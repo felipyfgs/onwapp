@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import { WhatsService } from '@/whats/whats.service';
 import { useDatabaseAuthState } from '@/whats/database-auth-state';
@@ -318,7 +319,7 @@ export class SessionService {
                 status: 'disconnected',
                 qrCode: null,
                 phoneNumber: null,
-                creds: null
+                creds: Prisma.DbNull
             }
         });
 
