@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, SessionStatus } from '@prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import { WhatsService } from '@/whats/whats.service';
 import { useDatabaseAuthState } from '@/whats/database-auth-state';
@@ -53,7 +53,7 @@ export class SessionService {
                 name,
                 webhookUrl,
                 webhookEvents: webhookEvents || [],
-                status: 'disconnected',
+                status: SessionStatus.disconnected,
             },
             select: {
                 id: true,
@@ -181,7 +181,7 @@ export class SessionService {
         // Update status
         await this.prisma.session.update({
             where: { id },
-            data: { status: 'connecting' }
+            data: { status: SessionStatus.connecting }
         });
 
         this.logger.log(`Session connecting: ${id} (${session.name})`);
@@ -203,7 +203,7 @@ export class SessionService {
 
         await this.prisma.session.update({
             where: { id },
-            data: { status: 'disconnected', qrCode: null }
+            data: { status: SessionStatus.disconnected, qrCode: null }
         });
 
         this.logger.log(`Session disconnected: ${id} (${session.name})`);
@@ -217,9 +217,10 @@ export class SessionService {
     async getQRCode(id: string) {
         const session = await this.findOne(id);
         const qrCode = this.whatsService.getQRCode(id);
-        const status = this.whatsService.getConnectionStatus(id) || session.status;
+        const whatsStatus = this.whatsService.getConnectionStatus(id);
+        const status = whatsStatus ? this.mapToSessionStatus(whatsStatus) : session.status;
 
-        if (!qrCode && status === 'open') {
+        if (!qrCode && status === SessionStatus.connected) {
             return {
                 id,
                 qrCode: null,
@@ -280,19 +281,20 @@ export class SessionService {
     async getSessionStatus(id: string) {
         const session = await this.findOne(id);
         const whatsStatus = this.whatsService.getConnectionStatus(id);
+        const status = whatsStatus ? this.mapToSessionStatus(whatsStatus) : session.status;
 
         // Update status from WhatsApp if available
-        if (whatsStatus && whatsStatus !== session.status) {
+        if (status && status !== session.status) {
             await this.prisma.session.update({
                 where: { id },
-                data: { status: whatsStatus }
+                data: { status }
             });
         }
 
         return {
             id: session.id,
             name: session.name,
-            status: whatsStatus || session.status,
+            status: status || session.status,
             phoneNumber: session.phoneNumber
         };
     }
@@ -316,7 +318,7 @@ export class SessionService {
         await this.prisma.session.update({
             where: { id },
             data: {
-                status: 'disconnected',
+                status: SessionStatus.disconnected,
                 qrCode: null,
                 phoneNumber: null,
                 creds: Prisma.DbNull
@@ -333,5 +335,15 @@ export class SessionService {
      */
     listWebhookEvents() {
         return { events: WEBHOOK_EVENTS };
+    }
+
+    private mapToSessionStatus(status: string | undefined): SessionStatus {
+        if (!status) return SessionStatus.disconnected;
+        switch (status) {
+            case 'open': return SessionStatus.connected;
+            case 'connecting': return SessionStatus.connecting;
+            case 'close': return SessionStatus.disconnected;
+            default: return SessionStatus.disconnected;
+        }
     }
 }

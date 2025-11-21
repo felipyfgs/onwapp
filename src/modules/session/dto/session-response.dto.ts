@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { SessionStatus } from '@prisma/client';
 
 export class SessionResponseDto {
     @ApiProperty({ description: 'Session ID (UUID)' })
@@ -7,8 +8,8 @@ export class SessionResponseDto {
     @ApiProperty({ description: 'Session name' })
     name: string;
 
-    @ApiProperty({ description: 'Connection status', example: 'disconnected' })
-    status: string;
+    @ApiProperty({ description: 'Connection status', enum: SessionStatus, example: SessionStatus.disconnected })
+    status: SessionStatus;
 
     @ApiPropertyOptional({ description: 'QR Code string (if available)', nullable: true })
     qrCode?: string | null;
@@ -36,8 +37,8 @@ export class SessionStatusDto {
     @ApiProperty({ description: 'Session name' })
     name: string;
 
-    @ApiProperty({ description: 'Connection status' })
-    status: string;
+    @ApiProperty({ description: 'Connection status', enum: SessionStatus })
+    status: SessionStatus;
 
     @ApiPropertyOptional({ description: 'Connected phone number', nullable: true })
     phoneNumber?: string | null;
@@ -50,8 +51,8 @@ export class QRCodeResponseDto {
     @ApiPropertyOptional({ description: 'QR Code string', nullable: true })
     qrCode?: string | null;
 
-    @ApiProperty({ description: 'Connection status' })
-    status: string;
+    @ApiProperty({ description: 'Connection status', enum: SessionStatus })
+    status: SessionStatus;
 
     @ApiPropertyOptional({ description: 'Status message' })
     message?: string;

@@ -6,17 +6,59 @@ datasource db {
   provider = "postgresql"
 }
 
+enum SessionStatus {
+  disconnected
+  connecting
+  connected
+}
+
 model Session {
-  id            String   @id @default(uuid())
-  name          String   @unique
-  status        String   @default("disconnected")
+  id            String        @id @default(uuid())
+  name          String        @unique
+  status        SessionStatus @default(disconnected)
   qrCode        String?
   phoneNumber   String?
   creds         Json?
   webhookUrl    String?
   webhookEvents String[] @default([])
+
+  webhookConfigs WebhookConfig[]
+  proxyConfig    ProxyConfig?
+
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   @@map("sessions")
+}
+
+model WebhookConfig {
+  id        String   @id @default(uuid())
+  url       String
+  events    String[]
+  enabled   Boolean  @default(true)
+  
+  sessionId String
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("webhook_configs")
+}
+
+model ProxyConfig {
+  id        String   @id @default(uuid())
+  host      String
+  port      Int
+  username  String?
+  password  String?
+  protocol  String   @default("http")
+
+  sessionId String   @unique
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("proxy_configs")
 }
