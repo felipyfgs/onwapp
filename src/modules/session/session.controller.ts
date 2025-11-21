@@ -30,7 +30,7 @@ import {
 import { ApiKeyGuard } from '@/guards/api-key.guard';
 
 @ApiTags('Sessions')
-@ApiSecurity('X-API-Key')
+@ApiSecurity('apikey')
 @Controller('sessions')
 @UseGuards(ApiKeyGuard)
 export class SessionController {
