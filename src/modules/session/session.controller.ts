@@ -10,6 +10,13 @@ import {
     HttpCode,
     HttpStatus
 } from '@nestjs/common';
+import {
+    ApiTags,
+    ApiOperation,
+    ApiResponse,
+    ApiSecurity,
+    ApiParam
+} from '@nestjs/swagger';
 import { SessionService } from './session.service';
 import {
     CreateSessionDto,
@@ -22,6 +29,8 @@ import {
 } from './dto';
 import { ApiKeyGuard } from '@/guards/api-key.guard';
 
+@ApiTags('Sessions')
+@ApiSecurity('X-API-Key')
 @Controller('sessions')
 @UseGuards(ApiKeyGuard)
 export class SessionController {
@@ -32,6 +41,8 @@ export class SessionController {
      * List all available webhook events
      */
     @Get('webhook/events')
+    @ApiOperation({ summary: 'List available webhook events' })
+    @ApiResponse({ status: 200, description: 'List of events', type: WebhookEventsDto })
     listWebhookEvents(): WebhookEventsDto {
         return this.sessionService.listWebhookEvents();
     }
@@ -42,6 +53,9 @@ export class SessionController {
      */
     @Post('create')
     @HttpCode(HttpStatus.CREATED)
+    @ApiOperation({ summary: 'Create a new session' })
+    @ApiResponse({ status: 201, description: 'Session created successfully', type: SessionResponseDto })
+    @ApiResponse({ status: 400, description: 'Bad Request' })
     async createSession(@Body(ValidationPipe) createSessionDto: CreateSessionDto): Promise<SessionResponseDto> {
         return this.sessionService.createSession(createSessionDto);
     }
@@ -51,6 +65,8 @@ export class SessionController {
      * List all sessions
      */
     @Get('list')
+    @ApiOperation({ summary: 'List all sessions' })
+    @ApiResponse({ status: 200, description: 'List of sessions', type: [SessionResponseDto] })
     async getSessions(): Promise<SessionResponseDto[]> {
         const sessions = await this.sessionService.findAll();
         return sessions.map(session => ({
@@ -65,6 +81,10 @@ export class SessionController {
      * Get session details
      */
     @Get(':id/info')
+    @ApiOperation({ summary: 'Get session details' })
+    @ApiParam({ name: 'id', description: 'Session ID' })
+    @ApiResponse({ status: 200, description: 'Session details', type: SessionResponseDto })
+    @ApiResponse({ status: 404, description: 'Session not found' })
     async getSession(@Param('id') id: string): Promise<SessionResponseDto> {
         return this.sessionService.findOne(id);
     }
@@ -74,6 +94,10 @@ export class SessionController {
      * Delete a session
      */
     @Delete(':id/delete')
+    @ApiOperation({ summary: 'Delete a session' })
+    @ApiParam({ name: 'id', description: 'Session ID' })
+    @ApiResponse({ status: 200, description: 'Session deleted', type: MessageResponseDto })
+    @ApiResponse({ status: 404, description: 'Session not found' })
     async deleteSession(@Param('id') id: string): Promise<MessageResponseDto> {
         return this.sessionService.deleteSession(id);
     }
@@ -83,6 +107,11 @@ export class SessionController {
      * Connect a session to WhatsApp
      */
     @Post(':id/connect')
+    @ApiOperation({ summary: 'Connect session to WhatsApp' })
+    @ApiParam({ name: 'id', description: 'Session ID' })
+    @ApiResponse({ status: 201, description: 'Connection initiated', type: MessageResponseDto })
+    @ApiResponse({ status: 400, description: 'Session already connected' })
+    @ApiResponse({ status: 404, description: 'Session not found' })
     async connectSession(@Param('id') id: string): Promise<MessageResponseDto> {
         return this.sessionService.connectSession(id);
     }
@@ -92,6 +121,11 @@ export class SessionController {
      * Disconnect a session from WhatsApp
      */
     @Post(':id/disconnect')
+    @ApiOperation({ summary: 'Disconnect session from WhatsApp' })
+    @ApiParam({ name: 'id', description: 'Session ID' })
+    @ApiResponse({ status: 201, description: 'Session disconnected', type: MessageResponseDto })
+    @ApiResponse({ status: 400, description: 'Session not connected' })
+    @ApiResponse({ status: 404, description: 'Session not found' })
     async disconnectSession(@Param('id') id: string): Promise<MessageResponseDto> {
         return this.sessionService.disconnectSession(id);
     }
@@ -101,6 +135,10 @@ export class SessionController {
      * Get QR code for session
      */
     @Get(':id/qr')
+    @ApiOperation({ summary: 'Get QR code for session' })
+    @ApiParam({ name: 'id', description: 'Session ID' })
+    @ApiResponse({ status: 200, description: 'QR Code data', type: QRCodeResponseDto })
+    @ApiResponse({ status: 404, description: 'Session not found' })
     async getQRCode(@Param('id') id: string): Promise<QRCodeResponseDto> {
         return this.sessionService.getQRCode(id);
     }
@@ -110,6 +148,11 @@ export class SessionController {
      * Pair session with phone number
      */
     @Post(':id/pair')
+    @ApiOperation({ summary: 'Pair session with phone number' })
+    @ApiParam({ name: 'id', description: 'Session ID' })
+    @ApiResponse({ status: 201, description: 'Pairing initiated', type: MessageResponseDto })
+    @ApiResponse({ status: 400, description: 'Invalid phone number or session not connected' })
+    @ApiResponse({ status: 404, description: 'Session not found' })
     async pairPhone(
         @Param('id') id: string,
         @Body(ValidationPipe) pairPhoneDto: PairPhoneDto
@@ -122,6 +165,10 @@ export class SessionController {
      * Get session connection status
      */
     @Get(':id/status')
+    @ApiOperation({ summary: 'Get session connection status' })
+    @ApiParam({ name: 'id', description: 'Session ID' })
+    @ApiResponse({ status: 200, description: 'Session status', type: SessionStatusDto })
+    @ApiResponse({ status: 404, description: 'Session not found' })
     async getSessionStatus(@Param('id') id: string): Promise<SessionStatusDto> {
         return this.sessionService.getSessionStatus(id);
     }
@@ -131,6 +178,10 @@ export class SessionController {
      * Logout session and clear credentials
      */
     @Post(':id/logout')
+    @ApiOperation({ summary: 'Logout session and clear credentials' })
+    @ApiParam({ name: 'id', description: 'Session ID' })
+    @ApiResponse({ status: 201, description: 'Session logged out', type: MessageResponseDto })
+    @ApiResponse({ status: 404, description: 'Session not found' })
     async logoutSession(@Param('id') id: string): Promise<MessageResponseDto> {
         return this.sessionService.logoutSession(id);
     }
