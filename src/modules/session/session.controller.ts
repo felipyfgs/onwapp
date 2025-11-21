@@ -11,7 +11,15 @@ import {
     HttpStatus
 } from '@nestjs/common';
 import { SessionService } from './session.service';
-import { CreateSessionDto, PairPhoneDto } from './dto';
+import {
+    CreateSessionDto,
+    PairPhoneDto,
+    SessionResponseDto,
+    SessionStatusDto,
+    QRCodeResponseDto,
+    WebhookEventsDto,
+    MessageResponseDto
+} from './dto';
 import { ApiKeyGuard } from '@/guards/api-key.guard';
 
 @Controller('sessions')
@@ -24,7 +32,7 @@ export class SessionController {
      * List all available webhook events
      */
     @Get('webhook/events')
-    listWebhookEvents() {
+    listWebhookEvents(): WebhookEventsDto {
         return this.sessionService.listWebhookEvents();
     }
 
@@ -34,7 +42,7 @@ export class SessionController {
      */
     @Post('create')
     @HttpCode(HttpStatus.CREATED)
-    createSession(@Body(ValidationPipe) createSessionDto: CreateSessionDto) {
+    async createSession(@Body(ValidationPipe) createSessionDto: CreateSessionDto): Promise<SessionResponseDto> {
         return this.sessionService.createSession(createSessionDto);
     }
 
@@ -43,8 +51,13 @@ export class SessionController {
      * List all sessions
      */
     @Get('list')
-    getSessions() {
-        return this.sessionService.findAll();
+    async getSessions(): Promise<SessionResponseDto[]> {
+        const sessions = await this.sessionService.findAll();
+        return sessions.map(session => ({
+            ...session,
+            phoneNumber: session.phoneNumber ?? undefined,
+            webhookUrl: session.webhookUrl ?? undefined
+        }));
     }
 
     /**
@@ -52,7 +65,7 @@ export class SessionController {
      * Get session details
      */
     @Get(':id/info')
-    getSession(@Param('id') id: string) {
+    async getSession(@Param('id') id: string): Promise<SessionResponseDto> {
         return this.sessionService.findOne(id);
     }
 
@@ -61,7 +74,7 @@ export class SessionController {
      * Delete a session
      */
     @Delete(':id/delete')
-    deleteSession(@Param('id') id: string) {
+    async deleteSession(@Param('id') id: string): Promise<MessageResponseDto> {
         return this.sessionService.deleteSession(id);
     }
 
@@ -70,7 +83,7 @@ export class SessionController {
      * Connect a session to WhatsApp
      */
     @Post(':id/connect')
-    connectSession(@Param('id') id: string) {
+    async connectSession(@Param('id') id: string): Promise<MessageResponseDto> {
         return this.sessionService.connectSession(id);
     }
 
@@ -79,7 +92,7 @@ export class SessionController {
      * Disconnect a session from WhatsApp
      */
     @Post(':id/disconnect')
-    disconnectSession(@Param('id') id: string) {
+    async disconnectSession(@Param('id') id: string): Promise<MessageResponseDto> {
         return this.sessionService.disconnectSession(id);
     }
 
@@ -88,7 +101,7 @@ export class SessionController {
      * Get QR code for session
      */
     @Get(':id/qr')
-    getQRCode(@Param('id') id: string) {
+    async getQRCode(@Param('id') id: string): Promise<QRCodeResponseDto> {
         return this.sessionService.getQRCode(id);
     }
 
@@ -97,10 +110,10 @@ export class SessionController {
      * Pair session with phone number
      */
     @Post(':id/pair')
-    pairPhone(
+    async pairPhone(
         @Param('id') id: string,
         @Body(ValidationPipe) pairPhoneDto: PairPhoneDto
-    ) {
+    ): Promise<MessageResponseDto> {
         return this.sessionService.pairPhone(id, pairPhoneDto);
     }
 
@@ -109,7 +122,7 @@ export class SessionController {
      * Get session connection status
      */
     @Get(':id/status')
-    getSessionStatus(@Param('id') id: string) {
+    async getSessionStatus(@Param('id') id: string): Promise<SessionStatusDto> {
         return this.sessionService.getSessionStatus(id);
     }
 
@@ -118,7 +131,7 @@ export class SessionController {
      * Logout session and clear credentials
      */
     @Post(':id/logout')
-    logoutSession(@Param('id') id: string) {
+    async logoutSession(@Param('id') id: string): Promise<MessageResponseDto> {
         return this.sessionService.logoutSession(id);
     }
 }

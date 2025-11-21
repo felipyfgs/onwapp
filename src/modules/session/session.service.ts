@@ -53,6 +53,17 @@ export class SessionService {
                 webhookUrl,
                 webhookEvents: webhookEvents || [],
                 status: 'disconnected',
+            },
+            select: {
+                id: true,
+                name: true,
+                status: true,
+                qrCode: true,
+                phoneNumber: true,
+                webhookUrl: true,
+                webhookEvents: true,
+                createdAt: true,
+                updatedAt: true,
             }
         });
 
@@ -291,11 +302,14 @@ export class SessionService {
     async logoutSession(id: string) {
         const session = await this.findOne(id);
 
-        if (!this.whatsService.getSocket(id)) {
-            throw new BadRequestException('Session is not connected');
+        // Disconnect if socket exists
+        if (this.whatsService.getSocket(id)) {
+            try {
+                await this.whatsService.disconnect(id);
+            } catch (error) {
+                this.logger.warn(`Failed to disconnect socket for session ${id}: ${error.message}`);
+            }
         }
-
-        await this.whatsService.disconnect(id);
 
         // Clear credentials from database
         await this.prisma.session.update({
