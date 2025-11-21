@@ -29,16 +29,31 @@ export class WhatsService {
     /**
      * Create a new WhatsApp connection for a session
      */
-    async createConnection(sessionId: string, authPath?: string): Promise<void> {
+    async createConnection(
+        sessionId: string,
+        authState?: any,
+        saveCredsCallback?: (creds: any) => Promise<void>
+    ): Promise<void> {
         try {
-            // Use auth path or default to session-specific folder
-            const authDir = authPath || `./auth_sessions/${sessionId}`;
-            const { state, saveCreds } = await useMultiFileAuthState(authDir);
+            let state: any;
+            let saveCreds: any;
+
+            if (authState) {
+                // Use provided auth state (from database)
+                state = authState.state;
+                saveCreds = saveCredsCallback || (() => Promise.resolve());
+            } else {
+                // Fallback to file-based auth (for testing)
+                const authDir = `./auth_sessions/${sessionId}`;
+                const fileAuth = await useMultiFileAuthState(authDir);
+                state = fileAuth.state;
+                saveCreds = fileAuth.saveCreds;
+            }
 
             // Create WhatsApp socket
             const sock = makeWASocket({
                 auth: state,
-                printQRInTerminal: false, // We'll handle QR ourselves
+                printQRInTerminal: false,
                 logger: this.logger as any,
             });
 
