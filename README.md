@@ -126,7 +126,7 @@ Edite o arquivo `.env`:
 DATABASE_URL="postgresql://zpwoot:zpwoot123@localhost:5432/zpwoot"
 
 # API Security
-GLOBAL_API_KEY="your-secret-api-key-here"
+API_KEY="your-secret-api-key-here"
 
 # Server
 PORT=3000
@@ -162,7 +162,7 @@ npm run start:prod
 | Variável | Descrição | Padrão | Obrigatório |
 |----------|-----------|--------|-------------|
 | `DATABASE_URL` | URL de conexão do PostgreSQL | - | ✅ |
-| `GLOBAL_API_KEY` | Chave de API para autenticação | - | ✅ |
+| `API_KEY` | Chave de API para autenticação | - | ✅ |
 | `PORT` | Porta do servidor | 3000 | ❌ |
 
 ### Docker Compose

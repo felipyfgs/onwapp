@@ -11,7 +11,7 @@ export class ApiKeyGuard implements CanActivate {
             throw new UnauthorizedException('API key is missing');
         }
 
-        const validApiKey = process.env.API_KEY || process.env.GLOBAL_API_KEY;
+        const validApiKey = process.env.API_KEY;
 
         if (!validApiKey) {
             throw new Error('API_KEY environment variable is not set');

@@ -46,7 +46,7 @@ Authorization: Bearer your-secret-api-key-here
 #### Configuração
 A chave de API é configurada via variável de ambiente:
 ```bash
-GLOBAL_API_KEY="your-secret-api-key-here"
+API_KEY="your-secret-api-key-here"
 ```
 
 #### Erros de Autenticação
@@ -1296,7 +1296,7 @@ setInterval(async () => {
 }
 ```
 
-**Solução**: Verificar variável `GLOBAL_API_KEY` no `.env`
+**Solução**: Verificar variável `API_KEY` no `.env`
 
 ---
 
@@ -1378,7 +1378,7 @@ setInterval(async () => {
 ```json
 {
   "statusCode": 500,
-  "message": "GLOBAL_API_KEY environment variable is not set"
+  "message": "API_KEY environment variable is not set"
 }
 ```
 
