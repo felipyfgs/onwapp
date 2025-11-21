@@ -9,8 +9,12 @@ async function bootstrap() {
     .setTitle('zpwoot API')
     .setDescription('WhatsApp API Service based on whaileys')
     .setVersion('1.0')
-    .addApiKey({ type: 'apiKey', name: 'X-API-Key', in: 'header' }, 'X-API-Key')
-    .addBearerAuth()
+    .addApiKey({
+      type: 'apiKey',
+      in: 'header',
+      name: 'apikey',
+      description: 'API Key for authentication. Add your API key in \'apikey\' header.'
+    }, 'apikey')
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);

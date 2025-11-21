@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, Logger } from '@nes
 import { Prisma, SessionStatus } from '@prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import { WhatsService } from '@/whats/whats.service';
+import { WebhookService } from '@/modules/webhook/webhook.service';
 import { useDatabaseAuthState } from '@/whats/database-auth-state';
 import { CreateSessionDto, PairPhoneDto } from './dto';
 
@@ -29,7 +30,8 @@ export class SessionService {
 
     constructor(
         private readonly prisma: PrismaService,
-        private readonly whatsService: WhatsService
+        private readonly whatsService: WhatsService,
+        private readonly webhookService: WebhookService
     ) { }
 
     /**

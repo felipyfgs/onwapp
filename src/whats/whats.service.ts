@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { WebhookService } from '@/modules/webhook/webhook.service';
 
 // Import WhatsApp client using dynamic import pattern for compatibility
 const makeWASocketModule = require('whaileys');
@@ -25,6 +26,8 @@ export class WhatsService {
     private sessions: Map<string, WASocket> = new Map();
     private qrCodes: Map<string, string> = new Map();
     private connectionStatus: Map<string, string> = new Map();
+
+    constructor(private readonly webhookService: WebhookService) { }
 
     /**
      * Create a new WhatsApp connection for a session
@@ -73,6 +76,57 @@ export class WhatsService {
                 this.handleIncomingMessages(sessionId, messages);
             });
 
+            // Handle message updates
+            sock.ev.on('messages.update', async (updates) => {
+                this.logger.debug(`Message updates for session ${sessionId}:`, updates.length);
+                await this.webhookService.triggerMessageUpdate(sessionId, updates);
+            });
+
+            // Handle message receipt updates
+            sock.ev.on('message-receipt.update', async (receipts) => {
+                this.logger.debug(`Message receipts for session ${sessionId}:`, receipts.length);
+                await this.webhookService.triggerMessageReceipt(sessionId, receipts);
+            });
+
+            // Handle presence updates
+            sock.ev.on('presence.update', async (presences) => {
+                this.logger.debug(`Presence updates for session ${sessionId}`);
+                await this.webhookService.triggerPresenceUpdate(sessionId, [presences]);
+            });
+
+            // Handle group updates
+            sock.ev.on('groups.upsert', async (groups) => {
+                this.logger.debug(`Groups upsert for session ${sessionId}:`, groups.length);
+                await this.webhookService.triggerGroupUpdate(sessionId, groups);
+            });
+
+            sock.ev.on('groups.update', async (groups) => {
+                this.logger.debug(`Groups update for session ${sessionId}:`, groups.length);
+                await this.webhookService.triggerGroupUpdate(sessionId, groups);
+            });
+
+            // Handle contact updates
+            sock.ev.on('contacts.upsert', async (contacts) => {
+                this.logger.debug(`Contacts upsert for session ${sessionId}:`, contacts.length);
+                await this.webhookService.triggerContactUpdate(sessionId, contacts);
+            });
+
+            sock.ev.on('contacts.update', async (contacts) => {
+                this.logger.debug(`Contacts update for session ${sessionId}:`, contacts.length);
+                await this.webhookService.triggerContactUpdate(sessionId, contacts);
+            });
+
+            // Handle chat updates
+            sock.ev.on('chats.upsert', async (chats) => {
+                this.logger.debug(`Chats upsert for session ${sessionId}:`, chats.length);
+                await this.webhookService.triggerChatUpdate(sessionId, chats);
+            });
+
+            sock.ev.on('chats.update', async (chats) => {
+                this.logger.debug(`Chats update for session ${sessionId}:`, chats.length);
+                await this.webhookService.triggerChatUpdate(sessionId, chats);
+            });
+
             this.logger.log(`WhatsApp connection created for session: ${sessionId}`);
         } catch (error) {
             this.logger.error(`Failed to create connection for session ${sessionId}:`, error);
@@ -83,23 +137,29 @@ export class WhatsService {
     /**
      * Handle connection state updates
      */
-    private handleConnectionUpdate(
+    private async handleConnectionUpdate(
         sessionId: string,
         update: Partial<ConnectionState>,
         sock: WASocket
-    ): void {
+    ): Promise<void> {
         const { connection, lastDisconnect, qr } = update;
 
         // Handle QR code
         if (qr) {
             this.qrCodes.set(sessionId, qr);
             this.logger.log(`QR code generated for session: ${sessionId}`);
+            
+            // Trigger webhook for QR code
+            await this.webhookService.triggerConnectionUpdate(sessionId, 'connecting', qr);
         }
 
         // Handle connection status
         if (connection) {
             this.connectionStatus.set(sessionId, connection);
             this.logger.log(`Connection status for ${sessionId}: ${connection}`);
+            
+            // Trigger webhook for connection status change
+            await this.webhookService.triggerConnectionUpdate(sessionId, connection);
         }
 
         // Handle disconnection
@@ -132,9 +192,11 @@ export class WhatsService {
     /**
      * Handle incoming messages
      */
-    private handleIncomingMessages(sessionId: string, messages: any[]): void {
+    private async handleIncomingMessages(sessionId: string, messages: any[]): Promise<void> {
         this.logger.debug(`Received ${messages.length} message(s) for session: ${sessionId}`);
-        // TODO: Process messages (save to database, trigger webhooks, etc.)
+        
+        // Trigger webhook for messages
+        await this.webhookService.triggerMessageUpsert(sessionId, messages);
     }
 
     /**

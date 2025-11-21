@@ -11,10 +11,10 @@ export class ApiKeyGuard implements CanActivate {
             throw new UnauthorizedException('API key is missing');
         }
 
-        const validApiKey = process.env.GLOBAL_API_KEY;
+        const validApiKey = process.env.API_KEY || process.env.GLOBAL_API_KEY;
 
         if (!validApiKey) {
-            throw new Error('GLOBAL_API_KEY environment variable is not set');
+            throw new Error('API_KEY environment variable is not set');
         }
 
         if (apiKey !== validApiKey) {
@@ -25,13 +25,19 @@ export class ApiKeyGuard implements CanActivate {
     }
 
     private extractApiKey(request: Request): string | undefined {
-        // Check X-API-Key header
+        // Check apikey header (primary method)
+        const apikey = request.headers['apikey'];
+        if (apikey) {
+            return Array.isArray(apikey) ? apikey[0] : apikey;
+        }
+
+        // Check X-API-Key header (backward compatibility)
         const headerKey = request.headers['x-api-key'];
         if (headerKey) {
             return Array.isArray(headerKey) ? headerKey[0] : headerKey;
         }
 
-        // Check Authorization Bearer token
+        // Check Authorization Bearer token (backward compatibility)
         const authorization = request.headers.authorization;
         if (authorization?.startsWith('Bearer ')) {
             return authorization.substring(7);
