@@ -1,10 +1,10 @@
 import { IsString, IsOptional, IsUrl } from 'class-validator';
 
 export class CreateSessionDto {
-    @IsString()
-    name: string;
+  @IsString()
+  name: string;
 
-    @IsUrl()
-    @IsOptional()
-    webhookUrl?: string;
+  @IsUrl()
+  @IsOptional()
+  webhookUrl?: string;
 }

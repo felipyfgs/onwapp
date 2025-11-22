@@ -45,10 +45,11 @@ export class LoggerService implements NestLoggerService {
         | undefined) ?? {};
     const traceCandidate = meta.find((m) => typeof m === 'string');
 
-    const trace = typeof traceCandidate === 'string' ? traceCandidate : undefined;
+    const trace =
+      typeof traceCandidate === 'string' ? traceCandidate : undefined;
 
     if (trace) {
-      (payload as Record<string, unknown>).trace = trace;
+      payload.trace = trace;
     }
 
     this.logger.error(payload, message);
