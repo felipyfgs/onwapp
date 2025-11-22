@@ -8,9 +8,9 @@ import {
 } from 'whaileys';
 import { Logger } from '@nestjs/common';
 
-const logger = new Logger('PostgresAuthState');
+const logger = new Logger('AuthState');
 
-export async function usePostgresAuthState(
+export async function useAuthState(
   sessionId: string,
   prisma: PrismaService,
 ): Promise<{
@@ -34,6 +34,7 @@ export async function usePostgresAuthState(
       });
 
       if (credsRecord && credsRecord.keyData) {
+        logger.debug(`[${sessionId}] Loaded existing credentials from database`);
         return JSON.parse(
           JSON.stringify(credsRecord.keyData),
           BufferJSON.reviver,
@@ -43,11 +44,13 @@ export async function usePostgresAuthState(
       logger.error('Error loading creds from database', error);
     }
 
+    logger.debug(`[${sessionId}] No existing credentials found, initializing new`);
     return initAuthCreds();
   };
 
   const saveCreds = async (): Promise<void> => {
     try {
+      logger.debug(`[${sessionId}] Saving credentials to database`);
       await prisma.authState.upsert({
         where: {
           sessionId_keyType_keyId: {
@@ -70,6 +73,7 @@ export async function usePostgresAuthState(
           ) as any,
         },
       });
+      logger.debug(`[${sessionId}] Credentials saved successfully`);
     } catch (error) {
       logger.error('Error saving creds to database', error);
     }
@@ -108,9 +112,7 @@ export async function usePostgresAuthState(
             let value = record.keyData;
 
             if (value) {
-              if (type === 'app-state-sync-key') {
-                value = JSON.parse(JSON.stringify(value), BufferJSON.reviver);
-              }
+              value = JSON.parse(JSON.stringify(value), BufferJSON.reviver);
               data[record.keyId] = value;
             }
           }
@@ -155,7 +157,11 @@ export async function usePostgresAuthState(
             }
           }
 
+          logger.debug(
+            `[${sessionId}] Setting keys: ${Object.keys(data).join(', ')} (${tasks.length} operations)`,
+          );
           await Promise.all(tasks);
+          logger.debug(`[${sessionId}] Keys saved successfully`);
         } catch (error) {
           logger.error('Error setting keys', error);
         }
