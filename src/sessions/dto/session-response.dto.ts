@@ -14,12 +14,6 @@ export class SessionResponseDto {
   name: string;
 
   @ApiProperty({
-    description: 'ID da sessão do WhatsApp',
-    example: 'session_123',
-  })
-  sessionId: string;
-
-  @ApiProperty({
     description: 'Status da sessão',
     example: 'connected',
     enum: ['connected', 'disconnected', 'connecting', 'qr'],

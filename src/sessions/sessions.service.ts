@@ -20,12 +20,9 @@ export class SessionsService {
   async createSession(
     createSessionDto: CreateSessionDto,
   ): Promise<SessionResponseDto> {
-    const sessionId = uuidv4();
-
     const session = await this.prisma.session.create({
       data: {
         name: createSessionDto.name,
-        sessionId,
         status: 'disconnected',
       },
     });
@@ -62,7 +59,7 @@ export class SessionsService {
       throw new NotFoundException(`Session with ID ${id} not found`);
     }
 
-    await this.whatsapp.deleteSession(session.sessionId);
+    await this.whatsapp.deleteSession(session.id);
 
     await this.prisma.session.delete({
       where: { id },

@@ -1,16 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import makeWASocket, {
   DisconnectReason,
-  useMultiFileAuthState,
   WASocket,
-  AuthenticationState,
-  initAuthCreds,
-  BufferJSON,
 } from 'whaileys';
 import { Boom } from '@hapi/boom';
 import { PrismaService } from '../prisma/prisma.service';
-import * as fs from 'fs-extra';
-import * as path from 'path';
+import * as qrcode from 'qrcode-terminal';
+import { usePostgresAuthState } from './postgres-auth-state';
 
 interface SessionSocket {
   socket: WASocket;
@@ -21,18 +17,16 @@ interface SessionSocket {
 export class WhatsAppService {
   private readonly logger = new Logger(WhatsAppService.name);
   private sessions: Map<string, SessionSocket> = new Map();
-  private readonly authDir = path.join(process.cwd(), 'auth_sessions');
 
-  constructor(private prisma: PrismaService) {
-    if (!fs.existsSync(this.authDir)) {
-      fs.mkdirSync(this.authDir, { recursive: true });
-    }
-  }
+  constructor(private prisma: PrismaService) {}
 
   async createSocket(
     sessionId: string,
   ): Promise<{ socket: WASocket; qr?: string }> {
-    const authState = await this.loadAuthState(sessionId);
+    const { state, saveCreds } = await usePostgresAuthState(
+      sessionId,
+      this.prisma,
+    );
     let currentQR: string | undefined;
 
     const customLogger = {
@@ -48,7 +42,7 @@ export class WhatsAppService {
     };
 
     const socket = makeWASocket({
-      auth: authState,
+      auth: state,
       printQRInTerminal: false,
       logger: customLogger as any,
     });
@@ -63,10 +57,11 @@ export class WhatsAppService {
           sessionSocket.qrCode = qr;
         }
         this.logger.log(`QR Code gerado para sessão ${sessionId}`);
+        qrcode.generate(qr, { small: true });
         this.prisma.session
           .update({
             where: { sessionId },
-            data: { qrCode: qr, status: 'qr' },
+            data: { qrCode: qr, status: 'connecting' },
           })
           .catch((err) => this.logger.error('Error updating session QR', err));
       }
@@ -121,7 +116,7 @@ export class WhatsAppService {
     });
 
     socket.ev.on('creds.update', () => {
-      this.saveAuthState(sessionId, authState).catch((err) =>
+      saveCreds().catch((err) =>
         this.logger.error('Error saving auth state', err),
       );
     });
@@ -129,66 +124,6 @@ export class WhatsAppService {
     this.sessions.set(sessionId, { socket, qrCode: currentQR });
 
     return { socket, qr: currentQR };
-  }
-
-  async loadAuthState(sessionId: string): Promise<AuthenticationState> {
-    const authDir = path.join(this.authDir, sessionId);
-
-    if (fs.existsSync(authDir)) {
-      const { state } = await useMultiFileAuthState(authDir);
-      return state;
-    }
-
-    const creds = initAuthCreds();
-    const keys = {
-      'pre-key': {} as any,
-      session: {} as any,
-      'sender-key': {} as any,
-      'app-state-sync-key': {} as any,
-      'app-state-sync-version': {} as any,
-      'sender-key-memory': {} as any,
-      'contacts-tc-token': {} as any,
-    };
-
-    return {
-      creds,
-      keys: {
-        get: (type, ids) => {
-          const data: Record<string, any> = {};
-          for (const id of ids) {
-            let value = keys[type][id];
-            if (value) {
-              if (type === 'app-state-sync-key') {
-                value = JSON.parse(JSON.stringify(value), BufferJSON.reviver);
-              }
-              data[id] = value;
-            }
-          }
-          return Promise.resolve(data);
-        },
-        set: (data) => {
-          for (const category in data) {
-            for (const id in data[category]) {
-              const value = data[category][id];
-              keys[category][id] = value;
-            }
-          }
-        },
-      },
-    };
-  }
-
-  async saveAuthState(
-    sessionId: string,
-    state: AuthenticationState,
-  ): Promise<void> {
-    const authDir = path.join(this.authDir, sessionId);
-    await fs.ensureDir(authDir);
-
-    await fs.writeFile(
-      path.join(authDir, 'creds.json'),
-      JSON.stringify(state.creds, BufferJSON.replacer, 2),
-    );
   }
 
   getSocket(sessionId: string): WASocket | undefined {
@@ -209,9 +144,5 @@ export class WhatsAppService {
 
   async deleteSession(sessionId: string): Promise<void> {
     await this.disconnectSocket(sessionId);
-    const authDir = path.join(this.authDir, sessionId);
-    if (fs.existsSync(authDir)) {
-      fs.rmSync(authDir, { recursive: true, force: true });
-    }
   }
 }
