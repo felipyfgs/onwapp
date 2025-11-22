@@ -21,7 +21,10 @@ const RECONNECT_DELAYS = {
 } as const;
 
 const MAX_LOGOUT_ATTEMPTS = 2;
-const ACTIVE_SESSION_STATUSES = ['connected', 'connecting'] as const;
+const ACTIVE_SESSION_STATUSES: Array<'connected' | 'connecting'> = [
+  'connected',
+  'connecting',
+];
 
 @Injectable()
 export class WhatsAppService implements OnModuleInit {
@@ -72,11 +75,7 @@ export class WhatsAppService implements OnModuleInit {
 
   private async updateSessionStatus(
     sessionId: string,
-    data: Partial<{
-      status: string;
-      qrCode: string | null;
-      phoneNumber: string | null;
-    }>,
+    data: any,
   ): Promise<void> {
     try {
       await this.prisma.session.update({
@@ -115,6 +114,140 @@ export class WhatsAppService implements OnModuleInit {
     }, delay);
   }
 
+  private async handleQRCode(sessionId: string, qr: string): Promise<void> {
+    const sessionSocket = this.sessions.get(sessionId);
+    if (sessionSocket) {
+      sessionSocket.qrCode = qr;
+    }
+    this.logger.log(`QR Code gerado para sessão ${sessionId}`);
+    qrcode.generate(qr, { small: true });
+    await this.updateSessionStatus(sessionId, { qrCode: qr, status: 'connecting' });
+  }
+
+  private async handleConnectionOpen(
+    sessionId: string,
+    socket: WASocket,
+  ): Promise<void> {
+    this.logger.log(`Sessão ${sessionId} conectada com sucesso`);
+    
+    const sessionSocket = this.sessions.get(sessionId);
+    if (sessionSocket) {
+      sessionSocket.logoutAttempts = 0;
+      sessionSocket.isNewLogin = false;
+    }
+
+    const phoneNumber = this.extractPhoneNumber(socket);
+    this.logger.debug(
+      `[${sessionId}] Número extraído: ${phoneNumber || 'não disponível'}`,
+    );
+
+    await this.updateSessionStatus(sessionId, {
+      status: 'connected',
+      qrCode: null,
+      phoneNumber,
+    });
+  }
+
+  private async handleConnectionClose(
+    sessionId: string,
+    statusCode: number,
+  ): Promise<void> {
+    const isLoggedOut = statusCode === DisconnectReason.loggedOut;
+    const isRestartRequired = statusCode === DisconnectReason.restartRequired;
+
+    const sessionSocket = this.sessions.get(sessionId);
+    const currentLogoutAttempts = (sessionSocket?.logoutAttempts ?? 0) + 1;
+    const shouldReconnect = this.shouldReconnectSession(
+      statusCode,
+      currentLogoutAttempts,
+      sessionSocket?.isNewLogin ?? false,
+    );
+
+    this.logger.log(
+      `Conexão fechada para ${sessionId} | statusCode: ${statusCode} | ` +
+        `isNewLogin: ${sessionSocket?.isNewLogin} | tentativas: ${currentLogoutAttempts} | ` +
+        `reconectar: ${shouldReconnect}`,
+    );
+
+    this.sessions.delete(sessionId);
+
+    if (
+      isLoggedOut &&
+      !sessionSocket?.isNewLogin &&
+      currentLogoutAttempts >= MAX_LOGOUT_ATTEMPTS
+    ) {
+      this.logger.warn(
+        `Sessão ${sessionId} invalidada após ${currentLogoutAttempts} tentativas, limpando credenciais`,
+      );
+      await this.clearSessionCredentials(sessionId);
+      await this.updateSessionStatus(sessionId, { status: 'disconnected' });
+    } else if (isLoggedOut || isRestartRequired) {
+      this.logger.log(
+        `401/515 detectado para ${sessionId}, tentativa ${currentLogoutAttempts} - mantendo credenciais`,
+      );
+      await this.updateSessionStatus(sessionId, { status: 'connecting' });
+    } else {
+      await this.updateSessionStatus(sessionId, { status: 'disconnected' });
+    }
+
+    if (shouldReconnect) {
+      const delay = this.getReconnectDelay(statusCode);
+      this.scheduleReconnect(sessionId, delay);
+    }
+  }
+
+  private handleCredsUpdate(
+    sessionId: string,
+    saveCreds: () => Promise<void>,
+  ): void {
+    this.logger.debug(`[${sessionId}] creds.update event received`);
+    saveCreds().catch((err) =>
+      this.logger.error(
+        `[${sessionId}] Operation: saveCreds | Error: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        err,
+      ),
+    );
+  }
+
+  private getConnectionUpdateHandler(
+    sessionId: string,
+    socket: WASocket,
+    saveCreds: () => Promise<void>,
+    currentQRRef: { value?: string },
+  ) {
+    return async (update: any) => {
+      const {
+        connection,
+        lastDisconnect,
+        qr,
+        isNewLogin: isNewLoginFromSocket,
+      } = update;
+
+      this.logger.debug(
+        `[${sessionId}] connection.update: ${JSON.stringify({ 
+          connection, 
+          qr: qr ? 'present' : undefined, 
+          isNewLogin: isNewLoginFromSocket, 
+          statusCode: (lastDisconnect?.error as Boom)?.output?.statusCode 
+        })}`,
+      );
+
+      if (qr) {
+        currentQRRef.value = qr;
+        await this.handleQRCode(sessionId, qr);
+      }
+
+      if (connection === 'open') {
+        await this.handleConnectionOpen(sessionId, socket);
+      } else if (connection === 'connecting') {
+        await this.updateSessionStatus(sessionId, { status: 'connecting' });
+      } else if (connection === 'close') {
+        const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
+        await this.handleConnectionClose(sessionId, statusCode);
+      }
+    };
+  }
+
   async onModuleInit() {
     this.logger.log('Reconectando sessões ativas...');
     const activeSessions = await this.prisma.session.findMany({
@@ -147,11 +280,8 @@ export class WhatsAppService implements OnModuleInit {
       `[${sessionId}] Creating socket | isNewLogin: ${isNewLogin}`,
     );
 
-    const { state, saveCreds } = await useAuthState(
-      sessionId,
-      this.prisma,
-    );
-    let currentQR: string | undefined;
+    const { state, saveCreds } = await useAuthState(sessionId, this.prisma);
+    const currentQRRef = { value: undefined as string | undefined };
 
     const socket = makeWASocket({
       auth: state,
@@ -159,155 +289,23 @@ export class WhatsAppService implements OnModuleInit {
       logger: this.createSilentLogger() as any,
     });
 
-    socket.ev.on('connection.update', async (update) => {
-      const { connection, lastDisconnect, qr, isNewLogin: isNewLoginFromSocket } = update;
-      this.logger.debug(
-        `[${sessionId}] connection.update: ${JSON.stringify({ connection, qr: qr ? 'present' : undefined, isNewLogin: isNewLoginFromSocket, statusCode: (lastDisconnect?.error as Boom)?.output?.statusCode })}`,
-      );
-
-      if (qr) {
-        currentQR = qr;
-        const sessionSocket = this.sessions.get(sessionId);
-        if (sessionSocket) {
-          sessionSocket.qrCode = qr;
-        }
-        this.logger.log(`QR Code gerado para sessão ${sessionId}`);
-        qrcode.generate(qr, { small: true });
-        this.prisma.session
-          .update({
-            where: { id: sessionId },
-            data: { qrCode: qr, status: 'connecting' },
-          })
-          .catch((err) => this.logger.error('Error updating session QR', err));
-      }
-
-      if (connection === 'open') {
-        this.logger.log(`Sessão ${sessionId} conectada com sucesso`);
-        const sessionSocket = this.sessions.get(sessionId);
-        if (sessionSocket) {
-          sessionSocket.logoutAttempts = 0;
-          sessionSocket.isNewLogin = false;
-        }
-
-        const phoneNumber = socket.user?.id
-          ? socket.user.id.split(':')[0]
-          : undefined;
-
-        this.logger.debug(
-          `[${sessionId}] Número extraído: ${phoneNumber || 'não disponível'}`,
-        );
-
-        this.prisma.session
-          .update({
-            where: { id: sessionId },
-            data: {
-              status: 'connected',
-              qrCode: null,
-              phoneNumber: phoneNumber || null,
-            },
-          })
-          .catch((err) =>
-            this.logger.error('Error updating session status', err),
-          );
-      } else if (connection === 'connecting') {
-        this.prisma.session
-          .update({
-            where: { id: sessionId },
-            data: { status: 'connecting' },
-          })
-          .catch((err) =>
-            this.logger.error('Error updating session status', err),
-          );
-      } else if (connection === 'close') {
-        const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
-        const isLoggedOut = statusCode === DisconnectReason.loggedOut;
-        const isRestartRequired = statusCode === DisconnectReason.restartRequired;
-        const isBadSession = statusCode === DisconnectReason.badSession;
-
-        const sessionSocket = this.sessions.get(sessionId);
-        const currentLogoutAttempts = (sessionSocket?.logoutAttempts ?? 0) + 1;
-
-        const shouldReconnect =
-          (!isLoggedOut || currentLogoutAttempts < 2) ||
-          isRestartRequired ||
-          isBadSession;
-
-        this.logger.log(
-          `Conexão fechada para ${sessionId} | statusCode: ${statusCode} | ` +
-            `isNewLogin: ${sessionSocket?.isNewLogin} | tentativas: ${currentLogoutAttempts} | ` +
-            `reconectar: ${shouldReconnect}`,
-        );
-
-        this.sessions.delete(sessionId);
-
-        if (isLoggedOut && !sessionSocket?.isNewLogin && currentLogoutAttempts >= 2) {
-          this.logger.warn(
-            `Sessão ${sessionId} invalidada após ${currentLogoutAttempts} tentativas, limpando credenciais`,
-          );
-          await this.prisma.authState
-            .deleteMany({
-              where: { sessionId },
-            })
-            .catch((err) =>
-              this.logger.error('Error clearing auth state', err),
-            );
-          this.prisma.session
-            .update({
-              where: { id: sessionId },
-              data: { status: 'disconnected' },
-            })
-            .catch((err) =>
-              this.logger.error('Error updating session status', err),
-            );
-        } else if (isLoggedOut || isRestartRequired) {
-          this.logger.log(
-            `401/515 detectado para ${sessionId}, tentativa ${currentLogoutAttempts} - mantendo credenciais`,
-          );
-          this.prisma.session
-            .update({
-              where: { id: sessionId },
-              data: { status: 'connecting' },
-            })
-            .catch((err) =>
-              this.logger.error('Error updating session status', err),
-            );
-        } else {
-          this.prisma.session
-            .update({
-              where: { id: sessionId },
-              data: { status: 'disconnected' },
-            })
-            .catch((err) =>
-              this.logger.error('Error updating session status', err),
-            );
-        }
-
-        if (shouldReconnect) {
-          const delay = isRestartRequired ? 10000 : 3000;
-          setTimeout(() => {
-            this.createSocket(sessionId).catch((err) =>
-              this.logger.error('Error reconnecting socket', err),
-            );
-          }, delay);
-        }
-      }
-    });
+    socket.ev.on(
+      'connection.update',
+      this.getConnectionUpdateHandler(sessionId, socket, saveCreds, currentQRRef),
+    );
 
     socket.ev.on('creds.update', () => {
-      this.logger.debug(`[${sessionId}] creds.update event received`);
-      saveCreds().catch((err) =>
-        this.logger.error('Error saving auth state', err),
-      );
+      this.handleCredsUpdate(sessionId, saveCreds);
     });
 
     this.sessions.set(sessionId, {
       socket,
-      qrCode: currentQR,
+      qrCode: currentQRRef.value,
       isNewLogin,
       logoutAttempts: 0,
     });
 
-    return { socket, qr: currentQR };
+    return { socket, qr: currentQRRef.value };
   }
 
   getSocket(sessionId: string): WASocket | undefined {

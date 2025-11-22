@@ -27,7 +27,6 @@ export async function useAuthState(
   clearState: () => Promise<void>;
 }> {
   let creds: AuthenticationCreds;
-  let keys: any = {};
 
   const loadCreds = async (): Promise<AuthenticationCreds> => {
     try {
@@ -43,10 +42,7 @@ export async function useAuthState(
 
       if (credsRecord && credsRecord.keyData) {
         logger.debug(`[${sessionId}] Loaded existing credentials from database`);
-        return JSON.parse(
-          JSON.stringify(credsRecord.keyData),
-          BufferJSON.reviver,
-        );
+        return deserializeFromJson(credsRecord.keyData);
       }
     } catch (error) {
       logger.error('Error loading creds from database', error);
@@ -71,14 +67,10 @@ export async function useAuthState(
           sessionId,
           keyType: 'creds',
           keyId: 'creds',
-          keyData: JSON.parse(
-            JSON.stringify(creds, BufferJSON.replacer),
-          ) as any,
+          keyData: serializeToJson(creds) as any,
         },
         update: {
-          keyData: JSON.parse(
-            JSON.stringify(creds, BufferJSON.replacer),
-          ) as any,
+          keyData: serializeToJson(creds) as any,
         },
       });
       logger.debug(`[${sessionId}] Credentials saved successfully`);
@@ -93,7 +85,6 @@ export async function useAuthState(
         where: { sessionId },
       });
       creds = initAuthCreds();
-      keys = {};
     } catch (error) {
       logger.error('Error clearing auth state from database', error);
     }
@@ -117,11 +108,9 @@ export async function useAuthState(
           });
 
           for (const record of records) {
-            let value = record.keyData;
-
+            const value = record.keyData;
             if (value) {
-              value = JSON.parse(JSON.stringify(value), BufferJSON.reviver);
-              data[record.keyId] = value;
+              data[record.keyId] = deserializeFromJson(value);
             }
           }
         } catch (error) {
@@ -150,14 +139,10 @@ export async function useAuthState(
                   sessionId,
                   keyType: category,
                   keyId: id,
-                  keyData: JSON.parse(
-                    JSON.stringify(value, BufferJSON.replacer),
-                  ) as any,
+                  keyData: serializeToJson(value) as any,
                 },
                 update: {
-                  keyData: JSON.parse(
-                    JSON.stringify(value, BufferJSON.replacer),
-                  ) as any,
+                  keyData: serializeToJson(value) as any,
                 },
               });
 
