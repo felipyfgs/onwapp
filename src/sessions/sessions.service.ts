@@ -110,6 +110,25 @@ export class SessionsService {
     return this.mapToResponseDto(updatedSession);
   }
 
+  async logoutSession(id: string): Promise<SessionResponseDto> {
+    const session = await this.prisma.session.findUnique({
+      where: { id },
+    });
+
+    if (!session) {
+      throw new NotFoundException(`Session with ID ${id} not found`);
+    }
+
+    await this.whatsapp.disconnectSocket(session.sessionId);
+
+    const updatedSession = await this.prisma.session.update({
+      where: { id },
+      data: { status: 'disconnected', qrCode: null },
+    });
+
+    return this.mapToResponseDto(updatedSession);
+  }
+
   async getQRCode(id: string): Promise<{ qrCode?: string }> {
     const session = await this.prisma.session.findUnique({
       where: { id },

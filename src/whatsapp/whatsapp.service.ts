@@ -35,20 +35,22 @@ export class WhatsAppService {
     const authState = await this.loadAuthState(sessionId);
     let currentQR: string | undefined;
 
+    const customLogger = {
+      level: 'silent',
+      fatal: (...args: any[]) => {},
+      error: (...args: any[]) => {},
+      warn: (...args: any[]) => {},
+      info: (...args: any[]) => {},
+      debug: (...args: any[]) => {},
+      trace: (...args: any[]) => {},
+      silent: (...args: any[]) => {},
+      child: () => customLogger,
+    };
+
     const socket = makeWASocket({
       auth: authState,
       printQRInTerminal: false,
-      logger: {
-        level: 'silent',
-        fatal: () => {},
-        error: () => {},
-        warn: () => {},
-        info: () => {},
-        debug: () => {},
-        trace: () => {},
-        silent: () => {},
-        child: () => this,
-      } as any,
+      logger: customLogger as any,
     });
 
     socket.ev.on('connection.update', (update) => {
@@ -56,11 +58,15 @@ export class WhatsAppService {
 
       if (qr) {
         currentQR = qr;
+        const sessionSocket = this.sessions.get(sessionId);
+        if (sessionSocket) {
+          sessionSocket.qrCode = qr;
+        }
         this.logger.log(`QR Code gerado para sessão ${sessionId}`);
         this.prisma.session
           .update({
             where: { sessionId },
-            data: { qrCode: qr, status: 'connecting' },
+            data: { qrCode: qr, status: 'qr' },
           })
           .catch((err) => this.logger.error('Error updating session QR', err));
       }
