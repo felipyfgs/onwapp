@@ -6,7 +6,13 @@ import { PrismaModule } from './prisma/prisma.module';
 import { WhatsModule } from './whats/whats.module';
 
 @Module({
-  imports: [LoggerModule, SessionModule, MessageModule, PrismaModule, WhatsModule],
+  imports: [
+    LoggerModule,
+    SessionModule,
+    MessageModule,
+    PrismaModule,
+    WhatsModule,
+  ],
   controllers: [],
   providers: [],
 })

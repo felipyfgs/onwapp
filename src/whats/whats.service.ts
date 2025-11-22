@@ -1,81 +1,103 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import makeWASocket, {
-	DisconnectReason,
-	AnyMessageContent,
-	proto,
-	useSingleFileAuthState,
-} from 'whaileys';
+import makeWASocket from 'whaileys/lib/Socket';
+import {
+  AnyMessageContent,
+  ConnectionState,
+  DisconnectReason,
+  MessageUpsertType,
+  WAMessage,
+} from 'whaileys/lib/Types';
+import { useMultiFileAuthState } from 'whaileys/lib/Utils/use-multi-file-auth-state';
 import qrcode from 'qrcode-terminal';
 import { LoggerService } from '../logger/logger.service';
 import { MessageService } from '../modules/message/message.service';
-import { SessionService } from '../modules/session/session.service';
-import { promises as fs } from 'fs';
 
-const SESSION_FILE = process.env.WHATS_SESSION_FILE || './whats-session.json';
+const SESSION_DIR = process.env.WHATS_SESSION_DIR || './whats-session';
 
 @Injectable()
 export class WhatsService implements OnModuleInit, OnModuleDestroy {
-	private socket = null as ReturnType<typeof makeWASocket> | null;
-	private authState: ReturnType<typeof useSingleFileAuthState>['state'] | null = null;
+  private socket: ReturnType<typeof makeWASocket> | null = null;
 
-	constructor(
-		private readonly logger: LoggerService,
-		private readonly messageService: MessageService,
-		private readonly sessionService: SessionService,
-	) {}
+  constructor(
+    private readonly logger: LoggerService,
+    private readonly messageService: MessageService,
+  ) {}
 
-	async onModuleInit() {
-		await this.initSocket();
-	}
+  async onModuleInit() {
+    await this.connect();
+  }
 
-	async onModuleDestroy() {
-		await this.shutdownSocket();
-	}
+  async onModuleDestroy() {
+    await this.shutdown();
+  }
 
-	private async initSocket() {
-		const { state, saveCreds } = await useSingleFileAuthState(SESSION_FILE);
-		this.authState = state;
+  private async connect() {
+    const { state, saveCreds } = await useMultiFileAuthState(SESSION_DIR);
 
-		this.socket = makeWASocket({
-			printQRInTerminal: false,
-			auth: state,
-			logger: this.logger as any,
-		});
+    this.socket = makeWASocket({
+      printQRInTerminal: false,
+      auth: state,
+      logger: this.logger.getLogger(),
+    });
 
-		this.socket.ev.on('connection.update', (update) => this.handleConnectionUpdate(update));
-		this.socket.ev.on('messages.upsert', (message) => this.handleMessage(message));
-		this.socket.ev.on('creds.update', saveCreds);
-	}
+    this.socket.ev.on('connection.update', (update: Partial<ConnectionState>) =>
+      this.handleConnectionUpdate(update),
+    );
+    this.socket.ev.on('messages.upsert', (payload) =>
+      this.handleMessage(payload),
+    );
+      this.socket.ev.on('connection.update', (update: Partial<ConnectionState>) => {
+        void this.handleConnectionUpdate(update);
+      });
+      this.socket.ev.on('messages.upsert', (payload) => {
+        void this.handleMessage(payload);
+      });
+    this.socket.ev.on('creds.update', saveCreds);
+  }
 
-	private async shutdownSocket() {
-		await this.socket?.ws.close();
-		this.socket = null;
-	}
+  private async shutdown() {
+    await this.socket?.ws.close();
+    this.socket = null;
+  }
 
-	private handleConnectionUpdate(update: proto.IConnectionState) {
-		this.logger.log('WhatsApp connection update', update);
-		const { connection, lastDisconnect } = update;
-		if (connection === 'close') {
-			const shouldReconnect =
-				(lastDisconnect?.error as DisconnectReason)?.output?.statusCode !== DisconnectReason.loggedOut;
-			if (shouldReconnect) {
-				this.initSocket();
-			}
-		}
-		if (update.qr) {
-			qrcode.generate(update.qr, { small: true });
-		}
-	}
+  private async handleConnectionUpdate(update: Partial<ConnectionState>) {
+    this.logger.info('WhatsApp connection status update', update);
+    if (update.qr) {
+      qrcode.generate(update.qr, { small: true });
+    }
 
-	private async handleMessage(message: { messages: proto.IWebMessageInfo[]; type: string }) {
-		const incoming = message.messages[0];
-		if (!incoming?.message) return;
+    if (update.connection === 'close') {
+      const error = update.lastDisconnect?.error as BaileysError;
+      const statusCode = error?.output?.statusCode;
+      const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+      if (shouldReconnect) {
+        this.logger.info('Reconectando WhatsApp...');
+        await this.reconnect();
+      } else {
+        this.logger.warn('WhatsApp encerrado: login deslogado.');
+      }
+    }
+  }
 
-		// Exemplo: novo registro na base via MessageService
-		await this.messageService.handleMessage(incoming);
-	}
+  private async reconnect() {
+    await this.shutdown();
+    await this.connect();
+  }
 
-	async sendMessage(jid: string, content: AnyMessageContent) {
-		return this.socket?.sendMessage(jid, content);
-	}
+  private async handleMessage({
+    messages,
+    type,
+  }: {
+    messages: WAMessage[];
+    type: MessageUpsertType;
+  }) {
+    const incoming = messages.find((msg) => msg?.message);
+    if (!incoming) return;
+
+    await this.messageService.handleMessage(incoming);
+  }
+
+  async sendMessage(jid: string, content: AnyMessageContent) {
+    return this.socket?.sendMessage(jid, content);
+  }
 }
