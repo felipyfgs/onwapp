@@ -4,13 +4,12 @@ import makeWASocket, {
   useMultiFileAuthState,
   WASocket,
   AuthenticationState,
-  SignalDataTypeMap,
   initAuthCreds,
   BufferJSON,
 } from 'whaileys';
 import { Boom } from '@hapi/boom';
 import { PrismaService } from '../prisma/prisma.service';
-import * as fs from 'fs';
+import * as fs from 'fs-extra';
 import * as path from 'path';
 
 interface SessionSocket {
@@ -30,7 +29,9 @@ export class WhatsAppService {
     }
   }
 
-  async createSocket(sessionId: string): Promise<{ socket: WASocket; qr?: string }> {
+  async createSocket(
+    sessionId: string,
+  ): Promise<{ socket: WASocket; qr?: string }> {
     const authState = await this.loadAuthState(sessionId);
     let currentQR: string | undefined;
 
@@ -45,56 +46,78 @@ export class WhatsAppService {
         info: () => {},
         debug: () => {},
         trace: () => {},
-        child: () => this as any,
-      },
+        silent: () => {},
+        child: () => this,
+      } as any,
     });
 
-    socket.ev.on('connection.update', async (update) => {
+    socket.ev.on('connection.update', (update) => {
       const { connection, lastDisconnect, qr } = update;
 
       if (qr) {
         currentQR = qr;
         this.logger.log(`QR Code gerado para sessão ${sessionId}`);
-        await this.prisma.session.update({
-          where: { sessionId },
-          data: { qrCode: qr, status: 'connecting' },
-        });
+        this.prisma.session
+          .update({
+            where: { sessionId },
+            data: { qrCode: qr, status: 'connecting' },
+          })
+          .catch((err) => this.logger.error('Error updating session QR', err));
       }
 
       if (connection === 'close') {
+        const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
         const shouldReconnect =
-          (lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
+          statusCode !== (DisconnectReason.loggedOut as unknown as number);
 
         this.logger.log(
           `Conexão fechada para ${sessionId}, reconectar: ${shouldReconnect}`,
         );
 
-        await this.prisma.session.update({
-          where: { sessionId },
-          data: { status: 'disconnected' },
-        });
+        this.prisma.session
+          .update({
+            where: { sessionId },
+            data: { status: 'disconnected' },
+          })
+          .catch((err) =>
+            this.logger.error('Error updating session status', err),
+          );
 
         this.sessions.delete(sessionId);
 
         if (shouldReconnect) {
-          setTimeout(() => this.createSocket(sessionId), 3000);
+          setTimeout(() => {
+            this.createSocket(sessionId).catch((err) =>
+              this.logger.error('Error reconnecting socket', err),
+            );
+          }, 3000);
         }
       } else if (connection === 'open') {
         this.logger.log(`Sessão ${sessionId} conectada com sucesso`);
-        await this.prisma.session.update({
-          where: { sessionId },
-          data: { status: 'connected', qrCode: null },
-        });
+        this.prisma.session
+          .update({
+            where: { sessionId },
+            data: { status: 'connected', qrCode: null },
+          })
+          .catch((err) =>
+            this.logger.error('Error updating session status', err),
+          );
       } else if (connection === 'connecting') {
-        await this.prisma.session.update({
-          where: { sessionId },
-          data: { status: 'connecting' },
-        });
+        this.prisma.session
+          .update({
+            where: { sessionId },
+            data: { status: 'connecting' },
+          })
+          .catch((err) =>
+            this.logger.error('Error updating session status', err),
+          );
       }
     });
 
-    socket.ev.on('creds.update', async () => {
-      await this.saveAuthState(sessionId, authState);
+    socket.ev.on('creds.update', () => {
+      this.saveAuthState(sessionId, authState).catch((err) =>
+        this.logger.error('Error saving auth state', err),
+      );
     });
 
     this.sessions.set(sessionId, { socket, qrCode: currentQR });
@@ -111,20 +134,21 @@ export class WhatsAppService {
     }
 
     const creds = initAuthCreds();
-    const keys: SignalDataTypeMap = {
-      'pre-key': {},
-      'session': {},
-      'sender-key': {},
-      'app-state-sync-key': {},
-      'app-state-sync-version': {},
-      'sender-key-memory': {},
+    const keys = {
+      'pre-key': {} as any,
+      session: {} as any,
+      'sender-key': {} as any,
+      'app-state-sync-key': {} as any,
+      'app-state-sync-version': {} as any,
+      'sender-key-memory': {} as any,
+      'contacts-tc-token': {} as any,
     };
 
     return {
       creds,
       keys: {
-        get: async (type, ids) => {
-          const data: any = {};
+        get: (type, ids) => {
+          const data: Record<string, any> = {};
           for (const id of ids) {
             let value = keys[type][id];
             if (value) {
@@ -134,9 +158,9 @@ export class WhatsAppService {
               data[id] = value;
             }
           }
-          return data;
+          return Promise.resolve(data);
         },
-        set: async (data) => {
+        set: (data) => {
           for (const category in data) {
             for (const id in data[category]) {
               const value = data[category][id];
@@ -148,13 +172,14 @@ export class WhatsAppService {
     };
   }
 
-  async saveAuthState(sessionId: string, state: AuthenticationState): Promise<void> {
+  async saveAuthState(
+    sessionId: string,
+    state: AuthenticationState,
+  ): Promise<void> {
     const authDir = path.join(this.authDir, sessionId);
-    if (!fs.existsSync(authDir)) {
-      fs.mkdirSync(authDir, { recursive: true });
-    }
+    await fs.ensureDir(authDir);
 
-    fs.writeFileSync(
+    await fs.writeFile(
       path.join(authDir, 'creds.json'),
       JSON.stringify(state.creds, BufferJSON.replacer, 2),
     );
