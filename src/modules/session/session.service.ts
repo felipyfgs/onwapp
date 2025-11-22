@@ -1,168 +1,218 @@
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
-import makeWASocket, {
-  AnyMessageContent,
-  ConnectionState,
-  DisconnectReason,
-  useMultiFileAuthState,
-  type WASocket,
-} from 'whaileys';
-import qrcodeTerminal from 'qrcode-terminal';
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import { LoggerService } from '../../logger/logger.service';
-import { MessageService } from '../message/message.service';
-
-const SESSION_DIR = process.env.WHATS_SESSION_DIR || './whats-session';
-
-interface SessionInfo {
-  socket: WASocket | null;
-  status: ConnectionState['connection'];
-  qr?: string;
-  user?: any;
-}
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
+import { WhatsManagerService } from '../../whats/whats-manager.service';
+import { CreateSessionDto } from './dto/create-session.dto';
+import { PairPhoneDto } from './dto/pair-phone.dto';
+import {
+  SessionResponseDto,
+  SessionStatusResponseDto,
+  QRCodeResponseDto,
+  WebhookEventsResponseDto,
+} from './dto/session-response.dto';
+import { Session, SessionStatus } from '@prisma/client';
 
 @Injectable()
-export class SessionService implements OnModuleDestroy {
-  private sessions = new Map<string, SessionInfo>();
-
+export class SessionService {
   constructor(
-    private readonly logger: LoggerService,
-    private readonly messageService: MessageService,
+    private readonly prisma: PrismaService,
+    private readonly whatsManager: WhatsManagerService,
   ) {}
 
-  async onModuleDestroy() {
-    for (const [id] of this.sessions) {
-      await this.deleteSession(id);
-    }
+  /**
+   * Lista todos os eventos de webhook disponíveis
+   */
+  listWebhookEvents(): WebhookEventsResponseDto {
+    return {
+      events: [
+        'connection.update',
+        'creds.update',
+        'messages.upsert',
+        'messages.update',
+        'messages.delete',
+        'message-receipt.update',
+        'presence.update',
+        'chats.upsert',
+        'chats.update',
+        'chats.delete',
+        'contacts.upsert',
+        'contacts.update',
+        'groups.upsert',
+        'groups.update',
+        'group-participants.update',
+      ],
+    };
   }
 
-  async createSession(id: string): Promise<void> {
-    const sessionPath = path.join(SESSION_DIR, id);
-    await fs.mkdir(sessionPath, { recursive: true });
-
-    const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
-
-    const socket = makeWASocket({
-      printQRInTerminal: false,
-      auth: state,
+  /**
+   * Cria uma nova sessão
+   */
+  async createSession(dto: CreateSessionDto): Promise<SessionResponseDto> {
+    const session = await this.prisma.session.create({
+      data: {
+        name: dto.name,
+        webhookUrl: dto.webhookUrl,
+        status: SessionStatus.disconnected,
+      },
     });
 
-    socket.ev.on('connection.update', (update) => {
-      this.handleConnectionUpdate(id, update);
+    return this.toResponseDto(session);
+  }
+
+  /**
+   * Lista todas as sessões
+   */
+  async getSessions(): Promise<SessionResponseDto[]> {
+    const sessions = await this.prisma.session.findMany({
+      orderBy: { createdAt: 'desc' },
     });
-    socket.ev.on('messages.upsert', ({ messages }) => {
-      this.handleMessagesUpsert(id, messages);
-    });
-    socket.ev.on('creds.update', saveCreds);
 
-    this.sessions.set(id, { socket, status: 'connecting' });
-    this.logger.log(`Sessão ${id} criada e iniciando conexão.`);
+    return sessions.map((session) => this.toResponseDto(session));
   }
 
-  async getSessions(): Promise<string[]> {
-    return Array.from(this.sessions.keys());
+  /**
+   * Obtém detalhes de uma sessão específica
+   */
+  async getSession(id: string): Promise<SessionResponseDto> {
+    const session = await this.findSessionOrThrow(id);
+    return this.toResponseDto(session);
   }
 
-  async getSession(id: string): Promise<SessionInfo | undefined> {
-    return this.sessions.get(id);
-  }
-
+  /**
+   * Deleta uma sessão
+   */
   async deleteSession(id: string): Promise<void> {
-    const session = this.sessions.get(id);
-    if (session?.socket) {
-      const ws = session.socket.ws as { close: () => Promise<void> };
-      await ws.close();
+    await this.findSessionOrThrow(id);
+
+    // Desconectar se estiver conectada
+    if (this.whatsManager.isSessionConnected(id)) {
+      await this.whatsManager.disconnectSession(id);
     }
-    this.sessions.delete(id);
-    const sessionPath = path.join(SESSION_DIR, id);
-    try {
-      await fs.rm(sessionPath, { recursive: true, force: true });
-    } catch (err) {
-      this.logger.warn(`Erro ao deletar pasta ${sessionPath}:`, err);
-    }
+
+    // Deletar do banco (cascade deleta authState também)
+    await this.prisma.session.delete({
+      where: { id },
+    });
   }
 
-  async connectSession(id: string): Promise<void> {
-    const session = this.sessions.get(id);
-    if (session?.socket) {
-      // Já existe, reconectar se fechado
-      if (session.status === 'close') {
-        await this.deleteSession(id);
-        await this.createSession(id);
-      }
-    } else {
-      await this.createSession(id);
-    }
+  /**
+   * Conecta uma sessão ao WhatsApp
+   */
+  async connectSession(id: string): Promise<SessionResponseDto> {
+    await this.findSessionOrThrow(id);
+
+    // Conectar via WhatsManagerService
+    await this.whatsManager.connectSession(id);
+
+    // Buscar sessão atualizada
+    const updatedSession = await this.prisma.session.findUnique({
+      where: { id },
+    });
+
+    return this.toResponseDto(updatedSession!);
   }
 
-  async disconnectSession(id: string): Promise<void> {
-    const session = this.sessions.get(id);
-    if (session?.socket) {
-      const ws = session.socket.ws as { close: () => Promise<void> };
-      await ws.close();
-      session.status = 'close';
-    }
+  /**
+   * Desconecta uma sessão do WhatsApp
+   */
+  async disconnectSession(id: string): Promise<SessionResponseDto> {
+    await this.findSessionOrThrow(id);
+
+    // Desconectar via WhatsManagerService
+    await this.whatsManager.disconnectSession(id);
+
+    // Buscar sessão atualizada
+    const updatedSession = await this.prisma.session.findUnique({
+      where: { id },
+    });
+
+    return this.toResponseDto(updatedSession!);
   }
 
-  async getQRCode(id: string): Promise<string | undefined> {
-    const session = this.sessions.get(id);
-    return session?.qr;
-  }
+  /**
+   * Obtém o QR Code de uma sessão
+   */
+  async getQRCode(id: string): Promise<QRCodeResponseDto> {
+    await this.findSessionOrThrow(id);
 
-  async getSessionStatus(id: string): Promise<ConnectionState['connection'] | undefined> {
-    const session = this.sessions.get(id);
-    return session?.status;
-  }
+    // Tentar obter QR da sessão ativa primeiro
+    const qrCode = this.whatsManager.getQRCode(id);
 
-  async pairPhone(id: string, phoneNumber: string): Promise<string> {
-    const session = this.sessions.get(id);
-    if (!session?.socket) {
-      throw new Error('Sessão não conectada');
-    }
-    const code = await session.socket.requestPairingCode(phoneNumber);
-    return code;
-  }
-
-  private async handleConnectionUpdate(id: string, update: Partial<ConnectionState>) {
-    const session = this.sessions.get(id);
-    if (!session) return;
-
-    this.logger.log(`Sessão ${id}: connection.update`, update);
-
-    if (update.qr) {
-      session.qr = update.qr;
-      qrcodeTerminal.generate(update.qr, { small: true });
+    if (qrCode) {
+      return { qrCode };
     }
 
-    if (update.connection === 'open') {
-      session.status = 'open';
-      if (update.user) {
-        session.user = update.user;
-      }
-      session.qr = undefined;
-    } else if (update.connection === 'close') {
-      session.status = 'close';
-      const shouldReconnect =
-        (update.lastDisconnect?.error as BaileysDisconnectError)?.output?.statusCode !== DisconnectReason.loggedOut;
-      if (shouldReconnect) {
-        this.logger.log(`Sessão ${id} reconectando...`);
-        setTimeout(() => this.connectSession(id), 3000);
-      }
-    }
+    // Se não houver na memória, buscar do banco
+    const session = await this.prisma.session.findUnique({
+      where: { id },
+      select: { qrCode: true },
+    });
+
+    return { qrCode: session?.qrCode || null };
   }
 
-  private handleMessagesUpsert(id: string, messages: any[]) {
-    const incoming = messages.find((msg) => msg?.message);
-    if (incoming) {
-      this.messageService.handleMessage(incoming).catch(this.logger.error);
-    }
+  /**
+   * Parear sessão com número de telefone
+   */
+  async pairPhone(id: string, dto: PairPhoneDto): Promise<SessionResponseDto> {
+    await this.findSessionOrThrow(id);
+
+    // TODO: Implementar lógica de pairing com telefone usando whaileys
+    // Por enquanto apenas atualiza o número no banco
+    const updatedSession = await this.prisma.session.update({
+      where: { id },
+      data: { phone: dto.phoneNumber },
+    });
+
+    return this.toResponseDto(updatedSession);
   }
 
-  async sendMessage(id: string, jid: string, content: AnyMessageContent): Promise<any> {
-    const session = this.sessions.get(id);
-    if (!session?.socket) {
-      throw new Error('Sessão não disponível');
+  /**
+   * Obtém o status atual de uma sessão
+   */
+  async getSessionStatus(id: string): Promise<SessionStatusResponseDto> {
+    await this.findSessionOrThrow(id);
+
+    const status = this.whatsManager.getSessionStatus(id);
+    const isConnected = this.whatsManager.isSessionConnected(id);
+
+    return {
+      id,
+      status,
+      isConnected,
+    };
+  }
+
+  /**
+   * Helper: Busca sessão ou lança exceção
+   */
+  private async findSessionOrThrow(id: string): Promise<Session> {
+    const session = await this.prisma.session.findUnique({
+      where: { id },
+    });
+
+    if (!session) {
+      throw new NotFoundException(`Sess
+
+ão com ID ${id} não encontrada`);
     }
-    return session.socket.sendMessage(jid, content);
+
+    return session;
+  }
+
+  /**
+   * Helper: Converte Session para ResponseDto
+   */
+  private toResponseDto(session: Session): SessionResponseDto {
+    return {
+      id: session.id,
+      name: session.name,
+      phone: session.phone,
+      status: session.status,
+      qrCode: session.qrCode,
+      webhookUrl: session.webhookUrl,
+      createdAt: session.createdAt,
+      updatedAt: session.updatedAt,
+      lastConnected: session.lastConnected,
+    };
   }
 }

@@ -11,3 +11,39 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum SessionStatus {
+  disconnected
+  connecting
+  connected
+}
+
+model Session {
+  id            String        @id @default(uuid())
+  name          String        @unique
+  phone         String?
+  status        SessionStatus @default(disconnected)
+  qrCode        String?
+  webhookUrl    String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  lastConnected DateTime?
+  
+  authState     AuthState?
+  
+  @@map("sessions")
+}
+
+model AuthState {
+  id        String   @id @default(uuid())
+  sessionId String   @unique
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  creds     Json
+  keys      Json
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("authStates")
+}
