@@ -47,9 +47,9 @@ export class DatabaseAuthState {
             this.logger.debug(`[LOAD] Found ${allAuthStates.length} total AuthState records for session ${this.sessionId}`);
             
             for (const record of allAuthStates) {
-                this.logger.debug(`[LOAD] Record - keyId: ${record.keyId}, data keys: ${Object.keys(record.data as any).join(', ')}`);
-                if (record.data && typeof record.data === 'object') {
-                    const recordData = this.bufferFromJSON(record.data);
+                this.logger.debug(`[LOAD] Record - keyId: ${(record as any).keyId}, data keys: ${Object.keys((record as any).data as any).join(', ')}`);
+                if ((record as any).data && typeof (record as any).data === 'object') {
+                    const recordData = this.bufferFromJSON((record as any).data);
                     const recordCreds = recordData.creds || {};
                     this.logger.debug(`[LOAD] Record - creds keys: ${Object.keys(recordCreds).join(', ')}`);
                     this.logger.debug(`[LOAD] Record - has noiseKey: ${!!recordCreds.noiseKey}`);
@@ -60,7 +60,7 @@ export class DatabaseAuthState {
         }
 
         // Deserializar Buffers do campo data unificado
-        const deserializedData = this.bufferFromJSON(authState.data || {});
+        const deserializedData = this.bufferFromJSON((authState as any).data || {});
 
         // Separar creds e keys do campo data unificado
         let deserializedCreds = deserializedData.creds || {};
@@ -75,8 +75,8 @@ export class DatabaseAuthState {
             this.logger.debug(`[LOAD] 🔍 RECONSTRUCTING - Starting individual key reconstruction`);
             
             for (const record of allAuthStates) {
-                if (record.data && typeof record.data === 'object') {
-                    const recordData = this.bufferFromJSON(record.data);
+                if ((record as any).data && typeof (record as any).data === 'object') {
+                    const recordData = this.bufferFromJSON((record as any).data);
                     const recordCreds = recordData.creds || {};
                     
                     // Mesclar chaves individuais nas credenciais principais
@@ -133,8 +133,8 @@ export class DatabaseAuthState {
             
             // Obter estado atual deserializado
             let currentData = { creds: {}, keys: {} };
-            if (authState?.data && typeof authState.data === 'object') {
-                currentData = this.bufferFromJSON(authState.data);
+            if ((authState as any)?.data && typeof (authState as any).data === 'object') {
+                currentData = this.bufferFromJSON((authState as any).data);
                 this.logger.debug(`[SAVE] Current DB data keys: ${Object.keys(currentData).join(', ')}`);
             }
 
@@ -188,7 +188,7 @@ export class DatabaseAuthState {
                     sessionId: this.sessionId,
                     data: unifiedData
                 }
-            });
+            } as any);
 
             this.logger.debug(`[SAVE] ✅ Credentials saved successfully for session ${this.sessionId}`);
         } catch (error) {
@@ -226,7 +226,7 @@ export class DatabaseAuthState {
                         },
                         keyId: keyName
                     }
-                });
+                } as any);
                 this.logger.debug(`[SAVE_KEYS] ✅ Saved individual key: ${keyName}`);
             }
         } catch (error) {
@@ -242,24 +242,42 @@ export class DatabaseAuthState {
         
         const data: any = {};
         
-        // Primeiro tentar obter das chaves individuais na tabela AuthState
+        // 🎯 CRITICAL: Buscar especificamente pelo keyId para encontrar o noiseKey e outras chaves
         try {
+            this.logger.debug(`[GET_KEYS] 🔍 SEARCHING - Looking for individual keys by keyId`);
+            
+            // Buscar todos os registros AuthState para esta sessão
             const authStates = await this.prisma.authState.findMany({
                 where: {
                     sessionId: this.sessionId
                 }
             });
 
+            this.logger.debug(`[GET_KEYS] 🔍 SEARCHING - Found ${authStates.length} total records for session ${this.sessionId}`);
+
             // Procurar em todos os registros AuthState para encontrar chaves individuais
             for (const authStateRecord of authStates) {
-                if (authStateRecord.data && typeof authStateRecord.data === 'object') {
-                    const authData = this.bufferFromJSON(authStateRecord.data);
+                this.logger.debug(`[GET_KEYS] 🔍 SEARCHING - Checking record with keyId: ${(authStateRecord as any).keyId}`);
+                
+                if ((authStateRecord as any).data && typeof (authStateRecord as any).data === 'object') {
+                    const authData = this.bufferFromJSON((authStateRecord as any).data);
                     const creds = authData.creds || {};
                     
+                    this.logger.debug(`[GET_KEYS] 🔍 SEARCHING - Record ${(authStateRecord as any).keyId} has creds keys: ${Object.keys(creds).join(', ')}`);
+                    
+                    // 🎯 CRITICAL FIX: Verificar se o keyId corresponde a uma das IDs procuradas
+                    if ((authStateRecord as any).keyId && ids.includes((authStateRecord as any).keyId)) {
+                        data[(authStateRecord as any).keyId] = creds[(authStateRecord as any).keyId];
+                        this.logger.debug(`[GET_KEYS] ✅ FOUND - Individual key ${(authStateRecord as any).keyId} found by keyId match`);
+                    }
+                    
+                    // Também verificar dentro das creds (fallback)
                     for (const keyName of Object.keys(creds)) {
-                        if (ids.includes(keyName) && keyName !== type) {
-                            data[keyName] = creds[keyName];
-                            this.logger.debug(`[GET_KEYS] ✅ Found individual key ${keyName} in AuthState record`);
+                        if (ids.includes(keyName)) {
+                            if (!data[keyName]) { // Não sobrescrever se já encontrou por keyId
+                                data[keyName] = creds[keyName];
+                                this.logger.debug(`[GET_KEYS] ✅ FOUND - Individual key ${keyName} found in creds`);
+                            }
                         }
                     }
                 }
@@ -276,22 +294,24 @@ export class DatabaseAuthState {
             const keys = currentState.keys || {};
 
             for (const id of ids) {
-                let value = keys[`${type}-${id}`];
+                if (!data[id]) { // Só buscar se não encontrou ainda
+                    let value = keys[`${type}-${id}`];
 
-                if (value) {
-                    if (typeof value === 'object' && value.data) {
-                        // Reconstruir Buffer se necessário
-                        value = this.bufferFromJSON(value);
+                    if (value) {
+                        if (typeof value === 'object' && value.data) {
+                            // Reconstruir Buffer se necessário
+                            value = this.bufferFromJSON(value);
+                        }
+                        data[id] = value;
+                        this.logger.debug(`[GET_KEYS] ✅ Key ${type}-${id} loaded successfully`);
+                    } else {
+                        this.logger.warn(`[GET_KEYS] ⚠️ Key ${type}-${id} not found in database`);
                     }
-                    data[id] = value;
-                    this.logger.debug(`[GET_KEYS] ✅ Key ${type}-${id} loaded successfully`);
-                } else {
-                    this.logger.warn(`[GET_KEYS] ⚠️ Key ${type}-${id} not found in database`);
                 }
             }
         }
 
-        this.logger.debug(`[GET_KEYS] Returning ${Object.keys(data).length} keys out of ${ids.length} requested`);
+        this.logger.debug(`[GET_KEYS] 🔍 FINAL RESULT - Returning ${Object.keys(data).length} keys out of ${ids.length} requested: ${Object.keys(data).join(', ')}`);
         return data;
     }
 
@@ -343,7 +363,7 @@ export class DatabaseAuthState {
                     sessionId: this.sessionId,
                     data: unifiedData
                 }
-            });
+            } as any);
 
             this.logger.debug(`[SET_KEYS] ✅ Keys saved successfully for session ${this.sessionId}`);
         } catch (error) {

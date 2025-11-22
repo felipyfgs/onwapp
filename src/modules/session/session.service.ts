@@ -162,8 +162,8 @@ export class SessionService {
 
             if (currentAuthState) {
                 // Obter dados atuais do campo data
-                const currentData = typeof currentAuthState.data === 'object' && currentAuthState.data !== null
-                    ? currentAuthState.data as any
+                const currentData = typeof (currentAuthState as any).data === 'object' && (currentAuthState as any).data !== null
+                    ? (currentAuthState as any).data as any
                     : { creds: {}, keys: {} };
                 
                 const currentCreds = currentData.creds || {};
@@ -179,7 +179,7 @@ export class SessionService {
                             }
                         }
                     }
-                });
+                } as any);
             } else {
                 await this.prisma.authState.create({
                     data: {
@@ -189,7 +189,7 @@ export class SessionService {
                             keys: {}
                         }
                     }
-                });
+                } as any);
             }
         };
 
