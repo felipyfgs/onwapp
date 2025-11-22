@@ -1,0 +1,43 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SessionStatus {
+  disconnected
+  connecting
+  connected
+}
+
+model Session {
+  id          String        @id @default(uuid())
+  name        String
+  sessionId   String        @unique
+  status      SessionStatus @default(disconnected)
+  qrCode      String?
+  phoneNumber String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  authState   AuthState[]
+
+  @@map("Session")
+}
+
+model AuthState {
+  id        String   @id @default(uuid())
+  sessionId String
+  keyType   String
+  keyId     String
+  keyData   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  session   Session  @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+
+  @@unique([sessionId, keyType, keyId])
+  @@map("AuthState")
+}
