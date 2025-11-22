@@ -15,6 +15,16 @@ interface SessionSocket {
   logoutAttempts: number;
 }
 
+interface DisconnectContext {
+  sessionId: string;
+  statusCode: number;
+  isLoggedOut: boolean;
+  isRestartRequired: boolean;
+  isBadSession: boolean;
+  logoutAttempts: number;
+  isNewLogin: boolean;
+}
+
 const RECONNECT_DELAYS = {
   DEFAULT: 3000,
   RESTART_REQUIRED: 10000,
@@ -32,6 +42,10 @@ export class WhatsAppService implements OnModuleInit {
   private sessions: Map<string, SessionSocket> = new Map();
 
   constructor(private prisma: PrismaService) {}
+
+  private formatSessionId(sessionId: string): string {
+    return sessionId.slice(0, 8);
+  }
 
   private createSilentLogger() {
     return {
@@ -114,22 +128,48 @@ export class WhatsAppService implements OnModuleInit {
     }, delay);
   }
 
+  private async reconnectActiveSessions(): Promise<void> {
+    const activeSessions = await this.prisma.session.findMany({
+      where: {
+        status: {
+          in: ACTIVE_SESSION_STATUSES,
+        },
+      },
+    });
+
+    this.logger.log(
+      `Reconectando ${activeSessions.length} sessão(ões) ativa(s)`,
+    );
+
+    for (const session of activeSessions) {
+      try {
+        await this.createSocket(session.id);
+      } catch (err) {
+        this.logger.error(
+          `[${session.id}] Falha ao reconectar: ${err instanceof Error ? err.message : 'Erro desconhecido'}`,
+        );
+      }
+    }
+  }
+
   private async handleQRCode(sessionId: string, qr: string): Promise<void> {
     const sessionSocket = this.sessions.get(sessionId);
     if (sessionSocket) {
       sessionSocket.qrCode = qr;
     }
-    this.logger.log(`QR Code gerado para sessão ${sessionId}`);
+    const sid = this.formatSessionId(sessionId);
+    this.logger.log(`[${sid}] QR gerado`);
     qrcode.generate(qr, { small: true });
-    await this.updateSessionStatus(sessionId, { qrCode: qr, status: 'connecting' });
+    await this.updateSessionStatus(sessionId, {
+      qrCode: qr,
+      status: 'connecting',
+    });
   }
 
   private async handleConnectionOpen(
     sessionId: string,
     socket: WASocket,
   ): Promise<void> {
-    this.logger.log(`Sessão ${sessionId} conectada com sucesso`);
-    
     const sessionSocket = this.sessions.get(sessionId);
     if (sessionSocket) {
       sessionSocket.logoutAttempts = 0;
@@ -137,8 +177,9 @@ export class WhatsAppService implements OnModuleInit {
     }
 
     const phoneNumber = this.extractPhoneNumber(socket);
-    this.logger.debug(
-      `[${sessionId}] Número extraído: ${phoneNumber || 'não disponível'}`,
+    const sid = this.formatSessionId(sessionId);
+    this.logger.log(
+      `[${sid}] ✓ Conectado${phoneNumber ? ` | Tel: +${phoneNumber}` : ''}`,
     );
 
     await this.updateSessionStatus(sessionId, {
@@ -163,10 +204,9 @@ export class WhatsAppService implements OnModuleInit {
       sessionSocket?.isNewLogin ?? false,
     );
 
+    const sid = this.formatSessionId(sessionId);
     this.logger.log(
-      `Conexão fechada para ${sessionId} | statusCode: ${statusCode} | ` +
-        `isNewLogin: ${sessionSocket?.isNewLogin} | tentativas: ${currentLogoutAttempts} | ` +
-        `reconectar: ${shouldReconnect}`,
+      `[${sid}] ✗ Desconectado | Code: ${statusCode} | Retry: ${shouldReconnect ? `✓ (${currentLogoutAttempts})` : '✗'}`,
     );
 
     this.sessions.delete(sessionId);
@@ -177,14 +217,11 @@ export class WhatsAppService implements OnModuleInit {
       currentLogoutAttempts >= MAX_LOGOUT_ATTEMPTS
     ) {
       this.logger.warn(
-        `Sessão ${sessionId} invalidada após ${currentLogoutAttempts} tentativas, limpando credenciais`,
+        `[${sid}] Sessão invalidada (${currentLogoutAttempts} tentativas) | Limpando credenciais`,
       );
       await this.clearSessionCredentials(sessionId);
       await this.updateSessionStatus(sessionId, { status: 'disconnected' });
     } else if (isLoggedOut || isRestartRequired) {
-      this.logger.log(
-        `401/515 detectado para ${sessionId}, tentativa ${currentLogoutAttempts} - mantendo credenciais`,
-      );
       await this.updateSessionStatus(sessionId, { status: 'connecting' });
     } else {
       await this.updateSessionStatus(sessionId, { status: 'disconnected' });
@@ -200,13 +237,12 @@ export class WhatsAppService implements OnModuleInit {
     sessionId: string,
     saveCreds: () => Promise<void>,
   ): void {
-    this.logger.debug(`[${sessionId}] creds.update event received`);
-    saveCreds().catch((err) =>
+    saveCreds().catch((err) => {
+      const sid = this.formatSessionId(sessionId);
       this.logger.error(
-        `[${sessionId}] Operation: saveCreds | Error: ${err instanceof Error ? err.message : 'Unknown error'}`,
-        err,
-      ),
-    );
+        `[${sid}] Falha ao salvar credenciais: ${err instanceof Error ? err.message : 'Erro desconhecido'}`,
+      );
+    });
   }
 
   private getConnectionUpdateHandler(
@@ -222,15 +258,6 @@ export class WhatsAppService implements OnModuleInit {
         qr,
         isNewLogin: isNewLoginFromSocket,
       } = update;
-
-      this.logger.debug(
-        `[${sessionId}] connection.update: ${JSON.stringify({ 
-          connection, 
-          qr: qr ? 'present' : undefined, 
-          isNewLogin: isNewLoginFromSocket, 
-          statusCode: (lastDisconnect?.error as Boom)?.output?.statusCode 
-        })}`,
-      );
 
       if (qr) {
         currentQRRef.value = qr;
@@ -249,23 +276,7 @@ export class WhatsAppService implements OnModuleInit {
   }
 
   async onModuleInit() {
-    this.logger.log('Reconectando sessões ativas...');
-    const activeSessions = await this.prisma.session.findMany({
-      where: {
-        status: {
-          in: ACTIVE_SESSION_STATUSES,
-        },
-      },
-    });
-
-    for (const session of activeSessions) {
-      this.logger.log(`Reconectando sessão ${session.id}`);
-      try {
-        await this.createSocket(session.id);
-      } catch (err) {
-        this.logger.error(`Erro ao reconectar sessão ${session.id}`, err);
-      }
-    }
+    await this.reconnectActiveSessions();
   }
 
   async createSocket(
@@ -276,8 +287,9 @@ export class WhatsAppService implements OnModuleInit {
     });
     const isNewLogin = !hasExistingCreds;
 
+    const sid = this.formatSessionId(sessionId);
     this.logger.log(
-      `[${sessionId}] Creating socket | isNewLogin: ${isNewLogin}`,
+      `[${sid}] Criando socket${isNewLogin ? ' | Novo login' : ' | Reconexão'}`,
     );
 
     const { state, saveCreds } = await useAuthState(sessionId, this.prisma);

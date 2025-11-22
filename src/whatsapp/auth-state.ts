@@ -6,9 +6,13 @@ import {
   initAuthCreds,
   BufferJSON,
 } from 'whaileys';
-import { Logger } from '@nestjs/common';
+import { createContextLogger } from '../logger/pino.logger';
 
-const logger = new Logger('AuthState');
+const logger = createContextLogger('AuthState');
+
+function formatSessionId(sessionId: string): string {
+  return sessionId.slice(0, 8);
+}
 
 function serializeToJson(value: any): any {
   return JSON.parse(JSON.stringify(value, BufferJSON.replacer));
@@ -41,20 +45,24 @@ export async function useAuthState(
       });
 
       if (credsRecord && credsRecord.keyData) {
-        logger.debug(`[${sessionId}] Loaded existing credentials from database`);
+        const sid = formatSessionId(sessionId);
+        logger.debug(`[${sid}] Credenciais carregadas do DB`);
         return deserializeFromJson(credsRecord.keyData);
       }
     } catch (error) {
-      logger.error('Error loading creds from database', error);
+      const sid = formatSessionId(sessionId);
+      logger.error(
+        `[${sid}] Falha ao carregar credenciais: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+      );
     }
 
-    logger.debug(`[${sessionId}] No existing credentials found, initializing new`);
+    const sid = formatSessionId(sessionId);
+    logger.debug(`[${sid}] Inicializando novas credenciais`);
     return initAuthCreds();
   };
 
   const saveCreds = async (): Promise<void> => {
     try {
-      logger.debug(`[${sessionId}] Saving credentials to database`);
       await prisma.authState.upsert({
         where: {
           sessionId_keyType_keyId: {
@@ -73,9 +81,13 @@ export async function useAuthState(
           keyData: serializeToJson(creds) as any,
         },
       });
-      logger.debug(`[${sessionId}] Credentials saved successfully`);
+      const sid = formatSessionId(sessionId);
+      logger.debug(`[${sid}] Credenciais ✓`);
     } catch (error) {
-      logger.error('Error saving creds to database', error);
+      const sid = formatSessionId(sessionId);
+      logger.error(
+        `[${sid}] Falha ao salvar credenciais: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+      );
     }
   };
 
@@ -85,8 +97,13 @@ export async function useAuthState(
         where: { sessionId },
       });
       creds = initAuthCreds();
+      const sid = formatSessionId(sessionId);
+      logger.debug(`[${sid}] Estado de autenticação limpo`);
     } catch (error) {
-      logger.error('Error clearing auth state from database', error);
+      const sid = formatSessionId(sessionId);
+      logger.error(
+        `[${sid}] Falha ao limpar estado: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+      );
     }
   };
 
@@ -114,7 +131,10 @@ export async function useAuthState(
             }
           }
         } catch (error) {
-          logger.error(`Error getting keys of type ${type}`, error);
+          const sid = formatSessionId(sessionId);
+          logger.error(
+            `[${sid}] Falha ao buscar chaves (${type}): ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+          );
         }
 
         return data;
@@ -150,13 +170,16 @@ export async function useAuthState(
             }
           }
 
+          const sid = formatSessionId(sessionId);
           logger.debug(
-            `[${sessionId}] Setting keys: ${Object.keys(data).join(', ')} (${tasks.length} operations)`,
+            `[${sid}] ${tasks.length} chave(s): ${Object.keys(data).join(', ')}`,
           );
           await Promise.all(tasks);
-          logger.debug(`[${sessionId}] Keys saved successfully`);
         } catch (error) {
-          logger.error('Error setting keys', error);
+          const sid = formatSessionId(sessionId);
+          logger.error(
+            `[${sid}] Falha ao salvar chaves: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+          );
         }
       },
     },

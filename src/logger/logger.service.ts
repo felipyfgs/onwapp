@@ -64,11 +64,18 @@ const mapPayload = (message: unknown, params: unknown[]): LogPayload => {
   };
 };
 
-const emit = (fn: LogFn, message: unknown, optionalParams: unknown[]): void => {
+const emit = (
+  fn: LogFn,
+  message: unknown,
+  optionalParams: unknown[],
+  context?: string,
+): void => {
   const { msg, meta } = mapPayload(message, optionalParams);
 
-  if (meta) {
-    fn(meta, msg);
+  const logData = context ? { ...meta, context } : meta;
+
+  if (logData) {
+    fn(logData, msg);
     return;
   }
 
@@ -77,23 +84,49 @@ const emit = (fn: LogFn, message: unknown, optionalParams: unknown[]): void => {
 
 @Injectable()
 export class PinoLoggerService implements LoggerService {
+  private context?: string;
+
+  setContext(context: string): void {
+    this.context = context;
+  }
+
   log(message: unknown, ...optionalParams: unknown[]): void {
-    emit(logger.info.bind(logger), message, optionalParams);
+    const context =
+      typeof optionalParams[optionalParams.length - 1] === 'string'
+        ? (optionalParams.pop() as string)
+        : this.context;
+    emit(logger.info.bind(logger), message, optionalParams, context);
   }
 
   error(message: unknown, ...optionalParams: unknown[]): void {
-    emit(logger.error.bind(logger), message, optionalParams);
+    const context =
+      typeof optionalParams[optionalParams.length - 1] === 'string'
+        ? (optionalParams.pop() as string)
+        : this.context;
+    emit(logger.error.bind(logger), message, optionalParams, context);
   }
 
   warn(message: unknown, ...optionalParams: unknown[]): void {
-    emit(logger.warn.bind(logger), message, optionalParams);
+    const context =
+      typeof optionalParams[optionalParams.length - 1] === 'string'
+        ? (optionalParams.pop() as string)
+        : this.context;
+    emit(logger.warn.bind(logger), message, optionalParams, context);
   }
 
   debug(message: unknown, ...optionalParams: unknown[]): void {
-    emit(logger.debug.bind(logger), message, optionalParams);
+    const context =
+      typeof optionalParams[optionalParams.length - 1] === 'string'
+        ? (optionalParams.pop() as string)
+        : this.context;
+    emit(logger.debug.bind(logger), message, optionalParams, context);
   }
 
   verbose(message: unknown, ...optionalParams: unknown[]): void {
-    emit(logger.trace.bind(logger), message, optionalParams);
+    const context =
+      typeof optionalParams[optionalParams.length - 1] === 'string'
+        ? (optionalParams.pop() as string)
+        : this.context;
+    emit(logger.trace.bind(logger), message, optionalParams, context);
   }
 }
