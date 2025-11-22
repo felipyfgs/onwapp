@@ -156,8 +156,10 @@ export class SessionService {
 
         // Save credentials callback
         const saveCredsCallback = async (creds: any) => {
-            const currentAuthState = await this.prisma.authState.findUnique({
-                where: { sessionId: id }
+            // sessionId is no longer unique — find the most recent auth state record for this session
+            const currentAuthState = await this.prisma.authState.findFirst({
+                where: { sessionId: id },
+                orderBy: { updatedAt: 'desc' }
             });
 
             if (currentAuthState) {
@@ -168,8 +170,9 @@ export class SessionService {
                 
                 const currentCreds = currentData.creds || {};
                 
+                // Update by id of the most recent record
                 await this.prisma.authState.update({
-                    where: { sessionId: id },
+                    where: { id: (currentAuthState as any).id },
                     data: {
                         data: {
                             ...currentData,

@@ -306,7 +306,8 @@ export class WhatsService {
             if (error instanceof TypeError && error.message.includes('noiseKey')) {
                 this.logger.warn(`Corrupted credentials detected for session ${sessionId}, clearing from database`);
                 try {
-                    await this.prisma.authState.delete({
+                    // sessionId is not unique — delete all auth state records for this session
+                    await this.prisma.authState.deleteMany({
                         where: { sessionId }
                     }).catch(() => {
                         // Ignorar se não existir

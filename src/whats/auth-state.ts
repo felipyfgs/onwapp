@@ -24,9 +24,12 @@ export class DatabaseAuthState {
     async getState(): Promise<{ creds: any; keys: any }> {
         this.logger.debug(`[LOAD] Starting to load state for session ${this.sessionId}`);
         
-        const authState = await this.prisma.authState.findUnique({
-            where: { sessionId: this.sessionId }
+        // Find the most recent AuthState record for this session (sessionId is no longer unique)
+        const authState = await this.prisma.authState.findFirst({
+            where: { sessionId: this.sessionId },
+            orderBy: { updatedAt: 'desc' }
         });
+        const authStateAny = authState as any;
 
         if (!authState) {
             this.logger.debug(`[LOAD] No auth state found in DB for session ${this.sessionId}`);
@@ -37,7 +40,7 @@ export class DatabaseAuthState {
         }
 
         this.logger.debug(`[LOAD] Auth state found in DB`);
-        this.logger.debug(`[LOAD] DB data keys: ${Object.keys((authState.data as any)?.data || {}).join(', ')}`);
+        this.logger.debug(`[LOAD] DB data keys: ${Object.keys((authStateAny?.data) || {}).join(', ')}`);
 
         // 🎯 DEBUG: Verificar todos os registros AuthState para esta sessão
         try {
@@ -125,9 +128,11 @@ export class DatabaseAuthState {
             }
 
             // Buscar estado atual do banco
-            const authState = await this.prisma.authState.findUnique({
-                where: { sessionId: this.sessionId }
+            const authState = await this.prisma.authState.findFirst({
+                where: { sessionId: this.sessionId },
+                orderBy: { updatedAt: 'desc' }
             });
+            const authStateAny = authState as any;
 
             this.logger.debug(`[SAVE] Current DB state exists: ${!!authState}`);
             
@@ -179,16 +184,24 @@ export class DatabaseAuthState {
 
             this.logger.debug(`[SAVE] Final unified data structure ready`);
 
-            await this.prisma.authState.upsert({
+            // sessionId is not unique anymore — try to find an existing record and update by id, otherwise create
+            const existingRecord = await this.prisma.authState.findFirst({
                 where: { sessionId: this.sessionId },
-                update: {
-                    data: unifiedData
-                },
-                create: {
-                    sessionId: this.sessionId,
-                    data: unifiedData
-                }
-            } as any);
+                orderBy: { updatedAt: 'desc' }
+            });
+            if (existingRecord) {
+                await this.prisma.authState.update({
+                    where: { id: (existingRecord as any).id },
+                    data: { data: unifiedData } as any
+                });
+            } else {
+                await this.prisma.authState.create({
+                    data: {
+                        sessionId: this.sessionId,
+                        data: unifiedData
+                    } as any
+                });
+            }
 
             this.logger.debug(`[SAVE] ✅ Credentials saved successfully for session ${this.sessionId}`);
         } catch (error) {
@@ -205,15 +218,18 @@ export class DatabaseAuthState {
             
             for (const [keyName, keyData] of Object.entries(keys)) {
                 // 🎯 FIX: Usar create em vez de upsert para evitar conflitos
+                // Create a dedicated AuthState record for this individual key
                 await this.prisma.authState.create({
                     data: {
-                        creds: {
-                            [keyName]: keyData
+                        sessionId: this.sessionId,
+                        keyId: keyName,
+                        data: {
+                            creds: {
+                                [keyName]: keyData
                             },
                             keys: {}
-                        },
-                    keyId: keyName,
-                    sessionId: this.sessionId
+                        }
+                    }
                 } as any);
                 this.logger.debug(`[SAVE_KEYS] ✅ Saved individual key: ${keyName}`);
             }
@@ -342,16 +358,28 @@ export class DatabaseAuthState {
                 keys: keys
             };
 
-            await this.prisma.authState.upsert({
+            // Update the most recent unified record for this session, or create a new one
+            // Find the most recent unified record (keyId == null). Prisma WhereInput may not accept null checks consistently across generated types,
+            // so fetch recent records and pick the one with keyId == null.
+            const existingUnifiedCandidates = await this.prisma.authState.findMany({
                 where: { sessionId: this.sessionId },
-                update: {
-                    data: unifiedData
-                },
-                create: {
-                    sessionId: this.sessionId,
-                    data: unifiedData
-                }
-            } as any);
+                orderBy: { updatedAt: 'desc' },
+                take: 10
+            });
+            const existingUnified = existingUnifiedCandidates.find(r => (r as any).keyId == null);
+            if (existingUnified) {
+                await this.prisma.authState.update({
+                    where: { id: (existingUnified as any).id },
+                    data: { data: unifiedData } as any
+                });
+            } else {
+                await this.prisma.authState.create({
+                    data: {
+                        sessionId: this.sessionId,
+                        data: unifiedData
+                    } as any
+                });
+            }
 
             this.logger.debug(`[SET_KEYS] ✅ Keys saved successfully for session ${this.sessionId}`);
         } catch (error) {
