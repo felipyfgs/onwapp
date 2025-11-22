@@ -79,7 +79,7 @@ export class SessionsService {
       throw new BadRequestException('Session is already connected');
     }
 
-    await this.whatsapp.createSocket(session.sessionId);
+    await this.whatsapp.createSocket(session.id);
 
     const updatedSession = await this.prisma.session.findUnique({
       where: { id },
