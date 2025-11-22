@@ -38,7 +38,7 @@ export class LoggerService implements NestLoggerService {
     this.logger.info(payload, message);
   }
 
-  error(message: string, ...meta: unknown[]) {
+  error(message: any, ...meta: unknown[]) {
     const payload =
       (meta.find((m) => m && typeof m === 'object') as
         | Record<string, unknown>
@@ -52,7 +52,13 @@ export class LoggerService implements NestLoggerService {
       payload.trace = trace;
     }
 
-    this.logger.error(payload, message);
+    if (message instanceof Error) {
+      // Se a mensagem for um erro, passamos como primeiro argumento para o pino
+      // para que ele serialize corretamente (stack trace, etc)
+      this.logger.error(message, message.message);
+    } else {
+      this.logger.error(payload, message);
+    }
   }
 
   warn(message: string, ...meta: unknown[]) {
