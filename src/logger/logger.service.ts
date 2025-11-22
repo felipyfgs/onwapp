@@ -1,41 +1,99 @@
 import { Injectable, LoggerService } from '@nestjs/common';
-import { LevelWithSilent } from 'pino';
+import { inspect } from 'node:util';
+import { LogFn } from 'pino';
 import { logger } from './pino.logger';
 
-type LogMethod = (message: any, ...optionalParams: any[]) => void;
+type LogPayload = {
+  msg: string;
+  meta?: Record<string, unknown>;
+};
 
-const mapMessage = (message: any, params: unknown[]): { msg: string; meta?: unknown } => {
-  if (params.length === 0) {
-    return { msg: typeof message === 'string' ? message : JSON.stringify(message) };
+const stringify = (value: unknown): string => {
+  if (typeof value === 'string') {
+    return value;
   }
 
-  if (typeof params[0] === 'object') {
+  if (value instanceof Error) {
+    return value.stack ?? value.message;
+  }
+
+  if (value === null || value === undefined) {
+    return String(value);
+  }
+
+  if (
+    typeof value === 'number' ||
+    typeof value === 'boolean' ||
+    typeof value === 'bigint'
+  ) {
+    return value.toString();
+  }
+
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return inspect(value, { depth: null });
+  }
+};
+
+const isPlainObject = (value: unknown): value is Record<string, unknown> => {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+};
+
+const mapPayload = (message: unknown, params: unknown[]): LogPayload => {
+  if (params.length === 0) {
+    return { msg: stringify(message) };
+  }
+
+  const [first, ...rest] = params;
+
+  if (isPlainObject(first)) {
     return {
-      msg: typeof message === 'string' ? message : JSON.stringify(message),
-      meta: params[0],
+      msg: stringify(message),
+      meta: first,
     };
   }
 
   return {
-    msg: [message, ...params].map((item) => (typeof item === 'string' ? item : JSON.stringify(item))).join(' '),
+    msg: [message, first, ...rest].map(stringify).join(' '),
   };
 };
 
-const withLevel = (level: Exclude<LevelWithSilent, 'silent'>) =>
-  ((message: any, ...optionalParams: any[]) => {
-    const { msg, meta } = mapMessage(message, optionalParams);
-    if (meta) {
-      logger[level](meta, msg);
-    } else {
-      logger[level](msg);
-    }
-  }) satisfies LogMethod;
+const emit = (fn: LogFn, message: unknown, optionalParams: unknown[]): void => {
+  const { msg, meta } = mapPayload(message, optionalParams);
+
+  if (meta) {
+    fn(meta, msg);
+    return;
+  }
+
+  fn(msg);
+};
 
 @Injectable()
 export class PinoLoggerService implements LoggerService {
-  log = withLevel('info');
-  error = withLevel('error');
-  warn = withLevel('warn');
-  debug = withLevel('debug');
-  verbose = withLevel('trace');
+  log(message: unknown, ...optionalParams: unknown[]): void {
+    emit(logger.info.bind(logger), message, optionalParams);
+  }
+
+  error(message: unknown, ...optionalParams: unknown[]): void {
+    emit(logger.error.bind(logger), message, optionalParams);
+  }
+
+  warn(message: unknown, ...optionalParams: unknown[]): void {
+    emit(logger.warn.bind(logger), message, optionalParams);
+  }
+
+  debug(message: unknown, ...optionalParams: unknown[]): void {
+    emit(logger.debug.bind(logger), message, optionalParams);
+  }
+
+  verbose(message: unknown, ...optionalParams: unknown[]): void {
+    emit(logger.trace.bind(logger), message, optionalParams);
+  }
 }

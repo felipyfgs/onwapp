@@ -1,6 +1,6 @@
-import pino, { LoggerOptions } from 'pino';
+import pino, { Logger, LoggerOptions } from 'pino';
 
-const transportOptions: LoggerOptions['transport'] = {
+const transportOptions: NonNullable<LoggerOptions['transport']> = {
   target: 'pino-pretty',
   options: {
     colorize: true,
@@ -16,6 +16,6 @@ const options: LoggerOptions = {
   transport: transportOptions,
 };
 
-export const logger = pino(options);
+export const logger: Logger = pino(options);
 
 export type PinoInstance = typeof logger;

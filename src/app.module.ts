@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
+import { PinoLoggerService } from './logger/logger.service';
 
 @Module({
-  imports: [],
-  controllers: [],
-  providers: [],
+  providers: [PinoLoggerService],
+  exports: [PinoLoggerService],
 })
 export class AppModule {}
