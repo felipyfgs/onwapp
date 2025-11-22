@@ -1,53 +1,83 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, LoggerService as NestLoggerService } from '@nestjs/common';
 import pino, { Logger } from 'pino';
-import pretty from 'pino-pretty';
-import type { Transform } from 'stream';
- 
+
+const level = process.env.LOG_LEVEL || 'info';
+const transport =
+  process.env.NODE_ENV === 'production'
+    ? undefined
+    : {
+        target: 'pino-pretty',
+        options: {
+          colorize: true,
+          translateTime: 'SYS:yyyy-mm-dd HH:MM:ss',
+          singleLine: true,
+          ignore: 'pid,hostname',
+        },
+      };
+
+const pinoOptions = transport ? { level, transport } : { level };
+const baseLogger: Logger = pino(pinoOptions);
+
 @Injectable()
-export class LoggerService {
-  private readonly logger: Logger;
- 
-  constructor() {
-    const level = process.env.LOG_LEVEL || 'info';
- 
-    if (process.env.NODE_ENV === 'production') {
-      this.logger = pino({ level });
-      return;
+export class LoggerService implements NestLoggerService {
+  private readonly logger: Logger = baseLogger;
+
+  log(message: string, ...meta: unknown[]) {
+    const payload =
+      meta[0] && typeof meta[0] === 'object'
+        ? (meta[0] as Record<string, unknown>)
+        : {};
+    this.logger.info(payload, message);
+  }
+
+  info(message: string, ...meta: unknown[]) {
+    const payload =
+      meta[0] && typeof meta[0] === 'object'
+        ? (meta[0] as Record<string, unknown>)
+        : {};
+    this.logger.info(payload, message);
+  }
+
+  error(message: string, ...meta: unknown[]) {
+    const payload =
+      (meta.find((m) => m && typeof m === 'object') as
+        | Record<string, unknown>
+        | undefined) ?? {};
+    const traceCandidate = meta.find((m) => typeof m === 'string');
+
+    const trace = typeof traceCandidate === 'string' ? traceCandidate : undefined;
+
+    if (trace) {
+      (payload as Record<string, unknown>).trace = trace;
     }
- 
-    const prettyStream: Transform = pretty({
-      colorize: true,
-      translateTime: 'SYS:standard',
-      ignore: 'pid,hostname',
-    }) as unknown as Transform;
- 
-    this.logger = pino({ level }, prettyStream);
+
+    this.logger.error(payload, message);
   }
- 
-  log(message: string, meta?: Record<string, unknown>) {
-    this.logger.info({ ...meta }, message);
+
+  warn(message: string, ...meta: unknown[]) {
+    const payload =
+      meta[0] && typeof meta[0] === 'object'
+        ? (meta[0] as Record<string, unknown>)
+        : {};
+    this.logger.warn(payload, message);
   }
- 
-  info(message: string, meta?: Record<string, unknown>) {
-    this.logger.info({ ...meta }, message);
+
+  debug(message: string, ...meta: unknown[]) {
+    const payload =
+      meta[0] && typeof meta[0] === 'object'
+        ? (meta[0] as Record<string, unknown>)
+        : {};
+    this.logger.debug(payload, message);
   }
- 
-  warn(message: string, meta?: Record<string, unknown>) {
-    this.logger.warn({ ...meta }, message);
+
+  verbose(message: string, ...meta: unknown[]) {
+    const payload =
+      meta[0] && typeof meta[0] === 'object'
+        ? (meta[0] as Record<string, unknown>)
+        : {};
+    this.logger.trace(payload, message);
   }
- 
-  error(message: string, meta?: Record<string, unknown>) {
-    this.logger.error({ ...meta }, message);
-  }
- 
-  debug(message: string, meta?: Record<string, unknown>) {
-    this.logger.debug({ ...meta }, message);
-  }
- 
-  verbose(message: string, meta?: Record<string, unknown>) {
-    this.logger.trace({ ...meta }, message);
-  }
- 
+
   getLogger() {
     return this.logger;
   }
