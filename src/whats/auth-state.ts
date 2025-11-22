@@ -37,7 +37,7 @@ export class DatabaseAuthState {
         }
 
         this.logger.debug(`[LOAD] Auth state found in DB`);
-        this.logger.debug(`[LOAD] DB data keys: ${Object.keys(authState.data as any).join(', ')}`);
+        this.logger.debug(`[LOAD] DB data keys: ${Object.keys((authState.data as any)?.data || {}).join(', ')}`);
 
         // 🎯 DEBUG: Verificar todos os registros AuthState para esta sessão
         try {
@@ -204,28 +204,16 @@ export class DatabaseAuthState {
             this.logger.debug(`[SAVE_KEYS] Saving ${Object.keys(keys).length} individual keys for session ${this.sessionId}`);
             
             for (const [keyName, keyData] of Object.entries(keys)) {
-                await this.prisma.authState.upsert({
-                    where: {
-                        sessionId: this.sessionId
-                    },
-                    update: {
-                        data: {
-                            creds: {
-                                [keyName]: keyData
-                            }
-                        },
-                        keyId: keyName
-                    },
-                    create: {
-                        sessionId: this.sessionId,
-                        data: {
-                            creds: {
-                                [keyName]: keyData
+                // 🎯 FIX: Usar create em vez de upsert para evitar conflitos
+                await this.prisma.authState.create({
+                    data: {
+                        creds: {
+                            [keyName]: keyData
                             },
                             keys: {}
                         },
-                        keyId: keyName
-                    }
+                    keyId: keyName,
+                    sessionId: this.sessionId
                 } as any);
                 this.logger.debug(`[SAVE_KEYS] ✅ Saved individual key: ${keyName}`);
             }

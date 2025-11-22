@@ -21,7 +21,7 @@ model Session {
   webhookUrl    String?
   webhookEvents String[] @default([])
 
-  authState      AuthState?
+  authStates     AuthState[]
   webhookConfigs WebhookConfig[]
   proxyConfig    ProxyConfig?
 
@@ -33,7 +33,7 @@ model Session {
 
 model AuthState {
   id        String   @id @default(uuid())
-  sessionId String   @unique
+  sessionId String
   keyId     String?
   data      Json     @default("{}")
   session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
