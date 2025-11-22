@@ -8,7 +8,6 @@ import { WhatsAppService } from '../whatsapp/whatsapp.service';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { PairPhoneDto } from './dto/pair-phone.dto';
 import { SessionResponseDto } from './dto/session-response.dto';
-import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class SessionsService {
@@ -187,7 +186,6 @@ export class SessionsService {
     return {
       id: session.id,
       name: session.name,
-      sessionId: session.sessionId,
       status: session.status,
       qrCode: session.qrCode ?? undefined,
       phoneNumber: session.phoneNumber ?? undefined,

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import makeWASocket, {
   DisconnectReason,
   WASocket,
@@ -14,11 +14,31 @@ interface SessionSocket {
 }
 
 @Injectable()
-export class WhatsAppService {
+export class WhatsAppService implements OnModuleInit {
   private readonly logger = new Logger(WhatsAppService.name);
   private sessions: Map<string, SessionSocket> = new Map();
 
   constructor(private prisma: PrismaService) {}
+
+  async onModuleInit() {
+    this.logger.log('Reconectando sessões ativas...');
+    const activeSessions = await this.prisma.session.findMany({
+      where: {
+        status: {
+          in: ['connected', 'connecting'],
+        },
+      },
+    });
+
+    for (const session of activeSessions) {
+      this.logger.log(`Reconectando sessão ${session.id}`);
+      try {
+        await this.createSocket(session.id);
+      } catch (err) {
+        this.logger.error(`Erro ao reconectar sessão ${session.id}`, err);
+      }
+    }
+  }
 
   async createSocket(
     sessionId: string,
@@ -47,7 +67,7 @@ export class WhatsAppService {
       logger: customLogger as any,
     });
 
-    socket.ev.on('connection.update', (update) => {
+    socket.ev.on('connection.update', async (update) => {
       const { connection, lastDisconnect, qr } = update;
 
       if (qr) {
@@ -60,44 +80,17 @@ export class WhatsAppService {
         qrcode.generate(qr, { small: true });
         this.prisma.session
           .update({
-            where: { sessionId },
+            where: { id: sessionId },
             data: { qrCode: qr, status: 'connecting' },
           })
           .catch((err) => this.logger.error('Error updating session QR', err));
       }
 
-      if (connection === 'close') {
-        const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
-        const shouldReconnect =
-          statusCode !== (DisconnectReason.loggedOut as unknown as number);
-
-        this.logger.log(
-          `Conexão fechada para ${sessionId}, reconectar: ${shouldReconnect}`,
-        );
-
-        this.prisma.session
-          .update({
-            where: { sessionId },
-            data: { status: 'disconnected' },
-          })
-          .catch((err) =>
-            this.logger.error('Error updating session status', err),
-          );
-
-        this.sessions.delete(sessionId);
-
-        if (shouldReconnect) {
-          setTimeout(() => {
-            this.createSocket(sessionId).catch((err) =>
-              this.logger.error('Error reconnecting socket', err),
-            );
-          }, 3000);
-        }
-      } else if (connection === 'open') {
+      if (connection === 'open') {
         this.logger.log(`Sessão ${sessionId} conectada com sucesso`);
         this.prisma.session
           .update({
-            where: { sessionId },
+            where: { id: sessionId },
             data: { status: 'connected', qrCode: null },
           })
           .catch((err) =>
@@ -106,12 +99,51 @@ export class WhatsAppService {
       } else if (connection === 'connecting') {
         this.prisma.session
           .update({
-            where: { sessionId },
+            where: { id: sessionId },
             data: { status: 'connecting' },
           })
           .catch((err) =>
             this.logger.error('Error updating session status', err),
           );
+      } else if (connection === 'close') {
+        const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
+        const isLoggedOut = statusCode === (DisconnectReason.loggedOut as unknown as number);
+        const isUnauthorized = statusCode === 401;
+        const shouldReconnect = !isLoggedOut && !isUnauthorized;
+
+        this.logger.log(
+          `Conexão fechada para ${sessionId}, reconectar: ${shouldReconnect}, statusCode: ${statusCode}, isLoggedOut: ${isLoggedOut}, isUnauthorized: ${isUnauthorized}`,
+        );
+
+        this.sessions.delete(sessionId);
+
+        if (isUnauthorized || isLoggedOut) {
+          this.logger.warn(`Sessão ${sessionId} invalidada, limpando credenciais`);
+          await this.prisma.authState
+            .deleteMany({
+              where: { sessionId },
+            })
+            .catch((err) =>
+              this.logger.error('Error clearing auth state', err),
+            );
+        }
+
+        this.prisma.session
+          .update({
+            where: { id: sessionId },
+            data: { status: 'disconnected' },
+          })
+          .catch((err) =>
+            this.logger.error('Error updating session status', err),
+          );
+
+        if (shouldReconnect) {
+          setTimeout(() => {
+            this.createSocket(sessionId).catch((err) =>
+              this.logger.error('Error reconnecting socket', err),
+            );
+          }, 3000);
+        }
       }
     });
 
