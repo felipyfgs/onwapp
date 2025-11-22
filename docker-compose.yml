@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: zpwoot-postgres
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-zpwoot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-zpwoot123}
+      POSTGRES_DB: ${POSTGRES_DB:-zpwoot}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - zpwoot-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-zpwoot} -d ${POSTGRES_DB:-zpwoot}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # DBGate (interface moderna para gerenciar PostgreSQL)
+  dbgate:
+    image: dbgate/dbgate:latest
+    container_name: zpwoot-dbgate
+    restart: unless-stopped
+    ports:
+      - '3001:3000'
+    environment:
+      CONNECTIONS: con1
+      LABEL_con1: zpwoot PostgreSQL
+      SERVER_con1: postgres
+      USER_con1: ${POSTGRES_USER:-zpwoot}
+      PASSWORD_con1: ${POSTGRES_PASSWORD:-zpwoot123}
+      PORT_con1: 5432
+      ENGINE_con1: postgres@dbgate-plugin-postgres
+      DATABASE_con1: ${POSTGRES_DB:-zpwoot}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - zpwoot-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  zpwoot-network:
+    driver: bridge
