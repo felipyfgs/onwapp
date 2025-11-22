@@ -10,6 +10,14 @@ import { Logger } from '@nestjs/common';
 
 const logger = new Logger('AuthState');
 
+function serializeToJson(value: any): any {
+  return JSON.parse(JSON.stringify(value, BufferJSON.replacer));
+}
+
+function deserializeFromJson(value: any): any {
+  return JSON.parse(JSON.stringify(value), BufferJSON.reviver);
+}
+
 export async function useAuthState(
   sessionId: string,
   prisma: PrismaService,
