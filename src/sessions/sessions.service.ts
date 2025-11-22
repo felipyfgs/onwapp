@@ -97,7 +97,7 @@ export class SessionsService {
       throw new NotFoundException(`Session with ID ${id} not found`);
     }
 
-    await this.whatsapp.disconnectSocket(session.sessionId);
+    await this.whatsapp.disconnectSocket(session.id);
 
     const updatedSession = await this.prisma.session.update({
       where: { id },
@@ -116,7 +116,7 @@ export class SessionsService {
       throw new NotFoundException(`Session with ID ${id} not found`);
     }
 
-    await this.whatsapp.disconnectSocket(session.sessionId);
+    await this.whatsapp.disconnectSocket(session.id);
 
     const updatedSession = await this.prisma.session.update({
       where: { id },
@@ -136,7 +136,7 @@ export class SessionsService {
     }
 
     const qrCode =
-      this.whatsapp.getQRCode(session.sessionId) || session.qrCode || undefined;
+      this.whatsapp.getQRCode(session.id) || session.qrCode || undefined;
 
     return { qrCode };
   }
@@ -153,7 +153,7 @@ export class SessionsService {
       throw new NotFoundException(`Session with ID ${id} not found`);
     }
 
-    const socket = this.whatsapp.getSocket(session.sessionId);
+    const socket = this.whatsapp.getSocket(session.id);
 
     if (!socket) {
       throw new BadRequestException(
