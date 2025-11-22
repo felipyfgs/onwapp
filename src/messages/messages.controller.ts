@@ -35,6 +35,13 @@ import { SendReactionMessageDto } from './dto/send-reaction-message.dto';
 import { SendForwardMessageDto } from './dto/send-forward-message.dto';
 import { DeleteMessageDto } from './dto/delete-message.dto';
 import { SetDisappearingMessagesDto } from './dto/set-disappearing-messages.dto';
+import { SendButtonsMessageDto } from './dto/send-buttons-message.dto';
+import { SendTemplateMessageDto } from './dto/send-template-message.dto';
+import { SendListMessageDto } from './dto/send-list-message.dto';
+import { SendPollMessageDto } from './dto/send-poll-message.dto';
+import { SendInteractiveMessageDto } from './dto/send-interactive-message.dto';
+import { EditMessageDto } from './dto/edit-message.dto';
+import { SendLiveLocationMessageDto } from './dto/send-live-location-message.dto';
 
 @ApiTags('Messages')
 @ApiSecurity('apikey')
@@ -266,5 +273,138 @@ export class MessagesController {
     @Body() dto: SetDisappearingMessagesDto,
   ): Promise<void> {
     return this.messagesService.setDisappearingMessages(sessionId, dto);
+  }
+
+  @Post(':sessionId/buttons')
+  @ApiOperation({ summary: 'Enviar mensagem com botões interativos' })
+  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
+  @ApiBody({ type: SendButtonsMessageDto })
+  @ApiOkResponse({
+    description: 'Mensagem com botões enviada com sucesso',
+    type: MessageResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Dados inválidos ou sessão desconectada',
+  })
+  @ApiNotFoundResponse({ description: 'Sessão não encontrada' })
+  async sendButtonsMessage(
+    @Param('sessionId') sessionId: string,
+    @Body() dto: SendButtonsMessageDto,
+  ): Promise<MessageResponseDto> {
+    return this.messagesService.sendButtonsMessage(sessionId, dto);
+  }
+
+  @Post(':sessionId/template')
+  @ApiOperation({ summary: 'Enviar mensagem com template buttons' })
+  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
+  @ApiBody({ type: SendTemplateMessageDto })
+  @ApiOkResponse({
+    description: 'Template enviado com sucesso',
+    type: MessageResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Dados inválidos ou sessão desconectada',
+  })
+  @ApiNotFoundResponse({ description: 'Sessão não encontrada' })
+  async sendTemplateMessage(
+    @Param('sessionId') sessionId: string,
+    @Body() dto: SendTemplateMessageDto,
+  ): Promise<MessageResponseDto> {
+    return this.messagesService.sendTemplateMessage(sessionId, dto);
+  }
+
+  @Post(':sessionId/list')
+  @ApiOperation({ summary: 'Enviar mensagem com lista de opções' })
+  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
+  @ApiBody({ type: SendListMessageDto })
+  @ApiOkResponse({
+    description: 'Lista enviada com sucesso',
+    type: MessageResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Dados inválidos ou sessão desconectada',
+  })
+  @ApiNotFoundResponse({ description: 'Sessão não encontrada' })
+  async sendListMessage(
+    @Param('sessionId') sessionId: string,
+    @Body() dto: SendListMessageDto,
+  ): Promise<MessageResponseDto> {
+    return this.messagesService.sendListMessage(sessionId, dto);
+  }
+
+  @Post(':sessionId/poll')
+  @ApiOperation({ summary: 'Enviar enquete' })
+  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
+  @ApiBody({ type: SendPollMessageDto })
+  @ApiOkResponse({
+    description: 'Enquete enviada com sucesso',
+    type: MessageResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Dados inválidos ou sessão desconectada',
+  })
+  @ApiNotFoundResponse({ description: 'Sessão não encontrada' })
+  async sendPollMessage(
+    @Param('sessionId') sessionId: string,
+    @Body() dto: SendPollMessageDto,
+  ): Promise<MessageResponseDto> {
+    return this.messagesService.sendPollMessage(sessionId, dto);
+  }
+
+  @Post(':sessionId/interactive')
+  @ApiOperation({ summary: 'Enviar mensagem interativa avançada' })
+  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
+  @ApiBody({ type: SendInteractiveMessageDto })
+  @ApiOkResponse({
+    description: 'Mensagem interativa enviada com sucesso',
+    type: MessageResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Dados inválidos ou sessão desconectada',
+  })
+  @ApiNotFoundResponse({ description: 'Sessão não encontrada' })
+  async sendInteractiveMessage(
+    @Param('sessionId') sessionId: string,
+    @Body() dto: SendInteractiveMessageDto,
+  ): Promise<MessageResponseDto> {
+    return this.messagesService.sendInteractiveMessage(sessionId, dto);
+  }
+
+  @Post(':sessionId/edit')
+  @ApiOperation({ summary: 'Editar mensagem enviada' })
+  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
+  @ApiBody({ type: EditMessageDto })
+  @ApiOkResponse({
+    description: 'Mensagem editada com sucesso',
+    type: MessageResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Dados inválidos ou sessão desconectada',
+  })
+  @ApiNotFoundResponse({ description: 'Sessão não encontrada' })
+  async editMessage(
+    @Param('sessionId') sessionId: string,
+    @Body() dto: EditMessageDto,
+  ): Promise<MessageResponseDto> {
+    return this.messagesService.editMessage(sessionId, dto);
+  }
+
+  @Post(':sessionId/live-location')
+  @ApiOperation({ summary: 'Enviar localização ao vivo' })
+  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
+  @ApiBody({ type: SendLiveLocationMessageDto })
+  @ApiOkResponse({
+    description: 'Localização ao vivo enviada com sucesso',
+    type: MessageResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Dados inválidos ou sessão desconectada',
+  })
+  @ApiNotFoundResponse({ description: 'Sessão não encontrada' })
+  async sendLiveLocationMessage(
+    @Param('sessionId') sessionId: string,
+    @Body() dto: SendLiveLocationMessageDto,
+  ): Promise<MessageResponseDto> {
+    return this.messagesService.sendLiveLocationMessage(sessionId, dto);
   }
 }

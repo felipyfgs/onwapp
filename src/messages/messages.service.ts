@@ -19,6 +19,13 @@ import { SendReactionMessageDto } from './dto/send-reaction-message.dto';
 import { SendForwardMessageDto } from './dto/send-forward-message.dto';
 import { DeleteMessageDto } from './dto/delete-message.dto';
 import { SetDisappearingMessagesDto } from './dto/set-disappearing-messages.dto';
+import { SendButtonsMessageDto } from './dto/send-buttons-message.dto';
+import { SendTemplateMessageDto } from './dto/send-template-message.dto';
+import { SendListMessageDto } from './dto/send-list-message.dto';
+import { SendPollMessageDto } from './dto/send-poll-message.dto';
+import { SendInteractiveMessageDto } from './dto/send-interactive-message.dto';
+import { EditMessageDto } from './dto/edit-message.dto';
+import { SendLiveLocationMessageDto } from './dto/send-live-location-message.dto';
 
 @Injectable()
 export class MessagesService {
@@ -354,11 +361,21 @@ export class MessagesService {
     sessionId: string,
     dto: SendForwardMessageDto,
   ): Promise<MessageResponseDto> {
-    await this.validateSessionConnected(sessionId);
+    const socket = await this.validateSessionConnected(sessionId);
+    const jid = this.formatJid(dto.to);
 
-    throw new BadRequestException(
-      'Forward message requires message store implementation. This feature will be available in a future update.',
-    );
+    const content: AnyMessageContent = {
+      forward: dto.message,
+      force: dto.force,
+    };
+
+    const message = await socket.sendMessage(jid, content);
+
+    if (!message) {
+      throw new BadRequestException('Failed to forward message');
+    }
+
+    return this.mapToMessageResponseDto(message);
   }
 
   async deleteMessage(sessionId: string, dto: DeleteMessageDto): Promise<void> {
@@ -387,5 +404,263 @@ export class MessagesService {
     };
 
     await socket.sendMessage(dto.jid, content);
+  }
+
+  async sendButtonsMessage(
+    sessionId: string,
+    dto: SendButtonsMessageDto,
+  ): Promise<MessageResponseDto> {
+    const socket = await this.validateSessionConnected(sessionId);
+    const jid = this.formatJid(dto.to);
+
+    if (dto.buttons.length > 3) {
+      throw new BadRequestException('Maximum 3 buttons allowed');
+    }
+
+    if (dto.headerType === 4 && !dto.image) {
+      throw new BadRequestException(
+        'Image is required when headerType is 4',
+      );
+    }
+
+    const content: any = {
+      text: dto.text,
+      footer: dto.footer,
+      buttons: dto.buttons,
+      headerType: dto.headerType || 1,
+    };
+
+    if (dto.image) {
+      content.image = this.parseMediaUpload(dto.image);
+    }
+
+    const options = {
+      quoted: dto.quoted as any,
+      ephemeralExpiration: dto.ephemeralExpiration,
+      statusJidList: dto.statusJidList,
+    };
+
+    const message = await socket.sendMessage(jid, content, options);
+
+    if (!message) {
+      throw new BadRequestException('Failed to send buttons message');
+    }
+
+    return this.mapToMessageResponseDto(message);
+  }
+
+  async sendTemplateMessage(
+    sessionId: string,
+    dto: SendTemplateMessageDto,
+  ): Promise<MessageResponseDto> {
+    const socket = await this.validateSessionConnected(sessionId);
+    const jid = this.formatJid(dto.to);
+
+    const content: any = {
+      text: dto.text,
+      footer: dto.footer,
+      templateButtons: dto.templateButtons,
+    };
+
+    if (dto.image) {
+      content.image = this.parseMediaUpload(dto.image);
+    }
+
+    const options = {
+      quoted: dto.quoted as any,
+      ephemeralExpiration: dto.ephemeralExpiration,
+      statusJidList: dto.statusJidList,
+    };
+
+    const message = await socket.sendMessage(jid, content, options);
+
+    if (!message) {
+      throw new BadRequestException('Failed to send template message');
+    }
+
+    return this.mapToMessageResponseDto(message);
+  }
+
+  async sendListMessage(
+    sessionId: string,
+    dto: SendListMessageDto,
+  ): Promise<MessageResponseDto> {
+    const socket = await this.validateSessionConnected(sessionId);
+    const jid = this.formatJid(dto.to);
+
+    if (!dto.buttonText) {
+      throw new BadRequestException('buttonText is required');
+    }
+
+    if (!dto.sections || dto.sections.length === 0) {
+      throw new BadRequestException('At least one section is required');
+    }
+
+    if (dto.sections.length > 10) {
+      throw new BadRequestException('Maximum 10 sections allowed');
+    }
+
+    const content: AnyMessageContent = {
+      text: dto.text,
+      footer: dto.footer,
+      title: dto.title,
+      buttonText: dto.buttonText,
+      sections: dto.sections,
+    };
+
+    const options = {
+      quoted: dto.quoted as any,
+      ephemeralExpiration: dto.ephemeralExpiration,
+      statusJidList: dto.statusJidList,
+    };
+
+    const message = await socket.sendMessage(jid, content, options);
+
+    if (!message) {
+      throw new BadRequestException('Failed to send list message');
+    }
+
+    return this.mapToMessageResponseDto(message);
+  }
+
+  async sendPollMessage(
+    sessionId: string,
+    dto: SendPollMessageDto,
+  ): Promise<MessageResponseDto> {
+    const socket = await this.validateSessionConnected(sessionId);
+    const jid = this.formatJid(dto.to);
+
+    if (!dto.options || dto.options.length < 2) {
+      throw new BadRequestException('At least 2 options are required');
+    }
+
+    if (dto.options.length > 12) {
+      throw new BadRequestException('Maximum 12 options allowed');
+    }
+
+    const selectableCount = dto.selectableCount ?? 1;
+    if (selectableCount < 0 || selectableCount > dto.options.length) {
+      throw new BadRequestException(
+        'selectableCount must be between 0 and number of options',
+      );
+    }
+
+    const content: any = {
+      poll: {
+        name: dto.name,
+        values: dto.options,
+        selectableCount,
+      },
+    };
+
+    const options = {
+      quoted: dto.quoted as any,
+      ephemeralExpiration: dto.ephemeralExpiration,
+      statusJidList: dto.statusJidList,
+    };
+
+    const message = await socket.sendMessage(jid, content, options);
+
+    if (!message) {
+      throw new BadRequestException('Failed to send poll message');
+    }
+
+    return this.mapToMessageResponseDto(message);
+  }
+
+  async sendInteractiveMessage(
+    sessionId: string,
+    dto: SendInteractiveMessageDto,
+  ): Promise<MessageResponseDto> {
+    const socket = await this.validateSessionConnected(sessionId);
+    const jid = this.formatJid(dto.to);
+
+    const content: AnyMessageContent = {
+      interactiveMessage: dto.interactiveMessage,
+      viewOnce: dto.viewOnce,
+    };
+
+    const options = {
+      quoted: dto.quoted as any,
+      ephemeralExpiration: dto.ephemeralExpiration,
+      statusJidList: dto.statusJidList,
+    };
+
+    const message = await socket.sendMessage(jid, content, options);
+
+    if (!message) {
+      throw new BadRequestException('Failed to send interactive message');
+    }
+
+    return this.mapToMessageResponseDto(message);
+  }
+
+  async editMessage(
+    sessionId: string,
+    dto: EditMessageDto,
+  ): Promise<MessageResponseDto> {
+    const socket = await this.validateSessionConnected(sessionId);
+    const jid = this.formatJid(dto.to);
+
+    if (!dto.messageKey.fromMe) {
+      throw new BadRequestException(
+        'Can only edit messages sent by you (fromMe must be true)',
+      );
+    }
+
+    const content: AnyMessageContent = {
+      text: dto.text,
+      edit: dto.messageKey,
+    };
+
+    const options = {
+      quoted: dto.quoted as any,
+      ephemeralExpiration: dto.ephemeralExpiration,
+      statusJidList: dto.statusJidList,
+    };
+
+    const message = await socket.sendMessage(jid, content, options);
+
+    if (!message) {
+      throw new BadRequestException('Failed to edit message');
+    }
+
+    return this.mapToMessageResponseDto(message);
+  }
+
+  async sendLiveLocationMessage(
+    sessionId: string,
+    dto: SendLiveLocationMessageDto,
+  ): Promise<MessageResponseDto> {
+    const socket = await this.validateSessionConnected(sessionId);
+    const jid = this.formatJid(dto.to);
+
+    const content: any = {
+      liveLocation: {
+        degreesLatitude: dto.latitude,
+        degreesLongitude: dto.longitude,
+        accuracyInMeters: dto.accuracy,
+        speedInMps: dto.speed,
+        degreesClockwiseFromMagneticNorth: dto.degreesClockwise,
+        caption: dto.caption,
+        sequenceNumber: dto.sequenceNumber,
+        timeOffset: dto.timeOffset,
+        jpegThumbnail: dto.jpegThumbnail,
+      },
+    };
+
+    const options = {
+      quoted: dto.quoted as any,
+      ephemeralExpiration: dto.ephemeralExpiration,
+      statusJidList: dto.statusJidList,
+    };
+
+    const message = await socket.sendMessage(jid, content, options);
+
+    if (!message) {
+      throw new BadRequestException('Failed to send live location message');
+    }
+
+    return this.mapToMessageResponseDto(message);
   }
 }

@@ -21,12 +21,4 @@ export class SendTextMessageDto extends SendMessageBaseDto {
   @IsArray()
   @IsString({ each: true })
   mentions?: string[];
-
-  @ApiProperty({
-    description: 'Rodapé da mensagem',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  footer?: string;
 }
