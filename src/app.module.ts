@@ -1,24 +1,10 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { SessionModule } from './modules/session/session.module';
-import { MessageModule } from './modules/message/message.module';
-import { WebhookModule } from './modules/webhook/webhook.module';
-import { WhatsModule } from './whats/whats.module';
-import { PrismaModule } from './prisma/prisma.module';
-import { LoggerModule } from './logger/logger.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: '.env',
-    }),
-    PrismaModule,
-    SessionModule,
-    MessageModule,
-    WebhookModule,
-    WhatsModule,
-    LoggerModule,
-  ],
+  imports: [],
+  controllers: [AppController],
+  providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}
