@@ -3,7 +3,7 @@ import { Prisma, SessionStatus } from '@prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import { WhatsService } from '@/whats/whats.service';
 import { WebhookService } from '@/modules/webhook/webhook.service';
-import { useDatabaseAuthState } from '@/whats/database-auth-state';
+import { useDatabaseAuthState } from '@/whats/auth-state';
 import { CreateSessionDto, PairPhoneDto } from './dto';
 
 // Webhook events disponíveis
@@ -156,25 +156,41 @@ export class SessionService {
 
         // Save credentials callback
         const saveCredsCallback = async (creds: any) => {
-            const currentSession = await this.prisma.session.findUnique({
-                where: { id },
-                select: { creds: true }
+            const currentAuthState = await this.prisma.authState.findUnique({
+                where: { sessionId: id }
             });
 
-            const currentCreds = (currentSession?.creds as any) || { creds: {}, keys: {} };
-
-            await this.prisma.session.update({
-                where: { id },
-                data: {
-                    creds: {
-                        ...currentCreds,
-                        creds: {
-                            ...currentCreds.creds,
-                            ...creds
+            if (currentAuthState) {
+                // Obter dados atuais do campo data
+                const currentData = typeof currentAuthState.data === 'object' && currentAuthState.data !== null
+                    ? currentAuthState.data as any
+                    : { creds: {}, keys: {} };
+                
+                const currentCreds = currentData.creds || {};
+                
+                await this.prisma.authState.update({
+                    where: { sessionId: id },
+                    data: {
+                        data: {
+                            ...currentData,
+                            creds: {
+                                ...currentCreds,
+                                ...creds
+                            }
                         }
                     }
-                }
-            });
+                });
+            } else {
+                await this.prisma.authState.create({
+                    data: {
+                        sessionId: id,
+                        data: {
+                            creds: creds,
+                            keys: {}
+                        }
+                    }
+                });
+            }
         };
 
         // Create WhatsApp connection
@@ -317,13 +333,16 @@ export class SessionService {
         }
 
         // Clear credentials from database
+        await this.prisma.authState.deleteMany({
+            where: { sessionId: id }
+        });
+
         await this.prisma.session.update({
             where: { id },
             data: {
                 status: SessionStatus.disconnected,
                 qrCode: null,
-                phoneNumber: null,
-                creds: Prisma.DbNull
+                phoneNumber: null
             }
         });
 

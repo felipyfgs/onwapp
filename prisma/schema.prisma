@@ -18,10 +18,10 @@ model Session {
   status        SessionStatus @default(disconnected)
   qrCode        String?
   phoneNumber   String?
-  creds         Json?
   webhookUrl    String?
   webhookEvents String[] @default([])
 
+  authState      AuthState?
   webhookConfigs WebhookConfig[]
   proxyConfig    ProxyConfig?
 
@@ -29,6 +29,18 @@ model Session {
   updatedAt     DateTime @updatedAt
 
   @@map("sessions")
+}
+
+model AuthState {
+  id        String   @id @default(uuid())
+  sessionId String   @unique
+  keyId     String?
+  data      Json     @default("{}")
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("authStates")
 }
 
 model WebhookConfig {
@@ -39,11 +51,10 @@ model WebhookConfig {
   
   sessionId String
   session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("webhook_configs")
+  @@map("webhookConfigs")
 }
 
 model ProxyConfig {
@@ -53,12 +64,10 @@ model ProxyConfig {
   username  String?
   password  String?
   protocol  String   @default("http")
-
   sessionId String   @unique
   session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("proxy_configs")
+  @@map("proxyConfigs")
 }
