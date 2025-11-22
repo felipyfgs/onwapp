@@ -1,9 +1,20 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { LoggerService, pinoHttpMiddleware } from './logger/logger.service';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // Criar app sem logger padrão do NestJS
+  const app = await NestFactory.create(AppModule, { 
+    logger: false 
+  });
+
+  // Configurar LoggerService como logger global
+  const loggerService = app.get(LoggerService);
+  app.useLogger(loggerService);
+
+  // Adicionar middleware pino-http para logs de requisição
+  app.use(pinoHttpMiddleware);
 
   const config = new DocumentBuilder()
     .setTitle('zpwoot API')
@@ -32,6 +43,11 @@ async function bootstrap() {
   
   SwaggerModule.setup('api', app, document);
 
-  await app.listen(process.env.PORT ?? 3000);
+  const port = process.env.PORT ?? 3000;
+  await app.listen(port);
+  
+  // Log de inicialização usando o novo logger
+  loggerService.log(`🚀 Application started on port ${port}`);
+  loggerService.log(`📚 Swagger documentation available at http://localhost:${port}/api`);
 }
 bootstrap();

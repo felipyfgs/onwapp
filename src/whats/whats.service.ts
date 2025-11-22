@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { WebhookService } from '@/modules/webhook/webhook.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { useDatabaseAuthState } from './auth-state';
+import { createPinoLogger } from '@/logger/logger.service';
 
 // Import WhatsApp client using dynamic import pattern for compatibility
 const makeWASocketModule = require('whaileys');
@@ -21,46 +22,6 @@ type ConnectionState = {
     };
     qr?: string;
 };
-
-/**
- * Create a Pino-compatible logger wrapper for NestJS Logger
- */
-function createPinoLogger(nestLogger: Logger) {
-    const levels = ['trace', 'debug', 'info', 'warn', 'error', 'fatal'];
-    
-    const pinoLogger: any = {
-        level: 'info',
-        child: (bindings: any) => createPinoLogger(nestLogger),
-    };
-
-    // Map Pino log levels to NestJS logger methods
-    levels.forEach(level => {
-        pinoLogger[level] = (...args: any[]) => {
-            const message = args.map(arg =>
-                typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
-            ).join(' ');
-
-            switch (level) {
-                case 'trace':
-                case 'debug':
-                    nestLogger.debug(message);
-                    break;
-                case 'info':
-                    nestLogger.log(message);
-                    break;
-                case 'warn':
-                    nestLogger.warn(message);
-                    break;
-                case 'error':
-                case 'fatal':
-                    nestLogger.error(message);
-                    break;
-            }
-        };
-    });
-
-    return pinoLogger;
-}
 
 @Injectable()
 export class WhatsService {
