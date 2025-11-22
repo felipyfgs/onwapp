@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
 import { WhatsService } from './whats.service';
-import { SessionModule } from '../modules/session/session.module';
-import { MessageModule } from '../modules/message/message.module';
+import { WhatsManagerService } from './whats-manager.service';
+import { PrismaModule } from '../prisma/prisma.module';
 import { LoggerModule } from '../logger/logger.module';
+import { MessageModule } from '../modules/message/message.module';
 
 @Module({
-  imports: [SessionModule, MessageModule, LoggerModule],
-  providers: [WhatsService],
-  exports: [WhatsService],
+  imports: [PrismaModule, LoggerModule, MessageModule],
+  providers: [WhatsService, WhatsManagerService],
+  exports: [WhatsService, WhatsManagerService],
 })
 export class WhatsModule {}

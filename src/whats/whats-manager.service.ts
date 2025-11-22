@@ -62,7 +62,6 @@ export class WhatsManagerService implements OnModuleDestroy {
         const socket = makeWASocket({
             auth: state,
             printQRInTerminal: false,
-            logger: this.logger.getLogger().child({ sessionId }),
         });
 
         // Criar instância da sessão

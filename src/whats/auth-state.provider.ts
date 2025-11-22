@@ -31,7 +31,7 @@ export async function useDatabaseAuthState(
 
     if (authState) {
         // Carregar credenciais existentes do banco
-        creds = authState.creds as AuthenticationCreds;
+        creds = authState.creds as unknown as AuthenticationCreds;
         keys = authState.keys || {};
     } else {
         // Primeira vez - inicializar credenciais vazias
