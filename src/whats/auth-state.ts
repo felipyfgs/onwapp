@@ -1,5 +1,6 @@
 import { PrismaService } from '@/prisma/prisma.service';
 import { Logger } from '@nestjs/common';
+import { LoggerService } from '@/logger/logger.service';
 import { proto } from 'whaileys';
 
 type AuthenticationCreds = any;
@@ -11,18 +12,25 @@ type SignalDataTypeMap = any;
  * Similar to Evolution API implementation
  */
 export class DatabaseAuthState {
-    private readonly logger = new Logger(DatabaseAuthState.name);
+    private readonly logger: any;
 
     constructor(
         private prisma: PrismaService,
-        private sessionId: string
-    ) { }
+        private sessionId: string,
+        logger?: any
+    ) {
+        this.logger = logger || new Logger(DatabaseAuthState.name);
+    }
 
     /**
      * Get authentication state from database
      */
     async getState(): Promise<{ creds: any; keys: any }> {
-        this.logger.debug(`[LOAD] Starting to load state for session ${this.sessionId}`);
+        const isVerbose = process.env.LOG_VERBOSE === 'true';
+        
+        if (isVerbose) {
+            this.logger.debug(`[LOAD] Starting to load state for session ${this.sessionId}`);
+        }
         
         // Find the most recent AuthState record for this session (sessionId is no longer unique)
         const authState = await this.prisma.authState.findFirst({
@@ -32,34 +40,40 @@ export class DatabaseAuthState {
         const authStateAny = authState as any;
 
         if (!authState) {
-            this.logger.debug(`[LOAD] No auth state found in DB for session ${this.sessionId}`);
+            if (isVerbose) {
+                this.logger.debug(`[LOAD] No auth state found in DB for session ${this.sessionId}`);
+            }
             return {
                 creds: {},
                 keys: {}
             };
         }
 
-        this.logger.debug(`[LOAD] Auth state found in DB`);
-        this.logger.debug(`[LOAD] DB data keys: ${Object.keys((authStateAny?.data) || {}).join(', ')}`);
+        if (isVerbose) {
+            this.logger.debug(`[LOAD] Auth state found in DB`);
+            this.logger.debug(`[LOAD] DB data keys: ${Object.keys((authStateAny?.data) || {}).join(', ')}`);
+        }
 
         // 🎯 DEBUG: Verificar todos os registros AuthState para esta sessão
-        try {
-            const allAuthStates = await this.prisma.authState.findMany({
-                where: { sessionId: this.sessionId }
-            });
-            this.logger.debug(`[LOAD] Found ${allAuthStates.length} total AuthState records for session ${this.sessionId}`);
-            
-            for (const record of allAuthStates) {
-                this.logger.debug(`[LOAD] Record - keyId: ${(record as any).keyId}, data keys: ${Object.keys((record as any).data as any).join(', ')}`);
-                if ((record as any).data && typeof (record as any).data === 'object') {
-                    const recordData = this.bufferFromJSON((record as any).data);
-                    const recordCreds = recordData.creds || {};
-                    this.logger.debug(`[LOAD] Record - creds keys: ${Object.keys(recordCreds).join(', ')}`);
-                    this.logger.debug(`[LOAD] Record - has noiseKey: ${!!recordCreds.noiseKey}`);
+        if (isVerbose) {
+            try {
+                const allAuthStates = await this.prisma.authState.findMany({
+                    where: { sessionId: this.sessionId }
+                });
+                this.logger.debug(`[LOAD] Found ${allAuthStates.length} total AuthState records for session ${this.sessionId}`);
+                
+                for (const record of allAuthStates) {
+                    this.logger.debug(`[LOAD] Record - keyId: ${(record as any).keyId}, data keys: ${Object.keys((record as any).data as any).join(', ')}`);
+                    if ((record as any).data && typeof (record as any).data === 'object') {
+                        const recordData = this.bufferFromJSON((record as any).data);
+                        const recordCreds = recordData.creds || {};
+                        this.logger.debug(`[LOAD] Record - creds keys: ${Object.keys(recordCreds).join(', ')}`);
+                        this.logger.debug(`[LOAD] Record - has noiseKey: ${!!recordCreds.noiseKey}`);
+                    }
                 }
+            } catch (error) {
+                this.logger.debug(`[LOAD] Error checking all AuthState records:`, error.message);
             }
-        } catch (error) {
-            this.logger.debug(`[LOAD] Error checking all AuthState records:`, error.message);
         }
 
         // Deserializar Buffers do campo data unificado
@@ -75,7 +89,9 @@ export class DatabaseAuthState {
                 where: { sessionId: this.sessionId }
             });
 
-            this.logger.debug(`[LOAD] 🔍 RECONSTRUCTING - Starting individual key reconstruction`);
+            if (isVerbose) {
+                this.logger.debug(`[LOAD] 🔍 RECONSTRUCTING - Starting individual key reconstruction`);
+            }
             
             for (const record of allAuthStates) {
                 if ((record as any).data && typeof (record as any).data === 'object') {
@@ -86,26 +102,34 @@ export class DatabaseAuthState {
                     for (const [keyName, keyValue] of Object.entries(recordCreds)) {
                         if (!deserializedCreds[keyName]) {
                             deserializedCreds[keyName] = keyValue;
-                            this.logger.debug(`[LOAD] 🔍 RECONSTRUCTED - Added key: ${keyName}`);
+                            if (isVerbose) {
+                                this.logger.debug(`[LOAD] 🔍 RECONSTRUCTED - Added key: ${keyName}`);
+                            }
                         } else {
-                            this.logger.debug(`[LOAD] 🔍 SKIPPED - Key already exists: ${keyName}`);
+                            if (isVerbose) {
+                                this.logger.debug(`[LOAD] 🔍 SKIPPED - Key already exists: ${keyName}`);
+                            }
                         }
                     }
                 }
             }
             
-            this.logger.debug(`[LOAD] 🔍 RECONSTRUCTION COMPLETE - Final creds keys: ${Object.keys(deserializedCreds).join(', ')}`);
+            if (isVerbose) {
+                this.logger.debug(`[LOAD] 🔍 RECONSTRUCTION COMPLETE - Final creds keys: ${Object.keys(deserializedCreds).join(', ')}`);
+            }
         } catch (error) {
             this.logger.error(`[LOAD] ❌ Failed to reconstruct individual keys:`, error);
         }
 
-        this.logger.debug(`[LOAD] Deserialized creds keys: ${Object.keys(deserializedCreds).join(', ')}`);
-        this.logger.debug(`[LOAD] Has noiseKey after deserialize: ${!!deserializedCreds.noiseKey}`);
-        if (deserializedCreds.noiseKey) {
-            this.logger.debug(`[LOAD] noiseKey.public type: ${deserializedCreds.noiseKey.public?.constructor?.name}, length: ${deserializedCreds.noiseKey.public?.length}`);
-            this.logger.debug(`[LOAD] noiseKey.private type: ${deserializedCreds.noiseKey.private?.constructor?.name}, length: ${deserializedCreds.noiseKey.private?.length}`);
-            this.logger.debug(`[LOAD] noiseKey.public isBuffer: ${Buffer.isBuffer(deserializedCreds.noiseKey.public)}`);
-            this.logger.debug(`[LOAD] noiseKey.private isBuffer: ${Buffer.isBuffer(deserializedCreds.noiseKey.private)}`);
+        if (isVerbose) {
+            this.logger.debug(`[LOAD] Deserialized creds keys: ${Object.keys(deserializedCreds).join(', ')}`);
+            this.logger.debug(`[LOAD] Has noiseKey after deserialize: ${!!deserializedCreds.noiseKey}`);
+            if (deserializedCreds.noiseKey) {
+                this.logger.debug(`[LOAD] noiseKey.public type: ${deserializedCreds.noiseKey.public?.constructor?.name}, length: ${deserializedCreds.noiseKey.public?.length}`);
+                this.logger.debug(`[LOAD] noiseKey.private type: ${deserializedCreds.noiseKey.private?.constructor?.name}, length: ${deserializedCreds.noiseKey.private?.length}`);
+                this.logger.debug(`[LOAD] noiseKey.public isBuffer: ${Buffer.isBuffer(deserializedCreds.noiseKey.public)}`);
+                this.logger.debug(`[LOAD] noiseKey.private isBuffer: ${Buffer.isBuffer(deserializedCreds.noiseKey.private)}`);
+            }
         }
 
         return {
@@ -118,29 +142,36 @@ export class DatabaseAuthState {
      * Save credentials to database
      */
     async saveCreds(creds: any): Promise<void> {
+        const isVerbose = process.env.LOG_VERBOSE === 'true';
+        
         try {
-            this.logger.debug(`[SAVE] Starting to save credentials for session ${this.sessionId}`);
-            this.logger.debug(`[SAVE] Incoming creds keys: ${Object.keys(creds).join(', ')}`);
-            this.logger.debug(`[SAVE] Has noiseKey: ${!!creds.noiseKey}`);
-            if (creds.noiseKey) {
-                this.logger.debug(`[SAVE] noiseKey.public type: ${creds.noiseKey.public?.constructor?.name}, length: ${creds.noiseKey.public?.length}`);
-                this.logger.debug(`[SAVE] noiseKey.private type: ${creds.noiseKey.private?.constructor?.name}, length: ${creds.noiseKey.private?.length}`);
+            if (isVerbose) {
+                this.logger.debug(`[SAVE] Starting to save credentials for session ${this.sessionId}`);
+                this.logger.debug(`[SAVE] Incoming creds keys: ${Object.keys(creds).join(', ')}`);
+                this.logger.debug(`[SAVE] Has noiseKey: ${!!creds.noiseKey}`);
+                if (creds.noiseKey) {
+                    this.logger.debug(`[SAVE] noiseKey.public type: ${creds.noiseKey.public?.constructor?.name}, length: ${creds.noiseKey.public?.length}`);
+                    this.logger.debug(`[SAVE] noiseKey.private type: ${creds.noiseKey.private?.constructor?.name}, length: ${creds.noiseKey.private?.length}`);
+                }
             }
 
-            // Buscar estado atual do banco
             const authState = await this.prisma.authState.findFirst({
                 where: { sessionId: this.sessionId },
                 orderBy: { updatedAt: 'desc' }
             });
             const authStateAny = authState as any;
 
-            this.logger.debug(`[SAVE] Current DB state exists: ${!!authState}`);
+            if (isVerbose) {
+                this.logger.debug(`[SAVE] Current DB state exists: ${!!authState}`);
+            }
             
             // Obter estado atual deserializado
             let currentData = { creds: {}, keys: {} };
             if ((authState as any)?.data && typeof (authState as any).data === 'object') {
                 currentData = this.bufferFromJSON((authState as any).data);
-                this.logger.debug(`[SAVE] Current DB data keys: ${Object.keys(currentData).join(', ')}`);
+                if (isVerbose) {
+                    this.logger.debug(`[SAVE] Current DB data keys: ${Object.keys(currentData).join(', ')}`);
+                }
             }
 
             // Garantir que currentCreds seja um objeto
@@ -154,7 +185,9 @@ export class DatabaseAuthState {
             for (const key of keysToExtract) {
                 if (creds[key]) {
                     individualKeys[key] = creds[key];
-                    this.logger.debug(`[SAVE] Extracting individual key: ${key}`);
+                    if (isVerbose) {
+                        this.logger.debug(`[SAVE] Extracting individual key: ${key}`);
+                    }
                 }
             }
             
@@ -182,7 +215,9 @@ export class DatabaseAuthState {
                 keys: currentKeys
             };
 
-            this.logger.debug(`[SAVE] Final unified data structure ready`);
+            if (isVerbose) {
+                this.logger.debug(`[SAVE] Final unified data structure ready`);
+            }
 
             // sessionId is not unique anymore — try to find an existing record and update by id, otherwise create
             const existingRecord = await this.prisma.authState.findFirst({
@@ -203,7 +238,9 @@ export class DatabaseAuthState {
                 });
             }
 
-            this.logger.debug(`[SAVE] ✅ Credentials saved successfully for session ${this.sessionId}`);
+            if (isVerbose) {
+                this.logger.debug(`[SAVE] ✅ Credentials saved successfully for session ${this.sessionId}`);
+            }
         } catch (error) {
             this.logger.error(`[SAVE] ❌ Failed to save credentials for session ${this.sessionId}:`, error);
         }
@@ -242,44 +279,47 @@ export class DatabaseAuthState {
      * Get a key from database
      */
     async get(type: string, ids: string[]): Promise<any> {
-        this.logger.debug(`[GET_KEYS] Type: ${type}, IDs: ${ids.join(', ')}`);
-        
-        const data: any = {};
-        
-        // 🎯 CRITICAL: Buscar especificamente pelo keyId para encontrar o noiseKey e outras chaves
-        try {
+        const isVerbose = process.env.LOG_VERBOSE === 'true';
+        if (isVerbose) {
+            this.logger.debug(`[GET_KEYS] Type: ${type}, IDs: ${ids.join(', ')}`);
             this.logger.debug(`[GET_KEYS] 🔍 SEARCHING - Looking for individual keys by keyId`);
-            
-            // Buscar todos os registros AuthState para esta sessão
+        }
+
+        const data: any = {};
+
+        try {
             const authStates = await this.prisma.authState.findMany({
-                where: {
-                    sessionId: this.sessionId
-                }
+                where: { sessionId: this.sessionId }
             });
 
-            this.logger.debug(`[GET_KEYS] 🔍 SEARCHING - Found ${authStates.length} total records for session ${this.sessionId}`);
+            if (isVerbose) {
+                this.logger.debug(`[GET_KEYS] 🔍 SEARCHING - Found ${authStates.length} total records for session ${this.sessionId}`);
+            }
 
-            // Procurar em todos os registros AuthState para encontrar chaves individuais
             for (const authStateRecord of authStates) {
-                this.logger.debug(`[GET_KEYS] 🔍 SEARCHING - Checking record with keyId: ${(authStateRecord as any).keyId}`);
-                
+                if (isVerbose) {
+                    this.logger.debug(`[GET_KEYS] 🔍 SEARCHING - Checking record with keyId: ${(authStateRecord as any).keyId}`);
+                }
+
                 if ((authStateRecord as any).data && typeof (authStateRecord as any).data === 'object') {
                     const authData = this.bufferFromJSON((authStateRecord as any).data);
                     const creds = authData.creds || {};
-                    
-                    this.logger.debug(`[GET_KEYS] 🔍 SEARCHING - Record ${(authStateRecord as any).keyId} has creds keys: ${Object.keys(creds).join(', ')}`);
-                    
-                    // 🎯 CRITICAL FIX: Verificar se o keyId corresponde a uma das IDs procuradas
+
+                    if (isVerbose) {
+                        this.logger.debug(`[GET_KEYS] 🔍 SEARCHING - Record ${(authStateRecord as any).keyId} has creds keys: ${Object.keys(creds).join(', ')}`);
+                    }
+
                     if ((authStateRecord as any).keyId && ids.includes((authStateRecord as any).keyId)) {
                         data[(authStateRecord as any).keyId] = creds[(authStateRecord as any).keyId];
-                        this.logger.debug(`[GET_KEYS] ✅ FOUND - Individual key ${(authStateRecord as any).keyId} found by keyId match`);
+                        if (isVerbose) {
+                            this.logger.debug(`[GET_KEYS] ✅ FOUND - Individual key ${(authStateRecord as any).keyId} found by keyId match`);
+                        }
                     }
-                    
-                    // Também verificar dentro das creds (fallback)
+
                     for (const keyName of Object.keys(creds)) {
-                        if (ids.includes(keyName)) {
-                            if (!data[keyName]) { // Não sobrescrever se já encontrou por keyId
-                                data[keyName] = creds[keyName];
+                        if (ids.includes(keyName) && !data[keyName]) {
+                            data[keyName] = creds[keyName];
+                            if (isVerbose) {
                                 this.logger.debug(`[GET_KEYS] ✅ FOUND - Individual key ${keyName} found in creds`);
                             }
                         }
@@ -475,9 +515,10 @@ export class DatabaseAuthState {
  */
 export async function useDatabaseAuthState(
     prisma: PrismaService,
-    sessionId: string
+    sessionId: string,
+    logger?: any
 ) {
-    const authState = new DatabaseAuthState(prisma, sessionId);
+    const authState = new DatabaseAuthState(prisma, sessionId, logger);
     const storedState = await authState.getState();
 
     return {

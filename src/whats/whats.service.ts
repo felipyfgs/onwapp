@@ -3,6 +3,7 @@ import { WebhookService } from '@/modules/webhook/webhook.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { useDatabaseAuthState } from './auth-state';
 import { createPinoLogger } from '@/logger/logger.service';
+import { LoggerService } from '@/logger/logger.service';
 
 // Import WhatsApp client using dynamic import pattern for compatibility
 const makeWASocketModule = require('whaileys');
@@ -32,7 +33,8 @@ export class WhatsService {
 
     constructor(
         private readonly webhookService: WebhookService,
-        private readonly prisma: PrismaService
+        private readonly prisma: PrismaService,
+        private readonly loggerService: LoggerService
     ) { }
 
     /**
@@ -51,8 +53,12 @@ export class WhatsService {
      * Import missing app-state-sync-key from old session directory
      */
     private async migrateAppStateKey(sessionId: string): Promise<void> {
+        const isVerbose = process.env.LOG_VERBOSE === 'true';
+        
         try {
-            this.logger.debug(`[MIGRATE] Starting app state key migration for session ${sessionId}`);
+            if (isVerbose) {
+                this.logger.debug(`[MIGRATE] Starting app state key migration for session ${sessionId}`);
+            }
             
             // Read:: old app-state-sync-key-AAAAAFWW.json file
             const fs = require('fs').promises;
@@ -61,16 +67,20 @@ export class WhatsService {
             const oldSessionPath = path.join(process.cwd(), 'auth_sessions', '833caddf-1db5-4423-843f-e1388e70da95');
             const keyFilePath = path.join(oldSessionPath, 'app-state-sync-key-AAAAAFWW.json');
             
-            this.logger.debug(`[MIGRATE] Checking for old key file: ${keyFilePath}`);
+            if (isVerbose) {
+                this.logger.debug(`[MIGRATE] Checking for old key file: ${keyFilePath}`);
+            }
             
             try {
                 const keyData = await fs.readFile(keyFilePath, 'utf8');
                 const parsedKey = JSON.parse(keyData);
                 
-                this.logger.debug(`[MIGRATE] Found old key data:`, parsedKey);
+                if (isVerbose) {
+                    this.logger.debug(`[MIGRATE] Found old key data:`, parsedKey);
+                }
                 
                 // Save:: key to:: new session using:: auth state
-                const dbAuthState = await useDatabaseAuthState(this.prisma, sessionId);
+                const dbAuthState = await useDatabaseAuthState(this.prisma, sessionId, this.loggerService);
                 
                 // Import:: key into:: keys store
                 await dbAuthState.state.keys.set({
@@ -97,9 +107,11 @@ export class WhatsService {
         authState?: any,
         saveCredsCallback?: (creds: any) => Promise<void>
     ): Promise<void> {
+        const isVerbose = process.env.LOG_VERBOSE === 'true';
+        
         try {
             // Get auth state from database or use provided state
-            const dbAuthState = authState || await useDatabaseAuthState(this.prisma, sessionId);
+            const dbAuthState = authState || await useDatabaseAuthState(this.prisma, sessionId, this.loggerService);
             const state = dbAuthState.state || { creds: {}, keys: {} };
             const saveCreds = dbAuthState.saveCreds || saveCredsCallback || (() => Promise.resolve());
 
@@ -109,16 +121,18 @@ export class WhatsService {
             // Store reference to state for credential merging
             const authStateRef = state;
 
-            this.logger.debug(`[CREATE_CONN] Creating connection for session ${sessionId}:`);
-            this.logger.debug(`[CREATE_CONN] Has creds object: ${!!state.creds}`);
-            this.logger.debug(`[CREATE_CONN] Has keys object: ${!!state.keys}`);
-            this.logger.debug(`[CREATE_CONN] Creds keys: ${state.creds ? Object.keys(state.creds).join(', ') : 'none'}`);
-            this.logger.debug(`[CREATE_CONN] Has valid noiseKey: ${hasValidCreds}`);
-            if (state.creds?.noiseKey) {
-                this.logger.debug(`[CREATE_CONN] noiseKey.public: type=${state.creds.noiseKey.public?.constructor?.name}, length=${state.creds.noiseKey.public?.length}, isBuffer=${Buffer.isBuffer(state.creds.noiseKey.public)}`);
-                this.logger.debug(`[CREATE_CONN] noiseKey.private: type=${state.creds.noiseKey.private?.constructor?.name}, length=${state.creds.noiseKey.private?.length}, isBuffer=${Buffer.isBuffer(state.creds.noiseKey.private)}`);
+            if (isVerbose) {
+                this.logger.debug(`[CREATE_CONN] Creating connection for session ${sessionId}:`);
+                this.logger.debug(`[CREATE_CONN] Has creds object: ${!!state.creds}`);
+                this.logger.debug(`[CREATE_CONN] Has keys object: ${!!state.keys}`);
+                this.logger.debug(`[CREATE_CONN] Creds keys: ${state.creds ? Object.keys(state.creds).join(', ') : 'none'}`);
+                this.logger.debug(`[CREATE_CONN] Has valid noiseKey: ${hasValidCreds}`);
+                if (state.creds?.noiseKey) {
+                    this.logger.debug(`[CREATE_CONN] noiseKey.public: type=${state.creds.noiseKey.public?.constructor?.name}, length=${state.creds.noiseKey.public?.length}, isBuffer=${Buffer.isBuffer(state.creds.noiseKey.public)}`);
+                    this.logger.debug(`[CREATE_CONN] noiseKey.private: type=${state.creds.noiseKey.private?.constructor?.name}, length=${state.creds.noiseKey.private?.length}, isBuffer=${Buffer.isBuffer(state.creds.noiseKey.private)}`);
+                }
+                this.logger.debug(`[CREATE_CONN] Other creds: me=${!!state.creds?.me}, account=${!!state.creds?.account}, platform=${!!state.creds?.platform}`);
             }
-            this.logger.debug(`[CREATE_CONN] Other creds: me=${!!state.creds?.me}, account=${!!state.creds?.account}, platform=${!!state.creds?.platform}`);
 
             // Create WhatsApp socket
             let sock: WASocket;
@@ -131,17 +145,21 @@ export class WhatsService {
                 const emptyCreds = initAuthCreds ? initAuthCreds() : {};
                 
                 // 🎯 CRITICAL: Save the initial credentials (including noiseKey) immediately
-                this.logger.debug(`[INIT_CREDS] Saving initial credentials with noiseKey`);
-                this.logger.debug(`[INIT_CREDS] Initial creds keys: ${Object.keys(emptyCreds).join(', ')}`);
-                this.logger.debug(`[INIT_CREDS] Has noiseKey: ${!!emptyCreds.noiseKey}`);
-                if (emptyCreds.noiseKey) {
-                    this.logger.debug(`[INIT_CREDS] noiseKey.public length: ${emptyCreds.noiseKey.public?.length}`);
-                    this.logger.debug(`[INIT_CREDS] noiseKey.private length: ${emptyCreds.noiseKey.private?.length}`);
+                if (isVerbose) {
+                    this.logger.debug(`[INIT_CREDS] Saving initial credentials with noiseKey`);
+                    this.logger.debug(`[INIT_CREDS] Initial creds keys: ${Object.keys(emptyCreds).join(', ')}`);
+                    this.logger.debug(`[INIT_CREDS] Has noiseKey: ${!!emptyCreds.noiseKey}`);
+                    if (emptyCreds.noiseKey) {
+                        this.logger.debug(`[INIT_CREDS] noiseKey.public length: ${emptyCreds.noiseKey.public?.length}`);
+                        this.logger.debug(`[INIT_CREDS] noiseKey.private length: ${emptyCreds.noiseKey.private?.length}`);
+                    }
                 }
                 
                 // Save immediately so we have the noiseKey
                 await saveCreds(emptyCreds);
-                this.logger.debug(`[INIT_CREDS] ✅ Initial credentials saved`);
+                if (isVerbose) {
+                    this.logger.debug(`[INIT_CREDS] ✅ Initial credentials saved`);
+                }
                 
                 const emptyAuthState = {
                     creds: emptyCreds,
@@ -168,27 +186,33 @@ export class WhatsService {
 
             // Handle credentials update
             sock.ev.on('creds.update', async (credsUpdate) => {
-                this.logger.debug(`[CREDS_UPDATE] 🔥 EVENT START - Credentials update event triggered for session ${sessionId}`);
-                this.logger.debug(`[CREDS_UPDATE] Updated creds keys: ${Object.keys(credsUpdate).join(', ')}`);
-                this.logger.debug(`[CREDS_UPDATE] Has noiseKey in update: ${!!credsUpdate.noiseKey}`);
-                this.logger.debug(`[CREDS_UPDATE] Current authStateRef.creds keys before merge: ${Object.keys(authStateRef.creds).join(', ')}`);
-                this.logger.debug(`[CREDS_UPDATE] Current authStateRef.creds has noiseKey before merge: ${!!authStateRef.creds.noiseKey}`);
+                if (isVerbose) {
+                    this.logger.debug(`[CREDS_UPDATE] 🔥 EVENT START - Credentials update event triggered for session ${sessionId}`);
+                    this.logger.debug(`[CREDS_UPDATE] Updated creds keys: ${Object.keys(credsUpdate).join(', ')}`);
+                    this.logger.debug(`[CREDS_UPDATE] Has noiseKey in update: ${!!credsUpdate.noiseKey}`);
+                    this.logger.debug(`[CREDS_UPDATE] Current authStateRef.creds keys before merge: ${Object.keys(authStateRef.creds).join(', ')}`);
+                    this.logger.debug(`[CREDS_UPDATE] Current authStateRef.creds has noiseKey before merge: ${!!authStateRef.creds.noiseKey}`);
+                }
                 
                 // 🎯 CRITICAL: Merge updates into the auth state reference
                 Object.assign(authStateRef.creds, credsUpdate);
                 
-                this.logger.debug(`[CREDS_UPDATE] Current complete creds keys after merge: ${Object.keys(authStateRef.creds).join(', ')}`);
-                this.logger.debug(`[CREDS_UPDATE] Has noiseKey in complete state after merge: ${!!authStateRef.creds.noiseKey}`);
-                
-                if (authStateRef.creds.noiseKey) {
-                    this.logger.debug(`[CREDS_UPDATE] noiseKey.public type: ${authStateRef.creds.noiseKey.public?.constructor?.name}, length: ${authStateRef.creds.noiseKey.public?.length}`);
-                    this.logger.debug(`[CREDS_UPDATE] noiseKey.private type: ${authStateRef.creds.noiseKey.private?.constructor?.name}, length: ${authStateRef.creds.noiseKey.private?.length}`);
+                if (isVerbose) {
+                    this.logger.debug(`[CREDS_UPDATE] Current complete creds keys after merge: ${Object.keys(authStateRef.creds).join(', ')}`);
+                    this.logger.debug(`[CREDS_UPDATE] Has noiseKey in complete state after merge: ${!!authStateRef.creds.noiseKey}`);
+                    
+                    if (authStateRef.creds.noiseKey) {
+                        this.logger.debug(`[CREDS_UPDATE] noiseKey.public type: ${authStateRef.creds.noiseKey.public?.constructor?.name}, length: ${authStateRef.creds.noiseKey.public?.length}`);
+                        this.logger.debug(`[CREDS_UPDATE] noiseKey.private type: ${authStateRef.creds.noiseKey.private?.constructor?.name}, length: ${authStateRef.creds.noiseKey.private?.length}`);
+                    }
+                    
+                    // Save the complete merged credentials
+                    this.logger.debug(`[CREDS_UPDATE] 🔥 SAVING - About to save credentials`);
                 }
-                
-                // Save the complete merged credentials
-                this.logger.debug(`[CREDS_UPDATE] 🔥 SAVING - About to save credentials`);
                 await saveCreds(authStateRef.creds);
-                this.logger.debug(`[CREDS_UPDATE] 🔥 EVENT END - Credentials saved successfully`);
+                if (isVerbose) {
+                    this.logger.debug(`[CREDS_UPDATE] 🔥 EVENT END - Credentials saved successfully`);
+                }
             });
 
             // Handle connection updates
@@ -291,6 +315,7 @@ export class WhatsService {
         sock: WASocket,
         saveCreds: (creds: any) => Promise<void>
     ): Promise<void> {
+        const isVerbose = process.env.LOG_VERBOSE === 'true';
         const { connection, lastDisconnect, qr } = update;
 
         // Handle QR code
@@ -337,26 +362,32 @@ export class WhatsService {
             this.logger.log(`Connection opened for session: ${sessionId}`);
             
             // 🎯 CRITICAL: Save complete credentials when connection opens
-            this.logger.debug(`[CONN_OPEN] Saving complete credentials for session ${sessionId}`);
+            if (isVerbose) {
+                this.logger.debug(`[CONN_OPEN] Saving complete credentials for session ${sessionId}`);
+            }
             
             try {
                 // Get the complete auth state from the socket
                 const authState = sock.authState();
                 if (authState && authState.creds) {
-                    this.logger.debug(`[CONN_OPEN] Complete auth state keys: ${Object.keys(authState.creds).join(', ')}`);
-                    this.logger.debug(`[CONN_OPEN] Has noiseKey: ${!!authState.creds.noiseKey}`);
-                    if (authState.creds.noiseKey) {
-                        this.logger.debug(`[CONN_OPEN] noiseKey.public type: ${authState.creds.noiseKey.public?.constructor?.name}, length: ${authState.creds.noiseKey.public?.length}`);
-                        this.logger.debug(`[CONN_OPEN] noiseKey.private type: ${authState.creds.noiseKey.private?.constructor?.name}, length: ${authState.creds.noiseKey.private?.length}`);
+                    if (isVerbose) {
+                        this.logger.debug(`[CONN_OPEN] Complete auth state keys: ${Object.keys(authState.creds).join(', ')}`);
+                        this.logger.debug(`[CONN_OPEN] Has noiseKey: ${!!authState.creds.noiseKey}`);
+                        if (authState.creds.noiseKey) {
+                            this.logger.debug(`[CONN_OPEN] noiseKey.public type: ${authState.creds.noiseKey.public?.constructor?.name}, length: ${authState.creds.noiseKey.public?.length}`);
+                            this.logger.debug(`[CONN_OPEN] noiseKey.private type: ${authState.creds.noiseKey.private?.constructor?.name}, length: ${authState.creds.noiseKey.private?.length}`);
+                        }
+                        this.logger.debug(`[CONN_OPEN] Other keys: signedIdentityKey=${!!authState.creds.signedIdentityKey}, signedPreKey=${!!authState.creds.signedPreKey}, advSecretKey=${!!authState.creds.advSecretKey}`);
                     }
-                    this.logger.debug(`[CONN_OPEN] Other keys: signedIdentityKey=${!!authState.creds.signedIdentityKey}, signedPreKey=${!!authState.creds.signedPreKey}, advSecretKey=${!!authState.creds.advSecretKey}`);
                     
                     // Save the complete credentials
                     await saveCreds(authState.creds);
-                    this.logger.debug(`[CONN_OPEN] ✅ Complete credentials saved for session ${sessionId}`);
-                    
-                    // 🎯 BONUS: Also save all keys from the keys store
-                    this.logger.debug(`[CONN_OPEN] Saving additional keys from keys store...`);
+                    if (isVerbose) {
+                        this.logger.debug(`[CONN_OPEN] ✅ Complete credentials saved for session ${sessionId}`);
+                        
+                        // 🎯 BONUS: Also save all keys from the keys store
+                        this.logger.debug(`[CONN_OPEN] Saving additional keys from keys store...`);
+                    }
                     try {
                         // Get all keys from the store and save them
                         const keysStore = authState.keys;
@@ -367,31 +398,41 @@ export class WhatsService {
                             for (const keyType of keyTypes) {
                                 try {
                                     // This is a workaround to access keys - we'll trigger the save mechanism
-                                    this.logger.debug(`[CONN_OPEN] Checking for key type: ${keyType}`);
+                                    if (isVerbose) {
+                                        this.logger.debug(`[CONN_OPEN] Checking for key type: ${keyType}`);
+                                    }
                                 } catch (keyError) {
-                                    this.logger.debug(`[CONN_OPEN] Could not check key type ${keyType}:`, keyError);
+                                    if (isVerbose) {
+                                        this.logger.debug(`[CONN_OPEN] Could not check key type ${keyType}:`, keyError);
+                                    }
                                 }
                             }
                         }
-                        this.logger.debug(`[CONN_OPEN] ✅ Keys store processed for session ${sessionId}`);
+                        if (isVerbose) {
+                            this.logger.debug(`[CONN_OPEN] ✅ Keys store processed for session ${sessionId}`);
+                        }
                     } catch (keysError) {
                         this.logger.error(`[CONN_OPEN] ❌ Failed to process keys store for session ${sessionId}:`, keysError);
                     }
                     
                     // 🎯 VERIFICATION: Verify what was actually saved
-                    this.logger.debug(`[CONN_OPEN] Verifying saved credentials...`);
+                    if (isVerbose) {
+                        this.logger.debug(`[CONN_OPEN] Verifying saved credentials...`);
+                    }
                     setTimeout(async () => {
                         try {
-                            const dbState = await useDatabaseAuthState(this.prisma, sessionId);
+                            const dbState = await useDatabaseAuthState(this.prisma, sessionId, this.loggerService);
                             const loadedState = await dbState.state;
                             
-                            this.logger.debug(`[CONN_OPEN] VERIFICATION - Loaded creds keys: ${Object.keys(loadedState.creds).join(', ')}`);
-                            this.logger.debug(`[CONN_OPEN] VERIFICATION - Has noiseKey: ${!!loadedState.creds.noiseKey}`);
-                            if (loadedState.creds.noiseKey) {
-                                this.logger.debug(`[CONN_OPEN] VERIFICATION - noiseKey.public isBuffer: ${Buffer.isBuffer(loadedState.creds.noiseKey.public)}`);
-                                this.logger.debug(`[CONN_OPEN] VERIFICATION - noiseKey.private isBuffer: ${Buffer.isBuffer(loadedState.creds.noiseKey.private)}`);
+                            if (isVerbose) {
+                                this.logger.debug(`[CONN_OPEN] VERIFICATION - Loaded creds keys: ${Object.keys(loadedState.creds).join(', ')}`);
+                                this.logger.debug(`[CONN_OPEN] VERIFICATION - Has noiseKey: ${!!loadedState.creds.noiseKey}`);
+                                if (loadedState.creds.noiseKey) {
+                                    this.logger.debug(`[CONN_OPEN] VERIFICATION - noiseKey.public isBuffer: ${Buffer.isBuffer(loadedState.creds.noiseKey.public)}`);
+                                    this.logger.debug(`[CONN_OPEN] VERIFICATION - noiseKey.private isBuffer: ${Buffer.isBuffer(loadedState.creds.noiseKey.private)}`);
+                                }
+                                this.logger.debug(`[CONN_OPEN] VERIFICATION - Keys count: ${Object.keys(loadedState.keys).length}`);
                             }
-                            this.logger.debug(`[CONN_OPEN] VERIFICATION - Keys count: ${Object.keys(loadedState.keys).length}`);
                             
                             if (this.isValidNoiseKey(loadedState.creds)) {
                                 this.logger.log(`[CONN_OPEN] ✅ VERIFICATION PASSED - All credentials saved correctly for session ${sessionId}`);
