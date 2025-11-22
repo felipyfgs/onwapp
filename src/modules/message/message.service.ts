@@ -3,7 +3,9 @@ import type { WAMessage } from 'whaileys/lib/Types';
 
 @Injectable()
 export class MessageService {
-  async handleMessage(_message: WAMessage) {
+  handleMessage(message: WAMessage) {
+    void message;
     // TODO: implementar lógica de negócio para processar mensagens recebidas.
+    return Promise.resolve();
   }
 }

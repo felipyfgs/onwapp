@@ -10,7 +10,6 @@ import makeWASocket, {
 import qrcodeTerminal from 'qrcode-terminal';
 import { LoggerService } from '../logger/logger.service';
 import { MessageService } from '../modules/message/message.service';
-import type { Logger } from 'pino';
 
 const SESSION_DIR = process.env.WHATS_SESSION_DIR || './whats-session';
 
@@ -48,7 +47,6 @@ export class WhatsService implements OnModuleInit, OnModuleDestroy {
     this.socket = makeWASocket({
       printQRInTerminal: false,
       auth: state,
-      logger: this.logger.getLogger() as unknown as Logger,
     });
 
     this.socket.ev.on(
