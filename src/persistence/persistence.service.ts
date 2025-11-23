@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { DatabaseService } from '../database/database.service';
 import { MessageStatus } from '@prisma/client';
 
 interface ContactData {
@@ -35,7 +35,7 @@ interface MessageData {
 export class PersistenceService {
   private readonly logger = new Logger(PersistenceService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: DatabaseService) {}
 
   async createOrUpdateContact(
     sessionId: string,

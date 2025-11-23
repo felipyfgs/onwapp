@@ -3,14 +3,14 @@ import { WhatsAppService } from '../whatsapp/whatsapp.service';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
 import { SettingsResponseDto } from './dto/settings-response.dto';
 import { validateSocket } from '../common/utils/socket-validator';
-import { PrismaService } from '../prisma/prisma.service';
+import { DatabaseService } from '../database/database.service';
 
 @Injectable()
 export class SettingsService {
   constructor(
     @Inject(forwardRef(() => WhatsAppService))
     private readonly whatsappService: WhatsAppService,
-    private readonly prisma: PrismaService,
+    private readonly prisma: DatabaseService,
   ) {}
 
   async updateSettings(

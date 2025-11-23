@@ -4,7 +4,7 @@ import makeWASocket, {
   WASocket,
 } from 'whaileys';
 import { Boom } from '@hapi/boom';
-import { PrismaService } from '../prisma/prisma.service';
+import { DatabaseService } from '../database/database.service';
 import * as qrcode from 'qrcode-terminal';
 import { useAuthState } from './auth-state';
 import { WebhooksService } from '../webhooks/webhooks.service';
@@ -48,7 +48,7 @@ export class WhatsAppService {
   private sessions: Map<string, SessionSocket> = new Map();
 
   constructor(
-    private prisma: PrismaService,
+    private prisma: DatabaseService,
     @Inject(forwardRef(() => WebhooksService))
     private webhooksService: WebhooksService,
     @Inject(forwardRef(() => PersistenceService))

@@ -1,4 +1,4 @@
-import { PrismaService } from '../prisma/prisma.service';
+import { DatabaseService } from '../database/database.service';
 import {
   AuthenticationState,
   AuthenticationCreds,
@@ -24,7 +24,7 @@ function deserializeFromJson(value: any): any {
 
 export async function useAuthState(
   sessionId: string,
-  prisma: PrismaService,
+  prisma: DatabaseService,
 ): Promise<{
   state: AuthenticationState;
   saveCreds: () => Promise<void>;

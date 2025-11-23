@@ -2,10 +2,10 @@ import { Module, forwardRef } from '@nestjs/common';
 import { SettingsController } from './settings.controller';
 import { SettingsService } from './settings.service';
 import { WhatsAppModule } from '../whatsapp/whatsapp.module';
-import { PrismaModule } from '../prisma/prisma.module';
+import { DatabaseModule } from '../database/database.module';
 
 @Module({
-  imports: [forwardRef(() => WhatsAppModule), PrismaModule],
+  imports: [forwardRef(() => WhatsAppModule), DatabaseModule],
   controllers: [SettingsController],
   providers: [SettingsService],
   exports: [SettingsService],

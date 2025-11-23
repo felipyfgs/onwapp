@@ -2,10 +2,10 @@ import { Module } from '@nestjs/common';
 import { PersistenceService } from './persistence.service';
 import { PersistenceController } from './persistence.controller';
 import { HistorySyncService } from './history-sync.service';
-import { PrismaModule } from '../prisma/prisma.module';
+import { DatabaseModule } from '../database/database.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [DatabaseModule],
   controllers: [PersistenceController],
   providers: [PersistenceService, HistorySyncService],
   exports: [PersistenceService, HistorySyncService],

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PinoLoggerService } from './logger/logger.service';
-import { PrismaModule } from './prisma/prisma.module';
+import { DatabaseModule } from './database/database.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { MessagesModule } from './messages/messages.module';
 import { GroupsModule } from './groups/groups.module';
@@ -20,7 +20,7 @@ import { PersistenceModule } from './persistence/persistence.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    PrismaModule,
+    DatabaseModule,
     SessionsModule,
     MessagesModule,
     GroupsModule,

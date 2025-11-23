@@ -3,7 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { DatabaseService } from '../database/database.service';
 import { WhatsAppService } from '../whatsapp/whatsapp.service';
 import { AnyMessageContent, proto, WASocket } from 'whaileys';
 import { MessageResponseDto } from './dto/message-response.dto';
@@ -30,7 +30,7 @@ import { SendLiveLocationMessageDto } from './dto/send-live-location-message.dto
 @Injectable()
 export class MessagesService {
   constructor(
-    private prisma: PrismaService,
+    private prisma: DatabaseService,
     private whatsapp: WhatsAppService,
   ) {}
 

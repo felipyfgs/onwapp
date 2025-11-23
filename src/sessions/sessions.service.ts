@@ -3,7 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { DatabaseService } from '../database/database.service';
 import { WhatsAppService } from '../whatsapp/whatsapp.service';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { PairPhoneDto } from './dto/pair-phone.dto';
@@ -12,7 +12,7 @@ import { SessionResponseDto } from './dto/session-response.dto';
 @Injectable()
 export class SessionsService {
   constructor(
-    private prisma: PrismaService,
+    private prisma: DatabaseService,
     private whatsapp: WhatsAppService,
   ) {}
 

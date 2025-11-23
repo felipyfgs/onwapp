@@ -5,7 +5,7 @@ import { Pool } from 'pg';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
-export class PrismaService
+export class DatabaseService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
