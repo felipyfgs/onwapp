@@ -4,6 +4,7 @@ import { PinoLoggerService } from './logger/logger.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { MessagesModule } from './messages/messages.module';
+import { GroupsModule } from './groups/groups.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { MessagesModule } from './messages/messages.module';
     PrismaModule,
     SessionsModule,
     MessagesModule,
+    GroupsModule,
   ],
   providers: [PinoLoggerService],
   exports: [PinoLoggerService],
