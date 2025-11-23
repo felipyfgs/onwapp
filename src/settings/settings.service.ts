@@ -1,43 +1,17 @@
-import {
-  Injectable,
-  OnModuleInit,
-  Inject,
-  forwardRef,
-} from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { WhatsAppService } from '../whatsapp/whatsapp.service';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
 import { SettingsResponseDto } from './dto/settings-response.dto';
 import { validateSocket } from '../common/utils/socket-validator';
-
-interface SettingsCacheData {
-  settings: SettingsResponseDto;
-  lastUpdate: Date;
-}
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
-export class SettingsService implements OnModuleInit {
-  private settingsCache: Map<string, SettingsCacheData> = new Map();
-  private readonly CACHE_TTL = 5 * 60 * 1000;
-
+export class SettingsService {
   constructor(
     @Inject(forwardRef(() => WhatsAppService))
     private readonly whatsappService: WhatsAppService,
+    private readonly prisma: PrismaService,
   ) {}
-
-  onModuleInit() {
-    this.startCacheCleanup();
-  }
-
-  private startCacheCleanup() {
-    setInterval(() => {
-      const now = Date.now();
-      for (const [sessionId, data] of this.settingsCache.entries()) {
-        if (now - data.lastUpdate.getTime() > this.CACHE_TTL) {
-          this.settingsCache.delete(sessionId);
-        }
-      }
-    }, 60000);
-  }
 
   async updateSettings(
     sessionId: string,
@@ -46,86 +20,126 @@ export class SettingsService implements OnModuleInit {
     const socket = this.whatsappService.getSocket(sessionId);
     validateSocket(socket);
 
-    const cachedData = this.settingsCache.get(sessionId);
-    let currentSettings = cachedData?.settings || {};
+    const updateData: any = {};
 
     if (dto.rejectCall !== undefined) {
-      currentSettings.rejectCall = dto.rejectCall;
+      updateData.rejectCall = dto.rejectCall;
     }
 
     if (dto.groupsIgnore !== undefined) {
-      currentSettings.groupsIgnore = dto.groupsIgnore;
+      updateData.groupsIgnore = dto.groupsIgnore;
     }
 
     if (dto.alwaysOnline !== undefined) {
-      currentSettings.alwaysOnline = dto.alwaysOnline;
+      updateData.alwaysOnline = dto.alwaysOnline;
     }
 
     if (dto.readMessages !== undefined) {
-      currentSettings.readMessages = dto.readMessages;
+      updateData.readMessages = dto.readMessages;
     }
 
     if (dto.readStatus !== undefined) {
-      currentSettings.readStatus = dto.readStatus;
+      updateData.readStatus = dto.readStatus;
     }
 
     if (dto.syncFullHistory !== undefined) {
-      currentSettings.syncFullHistory = dto.syncFullHistory;
+      updateData.syncFullHistory = dto.syncFullHistory;
     }
 
     if (dto.profilePicture !== undefined) {
       await socket.updateProfilePicturePrivacy(dto.profilePicture);
-      currentSettings.profilePicture = dto.profilePicture;
+      updateData.profilePicture = dto.profilePicture;
     }
 
     if (dto.status !== undefined) {
       await socket.updateStatusPrivacy(dto.status);
-      currentSettings.status = dto.status;
+      updateData.status = dto.status;
     }
 
     if (dto.lastSeen !== undefined) {
       await socket.updateLastSeenPrivacy(dto.lastSeen);
-      currentSettings.lastSeen = dto.lastSeen;
+      updateData.lastSeen = dto.lastSeen;
     }
 
     if (dto.online !== undefined) {
       await socket.updateOnlinePrivacy(dto.online);
-      currentSettings.online = dto.online;
+      updateData.online = dto.online;
     }
 
     if (dto.call !== undefined) {
       await socket.updateCallPrivacy(dto.call);
-      currentSettings.call = dto.call;
+      updateData.call = dto.call;
     }
 
     if (dto.messages !== undefined) {
       await socket.updateMessagesPrivacy(dto.messages);
-      currentSettings.messages = dto.messages;
+      updateData.messages = dto.messages;
     }
 
     if (dto.readReceipts !== undefined) {
       await socket.updateReadReceiptsPrivacy(dto.readReceipts);
-      currentSettings.readReceipts = dto.readReceipts;
+      updateData.readReceipts = dto.readReceipts;
     }
 
     if (dto.groupsAdd !== undefined) {
       await socket.updateGroupsAddPrivacy(dto.groupsAdd);
-      currentSettings.groupsAdd = dto.groupsAdd;
+      updateData.groupsAdd = dto.groupsAdd;
     }
 
-    this.settingsCache.set(sessionId, {
-      settings: currentSettings,
-      lastUpdate: new Date(),
+    const settings = await this.prisma.sessionSettings.upsert({
+      where: { sessionId },
+      create: {
+        sessionId,
+        ...updateData,
+      },
+      update: updateData,
     });
 
-    return currentSettings;
+    return {
+      rejectCall: settings.rejectCall,
+      groupsIgnore: settings.groupsIgnore,
+      alwaysOnline: settings.alwaysOnline,
+      readMessages: settings.readMessages,
+      readStatus: settings.readStatus,
+      syncFullHistory: settings.syncFullHistory,
+      profilePicture: settings.profilePicture ?? undefined,
+      status: settings.status ?? undefined,
+      lastSeen: settings.lastSeen ?? undefined,
+      online: settings.online ?? undefined,
+      call: settings.call ?? undefined,
+      messages: settings.messages ?? undefined,
+      readReceipts: settings.readReceipts ?? undefined,
+      groupsAdd: settings.groupsAdd ?? undefined,
+    };
   }
 
-  getSettings(sessionId: string): SettingsResponseDto {
+  async getSettings(sessionId: string): Promise<SettingsResponseDto> {
     const socket = this.whatsappService.getSocket(sessionId);
     validateSocket(socket);
 
-    const cachedData = this.settingsCache.get(sessionId);
-    return cachedData?.settings || {};
+    const settings = await this.prisma.sessionSettings.findUnique({
+      where: { sessionId },
+    });
+
+    if (!settings) {
+      return {};
+    }
+
+    return {
+      rejectCall: settings.rejectCall,
+      groupsIgnore: settings.groupsIgnore,
+      alwaysOnline: settings.alwaysOnline,
+      readMessages: settings.readMessages,
+      readStatus: settings.readStatus,
+      syncFullHistory: settings.syncFullHistory,
+      profilePicture: settings.profilePicture ?? undefined,
+      status: settings.status ?? undefined,
+      lastSeen: settings.lastSeen ?? undefined,
+      online: settings.online ?? undefined,
+      call: settings.call ?? undefined,
+      messages: settings.messages ?? undefined,
+      readReceipts: settings.readReceipts ?? undefined,
+      groupsAdd: settings.groupsAdd ?? undefined,
+    };
   }
 }

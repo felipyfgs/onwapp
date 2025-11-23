@@ -12,19 +12,53 @@ enum SessionStatus {
   connected
 }
 
+enum WAPrivacyValue {
+  all
+  contacts
+  contact_blacklist
+  none
+}
+
+enum WAPrivacyOnlineValue {
+  all
+  match_last_seen
+}
+
+enum WAPrivacyCallValue {
+  all
+  known
+}
+
+enum WAPrivacyMessagesValue {
+  all
+  contacts
+}
+
+enum WAReadReceiptsValue {
+  all
+  none
+}
+
+enum WAPrivacyGroupAddValue {
+  all
+  contacts
+  contact_blacklist
+}
+
 model Session {
-  id          String        @id @default(uuid())
+  id          String           @id @default(uuid())
   name        String
-  status      SessionStatus @default(disconnected)
+  status      SessionStatus    @default(disconnected)
   qrCode      String?
   phoneNumber String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
   authState   AuthState[]
   webhooks    Webhook[]
   contacts    Contact[]
   chats       Chat[]
   messages    Message[]
+  settings    SessionSettings?
 
   @@map("Session")
 }
@@ -121,4 +155,28 @@ model Message {
   @@unique([sessionId, messageId])
   @@index([sessionId, chatId, timestamp])
   @@map("Message")
+}
+
+model SessionSettings {
+  id              String                  @id @default(uuid())
+  sessionId       String                  @unique
+  rejectCall      Boolean                 @default(false)
+  groupsIgnore    Boolean                 @default(false)
+  alwaysOnline    Boolean                 @default(false)
+  readMessages    Boolean                 @default(false)
+  readStatus      Boolean                 @default(false)
+  syncFullHistory Boolean                 @default(true)
+  profilePicture  WAPrivacyValue?
+  status          WAPrivacyValue?
+  lastSeen        WAPrivacyValue?
+  online          WAPrivacyOnlineValue?
+  call            WAPrivacyCallValue?
+  messages        WAPrivacyMessagesValue?
+  readReceipts    WAReadReceiptsValue?
+  groupsAdd       WAPrivacyGroupAddValue?
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  session         Session                 @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("SessionSettings")
 }

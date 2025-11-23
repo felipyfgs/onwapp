@@ -310,7 +310,7 @@ export class WhatsAppService {
       try {
         let settings;
         try {
-          settings = this.settingsService.getSettings(sessionId);
+          settings = await this.settingsService.getSettings(sessionId);
         } catch (error) {
           settings = {};
         }
