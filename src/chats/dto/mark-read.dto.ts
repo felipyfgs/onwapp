@@ -2,22 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, ValidateNested, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
 import { LastMessage } from '../../common/interfaces/last-message.interface';
-
-class LastMessageDto {
-  @ApiProperty({
-    description: 'Chave da mensagem',
-  })
-  key: {
-    remoteJid: string;
-    id: string;
-    participant?: string;
-  };
-
-  @ApiProperty({
-    description: 'Timestamp da mensagem',
-  })
-  messageTimestamp: number;
-}
+import { LastMessageDto } from '../../common/dto/last-message.dto';
 
 export class MarkReadDto {
   @ApiProperty({

@@ -66,10 +66,6 @@ export class PresenceService implements OnModuleInit {
     });
   }
 
-  clearPresenceCache(sessionId: string) {
-    this.presenceCache.delete(sessionId);
-  }
-
   async updatePresence(
     sessionId: string,
     dto: UpdatePresenceDto,

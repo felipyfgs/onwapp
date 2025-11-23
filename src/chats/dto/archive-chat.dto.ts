@@ -2,28 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, ValidateNested, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
 import { LastMessage } from '../../common/interfaces/last-message.interface';
-
-class LastMessageDto {
-  @ApiProperty({
-    description: 'Chave da mensagem',
-    example: {
-      remoteJid: '5511999999999@s.whatsapp.net',
-      id: 'messageId123',
-      participant: undefined,
-    },
-  })
-  key: {
-    remoteJid: string;
-    id: string;
-    participant?: string;
-  };
-
-  @ApiProperty({
-    description: 'Timestamp da mensagem',
-    example: 1234567890,
-  })
-  messageTimestamp: number;
-}
+import { LastMessageDto } from '../../common/dto/last-message.dto';
 
 export class ArchiveChatDto {
   @ApiProperty({

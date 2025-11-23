@@ -93,8 +93,4 @@ export class ContactsService {
 
     return this.contactsCache.get(sessionId) || [];
   }
-
-  clearContactsCache(sessionId: string) {
-    this.contactsCache.delete(sessionId);
-  }
 }

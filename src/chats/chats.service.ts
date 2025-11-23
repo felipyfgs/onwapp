@@ -5,6 +5,7 @@ import { MuteChatDto } from './dto/mute-chat.dto';
 import { MarkReadDto } from './dto/mark-read.dto';
 import { ClearMessagesDto } from './dto/clear-messages.dto';
 import { ReadMessagesDto } from './dto/read-messages.dto';
+import { validateSocket } from '../common/utils/socket-validator';
 
 @Injectable()
 export class ChatsService {
@@ -16,9 +17,7 @@ export class ChatsService {
     dto: ArchiveChatDto,
   ): Promise<void> {
     const socket = this.whatsappService.getSocket(sessionId);
-    if (!socket) {
-      throw new BadRequestException('Sessão desconectada');
-    }
+    validateSocket(socket);
 
     await socket.chatModify(
       {
@@ -35,9 +34,7 @@ export class ChatsService {
     dto: ArchiveChatDto,
   ): Promise<void> {
     const socket = this.whatsappService.getSocket(sessionId);
-    if (!socket) {
-      throw new BadRequestException('Sessão desconectada');
-    }
+    validateSocket(socket);
 
     await socket.chatModify(
       {
@@ -54,9 +51,7 @@ export class ChatsService {
     dto: MuteChatDto,
   ): Promise<void> {
     const socket = this.whatsappService.getSocket(sessionId);
-    if (!socket) {
-      throw new BadRequestException('Sessão desconectada');
-    }
+    validateSocket(socket);
 
     await socket.chatModify(
       {

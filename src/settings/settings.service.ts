@@ -97,8 +97,4 @@ export class SettingsService {
 
     return this.settingsCache.get(sessionId) || {};
   }
-
-  clearSettingsCache(sessionId: string) {
-    this.settingsCache.delete(sessionId);
-  }
 }
