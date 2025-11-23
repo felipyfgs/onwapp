@@ -47,11 +47,11 @@ import { SendLiveLocationMessageDto } from './dto/send-live-location-message.dto
 @ApiSecurity('apikey')
 @ApiUnauthorizedResponse({ description: 'API Key inválida ou ausente' })
 @UseGuards(ApiKeyGuard)
-@Controller('messages')
+@Controller('sessions/:sessionId/messages')
 export class MessagesController {
   constructor(private readonly messagesService: MessagesService) {}
 
-  @Post(':sessionId/text')
+  @Post('text')
   @ApiOperation({ summary: 'Enviar mensagem de texto' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiBody({ type: SendTextMessageDto })
@@ -70,7 +70,7 @@ export class MessagesController {
     return this.messagesService.sendTextMessage(sessionId, dto);
   }
 
-  @Post(':sessionId/image')
+  @Post('image')
   @ApiOperation({ summary: 'Enviar mensagem com imagem' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiBody({ type: SendImageMessageDto })
@@ -89,7 +89,7 @@ export class MessagesController {
     return this.messagesService.sendImageMessage(sessionId, dto);
   }
 
-  @Post(':sessionId/video')
+  @Post('video')
   @ApiOperation({ summary: 'Enviar mensagem com vídeo' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiBody({ type: SendVideoMessageDto })
@@ -108,7 +108,7 @@ export class MessagesController {
     return this.messagesService.sendVideoMessage(sessionId, dto);
   }
 
-  @Post(':sessionId/audio')
+  @Post('audio')
   @ApiOperation({ summary: 'Enviar mensagem de áudio ou nota de voz' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiBody({ type: SendAudioMessageDto })
@@ -127,7 +127,7 @@ export class MessagesController {
     return this.messagesService.sendAudioMessage(sessionId, dto);
   }
 
-  @Post(':sessionId/document')
+  @Post('document')
   @ApiOperation({ summary: 'Enviar documento' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiBody({ type: SendDocumentMessageDto })
@@ -146,7 +146,7 @@ export class MessagesController {
     return this.messagesService.sendDocumentMessage(sessionId, dto);
   }
 
-  @Post(':sessionId/sticker')
+  @Post('sticker')
   @ApiOperation({ summary: 'Enviar sticker' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiBody({ type: SendStickerMessageDto })

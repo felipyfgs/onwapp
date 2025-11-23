@@ -2,7 +2,7 @@ import {
   Controller,
   Get,
   Post,
-  Put,
+  Delete,
   Param,
   Body,
   Query,
@@ -66,11 +66,11 @@ export class GroupsController {
   }
 
   @Get(':groupId')
-  @ApiOperation({ summary: 'Obter metadados do grupo' })
+  @ApiOperation({ summary: 'Obter informações do grupo' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiParam({ name: 'groupId', description: 'ID do grupo' })
   @ApiOkResponse({
-    description: 'Metadados do grupo obtidos com sucesso',
+    description: 'Informações do grupo obtidas com sucesso',
     type: GroupMetadataResponseDto,
   })
   @ApiNotFoundResponse({ description: 'Sessão ou grupo não encontrado' })
@@ -81,7 +81,7 @@ export class GroupsController {
     return this.groupsService.getGroupMetadata(sessionId, groupId);
   }
 
-  @Post(':groupId/leave')
+  @Delete(':groupId')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Sair do grupo' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
@@ -96,7 +96,7 @@ export class GroupsController {
     return this.groupsService.leaveGroup(sessionId, groupId);
   }
 
-  @Post(':groupId/participants/add')
+  @Post(':groupId/participants')
   @ApiOperation({ summary: 'Adicionar participantes ao grupo' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiParam({ name: 'groupId', description: 'ID do grupo' })
@@ -116,7 +116,7 @@ export class GroupsController {
     );
   }
 
-  @Post(':groupId/participants/remove')
+  @Delete(':groupId/participants')
   @ApiOperation({ summary: 'Remover participantes do grupo' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiParam({ name: 'groupId', description: 'ID do grupo' })
@@ -177,7 +177,7 @@ export class GroupsController {
   }
 
   @Post(':groupId/subject')
-  @ApiOperation({ summary: 'Alterar nome do grupo' })
+  @ApiOperation({ summary: 'Atualizar nome do grupo' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiParam({ name: 'groupId', description: 'ID do grupo' })
   @ApiBody({ type: UpdateGroupSubjectDto })
@@ -197,7 +197,7 @@ export class GroupsController {
   }
 
   @Post(':groupId/description')
-  @ApiOperation({ summary: 'Alterar descrição do grupo' })
+  @ApiOperation({ summary: 'Atualizar descrição do grupo' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiParam({ name: 'groupId', description: 'ID do grupo' })
   @ApiBody({ type: UpdateGroupDescriptionDto })
@@ -217,7 +217,7 @@ export class GroupsController {
   }
 
   @Post(':groupId/picture')
-  @ApiOperation({ summary: 'Alterar foto do grupo' })
+  @ApiOperation({ summary: 'Atualizar foto do grupo' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiParam({ name: 'groupId', description: 'ID do grupo' })
   @ApiBody({ type: UpdateGroupPictureDto })
@@ -276,7 +276,7 @@ export class GroupsController {
     );
   }
 
-  @Get(':groupId/invite-code')
+  @Get(':groupId/invite')
   @ApiOperation({ summary: 'Obter código de convite do grupo' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiParam({ name: 'groupId', description: 'ID do grupo' })
@@ -290,7 +290,7 @@ export class GroupsController {
     return this.groupsService.getInviteCode(sessionId, groupId);
   }
 
-  @Post(':groupId/invite-code/revoke')
+  @Post(':groupId/invite')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Revogar código de convite do grupo' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
@@ -305,7 +305,7 @@ export class GroupsController {
     return this.groupsService.revokeInviteCode(sessionId, groupId);
   }
 
-  @Post('invite/accept')
+  @Post('invite')
   @ApiOperation({ summary: 'Aceitar convite de grupo' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiBody({ type: AcceptInviteDto })
@@ -319,7 +319,7 @@ export class GroupsController {
     return this.groupsService.acceptInvite(sessionId, acceptInviteDto);
   }
 
-  @Get('invite/:code/info')
+  @Get('invite/:code')
   @ApiOperation({ summary: 'Obter informações do grupo via código de convite' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiParam({ name: 'code', description: 'Código do convite' })
