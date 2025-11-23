@@ -45,8 +45,6 @@ export async function useAuthState(
       });
 
       if (credsRecord && credsRecord.keyData) {
-        const sid = formatSessionId(sessionId);
-        logger.debug(`[${sid}] Credenciais carregadas do DB`);
         return deserializeFromJson(credsRecord.keyData);
       }
     } catch (error) {
@@ -56,8 +54,6 @@ export async function useAuthState(
       );
     }
 
-    const sid = formatSessionId(sessionId);
-    logger.debug(`[${sid}] Inicializando novas credenciais`);
     return initAuthCreds();
   };
 
@@ -81,8 +77,6 @@ export async function useAuthState(
           keyData: serializeToJson(creds) as any,
         },
       });
-      const sid = formatSessionId(sessionId);
-      logger.debug(`[${sid}] Credenciais ✓`);
     } catch (error) {
       const sid = formatSessionId(sessionId);
       logger.error(
@@ -97,8 +91,6 @@ export async function useAuthState(
         where: { sessionId },
       });
       creds = initAuthCreds();
-      const sid = formatSessionId(sessionId);
-      logger.debug(`[${sid}] Estado de autenticação limpo`);
     } catch (error) {
       const sid = formatSessionId(sessionId);
       logger.error(
@@ -170,10 +162,6 @@ export async function useAuthState(
             }
           }
 
-          const sid = formatSessionId(sessionId);
-          logger.debug(
-            `[${sid}] ${tasks.length} chave(s): ${Object.keys(data).join(', ')}`,
-          );
           await Promise.all(tasks);
         } catch (error) {
           const sid = formatSessionId(sessionId);

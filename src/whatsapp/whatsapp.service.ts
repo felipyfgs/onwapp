@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import makeWASocket, {
   DisconnectReason,
   WASocket,
@@ -38,7 +38,7 @@ const ACTIVE_SESSION_STATUSES: Array<'connected' | 'connecting'> = [
 ];
 
 @Injectable()
-export class WhatsAppService implements OnModuleInit {
+export class WhatsAppService {
   private readonly logger = new Logger(WhatsAppService.name);
   private sessions: Map<string, SessionSocket> = new Map();
 
@@ -133,7 +133,7 @@ export class WhatsAppService implements OnModuleInit {
     }, delay);
   }
 
-  private async reconnectActiveSessions(): Promise<void> {
+  async reconnectActiveSessions(): Promise<void> {
     const activeSessions = await this.prisma.session.findMany({
       where: {
         status: {
@@ -285,19 +285,13 @@ export class WhatsAppService implements OnModuleInit {
     socket: WASocket,
   ): Promise<void> {
     try {
-      const webhooks = await this.webhooksService.findBySessionId(sessionId);
-      const enabledWebhooks = webhooks.filter((webhook) => webhook.enabled);
+      const webhook = await this.webhooksService.findBySessionId(sessionId);
 
-      if (enabledWebhooks.length === 0) {
+      if (!webhook || !webhook.enabled || webhook.events.length === 0) {
         return;
       }
 
-      const allEvents = new Set<string>();
-      enabledWebhooks.forEach((webhook) => {
-        webhook.events.forEach((event) => allEvents.add(event));
-      });
-
-      allEvents.forEach((event) => {
+      webhook.events.forEach((event) => {
         socket.ev.on(event as any, async (payload: any) => {
           await this.webhooksService.trigger(sessionId, event, payload);
         });
@@ -305,17 +299,13 @@ export class WhatsAppService implements OnModuleInit {
 
       const sid = this.formatSessionId(sessionId);
       this.logger.log(
-        `[${sid}] Webhooks registrados: ${allEvents.size} evento(s)`,
+        `[${sid}] Webhooks registrados: ${webhook.events.length} evento(s)`,
       );
     } catch (error) {
       this.logger.error(
         `[${sessionId}] Erro ao registrar webhooks: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
       );
     }
-  }
-
-  async onModuleInit() {
-    await this.reconnectActiveSessions();
   }
 
   async createSocket(

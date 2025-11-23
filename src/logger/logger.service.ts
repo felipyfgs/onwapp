@@ -70,6 +70,12 @@ const emit = (
   optionalParams: unknown[],
   context?: string,
 ): void => {
+  const ignoredContexts = ['RoutesResolver', 'RouterExplorer', 'InstanceLoader'];
+  
+  if (context && ignoredContexts.includes(context)) {
+    return;
+  }
+
   const { msg, meta } = mapPayload(message, optionalParams);
 
   const logData = context ? { ...meta, context } : meta;

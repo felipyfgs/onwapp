@@ -3,43 +3,30 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
-  Delete,
   UseGuards,
 } from '@nestjs/common';
 import { WebhooksService } from './webhooks.service';
-import { CreateWebhookDto } from './dto/create-webhook.dto';
-import { UpdateWebhookDto } from './dto/update-webhook.dto';
+import { SetWebhookDto } from './dto/set-webhook.dto';
 import { ApiKeyGuard } from '../common/guards/api-key.guard';
 
-@Controller('webhooks')
+@Controller()
 @UseGuards(ApiKeyGuard)
 export class WebhooksController {
   constructor(private readonly webhooksService: WebhooksService) {}
 
-  @Post()
-  create(@Body() createWebhookDto: CreateWebhookDto) {
-    return this.webhooksService.create(createWebhookDto);
+  @Post('session/:sessionId/webhook/set')
+  set(@Param('sessionId') sessionId: string, @Body() setWebhookDto: SetWebhookDto) {
+    return this.webhooksService.set(sessionId, setWebhookDto);
   }
 
-  @Get('session/:sessionId')
-  findBySession(@Param('sessionId') sessionId: string) {
+  @Get('session/:sessionId/webhook/find')
+  find(@Param('sessionId') sessionId: string) {
     return this.webhooksService.findBySessionId(sessionId);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.webhooksService.findOne(id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateWebhookDto: UpdateWebhookDto) {
-    return this.webhooksService.update(id, updateWebhookDto);
-  }
-
-  @Delete(':id')
-  delete(@Param('id') id: string) {
-    return this.webhooksService.delete(id);
+  @Get('webhook/events')
+  getEvents() {
+    return this.webhooksService.getAvailableEvents();
   }
 }

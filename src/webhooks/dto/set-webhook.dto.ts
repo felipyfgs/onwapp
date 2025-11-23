@@ -1,10 +1,7 @@
-import { IsString, IsUrl, IsArray, IsBoolean, IsOptional, ArrayMinSize } from 'class-validator';
+import { IsUrl, IsArray, IsBoolean, IsOptional, ArrayMinSize } from 'class-validator';
 import { IsValidEvent } from '../validators/is-valid-event.validator';
 
-export class CreateWebhookDto {
-  @IsString()
-  sessionId: string;
-
+export class SetWebhookDto {
   @IsUrl()
   url: string;
 

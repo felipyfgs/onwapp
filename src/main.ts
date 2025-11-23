@@ -4,6 +4,7 @@ import { AppModule } from './app.module';
 import { PinoLoggerService } from './logger/logger.service';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { WhatsAppService } from './whatsapp/whatsapp.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -45,5 +46,8 @@ async function bootstrap() {
   logger.log(
     `Swagger documentation available at: http://localhost:${process.env.PORT ?? 3000}/api/docs`,
   );
+
+  const whatsappService = app.get(WhatsAppService);
+  await whatsappService.reconnectActiveSessions();
 }
 void bootstrap();
