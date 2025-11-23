@@ -280,12 +280,41 @@ export class WhatsAppService {
     };
   }
 
+  private registerMainEventListeners(
+    sessionId: string,
+    socket: WASocket,
+  ): void {
+    const sid = this.formatSessionId(sessionId);
+    const mainEvents = [
+      'messages.upsert',
+      'messages.update',
+      'messages.delete',
+      'message-receipt.update',
+      'presence.update',
+      'chats.upsert',
+      'chats.update',
+      'chats.delete',
+      'contacts.upsert',
+      'contacts.update',
+      'groups.upsert',
+      'groups.update',
+      'call',
+    ];
+
+    mainEvents.forEach((event) => {
+      socket.ev.on(event as any, (payload: any) => {
+        this.logger.log(`[${sid}] 📨 ${event}`, { event, payload });
+      });
+    });
+  }
+
   private async registerWebhookListeners(
     sessionId: string,
     socket: WASocket,
   ): Promise<void> {
     try {
       const webhook = await this.webhooksService.findBySessionId(sessionId);
+      const sid = this.formatSessionId(sessionId);
 
       if (!webhook || !webhook.enabled || webhook.events.length === 0) {
         return;
@@ -297,7 +326,6 @@ export class WhatsAppService {
         });
       });
 
-      const sid = this.formatSessionId(sessionId);
       this.logger.log(
         `[${sid}] Webhooks registrados: ${webhook.events.length} evento(s)`,
       );
@@ -338,6 +366,8 @@ export class WhatsAppService {
     socket.ev.on('creds.update', () => {
       this.handleCredsUpdate(sessionId, saveCreds);
     });
+
+    this.registerMainEventListeners(sessionId, socket);
 
     await this.registerWebhookListeners(sessionId, socket);
 

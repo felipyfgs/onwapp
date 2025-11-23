@@ -22,6 +22,9 @@ model Session {
   updatedAt   DateTime      @updatedAt
   authState   AuthState[]
   webhooks    Webhook[]
+  contacts    Contact[]
+  chats       Chat[]
+  messages    Message[]
 
   @@map("Session")
 }
@@ -51,4 +54,71 @@ model Webhook {
   session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@map("Webhook")
+}
+
+enum MessageStatus {
+  pending
+  sent
+  delivered
+  read
+  failed
+}
+
+model Contact {
+  id             String   @id @default(uuid())
+  sessionId      String
+  remoteJid      String
+  name           String?
+  profilePicUrl  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  session        Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, remoteJid])
+  @@index([sessionId, name])
+  @@map("Contact")
+}
+
+model Chat {
+  id                    String    @id @default(uuid())
+  sessionId             String
+  remoteJid             String
+  name                  String?
+  unreadCount           Int       @default(0)
+  lastMessageTimestamp  BigInt?
+  archived              Boolean   @default(false)
+  pinned                Boolean   @default(false)
+  muted                 Boolean   @default(false)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  session               Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  messages              Message[]
+
+  @@unique([sessionId, remoteJid])
+  @@index([sessionId, lastMessageTimestamp])
+  @@map("Chat")
+}
+
+model Message {
+  id            String        @id @default(uuid())
+  sessionId     String
+  chatId        String
+  remoteJid     String
+  messageId     String
+  fromMe        Boolean
+  senderJid     String?
+  senderName    String?
+  timestamp     BigInt
+  messageType   String
+  content       Json
+  status        MessageStatus @default(pending)
+  isDeleted     Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  session       Session       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  chat          Chat          @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, messageId])
+  @@index([sessionId, chatId, timestamp])
+  @@map("Message")
 }
