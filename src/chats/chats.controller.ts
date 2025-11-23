@@ -1,5 +1,6 @@
 import {
   Controller,
+  Get,
   Post,
   Delete,
   Param,
@@ -236,5 +237,31 @@ export class ChatsController {
     @Body() dto: ReadMessagesDto,
   ): Promise<void> {
     return this.chatsService.readMessages(sessionId, dto);
+  }
+
+  @Get()
+  @ApiOperation({
+    summary: 'Listar todos os chats',
+    description: 'Retorna a lista de todos os chats da sessão',
+  })
+  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
+  @ApiOkResponse({
+    description: 'Chats retornados com sucesso',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          name: { type: 'string' },
+          unreadCount: { type: 'number' },
+          conversationTimestamp: { type: 'number' },
+        },
+      },
+    },
+  })
+  @ApiBadRequestResponse({ description: 'Sessão desconectada' })
+  async listChats(@Param('sessionId') sessionId: string): Promise<any[]> {
+    return this.chatsService.listChats(sessionId);
   }
 }

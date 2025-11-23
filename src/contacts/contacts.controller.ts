@@ -79,4 +79,29 @@ export class ContactsController {
   ): Promise<BusinessProfileResponseDto | null> {
     return this.contactsService.getBusinessProfile(sessionId, jid);
   }
+
+  @Get()
+  @ApiOperation({
+    summary: 'Listar contatos',
+    description: 'Retorna a lista de contatos da sessão (do cache de eventos)',
+  })
+  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
+  @ApiOkResponse({
+    description: 'Contatos retornados com sucesso',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          name: { type: 'string' },
+          notify: { type: 'string' },
+        },
+      },
+    },
+  })
+  @ApiBadRequestResponse({ description: 'Sessão desconectada' })
+  async listContacts(@Param('sessionId') sessionId: string): Promise<any[]> {
+    return this.contactsService.listContacts(sessionId);
+  }
 }

@@ -48,7 +48,9 @@ export class ContactsService {
       description: profile.description,
       category: profile.category,
       email: profile.email,
-      website: (profile.websites && profile.websites[0]) || undefined,
+      website: Array.isArray(profile.website)
+        ? profile.website[0]
+        : (profile.website as any),
     };
   }
 }

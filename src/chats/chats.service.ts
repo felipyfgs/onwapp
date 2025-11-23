@@ -202,4 +202,26 @@ export class ChatsService {
 
     await socket.readMessages(dto.keys);
   }
+
+  async listChats(sessionId: string): Promise<any[]> {
+    const socket = this.whatsappService.getSocket(sessionId);
+    if (!socket) {
+      throw new BadRequestException('Sessão desconectada');
+    }
+
+    try {
+      const chats = await socket.groupFetchAllParticipating();
+      const chatList = Object.values(chats).map((chat: any) => ({
+        id: chat.id,
+        name: chat.subject || chat.name,
+        unreadCount: chat.unreadCount || 0,
+        conversationTimestamp: chat.conversationTimestamp || 0,
+      }));
+      return chatList;
+    } catch (error) {
+      throw new BadRequestException(
+        `Erro ao listar chats: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+      );
+    }
+  }
 }
