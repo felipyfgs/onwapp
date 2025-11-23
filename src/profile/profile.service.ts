@@ -5,10 +5,46 @@ import { UpdateProfileNameDto } from './dto/update-profile-name.dto';
 import { UpdateProfilePictureDto } from './dto/update-profile-picture.dto';
 import { BlockUserDto } from './dto/block-user.dto';
 import { GetProfilePictureQueryDto } from './dto/get-profile-picture.query';
+import { ProfileResponseDto } from './dto/profile-response.dto';
 
 @Injectable()
 export class ProfileService {
   constructor(private readonly whatsappService: WhatsAppService) {}
+
+  async fetchProfile(sessionId: string): Promise<ProfileResponseDto> {
+    const socket = this.whatsappService.getSocket(sessionId);
+    if (!socket) {
+      throw new BadRequestException('Sessão desconectada');
+    }
+
+    const jid = socket.user?.id;
+    if (!jid) {
+      throw new BadRequestException('Usuário não autenticado');
+    }
+
+    const profile: ProfileResponseDto = {
+      jid,
+      name: socket.user?.name,
+    };
+
+    try {
+      const statusResult = await socket.fetchStatus(jid);
+      if (statusResult) {
+        profile.status = statusResult.status;
+      }
+    } catch (error) {
+    }
+
+    try {
+      const pictureUrl = await socket.profilePictureUrl(jid, 'image');
+      if (pictureUrl) {
+        profile.profilePictureUrl = pictureUrl;
+      }
+    } catch (error) {
+    }
+
+    return profile;
+  }
 
   async fetchStatus(
     sessionId: string,
@@ -99,6 +135,26 @@ export class ProfileService {
     }
 
     await socket.updateProfilePicture(jid, mediaBuffer);
+  }
+
+  async removeProfilePicture(sessionId: string): Promise<void> {
+    const socket = this.whatsappService.getSocket(sessionId);
+    if (!socket) {
+      throw new BadRequestException('Sessão desconectada');
+    }
+
+    const jid = socket.user?.id;
+    if (!jid) {
+      throw new BadRequestException('Usuário não autenticado');
+    }
+
+    try {
+      await socket.updateProfilePicture(jid, null as any);
+    } catch (error) {
+      throw new BadRequestException(
+        `Erro ao remover foto de perfil: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+      );
+    }
   }
 
   async blockUser(sessionId: string, dto: BlockUserDto): Promise<void> {

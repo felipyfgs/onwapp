@@ -29,6 +29,7 @@ import { UpdateProfileNameDto } from './dto/update-profile-name.dto';
 import { UpdateProfilePictureDto } from './dto/update-profile-picture.dto';
 import { BlockUserDto } from './dto/block-user.dto';
 import { GetProfilePictureQueryDto } from './dto/get-profile-picture.query';
+import { ProfileResponseDto } from './dto/profile-response.dto';
 
 @ApiTags('Profile')
 @ApiSecurity('apikey')
@@ -37,6 +38,23 @@ import { GetProfilePictureQueryDto } from './dto/get-profile-picture.query';
 @Controller('sessions/:sessionId/profile')
 export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
+
+  @Get()
+  @ApiOperation({
+    summary: 'Obter perfil próprio',
+    description: 'Retorna informações do perfil da sessão conectada',
+  })
+  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
+  @ApiOkResponse({
+    description: 'Perfil retornado com sucesso',
+    type: ProfileResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Sessão desconectada' })
+  async fetchProfile(
+    @Param('sessionId') sessionId: string,
+  ): Promise<ProfileResponseDto> {
+    return this.profileService.fetchProfile(sessionId);
+  }
 
   @Get('status/:jid')
   @ApiOperation({
@@ -156,6 +174,19 @@ export class ProfileController {
     @Body() dto: UpdateProfilePictureDto,
   ): Promise<void> {
     return this.profileService.updateProfilePicture(sessionId, dto);
+  }
+
+  @Put('picture/remove')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Remover foto do perfil',
+    description: 'Remove a foto do próprio perfil do WhatsApp',
+  })
+  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
+  @ApiOkResponse({ description: 'Foto de perfil removida com sucesso' })
+  @ApiBadRequestResponse({ description: 'Sessão desconectada' })
+  async removePicture(@Param('sessionId') sessionId: string): Promise<void> {
+    return this.profileService.removeProfilePicture(sessionId);
   }
 
   @Post('block')
