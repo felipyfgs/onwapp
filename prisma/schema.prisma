@@ -42,7 +42,7 @@ model AuthState {
 
 model Webhook {
   id        String   @id @default(cuid())
-  sessionId String
+  sessionId String   @unique
   enabled   Boolean  @default(true)
   url       String
   events    String[]
@@ -50,6 +50,5 @@ model Webhook {
   updatedAt DateTime @updatedAt
   session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
-  @@index([sessionId])
   @@map("Webhook")
 }
