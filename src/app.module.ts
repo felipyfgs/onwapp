@@ -12,6 +12,7 @@ import { PresenceModule } from './presence/presence.module';
 import { MediaModule } from './media/media.module';
 import { SettingsModule } from './settings/settings.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
+import { PersistenceModule } from './persistence/persistence.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     MediaModule,
     SettingsModule,
     WebhooksModule,
+    PersistenceModule,
   ],
   providers: [PinoLoggerService],
   exports: [PinoLoggerService],

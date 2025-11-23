@@ -8,6 +8,11 @@ import { PrismaService } from '../prisma/prisma.service';
 import * as qrcode from 'qrcode-terminal';
 import { useAuthState } from './auth-state';
 import { WebhooksService } from '../webhooks/webhooks.service';
+import { PersistenceService } from '../persistence/persistence.service';
+import { HistorySyncService } from '../persistence/history-sync.service';
+import { SettingsService } from '../settings/settings.service';
+import { parseMessageContent } from '../persistence/utils/message-parser';
+import { MessageStatus } from '@prisma/client';
 
 interface SessionSocket {
   socket: WASocket;
@@ -46,6 +51,12 @@ export class WhatsAppService {
     private prisma: PrismaService,
     @Inject(forwardRef(() => WebhooksService))
     private webhooksService: WebhooksService,
+    @Inject(forwardRef(() => PersistenceService))
+    private persistenceService: PersistenceService,
+    @Inject(forwardRef(() => HistorySyncService))
+    private historySyncService: HistorySyncService,
+    @Inject(forwardRef(() => SettingsService))
+    private settingsService: SettingsService,
   ) {}
 
   private formatSessionId(sessionId: string): string {
@@ -285,23 +296,239 @@ export class WhatsAppService {
     socket: WASocket,
   ): void {
     const sid = this.formatSessionId(sessionId);
-    const mainEvents = [
-      'messages.upsert',
-      'messages.update',
-      'messages.delete',
-      'message-receipt.update',
+
+    socket.ev.on('messaging-history.set' as any, async (payload: any) => {
+      this.logger.log(`[${sid}] 📨 messaging-history.set`, {
+        event: 'messaging-history.set',
+        chatsCount: payload.chats?.length || 0,
+        contactsCount: payload.contacts?.length || 0,
+        messagesCount: payload.messages?.length || 0,
+        isLatest: payload.isLatest,
+        progress: payload.progress,
+      });
+
+      try {
+        let settings;
+        try {
+          settings = this.settingsService.getSettings(sessionId);
+        } catch (error) {
+          settings = {};
+        }
+
+        const shouldSync = settings?.syncFullHistory !== false;
+
+        if (shouldSync) {
+          await this.historySyncService.processHistorySync(sessionId, payload);
+        } else {
+          this.logger.debug(
+            `[${sid}] Sincronização de histórico desabilitada (syncFullHistory: false)`,
+          );
+        }
+      } catch (error) {
+        this.logger.error(
+          `[${sid}] Erro ao processar messaging-history.set: ${error.message}`,
+        );
+      }
+    });
+
+    socket.ev.on('messages.upsert' as any, async (payload: any) => {
+      this.logger.log(`[${sid}] 📨 messages.upsert`, { event: 'messages.upsert', payload });
+      
+      try {
+        const { messages, type } = payload;
+        
+        for (const msg of messages) {
+          if (!msg.key || !msg.key.id || !msg.key.remoteJid) continue;
+
+          const parsedContent = parseMessageContent(msg);
+
+          await this.persistenceService.createMessage(sessionId, {
+            remoteJid: msg.key.remoteJid,
+            messageId: msg.key.id,
+            fromMe: msg.key.fromMe || false,
+            senderJid: msg.key.participant || msg.key.remoteJid,
+            senderName: msg.pushName,
+            timestamp: msg.messageTimestamp || Date.now(),
+            messageType: parsedContent.messageType,
+            textContent: parsedContent.textContent,
+            mediaUrl: parsedContent.mediaUrl,
+            metadata: parsedContent.metadata,
+          });
+
+          if (msg.pushName && msg.key.remoteJid) {
+            await this.persistenceService.createOrUpdateContact(sessionId, {
+              remoteJid: msg.key.remoteJid,
+              name: msg.pushName,
+            });
+          }
+        }
+      } catch (error) {
+        this.logger.error(`[${sid}] Erro ao persistir messages.upsert: ${error.message}`);
+      }
+    });
+
+    socket.ev.on('messages.update' as any, async (payload: any) => {
+      this.logger.log(`[${sid}] 📨 messages.update`, { event: 'messages.update', payload });
+      
+      try {
+        for (const update of payload) {
+          if (!update.key || !update.key.id) continue;
+
+          let status: MessageStatus | undefined;
+          
+          if (update.update?.status !== undefined) {
+            const statusMap: Record<number, MessageStatus> = {
+              0: MessageStatus.pending,
+              1: MessageStatus.sent,
+              2: MessageStatus.delivered,
+              3: MessageStatus.read,
+              4: MessageStatus.failed,
+            };
+            status = statusMap[update.update.status];
+          }
+
+          if (status) {
+            await this.persistenceService.updateMessageStatus(
+              sessionId,
+              update.key.id,
+              status,
+            );
+          }
+        }
+      } catch (error) {
+        this.logger.error(`[${sid}] Erro ao persistir messages.update: ${error.message}`);
+      }
+    });
+
+    socket.ev.on('messages.delete' as any, async (payload: any) => {
+      this.logger.log(`[${sid}] 📨 messages.delete`, { event: 'messages.delete', payload });
+      
+      try {
+        const { keys } = payload;
+        for (const key of keys) {
+          if (key.id) {
+            await this.persistenceService.markMessageAsDeleted(sessionId, key.id);
+          }
+        }
+      } catch (error) {
+        this.logger.error(`[${sid}] Erro ao persistir messages.delete: ${error.message}`);
+      }
+    });
+
+    socket.ev.on('message-receipt.update' as any, async (payload: any) => {
+      this.logger.log(`[${sid}] 📨 message-receipt.update`, { event: 'message-receipt.update', payload });
+      
+      try {
+        for (const receipt of payload) {
+          if (!receipt.key || !receipt.key.id) continue;
+
+          let status: MessageStatus | undefined;
+          
+          if (receipt.receipt?.receiptTimestamp) {
+            status = receipt.receipt.readTimestamp 
+              ? MessageStatus.read 
+              : MessageStatus.delivered;
+          }
+
+          if (status) {
+            await this.persistenceService.updateMessageStatus(
+              sessionId,
+              receipt.key.id,
+              status,
+            );
+          }
+        }
+      } catch (error) {
+        this.logger.error(`[${sid}] Erro ao persistir message-receipt.update: ${error.message}`);
+      }
+    });
+
+    socket.ev.on('chats.upsert' as any, async (payload: any) => {
+      this.logger.log(`[${sid}] 📨 chats.upsert`, { event: 'chats.upsert', payload });
+      
+      try {
+        for (const chat of payload) {
+          await this.persistenceService.createOrUpdateChat(sessionId, {
+            remoteJid: chat.id,
+            name: chat.name,
+            unreadCount: chat.unreadCount,
+            lastMessageTimestamp: chat.conversationTimestamp,
+            archived: chat.archived,
+            pinned: chat.pinned,
+            muted: chat.mute?.endTimestamp ? true : false,
+          });
+        }
+      } catch (error) {
+        this.logger.error(`[${sid}] Erro ao persistir chats.upsert: ${error.message}`);
+      }
+    });
+
+    socket.ev.on('chats.update' as any, async (payload: any) => {
+      this.logger.log(`[${sid}] 📨 chats.update`, { event: 'chats.update', payload });
+      
+      try {
+        for (const chat of payload) {
+          const updateData: any = { remoteJid: chat.id };
+          
+          if (chat.name !== undefined) updateData.name = chat.name;
+          if (chat.unreadCount !== undefined) updateData.unreadCount = chat.unreadCount;
+          if (chat.conversationTimestamp !== undefined) {
+            updateData.lastMessageTimestamp = chat.conversationTimestamp;
+          }
+          if (chat.archived !== undefined) updateData.archived = chat.archived;
+          if (chat.pinned !== undefined) updateData.pinned = chat.pinned;
+          if (chat.mute !== undefined) {
+            updateData.muted = chat.mute?.endTimestamp ? true : false;
+          }
+
+          await this.persistenceService.createOrUpdateChat(sessionId, updateData);
+        }
+      } catch (error) {
+        this.logger.error(`[${sid}] Erro ao persistir chats.update: ${error.message}`);
+      }
+    });
+
+    socket.ev.on('contacts.upsert' as any, async (payload: any) => {
+      this.logger.log(`[${sid}] 📨 contacts.upsert`, { event: 'contacts.upsert', payload });
+      
+      try {
+        for (const contact of payload) {
+          await this.persistenceService.createOrUpdateContact(sessionId, {
+            remoteJid: contact.id,
+            name: contact.notify || contact.name,
+            profilePicUrl: contact.imgUrl,
+          });
+        }
+      } catch (error) {
+        this.logger.error(`[${sid}] Erro ao persistir contacts.upsert: ${error.message}`);
+      }
+    });
+
+    socket.ev.on('contacts.update' as any, async (payload: any) => {
+      this.logger.log(`[${sid}] 📨 contacts.update`, { event: 'contacts.update', payload });
+      
+      try {
+        for (const contact of payload) {
+          await this.persistenceService.createOrUpdateContact(sessionId, {
+            remoteJid: contact.id,
+            name: contact.notify || contact.name,
+            profilePicUrl: contact.imgUrl,
+          });
+        }
+      } catch (error) {
+        this.logger.error(`[${sid}] Erro ao persistir contacts.update: ${error.message}`);
+      }
+    });
+
+    const otherEvents = [
       'presence.update',
-      'chats.upsert',
-      'chats.update',
       'chats.delete',
-      'contacts.upsert',
-      'contacts.update',
       'groups.upsert',
       'groups.update',
       'call',
     ];
 
-    mainEvents.forEach((event) => {
+    otherEvents.forEach((event) => {
       socket.ev.on(event as any, (payload: any) => {
         this.logger.log(`[${sid}] 📨 ${event}`, { event, payload });
       });

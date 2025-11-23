@@ -1,4 +1,9 @@
-import { Injectable, BadRequestException, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleInit,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { WhatsAppService } from '../whatsapp/whatsapp.service';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
 import { SettingsResponseDto } from './dto/settings-response.dto';
@@ -14,7 +19,10 @@ export class SettingsService implements OnModuleInit {
   private settingsCache: Map<string, SettingsCacheData> = new Map();
   private readonly CACHE_TTL = 5 * 60 * 1000;
 
-  constructor(private readonly whatsappService: WhatsAppService) {}
+  constructor(
+    @Inject(forwardRef(() => WhatsAppService))
+    private readonly whatsappService: WhatsAppService,
+  ) {}
 
   onModuleInit() {
     this.startCacheCleanup();

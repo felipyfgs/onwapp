@@ -1,0 +1,393 @@
+{
+  "investigationDate": "2025-11-23",
+  "library": "whaileys",
+  "version": "fork estável do Baileys",
+  "totalEvents": 31,
+  "coverage": {
+    "implemented": 8,
+    "partial": 6,
+    "missing": 17,
+    "percentComplete": "35%"
+  },
+  "events": {
+    "synchronization": {
+      "messaging-history.set": {
+        "status": "MISSING",
+        "critical": true,
+        "payload": {
+          "chats": "Chat[]",
+          "contacts": "Contact[]",
+          "messages": "WAMessage[]",
+          "isLatest": "boolean",
+          "progress": "number | null",
+          "syncType": "HistorySync.HistorySyncType"
+        },
+        "syncTypes": {
+          "0": "INITIAL_BOOTSTRAP",
+          "1": "RECENT",
+          "2": "FULL",
+          "3": "ON_DEMAND",
+          "4": "PUSH_NAME"
+        },
+        "description": "Sincroniza histórico completo de chats, contatos e mensagens"
+      }
+    },
+    "messages": {
+      "messages.upsert": {
+        "status": "IMPLEMENTED",
+        "payload": "{ messages: WAMessage[]; type: 'append' | 'notify' }",
+        "description": "Novas mensagens recebidas"
+      },
+      "messages.update": {
+        "status": "IMPLEMENTED",
+        "payload": "WAMessageUpdate[]",
+        "description": "Atualizações de status de mensagens"
+      },
+      "messages.delete": {
+        "status": "IMPLEMENTED",
+        "payload": "{ keys: WAMessageKey[] } | { jid: string; all: true }",
+        "description": "Mensagens deletadas"
+      },
+      "message-receipt.update": {
+        "status": "IMPLEMENTED",
+        "payload": "MessageUserReceiptUpdate[]",
+        "description": "Confirmação de leitura/entrega"
+      },
+      "messages.media-update": {
+        "status": "MISSING",
+        "payload": "{ key, media?, error? }[]",
+        "description": "Atualização de URLs de mídia em mensagens"
+      },
+      "messages.reaction": {
+        "status": "MISSING",
+        "payload": "{ key: WAMessageKey; reaction: proto.IReaction }[]",
+        "description": "Reações a mensagens"
+      },
+      "messages.pdo-response": {
+        "status": "MISSING",
+        "payload": "{ messages: WAMessage[] }",
+        "description": "Resposta de operações peer-to-peer"
+      }
+    },
+    "chats": {
+      "chats.upsert": {
+        "status": "IMPLEMENTED",
+        "payload": "Chat[]",
+        "description": "Novos chats ou sincronização",
+        "fields_persisted": ["id", "name", "unreadCount", "conversationTimestamp"],
+        "fields_missing": ["archived", "pinned", "mute", "ephemeralExpiration"]
+      },
+      "chats.update": {
+        "status": "PARTIAL",
+        "payload": "ChatUpdate[]",
+        "description": "Atualizações parciais de chats",
+        "fields_persisted": ["id", "name", "unreadCount"],
+        "fields_missing": ["archived", "pinned", "mute", "ephemeralExpiration"]
+      },
+      "chats.delete": {
+        "status": "LOGGING_ONLY",
+        "payload": "string[]",
+        "description": "Chats deletados (array de JIDs)"
+      },
+      "chats.phoneNumberShare": {
+        "status": "MISSING",
+        "payload": "{ lid: string; jid: string }",
+        "description": "Compartilhamento de número de telefone"
+      }
+    },
+    "contacts": {
+      "contacts.upsert": {
+        "status": "IMPLEMENTED",
+        "payload": "Contact[]",
+        "description": "Novos contatos ou atualizações",
+        "fields_persisted": ["id", "name", "notify", "imgUrl"],
+        "fields_missing": ["lid", "verifiedName", "status"]
+      },
+      "contacts.update": {
+        "status": "PARTIAL",
+        "payload": "Partial<Contact>[]",
+        "description": "Atualizações parciais de contatos",
+        "fields_persisted": ["id", "name", "notify", "imgUrl"],
+        "fields_missing": ["lid", "verifiedName", "status"]
+      },
+      "contacts.phone-number-share": {
+        "status": "MISSING",
+        "payload": "{ lid: string; jid: string }",
+        "description": "Compartilhamento de número"
+      }
+    },
+    "groups": {
+      "groups.upsert": {
+        "status": "LOGGING_ONLY",
+        "payload": "GroupMetadata[]",
+        "description": "Novos grupos ou atualizações"
+      },
+      "groups.update": {
+        "status": "LOGGING_ONLY",
+        "payload": "Partial<GroupMetadata>[]",
+        "description": "Atualizações parciais de grupos"
+      },
+      "group-participants.update": {
+        "status": "MISSING",
+        "payload": "{ id: string; participants: string[]; action: ParticipantAction }",
+        "description": "Mudanças em participantes"
+      }
+    },
+    "connection": {
+      "connection.update": {
+        "status": "PARTIAL",
+        "payload": "Partial<ConnectionState>",
+        "description": "Estado da conexão WebSocket",
+        "fields_implemented": ["connection", "lastDisconnect", "qr"],
+        "fields_missing": ["isOnline", "receivedPendingNotifications"]
+      },
+      "creds.update": {
+        "status": "PARTIAL",
+        "payload": "Partial<AuthenticationCreds>",
+        "description": "Credenciais e estado de autenticação",
+        "implementation": "Apenas salva, não processa mudanças"
+      }
+    },
+    "presence": {
+      "presence.update": {
+        "status": "LOGGING_ONLY",
+        "payload": "{ id: string; presences: { [participant: string]: PresenceData } }",
+        "description": "Status de digitação/disponibilidade"
+      }
+    },
+    "blocklist": {
+      "blocklist.set": {
+        "status": "MISSING",
+        "payload": "{ blocklist: string[] }",
+        "description": "Lista completa de contatos bloqueados"
+      },
+      "blocklist.update": {
+        "status": "MISSING",
+        "payload": "{ blocklist: string[]; type: 'add' | 'remove' }",
+        "description": "Atualização de bloqueio"
+      }
+    },
+    "calls": {
+      "call": {
+        "status": "LOGGING_ONLY",
+        "payload": "WACallEvent[]",
+        "description": "Chamadas recebidas/iniciadas"
+      }
+    }
+  },
+  "dataStructures": {
+    "Contact": {
+      "id": {
+        "type": "string",
+        "description": "JID",
+        "persisted": true
+      },
+      "lid": {
+        "type": "string",
+        "description": "Logical ID",
+        "persisted": false
+      },
+      "name": {
+        "type": "string",
+        "description": "Nome salvo",
+        "persisted": true
+      },
+      "notify": {
+        "type": "string",
+        "description": "Nome do contato",
+        "persisted": true
+      },
+      "verifiedName": {
+        "type": "string",
+        "description": "Nome verificado",
+        "persisted": false
+      },
+      "imgUrl": {
+        "type": "string | null | 'changed'",
+        "description": "URL da foto de perfil",
+        "persisted": true,
+        "note": "com limitações"
+      },
+      "status": {
+        "type": "string",
+        "description": "Status/bio do contato",
+        "persisted": false
+      }
+    },
+    "Chat": {
+      "id": {
+        "type": "string",
+        "description": "JID",
+        "persisted": true
+      },
+      "name": {
+        "type": "string",
+        "description": "Nome do chat/grupo",
+        "persisted": true
+      },
+      "unreadCount": {
+        "type": "number",
+        "description": "Mensagens não lidas",
+        "persisted": true
+      },
+      "archived": {
+        "type": "boolean",
+        "description": "Se está arquivado",
+        "persisted": false
+      },
+      "pinned": {
+        "type": "boolean",
+        "description": "Se está fixado",
+        "persisted": false
+      },
+      "mute": {
+        "type": "{ endTimestamp: number }",
+        "description": "Configuração de mute",
+        "persisted": false
+      },
+      "conversationTimestamp": {
+        "type": "number",
+        "description": "Timestamp da última atividade",
+        "persisted": true
+      },
+      "ephemeralExpiration": {
+        "type": "number",
+        "description": "Duração de msgs temporárias",
+        "persisted": false
+      },
+      "lastMessageRecvTimestamp": {
+        "type": "number",
+        "description": "Última msg recebida da outra pessoa",
+        "persisted": false,
+        "note": "parcialmente"
+      },
+      "readOnly": {
+        "type": "boolean",
+        "description": "Chat bloqueado/somente leitura",
+        "persisted": false
+      }
+    },
+    "WAMessage": {
+      "key.remoteJid": {
+        "type": "string",
+        "description": "JID do destinatário/grupo",
+        "persisted": true
+      },
+      "key.fromMe": {
+        "type": "boolean",
+        "description": "Enviada por este cliente",
+        "persisted": true
+      },
+      "key.id": {
+        "type": "string",
+        "description": "ID único da mensagem",
+        "persisted": true
+      },
+      "key.participant": {
+        "type": "string",
+        "description": "Participante (grupos)",
+        "persisted": true
+      },
+      "message": {
+        "type": "proto.IMessage",
+        "description": "Conteúdo da mensagem",
+        "persisted": true
+      },
+      "messageTimestamp": {
+        "type": "number",
+        "description": "Timestamp da mensagem",
+        "persisted": true
+      },
+      "status": {
+        "type": "number (0-4)",
+        "description": "0=pending, 1=sent, 2=delivered, 3=read, 4=failed",
+        "persisted": false
+      },
+      "pushName": {
+        "type": "string",
+        "description": "Nome do remetente",
+        "persisted": true
+      },
+      "broadcast": {
+        "type": "boolean",
+        "description": "Mensagem broadcast",
+        "persisted": false
+      },
+      "messageStubType": {
+        "type": "number",
+        "description": "Tipo de stub (group updates)",
+        "persisted": false
+      },
+      "retryCount": {
+        "type": "number",
+        "description": "Contagem de retry",
+        "persisted": false
+      }
+    }
+  },
+  "sourceFiles": {
+    "whaileys": {
+      "types": "/root/zpwoot/node_modules/whaileys/lib/Types/Events.d.ts (linhas 10-99)",
+      "socket_chats": "/root/zpwoot/node_modules/whaileys/lib/Socket/chats.js (AppState sync)",
+      "socket_messages": "/root/zpwoot/node_modules/whaileys/lib/Socket/messages-recv.js",
+      "process_message": "/root/zpwoot/node_modules/whaileys/lib/Utils/process-message.js (linhas 103-131)",
+      "sync_action": "/root/zpwoot/node_modules/whaileys/lib/Utils/chat-utils.js (linhas 529-670)"
+    },
+    "zpwoot": {
+      "service": "/root/zpwoot/src/whatsapp/whatsapp.service.ts (registerMainEventListeners, linha 288)",
+      "validators": "/root/zpwoot/src/webhooks/validators/is-valid-event.validator.ts",
+      "persistence": "/root/zpwoot/src/persistence/persistence.service.ts"
+    }
+  },
+  "priorities": {
+    "P0_CRITICAL": [
+      {
+        "event": "messaging-history.set",
+        "reason": "Sincronização inicial de histórico completo",
+        "effort": "Medium"
+      }
+    ],
+    "P1_HIGH": [
+      {
+        "event": "messages.media-update",
+        "reason": "Manter URLs de mídia atualizadas"
+      },
+      {
+        "event": "messages.reaction",
+        "reason": "Suportar reações a mensagens"
+      },
+      {
+        "event": "group-participants.update",
+        "reason": "Atualizar membros de grupo"
+      },
+      {
+        "event": "chats.update - estender campos",
+        "reason": "Persistir archived, pinned, mute, ephemeralExpiration"
+      },
+      {
+        "event": "contacts.update - estender campos",
+        "reason": "Persistir lid, verifiedName, status"
+      },
+      {
+        "event": "blocklist.set/update",
+        "reason": "Gerenciar contatos bloqueados"
+      }
+    ],
+    "P2_MEDIUM": [
+      "chats.phoneNumberShare",
+      "contacts.phone-number-share",
+      "messages.pdo-response",
+      "Melhorar call event logging",
+      "Melhorar connection.update",
+      "Capturar message.status",
+      "Capturar message.broadcast"
+    ]
+  },
+  "notes": {
+    "note1": "messaging-history.set é CRÍTICO para sincronização inicial",
+    "note2": "Não existe 'chats.set' ou 'contacts.set' - use messaging-history.set",
+    "note3": "VALID_WEBHOOK_EVENTS já contém todos os 31 eventos",
+    "note4": "Muitos campos importantes não estão sendo persistidos",
+    "note5": "Taxa de cobertura pode chegar a 70% implementando P0 + P1"
+  }
+}
