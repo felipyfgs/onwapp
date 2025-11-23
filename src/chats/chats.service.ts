@@ -63,9 +63,7 @@ export class ChatsService {
 
   async unmuteChat(sessionId: string, jid: string): Promise<void> {
     const socket = this.whatsappService.getSocket(sessionId);
-    if (!socket) {
-      throw new BadRequestException('Sessão desconectada');
-    }
+    validateSocket(socket);
 
     await socket.chatModify(
       {
@@ -77,9 +75,7 @@ export class ChatsService {
 
   async pinChat(sessionId: string, jid: string): Promise<void> {
     const socket = this.whatsappService.getSocket(sessionId);
-    if (!socket) {
-      throw new BadRequestException('Sessão desconectada');
-    }
+    validateSocket(socket);
 
     await socket.chatModify(
       {
@@ -91,9 +87,7 @@ export class ChatsService {
 
   async unpinChat(sessionId: string, jid: string): Promise<void> {
     const socket = this.whatsappService.getSocket(sessionId);
-    if (!socket) {
-      throw new BadRequestException('Sessão desconectada');
-    }
+    validateSocket(socket);
 
     await socket.chatModify(
       {
@@ -109,9 +103,7 @@ export class ChatsService {
     dto: MarkReadDto,
   ): Promise<void> {
     const socket = this.whatsappService.getSocket(sessionId);
-    if (!socket) {
-      throw new BadRequestException('Sessão desconectada');
-    }
+    validateSocket(socket);
 
     await socket.chatModify(
       {
@@ -128,9 +120,7 @@ export class ChatsService {
     dto: MarkReadDto,
   ): Promise<void> {
     const socket = this.whatsappService.getSocket(sessionId);
-    if (!socket) {
-      throw new BadRequestException('Sessão desconectada');
-    }
+    validateSocket(socket);
 
     await socket.chatModify(
       {
@@ -147,9 +137,7 @@ export class ChatsService {
     dto: ArchiveChatDto,
   ): Promise<void> {
     const socket = this.whatsappService.getSocket(sessionId);
-    if (!socket) {
-      throw new BadRequestException('Sessão desconectada');
-    }
+    validateSocket(socket);
 
     await socket.chatModify(
       {
@@ -166,9 +154,7 @@ export class ChatsService {
     dto: ClearMessagesDto,
   ): Promise<void> {
     const socket = this.whatsappService.getSocket(sessionId);
-    if (!socket) {
-      throw new BadRequestException('Sessão desconectada');
-    }
+    validateSocket(socket);
 
     if (!dto.messages || dto.messages.length === 0) {
       await socket.chatModify(
@@ -191,18 +177,14 @@ export class ChatsService {
 
   async readMessages(sessionId: string, dto: ReadMessagesDto): Promise<void> {
     const socket = this.whatsappService.getSocket(sessionId);
-    if (!socket) {
-      throw new BadRequestException('Sessão desconectada');
-    }
+    validateSocket(socket);
 
     await socket.readMessages(dto.keys);
   }
 
   async listChats(sessionId: string): Promise<any[]> {
     const socket = this.whatsappService.getSocket(sessionId);
-    if (!socket) {
-      throw new BadRequestException('Sessão desconectada');
-    }
+    validateSocket(socket);
 
     try {
       const chats = await socket.groupFetchAllParticipating();

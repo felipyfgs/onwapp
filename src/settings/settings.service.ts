@@ -1,24 +1,45 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, OnModuleInit } from '@nestjs/common';
 import { WhatsAppService } from '../whatsapp/whatsapp.service';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
 import { SettingsResponseDto } from './dto/settings-response.dto';
+import { validateSocket } from '../common/utils/socket-validator';
+
+interface SettingsCacheData {
+  settings: SettingsResponseDto;
+  lastUpdate: Date;
+}
 
 @Injectable()
-export class SettingsService {
-  private settingsCache: Map<string, SettingsResponseDto> = new Map();
+export class SettingsService implements OnModuleInit {
+  private settingsCache: Map<string, SettingsCacheData> = new Map();
+  private readonly CACHE_TTL = 5 * 60 * 1000;
 
   constructor(private readonly whatsappService: WhatsAppService) {}
+
+  onModuleInit() {
+    this.startCacheCleanup();
+  }
+
+  private startCacheCleanup() {
+    setInterval(() => {
+      const now = Date.now();
+      for (const [sessionId, data] of this.settingsCache.entries()) {
+        if (now - data.lastUpdate.getTime() > this.CACHE_TTL) {
+          this.settingsCache.delete(sessionId);
+        }
+      }
+    }, 60000);
+  }
 
   async updateSettings(
     sessionId: string,
     dto: UpdateSettingsDto,
   ): Promise<SettingsResponseDto> {
     const socket = this.whatsappService.getSocket(sessionId);
-    if (!socket) {
-      throw new BadRequestException('Sessão desconectada');
-    }
+    validateSocket(socket);
 
-    let currentSettings = this.settingsCache.get(sessionId) || {};
+    const cachedData = this.settingsCache.get(sessionId);
+    let currentSettings = cachedData?.settings || {};
 
     if (dto.rejectCall !== undefined) {
       currentSettings.rejectCall = dto.rejectCall;
@@ -84,17 +105,19 @@ export class SettingsService {
       currentSettings.groupsAdd = dto.groupsAdd;
     }
 
-    this.settingsCache.set(sessionId, currentSettings);
+    this.settingsCache.set(sessionId, {
+      settings: currentSettings,
+      lastUpdate: new Date(),
+    });
 
     return currentSettings;
   }
 
   getSettings(sessionId: string): SettingsResponseDto {
     const socket = this.whatsappService.getSocket(sessionId);
-    if (!socket) {
-      throw new BadRequestException('Sessão desconectada');
-    }
+    validateSocket(socket);
 
-    return this.settingsCache.get(sessionId) || {};
+    const cachedData = this.settingsCache.get(sessionId);
+    return cachedData?.settings || {};
   }
 }

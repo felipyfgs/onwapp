@@ -6,6 +6,8 @@ import { UpdateProfilePictureDto } from './dto/update-profile-picture.dto';
 import { BlockUserDto } from './dto/block-user.dto';
 import { GetProfilePictureQueryDto } from './dto/get-profile-picture.query';
 import { ProfileResponseDto } from './dto/profile-response.dto';
+import { validateSocket } from '../common/utils/socket-validator';
+import { parseMediaBuffer } from '../common/utils/media-parser';
 
 @Injectable()
 export class ProfileService {
@@ -13,9 +15,7 @@ export class ProfileService {
 
   async fetchProfile(sessionId: string): Promise<ProfileResponseDto> {
     const socket = this.whatsappService.getSocket(sessionId);
-    if (!socket) {
-      throw new BadRequestException('Sessão desconectada');
-    }
+    validateSocket(socket);
 
     const jid = socket.user?.id;
     if (!jid) {
@@ -51,9 +51,7 @@ export class ProfileService {
     jid: string,
   ): Promise<{ status?: string; setAt?: Date }> {
     const socket = this.whatsappService.getSocket(sessionId);
-    if (!socket) {
-      throw new BadRequestException('Sessão desconectada');
-    }
+    validateSocket(socket);
 
     const result = await socket.fetchStatus(jid);
 
@@ -72,9 +70,7 @@ export class ProfileService {
     dto: UpdateProfileStatusDto,
   ): Promise<void> {
     const socket = this.whatsappService.getSocket(sessionId);
-    if (!socket) {
-      throw new BadRequestException('Sessão desconectada');
-    }
+    validateSocket(socket);
 
     await socket.updateProfileStatus(dto.status);
   }
@@ -84,9 +80,7 @@ export class ProfileService {
     dto: UpdateProfileNameDto,
   ): Promise<void> {
     const socket = this.whatsappService.getSocket(sessionId);
-    if (!socket) {
-      throw new BadRequestException('Sessão desconectada');
-    }
+    validateSocket(socket);
 
     await socket.updateProfileName(dto.name);
   }
@@ -97,9 +91,7 @@ export class ProfileService {
     query: GetProfilePictureQueryDto,
   ): Promise<{ url?: string }> {
     const socket = this.whatsappService.getSocket(sessionId);
-    if (!socket) {
-      throw new BadRequestException('Sessão desconectada');
-    }
+    validateSocket(socket);
 
     const type = query.type || 'preview';
     const timeout = query.timeout || 10000;
@@ -114,20 +106,10 @@ export class ProfileService {
     dto: UpdateProfilePictureDto,
   ): Promise<void> {
     const socket = this.whatsappService.getSocket(sessionId);
-    if (!socket) {
-      throw new BadRequestException('Sessão desconectada');
-    }
+    validateSocket(socket);
 
-    let mediaBuffer: Buffer;
-
-    if (dto.image.startsWith('data:')) {
-      const base64Data = dto.image.split(',')[1];
-      mediaBuffer = Buffer.from(base64Data, 'base64');
-    } else if (dto.image.startsWith('http')) {
-      mediaBuffer = Buffer.from(dto.image);
-    } else {
-      mediaBuffer = Buffer.from(dto.image, 'base64');
-    }
+    const media = parseMediaBuffer(dto.image);
+    const mediaBuffer = Buffer.isBuffer(media) ? media : Buffer.from(media.url);
 
     const jid = socket.user?.id;
     if (!jid) {
@@ -139,9 +121,7 @@ export class ProfileService {
 
   async removeProfilePicture(sessionId: string): Promise<void> {
     const socket = this.whatsappService.getSocket(sessionId);
-    if (!socket) {
-      throw new BadRequestException('Sessão desconectada');
-    }
+    validateSocket(socket);
 
     const jid = socket.user?.id;
     if (!jid) {
@@ -159,27 +139,21 @@ export class ProfileService {
 
   async blockUser(sessionId: string, dto: BlockUserDto): Promise<void> {
     const socket = this.whatsappService.getSocket(sessionId);
-    if (!socket) {
-      throw new BadRequestException('Sessão desconectada');
-    }
+    validateSocket(socket);
 
     await socket.updateBlockStatus(dto.jid, 'block');
   }
 
   async unblockUser(sessionId: string, dto: BlockUserDto): Promise<void> {
     const socket = this.whatsappService.getSocket(sessionId);
-    if (!socket) {
-      throw new BadRequestException('Sessão desconectada');
-    }
+    validateSocket(socket);
 
     await socket.updateBlockStatus(dto.jid, 'unblock');
   }
 
   async getBlocklist(sessionId: string): Promise<{ blocklist: string[] }> {
     const socket = this.whatsappService.getSocket(sessionId);
-    if (!socket) {
-      throw new BadRequestException('Sessão desconectada');
-    }
+    validateSocket(socket);
 
     const blocklist = await socket.fetchBlocklist();
 
