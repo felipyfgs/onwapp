@@ -1,0 +1,132 @@
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { WhatsAppService } from '../whatsapp/whatsapp.service';
+import { UpdateProfileStatusDto } from './dto/update-profile-status.dto';
+import { UpdateProfileNameDto } from './dto/update-profile-name.dto';
+import { UpdateProfilePictureDto } from './dto/update-profile-picture.dto';
+import { BlockUserDto } from './dto/block-user.dto';
+import { GetProfilePictureQueryDto } from './dto/get-profile-picture.query';
+
+@Injectable()
+export class ProfileService {
+  constructor(private readonly whatsappService: WhatsAppService) {}
+
+  async fetchStatus(
+    sessionId: string,
+    jid: string,
+  ): Promise<{ status?: string; setAt?: Date }> {
+    const socket = this.whatsappService.getSocket(sessionId);
+    if (!socket) {
+      throw new BadRequestException('Sessão desconectada');
+    }
+
+    const result = await socket.fetchStatus(jid);
+
+    if (!result) {
+      return {};
+    }
+
+    return {
+      status: result.status,
+      setAt: result.setAt,
+    };
+  }
+
+  async updateProfileStatus(
+    sessionId: string,
+    dto: UpdateProfileStatusDto,
+  ): Promise<void> {
+    const socket = this.whatsappService.getSocket(sessionId);
+    if (!socket) {
+      throw new BadRequestException('Sessão desconectada');
+    }
+
+    await socket.updateProfileStatus(dto.status);
+  }
+
+  async updateProfileName(
+    sessionId: string,
+    dto: UpdateProfileNameDto,
+  ): Promise<void> {
+    const socket = this.whatsappService.getSocket(sessionId);
+    if (!socket) {
+      throw new BadRequestException('Sessão desconectada');
+    }
+
+    await socket.updateProfileName(dto.name);
+  }
+
+  async getProfilePicture(
+    sessionId: string,
+    jid: string,
+    query: GetProfilePictureQueryDto,
+  ): Promise<{ url?: string }> {
+    const socket = this.whatsappService.getSocket(sessionId);
+    if (!socket) {
+      throw new BadRequestException('Sessão desconectada');
+    }
+
+    const type = query.type || 'preview';
+    const timeout = query.timeout || 10000;
+
+    const url = await socket.profilePictureUrl(jid, type, timeout);
+
+    return { url };
+  }
+
+  async updateProfilePicture(
+    sessionId: string,
+    dto: UpdateProfilePictureDto,
+  ): Promise<void> {
+    const socket = this.whatsappService.getSocket(sessionId);
+    if (!socket) {
+      throw new BadRequestException('Sessão desconectada');
+    }
+
+    let mediaBuffer: Buffer;
+
+    if (dto.image.startsWith('data:')) {
+      const base64Data = dto.image.split(',')[1];
+      mediaBuffer = Buffer.from(base64Data, 'base64');
+    } else if (dto.image.startsWith('http')) {
+      mediaBuffer = Buffer.from(dto.image);
+    } else {
+      mediaBuffer = Buffer.from(dto.image, 'base64');
+    }
+
+    const jid = socket.user?.id;
+    if (!jid) {
+      throw new BadRequestException('Usuário não autenticado');
+    }
+
+    await socket.updateProfilePicture(jid, mediaBuffer);
+  }
+
+  async blockUser(sessionId: string, dto: BlockUserDto): Promise<void> {
+    const socket = this.whatsappService.getSocket(sessionId);
+    if (!socket) {
+      throw new BadRequestException('Sessão desconectada');
+    }
+
+    await socket.updateBlockStatus(dto.jid, 'block');
+  }
+
+  async unblockUser(sessionId: string, dto: BlockUserDto): Promise<void> {
+    const socket = this.whatsappService.getSocket(sessionId);
+    if (!socket) {
+      throw new BadRequestException('Sessão desconectada');
+    }
+
+    await socket.updateBlockStatus(dto.jid, 'unblock');
+  }
+
+  async getBlocklist(sessionId: string): Promise<{ blocklist: string[] }> {
+    const socket = this.whatsappService.getSocket(sessionId);
+    if (!socket) {
+      throw new BadRequestException('Sessão desconectada');
+    }
+
+    const blocklist = await socket.fetchBlocklist();
+
+    return { blocklist };
+  }
+}
