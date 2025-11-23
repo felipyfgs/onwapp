@@ -165,7 +165,7 @@ export class MessagesController {
     return this.messagesService.sendStickerMessage(sessionId, dto);
   }
 
-  @Post(':sessionId/contact')
+  @Post('contact')
   @ApiOperation({ summary: 'Enviar contato(s)' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiBody({ type: SendContactMessageDto })
@@ -184,7 +184,7 @@ export class MessagesController {
     return this.messagesService.sendContactMessage(sessionId, dto);
   }
 
-  @Post(':sessionId/location')
+  @Post('location')
   @ApiOperation({ summary: 'Enviar localização' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiBody({ type: SendLocationMessageDto })
@@ -203,7 +203,7 @@ export class MessagesController {
     return this.messagesService.sendLocationMessage(sessionId, dto);
   }
 
-  @Post(':sessionId/react')
+  @Post('react')
   @ApiOperation({ summary: 'Reagir a uma mensagem' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiBody({ type: SendReactionMessageDto })
@@ -222,7 +222,7 @@ export class MessagesController {
     return this.messagesService.sendReaction(sessionId, dto);
   }
 
-  @Post(':sessionId/forward')
+  @Post('forward')
   @ApiOperation({ summary: 'Encaminhar mensagem' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiBody({ type: SendForwardMessageDto })
@@ -241,7 +241,7 @@ export class MessagesController {
     return this.messagesService.forwardMessage(sessionId, dto);
   }
 
-  @Delete(':sessionId/delete')
+  @Delete('delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Deletar mensagem para todos' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
@@ -258,7 +258,7 @@ export class MessagesController {
     return this.messagesService.deleteMessage(sessionId, dto);
   }
 
-  @Post(':sessionId/disappearing')
+  @Post('disappearing')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Configurar mensagens efêmeras em um chat' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
@@ -275,7 +275,7 @@ export class MessagesController {
     return this.messagesService.setDisappearingMessages(sessionId, dto);
   }
 
-  @Post(':sessionId/buttons')
+  @Post('buttons')
   @ApiOperation({ summary: 'Enviar mensagem com botões interativos' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiBody({ type: SendButtonsMessageDto })
@@ -294,7 +294,7 @@ export class MessagesController {
     return this.messagesService.sendButtonsMessage(sessionId, dto);
   }
 
-  @Post(':sessionId/template')
+  @Post('template')
   @ApiOperation({ summary: 'Enviar mensagem com template buttons' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiBody({ type: SendTemplateMessageDto })
@@ -313,7 +313,7 @@ export class MessagesController {
     return this.messagesService.sendTemplateMessage(sessionId, dto);
   }
 
-  @Post(':sessionId/list')
+  @Post('list')
   @ApiOperation({ summary: 'Enviar mensagem com lista de opções' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiBody({ type: SendListMessageDto })
@@ -332,7 +332,7 @@ export class MessagesController {
     return this.messagesService.sendListMessage(sessionId, dto);
   }
 
-  @Post(':sessionId/poll')
+  @Post('poll')
   @ApiOperation({ summary: 'Enviar enquete' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiBody({ type: SendPollMessageDto })
@@ -351,7 +351,7 @@ export class MessagesController {
     return this.messagesService.sendPollMessage(sessionId, dto);
   }
 
-  @Post(':sessionId/interactive')
+  @Post('interactive')
   @ApiOperation({ summary: 'Enviar mensagem interativa avançada' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiBody({ type: SendInteractiveMessageDto })
@@ -370,7 +370,7 @@ export class MessagesController {
     return this.messagesService.sendInteractiveMessage(sessionId, dto);
   }
 
-  @Post(':sessionId/edit')
+  @Post('edit')
   @ApiOperation({ summary: 'Editar mensagem enviada' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiBody({ type: EditMessageDto })
@@ -389,7 +389,7 @@ export class MessagesController {
     return this.messagesService.editMessage(sessionId, dto);
   }
 
-  @Post(':sessionId/live-location')
+  @Post('live-location')
   @ApiOperation({ summary: 'Enviar localização ao vivo' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiBody({ type: SendLiveLocationMessageDto })
