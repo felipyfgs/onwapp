@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, Inject, forwardRef } from '@nestjs/common';
 import makeWASocket, {
   DisconnectReason,
   WASocket,
@@ -7,6 +7,7 @@ import { Boom } from '@hapi/boom';
 import { PrismaService } from '../prisma/prisma.service';
 import * as qrcode from 'qrcode-terminal';
 import { useAuthState } from './auth-state';
+import { WebhooksService } from '../webhooks/webhooks.service';
 
 interface SessionSocket {
   socket: WASocket;
@@ -41,7 +42,11 @@ export class WhatsAppService implements OnModuleInit {
   private readonly logger = new Logger(WhatsAppService.name);
   private sessions: Map<string, SessionSocket> = new Map();
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(forwardRef(() => WebhooksService))
+    private webhooksService: WebhooksService,
+  ) {}
 
   private formatSessionId(sessionId: string): string {
     return sessionId.slice(0, 8);
@@ -275,6 +280,40 @@ export class WhatsAppService implements OnModuleInit {
     };
   }
 
+  private async registerWebhookListeners(
+    sessionId: string,
+    socket: WASocket,
+  ): Promise<void> {
+    try {
+      const webhooks = await this.webhooksService.findBySessionId(sessionId);
+      const enabledWebhooks = webhooks.filter((webhook) => webhook.enabled);
+
+      if (enabledWebhooks.length === 0) {
+        return;
+      }
+
+      const allEvents = new Set<string>();
+      enabledWebhooks.forEach((webhook) => {
+        webhook.events.forEach((event) => allEvents.add(event));
+      });
+
+      allEvents.forEach((event) => {
+        socket.ev.on(event as any, async (payload: any) => {
+          await this.webhooksService.trigger(sessionId, event, payload);
+        });
+      });
+
+      const sid = this.formatSessionId(sessionId);
+      this.logger.log(
+        `[${sid}] Webhooks registrados: ${allEvents.size} evento(s)`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `[${sessionId}] Erro ao registrar webhooks: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+      );
+    }
+  }
+
   async onModuleInit() {
     await this.reconnectActiveSessions();
   }
@@ -309,6 +348,8 @@ export class WhatsAppService implements OnModuleInit {
     socket.ev.on('creds.update', () => {
       this.handleCredsUpdate(sessionId, saveCreds);
     });
+
+    await this.registerWebhookListeners(sessionId, socket);
 
     this.sessions.set(sessionId, {
       socket,

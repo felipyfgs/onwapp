@@ -11,6 +11,7 @@ import { ChatsModule } from './chats/chats.module';
 import { PresenceModule } from './presence/presence.module';
 import { MediaModule } from './media/media.module';
 import { SettingsModule } from './settings/settings.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { SettingsModule } from './settings/settings.module';
     PresenceModule,
     MediaModule,
     SettingsModule,
+    WebhooksModule,
   ],
   providers: [PinoLoggerService],
   exports: [PinoLoggerService],
