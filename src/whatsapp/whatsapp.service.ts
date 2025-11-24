@@ -1,11 +1,11 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
-import makeWASocket, {
-  DisconnectReason,
-  WASocket,
-} from 'whaileys';
+import makeWASocket, { DisconnectReason, WASocket } from 'whaileys';
 import { Boom } from '@hapi/boom';
 import { DatabaseService } from '../database/database.service';
-import { AuthStateRepository, SessionRepository } from '../database/repositories';
+import {
+  AuthStateRepository,
+  SessionRepository,
+} from '../database/repositories';
 import { SocketManager } from './managers/socket.manager';
 import * as qrcode from 'qrcode-terminal';
 import { useAuthState } from './auth-state';
@@ -85,7 +85,8 @@ export class WhatsAppService {
     const isBadSession = statusCode === DisconnectReason.badSession;
 
     return (
-      (!isLoggedOut || logoutAttempts < MAX_LOGOUT_ATTEMPTS) ||
+      !isLoggedOut ||
+      logoutAttempts < MAX_LOGOUT_ATTEMPTS ||
       isRestartRequired ||
       isBadSession
     );
@@ -316,11 +317,14 @@ export class WhatsAppService {
     });
 
     socket.ev.on('messages.upsert' as any, async (payload: any) => {
-      this.logger.log(`[${sid}] 📨 messages.upsert`, { event: 'messages.upsert', payload });
-      
+      this.logger.log(`[${sid}] 📨 messages.upsert`, {
+        event: 'messages.upsert',
+        payload,
+      });
+
       try {
         const { messages, type } = payload;
-        
+
         for (const msg of messages) {
           if (!msg.key || !msg.key.id || !msg.key.remoteJid) continue;
 
@@ -347,19 +351,24 @@ export class WhatsAppService {
           }
         }
       } catch (error) {
-        this.logger.error(`[${sid}] Erro ao persistir messages.upsert: ${error.message}`);
+        this.logger.error(
+          `[${sid}] Erro ao persistir messages.upsert: ${error.message}`,
+        );
       }
     });
 
     socket.ev.on('messages.update' as any, async (payload: any) => {
-      this.logger.log(`[${sid}] 📨 messages.update`, { event: 'messages.update', payload });
-      
+      this.logger.log(`[${sid}] 📨 messages.update`, {
+        event: 'messages.update',
+        payload,
+      });
+
       try {
         for (const update of payload) {
           if (!update.key || !update.key.id) continue;
 
           let status: MessageStatus | undefined;
-          
+
           if (update.update?.status !== undefined) {
             const statusMap: Record<number, MessageStatus> = {
               0: MessageStatus.pending,
@@ -380,37 +389,50 @@ export class WhatsAppService {
           }
         }
       } catch (error) {
-        this.logger.error(`[${sid}] Erro ao persistir messages.update: ${error.message}`);
+        this.logger.error(
+          `[${sid}] Erro ao persistir messages.update: ${error.message}`,
+        );
       }
     });
 
     socket.ev.on('messages.delete' as any, async (payload: any) => {
-      this.logger.log(`[${sid}] 📨 messages.delete`, { event: 'messages.delete', payload });
-      
+      this.logger.log(`[${sid}] 📨 messages.delete`, {
+        event: 'messages.delete',
+        payload,
+      });
+
       try {
         const { keys } = payload;
         for (const key of keys) {
           if (key.id) {
-            await this.persistenceService.markMessageAsDeleted(sessionId, key.id);
+            await this.persistenceService.markMessageAsDeleted(
+              sessionId,
+              key.id,
+            );
           }
         }
       } catch (error) {
-        this.logger.error(`[${sid}] Erro ao persistir messages.delete: ${error.message}`);
+        this.logger.error(
+          `[${sid}] Erro ao persistir messages.delete: ${error.message}`,
+        );
       }
     });
 
     socket.ev.on('message-receipt.update' as any, async (payload: any) => {
-      this.logger.log(`[${sid}] 📨 message-receipt.update`, { event: 'message-receipt.update', payload });
-      
+      this.logger.log(`[${sid}] 📨 message-receipt.update`, {
+        event: 'message-receipt.update',
+        payload,
+      });
+
       try {
         for (const receipt of payload) {
           if (!receipt.key || !receipt.key.id) continue;
 
           let status: MessageStatus | undefined;
-          
+
           if (receipt.receipt?.receiptTimestamp) {
-            status = receipt.receipt.readTimestamp 
-              ? MessageStatus.read 
+            status = receipt.receipt.readTimestamp
+              ? MessageStatus.read
               : MessageStatus.delivered;
           }
 
@@ -423,13 +445,18 @@ export class WhatsAppService {
           }
         }
       } catch (error) {
-        this.logger.error(`[${sid}] Erro ao persistir message-receipt.update: ${error.message}`);
+        this.logger.error(
+          `[${sid}] Erro ao persistir message-receipt.update: ${error.message}`,
+        );
       }
     });
 
     socket.ev.on('chats.upsert' as any, async (payload: any) => {
-      this.logger.log(`[${sid}] 📨 chats.upsert`, { event: 'chats.upsert', payload });
-      
+      this.logger.log(`[${sid}] 📨 chats.upsert`, {
+        event: 'chats.upsert',
+        payload,
+      });
+
       try {
         for (const chat of payload) {
           await this.persistenceService.createOrUpdateChat(sessionId, {
@@ -443,19 +470,25 @@ export class WhatsAppService {
           });
         }
       } catch (error) {
-        this.logger.error(`[${sid}] Erro ao persistir chats.upsert: ${error.message}`);
+        this.logger.error(
+          `[${sid}] Erro ao persistir chats.upsert: ${error.message}`,
+        );
       }
     });
 
     socket.ev.on('chats.update' as any, async (payload: any) => {
-      this.logger.log(`[${sid}] 📨 chats.update`, { event: 'chats.update', payload });
-      
+      this.logger.log(`[${sid}] 📨 chats.update`, {
+        event: 'chats.update',
+        payload,
+      });
+
       try {
         for (const chat of payload) {
           const updateData: any = { remoteJid: chat.id };
-          
+
           if (chat.name !== undefined) updateData.name = chat.name;
-          if (chat.unreadCount !== undefined) updateData.unreadCount = chat.unreadCount;
+          if (chat.unreadCount !== undefined)
+            updateData.unreadCount = chat.unreadCount;
           if (chat.conversationTimestamp !== undefined) {
             updateData.lastMessageTimestamp = chat.conversationTimestamp;
           }
@@ -465,16 +498,24 @@ export class WhatsAppService {
             updateData.muted = chat.mute?.endTimestamp ? true : false;
           }
 
-          await this.persistenceService.createOrUpdateChat(sessionId, updateData);
+          await this.persistenceService.createOrUpdateChat(
+            sessionId,
+            updateData,
+          );
         }
       } catch (error) {
-        this.logger.error(`[${sid}] Erro ao persistir chats.update: ${error.message}`);
+        this.logger.error(
+          `[${sid}] Erro ao persistir chats.update: ${error.message}`,
+        );
       }
     });
 
     socket.ev.on('contacts.upsert' as any, async (payload: any) => {
-      this.logger.log(`[${sid}] 📨 contacts.upsert`, { event: 'contacts.upsert', payload });
-      
+      this.logger.log(`[${sid}] 📨 contacts.upsert`, {
+        event: 'contacts.upsert',
+        payload,
+      });
+
       try {
         for (const contact of payload) {
           await this.persistenceService.createOrUpdateContact(sessionId, {
@@ -484,13 +525,18 @@ export class WhatsAppService {
           });
         }
       } catch (error) {
-        this.logger.error(`[${sid}] Erro ao persistir contacts.upsert: ${error.message}`);
+        this.logger.error(
+          `[${sid}] Erro ao persistir contacts.upsert: ${error.message}`,
+        );
       }
     });
 
     socket.ev.on('contacts.update' as any, async (payload: any) => {
-      this.logger.log(`[${sid}] 📨 contacts.update`, { event: 'contacts.update', payload });
-      
+      this.logger.log(`[${sid}] 📨 contacts.update`, {
+        event: 'contacts.update',
+        payload,
+      });
+
       try {
         for (const contact of payload) {
           await this.persistenceService.createOrUpdateContact(sessionId, {
@@ -500,7 +546,9 @@ export class WhatsAppService {
           });
         }
       } catch (error) {
-        this.logger.error(`[${sid}] Erro ao persistir contacts.update: ${error.message}`);
+        this.logger.error(
+          `[${sid}] Erro ao persistir contacts.update: ${error.message}`,
+        );
       }
     });
 
@@ -550,10 +598,8 @@ export class WhatsAppService {
   async createSocket(
     sessionId: string,
   ): Promise<{ socket: WASocket; qr?: string }> {
-    const hasExistingCreds = await this.authStateRepository.findBySessionAndType(
-      sessionId,
-      'creds',
-    );
+    const hasExistingCreds =
+      await this.authStateRepository.findBySessionAndType(sessionId, 'creds');
     const isNewLogin = !hasExistingCreds || hasExistingCreds.length === 0;
 
     const sid = this.formatSessionId(sessionId);
@@ -572,7 +618,12 @@ export class WhatsAppService {
 
     socket.ev.on(
       'connection.update',
-      this.getConnectionUpdateHandler(sessionId, socket, saveCreds, currentQRRef),
+      this.getConnectionUpdateHandler(
+        sessionId,
+        socket,
+        saveCreds,
+        currentQRRef,
+      ),
     );
 
     socket.ev.on('creds.update', () => {

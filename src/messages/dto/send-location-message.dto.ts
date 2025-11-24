@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsNotEmpty, IsOptional, IsString, IsBoolean } from 'class-validator';
+import {
+  IsNumber,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsBoolean,
+} from 'class-validator';
 import { SendMessageBaseDto } from './send-message-base.dto';
 
 export class SendLocationMessageDto extends SendMessageBaseDto {

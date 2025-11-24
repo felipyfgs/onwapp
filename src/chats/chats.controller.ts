@@ -19,7 +19,6 @@ import {
   ApiNoContentResponse,
   ApiBadRequestResponse,
   ApiUnauthorizedResponse,
-  ApiNotFoundResponse,
 } from '@nestjs/swagger';
 import { ChatsService } from './chats.service';
 import { ApiKeyGuard } from '../common/guards/api-key.guard';

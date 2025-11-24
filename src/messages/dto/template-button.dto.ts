@@ -1,7 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNumber, IsOptional, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import { UrlButtonDto, CallButtonDto, QuickReplyButtonDto } from './template-buttons.dto';
+import {
+  UrlButtonDto,
+  CallButtonDto,
+  QuickReplyButtonDto,
+} from './template-buttons.dto';
 
 export class TemplateButtonDto {
   @ApiProperty({

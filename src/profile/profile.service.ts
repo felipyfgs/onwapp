@@ -32,16 +32,14 @@ export class ProfileService {
       if (statusResult) {
         profile.status = statusResult.status;
       }
-    } catch (error) {
-    }
+    } catch (error) {}
 
     try {
       const pictureUrl = await socket.profilePictureUrl(jid, 'image');
       if (pictureUrl) {
         profile.profilePictureUrl = pictureUrl;
       }
-    } catch (error) {
-    }
+    } catch (error) {}
 
     return profile;
   }

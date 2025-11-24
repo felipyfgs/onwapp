@@ -35,7 +35,9 @@ export class MediaController {
     description: 'Mídia baixada com sucesso',
     type: DownloadMediaResponseDto,
   })
-  @ApiBadRequestResponse({ description: 'Sessão desconectada ou erro no download' })
+  @ApiBadRequestResponse({
+    description: 'Sessão desconectada ou erro no download',
+  })
   async downloadMedia(
     @Param('sessionId') sessionId: string,
     @Body() dto: DownloadMediaDto,
@@ -60,7 +62,9 @@ export class MediaController {
       },
     },
   })
-  @ApiBadRequestResponse({ description: 'Sessão desconectada ou erro no re-upload' })
+  @ApiBadRequestResponse({
+    description: 'Sessão desconectada ou erro no re-upload',
+  })
   async updateMedia(
     @Param('sessionId') sessionId: string,
     @Body() dto: UpdateMediaDto,

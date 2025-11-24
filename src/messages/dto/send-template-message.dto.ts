@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsOptional, IsArray, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsArray,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { SendMessageBaseDto } from './send-message-base.dto';
 import { TemplateButtonDto } from './template-button.dto';
@@ -25,9 +31,18 @@ export class SendTemplateMessageDto extends SendMessageBaseDto {
     description: 'Lista de template buttons',
     type: [TemplateButtonDto],
     example: [
-      { index: 1, urlButton: { displayText: 'Visitar', url: 'https://example.com' } },
-      { index: 2, callButton: { displayText: 'Ligar', phoneNumber: '+5511999999999' } },
-      { index: 3, quickReplyButton: { displayText: 'Responder', id: 'reply1' } },
+      {
+        index: 1,
+        urlButton: { displayText: 'Visitar', url: 'https://example.com' },
+      },
+      {
+        index: 2,
+        callButton: { displayText: 'Ligar', phoneNumber: '+5511999999999' },
+      },
+      {
+        index: 3,
+        quickReplyButton: { displayText: 'Responder', id: 'reply1' },
+      },
     ],
   })
   @IsArray()

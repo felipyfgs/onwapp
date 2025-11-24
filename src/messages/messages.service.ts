@@ -85,7 +85,9 @@ export class MessagesService {
       fromMe: message.key.fromMe ?? false,
       timestamp: new Date(Number(message.messageTimestamp) * 1000),
       status: proto.WebMessageInfo.Status[message.status ?? 0],
-      participant: message.key.participant ? message.key.participant : undefined,
+      participant: message.key.participant
+        ? message.key.participant
+        : undefined,
     };
   }
 
@@ -418,9 +420,7 @@ export class MessagesService {
     }
 
     if (dto.headerType === 4 && !dto.image) {
-      throw new BadRequestException(
-        'Image is required when headerType is 4',
-      );
+      throw new BadRequestException('Image is required when headerType is 4');
     }
 
     const content: any = {

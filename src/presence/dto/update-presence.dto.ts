@@ -12,7 +12,8 @@ export class UpdatePresenceDto {
   presence: WAPresence;
 
   @ApiProperty({
-    description: 'JID do chat (opcional, envia presença para um chat específico)',
+    description:
+      'JID do chat (opcional, envia presença para um chat específico)',
     required: false,
     example: '5511999999999@s.whatsapp.net',
   })

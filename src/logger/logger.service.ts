@@ -70,8 +70,12 @@ const emit = (
   optionalParams: unknown[],
   context?: string,
 ): void => {
-  const ignoredContexts = ['RoutesResolver', 'RouterExplorer', 'InstanceLoader'];
-  
+  const ignoredContexts = [
+    'RoutesResolver',
+    'RouterExplorer',
+    'InstanceLoader',
+  ];
+
   if (context && ignoredContexts.includes(context)) {
     return;
   }

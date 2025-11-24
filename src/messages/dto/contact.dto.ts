@@ -12,7 +12,8 @@ export class ContactDto {
 
   @ApiProperty({
     description: 'vCard do contato',
-    example: 'BEGIN:VCARD\nVERSION:3.0\nFN:John Doe\nTEL:+5511999999999\nEND:VCARD',
+    example:
+      'BEGIN:VCARD\nVERSION:3.0\nFN:John Doe\nTEL:+5511999999999\nEND:VCARD',
   })
   @IsString()
   @IsNotEmpty()

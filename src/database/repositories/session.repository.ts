@@ -27,10 +27,7 @@ export class SessionRepository extends BaseRepository<Session> {
     });
   }
 
-  async update(
-    id: string,
-    data: Prisma.SessionUpdateInput,
-  ): Promise<Session> {
+  async update(id: string, data: Prisma.SessionUpdateInput): Promise<Session> {
     return this.prisma.session.update({
       where: { id },
       data,

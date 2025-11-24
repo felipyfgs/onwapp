@@ -56,7 +56,9 @@ export class GroupsController {
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiBody({ type: CreateGroupDto })
   @ApiOkResponse({ description: 'Grupo criado com sucesso' })
-  @ApiBadRequestResponse({ description: 'Dados inválidos ou erro ao criar grupo' })
+  @ApiBadRequestResponse({
+    description: 'Dados inválidos ou erro ao criar grupo',
+  })
   @ApiNotFoundResponse({ description: 'Sessão não encontrada' })
   async createGroup(
     @Param('sessionId') sessionId: string,
@@ -202,7 +204,9 @@ export class GroupsController {
   @ApiParam({ name: 'groupId', description: 'ID do grupo' })
   @ApiBody({ type: UpdateGroupDescriptionDto })
   @ApiOkResponse({ description: 'Descrição do grupo atualizada com sucesso' })
-  @ApiBadRequestResponse({ description: 'Erro ao atualizar descrição do grupo' })
+  @ApiBadRequestResponse({
+    description: 'Erro ao atualizar descrição do grupo',
+  })
   @ApiNotFoundResponse({ description: 'Sessão não encontrada' })
   async updateDescription(
     @Param('sessionId') sessionId: string,
@@ -244,10 +248,13 @@ export class GroupsController {
     name: 'type',
     required: false,
     enum: ['image', 'preview'],
-    description: 'Tipo de imagem (image = alta resolução, preview = baixa resolução)',
+    description:
+      'Tipo de imagem (image = alta resolução, preview = baixa resolução)',
   })
   @ApiOkResponse({ description: 'URL da foto do grupo' })
-  @ApiNotFoundResponse({ description: 'Foto não encontrada ou sessão não encontrada' })
+  @ApiNotFoundResponse({
+    description: 'Foto não encontrada ou sessão não encontrada',
+  })
   async getPicture(
     @Param('sessionId') sessionId: string,
     @Param('groupId') groupId: string,
@@ -261,8 +268,12 @@ export class GroupsController {
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiParam({ name: 'groupId', description: 'ID do grupo' })
   @ApiBody({ type: UpdateGroupSettingsDto })
-  @ApiOkResponse({ description: 'Configurações do grupo atualizadas com sucesso' })
-  @ApiBadRequestResponse({ description: 'Erro ao atualizar configurações do grupo' })
+  @ApiOkResponse({
+    description: 'Configurações do grupo atualizadas com sucesso',
+  })
+  @ApiBadRequestResponse({
+    description: 'Erro ao atualizar configurações do grupo',
+  })
   @ApiNotFoundResponse({ description: 'Sessão não encontrada' })
   async updateSettings(
     @Param('sessionId') sessionId: string,
@@ -324,7 +335,9 @@ export class GroupsController {
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiParam({ name: 'code', description: 'Código do convite' })
   @ApiOkResponse({ description: 'Informações do grupo obtidas com sucesso' })
-  @ApiNotFoundResponse({ description: 'Convite não encontrado ou sessão não encontrada' })
+  @ApiNotFoundResponse({
+    description: 'Convite não encontrado ou sessão não encontrada',
+  })
   async getInviteInfo(
     @Param('sessionId') sessionId: string,
     @Param('code') code: string,

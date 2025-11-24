@@ -64,11 +64,10 @@ export class HistorySyncService {
             profilePicUrl: contact.imgUrl,
           }));
 
-        const contactsCount =
-          await this.persistenceService.createContactsBatch(
-            sessionId,
-            contactsData,
-          );
+        const contactsCount = await this.persistenceService.createContactsBatch(
+          sessionId,
+          contactsData,
+        );
         stats.totalContacts += contactsCount;
       }
 
@@ -109,11 +108,10 @@ export class HistorySyncService {
             };
           });
 
-        const messagesCount =
-          await this.persistenceService.createMessagesBatch(
-            sessionId,
-            messagesData,
-          );
+        const messagesCount = await this.persistenceService.createMessagesBatch(
+          sessionId,
+          messagesData,
+        );
         stats.totalMessages += messagesCount;
       }
 

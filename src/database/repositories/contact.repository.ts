@@ -39,10 +39,13 @@ export class ContactRepository extends BaseRepository<Contact> {
     });
   }
 
-  async findBySessionId(sessionId: string, options?: {
-    skip?: number;
-    take?: number;
-  }): Promise<Contact[]> {
+  async findBySessionId(
+    sessionId: string,
+    options?: {
+      skip?: number;
+      take?: number;
+    },
+  ): Promise<Contact[]> {
     return this.prisma.contact.findMany({
       where: { sessionId },
       skip: options?.skip,

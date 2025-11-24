@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, ValidateNested, ArrayMinSize } from 'class-validator';
-import { Type } from 'class-transformer';
 import { MessageKey } from '../../common/interfaces/message-key.interface';
 
 class MessageKeyDto implements MessageKey {

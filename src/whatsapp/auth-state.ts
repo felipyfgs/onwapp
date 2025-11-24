@@ -71,10 +71,10 @@ export async function useAuthState(
           sessionId,
           keyType: 'creds',
           keyId: 'creds',
-          keyData: serializeToJson(creds) as any,
+          keyData: serializeToJson(creds),
         },
         update: {
-          keyData: serializeToJson(creds) as any,
+          keyData: serializeToJson(creds),
         },
       });
     } catch (error) {
@@ -151,10 +151,10 @@ export async function useAuthState(
                   sessionId,
                   keyType: category,
                   keyId: id,
-                  keyData: serializeToJson(value) as any,
+                  keyData: serializeToJson(value),
                 },
                 update: {
-                  keyData: serializeToJson(value) as any,
+                  keyData: serializeToJson(value),
                 },
               });
 

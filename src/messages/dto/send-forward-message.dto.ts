@@ -6,9 +6,13 @@ export class SendForwardMessageDto extends SendMessageBaseDto {
   @ApiProperty({
     description: 'Mensagem completa a encaminhar (proto.IWebMessageInfo)',
     example: {
-      key: { remoteJid: '5511999999999@s.whatsapp.net', fromMe: true, id: '3EB0ABCD123456' },
+      key: {
+        remoteJid: '5511999999999@s.whatsapp.net',
+        fromMe: true,
+        id: '3EB0ABCD123456',
+      },
       message: { conversation: 'Olá' },
-      messageTimestamp: 1234567890
+      messageTimestamp: 1234567890,
     },
   })
   @IsObject()

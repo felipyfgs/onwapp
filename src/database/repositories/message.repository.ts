@@ -21,11 +21,14 @@ export class MessageRepository extends BaseRepository<Message> {
     return result.count;
   }
 
-  async findBySessionId(sessionId: string, options?: {
-    skip?: number;
-    take?: number;
-    orderBy?: Prisma.MessageOrderByWithRelationInput;
-  }): Promise<Message[]> {
+  async findBySessionId(
+    sessionId: string,
+    options?: {
+      skip?: number;
+      take?: number;
+      orderBy?: Prisma.MessageOrderByWithRelationInput;
+    },
+  ): Promise<Message[]> {
     return this.prisma.message.findMany({
       where: { sessionId },
       skip: options?.skip,
@@ -34,10 +37,13 @@ export class MessageRepository extends BaseRepository<Message> {
     });
   }
 
-  async findByChatId(chatId: string, options?: {
-    skip?: number;
-    take?: number;
-  }): Promise<Message[]> {
+  async findByChatId(
+    chatId: string,
+    options?: {
+      skip?: number;
+      take?: number;
+    },
+  ): Promise<Message[]> {
     return this.prisma.message.findMany({
       where: { chatId },
       skip: options?.skip,
@@ -46,10 +52,7 @@ export class MessageRepository extends BaseRepository<Message> {
     });
   }
 
-  async update(
-    id: string,
-    data: Prisma.MessageUpdateInput,
-  ): Promise<Message> {
+  async update(id: string, data: Prisma.MessageUpdateInput): Promise<Message> {
     return this.prisma.message.update({
       where: { id },
       data,

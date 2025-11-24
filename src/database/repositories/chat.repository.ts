@@ -21,10 +21,13 @@ export class ChatRepository extends BaseRepository<Chat> {
     return result.count;
   }
 
-  async findBySessionId(sessionId: string, options?: {
-    skip?: number;
-    take?: number;
-  }): Promise<Chat[]> {
+  async findBySessionId(
+    sessionId: string,
+    options?: {
+      skip?: number;
+      take?: number;
+    },
+  ): Promise<Chat[]> {
     return this.prisma.chat.findMany({
       where: { sessionId },
       skip: options?.skip,

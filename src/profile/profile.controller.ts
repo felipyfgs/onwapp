@@ -94,7 +94,9 @@ export class ProfileController {
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiBody({ type: UpdateProfileStatusDto })
   @ApiOkResponse({ description: 'Status atualizado com sucesso' })
-  @ApiBadRequestResponse({ description: 'Dados inválidos ou sessão desconectada' })
+  @ApiBadRequestResponse({
+    description: 'Dados inválidos ou sessão desconectada',
+  })
   async updateStatus(
     @Param('sessionId') sessionId: string,
     @Body() dto: UpdateProfileStatusDto,
@@ -111,7 +113,9 @@ export class ProfileController {
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiBody({ type: UpdateProfileNameDto })
   @ApiOkResponse({ description: 'Nome atualizado com sucesso' })
-  @ApiBadRequestResponse({ description: 'Dados inválidos ou sessão desconectada' })
+  @ApiBadRequestResponse({
+    description: 'Dados inválidos ou sessão desconectada',
+  })
   async updateName(
     @Param('sessionId') sessionId: string,
     @Body() dto: UpdateProfileNameDto,
@@ -168,7 +172,9 @@ export class ProfileController {
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiBody({ type: UpdateProfilePictureDto })
   @ApiOkResponse({ description: 'Foto de perfil atualizada com sucesso' })
-  @ApiBadRequestResponse({ description: 'Dados inválidos ou sessão desconectada' })
+  @ApiBadRequestResponse({
+    description: 'Dados inválidos ou sessão desconectada',
+  })
   async updatePicture(
     @Param('sessionId') sessionId: string,
     @Body() dto: UpdateProfilePictureDto,
@@ -198,7 +204,9 @@ export class ProfileController {
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiBody({ type: BlockUserDto })
   @ApiOkResponse({ description: 'Usuário bloqueado com sucesso' })
-  @ApiBadRequestResponse({ description: 'Dados inválidos ou sessão desconectada' })
+  @ApiBadRequestResponse({
+    description: 'Dados inválidos ou sessão desconectada',
+  })
   async blockUser(
     @Param('sessionId') sessionId: string,
     @Body() dto: BlockUserDto,
@@ -215,7 +223,9 @@ export class ProfileController {
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiBody({ type: BlockUserDto })
   @ApiOkResponse({ description: 'Usuário desbloqueado com sucesso' })
-  @ApiBadRequestResponse({ description: 'Dados inválidos ou sessão desconectada' })
+  @ApiBadRequestResponse({
+    description: 'Dados inválidos ou sessão desconectada',
+  })
   async unblockUser(
     @Param('sessionId') sessionId: string,
     @Body() dto: BlockUserDto,
