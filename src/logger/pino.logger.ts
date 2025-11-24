@@ -1,21 +1,13 @@
-import pino, { Logger, LoggerOptions } from 'pino';
+import pino, { Logger } from 'pino';
+import { LoggerConfig } from './logger.config';
 
-const transportOptions: NonNullable<LoggerOptions['transport']> = {
-  target: 'pino-pretty',
-  options: {
-    colorize: true,
-    translateTime: 'SYS:HH:MM:ss',
-    singleLine: true,
-    ignore: 'pid,hostname',
-    messageFormat: '{msg}',
+const loggerConfig = new LoggerConfig({
+  get: (key: string, defaultValue?: string) => {
+    return process.env[key] || defaultValue;
   },
-};
+} as any);
 
-const options: LoggerOptions = {
-  level: process.env.LOG_LEVEL ?? 'info',
-  base: undefined,
-  transport: transportOptions,
-};
+const options = loggerConfig.createPinoOptions();
 
 export const logger: Logger = pino(options);
 

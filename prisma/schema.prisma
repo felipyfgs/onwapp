@@ -58,6 +58,7 @@ model Session {
   contacts    Contact[]
   chats       Chat[]
   messages    Message[]
+  statusHistories MessageStatusHistory[]
   settings    SessionSettings?
 
   @@map("Session")
@@ -144,39 +145,48 @@ model Message {
   senderName    String?
   timestamp     BigInt
   messageType   String
-  content       Json
+  
+  // Campos separados do JSON para performance
+  textContent   String?        // Movido do JSON - busca textual rápida
+  mediaUrl      String?        // Movido do JSON - acesso direto à mídia
+  fileLength    BigInt?        // Movido do JSON - filtrar por tamanho
+  
+  // JSON mantido mas limpo (sem dados pesados)
+  content       Json           // Apenas metadados leves
+  
   status        MessageStatus @default(pending)
   isDeleted     Boolean       @default(false)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+  
   session       Session       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   chat          Chat          @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  statusHistory  MessageStatusHistory[]
 
   @@unique([sessionId, messageId])
   @@index([sessionId, chatId, timestamp])
+  @@index([status])                    // Para os muitos updates de status
+  @@index([textContent])                // Para busca textual
+  @@index([mediaUrl])                  // Para filtrar mídias
+  @@index([messageType])                // Para filtrar tipos
+  @@index([timestamp DESC])              // Para queries por tempo
   @@map("Message")
+}
+
+model MessageStatusHistory {
+  id          String   @id @default(uuid())
+  messageId   String
+  status      MessageStatus
+  timestamp   BigInt
+  recipientJid String?  // Para receipts em grupos
+  createdAt   DateTime @default(now())
+  
+  message     Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  
+  @@index([messageId])
+  @@index([timestamp])
+  @@map("MessageStatusHistory")
 }
 
 model SessionSettings {
   id              String                  @id @default(uuid())
-  sessionId       String                  @unique
-  rejectCall      Boolean                 @default(false)
-  groupsIgnore    Boolean                 @default(false)
-  alwaysOnline    Boolean                 @default(false)
-  readMessages    Boolean                 @default(false)
-  readStatus      Boolean                 @default(false)
-  syncFullHistory Boolean                 @default(true)
-  profilePicture  WAPrivacyValue?
-  status          WAPrivacyValue?
-  lastSeen        WAPrivacyValue?
-  online          WAPrivacyOnlineValue?
-  call            WAPrivacyCallValue?
-  messages        WAPrivacyMessagesValue?
-  readReceipts    WAReadReceiptsValue?
-  groupsAdd       WAPrivacyGroupAddValue?
-  createdAt       DateTime                @default(now())
-  updatedAt       DateTime                @updatedAt
-  session         Session                 @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-
-  @@map("SessionSettings")
-}

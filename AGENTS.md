@@ -15,9 +15,10 @@ Este projeto é uma API robusta para gerenciamento de sessões WhatsApp constru�
 5. [Banco de Dados](#banco-de-dados)
 6. [Fluxos de Trabalho Essenciais](#fluxos-de-trabalho-essenciais)
 7. [Padrões e Convenções](#padrões-e-convenções)
-8. [Exemplos Práticos](#exemplos-práticos)
-9. [API Documentation](#api-documentation)
-10. [Troubleshooting](#troubleshooting)
+8. [Logging Estruturado](#logging-estruturado)
+9. [Exemplos Práticos](#exemplos-práticos)
+10. [API Documentation](#api-documentation)
+11. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -27,7 +28,7 @@ Este projeto é uma API robusta para gerenciamento de sessões WhatsApp constru�
 - **Backend**: NestJS 11+ (TypeScript)
 - **Banco de Dados**: PostgreSQL 16 com Prisma ORM
 - **WhatsApp Integration**: Whaileys
-- **Logging**: Pino com estrutura centralizada
+- **Logging**: Pino com configuração avançada e formato configurável
 - **API Documentation**: Swagger/OpenAPI 3.0
 - **Container**: Docker + Docker Compose
 
@@ -37,6 +38,7 @@ Este projeto é uma API robusta para gerenciamento de sessões WhatsApp constru�
 - Persistência completa de mensagens e contatos
 - Suporte a todos os tipos de mensagens WhatsApp
 - Interface administrativa via API RESTful
+- Logging estruturado com saída configurável (JSON/pretty)
 
 ---
 
@@ -60,9 +62,9 @@ Acesso aos serviços:
 # Instalar dependências
 npm install
 
-# Variáveis de ambiente necessárias (criar .env)
-DATABASE_URL="postgresql://zpwoot:zpwoot123@localhost:5432/zpwoot"
-PORT=3000
+# Variáveis de ambiente necessárias (criar .env baseado no .env.example)
+cp .env.example .env
+# Editar .env com suas configurações
 
 # Rodar migrations do Prisma
 npx prisma migrate dev
@@ -171,13 +173,22 @@ export class DatabaseService extends PrismaClient {
 }
 ```
 
-### PinoLoggerService
+### LoggerConfig e PinoLoggerService
 ```typescript
+// Localização: src/logger/logger.config.ts
+// Configuração avançada de logging baseada em ambiente
+@Injectable()
+export class LoggerConfig {
+  createPinoOptions(): LoggerOptions {
+    // Configuração dinâmica baseada em variáveis de ambiente
+  }
+}
+
 // Localização: src/logger/logger.service.ts
-// Logging estruturado com Pino
+// Implementação NestJS LoggerService com Pino
 @Injectable()
 export class PinoLoggerService implements LoggerService {
-  // Implementação com níveis de log customizados
+  // Logging estruturado com contexto automático
 }
 ```
 
@@ -307,63 +318,263 @@ throw Boom.notFound('Session not found');
 throw Boom.badRequest('Invalid phone number');
 ```
 
-### Logging
+---
+
+## Logging Estruturado
+
+O projeto utiliza Pino Logger com configuração avançada baseada em variáveis de ambiente, suportando tanto saída JSON estruturada para produção quanto saída pretty para desenvolvimento.
+
+### Variáveis de Ambiente
+```env
+# Nível de log: trace, debug, info, warn, error, fatal
+LOG_LEVEL=info
+
+# Formato de saída: pretty (console colorido), json (estruturado), mixed (adaptativo)
+LOG_FORMAT=pretty
+
+# Opções de formatação pretty
+LOG_PRETTY_COLORIZE=true
+LOG_PRETTY_SINGLE_LINE=true
+
+# Opções de metadados estruturados
+LOG_INCLUDE_TIMESTAMP=true
+LOG_SERVICE_NAME=zpwoot
+LOG_STRUCTURED_METADATA=true
+```
+
+### Formatos de Log Suportados
+
+#### `pretty` - Desenvolvimento
+- Saída colorida e formatada para console
+- Timestamps em formato legível
+- Single line para melhor readability
+- Ideal para desenvolvimento local
+
+#### `json` - Produção/Containers
+- Saída JSON pura estruturada
+- Metadados consistentes para log aggregators
+- Otimizado para parsing automatizado
+- Ideal para produção e ambientes containerizados
+
+#### `mixed` - Adaptativo
+- Detecta automaticamente TTY capability
+- Pretty quando em terminal interativo
+- JSON quando redirecionado para arquivo/pipe
+- Flexível para diferentes cenários
+
+### Melhores Práticas de Logging
+
+#### 1. Logs Informativos com Contexto
 ```typescript
-// Usar logger injetado com contexto
+// Logs de operações importantes
 this.logger.log(`Session ${sessionId} connected`, 'SessionsService');
-this.logger.error(`Failed to send message`, error, 'MessagesService');
+
+// Logs com metadados estruturados
+this.logger.log(
+  `Message processed successfully`,
+  { 
+    sessionId, 
+    messageId, 
+    messageType, 
+    processingTime: Date.now() - startTime 
+  },
+  'MessageProcessor'
+);
+```
+
+#### 2. Logs de Erro com Detalhes
+```typescript
+// Sempre incluir objeto de erro quando disponível
+this.logger.error(
+  `Failed to send message to ${remoteJid}`,
+  error,
+  'MessagesService'
+);
+
+// Logs de erro com contexto adicional
+this.logger.error(
+  `Database connection failed`,
+  { 
+    error: error.message, 
+    stack: error.stack,
+    query: sqlQuery,
+    params: queryParams 
+  },
+  'DatabaseService'
+);
+```
+
+#### 3. Logs de Debug para Troubleshooting
+```typescript
+// Debug com informações detalhadas
+this.logger.debug(
+  `Processing webhook event`,
+  { 
+    eventType, 
+    sessionId, 
+    payload: JSON.stringify(eventPayload),
+    processingId: generateId() 
+  },
+  'WebhookService'
+);
+```
+
+#### 4. Logs de Performance
+```typescript
+const startTime = Date.now();
+// ... operação ...
+this.logger.log(
+  `Operation completed`,
+  { 
+    operation: 'sendBulkMessages',
+    duration: Date.now() - startTime,
+    messageCount: messages.length,
+    successCount: successCount,
+    failureCount: failureCount 
+  },
+  'MessagesService'
+);
+```
+
+### Estrutura de Log JSON (Produção)
+```json
+{
+  "level": "info",
+  "time": "2025-01-01T00:00:00.000Z",
+  "service": "zpwoot",
+  "version": "1.0.0",
+  "environment": "production",
+  "pid": 1234,
+  "context": "SessionsService",
+  "sessionId": "uuid-123",
+  "msg": "Session connected successfully"
+}
+```
+
+### Exemplos de Saída
+
+#### Pretty Mode (Desenvolvimento)
+```
+[19:45:32.123] INFO (SessionsService): Session uuid-123 connected successfully
+[19:45:32.124] ERROR (MessagesService): Failed to send message to 5511999998888@s.whatsapp.net
+[19:45:32.125] DEBUG (WebhookService): Processing webhook event {eventType: "messages.upsert"}
+```
+
+#### JSON Mode (Produção)
+```json
+{"level":"info","time":"2025-01-01T19:45:32.123Z","service":"zpwoot","environment":"production","pid":1234,"context":"SessionsService","sessionId":"uuid-123","msg":"Session connected successfully"}
+{"level":"error","time":"2025-01-01T19:45:32.124Z","service":"zpwoot","environment":"production","pid":1234,"context":"MessagesService","remoteJid":"5511999998888@s.whatsapp.net","err":{"message":"Connection timeout"},"msg":"Failed to send message"}
+{"level":"debug","time":"2025-01-01T19:45:32.125Z","service":"zpwoot","environment":"production","pid":1234,"context":"WebhookService","eventType":"messages.upsert","msg":"Processing webhook event"}
 ```
 
 ---
 
 ## Exemplos Práticos
 
-### Controller Completo
+### Controller Completo com Logging
 ```typescript
 @Controller('sessions')
 @UseGuards(ApiKeyGuard)
 export class SessionsController {
-  constructor(private readonly sessionsService: SessionsService) {}
+  constructor(
+    private readonly sessionsService: SessionsService,
+    private readonly logger: PinoLoggerService
+  ) {
+    this.logger.setContext('SessionsController');
+  }
 
   @Post()
   async create(@Body() createSessionDto: CreateSessionDto) {
-    return this.sessionsService.create(createSessionDto);
+    this.logger.log(`Creating new session: ${createSessionDto.name}`);
+    
+    try {
+      const result = await this.sessionsService.create(createSessionDto);
+      this.logger.log(`Session created successfully: ${result.id}`, { sessionId: result.id });
+      return result;
+    } catch (error) {
+      this.logger.error(`Failed to create session`, error, { name: createSessionDto.name });
+      throw error;
+    }
   }
 
   @Get(':id/qrcode')
   @Public()  // Endpoint público para QR code
   async getQrCode(@Param('id') id: string) {
-    return this.sessionsService.getQrCode(id);
+    this.logger.debug(`QR code requested for session: ${id}`, { sessionId: id });
+    
+    const qrCode = await this.sessionsService.getQrCode(id);
+    this.logger.log(`QR code generated for session: ${id}`, { sessionId: id });
+    
+    return qrCode;
   }
 }
 ```
 
-### Service com Repository
+### Service com Repository e Logging Estruturado
 ```typescript
 @Injectable()
 export class MessagesService {
   constructor(
     private readonly messageRepository: MessageRepository,
     private readonly whatsappService: WhatsAppService,
-  ) {}
+    private readonly logger: PinoLoggerService
+  ) {
+    this.logger.setContext('MessagesService');
+  }
 
   async sendTextMessage(dto: SendTextMessageDto) {
-    const session = await this.whatsappService.getSession(dto.sessionId);
-    const result = await session.sendMessage(dto.remoteJid, {
-      text: dto.text,
-    });
+    const startTime = Date.now();
     
-    await this.messageRepository.create({
-      ...dto,
-      messageId: result.key.id,
-      status: MessageStatus.SENT,
+    this.logger.debug(`Starting message send operation`, {
+      sessionId: dto.sessionId,
+      remoteJid: dto.remoteJid,
+      messageLength: dto.text.length
     });
-    
-    return result;
+
+    try {
+      const session = await this.whatsappService.getSession(dto.sessionId);
+      const result = await session.sendMessage(dto.remoteJid, {
+        text: dto.text,
+      });
+      
+      await this.messageRepository.create({
+        ...dto,
+        messageId: result.key.id,
+        status: MessageStatus.SENT,
+      });
+
+      const duration = Date.now() - startTime;
+      this.logger.log(
+        `Message sent successfully`,
+        {
+          sessionId: dto.sessionId,
+          messageId: result.key.id,
+          remoteJid: dto.remoteJid,
+          duration,
+          messageType: 'text'
+        }
+      );
+      
+      return result;
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      this.logger.error(
+        `Failed to send message`,
+        error,
+        {
+          sessionId: dto.sessionId,
+          remoteJid: dto.remoteJid,
+          duration,
+          errorType: error.constructor.name
+        }
+      );
+      throw error;
+    }
   }
+}
 ```
 
-### DTO Complexo
+### DTO Complexo com Validação
 ```typescript
 export class SendTextMessageDto {
   @IsUUID()
@@ -416,9 +627,11 @@ GET    /groups/:id/metadata         # Metadados do grupo
 
 #### 1. Sessão não conecta
 ```bash
-# Verificar logs
-docker-compose logs -f postgres
-npm run start:dev  # Observar logs da aplicação
+# Verificar logs com diferentes níveis
+LOG_LEVEL=debug npm run start:dev
+
+# Verificar logs específicos do serviço
+grep "SessionsService" logs/app.log
 
 # Verificar estado da sessão no banco
 npx prisma studio
@@ -427,14 +640,19 @@ npx prisma studio
 #### 2. QR Code inválido
 - Limpar dados da sessão: `DELETE FROM "AuthState" WHERE sessionId = 'uuid'`
 - Reiniciar aplicação para gerar novo QR code
+- Verificar logs de autenticação com `LOG_LEVEL=debug`
 
 #### 3. Mensagens não são enviadas
 - Verificar status da sessão: deve ser `connected`
 - Validar formato do `remoteJid`: `5511999998888@s.whatsapp.net`
-- Verificar webhooks se há eventos de erro
+- Verificar logs de erro no `MessagesService`
+- Testar com `LOG_FORMAT=json` para melhor parsing
 
 #### 4. Performance lenta
 ```bash
+# Analisar logs de performance
+grep "duration" logs/app.log | jq '.duration'
+
 # Indexes necessários no PostgreSQL
 CREATE INDEX CONCURRENTLY idx_message_session_timestamp 
 ON "Message" (sessionId, timestamp);
@@ -445,17 +663,19 @@ ON "Chat" (sessionId, unreadCount);
 
 ### Debug e Monitoramento
 
-#### Logs Estruturados
-```typescript
-// Logs incluem contexto automático
-{
-  "level": "error",
-  "time": "2025-01-01T00:00:00.000Z",
-  "service": "MessagesService",
-  "sessionId": "uuid",
-  "messageId": "msg-id",
-  "error": "Connection timeout"
-}
+#### Análise de Logs Estruturados
+```bash
+# Filtrar logs por nível
+jq 'select(.level == "error")' logs/app.log
+
+# Filtrar por contexto
+jq 'select(.context == "SessionsService")' logs/app.log
+
+# Analisar performance
+jq 'select(.duration) | {duration, operation, timestamp}' logs/app.log
+
+# Contar erros por tipo
+jq 'select(.level == "error") | .errorType' logs/app.log | sort | uniq -c
 ```
 
 #### Health Checks
@@ -465,6 +685,21 @@ curl http://localhost:3000/health
 
 # Verificar conexão com banco
 curl http://localhost:3000/health/database
+
+# Verificar status das sessões
+curl -H "apikey: $API_KEY" http://localhost:3000/sessions
+```
+
+#### Monitoramento em Produção
+```bash
+# Configuração recomendada para produção
+LOG_LEVEL=info
+LOG_FORMAT=json
+LOG_STRUCTURED_METADATA=true
+LOG_INCLUDE_TIMESTAMP=true
+
+# Exemplo de configuração Docker
+docker run -e LOG_LEVEL=warn -e LOG_FORMAT=json zpwoot:latest
 ```
 
 ---
@@ -483,6 +718,7 @@ curl http://localhost:3000/health/database
 - [DBGate](http://localhost:3001) - Interface PostgreSQL via Docker
 - [Postman](https://www.postman.com) - Testes de API
 - [Docker Desktop](https://www.docker.com/products/docker-desktop) - Container management
+- [jq](https://stedolan.github.io/jq/) - Processamento de JSON logs
 
 ---
 
@@ -491,10 +727,21 @@ curl http://localhost:3000/health/database
 ### Para Adicionar Novas Funcionalidades:
 
 1. **Criar módulo**: `nest generate module new-feature`
-2. **Criar DTOs**: Com validação using class-validator
-3. **Implementar Service**: Com injeção de dependências
-4. **Criar Controller**: Com guards e documentação
+2. **Criar DTOs**: Com validação usando class-validator
+3. **Implementar Service**: Com injeção de dependências e logging estruturado
+4. **Criar Controller**: Com guards, documentação e logging adequado
 5. **Atualizar AGENTS.md**: Manter documentação atualizada
 
 ### Padrões de Code Review:
-- Seguir convenções de命名 existentes
+- Seguir convenções de nomenclatura existentes
+- Incluir logging estruturado em operações importantes
+- Adicionar metadados relevantes nos logs
+- Usar níveis de log apropriados (debug, info, warn, error)
+- Documentar novas variáveis de ambiente no .env.example
+
+### Logging Guidelines:
+- **DEBUG**: Informações detalhadas para troubleshooting
+- **INFO**: Operações importantes e eventos de negócio
+- **WARN**: Situações anômalas que não causam falha
+- **ERROR**: Falhas que requerem atenção imediata
+- **TRACE**: Detalhes extremamente granulares (desenvolvimento apenas)
