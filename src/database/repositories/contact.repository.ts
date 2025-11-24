@@ -4,12 +4,12 @@ import { BaseRepository } from '../../common/repositories/base.repository';
 import { DatabaseService } from '../database.service';
 
 @Injectable()
-export class ContactRepository extends BaseRepository<Contact> {
+export class ContactRepository extends BaseRepository {
   constructor(prisma: DatabaseService) {
     super(prisma);
   }
 
-  async create(data: Prisma.ContactCreateInput): Promise<Contact> {
+  create(data: Prisma.ContactCreateInput): Promise<Contact> {
     return this.prisma.contact.create({ data });
   }
 
@@ -21,7 +21,7 @@ export class ContactRepository extends BaseRepository<Contact> {
     return result.count;
   }
 
-  async upsert(
+  upsert(
     sessionId: string,
     remoteJid: string,
     create: Prisma.ContactCreateInput,
@@ -39,7 +39,7 @@ export class ContactRepository extends BaseRepository<Contact> {
     });
   }
 
-  async findBySessionId(
+  findBySessionId(
     sessionId: string,
     options?: {
       skip?: number;
@@ -54,7 +54,7 @@ export class ContactRepository extends BaseRepository<Contact> {
     });
   }
 
-  async findByRemoteJid(
+  findByRemoteJid(
     sessionId: string,
     remoteJid: string,
   ): Promise<Contact | null> {

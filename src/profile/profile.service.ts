@@ -32,7 +32,7 @@ export class ProfileService {
       if (statusResult) {
         profile.status = statusResult.status;
       }
-    } catch (error) {
+    } catch {
       // Ignorar erro ao obter status
     }
 
@@ -41,7 +41,7 @@ export class ProfileService {
       if (pictureUrl) {
         profile.profilePictureUrl = pictureUrl;
       }
-    } catch (error) {
+    } catch {
       // Ignorar erro ao obter foto de perfil
     }
 

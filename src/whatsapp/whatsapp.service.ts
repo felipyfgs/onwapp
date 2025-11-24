@@ -74,7 +74,7 @@ export class WhatsAppService {
   private shouldReconnectSession(
     statusCode: number,
     logoutAttempts: number,
-    isNewLogin: boolean,
+    _isNewLogin: boolean,
   ): boolean {
     const isLoggedOut = statusCode === DisconnectReason.loggedOut;
     const isRestartRequired = statusCode === DisconnectReason.restartRequired;

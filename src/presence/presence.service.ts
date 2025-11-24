@@ -91,7 +91,7 @@ export class PresenceService implements OnModuleInit {
     await socket.presenceSubscribe(dto.jid);
   }
 
-  async getPresenceCache(
+  getPresenceCache(
     sessionId: string,
     jid?: string,
   ): Promise<PresenceCacheResponseDto> {

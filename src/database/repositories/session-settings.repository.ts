@@ -4,24 +4,23 @@ import { BaseRepository } from '../../common/repositories/base.repository';
 import { DatabaseService } from '../database.service';
 
 @Injectable()
-export class SessionSettingsRepository extends BaseRepository<SessionSettings> {
+export class SessionSettingsRepository extends BaseRepository {
   constructor(prisma: DatabaseService) {
     super(prisma);
   }
 
-  async upsert(
+  upsert(
     sessionId: string,
-    create: Prisma.SessionSettingsCreateInput,
-    update: Prisma.SessionSettingsUpdateInput,
+    data: Prisma.SessionSettingsCreateInput,
   ): Promise<SessionSettings> {
     return this.prisma.sessionSettings.upsert({
       where: { sessionId },
-      create,
-      update,
+      create: data,
+      update: data,
     });
   }
 
-  async findBySessionId(sessionId: string): Promise<SessionSettings | null> {
+  findBySessionId(sessionId: string): Promise<SessionSettings | null> {
     return this.prisma.sessionSettings.findUnique({
       where: { sessionId },
     });

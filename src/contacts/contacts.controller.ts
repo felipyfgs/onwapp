@@ -94,7 +94,7 @@ export class ContactsController {
     },
   })
   @ApiBadRequestResponse({ description: 'Sessão desconectada' })
-  listContacts(@Param('sessionId') sessionId: string): Promise<any[]> {
+  listContacts(@Param('sessionId') sessionId: string): any[] {
     return this.contactsService.listContacts(sessionId);
   }
 }

@@ -4,37 +4,48 @@ import { BaseRepository } from '../../common/repositories/base.repository';
 import { DatabaseService } from '../database.service';
 
 @Injectable()
-export class SessionRepository extends BaseRepository<Session> {
+export class SessionRepository extends BaseRepository {
   constructor(prisma: DatabaseService) {
     super(prisma);
   }
 
-  async create(data: Prisma.SessionCreateInput): Promise<Session> {
+  create(data: Prisma.SessionCreateInput): Promise<Session> {
     return this.prisma.session.create({ data });
   }
 
-  async findById(id: string): Promise<Session | null> {
-    return this.prisma.session.findUnique({ where: { id } });
-  }
-
-  async findAll(): Promise<Session[]> {
-    return this.prisma.session.findMany();
-  }
-
-  async findAllConnected(): Promise<Session[]> {
-    return this.prisma.session.findMany({
-      where: { status: 'connected' },
+  findById(id: string): Promise<Session | null> {
+    return this.prisma.session.findUnique({
+      where: { id },
     });
   }
 
-  async update(id: string, data: Prisma.SessionUpdateInput): Promise<Session> {
+  findAll(): Promise<Session[]> {
+    return this.prisma.session.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  findAllConnected(): Promise<Session[]> {
+    return this.prisma.session.findMany({
+      where: {
+        status: {
+          in: ['connected', 'connecting'],
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  update(id: string, data: Prisma.SessionUpdateInput): Promise<Session> {
     return this.prisma.session.update({
       where: { id },
       data,
     });
   }
 
-  async delete(id: string): Promise<Session> {
-    return this.prisma.session.delete({ where: { id } });
+  delete(id: string): Promise<Session> {
+    return this.prisma.session.delete({
+      where: { id },
+    });
   }
 }

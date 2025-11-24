@@ -49,7 +49,7 @@ export async function useAuthState(
       });
 
       if (credsRecord && credsRecord.keyData) {
-        return deserializeFromJson(credsRecord.keyData);
+        return deserializeFromJson(credsRecord.keyData) as AuthenticationCreds;
       }
     } catch (error) {
       const sid = formatSessionId(sessionId);

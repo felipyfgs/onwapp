@@ -4,30 +4,26 @@ import { BaseRepository } from '../../common/repositories/base.repository';
 import { DatabaseService } from '../database.service';
 
 @Injectable()
-export class WebhookRepository extends BaseRepository<Webhook> {
+export class WebhookRepository extends BaseRepository {
   constructor(prisma: DatabaseService) {
     super(prisma);
   }
 
-  async upsert(
-    sessionId: string,
-    create: Prisma.WebhookCreateInput,
-    update: Prisma.WebhookUpdateInput,
-  ): Promise<Webhook> {
+  upsert(sessionId: string, data: Prisma.WebhookCreateInput): Promise<Webhook> {
     return this.prisma.webhook.upsert({
       where: { sessionId },
-      create,
-      update,
+      create: data,
+      update: data,
     });
   }
 
-  async findBySessionId(sessionId: string): Promise<Webhook | null> {
+  findBySessionId(sessionId: string): Promise<Webhook | null> {
     return this.prisma.webhook.findUnique({
       where: { sessionId },
     });
   }
 
-  async delete(sessionId: string): Promise<Webhook> {
+  delete(sessionId: string): Promise<Webhook> {
     return this.prisma.webhook.delete({
       where: { sessionId },
     });
