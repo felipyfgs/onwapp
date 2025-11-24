@@ -39,13 +39,13 @@ export function IsValidEvent(validationOptions?: ValidationOptions) {
       propertyName: propertyName,
       options: validationOptions,
       validator: {
-        validate(value: any, args: ValidationArguments) {
+        validate(value: any) {
           if (typeof value !== 'string') {
             return false;
           }
           return VALID_WEBHOOK_EVENTS.includes(value);
         },
-        defaultMessage(args: ValidationArguments) {
+        defaultMessage() {
           return `Each event must be one of the following: ${VALID_WEBHOOK_EVENTS.join(', ')}`;
         },
       },

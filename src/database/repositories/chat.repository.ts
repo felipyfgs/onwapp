@@ -4,7 +4,7 @@ import { BaseRepository } from '../../common/repositories/base.repository';
 import { DatabaseService } from '../database.service';
 
 @Injectable()
-export class ChatRepository extends BaseRepository<Chat> {
+export class ChatRepository extends BaseRepository {
   constructor(prisma: DatabaseService) {
     super(prisma);
   }

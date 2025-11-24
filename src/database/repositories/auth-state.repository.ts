@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { AuthState, Prisma } from '@prisma/client';
+import { AuthState } from '@prisma/client';
 import { BaseRepository } from '../../common/repositories/base.repository';
 import { DatabaseService } from '../database.service';
 
 @Injectable()
-export class AuthStateRepository extends BaseRepository<AuthState> {
+export class AuthStateRepository extends BaseRepository {
   constructor(prisma: DatabaseService) {
     super(prisma);
   }

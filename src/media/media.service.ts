@@ -12,13 +12,13 @@ export class MediaService {
   private createSilentLogger() {
     return {
       level: 'silent',
-      fatal: (...args: any[]) => {},
-      error: (...args: any[]) => {},
-      warn: (...args: any[]) => {},
-      info: (...args: any[]) => {},
-      debug: (...args: any[]) => {},
-      trace: (...args: any[]) => {},
-      silent: (...args: any[]) => {},
+      fatal: () => {},
+      error: () => {},
+      warn: () => {},
+      info: () => {},
+      debug: () => {},
+      trace: () => {},
+      silent: () => {},
       child: () => this.createSilentLogger(),
     };
   }

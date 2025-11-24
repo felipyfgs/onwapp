@@ -53,7 +53,6 @@ export class PresenceService implements OnModuleInit {
 
       const sessionCache = this.presenceCache.get(sessionId)!;
 
-      const chatJid = update.id;
       const presences = update.presences || {};
 
       for (const [jid, presenceInfo] of Object.entries(presences) as any) {

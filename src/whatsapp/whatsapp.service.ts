@@ -28,10 +28,6 @@ const RECONNECT_DELAYS = {
 } as const;
 
 const MAX_LOGOUT_ATTEMPTS = 2;
-const ACTIVE_SESSION_STATUSES: Array<'connected' | 'connecting'> = [
-  'connected',
-  'connecting',
-];
 
 @Injectable()
 export class WhatsAppService {
@@ -60,13 +56,13 @@ export class WhatsAppService {
   private createSilentLogger() {
     return {
       level: 'silent',
-      fatal: (...args: any[]) => {},
-      error: (...args: any[]) => {},
-      warn: (...args: any[]) => {},
-      info: (...args: any[]) => {},
-      debug: (...args: any[]) => {},
-      trace: (...args: any[]) => {},
-      silent: (...args: any[]) => {},
+      fatal: () => {},
+      error: () => {},
+      warn: () => {},
+      info: () => {},
+      debug: () => {},
+      trace: () => {},
+      silent: () => {},
       child: () => this.createSilentLogger(),
     };
   }
@@ -253,12 +249,7 @@ export class WhatsAppService {
     currentQRRef: { value?: string },
   ) {
     return async (update: any) => {
-      const {
-        connection,
-        lastDisconnect,
-        qr,
-        isNewLogin: isNewLoginFromSocket,
-      } = update;
+      const { connection, lastDisconnect, qr } = update;
 
       if (qr) {
         currentQRRef.value = qr;
@@ -323,7 +314,7 @@ export class WhatsAppService {
       });
 
       try {
-        const { messages, type } = payload;
+        const { messages } = payload;
 
         for (const msg of messages) {
           if (!msg.key || !msg.key.id || !msg.key.remoteJid) continue;

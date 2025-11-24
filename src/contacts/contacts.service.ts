@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { WhatsAppService } from '../whatsapp/whatsapp.service';
 import { ValidateNumberDto } from './dto/validate-number.dto';
 import { ValidateNumberResponseDto } from './dto/validate-number-response.dto';

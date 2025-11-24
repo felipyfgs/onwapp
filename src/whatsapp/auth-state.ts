@@ -19,7 +19,11 @@ function serializeToJson(value: any): any {
 }
 
 function deserializeFromJson(value: any): any {
-  return JSON.parse(JSON.stringify(value), BufferJSON.reviver);
+  try {
+    return JSON.parse(JSON.stringify(value), BufferJSON.reviver);
+  } catch {
+    return value;
+  }
 }
 
 export async function useAuthState(
