@@ -87,10 +87,10 @@ export class PresenceController {
     description: 'Cache de presenças retornado com sucesso',
     type: PresenceCacheResponseDto,
   })
-  async getPresenceCache(
+  getPresenceCache(
     @Param('sessionId') sessionId: string,
     @Query('jid') jid?: string,
-  ): Promise<PresenceCacheResponseDto> {
+  ): PresenceCacheResponseDto {
     return this.presenceService.getPresenceCache(sessionId, jid);
   }
 }
