@@ -13,7 +13,7 @@ export class AuthStateRepository extends BaseRepository<AuthState> {
     sessionId: string,
     keyType: string,
     keyId: string,
-    keyData: Prisma.JsonValue,
+    keyData: any,
   ): Promise<AuthState> {
     return this.prisma.authState.upsert({
       where: {

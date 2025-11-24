@@ -3,7 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { DatabaseService } from '../database/database.service';
+import { SessionRepository } from '../database/repositories';
 import { WhatsAppService } from '../whatsapp/whatsapp.service';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { PairPhoneDto } from './dto/pair-phone.dto';
@@ -12,35 +12,29 @@ import { SessionResponseDto } from './dto/session-response.dto';
 @Injectable()
 export class SessionsService {
   constructor(
-    private prisma: DatabaseService,
+    private readonly sessionRepository: SessionRepository,
     private whatsapp: WhatsAppService,
   ) {}
 
   async createSession(
     createSessionDto: CreateSessionDto,
   ): Promise<SessionResponseDto> {
-    const session = await this.prisma.session.create({
-      data: {
-        name: createSessionDto.name,
-        status: 'disconnected',
-      },
+    const session = await this.sessionRepository.create({
+      name: createSessionDto.name,
+      status: 'disconnected',
     });
 
     return this.mapToResponseDto(session);
   }
 
   async getSessions(): Promise<SessionResponseDto[]> {
-    const sessions = await this.prisma.session.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
+    const sessions = await this.sessionRepository.findAll();
 
     return sessions.map((session) => this.mapToResponseDto(session));
   }
 
   async getSession(id: string): Promise<SessionResponseDto> {
-    const session = await this.prisma.session.findUnique({
-      where: { id },
-    });
+    const session = await this.sessionRepository.findById(id);
 
     if (!session) {
       throw new NotFoundException(`Session with ID ${id} not found`);
@@ -50,9 +44,7 @@ export class SessionsService {
   }
 
   async deleteSession(id: string): Promise<void> {
-    const session = await this.prisma.session.findUnique({
-      where: { id },
-    });
+    const session = await this.sessionRepository.findById(id);
 
     if (!session) {
       throw new NotFoundException(`Session with ID ${id} not found`);
@@ -60,15 +52,11 @@ export class SessionsService {
 
     await this.whatsapp.deleteSession(session.id);
 
-    await this.prisma.session.delete({
-      where: { id },
-    });
+    await this.sessionRepository.delete(id);
   }
 
   async connectSession(id: string): Promise<SessionResponseDto> {
-    const session = await this.prisma.session.findUnique({
-      where: { id },
-    });
+    const session = await this.sessionRepository.findById(id);
 
     if (!session) {
       throw new NotFoundException(`Session with ID ${id} not found`);
@@ -80,17 +68,13 @@ export class SessionsService {
 
     await this.whatsapp.createSocket(session.id);
 
-    const updatedSession = await this.prisma.session.findUnique({
-      where: { id },
-    });
+    const updatedSession = await this.sessionRepository.findById(id);
 
     return this.mapToResponseDto(updatedSession!);
   }
 
   async disconnectSession(id: string): Promise<SessionResponseDto> {
-    const session = await this.prisma.session.findUnique({
-      where: { id },
-    });
+    const session = await this.sessionRepository.findById(id);
 
     if (!session) {
       throw new NotFoundException(`Session with ID ${id} not found`);
@@ -98,18 +82,16 @@ export class SessionsService {
 
     await this.whatsapp.disconnectSocket(session.id);
 
-    const updatedSession = await this.prisma.session.update({
-      where: { id },
-      data: { status: 'disconnected', qrCode: null },
+    const updatedSession = await this.sessionRepository.update(id, {
+      status: 'disconnected',
+      qrCode: null,
     });
 
     return this.mapToResponseDto(updatedSession);
   }
 
   async logoutSession(id: string): Promise<SessionResponseDto> {
-    const session = await this.prisma.session.findUnique({
-      where: { id },
-    });
+    const session = await this.sessionRepository.findById(id);
 
     if (!session) {
       throw new NotFoundException(`Session with ID ${id} not found`);
@@ -117,18 +99,16 @@ export class SessionsService {
 
     await this.whatsapp.disconnectSocket(session.id);
 
-    const updatedSession = await this.prisma.session.update({
-      where: { id },
-      data: { status: 'disconnected', qrCode: null },
+    const updatedSession = await this.sessionRepository.update(id, {
+      status: 'disconnected',
+      qrCode: null,
     });
 
     return this.mapToResponseDto(updatedSession);
   }
 
   async getQRCode(id: string): Promise<{ qrCode?: string }> {
-    const session = await this.prisma.session.findUnique({
-      where: { id },
-    });
+    const session = await this.sessionRepository.findById(id);
 
     if (!session) {
       throw new NotFoundException(`Session with ID ${id} not found`);
@@ -144,9 +124,7 @@ export class SessionsService {
     id: string,
     pairPhoneDto: PairPhoneDto,
   ): Promise<SessionResponseDto> {
-    const session = await this.prisma.session.findUnique({
-      where: { id },
-    });
+    const session = await this.sessionRepository.findById(id);
 
     if (!session) {
       throw new NotFoundException(`Session with ID ${id} not found`);
@@ -162,18 +140,15 @@ export class SessionsService {
 
     await socket.requestPairingCode(pairPhoneDto.phoneNumber);
 
-    const updatedSession = await this.prisma.session.update({
-      where: { id },
-      data: { phoneNumber: pairPhoneDto.phoneNumber },
+    const updatedSession = await this.sessionRepository.update(id, {
+      phoneNumber: pairPhoneDto.phoneNumber,
     });
 
     return this.mapToResponseDto(updatedSession);
   }
 
   async getSessionStatus(id: string): Promise<{ status: string }> {
-    const session = await this.prisma.session.findUnique({
-      where: { id },
-    });
+    const session = await this.sessionRepository.findById(id);
 
     if (!session) {
       throw new NotFoundException(`Session with ID ${id} not found`);

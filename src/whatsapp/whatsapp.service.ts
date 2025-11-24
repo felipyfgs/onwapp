@@ -5,6 +5,8 @@ import makeWASocket, {
 } from 'whaileys';
 import { Boom } from '@hapi/boom';
 import { DatabaseService } from '../database/database.service';
+import { AuthStateRepository, SessionRepository } from '../database/repositories';
+import { SocketManager } from './managers/socket.manager';
 import * as qrcode from 'qrcode-terminal';
 import { useAuthState } from './auth-state';
 import { WebhooksService } from '../webhooks/webhooks.service';
@@ -14,21 +16,10 @@ import { SettingsService } from '../settings/settings.service';
 import { parseMessageContent } from '../persistence/utils/message-parser';
 import { MessageStatus } from '@prisma/client';
 
-interface SessionSocket {
-  socket: WASocket;
+interface SessionData {
   qrCode?: string;
   isNewLogin: boolean;
   logoutAttempts: number;
-}
-
-interface DisconnectContext {
-  sessionId: string;
-  statusCode: number;
-  isLoggedOut: boolean;
-  isRestartRequired: boolean;
-  isBadSession: boolean;
-  logoutAttempts: number;
-  isNewLogin: boolean;
 }
 
 const RECONNECT_DELAYS = {
@@ -45,10 +36,13 @@ const ACTIVE_SESSION_STATUSES: Array<'connected' | 'connecting'> = [
 @Injectable()
 export class WhatsAppService {
   private readonly logger = new Logger(WhatsAppService.name);
-  private sessions: Map<string, SessionSocket> = new Map();
+  private sessionData: Map<string, SessionData> = new Map();
 
   constructor(
-    private prisma: DatabaseService,
+    private readonly prisma: DatabaseService,
+    private readonly socketManager: SocketManager,
+    private readonly authStateRepository: AuthStateRepository,
+    private readonly sessionRepository: SessionRepository,
     @Inject(forwardRef(() => WebhooksService))
     private webhooksService: WebhooksService,
     @Inject(forwardRef(() => PersistenceService))
@@ -108,10 +102,7 @@ export class WhatsAppService {
     data: any,
   ): Promise<void> {
     try {
-      await this.prisma.session.update({
-        where: { id: sessionId },
-        data,
-      });
+      await this.sessionRepository.update(sessionId, data);
     } catch (error) {
       this.logger.error(
         `[${sessionId}] Operation: updateSessionStatus | Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -122,9 +113,7 @@ export class WhatsAppService {
 
   private async clearSessionCredentials(sessionId: string): Promise<void> {
     try {
-      await this.prisma.authState.deleteMany({
-        where: { sessionId },
-      });
+      await this.authStateRepository.deleteBySession(sessionId);
     } catch (error) {
       this.logger.error(
         `[${sessionId}] Operation: clearSessionCredentials | Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -145,13 +134,7 @@ export class WhatsAppService {
   }
 
   async reconnectActiveSessions(): Promise<void> {
-    const activeSessions = await this.prisma.session.findMany({
-      where: {
-        status: {
-          in: ACTIVE_SESSION_STATUSES,
-        },
-      },
-    });
+    const activeSessions = await this.sessionRepository.findAllConnected();
 
     this.logger.log(
       `Reconectando ${activeSessions.length} sessão(ões) ativa(s)`,
@@ -169,9 +152,9 @@ export class WhatsAppService {
   }
 
   private async handleQRCode(sessionId: string, qr: string): Promise<void> {
-    const sessionSocket = this.sessions.get(sessionId);
-    if (sessionSocket) {
-      sessionSocket.qrCode = qr;
+    const sessionDataEntry = this.sessionData.get(sessionId);
+    if (sessionDataEntry) {
+      sessionDataEntry.qrCode = qr;
     }
     const sid = this.formatSessionId(sessionId);
     this.logger.log(`[${sid}] QR gerado`);
@@ -186,10 +169,10 @@ export class WhatsAppService {
     sessionId: string,
     socket: WASocket,
   ): Promise<void> {
-    const sessionSocket = this.sessions.get(sessionId);
-    if (sessionSocket) {
-      sessionSocket.logoutAttempts = 0;
-      sessionSocket.isNewLogin = false;
+    const sessionDataEntry = this.sessionData.get(sessionId);
+    if (sessionDataEntry) {
+      sessionDataEntry.logoutAttempts = 0;
+      sessionDataEntry.isNewLogin = false;
     }
 
     const phoneNumber = this.extractPhoneNumber(socket);
@@ -212,12 +195,12 @@ export class WhatsAppService {
     const isLoggedOut = statusCode === DisconnectReason.loggedOut;
     const isRestartRequired = statusCode === DisconnectReason.restartRequired;
 
-    const sessionSocket = this.sessions.get(sessionId);
-    const currentLogoutAttempts = (sessionSocket?.logoutAttempts ?? 0) + 1;
+    const sessionDataEntry = this.sessionData.get(sessionId);
+    const currentLogoutAttempts = (sessionDataEntry?.logoutAttempts ?? 0) + 1;
     const shouldReconnect = this.shouldReconnectSession(
       statusCode,
       currentLogoutAttempts,
-      sessionSocket?.isNewLogin ?? false,
+      sessionDataEntry?.isNewLogin ?? false,
     );
 
     const sid = this.formatSessionId(sessionId);
@@ -225,11 +208,12 @@ export class WhatsAppService {
       `[${sid}] ✗ Desconectado | Code: ${statusCode} | Retry: ${shouldReconnect ? `✓ (${currentLogoutAttempts})` : '✗'}`,
     );
 
-    this.sessions.delete(sessionId);
+    this.socketManager.deleteSocket(sessionId);
+    this.sessionData.delete(sessionId);
 
     if (
       isLoggedOut &&
-      !sessionSocket?.isNewLogin &&
+      !sessionDataEntry?.isNewLogin &&
       currentLogoutAttempts >= MAX_LOGOUT_ATTEMPTS
     ) {
       this.logger.warn(
@@ -566,10 +550,11 @@ export class WhatsAppService {
   async createSocket(
     sessionId: string,
   ): Promise<{ socket: WASocket; qr?: string }> {
-    const hasExistingCreds = await this.prisma.authState.findFirst({
-      where: { sessionId, keyType: 'creds' },
-    });
-    const isNewLogin = !hasExistingCreds;
+    const hasExistingCreds = await this.authStateRepository.findBySessionAndType(
+      sessionId,
+      'creds',
+    );
+    const isNewLogin = !hasExistingCreds || hasExistingCreds.length === 0;
 
     const sid = this.formatSessionId(sessionId);
     this.logger.log(
@@ -598,8 +583,8 @@ export class WhatsAppService {
 
     await this.registerWebhookListeners(sessionId, socket);
 
-    this.sessions.set(sessionId, {
-      socket,
+    this.socketManager.createSocket(sessionId, socket);
+    this.sessionData.set(sessionId, {
       qrCode: currentQRRef.value,
       isNewLogin,
       logoutAttempts: 0,
@@ -609,18 +594,19 @@ export class WhatsAppService {
   }
 
   getSocket(sessionId: string): WASocket | undefined {
-    return this.sessions.get(sessionId)?.socket;
+    return this.socketManager.getSocket(sessionId);
   }
 
   getQRCode(sessionId: string): string | undefined {
-    return this.sessions.get(sessionId)?.qrCode;
+    return this.sessionData.get(sessionId)?.qrCode;
   }
 
   async disconnectSocket(sessionId: string): Promise<void> {
-    const sessionSocket = this.sessions.get(sessionId);
-    if (sessionSocket) {
-      await sessionSocket.socket.logout();
-      this.sessions.delete(sessionId);
+    const socket = this.socketManager.getSocket(sessionId);
+    if (socket) {
+      await socket.logout();
+      this.socketManager.deleteSocket(sessionId);
+      this.sessionData.delete(sessionId);
     }
   }
 
