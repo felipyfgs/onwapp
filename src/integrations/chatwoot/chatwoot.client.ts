@@ -1,90 +1,93 @@
-import axios, { AxiosInstance } from 'axios';
+import { Injectable, Logger } from '@nestjs/common';
+import axios, { AxiosInstance, AxiosError } from 'axios';
 import FormData from 'form-data';
+import * as Boom from '@hapi/boom';
+import {
+  ChatwootClientConfig,
+  ChatwootContact,
+  ChatwootConversation,
+  ChatwootMessage,
+  ChatwootInbox,
+  ContactsSearchResponse,
+  ContactCreateResponse,
+  ConversationsListResponse,
+  InboxesListResponse,
+  FilterPayloadItem,
+} from './interfaces';
+import { CHATWOOT_DEFAULTS } from './constants';
 
-export interface ChatwootConfig {
-  url: string;
-  accountId: string;
-  token: string;
-}
+// Re-export interfaces for backward compatibility
+export type {
+  ChatwootClientConfig as ChatwootConfig,
+  ChatwootContact,
+  ChatwootConversation,
+  ChatwootMessage,
+  ChatwootInbox,
+};
 
-export interface ChatwootContact {
-  id: number;
-  name?: string;
-  email?: string;
-  phone_number?: string;
-  identifier?: string;
-  thumbnail?: string;
-  custom_attributes?: Record<string, unknown>;
-}
-
-export interface ChatwootConversation {
-  id: number;
-  inbox_id: number;
-  contact_id: number;
-  status: 'open' | 'resolved' | 'pending';
-  messages?: ChatwootMessage[];
-}
-
-export interface ChatwootMessage {
-  id: number;
-  content: string;
-  message_type: 'incoming' | 'outgoing';
-  content_type?: string;
-  private?: boolean;
-  source_id?: string;
-  attachments?: ChatwootAttachment[];
-}
-
-export interface ChatwootAttachment {
-  id: number;
-  file_type: string;
-  data_url: string;
-}
-
-export interface ChatwootInbox {
-  id: number;
-  name: string;
-  channel_type: string;
-  webhook_url?: string;
-}
-
-interface ContactsSearchResponse {
-  payload: ChatwootContact[];
-}
-
-interface ContactCreateResponse {
-  payload: { contact: ChatwootContact };
-}
-
-interface ConversationsListResponse {
-  payload: ChatwootConversation[];
-}
-
-interface InboxesListResponse {
-  payload: ChatwootInbox[];
-}
-
-interface FilterPayloadItem {
-  attribute_key: string;
-  filter_operator: string;
-  values: string[];
-  query_operator: string | null;
-}
-
+/**
+ * Chatwoot API Client
+ *
+ * Handles all HTTP communication with the Chatwoot API.
+ * Each instance is configured for a specific Chatwoot account.
+ */
 export class ChatwootClient {
-  private client: AxiosInstance;
-  private accountId: string;
+  private readonly client: AxiosInstance;
+  private readonly accountId: string;
+  private readonly baseUrl: string;
+  private readonly logger = new Logger(ChatwootClient.name);
 
-  constructor(config: ChatwootConfig) {
+  constructor(config: ChatwootClientConfig) {
     this.accountId = config.accountId;
+    this.baseUrl = config.url;
     this.client = axios.create({
       baseURL: `${config.url}/api/v1/accounts/${config.accountId}`,
       headers: {
         'Content-Type': 'application/json',
         api_access_token: config.token,
       },
-      timeout: 30000,
+      timeout: CHATWOOT_DEFAULTS.HTTP_TIMEOUT,
     });
+
+    // Add response interceptor for error handling
+    this.client.interceptors.response.use(
+      (response) => response,
+      (error: AxiosError) => this.handleApiError(error),
+    );
+  }
+
+  /**
+   * Handle API errors and convert to Boom errors
+   */
+  private handleApiError(error: AxiosError): never {
+    const status = error.response?.status || 500;
+    const message =
+      (error.response?.data as { error?: string })?.error ||
+      error.message ||
+      'Chatwoot API error';
+
+    this.logger.error(
+      `Chatwoot API error: ${status} - ${message}`,
+      error.stack,
+    );
+
+    if (status === 401) {
+      throw Boom.unauthorized('Invalid Chatwoot API token');
+    }
+    if (status === 403) {
+      throw Boom.forbidden('Access denied to Chatwoot resource');
+    }
+    if (status === 404) {
+      throw Boom.notFound(message);
+    }
+    if (status === 422) {
+      throw Boom.badData(message);
+    }
+    if (status >= 500) {
+      throw Boom.serverUnavailable('Chatwoot service unavailable');
+    }
+
+    throw Boom.badRequest(message);
   }
 
   // ==================== CONTACTS ====================
@@ -345,5 +348,79 @@ export class ChatwootClient {
       },
     );
     return data;
+  }
+
+  // ==================== UTILITY GETTERS ====================
+
+  /**
+   * Get the base URL of the Chatwoot instance
+   */
+  getBaseUrl(): string {
+    return this.baseUrl;
+  }
+
+  /**
+   * Get the account ID
+   */
+  getAccountId(): string {
+    return this.accountId;
+  }
+}
+
+/**
+ * Factory for creating ChatwootClient instances
+ *
+ * Manages client instances and ensures proper caching per session.
+ */
+@Injectable()
+export class ChatwootClientFactory {
+  private readonly logger = new Logger(ChatwootClientFactory.name);
+  private readonly clients = new Map<string, ChatwootClient>();
+
+  /**
+   * Get or create a ChatwootClient for the given session
+   */
+  getClient(sessionId: string, config: ChatwootClientConfig): ChatwootClient {
+    const cacheKey = `${sessionId}:${config.accountId}`;
+
+    if (!this.clients.has(cacheKey)) {
+      this.logger.debug(`Creating new Chatwoot client for session: ${sessionId}`);
+      this.clients.set(cacheKey, new ChatwootClient(config));
+    }
+
+    return this.clients.get(cacheKey)!;
+  }
+
+  /**
+   * Remove a cached client for the given session
+   */
+  removeClient(sessionId: string): void {
+    // Remove all clients for this session
+    for (const key of this.clients.keys()) {
+      if (key.startsWith(`${sessionId}:`)) {
+        this.clients.delete(key);
+        this.logger.debug(`Removed Chatwoot client: ${key}`);
+      }
+    }
+  }
+
+  /**
+   * Check if a client exists for the session
+   */
+  hasClient(sessionId: string): boolean {
+    for (const key of this.clients.keys()) {
+      if (key.startsWith(`${sessionId}:`)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Clear all cached clients
+   */
+  clearAll(): void {
+    this.clients.clear();
+    this.logger.debug('Cleared all Chatwoot clients');
   }
 }

@@ -1,8 +1,19 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ChatwootService } from './chatwoot.service';
-import { ChatwootRepository } from './chatwoot.repository';
 import axios from 'axios';
-import { WAMessageKey } from '../../common/interfaces';
+import {
+  ChatwootConfigService,
+  ChatwootContactService,
+  ChatwootConversationService,
+  ChatwootMessageService,
+} from './services';
+import { ChatwootRepository } from './chatwoot.repository';
+import {
+  ZpwootWebhookPayload,
+  ZpwootMessageEvent,
+  WAMessageContent,
+  EventHandlingResult,
+} from './interfaces';
+import { ZPWOOT_EVENTS } from './constants';
 import {
   getMediaExtension,
   extractMediaUrl,
@@ -10,35 +21,29 @@ import {
   extractPhoneFromJid,
 } from '../../common/utils';
 
-interface WAMessageEvent {
-  key: WAMessageKey & { fromMe?: boolean };
-  message?: Record<string, unknown>;
-  pushName?: string;
-  messageTimestamp?: number;
-}
-
-interface WebhookPayload {
-  sessionId: string;
-  event: string;
-  timestamp: string;
-  data: {
-    messages?: WAMessageEvent[];
-    type?: string;
-  };
-}
-
+/**
+ * Handler for WhatsApp events forwarded to Chatwoot
+ *
+ * Processes incoming WhatsApp messages and forwards them to Chatwoot.
+ */
 @Injectable()
 export class ChatwootEventHandler {
   private readonly logger = new Logger(ChatwootEventHandler.name);
 
   constructor(
-    private readonly chatwootService: ChatwootService,
+    private readonly configService: ChatwootConfigService,
+    private readonly contactService: ChatwootContactService,
+    private readonly conversationService: ChatwootConversationService,
+    private readonly messageService: ChatwootMessageService,
     private readonly chatwootRepository: ChatwootRepository,
   ) {}
 
+  /**
+   * Handle incoming webhook event from zpwoot
+   */
   async handleWebhookEvent(
-    payload: WebhookPayload,
-  ): Promise<{ processed: boolean; reason?: string }> {
+    payload: ZpwootWebhookPayload,
+  ): Promise<EventHandlingResult> {
     const { sessionId, event, data } = payload;
 
     const config = await this.chatwootRepository.findBySessionId(sessionId);
@@ -47,22 +52,25 @@ export class ChatwootEventHandler {
     }
 
     switch (event) {
-      case 'messages.upsert':
+      case ZPWOOT_EVENTS.MESSAGES_UPSERT:
         return this.handleMessagesUpsert(sessionId, data, config);
       default:
         return { processed: false, reason: `Event ${event} not handled` };
     }
   }
 
+  /**
+   * Handle messages.upsert event
+   */
   private async handleMessagesUpsert(
     sessionId: string,
-    data: { messages?: WAMessageEvent[]; type?: string },
+    data: { messages?: ZpwootMessageEvent[]; type?: string },
     config: {
       ignoreJids: string[];
       signMsg: boolean;
       signDelimiter: string | null;
     },
-  ): Promise<{ processed: boolean; reason?: string }> {
+  ): Promise<EventHandlingResult> {
     const messages = data.messages || [];
 
     if (messages.length === 0) {
@@ -77,7 +85,7 @@ export class ChatwootEventHandler {
         processedCount++;
       } catch (error) {
         this.logger.error(
-          `Error processing message ${msg.key.id}: ${(error as Error).message}`,
+          `[${sessionId}] Error processing message ${msg.key.id}: ${(error as Error).message}`,
         );
       }
     }
@@ -88,9 +96,12 @@ export class ChatwootEventHandler {
     };
   }
 
+  /**
+   * Process a single WhatsApp message and forward to Chatwoot
+   */
   private async processMessage(
     sessionId: string,
-    msg: WAMessageEvent,
+    msg: ZpwootMessageEvent,
     config: {
       ignoreJids: string[];
       signMsg: boolean;
@@ -115,17 +126,17 @@ export class ChatwootEventHandler {
     const phoneNumber = isGroup ? remoteJid : extractPhoneFromJid(remoteJid);
 
     // Get or create inbox
-    const inbox = await this.chatwootService.getInbox(sessionId);
+    const inbox = await this.configService.getInbox(sessionId);
     if (!inbox) {
       this.logger.warn(`[${sessionId}] Chatwoot inbox not found`);
       return;
     }
 
     // Find or create contact
-    let contact = await this.chatwootService.findContact(sessionId, remoteJid);
+    let contact = await this.contactService.findContact(sessionId, remoteJid);
     if (!contact) {
       const contactName = pushName || phoneNumber;
-      contact = await this.chatwootService.createContact(sessionId, {
+      contact = await this.contactService.createContact(sessionId, {
         phoneNumber,
         inboxId: inbox.id,
         isGroup,
@@ -140,7 +151,7 @@ export class ChatwootEventHandler {
     }
 
     // Get or create conversation
-    const conversationId = await this.chatwootService.createConversation(
+    const conversationId = await this.conversationService.getOrCreateConversation(
       sessionId,
       { contactId: contact.id, inboxId: inbox.id },
     );
@@ -151,8 +162,8 @@ export class ChatwootEventHandler {
     }
 
     // Get message content
-    const messageContent = this.chatwootService.getMessageContent(
-      message as Parameters<typeof this.chatwootService.getMessageContent>[0],
+    const messageContent = this.messageService.getMessageContent(
+      message as WAMessageContent,
     );
     if (!messageContent) {
       this.logger.debug(`[${sessionId}] No message content to forward`);
@@ -167,7 +178,7 @@ export class ChatwootEventHandler {
         .replace('@s.whatsapp.net', '')
         .split(':')[0];
       const senderName = pushName || participantPhone;
-      finalContent = this.chatwootService.formatMessageContent(
+      finalContent = this.messageService.formatMessageContent(
         messageContent,
         true,
         config.signDelimiter || '\n',
@@ -176,8 +187,8 @@ export class ChatwootEventHandler {
     }
 
     // Check for media
-    const isMedia = this.chatwootService.isMediaMessage(
-      message as Parameters<typeof this.chatwootService.isMediaMessage>[0],
+    const isMedia = this.messageService.isMediaMessage(
+      message as WAMessageContent,
     );
 
     if (isMedia && message) {
@@ -190,7 +201,7 @@ export class ChatwootEventHandler {
         fromMe,
       );
     } else {
-      await this.chatwootService.createMessage(sessionId, conversationId, {
+      await this.messageService.createMessage(sessionId, conversationId, {
         content: finalContent,
         messageType: fromMe ? 'outgoing' : 'incoming',
         sourceId: key.id,
@@ -202,19 +213,19 @@ export class ChatwootEventHandler {
     );
   }
 
+  /**
+   * Handle media messages (images, videos, documents, etc.)
+   */
   private async handleMediaMessage(
     sessionId: string,
     conversationId: number,
-    msg: WAMessageEvent,
+    msg: ZpwootMessageEvent,
     finalContent: string,
     messageContent: string,
     fromMe?: boolean,
   ): Promise<void> {
-    // For media, we need to download from WhatsApp first
-    // This requires the media URL from the message
-    // For now, send text placeholder with media type
-    const mediaType = this.chatwootService.getMediaType(
-      msg.message as Parameters<typeof this.chatwootService.getMediaType>[0],
+    const mediaType = this.messageService.getMediaType(
+      msg.message as WAMessageContent,
     );
 
     // Try to get media URL if available in message metadata
@@ -229,7 +240,7 @@ export class ChatwootEventHandler {
         const extension = getMediaExtension(msg.message);
         const filename = `${mediaType}_${Date.now()}.${extension}`;
 
-        await this.chatwootService.createMessageWithAttachment(
+        await this.messageService.createMessageWithAttachment(
           sessionId,
           conversationId,
           {
@@ -248,7 +259,7 @@ export class ChatwootEventHandler {
     }
 
     // Fallback: send text with media indicator
-    await this.chatwootService.createMessage(sessionId, conversationId, {
+    await this.messageService.createMessage(sessionId, conversationId, {
       content: finalContent,
       messageType: fromMe ? 'outgoing' : 'incoming',
       sourceId: msg.key.id,

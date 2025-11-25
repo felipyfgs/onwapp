@@ -8,75 +8,46 @@ import {
   UseGuards,
   Logger,
   HttpCode,
-  Inject,
-  forwardRef,
+  HttpStatus,
 } from '@nestjs/common';
-import { ChatwootService } from './chatwoot.service';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
+import { ChatwootConfigService } from './services';
 import { ChatwootEventHandler } from './chatwoot-event.handler';
-import { ChatwootDto } from './dto/chatwoot.dto';
+import { ChatwootWebhookHandler } from './handlers';
+import {
+  SetChatwootConfigDto,
+  ChatwootConfigResponseDto,
+  ChatwootNotConfiguredResponseDto,
+  ChatwootDeleteResponseDto,
+  ChatwootWebhookResponseDto,
+  ZpwootEventResponseDto,
+  ChatwootWebhookPayloadDto,
+  ZpwootEventPayloadDto,
+} from './dto';
 import { ApiKeyGuard } from '../../common/guards/api-key.guard';
 import { Public } from '../../common/decorators/public.decorator';
-import { MessagesService } from '../../api/messages/messages.service';
-import { WhatsAppService } from '../../core/whatsapp/whatsapp.service';
-import { PersistenceService } from '../../core/persistence/persistence.service';
-import { formatRemoteJid, getMimeType } from '../../common/utils';
-import axios from 'axios';
 
-interface ChatwootWebhookPayload {
-  id?: number; // Chatwoot message ID
-  event?: string;
-  message_type?: string;
-  content?: string;
-  private?: boolean;
-  source_id?: string;
-  content_attributes?: {
-    in_reply_to?: number; // Chatwoot message ID being replied to
-    in_reply_to_external_id?: string; // External (WA) message ID being replied to
-    deleted?: boolean; // Message was deleted
-  };
-  conversation?: {
-    id: number;
-    status?: string;
-    meta?: {
-      sender?: {
-        identifier?: string;
-        phone_number?: string;
-        name?: string;
-      };
-    };
-  };
-  sender?: {
-    id: number;
-    name?: string;
-    type?: string;
-  };
-  attachments?: Array<{
-    file_type: string;
-    data_url: string;
-    thumb_url?: string;
-    file_name?: string;
-  }>;
-}
-
-interface ZpwootWebhookPayload {
-  sessionId: string;
-  event: string;
-  timestamp: string;
-  data: Record<string, unknown>;
-}
-
+/**
+ * Controller for Chatwoot integration
+ *
+ * Handles configuration management and webhook endpoints for
+ * bidirectional communication between WhatsApp and Chatwoot.
+ */
+@ApiTags('Chatwoot')
 @Controller()
 export class ChatwootController {
   private readonly logger = new Logger(ChatwootController.name);
 
   constructor(
-    private readonly chatwootService: ChatwootService,
-    private readonly chatwootEventHandler: ChatwootEventHandler,
-    @Inject(forwardRef(() => MessagesService))
-    private readonly messagesService: MessagesService,
-    @Inject(forwardRef(() => WhatsAppService))
-    private readonly whatsappService: WhatsAppService,
-    private readonly persistenceService: PersistenceService,
+    private readonly configService: ChatwootConfigService,
+    private readonly eventHandler: ChatwootEventHandler,
+    private readonly webhookHandler: ChatwootWebhookHandler,
   ) {}
 
   @Post('session/:sessionId/chatwoot/set')
