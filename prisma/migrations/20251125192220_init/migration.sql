@@ -36,6 +36,22 @@ CREATE TABLE "Session" (
 );
 
 -- CreateTable
+CREATE TABLE "Proxy" (
+    "id" TEXT NOT NULL,
+    "sessionId" TEXT NOT NULL,
+    "enabled" BOOLEAN NOT NULL DEFAULT false,
+    "host" TEXT,
+    "port" INTEGER,
+    "protocol" TEXT DEFAULT 'http',
+    "username" TEXT,
+    "password" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Proxy_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "AuthState" (
     "id" TEXT NOT NULL,
     "sessionId" TEXT NOT NULL,
@@ -107,6 +123,12 @@ CREATE TABLE "Message" (
     "mediaUrl" TEXT,
     "fileLength" BIGINT,
     "content" JSONB NOT NULL,
+    "chatwootConversationId" INTEGER,
+    "chatwootMessageId" INTEGER,
+    "chatwootInboxId" INTEGER,
+    "chatwootContactId" INTEGER,
+    "waMessageKey" JSONB,
+    "waMessage" JSONB,
     "status" "MessageStatus" NOT NULL DEFAULT 'pending',
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -151,6 +173,35 @@ CREATE TABLE "SessionSettings" (
     CONSTRAINT "SessionSettings_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "Chatwoot" (
+    "id" TEXT NOT NULL,
+    "sessionId" TEXT NOT NULL,
+    "enabled" BOOLEAN NOT NULL DEFAULT false,
+    "accountId" TEXT,
+    "token" TEXT,
+    "url" TEXT,
+    "nameInbox" TEXT,
+    "signMsg" BOOLEAN NOT NULL DEFAULT false,
+    "signDelimiter" TEXT DEFAULT '\n',
+    "reopenConversation" BOOLEAN NOT NULL DEFAULT false,
+    "conversationPending" BOOLEAN NOT NULL DEFAULT false,
+    "mergeBrazilContacts" BOOLEAN NOT NULL DEFAULT false,
+    "importContacts" BOOLEAN NOT NULL DEFAULT false,
+    "importMessages" BOOLEAN NOT NULL DEFAULT false,
+    "daysLimitImportMessages" INTEGER DEFAULT 3,
+    "organization" TEXT,
+    "logo" TEXT,
+    "ignoreJids" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Chatwoot_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Proxy_sessionId_key" ON "Proxy"("sessionId");
+
 -- CreateIndex
 CREATE UNIQUE INDEX "AuthState_sessionId_keyType_keyId_key" ON "AuthState"("sessionId", "keyType", "keyId");
 
@@ -188,6 +239,12 @@ CREATE INDEX "Message_messageType_idx" ON "Message"("messageType");
 CREATE INDEX "Message_timestamp_idx" ON "Message"("timestamp");
 
 -- CreateIndex
+CREATE INDEX "Message_chatwootConversationId_idx" ON "Message"("chatwootConversationId");
+
+-- CreateIndex
+CREATE INDEX "Message_chatwootMessageId_idx" ON "Message"("chatwootMessageId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Message_sessionId_messageId_key" ON "Message"("sessionId", "messageId");
 
 -- CreateIndex
@@ -198,6 +255,12 @@ CREATE INDEX "MessageStatusHistory_timestamp_idx" ON "MessageStatusHistory"("tim
 
 -- CreateIndex
 CREATE UNIQUE INDEX "SessionSettings_sessionId_key" ON "SessionSettings"("sessionId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Chatwoot_sessionId_key" ON "Chatwoot"("sessionId");
+
+-- AddForeignKey
+ALTER TABLE "Proxy" ADD CONSTRAINT "Proxy_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "Session"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "AuthState" ADD CONSTRAINT "AuthState_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "Session"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -222,3 +285,6 @@ ALTER TABLE "MessageStatusHistory" ADD CONSTRAINT "MessageStatusHistory_messageI
 
 -- AddForeignKey
 ALTER TABLE "SessionSettings" ADD CONSTRAINT "SessionSettings_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "Session"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Chatwoot" ADD CONSTRAINT "Chatwoot_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "Session"("id") ON DELETE CASCADE ON UPDATE CASCADE;
