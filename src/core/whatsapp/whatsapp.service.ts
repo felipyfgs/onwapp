@@ -1,5 +1,5 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
-import makeWASocket, { DisconnectReason, WASocket } from 'whaileys';
+import makeWASocket, { DisconnectReason, WASocket, downloadMediaMessage } from 'whaileys';
 import { Boom } from '@hapi/boom';
 import { DatabaseService } from '../../database/database.service';
 import { AuthStateRepository } from '../../database/repositories/auth-state.repository';
@@ -8,6 +8,7 @@ import { SocketManager } from './managers/socket.manager';
 import * as qrcode from 'qrcode-terminal';
 import { useAuthState } from './auth-state';
 import { WebhooksService } from '../../integrations/webhooks/webhooks.service';
+import { ChatwootService } from '../../integrations/chatwoot/chatwoot.service';
 import { PersistenceService } from '../persistence/persistence.service';
 import { HistorySyncService } from '../persistence/history-sync.service';
 import { SettingsService } from '../../api/settings/settings.service';

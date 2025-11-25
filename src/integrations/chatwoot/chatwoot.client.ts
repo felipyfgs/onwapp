@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import FormData from 'form-data';
 
 export interface ChatwootConfig {
@@ -14,7 +14,7 @@ export interface ChatwootContact {
   phone_number?: string;
   identifier?: string;
   thumbnail?: string;
-  custom_attributes?: Record<string, any>;
+  custom_attributes?: Record<string, unknown>;
 }
 
 export interface ChatwootConversation {
@@ -48,6 +48,29 @@ export interface ChatwootInbox {
   webhook_url?: string;
 }
 
+interface ContactsSearchResponse {
+  payload: ChatwootContact[];
+}
+
+interface ContactCreateResponse {
+  payload: { contact: ChatwootContact };
+}
+
+interface ConversationsListResponse {
+  payload: ChatwootConversation[];
+}
+
+interface InboxesListResponse {
+  payload: ChatwootInbox[];
+}
+
+interface FilterPayloadItem {
+  attribute_key: string;
+  filter_operator: string;
+  values: string[];
+  query_operator: string | null;
+}
+
 export class ChatwootClient {
   private client: AxiosInstance;
   private accountId: string;
@@ -58,7 +81,7 @@ export class ChatwootClient {
       baseURL: `${config.url}/api/v1/accounts/${config.accountId}`,
       headers: {
         'Content-Type': 'application/json',
-        'api_access_token': config.token,
+        api_access_token: config.token,
       },
       timeout: 30000,
     });
@@ -66,15 +89,20 @@ export class ChatwootClient {
 
   // ==================== CONTACTS ====================
 
-  async searchContacts(query: string): Promise<{ payload: ChatwootContact[] }> {
-    const { data } = await this.client.get('/contacts/search', {
-      params: { q: query },
-    });
+  async searchContacts(query: string): Promise<ContactsSearchResponse> {
+    const { data } = await this.client.get<ContactsSearchResponse>(
+      '/contacts/search',
+      {
+        params: { q: query },
+      },
+    );
     return data;
   }
 
   async getContact(contactId: number): Promise<ChatwootContact> {
-    const { data } = await this.client.get(`/contacts/${contactId}`);
+    const { data } = await this.client.get<ChatwootContact>(
+      `/contacts/${contactId}`,
+    );
     return data;
   }
 
@@ -84,9 +112,12 @@ export class ChatwootClient {
     phone_number?: string;
     identifier?: string;
     avatar_url?: string;
-    custom_attributes?: Record<string, any>;
-  }): Promise<{ payload: { contact: ChatwootContact } }> {
-    const { data } = await this.client.post('/contacts', contact);
+    custom_attributes?: Record<string, unknown>;
+  }): Promise<ContactCreateResponse> {
+    const { data } = await this.client.post<ContactCreateResponse>(
+      '/contacts',
+      contact,
+    );
     return data;
   }
 
@@ -97,24 +128,32 @@ export class ChatwootClient {
       phone_number: string;
       avatar_url: string;
       identifier: string;
-      custom_attributes: Record<string, any>;
+      custom_attributes: Record<string, unknown>;
     }>,
   ): Promise<ChatwootContact> {
-    const { data } = await this.client.put(`/contacts/${contactId}`, contact);
+    const { data } = await this.client.put<ChatwootContact>(
+      `/contacts/${contactId}`,
+      contact,
+    );
     return data;
   }
 
   async getContactConversations(
     contactId: number,
-  ): Promise<{ payload: ChatwootConversation[] }> {
-    const { data } = await this.client.get(
+  ): Promise<ConversationsListResponse> {
+    const { data } = await this.client.get<ConversationsListResponse>(
       `/contacts/${contactId}/conversations`,
     );
     return data;
   }
 
-  async filterContacts(payload: any[]): Promise<{ payload: ChatwootContact[] }> {
-    const { data } = await this.client.post('/contacts/filter', { payload });
+  async filterContacts(
+    payload: FilterPayloadItem[],
+  ): Promise<ContactsSearchResponse> {
+    const { data } = await this.client.post<ContactsSearchResponse>(
+      '/contacts/filter',
+      { payload },
+    );
     return data;
   }
 
@@ -125,16 +164,21 @@ export class ChatwootClient {
     contact_id: number;
     status?: 'open' | 'pending';
   }): Promise<ChatwootConversation> {
-    const { data } = await this.client.post('/conversations', {
-      contact_id: params.contact_id.toString(),
-      inbox_id: params.inbox_id.toString(),
-      status: params.status,
-    });
+    const { data } = await this.client.post<ChatwootConversation>(
+      '/conversations',
+      {
+        contact_id: params.contact_id.toString(),
+        inbox_id: params.inbox_id.toString(),
+        status: params.status,
+      },
+    );
     return data;
   }
 
   async getConversation(conversationId: number): Promise<ChatwootConversation> {
-    const { data } = await this.client.get(`/conversations/${conversationId}`);
+    const { data } = await this.client.get<ChatwootConversation>(
+      `/conversations/${conversationId}`,
+    );
     return data;
   }
 
@@ -142,7 +186,7 @@ export class ChatwootClient {
     conversationId: number,
     status: 'open' | 'resolved' | 'pending',
   ): Promise<ChatwootConversation> {
-    const { data } = await this.client.post(
+    const { data } = await this.client.post<ChatwootConversation>(
       `/conversations/${conversationId}/toggle_status`,
       { status },
     );
@@ -158,10 +202,10 @@ export class ChatwootClient {
       message_type: 'incoming' | 'outgoing';
       private?: boolean;
       source_id?: string;
-      content_attributes?: Record<string, any>;
+      content_attributes?: Record<string, unknown>;
     },
   ): Promise<ChatwootMessage> {
-    const { data } = await this.client.post(
+    const { data } = await this.client.post<ChatwootMessage>(
       `/conversations/${conversationId}/messages`,
       params,
     );
@@ -194,13 +238,13 @@ export class ChatwootClient {
       formData.append('source_id', params.source_id);
     }
 
-    params.attachments.forEach((attachment, index) => {
+    params.attachments.forEach((attachment) => {
       formData.append(`attachments[]`, attachment.content, {
         filename: attachment.filename,
       });
     });
 
-    const { data } = await this.client.post(
+    const { data } = await this.client.post<ChatwootMessage>(
       `/conversations/${conversationId}/messages`,
       formData,
       {
@@ -221,13 +265,15 @@ export class ChatwootClient {
 
   // ==================== INBOXES ====================
 
-  async listInboxes(): Promise<{ payload: ChatwootInbox[] }> {
-    const { data } = await this.client.get('/inboxes');
+  async listInboxes(): Promise<InboxesListResponse> {
+    const { data } = await this.client.get<InboxesListResponse>('/inboxes');
     return data;
   }
 
   async getInbox(inboxId: number): Promise<ChatwootInbox> {
-    const { data } = await this.client.get(`/inboxes/${inboxId}`);
+    const { data } = await this.client.get<ChatwootInbox>(
+      `/inboxes/${inboxId}`,
+    );
     return data;
   }
 
@@ -235,7 +281,7 @@ export class ChatwootClient {
     name: string;
     webhook_url?: string;
   }): Promise<ChatwootInbox> {
-    const { data } = await this.client.post('/inboxes', {
+    const { data } = await this.client.post<ChatwootInbox>('/inboxes', {
       name: params.name,
       channel: {
         type: 'api',
@@ -249,7 +295,10 @@ export class ChatwootClient {
     inboxId: number,
     params: { name?: string; webhook_url?: string },
   ): Promise<ChatwootInbox> {
-    const { data } = await this.client.patch(`/inboxes/${inboxId}`, params);
+    const { data } = await this.client.patch<ChatwootInbox>(
+      `/inboxes/${inboxId}`,
+      params,
+    );
     return data;
   }
 
@@ -275,10 +324,13 @@ export class ChatwootClient {
     baseContactId: number,
     mergeeContactId: number,
   ): Promise<ChatwootContact> {
-    const { data } = await this.client.post('/actions/contact_merge', {
-      base_contact_id: baseContactId,
-      mergee_contact_id: mergeeContactId,
-    });
+    const { data } = await this.client.post<ChatwootContact>(
+      '/actions/contact_merge',
+      {
+        base_contact_id: baseContactId,
+        mergee_contact_id: mergeeContactId,
+      },
+    );
     return data;
   }
 }

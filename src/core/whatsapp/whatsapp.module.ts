@@ -2,12 +2,14 @@ import { Module, forwardRef } from '@nestjs/common';
 import { WhatsAppService } from './whatsapp.service';
 import { SocketManager } from './managers/socket.manager';
 import { WebhooksModule } from '../../integrations/webhooks/webhooks.module';
+import { ChatwootModule } from '../../integrations/chatwoot/chatwoot.module';
 import { PersistenceModule } from '../persistence/persistence.module';
 import { SettingsModule } from '../../api/settings/settings.module';
 
 @Module({
   imports: [
     forwardRef(() => WebhooksModule),
+    forwardRef(() => ChatwootModule),
     forwardRef(() => PersistenceModule),
     forwardRef(() => SettingsModule),
   ],

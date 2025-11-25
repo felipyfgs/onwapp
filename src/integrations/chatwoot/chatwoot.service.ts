@@ -1,11 +1,38 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ChatwootRepository } from './chatwoot.repository';
-import { ChatwootClient, ChatwootConfig, ChatwootContact, ChatwootInbox } from './chatwoot.client';
+import {
+  ChatwootClient,
+  ChatwootContact,
+  ChatwootInbox,
+} from './chatwoot.client';
 import { ChatwootDto } from './dto/chatwoot.dto';
 import { Chatwoot } from '@prisma/client';
-import axios from 'axios';
-import * as mimeTypes from 'mime-types';
+
+interface FilterPayloadItem {
+  attribute_key: string;
+  filter_operator: string;
+  values: string[];
+  query_operator: string | null;
+}
+
+interface WAMessage {
+  conversation?: string;
+  extendedTextMessage?: { text: string };
+  imageMessage?: { caption?: string };
+  videoMessage?: { caption?: string };
+  audioMessage?: Record<string, unknown>;
+  documentMessage?: { fileName?: string };
+  stickerMessage?: Record<string, unknown>;
+  contactMessage?: Record<string, unknown>;
+  locationMessage?: Record<string, unknown>;
+  liveLocationMessage?: Record<string, unknown>;
+  listMessage?: Record<string, unknown>;
+  listResponseMessage?: Record<string, unknown>;
+  buttonsResponseMessage?: Record<string, unknown>;
+  templateButtonReplyMessage?: Record<string, unknown>;
+  reactionMessage?: { text?: string };
+}
 
 @Injectable()
 export class ChatwootService {
@@ -43,8 +70,10 @@ export class ChatwootService {
       this.clients.delete(sessionId);
     }
 
-    const serverUrl = this.configService.get<string>('SERVER_URL') || `http://localhost:${this.configService.get<number>('PORT') || 3000}`;
-    
+    const serverUrl =
+      this.configService.get<string>('SERVER_URL') ||
+      `http://localhost:${this.configService.get<number>('PORT') || 3000}`;
+
     return {
       ...result,
       webhookUrl: `${serverUrl}/chatwoot/webhook/${sessionId}`,
@@ -57,7 +86,9 @@ export class ChatwootService {
       return null;
     }
 
-    const serverUrl = this.configService.get<string>('SERVER_URL') || `http://localhost:${this.configService.get<number>('PORT') || 3000}`;
+    const serverUrl =
+      this.configService.get<string>('SERVER_URL') ||
+      `http://localhost:${this.configService.get<number>('PORT') || 3000}`;
 
     return {
       ...config,
@@ -83,7 +114,9 @@ export class ChatwootService {
 
     try {
       const inboxes = await client.listInboxes();
-      return inboxes.payload.find((inbox) => inbox.name === config.nameInbox) || null;
+      return (
+        inboxes.payload.find((inbox) => inbox.name === config.nameInbox) || null
+      );
     } catch (error) {
       this.logger.error(`Error getting inbox: ${error.message}`);
       return null;
@@ -102,7 +135,9 @@ export class ChatwootService {
 
     try {
       const isGroup = phoneNumber.includes('@g.us');
-      const query = isGroup ? phoneNumber : `+${phoneNumber.replace('@s.whatsapp.net', '').split(':')[0]}`;
+      const query = isGroup
+        ? phoneNumber
+        : `+${phoneNumber.replace('@s.whatsapp.net', '').split(':')[0]}`;
 
       if (isGroup) {
         const result = await client.searchContacts(query);
@@ -115,14 +150,18 @@ export class ChatwootService {
       if (result.payload.length === 0) return null;
       if (result.payload.length === 1) return result.payload[0];
 
-      return this.findBestMatchingContact(result.payload, query, config.mergeBrazilContacts);
+      return this.findBestMatchingContact(
+        result.payload,
+        query,
+        config.mergeBrazilContacts,
+      );
     } catch (error) {
       this.logger.error(`Error finding contact: ${error.message}`);
       return null;
     }
   }
 
-  private buildPhoneFilterPayload(query: string): any[] {
+  private buildPhoneFilterPayload(query: string): FilterPayloadItem[] {
     const numbers = this.getPhoneVariations(query);
     return numbers.map((number, index) => ({
       attribute_key: 'phone_number',
@@ -149,7 +188,11 @@ export class ChatwootService {
   ): ChatwootContact | null {
     const phoneVariations = this.getPhoneVariations(query);
 
-    if (contacts.length === 2 && mergeBrazilContacts && query.startsWith('+55')) {
+    if (
+      contacts.length === 2 &&
+      mergeBrazilContacts &&
+      query.startsWith('+55')
+    ) {
       const contact = contacts.find((c) => c.phone_number?.length === 14);
       if (contact) return contact;
     }
@@ -181,21 +224,27 @@ export class ChatwootService {
     if (!client) return null;
 
     try {
-      const data: any = {
+      const contactData: {
+        inbox_id: number;
+        name: string;
+        identifier: string;
+        phone_number?: string;
+        avatar_url?: string;
+      } = {
         inbox_id: params.inboxId,
         name: params.name || params.phoneNumber,
         identifier: params.identifier || params.phoneNumber,
       };
 
       if (!params.isGroup) {
-        data.phone_number = `+${params.phoneNumber}`;
+        contactData.phone_number = `+${params.phoneNumber}`;
       }
 
       if (params.avatarUrl) {
-        data.avatar_url = params.avatarUrl;
+        contactData.avatar_url = params.avatarUrl;
       }
 
-      const result = await client.createContact(data);
+      const result = await client.createContact(contactData);
       return result.payload?.contact || null;
     } catch (error) {
       this.logger.error(`Error creating contact: ${error.message}`);
@@ -241,7 +290,9 @@ export class ChatwootService {
     if (!client) return null;
 
     try {
-      const conversations = await client.getContactConversations(params.contactId);
+      const conversations = await client.getContactConversations(
+        params.contactId,
+      );
       const existingConversation = conversations.payload.find(
         (conv) =>
           conv.inbox_id === params.inboxId &&
@@ -249,8 +300,14 @@ export class ChatwootService {
       );
 
       if (existingConversation) {
-        if (config.conversationPending && existingConversation.status !== 'open') {
-          await client.toggleConversationStatus(existingConversation.id, 'pending');
+        if (
+          config.conversationPending &&
+          existingConversation.status !== 'open'
+        ) {
+          await client.toggleConversationStatus(
+            existingConversation.id,
+            'pending',
+          );
         }
         return existingConversation.id;
       }
@@ -329,7 +386,9 @@ export class ChatwootService {
         ],
       });
     } catch (error) {
-      this.logger.error(`Error creating message with attachment: ${error.message}`);
+      this.logger.error(
+        `Error creating message with attachment: ${error.message}`,
+      );
       return null;
     }
   }
@@ -354,7 +413,12 @@ export class ChatwootService {
     }
   }
 
-  formatMessageContent(content: string, signMsg: boolean, signDelimiter?: string, senderName?: string): string {
+  formatMessageContent(
+    content: string,
+    signMsg: boolean,
+    signDelimiter?: string,
+    senderName?: string,
+  ): string {
     if (!signMsg || !senderName) {
       return content;
     }
@@ -362,46 +426,25 @@ export class ChatwootService {
     return `**${senderName}**${delimiter}${content}`;
   }
 
-  getMessageContent(message: any): string | null {
+  getMessageContent(message: WAMessage | null): string | null {
     if (!message) return null;
 
-    const types = [
-      'conversation',
-      'extendedTextMessage',
-      'imageMessage',
-      'videoMessage',
-      'audioMessage',
-      'documentMessage',
-      'stickerMessage',
-      'contactMessage',
-      'locationMessage',
-      'liveLocationMessage',
-      'listMessage',
-      'listResponseMessage',
-      'buttonsResponseMessage',
-      'templateButtonReplyMessage',
-      'reactionMessage',
-    ];
-
-    for (const type of types) {
-      if (message[type]) {
-        if (type === 'conversation') return message.conversation;
-        if (type === 'extendedTextMessage') return message.extendedTextMessage.text;
-        if (type === 'imageMessage') return message.imageMessage.caption || '[Image]';
-        if (type === 'videoMessage') return message.videoMessage.caption || '[Video]';
-        if (type === 'audioMessage') return '[Audio]';
-        if (type === 'documentMessage') return message.documentMessage.fileName || '[Document]';
-        if (type === 'stickerMessage') return '[Sticker]';
-        if (type === 'contactMessage') return '[Contact]';
-        if (type === 'locationMessage') return '[Location]';
-        if (type === 'reactionMessage') return message.reactionMessage.text || null;
-      }
-    }
+    if (message.conversation) return message.conversation;
+    if (message.extendedTextMessage) return message.extendedTextMessage.text;
+    if (message.imageMessage) return message.imageMessage.caption || '[Image]';
+    if (message.videoMessage) return message.videoMessage.caption || '[Video]';
+    if (message.audioMessage) return '[Audio]';
+    if (message.documentMessage)
+      return message.documentMessage.fileName || '[Document]';
+    if (message.stickerMessage) return '[Sticker]';
+    if (message.contactMessage) return '[Contact]';
+    if (message.locationMessage) return '[Location]';
+    if (message.reactionMessage) return message.reactionMessage.text || null;
 
     return null;
   }
 
-  isMediaMessage(message: any): boolean {
+  isMediaMessage(message: WAMessage | null): boolean {
     if (!message) return false;
     return !!(
       message.imageMessage ||
@@ -412,7 +455,8 @@ export class ChatwootService {
     );
   }
 
-  getMediaType(message: any): string | null {
+  getMediaType(message: WAMessage | null): string | null {
+    if (!message) return null;
     if (message.imageMessage) return 'image';
     if (message.videoMessage) return 'video';
     if (message.audioMessage) return 'audio';

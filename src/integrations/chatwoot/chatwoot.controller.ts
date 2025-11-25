@@ -53,10 +53,7 @@ export class ChatwootController {
   @Post('chatwoot/webhook/:sessionId')
   @Public()
   @HttpCode(200)
-  async receiveWebhook(
-    @Param('sessionId') sessionId: string,
-    @Body() body: any,
-  ) {
+  receiveWebhook(@Param('sessionId') sessionId: string, @Body() body: any) {
     this.logger.debug(`Received Chatwoot webhook for session: ${sessionId}`);
     this.logger.debug(`Webhook body: ${JSON.stringify(body)}`);
 
@@ -65,7 +62,10 @@ export class ChatwootController {
     // We need to forward these messages to WhatsApp
 
     if (!body?.conversation || body.private) {
-      return { status: 'ignored', reason: 'No conversation or private message' };
+      return {
+        status: 'ignored',
+        reason: 'No conversation or private message',
+      };
     }
 
     if (body.message_type !== 'outgoing') {
@@ -73,8 +73,9 @@ export class ChatwootController {
     }
 
     // Get chat ID from conversation
-    const chatId = body.conversation?.meta?.sender?.identifier ||
-                   body.conversation?.meta?.sender?.phone_number?.replace('+', '');
+    const chatId =
+      body.conversation?.meta?.sender?.identifier ||
+      body.conversation?.meta?.sender?.phone_number?.replace('+', '');
 
     if (!chatId) {
       return { status: 'error', reason: 'Could not determine chat ID' };
