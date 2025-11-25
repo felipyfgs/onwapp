@@ -226,8 +226,8 @@ export class ChatwootController {
               sessionId,
               result.id,
               {
-                chatwootMessageId: body.id,
-                chatwootConversationId: body.conversation.id,
+                cwMessageId: body.id,
+                cwConversationId: body.conversation.id,
               },
             );
           }
@@ -253,8 +253,8 @@ export class ChatwootController {
             sessionId,
             result.id,
             {
-              chatwootMessageId: body.id,
-              chatwootConversationId: body.conversation.id,
+              cwMessageId: body.id,
+              cwConversationId: body.conversation.id,
             },
           );
         }

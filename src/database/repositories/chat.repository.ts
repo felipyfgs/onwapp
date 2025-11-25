@@ -32,7 +32,7 @@ export class ChatRepository extends BaseRepository {
       where: { sessionId },
       skip: options?.skip,
       take: options?.take,
-      orderBy: { lastMessageTimestamp: 'desc' },
+      orderBy: { lastMessageTs: 'desc' },
     });
   }
 

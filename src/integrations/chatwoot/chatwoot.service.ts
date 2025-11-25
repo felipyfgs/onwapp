@@ -152,9 +152,7 @@ export class ChatwootService {
     try {
       // First, try to find existing inbox
       const inboxes = await client.listInboxes();
-      let inbox = inboxes.payload.find(
-        (inbox) => inbox.name === config.inbox,
-      );
+      let inbox = inboxes.payload.find((inbox) => inbox.name === config.inbox);
 
       if (inbox) {
         // Update webhook URL if needed

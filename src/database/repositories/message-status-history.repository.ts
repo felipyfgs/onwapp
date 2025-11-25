@@ -89,7 +89,7 @@ export class MessageStatusHistoryRepository {
     const where: any = {
       message: {
         sessionId,
-        isDeleted: false,
+        deleted: false,
       },
     };
 
@@ -127,7 +127,7 @@ export class MessageStatusHistoryRepository {
     const messagesWithHistory = await this.prisma.message.findMany({
       where: {
         sessionId,
-        isDeleted: false,
+        deleted: false,
         ...(options?.startDate && {
           timestamp: { gte: BigInt(options.startDate.getTime()) },
         }),

@@ -37,7 +37,7 @@ export class MessageRepository extends BaseRepository {
           contains: textSearch,
           mode: 'insensitive',
         },
-        isDeleted: false,
+        deleted: false,
       },
       skip: options?.offset || 0,
       take: options?.limit || 50,
@@ -57,7 +57,7 @@ export class MessageRepository extends BaseRepository {
     const where: any = {
       sessionId,
       mediaUrl: { not: null },
-      isDeleted: false,
+      deleted: false,
     };
 
     if (mediaUrl) {
@@ -87,7 +87,7 @@ export class MessageRepository extends BaseRepository {
     const where: any = {
       sessionId,
       fileLength: { not: null },
-      isDeleted: false,
+      deleted: false,
     };
 
     if (filters?.minLength) {
@@ -123,7 +123,7 @@ export class MessageRepository extends BaseRepository {
   ): Promise<Message[]> {
     const where: any = {
       sessionId,
-      isDeleted: false,
+      deleted: false,
     };
 
     if (status) {
@@ -151,7 +151,7 @@ export class MessageRepository extends BaseRepository {
       where: {
         sessionId,
         messageType,
-        isDeleted: false,
+        deleted: false,
       },
       skip: options?.offset || 0,
       take: options?.limit || 50,
@@ -176,7 +176,7 @@ export class MessageRepository extends BaseRepository {
           gte: BigInt(startDate.getTime()),
           lte: BigInt(endDate.getTime()),
         },
-        isDeleted: false,
+        deleted: false,
       },
       skip: options?.offset || 0,
       take: options?.limit || 50,
@@ -194,7 +194,7 @@ export class MessageRepository extends BaseRepository {
     return this.prisma.message.findMany({
       where: {
         sessionId,
-        isDeleted: false,
+        deleted: false,
       },
       skip: options?.skip,
       take: options?.take,
@@ -214,7 +214,7 @@ export class MessageRepository extends BaseRepository {
       where: {
         sessionId,
         chatId,
-        isDeleted: false,
+        deleted: false,
       },
       skip: options?.skip,
       take: options?.take,
@@ -239,7 +239,7 @@ export class MessageRepository extends BaseRepository {
   ): Promise<Message[]> {
     const where: any = {
       sessionId,
-      isDeleted: false,
+      deleted: false,
     };
 
     if (filters.chatId) where.chatId = filters.chatId;
@@ -327,7 +327,7 @@ export class MessageRepository extends BaseRepository {
           messageId,
         },
       },
-      data: { isDeleted: true },
+      data: { deleted: true },
     });
   }
 
@@ -349,7 +349,7 @@ export class MessageRepository extends BaseRepository {
               messageId: del.messageId,
             },
           },
-          data: { isDeleted: true },
+          data: { deleted: true },
         });
         count++;
       }
@@ -397,7 +397,7 @@ export class MessageRepository extends BaseRepository {
       by: ['status'],
       where: {
         sessionId,
-        isDeleted: false,
+        deleted: false,
       },
       _count: {
         id: true,
@@ -428,7 +428,7 @@ export class MessageRepository extends BaseRepository {
   }> {
     const where: any = {
       sessionId,
-      isDeleted: false,
+      deleted: false,
     };
 
     if (options?.startDate || options?.endDate) {
