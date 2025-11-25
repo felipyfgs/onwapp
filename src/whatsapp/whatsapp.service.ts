@@ -2,10 +2,8 @@ import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import makeWASocket, { DisconnectReason, WASocket } from 'whaileys';
 import { Boom } from '@hapi/boom';
 import { DatabaseService } from '../database/database.service';
-import {
-  AuthStateRepository,
-  SessionRepository,
-} from '../database/repositories';
+import { AuthStateRepository } from '../database/repositories/auth-state.repository';
+import { SessionRepository } from '../database/repositories/session.repository';
 import { SocketManager } from './managers/socket.manager';
 import * as qrcode from 'qrcode-terminal';
 import { useAuthState } from './auth-state';

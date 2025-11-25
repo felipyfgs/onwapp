@@ -3,7 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { SessionRepository } from '../database/repositories';
+import { SessionRepository } from '../database/repositories/session.repository';
 import { WhatsAppService } from '../whatsapp/whatsapp.service';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { PairPhoneDto } from './dto/pair-phone.dto';

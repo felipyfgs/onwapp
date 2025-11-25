@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database.service';
-import { MessageStatus } from '@prisma/client';
+import { MessageStatus, MessageStatusHistory } from '@prisma/client';
 
 interface DeliveryTimeMetric {
   messageId: string;
@@ -176,7 +176,7 @@ export class MessageStatusHistoryRepository {
     if (dataArray.length === 0) return [];
 
     return this.prisma.$transaction(async (tx) => {
-      const results = [];
+      const results: MessageStatusHistory[] = [];
       for (const data of dataArray) {
         const result = await tx.messageStatusHistory.create({ data });
         results.push(result);
