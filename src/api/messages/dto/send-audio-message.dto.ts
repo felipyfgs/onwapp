@@ -41,4 +41,14 @@ export class SendAudioMessageDto extends SendMessageBaseDto {
   @IsOptional()
   @IsString()
   mimetype?: string;
+
+  @ApiProperty({
+    description:
+      'Converter áudio para OGG/OPUS (PTT). Default: true. Se false, envia sem conversão.',
+    required: false,
+    default: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  encoding?: boolean;
 }

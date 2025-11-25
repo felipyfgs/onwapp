@@ -391,6 +391,9 @@ export class ChatwootService {
       messageType: 'incoming' | 'outgoing';
       private?: boolean;
       sourceId?: string;
+      // Reply support (following Evolution API pattern)
+      inReplyTo?: number; // Chatwoot message ID being replied to
+      inReplyToExternalId?: string; // WhatsApp message ID being replied to
     },
   ) {
     const config = await this.getConfig(sessionId);
@@ -400,11 +403,27 @@ export class ChatwootService {
     if (!client) return null;
 
     try {
+      // Build content_attributes for reply
+      const contentAttributes: Record<string, unknown> = {};
+      if (params.inReplyTo) {
+        contentAttributes.in_reply_to = params.inReplyTo;
+      }
+      if (params.inReplyToExternalId) {
+        contentAttributes.in_reply_to_external_id = params.inReplyToExternalId;
+      }
+
       return await client.createMessage(conversationId, {
         content: params.content,
         message_type: params.messageType,
         private: params.private,
         source_id: params.sourceId,
+        content_attributes:
+          Object.keys(contentAttributes).length > 0
+            ? contentAttributes
+            : undefined,
+        source_reply_id: params.inReplyTo
+          ? params.inReplyTo.toString()
+          : undefined,
       });
     } catch (error) {
       this.logger.error(`Error creating message: ${error.message}`);

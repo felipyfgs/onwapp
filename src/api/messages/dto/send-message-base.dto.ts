@@ -5,9 +5,15 @@ import {
   IsOptional,
   IsNumber,
   IsArray,
+  ValidateNested,
+  IsBoolean,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
-export class QuotedMessageDto {
+/**
+ * Message key structure following Baileys/Evolution API pattern
+ */
+export class MessageKeyDto {
   @ApiProperty({
     description: 'JID remoto da mensagem citada',
     example: '5511999999999@s.whatsapp.net',
@@ -20,6 +26,7 @@ export class QuotedMessageDto {
     description: 'Mensagem foi enviada por mim',
     example: true,
   })
+  @IsBoolean()
   @IsNotEmpty()
   fromMe: boolean;
 
@@ -38,6 +45,27 @@ export class QuotedMessageDto {
   @IsOptional()
   @IsString()
   participant?: string;
+}
+
+/**
+ * Quoted message structure following Evolution API pattern
+ * Baileys expects: { key: proto.IMessageKey, message: proto.IMessage }
+ */
+export class QuotedMessageDto {
+  @ApiProperty({
+    description: 'Chave da mensagem original',
+    type: MessageKeyDto,
+  })
+  @ValidateNested()
+  @Type(() => MessageKeyDto)
+  key: MessageKeyDto;
+
+  @ApiProperty({
+    description: 'Conteúdo da mensagem original (proto.IMessage)',
+    required: false,
+  })
+  @IsOptional()
+  message?: Record<string, unknown>;
 }
 
 export class SendMessageBaseDto {

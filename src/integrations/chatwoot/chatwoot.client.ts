@@ -203,6 +203,7 @@ export class ChatwootClient {
       private?: boolean;
       source_id?: string;
       content_attributes?: Record<string, unknown>;
+      source_reply_id?: string; // Chatwoot message ID for reply threading
     },
   ): Promise<ChatwootMessage> {
     const { data } = await this.client.post<ChatwootMessage>(

@@ -43,6 +43,8 @@ interface MessageData {
   chatwootContactId?: number | null;
   // WhatsApp message key for reply/edit/delete
   waMessageKey?: WAMessageKey | null;
+  // Original WhatsApp message content for replies
+  waMessage?: Record<string, unknown> | null;
 }
 
 @Injectable()
@@ -178,6 +180,10 @@ export class PersistenceService {
           waMessageKey: messageData.waMessageKey
             ? (messageData.waMessageKey as unknown as Prisma.InputJsonValue)
             : undefined,
+          // Original WhatsApp message content for replies
+          waMessage: messageData.waMessage
+            ? (messageData.waMessage as unknown as Prisma.InputJsonValue)
+            : undefined,
         },
       });
 
@@ -260,7 +266,7 @@ export class PersistenceService {
     },
   ): Promise<void> {
     try {
-      await this.prisma.message.updateMany({
+      const result = await this.prisma.message.updateMany({
         where: {
           sessionId,
           messageId,
@@ -268,9 +274,17 @@ export class PersistenceService {
         data: chatwootData,
       });
 
-      this.logger.debug(
-        `Chatwoot data updated for message: ${messageId} -> conv=${chatwootData.chatwootConversationId}, msg=${chatwootData.chatwootMessageId}`,
-      );
+      // Retry if message not found (race condition with messages.upsert)
+      if (result.count === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        await this.prisma.message.updateMany({
+          where: {
+            sessionId,
+            messageId,
+          },
+          data: chatwootData,
+        });
+      }
     } catch (error) {
       this.logger.error(
         `Erro ao atualizar dados Chatwoot: ${error.message}`,
@@ -286,6 +300,7 @@ export class PersistenceService {
     messageId: string;
     remoteJid: string;
     waMessageKey: WAMessageKey | null;
+    waMessage: Record<string, unknown> | null;
   } | null> {
     try {
       const message = await this.prisma.message.findFirst({
@@ -297,6 +312,7 @@ export class PersistenceService {
           messageId: true,
           remoteJid: true,
           waMessageKey: true,
+          waMessage: true,
         },
       });
       if (!message) return null;
@@ -304,6 +320,7 @@ export class PersistenceService {
         messageId: message.messageId,
         remoteJid: message.remoteJid,
         waMessageKey: message.waMessageKey as WAMessageKey | null,
+        waMessage: message.waMessage as Record<string, unknown> | null,
       };
     } catch (error) {
       this.logger.error(
@@ -320,6 +337,8 @@ export class PersistenceService {
     messageId: string;
     remoteJid: string;
     waMessageKey: WAMessageKey | null;
+    waMessage: Record<string, unknown> | null;
+    chatwootMessageId: number | null;
   } | null> {
     try {
       const message = await this.prisma.message.findFirst({
@@ -331,6 +350,8 @@ export class PersistenceService {
           messageId: true,
           remoteJid: true,
           waMessageKey: true,
+          waMessage: true,
+          chatwootMessageId: true,
         },
       });
       if (!message) return null;
@@ -338,6 +359,8 @@ export class PersistenceService {
         messageId: message.messageId,
         remoteJid: message.remoteJid,
         waMessageKey: message.waMessageKey as WAMessageKey | null,
+        waMessage: message.waMessage as Record<string, unknown> | null,
+        chatwootMessageId: message.chatwootMessageId,
       };
     } catch (error) {
       this.logger.error(

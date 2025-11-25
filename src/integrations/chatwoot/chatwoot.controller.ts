@@ -22,6 +22,7 @@ import { PersistenceService } from '../../core/persistence/persistence.service';
 import axios from 'axios';
 
 interface ChatwootWebhookPayload {
+  id?: number; // Chatwoot message ID
   event?: string;
   message_type?: string;
   content?: string;
@@ -144,18 +145,6 @@ export class ChatwootController {
     @Param('sessionId') sessionId: string,
     @Body() body: ChatwootWebhookPayload,
   ) {
-    // DEBUG: Log full payload structure
-    this.logger.debug(
-      `[CW-WEBHOOK] event=${body.event}, type=${body.message_type}, sender=${body.sender?.type}, private=${body.private}, source_id=${body.source_id}`,
-    );
-    this.logger.debug(
-      `[CW-WEBHOOK] conversation.id=${body.conversation?.id}, meta.sender.identifier=${body.conversation?.meta?.sender?.identifier}, meta.sender.phone=${body.conversation?.meta?.sender?.phone_number}`,
-    );
-    this.logger.debug(`[CW-WEBHOOK] content="${body.content?.slice(0, 100)}"`);
-    this.logger.debug(
-      `[CW-WEBHOOK] content_attributes=${JSON.stringify(body.content_attributes)}`,
-    );
-
     // Only process message_created events
     if (body.event !== 'message_created') {
       return { status: 'ignored', reason: `Event ${body.event} not handled` };
@@ -182,18 +171,15 @@ export class ChatwootController {
 
     // Get chat ID from conversation metadata
     const chatId = this.extractChatId(body);
-    this.logger.debug(`[CW-WEBHOOK] extractChatId result: "${chatId}"`);
     if (!chatId) {
-      this.logger.warn(`[CW-WEBHOOK] Could not extract chatId from payload`);
+      this.logger.warn(`[CW] Could not extract chatId from webhook payload`);
       return { status: 'error', reason: 'Could not determine chat ID' };
     }
 
     let remoteJid = this.formatRemoteJid(chatId);
-    this.logger.debug(
-      `[CW-WEBHOOK] formatRemoteJid: "${chatId}" -> "${remoteJid}"`,
-    );
 
-    // Validate and get correct JID/LID using onWhatsApp (for non-group chats)
+    // Validate number exists on WhatsApp (for non-group chats)
+    // Following Evolution API pattern - always use JID (@s.whatsapp.net), not LID
     if (!remoteJid.includes('@g.us')) {
       try {
         const socket = this.whatsappService.getSocket(sessionId);
@@ -203,22 +189,13 @@ export class ChatwootController {
             .split(':')[0];
           const results = await socket.onWhatsApp(phoneNumber);
           if (results && results.length > 0 && results[0].exists) {
-            // Prefer LID if available, otherwise use JID
-            const validJid = results[0].lid || results[0].jid;
-            this.logger.debug(
-              `[CW-WEBHOOK] onWhatsApp validated: "${phoneNumber}" -> jid="${results[0].jid}", lid="${results[0].lid}", using="${validJid}"`,
-            );
-            remoteJid = validJid;
+            remoteJid = results[0].jid;
           } else {
-            this.logger.warn(
-              `[CW-WEBHOOK] Number not found on WhatsApp: ${phoneNumber}`,
-            );
+            this.logger.warn(`[CW] Number not on WhatsApp: ${phoneNumber}`);
           }
         }
       } catch (error) {
-        this.logger.error(
-          `[CW-WEBHOOK] onWhatsApp error: ${(error as Error).message}`,
-        );
+        this.logger.error(`[CW] onWhatsApp error: ${(error as Error).message}`);
       }
     }
 
@@ -243,12 +220,17 @@ export class ChatwootController {
       // Send text message
       if (body.content) {
         // Check if this is a reply to another message
+        // Baileys expects quoted to be { key: { remoteJid, fromMe, id, participant? }, message?: IMessage }
+        // Following Evolution API pattern: Quoted = { key: proto.IMessageKey, message: proto.IMessage }
         let quoted:
           | {
-              id: string;
-              remoteJid: string;
-              fromMe: boolean;
-              participant?: string;
+              key: {
+                remoteJid: string;
+                fromMe: boolean;
+                id: string;
+                participant?: string;
+              };
+              message?: Record<string, unknown>;
             }
           | undefined;
 
@@ -257,11 +239,7 @@ export class ChatwootController {
           body.content_attributes?.in_reply_to;
 
         if (replyToId) {
-          this.logger.debug(
-            `[CW-WEBHOOK] Reply detected, looking for message: ${replyToId}`,
-          );
-
-          // Try to find the original message
+          // Try to find the original message for reply
           let originalMessage: {
             messageId: string;
             remoteJid: string;
@@ -271,16 +249,15 @@ export class ChatwootController {
               fromMe: boolean;
               participant?: string;
             } | null;
+            waMessage: Record<string, unknown> | null;
           } | null = null;
 
           if (body.content_attributes?.in_reply_to_external_id) {
-            // External ID is the WhatsApp message ID
             originalMessage = await this.persistenceService.findMessageByWAId(
               sessionId,
               body.content_attributes.in_reply_to_external_id,
             );
           } else if (body.content_attributes?.in_reply_to) {
-            // in_reply_to is Chatwoot message ID
             originalMessage =
               await this.persistenceService.findMessageByChatwootId(
                 sessionId,
@@ -289,25 +266,40 @@ export class ChatwootController {
           }
 
           if (originalMessage?.waMessageKey) {
-            quoted = originalMessage.waMessageKey;
-            this.logger.debug(
-              `[CW-WEBHOOK] Found original message for reply: ${JSON.stringify(quoted)}`,
+            const simplifiedMessage = this.simplifyQuotedMessage(
+              originalMessage.waMessage,
             );
+            quoted = {
+              key: { ...originalMessage.waMessageKey },
+              message: simplifiedMessage,
+            };
           } else {
             this.logger.warn(
-              `[CW-WEBHOOK] Could not find original message for reply: ${replyToId}`,
+              `[CW] Original message not found for reply: ${replyToId}`,
             );
           }
         }
 
-        await this.messagesService.sendTextMessage(sessionId, {
+        const result = await this.messagesService.sendTextMessage(sessionId, {
           to: remoteJid,
           text: body.content,
           quoted,
         });
+
+        // Link WA message ID to Chatwoot message ID for reply tracking
+        if (result?.id && body.id && body.conversation?.id) {
+          await this.persistenceService.updateMessageChatwoot(
+            sessionId,
+            result.id,
+            {
+              chatwootMessageId: body.id,
+              chatwootConversationId: body.conversation.id,
+            },
+          );
+        }
       }
 
-      this.logger.log(`Chatwoot message sent to ${remoteJid}`);
+      this.logger.log(`[CW] Message sent to ${remoteJid}`);
       return { status: 'sent', chatId: remoteJid };
     } catch (error) {
       this.logger.error(
@@ -379,6 +371,7 @@ export class ChatwootController {
         });
         break;
       case 'audio':
+        // AudioService will convert to OGG/OPUS automatically (encoding=true by default)
         await this.messagesService.sendAudioMessage(sessionId, {
           to: remoteJid,
           audio: mediaData,
@@ -420,5 +413,79 @@ export class ChatwootController {
     return (
       mimeTypes[ext || ''] || mimeTypes[fileType] || 'application/octet-stream'
     );
+  }
+
+  /**
+   * Simplifies a WhatsApp message for use in quoted replies.
+   * Removes metadata fields that can cause issues with Baileys.
+   * Keeps only the essential message content (text, image, video, etc.)
+   */
+  private simplifyQuotedMessage(
+    waMessage: Record<string, unknown> | null,
+  ): Record<string, unknown> {
+    if (!waMessage) {
+      return {};
+    }
+
+    // Fields to exclude - these are metadata that shouldn't be in quoted message
+    const excludeFields = [
+      'messageContextInfo',
+      'deviceListMetadata',
+      'deviceListMetadataVersion',
+      'messageSecret',
+      'senderKeyDistributionMessage',
+    ];
+
+    // Priority order of message content types
+    const contentTypes = [
+      'conversation',
+      'extendedTextMessage',
+      'imageMessage',
+      'videoMessage',
+      'audioMessage',
+      'documentMessage',
+      'documentWithCaptionMessage',
+      'stickerMessage',
+      'contactMessage',
+      'contactsArrayMessage',
+      'locationMessage',
+      'liveLocationMessage',
+      'pollCreationMessage',
+      'reactionMessage',
+    ];
+
+    const simplified: Record<string, unknown> = {};
+
+    // Find and include message content
+    for (const contentType of contentTypes) {
+      if (waMessage[contentType]) {
+        // For extendedTextMessage, simplify to just the text
+        if (contentType === 'extendedTextMessage') {
+          const extMsg = waMessage[contentType] as Record<string, unknown>;
+          simplified[contentType] = {
+            text: extMsg.text,
+          };
+        } else if (contentType === 'conversation') {
+          simplified[contentType] = waMessage[contentType];
+        } else {
+          // For media messages, include the content but remove nested contextInfo
+          const content = { ...(waMessage[contentType] as object) };
+          delete (content as Record<string, unknown>).contextInfo;
+          simplified[contentType] = content;
+        }
+        break; // Found the content type, no need to continue
+      }
+    }
+
+    // If no known content type found, include all fields except excluded ones
+    if (Object.keys(simplified).length === 0) {
+      for (const [key, value] of Object.entries(waMessage)) {
+        if (!excludeFields.includes(key)) {
+          simplified[key] = value;
+        }
+      }
+    }
+
+    return simplified;
   }
 }

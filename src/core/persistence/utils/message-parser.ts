@@ -21,6 +21,8 @@ export function parseMessageContent(
     };
   }
 
+  // Text messages: unify conversation and extendedTextMessage as 'conversation'
+  // extendedTextMessage is essentially a text message with additional metadata (links, replies, etc.)
   if (msg.conversation) {
     return {
       messageType: 'conversation',
@@ -32,7 +34,7 @@ export function parseMessageContent(
 
   if (msg.extendedTextMessage) {
     return {
-      messageType: 'extendedTextMessage',
+      messageType: 'conversation', // Unified as 'conversation' for consistency
       textContent: msg.extendedTextMessage.text || null,
       mediaUrl: null,
       metadata: {

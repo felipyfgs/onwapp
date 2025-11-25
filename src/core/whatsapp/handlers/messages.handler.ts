@@ -1,7 +1,8 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
-import { WASocket } from 'whaileys';
+import { WASocket, downloadMediaMessage, proto } from 'whaileys';
 import { PersistenceService } from '../../persistence/persistence.service';
 import { ChatwootService } from '../../../integrations/chatwoot/chatwoot.service';
+import { WhatsAppService } from '../whatsapp.service';
 import { parseMessageContent } from '../../persistence/utils/message-parser';
 import { MessageStatus } from '@prisma/client';
 import { formatSessionId } from '../utils/helpers';
@@ -15,6 +16,8 @@ export class MessagesHandler {
     private readonly persistenceService: PersistenceService,
     @Inject(forwardRef(() => ChatwootService))
     private readonly chatwootService: ChatwootService,
+    @Inject(forwardRef(() => WhatsAppService))
+    private readonly whatsappService: WhatsAppService,
   ) {}
 
   registerMessageListeners(sessionId: string, socket: WASocket): void {
@@ -89,6 +92,8 @@ export class MessagesHandler {
             fromMe: msg.key.fromMe || false,
             participant: msg.key.participant,
           },
+          // Store original message content for reply operations (like Evolution API)
+          waMessage: msg.message || null,
         });
 
         if (msg.pushName && msg.key.remoteJid) {
@@ -252,15 +257,10 @@ export class MessagesHandler {
         ? remoteJid
         : remoteJid.replace('@s.whatsapp.net', '').split(':')[0];
 
-      // DEBUG: Log incoming message details
-      this.logger.debug(
-        `[${sid}] [CW-FWD] remoteJid="${remoteJid}", phoneNumber="${phoneNumber}", isGroup=${isGroup}, pushName="${pushName}"`,
-      );
-
       // Get or create inbox
       const inbox = await this.chatwootService.getInbox(sessionId);
       if (!inbox) {
-        this.logger.warn(`[${sid}] Chatwoot inbox not found`);
+        this.logger.warn(`[${sid}] [CW] Inbox not found`);
         return;
       }
 
@@ -269,13 +269,7 @@ export class MessagesHandler {
         sessionId,
         remoteJid,
       );
-      this.logger.debug(
-        `[${sid}] [CW-FWD] findContact result: ${contact ? `id=${contact.id}, identifier=${contact.identifier}` : 'null'}`,
-      );
       if (!contact) {
-        this.logger.debug(
-          `[${sid}] [CW-FWD] Creating contact: phoneNumber="${phoneNumber}", identifier="${remoteJid}", name="${pushName || phoneNumber}"`,
-        );
         contact = await this.chatwootService.createContact(sessionId, {
           phoneNumber,
           inboxId: inbox.id,
@@ -284,9 +278,6 @@ export class MessagesHandler {
           identifier: remoteJid,
         });
         if (!contact) return;
-        this.logger.debug(
-          `[${sid}] [CW-FWD] Contact created: id=${contact.id}, identifier=${contact.identifier}`,
-        );
       }
 
       // Get or create conversation
@@ -317,16 +308,97 @@ export class MessagesHandler {
         );
       }
 
-      // Send to Chatwoot
-      const chatwootMessage = await this.chatwootService.createMessage(
-        sessionId,
-        conversationId,
-        {
-          content: finalContent,
-          messageType: fromMe ? 'outgoing' : 'incoming',
-          sourceId: key.id,
-        },
+      // Extract stanzaId for reply support
+      const waMessage = message as {
+        extendedTextMessage?: { contextInfo?: { stanzaId?: string } };
+        imageMessage?: { contextInfo?: { stanzaId?: string } };
+        videoMessage?: { contextInfo?: { stanzaId?: string } };
+        audioMessage?: { contextInfo?: { stanzaId?: string; ptt?: boolean } };
+        documentMessage?: {
+          contextInfo?: { stanzaId?: string };
+          fileName?: string;
+        };
+        stickerMessage?: { contextInfo?: { stanzaId?: string } };
+        contextInfo?: { stanzaId?: string };
+      };
+
+      const stanzaId =
+        waMessage?.extendedTextMessage?.contextInfo?.stanzaId ||
+        waMessage?.imageMessage?.contextInfo?.stanzaId ||
+        waMessage?.videoMessage?.contextInfo?.stanzaId ||
+        waMessage?.audioMessage?.contextInfo?.stanzaId ||
+        waMessage?.documentMessage?.contextInfo?.stanzaId ||
+        waMessage?.contextInfo?.stanzaId;
+
+      let inReplyTo: number | undefined;
+      let inReplyToExternalId: string | undefined;
+
+      if (stanzaId) {
+        inReplyToExternalId = stanzaId;
+        const quotedMessage = await this.persistenceService.findMessageByWAId(
+          sessionId,
+          stanzaId,
+        );
+        if (quotedMessage?.chatwootMessageId) {
+          inReplyTo = quotedMessage.chatwootMessageId;
+        }
+      }
+
+      // Check if this is a media message
+      const isMediaMessage = this.chatwootService.isMediaMessage(
+        message || null,
       );
+
+      let chatwootMessage: { id: number } | null = null;
+
+      if (isMediaMessage) {
+        // Try to download and forward media
+        const mediaBuffer = await this.downloadMedia(sessionId, msg, sid);
+        if (mediaBuffer) {
+          const mediaType = this.chatwootService.getMediaType(message || null);
+          const extension = this.getMediaExtension(waMessage, mediaType);
+          const filename = this.getMediaFilename(waMessage, key.id, extension);
+
+          chatwootMessage =
+            await this.chatwootService.createMessageWithAttachment(
+              sessionId,
+              conversationId,
+              {
+                content:
+                  finalContent !== messageContent ? finalContent : undefined,
+                messageType: fromMe ? 'outgoing' : 'incoming',
+                sourceId: key.id,
+                file: { buffer: mediaBuffer, filename },
+              },
+            );
+        } else {
+          // Fallback to text if media download fails
+          chatwootMessage = await this.chatwootService.createMessage(
+            sessionId,
+            conversationId,
+            {
+              content: finalContent,
+              messageType: fromMe ? 'outgoing' : 'incoming',
+              sourceId: key.id,
+              inReplyTo,
+              inReplyToExternalId,
+            },
+          );
+        }
+      } else {
+        // Send text message
+        chatwootMessage = await this.chatwootService.createMessage(
+          sessionId,
+          conversationId,
+          {
+            content: finalContent,
+            messageType: fromMe ? 'outgoing' : 'incoming',
+            sourceId: key.id,
+            inReplyTo,
+            inReplyToExternalId,
+          },
+        );
+      }
 
       // Update message with Chatwoot tracking data
       if (chatwootMessage) {
@@ -336,15 +408,92 @@ export class MessagesHandler {
           chatwootInboxId: inbox.id,
           chatwootContactId: contact.id,
         });
+        this.logger.log(
+          `[${sid}] [CW] Message forwarded (msgId=${chatwootMessage.id})`,
+        );
       }
-
-      this.logger.debug(
-        `[${sid}] Message forwarded to Chatwoot (msgId=${chatwootMessage?.id}, convId=${conversationId})`,
-      );
     } catch (error) {
       this.logger.error(
         `[${sid}] Chatwoot forward error: ${(error as Error).message}`,
       );
     }
+  }
+
+  private async downloadMedia(
+    sessionId: string,
+    msg: {
+      key: { id: string; remoteJid: string; fromMe?: boolean };
+      message?: Record<string, unknown>;
+    },
+    sid: string,
+  ): Promise<Buffer | null> {
+    try {
+      const socket = this.whatsappService.getSocket(sessionId);
+      if (!socket) return null;
+
+      const silentLogger: any = {
+        level: 'silent',
+        fatal: () => {},
+        error: () => {},
+        warn: () => {},
+        info: () => {},
+        debug: () => {},
+        trace: () => {},
+        silent: () => {},
+        child: () => silentLogger,
+      };
+
+      const buffer = await downloadMediaMessage(
+        msg as proto.IWebMessageInfo,
+        'buffer',
+        {},
+        {
+          logger: silentLogger,
+          reuploadRequest: socket.updateMediaMessage.bind(socket),
+        },
+      );
+
+      return buffer as Buffer;
+    } catch (error) {
+      this.logger.warn(
+        `[${sid}] [CW] Media download failed: ${(error as Error).message}`,
+      );
+      return null;
+    }
+  }
+
+  private getMediaExtension(
+    message: Record<string, unknown> | undefined,
+    mediaType: string | null,
+  ): string {
+    if (!message) return 'bin';
+
+    if (message.imageMessage) return 'jpg';
+    if (message.videoMessage) return 'mp4';
+    if (message.audioMessage) {
+      const audio = message.audioMessage as { ptt?: boolean };
+      return audio.ptt ? 'ogg' : 'mp3';
+    }
+    if (message.documentMessage) {
+      const doc = message.documentMessage as { fileName?: string };
+      const fileName = doc.fileName || '';
+      const ext = fileName.split('.').pop();
+      return ext || 'bin';
+    }
+    if (message.stickerMessage) return 'webp';
+
+    return 'bin';
+  }
+
+  private getMediaFilename(
+    message: Record<string, unknown> | undefined,
+    messageId: string,
+    extension: string,
+  ): string {
+    if (message?.documentMessage) {
+      const doc = message.documentMessage as { fileName?: string };
+      if (doc.fileName) return doc.fileName;
+    }
+    return `${messageId}.${extension}`;
   }
 }

@@ -1,8 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-import { SendMessageBaseDto } from './send-message-base.dto';
-import { QuotedMessageDto } from './send-message-base.dto';
+import { SendMessageBaseDto, MessageKeyDto } from './send-message-base.dto';
 
 export class EditMessageDto extends SendMessageBaseDto {
   @ApiProperty({
@@ -15,9 +14,9 @@ export class EditMessageDto extends SendMessageBaseDto {
 
   @ApiProperty({
     description: 'Chave da mensagem a editar',
-    type: QuotedMessageDto,
+    type: MessageKeyDto,
   })
   @ValidateNested()
-  @Type(() => QuotedMessageDto)
-  messageKey: QuotedMessageDto;
+  @Type(() => MessageKeyDto)
+  messageKey: MessageKeyDto;
 }

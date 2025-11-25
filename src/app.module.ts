@@ -14,6 +14,7 @@ import { SettingsModule } from './api/settings/settings.module';
 import { WebhooksModule } from './integrations/webhooks/webhooks.module';
 import { ChatwootModule } from './integrations/chatwoot/chatwoot.module';
 import { PersistenceModule } from './core/persistence/persistence.module';
+import { AudioModule } from './core/audio/audio.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { PersistenceModule } from './core/persistence/persistence.module';
     WebhooksModule,
     ChatwootModule,
     PersistenceModule,
+    AudioModule,
   ],
   providers: [PinoLoggerService],
   exports: [PinoLoggerService],

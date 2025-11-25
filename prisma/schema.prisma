@@ -162,6 +162,7 @@ model Message {
   
   // WhatsApp message key for reply/edit/delete operations
   waMessageKey  Json?    // { id, remoteJid, fromMe, participant? }
+  waMessage     Json?    // Original WhatsApp message content for replies (proto.IMessage)
   
   status        MessageStatus @default(pending)
   isDeleted     Boolean       @default(false)

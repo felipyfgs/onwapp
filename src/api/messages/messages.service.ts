@@ -7,6 +7,7 @@ import { DatabaseService } from '../../database/database.service';
 import { WhatsAppService } from '../../core/whatsapp/whatsapp.service';
 import { AnyMessageContent, proto, WASocket } from 'whaileys';
 import { MessageResponseDto } from './dto/message-response.dto';
+import { QuotedMessageDto } from './dto/send-message-base.dto';
 import { SendTextMessageDto } from './dto/send-text-message.dto';
 import { SendImageMessageDto } from './dto/send-image-message.dto';
 import { SendVideoMessageDto } from './dto/send-video-message.dto';
@@ -26,12 +27,14 @@ import { SendPollMessageDto } from './dto/send-poll-message.dto';
 import { SendInteractiveMessageDto } from './dto/send-interactive-message.dto';
 import { EditMessageDto } from './dto/edit-message.dto';
 import { SendLiveLocationMessageDto } from './dto/send-live-location-message.dto';
+import { AudioService } from '../../core/audio/audio.service';
 
 @Injectable()
 export class MessagesService {
   constructor(
     private prisma: DatabaseService,
     private whatsapp: WhatsAppService,
+    private audioService: AudioService,
   ) {}
 
   private async validateSessionConnected(sessionId: string): Promise<WASocket> {
@@ -61,6 +64,38 @@ export class MessagesService {
 
     const cleaned = phoneNumber.replace(/\D/g, '');
     return `${cleaned}@s.whatsapp.net`;
+  }
+
+  /**
+   * Transform QuotedMessageDto to Baileys expected format
+   * Following Evolution API pattern: { key: proto.IMessageKey, message: proto.IMessage }
+   * Baileys expects: { key: { remoteJid, fromMe, id, participant? }, message?: {} }
+   */
+  private formatQuotedMessage(
+    quoted: QuotedMessageDto | undefined,
+  ): proto.IWebMessageInfo | undefined {
+    if (!quoted?.key) return undefined;
+
+    const result: proto.IWebMessageInfo = {
+      key: {
+        remoteJid: quoted.key.remoteJid,
+        fromMe: quoted.key.fromMe,
+        id: quoted.key.id,
+        participant: quoted.key.participant,
+      },
+    };
+
+    // Only include message if it has actual content
+    // An empty object {} can cause issues with Baileys
+    if (
+      quoted.message &&
+      typeof quoted.message === 'object' &&
+      Object.keys(quoted.message).length > 0
+    ) {
+      result.message = quoted.message as proto.IMessage;
+    }
+
+    return result;
   }
 
   private parseMediaUpload(media: string): { url: string } | Buffer {
@@ -103,8 +138,10 @@ export class MessagesService {
       mentions: dto.mentions,
     };
 
+    const formattedQuoted = this.formatQuotedMessage(dto.quoted);
+
     const options = {
-      quoted: dto.quoted as any,
+      quoted: formattedQuoted,
       ephemeralExpiration: dto.ephemeralExpiration,
       statusJidList: dto.statusJidList,
     };
@@ -135,7 +172,7 @@ export class MessagesService {
     };
 
     const options = {
-      quoted: dto.quoted as any,
+      quoted: this.formatQuotedMessage(dto.quoted),
       ephemeralExpiration: dto.ephemeralExpiration,
       statusJidList: dto.statusJidList,
     };
@@ -167,7 +204,7 @@ export class MessagesService {
     };
 
     const options = {
-      quoted: dto.quoted as any,
+      quoted: this.formatQuotedMessage(dto.quoted),
       ephemeralExpiration: dto.ephemeralExpiration,
       statusJidList: dto.statusJidList,
     };
@@ -188,15 +225,33 @@ export class MessagesService {
     const socket = await this.validateSessionConnected(sessionId);
     const jid = this.formatJid(dto.to);
 
+    // Default to encoding=true for PTT (voice notes)
+    const shouldEncode = dto.encoding !== false;
+
+    let audioData: Buffer | { url: string };
+    let mimetype = dto.mimetype;
+    let ptt = dto.ptt;
+
+    if (shouldEncode) {
+      // Convert audio to OGG/OPUS for WhatsApp PTT
+      const audioBuffer = await this.audioService.processAudio(dto.audio);
+      audioData = audioBuffer;
+      mimetype = 'audio/ogg; codecs=opus';
+      ptt = true;
+    } else {
+      // Send as-is without conversion
+      audioData = this.parseMediaUpload(dto.audio);
+    }
+
     const content: AnyMessageContent = {
-      audio: this.parseMediaUpload(dto.audio),
-      ptt: dto.ptt,
+      audio: audioData,
+      ptt,
       seconds: dto.seconds,
-      mimetype: dto.mimetype,
+      mimetype,
     };
 
     const options = {
-      quoted: dto.quoted as any,
+      quoted: this.formatQuotedMessage(dto.quoted),
       ephemeralExpiration: dto.ephemeralExpiration,
       statusJidList: dto.statusJidList,
     };
@@ -224,7 +279,7 @@ export class MessagesService {
     };
 
     const options = {
-      quoted: dto.quoted as any,
+      quoted: this.formatQuotedMessage(dto.quoted),
       ephemeralExpiration: dto.ephemeralExpiration,
       statusJidList: dto.statusJidList,
     };
@@ -251,7 +306,7 @@ export class MessagesService {
     };
 
     const options = {
-      quoted: dto.quoted as any,
+      quoted: this.formatQuotedMessage(dto.quoted),
       ephemeralExpiration: dto.ephemeralExpiration,
       statusJidList: dto.statusJidList,
     };
@@ -284,7 +339,7 @@ export class MessagesService {
     };
 
     const options = {
-      quoted: dto.quoted as any,
+      quoted: this.formatQuotedMessage(dto.quoted),
       ephemeralExpiration: dto.ephemeralExpiration,
       statusJidList: dto.statusJidList,
     };
@@ -317,7 +372,7 @@ export class MessagesService {
     };
 
     const options = {
-      quoted: dto.quoted as any,
+      quoted: this.formatQuotedMessage(dto.quoted),
       ephemeralExpiration: dto.ephemeralExpiration,
       statusJidList: dto.statusJidList,
     };
@@ -435,7 +490,7 @@ export class MessagesService {
     }
 
     const options = {
-      quoted: dto.quoted as any,
+      quoted: this.formatQuotedMessage(dto.quoted),
       ephemeralExpiration: dto.ephemeralExpiration,
       statusJidList: dto.statusJidList,
     };
@@ -467,7 +522,7 @@ export class MessagesService {
     }
 
     const options = {
-      quoted: dto.quoted as any,
+      quoted: this.formatQuotedMessage(dto.quoted),
       ephemeralExpiration: dto.ephemeralExpiration,
       statusJidList: dto.statusJidList,
     };
@@ -509,7 +564,7 @@ export class MessagesService {
     };
 
     const options = {
-      quoted: dto.quoted as any,
+      quoted: this.formatQuotedMessage(dto.quoted),
       ephemeralExpiration: dto.ephemeralExpiration,
       statusJidList: dto.statusJidList,
     };
@@ -554,7 +609,7 @@ export class MessagesService {
     };
 
     const options = {
-      quoted: dto.quoted as any,
+      quoted: this.formatQuotedMessage(dto.quoted),
       ephemeralExpiration: dto.ephemeralExpiration,
       statusJidList: dto.statusJidList,
     };
@@ -581,7 +636,7 @@ export class MessagesService {
     };
 
     const options = {
-      quoted: dto.quoted as any,
+      quoted: this.formatQuotedMessage(dto.quoted),
       ephemeralExpiration: dto.ephemeralExpiration,
       statusJidList: dto.statusJidList,
     };
@@ -614,7 +669,7 @@ export class MessagesService {
     };
 
     const options = {
-      quoted: dto.quoted as any,
+      quoted: this.formatQuotedMessage(dto.quoted),
       ephemeralExpiration: dto.ephemeralExpiration,
       statusJidList: dto.statusJidList,
     };
@@ -650,7 +705,7 @@ export class MessagesService {
     };
 
     const options = {
-      quoted: dto.quoted as any,
+      quoted: this.formatQuotedMessage(dto.quoted),
       ephemeralExpiration: dto.ephemeralExpiration,
       statusJidList: dto.statusJidList,
     };
