@@ -2,17 +2,18 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PinoLoggerService } from './logger/logger.service';
 import { DatabaseModule } from './database/database.module';
-import { SessionsModule } from './sessions/sessions.module';
-import { MessagesModule } from './messages/messages.module';
-import { GroupsModule } from './groups/groups.module';
-import { ContactsModule } from './contacts/contacts.module';
-import { ProfileModule } from './profile/profile.module';
-import { ChatsModule } from './chats/chats.module';
-import { PresenceModule } from './presence/presence.module';
-import { MediaModule } from './media/media.module';
-import { SettingsModule } from './settings/settings.module';
-import { WebhooksModule } from './webhooks/webhooks.module';
-import { PersistenceModule } from './persistence/persistence.module';
+import { SessionsModule } from './api/sessions/sessions.module';
+import { MessagesModule } from './api/messages/messages.module';
+import { GroupsModule } from './api/groups/groups.module';
+import { ContactsModule } from './api/contacts/contacts.module';
+import { ProfileModule } from './api/profile/profile.module';
+import { ChatsModule } from './api/chats/chats.module';
+import { PresenceModule } from './api/presence/presence.module';
+import { MediaModule } from './api/media/media.module';
+import { SettingsModule } from './api/settings/settings.module';
+import { WebhooksModule } from './integrations/webhooks/webhooks.module';
+import { ChatwootModule } from './integrations/chatwoot/chatwoot.module';
+import { PersistenceModule } from './core/persistence/persistence.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { PersistenceModule } from './persistence/persistence.module';
     MediaModule,
     SettingsModule,
     WebhooksModule,
+    ChatwootModule,
     PersistenceModule,
   ],
   providers: [PinoLoggerService],

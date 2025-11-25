@@ -59,6 +59,7 @@ model Session {
   chats       Chat[]
   messages    Message[]
   settings    SessionSettings?
+  chatwoot    Chatwoot?
 
   @@map("Session")
 }
@@ -209,4 +210,30 @@ model SessionSettings {
   session         Session                 @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@map("SessionSettings")
+}
+
+model Chatwoot {
+  id                      String   @id @default(cuid())
+  sessionId               String   @unique
+  enabled                 Boolean  @default(false)
+  accountId               String?
+  token                   String?
+  url                     String?
+  nameInbox               String?
+  signMsg                 Boolean  @default(false)
+  signDelimiter           String?  @default("\\n")
+  reopenConversation      Boolean  @default(false)
+  conversationPending     Boolean  @default(false)
+  mergeBrazilContacts     Boolean  @default(false)
+  importContacts          Boolean  @default(false)
+  importMessages          Boolean  @default(false)
+  daysLimitImportMessages Int?     @default(3)
+  organization            String?
+  logo                    String?
+  ignoreJids              String[] @default([])
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  session                 Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("Chatwoot")
 }

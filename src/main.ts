@@ -4,7 +4,7 @@ import { AppModule } from './app.module';
 import { PinoLoggerService } from './logger/logger.service';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { WhatsAppService } from './whatsapp/whatsapp.service';
+import { WhatsAppService } from './core/whatsapp/whatsapp.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {

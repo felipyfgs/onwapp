@@ -45,6 +45,16 @@ services:
     networks:
       - zpwoot-network
 
+  # Webhook Tester (para testar webhooks localmente)
+  webhook-tester:
+    image: tarampampam/webhook-tester:latest
+    container_name: zpwoot-webhook-tester
+    restart: unless-stopped
+    ports:
+      - '8080:8080'
+    networks:
+      - zpwoot-network
+
 volumes:
   postgres_data:
     driver: local
