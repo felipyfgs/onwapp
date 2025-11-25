@@ -58,7 +58,6 @@ model Session {
   contacts    Contact[]
   chats       Chat[]
   messages    Message[]
-  statusHistories MessageStatusHistory[]
   settings    SessionSettings?
 
   @@map("Session")
@@ -169,7 +168,7 @@ model Message {
   @@index([textContent])                // Para busca textual
   @@index([mediaUrl])                  // Para filtrar mídias
   @@index([messageType])                // Para filtrar tipos
-  @@index([timestamp DESC])              // Para queries por tempo
+  @@index([timestamp])                  // Para queries por tempo
   @@map("Message")
 }
 
@@ -190,3 +189,24 @@ model MessageStatusHistory {
 
 model SessionSettings {
   id              String                  @id @default(uuid())
+  sessionId       String                  @unique
+  rejectCall      Boolean                 @default(false)
+  groupsIgnore    Boolean                 @default(false)
+  alwaysOnline    Boolean                 @default(false)
+  readMessages    Boolean                 @default(false)
+  readStatus      Boolean                 @default(false)
+  syncFullHistory Boolean                 @default(true)
+  profilePicture  WAPrivacyValue?
+  status          WAPrivacyValue?
+  lastSeen        WAPrivacyValue?
+  online          WAPrivacyOnlineValue?
+  call            WAPrivacyCallValue?
+  messages        WAPrivacyMessagesValue?
+  readReceipts    WAReadReceiptsValue?
+  groupsAdd       WAPrivacyGroupAddValue?
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  session         Session                 @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("SessionSettings")
+}
