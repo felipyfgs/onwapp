@@ -21,33 +21,23 @@ export class MessagesHandler {
     private readonly whatsappService: WhatsAppService,
   ) {}
 
-  registerMessageListeners(sessionId: string, socket: WASocket): void {
+  // Método público para uso com ev.process()
+  handleMessagesUpsert(
+    sessionId: string,
+    socket: WASocket,
+    payload: { messages: unknown[]; type?: string },
+  ): void {
     const sid = formatSessionId(sessionId);
-
-    socket.ev.on(
-      'messages.upsert' as never,
-      (payload: { messages: unknown[] }) => {
-        void this.handleMessagesUpsert(sessionId, payload, sid);
-      },
-    );
-
-    socket.ev.on('messages.update' as never, (payload: unknown[]) => {
-      void this.handleMessagesUpdate(sessionId, payload, sid);
-    });
-
-    socket.ev.on(
-      'messages.delete' as never,
-      (payload: { keys: { id: string }[] }) => {
-        void this.handleMessagesDelete(sessionId, payload, sid);
-      },
-    );
-
-    socket.ev.on('message-receipt.update' as never, (payload: unknown[]) => {
-      void this.handleMessageReceiptUpdate(sessionId, payload, sid);
-    });
+    void this.processMessagesUpsert(sessionId, payload, sid);
   }
 
-  private async handleMessagesUpsert(
+  // Método público para uso com ev.process()
+  handleMessagesUpdate(sessionId: string, payload: unknown[]): void {
+    const sid = formatSessionId(sessionId);
+    void this.processMessagesUpdate(sessionId, payload, sid);
+  }
+
+  private async processMessagesUpsert(
     sessionId: string,
     payload: { messages: unknown[]; type?: string },
     sid: string,
@@ -144,7 +134,7 @@ export class MessagesHandler {
     }
   }
 
-  private async handleMessagesUpdate(
+  private async processMessagesUpdate(
     sessionId: string,
     payload: unknown[],
     sid: string,

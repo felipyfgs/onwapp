@@ -88,9 +88,9 @@ export class PersistenceService {
       if (chatData.name !== undefined) updateData.name = chatData.name;
       if (chatData.unread !== undefined) updateData.unread = chatData.unread;
       if (chatData.archived !== undefined)
-        updateData.archived = chatData.archived;
-      if (chatData.pinned !== undefined) updateData.pinned = chatData.pinned;
-      if (chatData.muted !== undefined) updateData.muted = chatData.muted;
+        updateData.archived = !!chatData.archived;
+      if (chatData.pinned !== undefined) updateData.pinned = !!chatData.pinned;
+      if (chatData.muted !== undefined) updateData.muted = !!chatData.muted;
       if (chatData.lastMessageTs !== undefined) {
         updateData.lastMessageTs = BigInt(chatData.lastMessageTs.toString());
       }
@@ -110,9 +110,9 @@ export class PersistenceService {
           lastMessageTs: chatData.lastMessageTs
             ? BigInt(chatData.lastMessageTs.toString())
             : null,
-          archived: chatData.archived || false,
-          pinned: chatData.pinned || false,
-          muted: chatData.muted || false,
+          archived: !!chatData.archived,
+          pinned: !!chatData.pinned,
+          muted: !!chatData.muted,
         },
         update: updateData,
       });
@@ -567,9 +567,9 @@ export class PersistenceService {
               lastMessageTs: chat.lastMessageTs
                 ? BigInt(chat.lastMessageTs.toString())
                 : null,
-              archived: chat.archived || false,
-              pinned: chat.pinned || false,
-              muted: chat.muted || false,
+              archived: !!chat.archived,
+              pinned: !!chat.pinned,
+              muted: !!chat.muted,
             },
             update: {
               name: chat.name,
@@ -577,9 +577,9 @@ export class PersistenceService {
               lastMessageTs: chat.lastMessageTs
                 ? BigInt(chat.lastMessageTs.toString())
                 : null,
-              archived: chat.archived,
-              pinned: chat.pinned,
-              muted: chat.muted,
+              archived: !!chat.archived,
+              pinned: !!chat.pinned,
+              muted: !!chat.muted,
             },
           });
           processedCount++;

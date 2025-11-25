@@ -4,13 +4,13 @@ import { PersistenceService } from '../../persistence/persistence.service';
 import { formatSessionId } from '../utils/helpers';
 
 interface ChatPayload {
-  id: string;
-  name?: string;
-  unreadCount?: number;
-  conversationTimestamp?: number;
-  archived?: boolean;
-  pinned?: boolean;
-  mute?: { endTimestamp?: number };
+  id?: string;
+  name?: string | null;
+  unreadCount?: number | null;
+  conversationTimestamp?: number | null;
+  archived?: boolean | null;
+  pinned?: boolean | null;
+  mute?: { endTimestamp?: number | null } | null;
 }
 
 interface ContactPayload {
@@ -29,29 +29,18 @@ export class ChatsHandler {
     private readonly persistenceService: PersistenceService,
   ) {}
 
-  registerChatListeners(sessionId: string, socket: WASocket): void {
+  // Métodos públicos para uso com ev.process()
+  handleChatsUpsert(sessionId: string, payload: ChatPayload[]): void {
     const sid = formatSessionId(sessionId);
-
-    socket.ev.on('chats.upsert' as never, (payload: ChatPayload[]) => {
-      void this.handleChatsUpsert(sessionId, payload, sid);
-    });
-
-    socket.ev.on('chats.update' as never, (payload: ChatPayload[]) => {
-      void this.handleChatsUpdate(sessionId, payload, sid);
-    });
-
-    socket.ev.on('contacts.upsert' as never, (payload: ContactPayload[]) => {
-      void this.handleContactsUpsert(sessionId, payload, sid);
-    });
-
-    socket.ev.on('contacts.update' as never, (payload: ContactPayload[]) => {
-      void this.handleContactsUpdate(sessionId, payload, sid);
-    });
-
-    this.registerOtherEvents(socket, sid);
+    void this.processChatsUpsert(sessionId, payload, sid);
   }
 
-  private async handleChatsUpsert(
+  handleChatsUpdate(sessionId: string, payload: ChatPayload[]): void {
+    const sid = formatSessionId(sessionId);
+    void this.processChatsUpdate(sessionId, payload, sid);
+  }
+
+  private async processChatsUpsert(
     sessionId: string,
     payload: ChatPayload[],
     sid: string,
@@ -63,13 +52,14 @@ export class ChatsHandler {
 
     try {
       for (const chat of payload) {
+        if (!chat.id) continue;
         await this.persistenceService.createOrUpdateChat(sessionId, {
           remoteJid: chat.id,
-          name: chat.name,
-          unread: chat.unreadCount,
-          lastMessageTs: chat.conversationTimestamp,
-          archived: chat.archived,
-          pinned: chat.pinned,
+          name: chat.name ?? undefined,
+          unread: chat.unreadCount ?? undefined,
+          lastMessageTs: chat.conversationTimestamp ?? undefined,
+          archived: chat.archived ?? undefined,
+          pinned: chat.pinned ?? undefined,
           muted: chat.mute?.endTimestamp ? true : false,
         });
       }
@@ -80,7 +70,7 @@ export class ChatsHandler {
     }
   }
 
-  private async handleChatsUpdate(
+  private async processChatsUpdate(
     sessionId: string,
     payload: ChatPayload[],
     sid: string,
@@ -92,13 +82,14 @@ export class ChatsHandler {
 
     try {
       for (const chat of payload) {
+        if (!chat.id) continue;
         await this.persistenceService.createOrUpdateChat(sessionId, {
           remoteJid: chat.id,
-          name: chat.name,
-          unread: chat.unreadCount,
-          lastMessageTs: chat.conversationTimestamp,
-          archived: chat.archived,
-          pinned: chat.pinned,
+          name: chat.name ?? undefined,
+          unread: chat.unreadCount ?? undefined,
+          lastMessageTs: chat.conversationTimestamp ?? undefined,
+          archived: chat.archived ?? undefined,
+          pinned: chat.pinned ?? undefined,
           muted: chat.mute?.endTimestamp ? true : false,
         });
       }

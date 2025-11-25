@@ -1,6 +1,12 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
-import makeWASocket, { WASocket } from 'whaileys';
+import makeWASocket, {
+  WASocket,
+  fetchLatestBaileysVersion,
+  makeCacheableSignalKeyStore,
+  Browsers,
+} from 'whaileys';
 import { Proxy } from '@prisma/client';
+import * as P from 'pino';
 import { DatabaseService } from '../../database/database.service';
 import { AuthStateRepository } from '../../database/repositories/auth-state.repository';
 import { SessionRepository } from '../../database/repositories/session.repository';
@@ -104,6 +110,18 @@ export class WhatsAppService {
       `[${sid}] Criando socket${isNewLogin ? ' | Novo login' : ' | Reconexão'}${proxyConfig?.enabled ? ' | Proxy habilitado' : ''}`,
     );
 
+    // Fechar socket existente se houver (evita conflitos)
+    const existingSocket = this.socketManager.getSocket(sessionId);
+    if (existingSocket) {
+      this.logger.log(`[${sid}] Fechando socket existente antes de reconectar`);
+      try {
+        existingSocket.end(undefined);
+      } catch {
+        // Ignorar erros ao fechar socket antigo
+      }
+      this.socketManager.deleteSocket(sessionId);
+    }
+
     const { state, saveCreds } = await useAuthState(sessionId, this.prisma);
     const currentQRRef: QRCodeRef = { value: undefined };
 
@@ -113,45 +131,106 @@ export class WhatsAppService {
         `[${sid}] Proxy configurado: ${proxyConfig.protocol ?? 'http'}://${proxyConfig.host}:${proxyConfig.port}`,
       );
       // TODO: Implement proxy agent with https-proxy-agent or socks-proxy-agent
-      // This requires additional packages and configuration
     }
 
+    // Buscar versão mais recente do WhatsApp Web (como Evolution API faz)
+    const { version } = await fetchLatestBaileysVersion();
+    this.logger.log(`[${sid}] WhatsApp Web version: ${version.join('.')}`);
+
+    // Configurar browser fingerprint (padrão Evolution API)
+    const browser = Browsers.ubuntu('Chrome');
+
     const socket = makeWASocket({
-      auth: state,
+      auth: {
+        creds: state.creds,
+        keys: makeCacheableSignalKeyStore(
+          state.keys,
+          P.default({ level: 'silent' }) as any,
+        ),
+      },
+      version,
+      browser,
       printQRInTerminal: false,
+      generateHighQualityLinkPreview: true,
+      syncFullHistory: false,
+      markOnlineOnConnect: false,
+      emitOwnEvents: false, // Evita conflitos de eventos
+      fireInitQueries: true, // Importante para inicialização
+      connectTimeoutMs: 30_000,
+      keepAliveIntervalMs: 30_000,
+      retryRequestDelayMs: 350,
       logger: createSilentLogger() as unknown as Parameters<
         typeof makeWASocket
       >[0]['logger'],
     });
 
-    // Connection events
-    socket.ev.on('connection.update', (update: unknown) => {
-      void this.connectionHandler.createConnectionUpdateHandler(
-        sessionId,
-        socket,
-        saveCreds,
-        currentQRRef,
-        this.sessionData,
-        (sid, delay) => this.scheduleReconnect(sid, delay),
-      )(
-        update as {
-          connection?: string;
-          lastDisconnect?: { error: Error };
-          qr?: string;
-        },
-      );
+    // Usar ev.process() como a Evolution API faz (processa eventos em lote)
+    socket.ev.process(async (events) => {
+      // Connection update
+      if (events['connection.update']) {
+        const update = events['connection.update'];
+        await this.connectionHandler.createConnectionUpdateHandler(
+          sessionId,
+          socket,
+          saveCreds,
+          currentQRRef,
+          this.sessionData,
+          (sid, delay) => this.scheduleReconnect(sid, delay),
+        )(
+          update as {
+            connection?: string;
+            lastDisconnect?: { error: Error };
+            qr?: string;
+          },
+        );
+      }
+
+      // Credentials update
+      if (events['creds.update']) {
+        this.connectionHandler.handleCredsUpdate(sessionId, saveCreds);
+      }
+
+      // Messages
+      if (events['messages.upsert']) {
+        this.messagesHandler.handleMessagesUpsert(
+          sessionId,
+          socket,
+          events['messages.upsert'],
+        );
+      }
+
+      if (events['messages.update']) {
+        this.messagesHandler.handleMessagesUpdate(
+          sessionId,
+          events['messages.update'],
+        );
+      }
+
+      // Chats (using type assertion due to complex Whaileys types with Long/null)
+      if (events['chats.upsert']) {
+        this.chatsHandler.handleChatsUpsert(
+          sessionId,
+          events['chats.upsert'] as any,
+        );
+      }
+
+      if (events['chats.update']) {
+        this.chatsHandler.handleChatsUpdate(
+          sessionId,
+          events['chats.update'] as any,
+        );
+      }
+
+      // History
+      if (events['messaging-history.set']) {
+        this.historyHandler.handleHistorySet(
+          sessionId,
+          events['messaging-history.set'] as any,
+        );
+      }
     });
 
-    socket.ev.on('creds.update', () => {
-      this.connectionHandler.handleCredsUpdate(sessionId, saveCreds);
-    });
-
-    // Register all event handlers
-    this.messagesHandler.registerMessageListeners(sessionId, socket);
-    this.chatsHandler.registerChatListeners(sessionId, socket);
-    this.historyHandler.registerHistoryListeners(sessionId, socket);
-
-    // Register webhook listeners
+    // Register webhook listeners (esses podem ficar separados)
     void this.registerWebhookListeners(sessionId, socket);
 
     // Store socket and session data

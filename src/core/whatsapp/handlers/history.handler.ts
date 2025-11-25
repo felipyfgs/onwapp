@@ -1,5 +1,4 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
-import { WASocket } from 'whaileys';
 import { HistorySyncService } from '../../persistence/history-sync.service';
 import { SettingsService } from '../../../api/settings/settings.service';
 import { formatSessionId } from '../utils/helpers';
@@ -9,7 +8,7 @@ interface HistorySyncPayload {
   contacts?: unknown[];
   messages?: unknown[];
   isLatest?: boolean;
-  progress?: number;
+  progress?: number | null;
 }
 
 @Injectable()
@@ -23,18 +22,13 @@ export class HistoryHandler {
     private readonly settingsService: SettingsService,
   ) {}
 
-  registerHistoryListeners(sessionId: string, socket: WASocket): void {
+  // Método público para uso com ev.process()
+  handleHistorySet(sessionId: string, payload: HistorySyncPayload): void {
     const sid = formatSessionId(sessionId);
-
-    socket.ev.on(
-      'messaging-history.set' as never,
-      (payload: HistorySyncPayload) => {
-        void this.handleHistorySync(sessionId, payload, sid);
-      },
-    );
+    void this.processHistorySync(sessionId, payload, sid);
   }
 
-  private async handleHistorySync(
+  private async processHistorySync(
     sessionId: string,
     payload: HistorySyncPayload,
     sid: string,
@@ -64,7 +58,7 @@ export class HistoryHandler {
           contacts: payload.contacts || [],
           messages: payload.messages || [],
           isLatest: payload.isLatest ?? false,
-          progress: payload.progress,
+          progress: payload.progress ?? undefined,
         });
       } else {
         this.logger.debug(
