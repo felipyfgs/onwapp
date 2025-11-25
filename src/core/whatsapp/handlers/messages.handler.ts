@@ -110,7 +110,7 @@ export class MessagesHandler {
           messageId: msg.key.id,
           fromMe: msg.key.fromMe || false,
           senderJid: msg.key.participant || msg.key.remoteJid,
-          senderName: msg.pushName,
+          sender: msg.pushName,
           timestamp: msg.messageTimestamp || Date.now(),
           messageType: parsedContent.messageType,
           textContent: parsedContent.textContent,
@@ -213,11 +213,11 @@ export class MessagesHandler {
           await this.persistenceService.markMessageAsDeleted(sessionId, key.id);
 
           // Forward delete to Chatwoot if message was synced
-          if (message?.chatwootMessageId && message?.chatwootConversationId) {
+          if (message?.cwMessageId && message?.cwConversationId) {
             await this.forwardDeleteToChatwoot(
               sessionId,
-              message.chatwootConversationId,
-              message.chatwootMessageId,
+              message.cwConversationId,
+              message.cwMessageId,
               sid,
             );
           }
@@ -289,7 +289,7 @@ export class MessagesHandler {
         originalMessageId,
       );
 
-      if (!originalMessage?.chatwootConversationId) {
+      if (!originalMessage?.cwConversationId) {
         this.logger.warn(
           `[${sid}] [CW] Original message not found for edit: ${originalMessageId}`,
         );
@@ -310,12 +310,12 @@ export class MessagesHandler {
 
       await this.chatwootService.createMessage(
         sessionId,
-        originalMessage.chatwootConversationId,
+        originalMessage.cwConversationId,
         {
           content: formattedContent,
           messageType: 'incoming', // Shows as customer message
           sourceId: `edited-${originalMessageId}`, // Prevents loop - webhook ignores source_id
-          inReplyTo: originalMessage.chatwootMessageId || undefined,
+          inReplyTo: originalMessage.cwMessageId || undefined,
           inReplyToExternalId: originalMessageId,
         },
       );
@@ -487,8 +487,8 @@ export class MessagesHandler {
           sessionId,
           stanzaId,
         );
-        if (quotedMessage?.chatwootMessageId) {
-          inReplyTo = quotedMessage.chatwootMessageId;
+        if (quotedMessage?.cwMessageId) {
+          inReplyTo = quotedMessage.cwMessageId;
         }
       }
 
@@ -549,10 +549,10 @@ export class MessagesHandler {
       // Update message with Chatwoot tracking data
       if (chatwootMessage) {
         await this.persistenceService.updateMessageChatwoot(sessionId, key.id, {
-          chatwootConversationId: conversationId,
-          chatwootMessageId: chatwootMessage.id,
-          chatwootInboxId: inbox.id,
-          chatwootContactId: contact.id,
+          cwConversationId: conversationId,
+          cwMessageId: chatwootMessage.id,
+          cwInboxId: inbox.id,
+          cwContactId: contact.id,
         });
         this.logger.log(
           `[${sid}] [CW] Message forwarded (msgId=${chatwootMessage.id})`,

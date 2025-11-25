@@ -46,13 +46,13 @@ enum WAPrivacyGroupAddValue {
 }
 
 model Session {
-  id          String           @id @default(uuid())
-  name        String
-  status      SessionStatus    @default(disconnected)
-  qrCode      String?
-  phoneNumber String?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id        String           @id @default(uuid())
+  name      String
+  status    SessionStatus    @default(disconnected)
+  qrCode    String?
+  phone     String?          @map("phoneNumber")
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
   authState   AuthState[]
   webhook     Webhook?
   contacts    Contact[]
@@ -117,14 +117,14 @@ enum MessageStatus {
 }
 
 model Contact {
-  id             String   @id @default(uuid())
-  sessionId      String
-  remoteJid      String
-  name           String?
-  profilePicUrl  String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  session        Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  id        String   @id @default(uuid())
+  sessionId String
+  remoteJid String
+  name      String?
+  avatarUrl String?  @map("profilePicUrl")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@unique([sessionId, remoteJid])
   @@index([sessionId, name])
@@ -132,73 +132,70 @@ model Contact {
 }
 
 model Chat {
-  id                    String    @id @default(uuid())
-  sessionId             String
-  remoteJid             String
-  name                  String?
-  unreadCount           Int       @default(0)
-  lastMessageTimestamp  BigInt?
-  archived              Boolean   @default(false)
-  pinned                Boolean   @default(false)
-  muted                 Boolean   @default(false)
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  session               Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  messages              Message[]
+  id            String    @id @default(uuid())
+  sessionId     String
+  remoteJid     String
+  name          String?
+  unread        Int       @default(0) @map("unreadCount")
+  lastMessageTs BigInt?   @map("lastMessageTimestamp")
+  archived      Boolean   @default(false)
+  pinned        Boolean   @default(false)
+  muted         Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  session       Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  messages      Message[]
 
   @@unique([sessionId, remoteJid])
-  @@index([sessionId, lastMessageTimestamp])
+  @@index([sessionId, lastMessageTs])
   @@map("Chat")
 }
 
 model Message {
-  id            String        @id @default(uuid())
-  sessionId     String
-  chatId        String
-  remoteJid     String
-  messageId     String
-  fromMe        Boolean
-  senderJid     String?
-  senderName    String?
-  timestamp     BigInt
-  messageType   String
+  id          String        @id @default(uuid())
+  sessionId   String
+  chatId      String
+  remoteJid   String
+  messageId   String
+  fromMe      Boolean
+  senderJid   String?
+  sender      String?       @map("senderName")
+  timestamp   BigInt
+  messageType String
   
-  // Campos separados do JSON para performance
-  textContent   String?        // Movido do JSON - busca textual rápida
-  mediaUrl      String?        // Movido do JSON - acesso direto à mídia
-  fileLength    BigInt?        // Movido do JSON - filtrar por tamanho
+  textContent String?
+  mediaUrl    String?
+  fileLength  BigInt?
+  content     Json
   
-  // JSON mantido mas limpo (sem dados pesados)
-  content       Json           // Apenas metadados leves
+  // Chatwoot tracking
+  cwConversationId Int?     @map("chatwootConversationId")
+  cwMessageId      Int?     @map("chatwootMessageId")
+  cwInboxId        Int?     @map("chatwootInboxId")
+  cwContactId      Int?     @map("chatwootContactId")
   
-  // Chatwoot tracking fields
-  chatwootConversationId  Int?     // ID da conversa no Chatwoot
-  chatwootMessageId       Int?     // ID da mensagem no Chatwoot
-  chatwootInboxId         Int?     // ID do inbox no Chatwoot
-  chatwootContactId       Int?     // ID do contato no Chatwoot
+  // WhatsApp message key
+  waMessageKey Json?
+  waMessage    Json?
   
-  // WhatsApp message key for reply/edit/delete operations
-  waMessageKey  Json?    // { id, remoteJid, fromMe, participant? }
-  waMessage     Json?    // Original WhatsApp message content for replies (proto.IMessage)
+  status    MessageStatus @default(pending)
+  deleted   Boolean       @default(false) @map("isDeleted")
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
   
-  status        MessageStatus @default(pending)
-  isDeleted     Boolean       @default(false)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  
-  session       Session       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  chat          Chat          @relation(fields: [chatId], references: [id], onDelete: Cascade)
-  statusHistory  MessageStatusHistory[]
+  session       Session              @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  chat          Chat                 @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  statusHistory MessageStatusHistory[]
 
   @@unique([sessionId, messageId])
   @@index([sessionId, chatId, timestamp])
-  @@index([status])                    // Para os muitos updates de status
-  @@index([textContent])                // Para busca textual
-  @@index([mediaUrl])                  // Para filtrar mídias
-  @@index([messageType])                // Para filtrar tipos
-  @@index([timestamp])                  // Para queries por tempo
-  @@index([chatwootConversationId])     // Para buscar msgs por conversa Chatwoot
-  @@index([chatwootMessageId])          // Para buscar msg específica do Chatwoot
+  @@index([status])
+  @@index([textContent])
+  @@index([mediaUrl])
+  @@index([messageType])
+  @@index([timestamp])
+  @@index([cwConversationId])
+  @@index([cwMessageId])
   @@map("Message")
 }
 
@@ -221,7 +218,7 @@ model SessionSettings {
   id              String                  @id @default(uuid())
   sessionId       String                  @unique
   rejectCall      Boolean                 @default(false)
-  groupsIgnore    Boolean                 @default(false)
+  ignoreGroups    Boolean                 @default(false) @map("groupsIgnore")
   alwaysOnline    Boolean                 @default(false)
   readMessages    Boolean                 @default(false)
   readStatus      Boolean                 @default(false)
@@ -242,27 +239,27 @@ model SessionSettings {
 }
 
 model Chatwoot {
-  id                      String   @id @default(cuid())
-  sessionId               String   @unique
-  enabled                 Boolean  @default(false)
-  accountId               String?
-  token                   String?
-  url                     String?
-  nameInbox               String?
-  signMsg                 Boolean  @default(false)
-  signDelimiter           String?  @default("\\n")
-  reopenConversation      Boolean  @default(false)
-  conversationPending     Boolean  @default(false)
-  mergeBrazilContacts     Boolean  @default(false)
-  importContacts          Boolean  @default(false)
-  importMessages          Boolean  @default(false)
-  daysLimitImportMessages Int?     @default(3)
-  organization            String?
-  logo                    String?
-  ignoreJids              String[] @default([])
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
-  session                 Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  id              String   @id @default(cuid())
+  sessionId       String   @unique
+  enabled         Boolean  @default(false)
+  accountId       String?
+  token           String?
+  url             String?
+  inbox           String?  @map("nameInbox")
+  signMsg         Boolean  @default(false)
+  signDelimiter   String?  @default("\\n")
+  reopen          Boolean  @default(false) @map("reopenConversation")
+  pending         Boolean  @default(false) @map("conversationPending")
+  mergeBrazil     Boolean  @default(false) @map("mergeBrazilContacts")
+  importContacts  Boolean  @default(false)
+  importMessages  Boolean  @default(false)
+  importDays      Int?     @default(3) @map("daysLimitImportMessages")
+  organization    String?
+  logo            String?
+  ignoreJids      String[] @default([])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  session         Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@map("Chatwoot")
 }

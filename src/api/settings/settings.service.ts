@@ -26,8 +26,8 @@ export class SettingsService {
       updateData.rejectCall = dto.rejectCall;
     }
 
-    if (dto.groupsIgnore !== undefined) {
-      updateData.groupsIgnore = dto.groupsIgnore;
+    if (dto.ignoreGroups !== undefined) {
+      updateData.ignoreGroups = dto.ignoreGroups;
     }
 
     if (dto.alwaysOnline !== undefined) {
@@ -97,7 +97,7 @@ export class SettingsService {
 
     return {
       rejectCall: settings.rejectCall,
-      groupsIgnore: settings.groupsIgnore,
+      ignoreGroups: settings.ignoreGroups,
       alwaysOnline: settings.alwaysOnline,
       readMessages: settings.readMessages,
       readStatus: settings.readStatus,
@@ -127,7 +127,7 @@ export class SettingsService {
 
     return {
       rejectCall: settings.rejectCall,
-      groupsIgnore: settings.groupsIgnore,
+      ignoreGroups: settings.ignoreGroups,
       alwaysOnline: settings.alwaysOnline,
       readMessages: settings.readMessages,
       readStatus: settings.readStatus,

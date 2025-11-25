@@ -65,3 +65,22 @@ export interface Long {
   high: number;
   unsigned: boolean;
 }
+
+export interface ProxyConfig {
+  enabled: boolean;
+  host?: string | null;
+  port?: number | null;
+  protocol?: string | null;
+  username?: string | null;
+  password?: string | null;
+}
+
+export interface ProxyAgent {
+  host: string;
+  port: number;
+  protocol?: string;
+  auth?: {
+    username: string;
+    password: string;
+  };
+}

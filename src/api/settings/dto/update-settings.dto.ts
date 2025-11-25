@@ -26,7 +26,7 @@ export class UpdateSettingsDto {
   })
   @IsOptional()
   @IsBoolean()
-  groupsIgnore?: boolean;
+  ignoreGroups?: boolean;
 
   @ApiProperty({
     description: 'Sempre mostrar como online',

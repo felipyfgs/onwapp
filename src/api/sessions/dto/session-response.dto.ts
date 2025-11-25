@@ -19,16 +19,16 @@ export class ChatwootResponseDto {
   url?: string;
 
   @ApiPropertyOptional({ description: 'Nome do inbox' })
-  nameInbox?: string;
+  inbox?: string;
 
   @ApiPropertyOptional({ description: 'Assinar mensagens' })
   signMsg?: boolean;
 
   @ApiPropertyOptional({ description: 'Reabrir conversas' })
-  reopenConversation?: boolean;
+  reopen?: boolean;
 
   @ApiPropertyOptional({ description: 'Conversas pendentes' })
-  conversationPending?: boolean;
+  pending?: boolean;
 
   @ApiProperty({ description: 'Data de criação' })
   createdAt: Date;
@@ -67,7 +67,7 @@ export class SessionResponseDto {
     description: 'Número de telefone pareado',
     example: '+5511999999999',
   })
-  phoneNumber?: string;
+  phone?: string;
 
   @ApiPropertyOptional({
     description: 'Configuração de webhook',

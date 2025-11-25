@@ -60,15 +60,15 @@ export class SessionsService {
             accountId: chatwoot.accountId,
             token: chatwoot.token,
             url: chatwoot.url,
-            nameInbox: chatwoot.nameInbox,
+            inbox: chatwoot.inbox,
             signMsg: chatwoot.signMsg ?? false,
             signDelimiter: chatwoot.signDelimiter ?? '\\n',
-            reopenConversation: chatwoot.reopenConversation ?? false,
-            conversationPending: chatwoot.conversationPending ?? false,
-            mergeBrazilContacts: chatwoot.mergeBrazilContacts ?? false,
+            reopen: chatwoot.reopen ?? false,
+            pending: chatwoot.pending ?? false,
+            mergeBrazil: chatwoot.mergeBrazil ?? false,
             importContacts: chatwoot.importContacts ?? false,
             importMessages: chatwoot.importMessages ?? false,
-            daysLimitImportMessages: chatwoot.daysLimitImportMessages ?? 3,
+            importDays: chatwoot.importDays ?? 3,
             ignoreJids: chatwoot.ignoreJids ?? [],
           },
         });
@@ -215,7 +215,7 @@ export class SessionsService {
     await socket.requestPairingCode(pairPhoneDto.phoneNumber);
 
     const updatedSession = await this.sessionRepository.updateWithConfigs(id, {
-      phoneNumber: pairPhoneDto.phoneNumber,
+      phone: pairPhoneDto.phoneNumber,
     });
 
     return this.mapToResponseDto(updatedSession);
@@ -237,7 +237,7 @@ export class SessionsService {
       name: session.name,
       status: session.status,
       qrCode: session.qrCode ?? undefined,
-      phoneNumber: session.phoneNumber ?? undefined,
+      phone: session.phone ?? undefined,
       webhook: session.webhook
         ? {
             id: session.webhook.id,
@@ -256,10 +256,10 @@ export class SessionsService {
             enabled: session.chatwoot.enabled,
             accountId: session.chatwoot.accountId ?? undefined,
             url: session.chatwoot.url ?? undefined,
-            nameInbox: session.chatwoot.nameInbox ?? undefined,
+            inbox: session.chatwoot.inbox ?? undefined,
             signMsg: session.chatwoot.signMsg,
-            reopenConversation: session.chatwoot.reopenConversation,
-            conversationPending: session.chatwoot.conversationPending,
+            reopen: session.chatwoot.reopen,
+            pending: session.chatwoot.pending,
             createdAt: session.chatwoot.createdAt,
             updatedAt: session.chatwoot.updatedAt,
           }

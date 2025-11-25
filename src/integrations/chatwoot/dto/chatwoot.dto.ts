@@ -26,7 +26,7 @@ export class ChatwootDto {
 
   @IsString()
   @IsOptional()
-  nameInbox?: string;
+  inbox?: string;
 
   @IsBoolean()
   @IsOptional()
@@ -38,15 +38,15 @@ export class ChatwootDto {
 
   @IsBoolean()
   @IsOptional()
-  reopenConversation?: boolean;
+  reopen?: boolean;
 
   @IsBoolean()
   @IsOptional()
-  conversationPending?: boolean;
+  pending?: boolean;
 
   @IsBoolean()
   @IsOptional()
-  mergeBrazilContacts?: boolean;
+  mergeBrazil?: boolean;
 
   @IsBoolean()
   @IsOptional()
@@ -58,7 +58,7 @@ export class ChatwootDto {
 
   @IsNumber()
   @IsOptional()
-  daysLimitImportMessages?: number;
+  importDays?: number;
 
   @IsString()
   @IsOptional()

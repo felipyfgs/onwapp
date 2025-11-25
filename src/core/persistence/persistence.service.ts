@@ -6,14 +6,14 @@ import { WAMessageKey } from '../../common/interfaces';
 interface ContactData {
   remoteJid: string;
   name?: string;
-  profilePicUrl?: string;
+  avatarUrl?: string;
 }
 
 interface ChatData {
   remoteJid: string;
   name?: string;
-  unreadCount?: number;
-  lastMessageTimestamp?: bigint | number | string;
+  unread?: number;
+  lastMessageTs?: bigint | number | string;
   archived?: boolean;
   pinned?: boolean;
   muted?: boolean;
@@ -24,17 +24,17 @@ interface MessageData {
   messageId: string;
   fromMe: boolean;
   senderJid?: string;
-  senderName?: string;
+  sender?: string;
   timestamp: bigint | number | string;
   messageType: string;
   textContent?: string | null;
   mediaUrl?: string | null;
   metadata: Record<string, any>;
   // Chatwoot tracking
-  chatwootConversationId?: number | null;
-  chatwootMessageId?: number | null;
-  chatwootInboxId?: number | null;
-  chatwootContactId?: number | null;
+  cwConversationId?: number | null;
+  cwMessageId?: number | null;
+  cwInboxId?: number | null;
+  cwContactId?: number | null;
   // WhatsApp message key for reply/edit/delete
   waMessageKey?: WAMessageKey | null;
   // Original WhatsApp message content for replies
@@ -63,11 +63,11 @@ export class PersistenceService {
           sessionId,
           remoteJid: contactData.remoteJid,
           name: contactData.name,
-          profilePicUrl: contactData.profilePicUrl,
+          avatarUrl: contactData.avatarUrl,
         },
         update: {
           name: contactData.name,
-          profilePicUrl: contactData.profilePicUrl,
+          avatarUrl: contactData.avatarUrl,
         },
       });
     } catch (error) {
@@ -86,16 +86,13 @@ export class PersistenceService {
       const updateData: any = {};
 
       if (chatData.name !== undefined) updateData.name = chatData.name;
-      if (chatData.unreadCount !== undefined)
-        updateData.unreadCount = chatData.unreadCount;
+      if (chatData.unread !== undefined) updateData.unread = chatData.unread;
       if (chatData.archived !== undefined)
         updateData.archived = chatData.archived;
       if (chatData.pinned !== undefined) updateData.pinned = chatData.pinned;
       if (chatData.muted !== undefined) updateData.muted = chatData.muted;
-      if (chatData.lastMessageTimestamp !== undefined) {
-        updateData.lastMessageTimestamp = BigInt(
-          chatData.lastMessageTimestamp.toString(),
-        );
+      if (chatData.lastMessageTs !== undefined) {
+        updateData.lastMessageTs = BigInt(chatData.lastMessageTs.toString());
       }
 
       const chat = await this.prisma.chat.upsert({
@@ -109,9 +106,9 @@ export class PersistenceService {
           sessionId,
           remoteJid: chatData.remoteJid,
           name: chatData.name,
-          unreadCount: chatData.unreadCount || 0,
-          lastMessageTimestamp: chatData.lastMessageTimestamp
-            ? BigInt(chatData.lastMessageTimestamp.toString())
+          unread: chatData.unread || 0,
+          lastMessageTs: chatData.lastMessageTs
+            ? BigInt(chatData.lastMessageTs.toString())
             : null,
           archived: chatData.archived || false,
           pinned: chatData.pinned || false,
@@ -137,7 +134,7 @@ export class PersistenceService {
     try {
       const chatId = await this.createOrUpdateChat(sessionId, {
         remoteJid: messageData.remoteJid,
-        lastMessageTimestamp: messageData.timestamp,
+        lastMessageTs: messageData.timestamp,
       });
 
       if (!chatId) {
@@ -158,7 +155,7 @@ export class PersistenceService {
           messageId: messageData.messageId,
           fromMe: messageData.fromMe,
           senderJid: messageData.senderJid,
-          senderName: messageData.senderName,
+          sender: messageData.sender,
           timestamp: BigInt(messageData.timestamp.toString()),
           messageType: messageData.messageType,
           content,
@@ -166,10 +163,10 @@ export class PersistenceService {
             ? MessageStatus.sent
             : MessageStatus.delivered,
           // Chatwoot tracking
-          chatwootConversationId: messageData.chatwootConversationId,
-          chatwootMessageId: messageData.chatwootMessageId,
-          chatwootInboxId: messageData.chatwootInboxId,
-          chatwootContactId: messageData.chatwootContactId,
+          cwConversationId: messageData.cwConversationId,
+          cwMessageId: messageData.cwMessageId,
+          cwInboxId: messageData.cwInboxId,
+          cwContactId: messageData.cwContactId,
           // WhatsApp message key for reply/edit/delete
           waMessageKey: messageData.waMessageKey
             ? (messageData.waMessageKey as unknown as Prisma.InputJsonValue)
@@ -236,7 +233,7 @@ export class PersistenceService {
           messageId,
         },
         data: {
-          isDeleted: true,
+          deleted: true,
         },
       });
 
@@ -278,10 +275,10 @@ export class PersistenceService {
     sessionId: string,
     messageId: string,
     chatwootData: {
-      chatwootConversationId?: number;
-      chatwootMessageId?: number;
-      chatwootInboxId?: number;
-      chatwootContactId?: number;
+      cwConversationId?: number;
+      cwMessageId?: number;
+      cwInboxId?: number;
+      cwContactId?: number;
     },
   ): Promise<void> {
     try {
@@ -314,7 +311,7 @@ export class PersistenceService {
 
   async findMessageByChatwootId(
     sessionId: string,
-    chatwootMessageId: number,
+    cwMessageId: number,
   ): Promise<{
     messageId: string;
     remoteJid: string;
@@ -325,7 +322,7 @@ export class PersistenceService {
       const message = await this.prisma.message.findFirst({
         where: {
           sessionId,
-          chatwootMessageId,
+          cwMessageId,
         },
         select: {
           messageId: true,
@@ -357,8 +354,8 @@ export class PersistenceService {
     remoteJid: string;
     waMessageKey: WAMessageKey | null;
     waMessage: Record<string, unknown> | null;
-    chatwootMessageId: number | null;
-    chatwootConversationId: number | null;
+    cwMessageId: number | null;
+    cwConversationId: number | null;
   } | null> {
     try {
       const message = await this.prisma.message.findFirst({
@@ -371,8 +368,8 @@ export class PersistenceService {
           remoteJid: true,
           waMessageKey: true,
           waMessage: true,
-          chatwootMessageId: true,
-          chatwootConversationId: true,
+          cwMessageId: true,
+          cwConversationId: true,
         },
       });
       if (!message) return null;
@@ -381,8 +378,8 @@ export class PersistenceService {
         remoteJid: message.remoteJid,
         waMessageKey: message.waMessageKey as WAMessageKey | null,
         waMessage: message.waMessage as Record<string, unknown> | null,
-        chatwootMessageId: message.chatwootMessageId,
-        chatwootConversationId: message.chatwootConversationId,
+        cwMessageId: message.cwMessageId,
+        cwConversationId: message.cwConversationId,
       };
     } catch (error) {
       this.logger.error(
@@ -406,11 +403,11 @@ export class PersistenceService {
 
     if (filters?.archived !== undefined) where.archived = filters.archived;
     if (filters?.pinned !== undefined) where.pinned = filters.pinned;
-    if (filters?.unreadOnly) where.unreadCount = { gt: 0 };
+    if (filters?.unreadOnly) where.unread = { gt: 0 };
 
     return this.prisma.chat.findMany({
       where,
-      orderBy: { lastMessageTimestamp: 'desc' },
+      orderBy: { lastMessageTs: 'desc' },
       take: filters?.limit || 50,
       skip: filters?.offset || 0,
       include: {
@@ -452,7 +449,7 @@ export class PersistenceService {
       order?: 'asc' | 'desc';
     },
   ) {
-    const where: any = { chatId, isDeleted: false };
+    const where: any = { chatId, deleted: false };
 
     if (filters?.fromMe !== undefined) where.fromMe = filters.fromMe;
     if (filters?.messageType) where.messageType = filters.messageType;
@@ -520,11 +517,11 @@ export class PersistenceService {
               sessionId,
               remoteJid: contact.remoteJid,
               name: contact.name,
-              profilePicUrl: contact.profilePicUrl,
+              avatarUrl: contact.avatarUrl,
             },
             update: {
               name: contact.name,
-              profilePicUrl: contact.profilePicUrl,
+              avatarUrl: contact.avatarUrl,
             },
           });
           processedCount++;
@@ -566,9 +563,9 @@ export class PersistenceService {
               sessionId,
               remoteJid: chat.remoteJid,
               name: chat.name,
-              unreadCount: chat.unreadCount || 0,
-              lastMessageTimestamp: chat.lastMessageTimestamp
-                ? BigInt(chat.lastMessageTimestamp.toString())
+              unread: chat.unread || 0,
+              lastMessageTs: chat.lastMessageTs
+                ? BigInt(chat.lastMessageTs.toString())
                 : null,
               archived: chat.archived || false,
               pinned: chat.pinned || false,
@@ -576,9 +573,9 @@ export class PersistenceService {
             },
             update: {
               name: chat.name,
-              unreadCount: chat.unreadCount,
-              lastMessageTimestamp: chat.lastMessageTimestamp
-                ? BigInt(chat.lastMessageTimestamp.toString())
+              unread: chat.unread,
+              lastMessageTs: chat.lastMessageTs
+                ? BigInt(chat.lastMessageTs.toString())
                 : null,
               archived: chat.archived,
               pinned: chat.pinned,
@@ -618,7 +615,7 @@ export class PersistenceService {
           if (!chatIds.has(msg.remoteJid)) {
             const chatId = await this.createOrUpdateChat(sessionId, {
               remoteJid: msg.remoteJid,
-              lastMessageTimestamp: msg.timestamp,
+              lastMessageTs: msg.timestamp,
             });
             if (chatId) {
               chatIds.set(msg.remoteJid, chatId);
@@ -635,7 +632,7 @@ export class PersistenceService {
             messageId: msg.messageId,
             fromMe: msg.fromMe,
             senderJid: msg.senderJid,
-            senderName: msg.senderName,
+            sender: msg.sender,
             timestamp: BigInt(msg.timestamp.toString()),
             messageType: msg.messageType,
             content: {

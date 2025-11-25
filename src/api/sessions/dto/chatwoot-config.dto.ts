@@ -38,7 +38,7 @@ export class ChatwootConfigDto {
   })
   @IsString()
   @IsOptional()
-  nameInbox?: string;
+  inbox?: string;
 
   @ApiPropertyOptional({
     description: 'Assinar mensagens em grupos com nome do remetente',
@@ -62,7 +62,7 @@ export class ChatwootConfigDto {
   })
   @IsBoolean()
   @IsOptional()
-  reopenConversation?: boolean;
+  reopen?: boolean;
 
   @ApiPropertyOptional({
     description: 'Criar conversas como pendentes',
@@ -70,7 +70,7 @@ export class ChatwootConfigDto {
   })
   @IsBoolean()
   @IsOptional()
-  conversationPending?: boolean;
+  pending?: boolean;
 
   @ApiPropertyOptional({
     description: 'Mesclar contatos brasileiros (com/sem 9)',
@@ -78,7 +78,7 @@ export class ChatwootConfigDto {
   })
   @IsBoolean()
   @IsOptional()
-  mergeBrazilContacts?: boolean;
+  mergeBrazil?: boolean;
 
   @ApiPropertyOptional({ description: 'Importar contatos', default: false })
   @IsBoolean()
@@ -96,7 +96,7 @@ export class ChatwootConfigDto {
   })
   @IsNumber()
   @IsOptional()
-  daysLimitImportMessages?: number;
+  importDays?: number;
 
   @ApiPropertyOptional({ description: 'JIDs a ignorar', type: [String] })
   @IsArray()

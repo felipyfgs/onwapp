@@ -13,7 +13,7 @@ export class SettingsResponseDto {
     example: false,
     required: false,
   })
-  groupsIgnore?: boolean;
+  ignoreGroups?: boolean;
 
   @ApiProperty({
     description: 'Sempre mostrar como online',

@@ -66,8 +66,8 @@ export class ChatsHandler {
         await this.persistenceService.createOrUpdateChat(sessionId, {
           remoteJid: chat.id,
           name: chat.name,
-          unreadCount: chat.unreadCount,
-          lastMessageTimestamp: chat.conversationTimestamp,
+          unread: chat.unreadCount,
+          lastMessageTs: chat.conversationTimestamp,
           archived: chat.archived,
           pinned: chat.pinned,
           muted: chat.mute?.endTimestamp ? true : false,
@@ -95,8 +95,8 @@ export class ChatsHandler {
         await this.persistenceService.createOrUpdateChat(sessionId, {
           remoteJid: chat.id,
           name: chat.name,
-          unreadCount: chat.unreadCount,
-          lastMessageTimestamp: chat.conversationTimestamp,
+          unread: chat.unreadCount,
+          lastMessageTs: chat.conversationTimestamp,
           archived: chat.archived,
           pinned: chat.pinned,
           muted: chat.mute?.endTimestamp ? true : false,
@@ -124,7 +124,7 @@ export class ChatsHandler {
         await this.persistenceService.createOrUpdateContact(sessionId, {
           remoteJid: contact.id,
           name: contact.notify || contact.name,
-          profilePicUrl: contact.imgUrl,
+          avatarUrl: contact.imgUrl,
         });
       }
     } catch (error) {
@@ -149,7 +149,7 @@ export class ChatsHandler {
         await this.persistenceService.createOrUpdateContact(sessionId, {
           remoteJid: contact.id,
           name: contact.notify || contact.name,
-          profilePicUrl: contact.imgUrl,
+          avatarUrl: contact.imgUrl,
         });
       }
     } catch (error) {

@@ -77,7 +77,7 @@ export class ChatwootService {
     const webhookUrl = `${serverUrl}/chatwoot/webhook/${sessionId}`;
 
     // Auto-create inbox if enabled
-    if (dto.enabled && dto.nameInbox) {
+    if (dto.enabled && dto.inbox) {
       try {
         const inbox = await this.getOrCreateInbox(sessionId, webhookUrl);
         if (inbox) {
@@ -131,7 +131,7 @@ export class ChatwootService {
     try {
       const inboxes = await client.listInboxes();
       return (
-        inboxes.payload.find((inbox) => inbox.name === config.nameInbox) || null
+        inboxes.payload.find((inbox) => inbox.name === config.inbox) || null
       );
     } catch (error) {
       this.logger.error(`Error getting inbox: ${(error as Error).message}`);
@@ -153,7 +153,7 @@ export class ChatwootService {
       // First, try to find existing inbox
       const inboxes = await client.listInboxes();
       let inbox = inboxes.payload.find(
-        (inbox) => inbox.name === config.nameInbox,
+        (inbox) => inbox.name === config.inbox,
       );
 
       if (inbox) {
@@ -168,9 +168,9 @@ export class ChatwootService {
       }
 
       // Create new inbox
-      this.logger.log(`Creating new inbox: ${config.nameInbox}`);
+      this.logger.log(`Creating new inbox: ${config.inbox}`);
       inbox = await client.createApiInbox({
-        name: config.nameInbox || `WhatsApp ${sessionId.slice(0, 8)}`,
+        name: config.inbox || `WhatsApp ${sessionId.slice(0, 8)}`,
         webhook_url: webhookUrl,
       });
 
@@ -211,7 +211,7 @@ export class ChatwootService {
       return this.findBestMatchingContact(
         result.payload,
         query,
-        config.mergeBrazilContacts,
+        config.mergeBrazil,
       );
     } catch (error) {
       this.logger.error(`Error finding contact: ${error.message}`);
@@ -354,14 +354,11 @@ export class ChatwootService {
       const existingConversation = conversations.payload.find(
         (conv) =>
           conv.inbox_id === params.inboxId &&
-          (config.reopenConversation || conv.status !== 'resolved'),
+          (config.reopen || conv.status !== 'resolved'),
       );
 
       if (existingConversation) {
-        if (
-          config.conversationPending &&
-          existingConversation.status !== 'open'
-        ) {
+        if (config.pending && existingConversation.status !== 'open') {
           await client.toggleConversationStatus(
             existingConversation.id,
             'pending',
@@ -373,7 +370,7 @@ export class ChatwootService {
       const conversation = await client.createConversation({
         inbox_id: params.inboxId,
         contact_id: params.contactId,
-        status: config.conversationPending ? 'pending' : 'open',
+        status: config.pending ? 'pending' : 'open',
       });
 
       return conversation.id;

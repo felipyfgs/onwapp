@@ -1,5 +1,6 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import makeWASocket, { WASocket } from 'whaileys';
+import { Proxy } from '@prisma/client';
 import { DatabaseService } from '../../database/database.service';
 import { AuthStateRepository } from '../../database/repositories/auth-state.repository';
 import { SessionRepository } from '../../database/repositories/session.repository';
@@ -92,6 +93,7 @@ export class WhatsAppService {
 
   async createSocket(
     sessionId: string,
+    proxyConfig?: Proxy | null,
   ): Promise<{ socket: WASocket; qr?: string }> {
     const hasExistingCreds =
       await this.authStateRepository.findBySessionAndType(sessionId, 'creds');
@@ -99,11 +101,20 @@ export class WhatsAppService {
 
     const sid = formatSessionId(sessionId);
     this.logger.log(
-      `[${sid}] Criando socket${isNewLogin ? ' | Novo login' : ' | Reconexão'}`,
+      `[${sid}] Criando socket${isNewLogin ? ' | Novo login' : ' | Reconexão'}${proxyConfig?.enabled ? ' | Proxy habilitado' : ''}`,
     );
 
     const { state, saveCreds } = await useAuthState(sessionId, this.prisma);
     const currentQRRef: QRCodeRef = { value: undefined };
+
+    // Log proxy configuration (proxy implementation requires additional setup)
+    if (proxyConfig?.enabled && proxyConfig.host && proxyConfig.port) {
+      this.logger.log(
+        `[${sid}] Proxy configurado: ${proxyConfig.protocol ?? 'http'}://${proxyConfig.host}:${proxyConfig.port}`,
+      );
+      // TODO: Implement proxy agent with https-proxy-agent or socks-proxy-agent
+      // This requires additional packages and configuration
+    }
 
     const socket = makeWASocket({
       auth: state,
