@@ -442,6 +442,8 @@ export class ChatwootService {
         buffer: Buffer;
         filename: string;
       };
+      inReplyTo?: number;
+      inReplyToExternalId?: string;
     },
   ) {
     const config = await this.getConfig(sessionId);
@@ -451,6 +453,15 @@ export class ChatwootService {
     if (!client) return null;
 
     try {
+      // Build content_attributes for reply support
+      const contentAttributes =
+        params.inReplyTo || params.inReplyToExternalId
+          ? {
+              in_reply_to: params.inReplyTo,
+              in_reply_to_external_id: params.inReplyToExternalId,
+            }
+          : undefined;
+
       return await client.createMessageWithAttachments(conversationId, {
         content: params.content,
         message_type: params.messageType,
@@ -461,6 +472,7 @@ export class ChatwootService {
             filename: params.file.filename,
           },
         ],
+        content_attributes: contentAttributes,
       });
     } catch (error) {
       this.logger.error(

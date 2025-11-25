@@ -224,6 +224,10 @@ export class ChatwootClient {
         content: Buffer;
         filename: string;
       }>;
+      content_attributes?: {
+        in_reply_to?: number;
+        in_reply_to_external_id?: string;
+      };
     },
   ): Promise<ChatwootMessage> {
     const formData = new FormData();
@@ -237,6 +241,14 @@ export class ChatwootClient {
     }
     if (params.source_id) {
       formData.append('source_id', params.source_id);
+    }
+
+    // Add reply support
+    if (params.content_attributes) {
+      formData.append(
+        'content_attributes',
+        JSON.stringify(params.content_attributes),
+      );
     }
 
     params.attachments.forEach((attachment) => {

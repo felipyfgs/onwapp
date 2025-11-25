@@ -31,6 +31,7 @@ interface ChatwootWebhookPayload {
   content_attributes?: {
     in_reply_to?: number; // Chatwoot message ID being replied to
     in_reply_to_external_id?: string; // External (WA) message ID being replied to
+    deleted?: boolean; // Message was deleted
   };
   conversation?: {
     id: number;
@@ -145,7 +146,12 @@ export class ChatwootController {
     @Param('sessionId') sessionId: string,
     @Body() body: ChatwootWebhookPayload,
   ) {
-    // Only process message_created events
+    // Handle message_updated (delete) event - Following Evolution API pattern
+    if (body.event === 'message_updated' && body.content_attributes?.deleted) {
+      return this.handleChatwootMessageDelete(sessionId, body);
+    }
+
+    // Only process message_created events for sending messages
     if (body.event !== 'message_created') {
       return { status: 'ignored', reason: `Event ${body.event} not handled` };
     }
@@ -200,15 +206,30 @@ export class ChatwootController {
     }
 
     try {
+      // Get quoted message for reply support (used for both attachments and text)
+      const quoted = await this.getQuotedMessage(sessionId, body);
+
       // Handle attachments first
       if (body.attachments && body.attachments.length > 0) {
         for (const attachment of body.attachments) {
-          await this.sendAttachment(
+          const result = await this.sendAttachment(
             sessionId,
             remoteJid,
             attachment,
             body.content,
+            quoted,
           );
+          // Link WA message ID to Chatwoot message ID for reply tracking
+          if (result?.id && body.id && body.conversation?.id) {
+            await this.persistenceService.updateMessageChatwoot(
+              sessionId,
+              result.id,
+              {
+                chatwootMessageId: body.id,
+                chatwootConversationId: body.conversation.id,
+              },
+            );
+          }
         }
         // If there's text content without being part of attachment caption, send it separately
         if (body.content && body.attachments.length === 1) {
@@ -219,67 +240,6 @@ export class ChatwootController {
 
       // Send text message
       if (body.content) {
-        // Check if this is a reply to another message
-        // Baileys expects quoted to be { key: { remoteJid, fromMe, id, participant? }, message?: IMessage }
-        // Following Evolution API pattern: Quoted = { key: proto.IMessageKey, message: proto.IMessage }
-        let quoted:
-          | {
-              key: {
-                remoteJid: string;
-                fromMe: boolean;
-                id: string;
-                participant?: string;
-              };
-              message?: Record<string, unknown>;
-            }
-          | undefined;
-
-        const replyToId =
-          body.content_attributes?.in_reply_to_external_id ||
-          body.content_attributes?.in_reply_to;
-
-        if (replyToId) {
-          // Try to find the original message for reply
-          let originalMessage: {
-            messageId: string;
-            remoteJid: string;
-            waMessageKey: {
-              id: string;
-              remoteJid: string;
-              fromMe: boolean;
-              participant?: string;
-            } | null;
-            waMessage: Record<string, unknown> | null;
-          } | null = null;
-
-          if (body.content_attributes?.in_reply_to_external_id) {
-            originalMessage = await this.persistenceService.findMessageByWAId(
-              sessionId,
-              body.content_attributes.in_reply_to_external_id,
-            );
-          } else if (body.content_attributes?.in_reply_to) {
-            originalMessage =
-              await this.persistenceService.findMessageByChatwootId(
-                sessionId,
-                body.content_attributes.in_reply_to,
-              );
-          }
-
-          if (originalMessage?.waMessageKey) {
-            const simplifiedMessage = this.simplifyQuotedMessage(
-              originalMessage.waMessage,
-            );
-            quoted = {
-              key: { ...originalMessage.waMessageKey },
-              message: simplifiedMessage,
-            };
-          } else {
-            this.logger.warn(
-              `[CW] Original message not found for reply: ${replyToId}`,
-            );
-          }
-        }
-
         const result = await this.messagesService.sendTextMessage(sessionId, {
           to: remoteJid,
           text: body.content,
@@ -306,6 +266,60 @@ export class ChatwootController {
         `Error sending Chatwoot message: ${(error as Error).message}`,
       );
       return { status: 'error', error: (error as Error).message };
+    }
+  }
+
+  /**
+   * Handle message deletion from Chatwoot
+   * Following Evolution API pattern: find WA message by chatwootMessageId and delete it
+   */
+  private async handleChatwootMessageDelete(
+    sessionId: string,
+    body: ChatwootWebhookPayload,
+  ): Promise<{ status: string; reason?: string }> {
+    if (!body.id) {
+      return { status: 'error', reason: 'No message ID in payload' };
+    }
+
+    try {
+      // Find the WhatsApp message by Chatwoot message ID
+      const message = await this.persistenceService.findMessageByChatwootId(
+        sessionId,
+        body.id,
+      );
+
+      if (!message?.waMessageKey) {
+        this.logger.warn(
+          `[CW] Message not found for delete: chatwootId=${body.id}`,
+        );
+        return { status: 'ignored', reason: 'Message not found in database' };
+      }
+
+      const socket = this.whatsappService.getSocket(sessionId);
+      if (!socket) {
+        return { status: 'error', reason: 'Session not connected' };
+      }
+
+      // Delete the message on WhatsApp
+      const key = message.waMessageKey as {
+        id: string;
+        remoteJid: string;
+        fromMe: boolean;
+        participant?: string;
+      };
+
+      await socket.sendMessage(key.remoteJid, { delete: key });
+
+      // Mark as deleted in our database
+      await this.persistenceService.markMessageAsDeleted(sessionId, key.id);
+
+      this.logger.log(`[CW] Message deleted on WhatsApp: ${key.id}`);
+      return { status: 'deleted', reason: 'Message deleted on WhatsApp' };
+    } catch (error) {
+      this.logger.error(
+        `[CW] Error deleting message: ${(error as Error).message}`,
+      );
+      return { status: 'error', reason: (error as Error).message };
     }
   }
 
@@ -337,7 +351,16 @@ export class ChatwootController {
       file_name?: string;
     },
     caption?: string,
-  ): Promise<void> {
+    quoted?: {
+      key: {
+        remoteJid: string;
+        fromMe: boolean;
+        id: string;
+        participant?: string;
+      };
+      message?: Record<string, unknown>;
+    },
+  ): Promise<{ id: string } | null> {
     const { file_type, data_url, file_name } = attachment;
 
     // Download the attachment
@@ -357,35 +380,35 @@ export class ChatwootController {
     // Send based on file type
     switch (file_type) {
       case 'image':
-        await this.messagesService.sendImageMessage(sessionId, {
+        return await this.messagesService.sendImageMessage(sessionId, {
           to: remoteJid,
           image: mediaData,
           caption,
+          quoted,
         });
-        break;
       case 'video':
-        await this.messagesService.sendVideoMessage(sessionId, {
+        return await this.messagesService.sendVideoMessage(sessionId, {
           to: remoteJid,
           video: mediaData,
           caption,
+          quoted,
         });
-        break;
       case 'audio':
         // AudioService will convert to OGG/OPUS automatically (encoding=true by default)
-        await this.messagesService.sendAudioMessage(sessionId, {
+        return await this.messagesService.sendAudioMessage(sessionId, {
           to: remoteJid,
           audio: mediaData,
+          quoted,
         });
-        break;
       case 'file':
       default:
-        await this.messagesService.sendDocumentMessage(sessionId, {
+        return await this.messagesService.sendDocumentMessage(sessionId, {
           to: remoteJid,
           document: mediaData,
           mimetype: this.getMimeType(file_type, file_name),
           fileName: file_name || 'document',
+          quoted,
         });
-        break;
     }
   }
 
@@ -413,6 +436,69 @@ export class ChatwootController {
     return (
       mimeTypes[ext || ''] || mimeTypes[fileType] || 'application/octet-stream'
     );
+  }
+
+  /**
+   * Gets the quoted message for reply support
+   * Following Evolution API pattern: looks up message by in_reply_to or in_reply_to_external_id
+   */
+  private async getQuotedMessage(
+    sessionId: string,
+    body: ChatwootWebhookPayload,
+  ): Promise<
+    | {
+        key: {
+          remoteJid: string;
+          fromMe: boolean;
+          id: string;
+          participant?: string;
+        };
+        message?: Record<string, unknown>;
+      }
+    | undefined
+  > {
+    const replyToId =
+      body.content_attributes?.in_reply_to_external_id ||
+      body.content_attributes?.in_reply_to;
+
+    if (!replyToId) return undefined;
+
+    let originalMessage: {
+      messageId: string;
+      remoteJid: string;
+      waMessageKey: {
+        id: string;
+        remoteJid: string;
+        fromMe: boolean;
+        participant?: string;
+      } | null;
+      waMessage: Record<string, unknown> | null;
+    } | null = null;
+
+    if (body.content_attributes?.in_reply_to_external_id) {
+      originalMessage = await this.persistenceService.findMessageByWAId(
+        sessionId,
+        body.content_attributes.in_reply_to_external_id,
+      );
+    } else if (body.content_attributes?.in_reply_to) {
+      originalMessage = await this.persistenceService.findMessageByChatwootId(
+        sessionId,
+        body.content_attributes.in_reply_to,
+      );
+    }
+
+    if (originalMessage?.waMessageKey) {
+      const simplifiedMessage = this.simplifyQuotedMessage(
+        originalMessage.waMessage,
+      );
+      return {
+        key: { ...originalMessage.waMessageKey },
+        message: simplifiedMessage,
+      };
+    }
+
+    this.logger.warn(`[CW] Original message not found for reply: ${replyToId}`);
+    return undefined;
   }
 
   /**

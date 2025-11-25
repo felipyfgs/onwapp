@@ -48,7 +48,7 @@ export class MessagesHandler {
 
   private async handleMessagesUpsert(
     sessionId: string,
-    payload: { messages: unknown[] },
+    payload: { messages: unknown[]; type?: string },
     sid: string,
   ): Promise<void> {
     this.logger.log(`[${sid}] 📨 messages.upsert`, {
@@ -66,11 +66,41 @@ export class MessagesHandler {
           fromMe?: boolean;
           participant?: string;
         };
-        message?: Record<string, unknown>;
+        message?: Record<string, unknown> & {
+          protocolMessage?: {
+            key?: { id: string; remoteJid: string; fromMe?: boolean };
+            editedMessage?: {
+              conversation?: string;
+              extendedTextMessage?: { text?: string };
+            };
+            type?: number;
+          };
+          editedMessage?: {
+            message?: {
+              protocolMessage?: {
+                key?: { id: string; remoteJid: string; fromMe?: boolean };
+                editedMessage?: {
+                  conversation?: string;
+                  extendedTextMessage?: { text?: string };
+                };
+              };
+            };
+          };
+        };
         pushName?: string;
         messageTimestamp?: number;
       }>) {
         if (!msg.key || !msg.key.id || !msg.key.remoteJid) continue;
+
+        // Check if this is an edited message (protocolMessage with editedMessage)
+        const editedMessage =
+          msg.message?.protocolMessage ||
+          msg.message?.editedMessage?.message?.protocolMessage;
+
+        if (editedMessage?.editedMessage) {
+          await this.handleMessageEdit(sessionId, editedMessage, sid);
+          continue;
+        }
 
         const parsedContent = parseMessageContent(msg);
 
@@ -172,12 +202,129 @@ export class MessagesHandler {
       const { keys } = payload;
       for (const key of keys) {
         if (key.id) {
+          // Find the message to get Chatwoot IDs before marking as deleted
+          const message = await this.persistenceService.findMessageByWAId(
+            sessionId,
+            key.id,
+          );
+
+          // Mark as deleted in our database
           await this.persistenceService.markMessageAsDeleted(sessionId, key.id);
+
+          // Forward delete to Chatwoot if message was synced
+          if (message?.chatwootMessageId && message?.chatwootConversationId) {
+            await this.forwardDeleteToChatwoot(
+              sessionId,
+              message.chatwootConversationId,
+              message.chatwootMessageId,
+              sid,
+            );
+          }
         }
       }
     } catch (error) {
       this.logger.error(
         `[${sid}] Erro ao persistir messages.delete: ${(error as Error).message}`,
+      );
+    }
+  }
+
+  private async forwardDeleteToChatwoot(
+    sessionId: string,
+    conversationId: number,
+    messageId: number,
+    sid: string,
+  ): Promise<void> {
+    try {
+      const config = await this.chatwootService.getConfig(sessionId);
+      if (!config?.enabled) return;
+
+      await this.chatwootService.deleteMessage(
+        sessionId,
+        conversationId,
+        messageId,
+      );
+      this.logger.log(`[${sid}] [CW] Message deleted (msgId=${messageId})`);
+    } catch (error) {
+      this.logger.error(
+        `[${sid}] [CW] Error forwarding delete: ${(error as Error).message}`,
+      );
+    }
+  }
+
+  /**
+   * Handle edited message from WhatsApp
+   * Following Evolution API pattern: create a new message in Chatwoot with edited content
+   * and reference the original message via stanzaId
+   */
+  private async handleMessageEdit(
+    sessionId: string,
+    editedMessage: {
+      key?: { id: string; remoteJid: string; fromMe?: boolean };
+      editedMessage?: {
+        conversation?: string;
+        extendedTextMessage?: { text?: string };
+      };
+    },
+    sid: string,
+  ): Promise<void> {
+    try {
+      const config = await this.chatwootService.getConfig(sessionId);
+      if (!config?.enabled) return;
+
+      const originalMessageId = editedMessage.key?.id;
+      if (!originalMessageId) return;
+
+      // Get edited text content
+      const editedText =
+        editedMessage.editedMessage?.conversation ||
+        editedMessage.editedMessage?.extendedTextMessage?.text;
+
+      if (!editedText) return;
+
+      // Find original message to get Chatwoot IDs
+      const originalMessage = await this.persistenceService.findMessageByWAId(
+        sessionId,
+        originalMessageId,
+      );
+
+      if (!originalMessage?.chatwootConversationId) {
+        this.logger.warn(
+          `[${sid}] [CW] Original message not found for edit: ${originalMessageId}`,
+        );
+        return;
+      }
+
+      // Update the message content in our database
+      await this.persistenceService.updateMessageContent(
+        sessionId,
+        originalMessageId,
+        editedText,
+      );
+
+      // Create a new message in Chatwoot showing the edited content
+      // This appears as a customer message (incoming) but with sourceId to prevent
+      // it from being sent back to WhatsApp (our webhook ignores messages with source_id)
+      const formattedContent = `📝 _Mensagem editada:_\n${editedText}`;
+
+      await this.chatwootService.createMessage(
+        sessionId,
+        originalMessage.chatwootConversationId,
+        {
+          content: formattedContent,
+          messageType: 'incoming', // Shows as customer message
+          sourceId: `edited-${originalMessageId}`, // Prevents loop - webhook ignores source_id
+          inReplyTo: originalMessage.chatwootMessageId || undefined,
+          inReplyToExternalId: originalMessageId,
+        },
+      );
+
+      this.logger.log(
+        `[${sid}] [CW] Message edit shown for: ${originalMessageId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `[${sid}] [CW] Error handling message edit: ${(error as Error).message}`,
       );
     }
   }
@@ -355,8 +502,7 @@ export class MessagesHandler {
         // Try to download and forward media
         const mediaBuffer = await this.downloadMedia(sessionId, msg, sid);
         if (mediaBuffer) {
-          const mediaType = this.chatwootService.getMediaType(message || null);
-          const extension = this.getMediaExtension(waMessage, mediaType);
+          const extension = this.getMediaExtension(waMessage);
           const filename = this.getMediaFilename(waMessage, key.id, extension);
 
           chatwootMessage =
@@ -369,6 +515,8 @@ export class MessagesHandler {
                 messageType: fromMe ? 'outgoing' : 'incoming',
                 sourceId: key.id,
                 file: { buffer: mediaBuffer, filename },
+                inReplyTo,
+                inReplyToExternalId,
               },
             );
         } else {
@@ -419,6 +567,20 @@ export class MessagesHandler {
     }
   }
 
+  private createSilentLogger(): Record<string, unknown> {
+    return {
+      level: 'silent',
+      fatal: () => {},
+      error: () => {},
+      warn: () => {},
+      info: () => {},
+      debug: () => {},
+      trace: () => {},
+      silent: () => {},
+      child: () => this.createSilentLogger(),
+    };
+  }
+
   private async downloadMedia(
     sessionId: string,
     msg: {
@@ -431,24 +593,16 @@ export class MessagesHandler {
       const socket = this.whatsappService.getSocket(sessionId);
       if (!socket) return null;
 
-      const silentLogger: any = {
-        level: 'silent',
-        fatal: () => {},
-        error: () => {},
-        warn: () => {},
-        info: () => {},
-        debug: () => {},
-        trace: () => {},
-        silent: () => {},
-        child: () => silentLogger,
-      };
-
       const buffer = await downloadMediaMessage(
         msg as proto.IWebMessageInfo,
         'buffer',
         {},
         {
-          logger: silentLogger,
+          logger: this.createSilentLogger() as Parameters<
+            typeof downloadMediaMessage
+          >[3] extends { logger: infer L }
+            ? L
+            : never,
           reuploadRequest: socket.updateMediaMessage.bind(socket),
         },
       );
@@ -464,7 +618,6 @@ export class MessagesHandler {
 
   private getMediaExtension(
     message: Record<string, unknown> | undefined,
-    mediaType: string | null,
   ): string {
     if (!message) return 'bin';
 

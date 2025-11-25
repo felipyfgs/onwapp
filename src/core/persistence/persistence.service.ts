@@ -255,6 +255,31 @@ export class PersistenceService {
     }
   }
 
+  async updateMessageContent(
+    sessionId: string,
+    messageId: string,
+    newContent: string,
+  ): Promise<void> {
+    try {
+      await this.prisma.message.updateMany({
+        where: {
+          sessionId,
+          messageId,
+        },
+        data: {
+          textContent: newContent,
+        },
+      });
+
+      this.logger.debug(`Conteúdo da mensagem atualizado: ${messageId}`);
+    } catch (error) {
+      this.logger.error(
+        `Erro ao atualizar conteúdo da mensagem: ${error.message}`,
+        error.stack,
+      );
+    }
+  }
+
   async updateMessageChatwoot(
     sessionId: string,
     messageId: string,
@@ -339,6 +364,7 @@ export class PersistenceService {
     waMessageKey: WAMessageKey | null;
     waMessage: Record<string, unknown> | null;
     chatwootMessageId: number | null;
+    chatwootConversationId: number | null;
   } | null> {
     try {
       const message = await this.prisma.message.findFirst({
@@ -352,6 +378,7 @@ export class PersistenceService {
           waMessageKey: true,
           waMessage: true,
           chatwootMessageId: true,
+          chatwootConversationId: true,
         },
       });
       if (!message) return null;
@@ -361,6 +388,7 @@ export class PersistenceService {
         waMessageKey: message.waMessageKey as WAMessageKey | null,
         waMessage: message.waMessage as Record<string, unknown> | null,
         chatwootMessageId: message.chatwootMessageId,
+        chatwootConversationId: message.chatwootConversationId,
       };
     } catch (error) {
       this.logger.error(
