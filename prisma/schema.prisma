@@ -160,6 +160,9 @@ model Message {
   chatwootInboxId         Int?     // ID do inbox no Chatwoot
   chatwootContactId       Int?     // ID do contato no Chatwoot
   
+  // WhatsApp message key for reply/edit/delete operations
+  waMessageKey  Json?    // { id, remoteJid, fromMe, participant? }
+  
   status        MessageStatus @default(pending)
   isDeleted     Boolean       @default(false)
   createdAt     DateTime      @default(now())

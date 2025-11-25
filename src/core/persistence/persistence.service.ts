@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../../database/database.service';
-import { MessageStatus } from '@prisma/client';
+import { MessageStatus, Prisma } from '@prisma/client';
 
 interface ContactData {
   remoteJid: string;
@@ -16,6 +16,13 @@ interface ChatData {
   archived?: boolean;
   pinned?: boolean;
   muted?: boolean;
+}
+
+interface WAMessageKey {
+  id: string;
+  remoteJid: string;
+  fromMe: boolean;
+  participant?: string;
 }
 
 interface MessageData {
@@ -34,6 +41,8 @@ interface MessageData {
   chatwootMessageId?: number | null;
   chatwootInboxId?: number | null;
   chatwootContactId?: number | null;
+  // WhatsApp message key for reply/edit/delete
+  waMessageKey?: WAMessageKey | null;
 }
 
 @Injectable()
@@ -165,6 +174,10 @@ export class PersistenceService {
           chatwootMessageId: messageData.chatwootMessageId,
           chatwootInboxId: messageData.chatwootInboxId,
           chatwootContactId: messageData.chatwootContactId,
+          // WhatsApp message key for reply/edit/delete
+          waMessageKey: messageData.waMessageKey
+            ? (messageData.waMessageKey as unknown as Prisma.InputJsonValue)
+            : undefined,
         },
       });
 
@@ -269,7 +282,11 @@ export class PersistenceService {
   async findMessageByChatwootId(
     sessionId: string,
     chatwootMessageId: number,
-  ): Promise<{ messageId: string; remoteJid: string } | null> {
+  ): Promise<{
+    messageId: string;
+    remoteJid: string;
+    waMessageKey: WAMessageKey | null;
+  } | null> {
     try {
       const message = await this.prisma.message.findFirst({
         where: {
@@ -279,12 +296,52 @@ export class PersistenceService {
         select: {
           messageId: true,
           remoteJid: true,
+          waMessageKey: true,
         },
       });
-      return message;
+      if (!message) return null;
+      return {
+        messageId: message.messageId,
+        remoteJid: message.remoteJid,
+        waMessageKey: message.waMessageKey as WAMessageKey | null,
+      };
     } catch (error) {
       this.logger.error(
         `Erro ao buscar mensagem por Chatwoot ID: ${error.message}`,
+      );
+      return null;
+    }
+  }
+
+  async findMessageByWAId(
+    sessionId: string,
+    waMessageId: string,
+  ): Promise<{
+    messageId: string;
+    remoteJid: string;
+    waMessageKey: WAMessageKey | null;
+  } | null> {
+    try {
+      const message = await this.prisma.message.findFirst({
+        where: {
+          sessionId,
+          messageId: waMessageId,
+        },
+        select: {
+          messageId: true,
+          remoteJid: true,
+          waMessageKey: true,
+        },
+      });
+      if (!message) return null;
+      return {
+        messageId: message.messageId,
+        remoteJid: message.remoteJid,
+        waMessageKey: message.waMessageKey as WAMessageKey | null,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Erro ao buscar mensagem por WA ID: ${(error as Error).message}`,
       );
       return null;
     }

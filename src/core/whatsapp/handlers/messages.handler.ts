@@ -82,6 +82,13 @@ export class MessagesHandler {
           textContent: parsedContent.textContent,
           mediaUrl: parsedContent.mediaUrl,
           metadata: parsedContent.metadata,
+          // Store WAMessageKey for reply/edit/delete operations
+          waMessageKey: {
+            id: msg.key.id,
+            remoteJid: msg.key.remoteJid,
+            fromMe: msg.key.fromMe || false,
+            participant: msg.key.participant,
+          },
         });
 
         if (msg.pushName && msg.key.remoteJid) {

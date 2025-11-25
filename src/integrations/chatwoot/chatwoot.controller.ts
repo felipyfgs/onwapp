@@ -18,6 +18,7 @@ import { ApiKeyGuard } from '../../common/guards/api-key.guard';
 import { Public } from '../../common/decorators/public.decorator';
 import { MessagesService } from '../../api/messages/messages.service';
 import { WhatsAppService } from '../../core/whatsapp/whatsapp.service';
+import { PersistenceService } from '../../core/persistence/persistence.service';
 import axios from 'axios';
 
 interface ChatwootWebhookPayload {
@@ -26,6 +27,10 @@ interface ChatwootWebhookPayload {
   content?: string;
   private?: boolean;
   source_id?: string;
+  content_attributes?: {
+    in_reply_to?: number; // Chatwoot message ID being replied to
+    in_reply_to_external_id?: string; // External (WA) message ID being replied to
+  };
   conversation?: {
     id: number;
     status?: string;
@@ -68,6 +73,7 @@ export class ChatwootController {
     private readonly messagesService: MessagesService,
     @Inject(forwardRef(() => WhatsAppService))
     private readonly whatsappService: WhatsAppService,
+    private readonly persistenceService: PersistenceService,
   ) {}
 
   @Post('session/:sessionId/chatwoot/set')
@@ -146,6 +152,9 @@ export class ChatwootController {
       `[CW-WEBHOOK] conversation.id=${body.conversation?.id}, meta.sender.identifier=${body.conversation?.meta?.sender?.identifier}, meta.sender.phone=${body.conversation?.meta?.sender?.phone_number}`,
     );
     this.logger.debug(`[CW-WEBHOOK] content="${body.content?.slice(0, 100)}"`);
+    this.logger.debug(
+      `[CW-WEBHOOK] content_attributes=${JSON.stringify(body.content_attributes)}`,
+    );
 
     // Only process message_created events
     if (body.event !== 'message_created') {
@@ -233,9 +242,68 @@ export class ChatwootController {
 
       // Send text message
       if (body.content) {
+        // Check if this is a reply to another message
+        let quoted:
+          | {
+              id: string;
+              remoteJid: string;
+              fromMe: boolean;
+              participant?: string;
+            }
+          | undefined;
+
+        const replyToId =
+          body.content_attributes?.in_reply_to_external_id ||
+          body.content_attributes?.in_reply_to;
+
+        if (replyToId) {
+          this.logger.debug(
+            `[CW-WEBHOOK] Reply detected, looking for message: ${replyToId}`,
+          );
+
+          // Try to find the original message
+          let originalMessage: {
+            messageId: string;
+            remoteJid: string;
+            waMessageKey: {
+              id: string;
+              remoteJid: string;
+              fromMe: boolean;
+              participant?: string;
+            } | null;
+          } | null = null;
+
+          if (body.content_attributes?.in_reply_to_external_id) {
+            // External ID is the WhatsApp message ID
+            originalMessage = await this.persistenceService.findMessageByWAId(
+              sessionId,
+              body.content_attributes.in_reply_to_external_id,
+            );
+          } else if (body.content_attributes?.in_reply_to) {
+            // in_reply_to is Chatwoot message ID
+            originalMessage =
+              await this.persistenceService.findMessageByChatwootId(
+                sessionId,
+                body.content_attributes.in_reply_to,
+              );
+          }
+
+          if (originalMessage?.waMessageKey) {
+            quoted = originalMessage.waMessageKey;
+            this.logger.debug(
+              `[CW-WEBHOOK] Found original message for reply: ${JSON.stringify(quoted)}`,
+            );
+          } else {
+            this.logger.warn(
+              `[CW-WEBHOOK] Could not find original message for reply: ${replyToId}`,
+            );
+          }
+        }
+
         await this.messagesService.sendTextMessage(sessionId, {
           to: remoteJid,
           text: body.content,
+          quoted,
         });
       }
 
