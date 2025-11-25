@@ -10,204 +10,547 @@ Este projeto é uma API robusta para gerenciamento de sessões WhatsApp constru�
 
 1. [Visão Geral da Arquitetura](#visão-geral-da-arquitetura)
 2. [Setup de Desenvolvimento](#setup-de-desenvolvimento)
-3. [Estrutura de Módulos](#estrutura-de-módulos)
-4. [Serviços Core](#serviços-core)
-5. [Banco de Dados](#banco-de-dados)
-6. [Fluxos de Trabalho Essenciais](#fluxos-de-trabalho-essenciais)
-7. [Padrões e Convenções](#padrões-e-convenções)
-8. [Logging Estruturado](#logging-estruturado)
-9. [Exemplos Práticos](#exemplos-práticos)
-10. [API Documentation](#api-documentation)
-11. [Troubleshooting](#troubleshooting)
+3. [Estrutura de Diretórios](#estrutura-de-diretórios)
+4. [Endpoints da API](#endpoints-da-api)
+5. [Módulos Core](#módulos-core)
+6. [Integrações](#integrações)
+7. [Banco de Dados](#banco-de-dados)
+8. [Sistema de Eventos e Webhooks](#sistema-de-eventos-e-webhooks)
+9. [Fluxos de Trabalho Essenciais](#fluxos-de-trabalho-essenciais)
+10. [Padrões e Convenções](#padrões-e-convenções)
+11. [Logging](#logging)
+12. [Troubleshooting](#troubleshooting)
 
 ---
 
 ## Visão Geral da Arquitetura
 
 ### Stack Tecnológico
-- **Backend**: NestJS 11+ (TypeScript)
-- **Banco de Dados**: PostgreSQL 16 com Prisma ORM
-- **WhatsApp Integration**: Whaileys
-- **Logging**: Pino com configuração avançada e formato configurável
-- **API Documentation**: Swagger/OpenAPI 3.0
-- **Container**: Docker + Docker Compose
+| Tecnologia | Versão | Uso |
+|------------|--------|-----|
+| NestJS | 11.x | Framework backend |
+| TypeScript | 5.7+ | Linguagem |
+| PostgreSQL | 16 | Banco de dados |
+| Prisma ORM | 7.x | ORM com adapter `@prisma/adapter-pg` |
+| Whaileys | 6.4+ | WhatsApp Web API |
+| Pino | 9.x | Logging estruturado |
+| Swagger | 11.x | Documentação API |
+| Axios | 1.13+ | HTTP Client |
+| class-validator | 0.14+ | Validação de DTOs |
+
+### Dependências Principais
+```json
+{
+  "@nestjs/common": "^11.0.1",
+  "@nestjs/config": "^4.0.2",
+  "@nestjs/swagger": "^11.2.3",
+  "@nestjs/axios": "^4.0.1",
+  "@prisma/client": "^7.0.0",
+  "@prisma/adapter-pg": "^7.0.0",
+  "whaileys": "^6.4.2",
+  "pino": "^9.14.0",
+  "class-validator": "^0.14.2",
+  "@hapi/boom": "^10.0.1"
+}
+```
 
 ### Principais Características
 - Multi-sessões WhatsApp independentes
-- Sistema de webhooks configurável
-- Persistência completa de mensagens e contatos
-- Suporte a todos os tipos de mensagens WhatsApp
-- Interface administrativa via API RESTful
-- Logging estruturado com saída configurável (JSON/pretty)
+- 23 eventos de webhook suportados
+- Integração bidirecional com Chatwoot
+- Persistência completa de mensagens, contatos e chats
+- Sincronização de histórico WhatsApp
+- Suporte a 18+ tipos de mensagens
+- Rastreamento de mensagens Chatwoot ↔ WhatsApp
+- Reconexão automática de sessões
+- API RESTful documentada com Swagger
 
 ---
 
 ## Setup de Desenvolvimento
 
-### 1. Ambiente Docker (Recomendado)
+### 1. Ambiente Docker
 ```bash
-# Iniciar banco de dados e interface de administração
+# Iniciar serviços
 docker-compose up -d
 
-# Verificar status dos containers
+# Verificar status
 docker-compose ps
 ```
 
-Acesso aos serviços:
-- PostgreSQL: `localhost:5432`
-- DBGate (Database Admin): `http://localhost:3001`
+| Serviço | Porta | Descrição |
+|---------|-------|-----------|
+| PostgreSQL | 5432 | Banco de dados principal |
+| DBGate | 3001 | Interface web PostgreSQL |
+| Webhook Tester | 8080 | Testar webhooks localmente |
 
-### 2. Instalação e Execução
+### 2. Instalação
 ```bash
-# Instalar dependências
 npm install
-
-# Variáveis de ambiente necessárias (criar .env baseado no .env.example)
 cp .env.example .env
-# Editar .env com suas configurações
-
-# Rodar migrations do Prisma
 npx prisma migrate dev
-
-# Iniciar servidor de desenvolvimento
+npx prisma generate
 npm run start:dev
-
-# Build de produção
-npm run build
-npm run start:prod
 ```
 
-### 3. Scripts Úteis
+### 3. Scripts
 ```bash
-# Testes
-npm run test              # Unit tests
-npm run test:e2e         # End-to-end tests
-npm run test:cov         # Test coverage
+npm run start:dev     # Desenvolvimento com watch
+npm run start:debug   # Debug mode
+npm run build         # Build produção
+npm run start:prod    # Produção
 
-# Código
-npm run lint             # ESLint
-npm run format           # Prettier
+npm run test          # Unit tests
+npm run test:e2e      # E2E tests
+npm run test:cov      # Coverage
 
-# Prisma
-npx prisma studio        # Database GUI
-npx prisma generate      # Generate client
+npm run lint          # ESLint
+npm run format        # Prettier
+
+npx prisma studio     # Database GUI
+npx prisma generate   # Gerar client
+```
+
+### 4. Variáveis de Ambiente
+```env
+DATABASE_URL=postgresql://zpwoot:zpwoot123@localhost:5432/zpwoot
+PORT=3000
+API_KEY=your-secret-api-key
+SERVER_URL=http://localhost:3000
+LOG_LEVEL=info
+LOG_FORMAT=pretty
 ```
 
 ---
 
-## Estrutura de Módulos
+## Estrutura de Diretórios
 
-### Módulos Principais
-
-#### `sessions/` - Gestão de Sessões WhatsApp
-- **Controller**: Criação, listagem, remoção de sessões
-- **Service**: Gerenciamento de conexões, QR codes, status
-- **DTOs**: `CreateSessionDto`, `PairPhoneDto`, `SessionResponseDto`
-
-#### `messages/` - Envio e Gestão de Mensagens
-- **Controller**: Envio de todos os tipos de mensagens
-- **Service**: Processamento, validação, envio via Whaileys
-- **DTOs**: Múltiplos DTOs para cada tipo de mensagem (texto, imagem, áudio, etc.)
-
-#### `chats/` - Gestão de Conversas
-- **Controller**: Arquivar, limpar, marcar lidas, mutar
-- **Service**: Operações bulk em conversas
-- **DTOs**: `ArchiveChatDto`, `ClearMessagesDto`, `MarkReadDto`
-
-#### `contacts/` - Gestão de Contatos
-- **Controller**: Validação de números, perfil de negócio
-- **Service**: Sincronização e gerenciamento de contatos
-- **DTOs**: `ValidateNumberDto`, `BusinessProfileResponseDto`
-
-#### `groups/` - Gestão de Grupos
-- **Controller**: Criação, administração de participantes
-- **Service**: Metadados, configurações, convites
-- **DTOs**: `CreateGroupDto`, `ManageParticipantsDto`, `UpdateGroupSettingsDto`
-
-#### `media/` - Gestão de Mídia
-- **Controller**: Download e upload de arquivos
-- **Service**: Processamento e armazenamento de mídia
-- **DTOs**: `DownloadMediaDto`, `UpdateMediaDto`
-
-#### `presence/` - Gestão de Presença
-- **Controller**: Status online, presença de contatos
-- **Service**: Cache e sincronização de presença
-- **DTOs**: `UpdatePresenceDto`, `SubscribePresenceDto`
-
-#### `profile/` - Gestão de Perfil
-- **Controller**: Nome, foto, status, bloqueios
-- **Service**: Configurações do perfil da sessão
-- **DTOs**: `UpdateProfileNameDto`, `UpdateProfilePictureDto`
-
-#### `webhooks/` - Sistema de Webhooks
-- **Controller**: Configuração de endpoints webhook
-- **Service**: Disparo de eventos para URLs configuradas
-- **DTOs**: `SetWebhookDto`, `WebhookResponseDto`
-
-#### `persistence/` - Persistência de Dados
-- **Controller**: Recuperação histórica de dados
-- **Service**: Sincronização e parseamento de mensagens
-- **DTOs**: `GetChatsDto`, `GetContactsDto`, `GetMessagesDto`
-
-#### `settings/` - Configurações da Sessão
-- **Controller**: Configurações de privacidade e comportamento
-- **Service**: Gestão de preferências da sessão
-- **DTOs**: `UpdateSettingsDto`, `SettingsResponseDto`
+```
+src/
+├── main.ts                          # Bootstrap
+├── app.module.ts                    # Módulo raiz
+│
+├── api/                             # Endpoints REST
+│   ├── sessions/                    # Sessões WhatsApp
+│   ├── messages/                    # Envio de mensagens (18 tipos)
+│   ├── chats/                       # Gestão de conversas
+│   ├── contacts/                    # Gestão de contatos
+│   ├── groups/                      # Gestão de grupos
+│   ├── media/                       # Download/upload mídia
+│   ├── presence/                    # Status de presença
+│   ├── profile/                     # Perfil do usuário
+│   └── settings/                    # Configurações
+│
+├── core/                            # Lógica principal
+│   ├── whatsapp/                    # Integração Whaileys
+│   │   ├── whatsapp.service.ts
+│   │   ├── auth-state.ts
+│   │   ├── managers/socket.manager.ts
+│   │   ├── handlers/
+│   │   │   ├── connection.handler.ts
+│   │   │   ├── messages.handler.ts
+│   │   │   ├── chats.handler.ts
+│   │   │   └── history.handler.ts
+│   │   └── utils/helpers.ts
+│   └── persistence/                 # Persistência
+│       ├── persistence.service.ts
+│       ├── persistence.controller.ts
+│       ├── history-sync.service.ts
+│       └── utils/message-parser.ts
+│
+├── integrations/                    # Integrações externas
+│   ├── webhooks/                    # Sistema de webhooks
+│   └── chatwoot/                    # Integração Chatwoot
+│
+├── database/                        # Camada de dados
+│   ├── database.service.ts          # Prisma client
+│   └── repositories/                # Repositories
+│
+├── logger/                          # Logging
+│   ├── pino.logger.ts
+│   └── logger.service.ts
+│
+└── common/                          # Compartilhados
+    ├── guards/api-key.guard.ts
+    ├── decorators/public.decorator.ts
+    ├── dto/
+    ├── interfaces/
+    └── constants/
+```
 
 ---
 
-## Serviços Core
+## Endpoints da API
 
-### DatabaseService
+### Base URL: `http://localhost:3000`
+### Autenticação: Header `apikey: your-api-key`
+### Documentação Swagger: `http://localhost:3000/api/docs`
+
+---
+
+### Sessions (`/sessions`)
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| POST | `/sessions/create` | Criar nova sessão |
+| GET | `/sessions/list` | Listar todas as sessões |
+| GET | `/sessions/:id/info` | Obter detalhes da sessão |
+| DELETE | `/sessions/:id/delete` | Remover sessão |
+| POST | `/sessions/:id/connect` | Conectar sessão |
+| POST | `/sessions/:id/disconnect` | Desconectar sessão |
+| POST | `/sessions/:id/logout` | Logout (remove credenciais) |
+| GET | `/sessions/:id/qr` | Obter QR code |
+| POST | `/sessions/:id/pair` | Parear com telefone |
+| GET | `/sessions/:id/status` | Status da conexão |
+
+**DTOs:**
+- `CreateSessionDto`: `{ name: string }`
+- `PairPhoneDto`: `{ phoneNumber: string }`
+
+---
+
+### Messages (`/sessions/:sessionId/messages`)
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| POST | `/text` | Enviar texto |
+| POST | `/image` | Enviar imagem |
+| POST | `/video` | Enviar vídeo |
+| POST | `/audio` | Enviar áudio/PTT |
+| POST | `/document` | Enviar documento |
+| POST | `/sticker` | Enviar sticker |
+| POST | `/contact` | Enviar contato (vCard) |
+| POST | `/location` | Enviar localização |
+| POST | `/live-location` | Enviar localização ao vivo |
+| POST | `/react` | Enviar reação |
+| POST | `/forward` | Encaminhar mensagem |
+| DELETE | `/delete` | Deletar mensagem |
+| POST | `/edit` | Editar mensagem |
+| POST | `/buttons` | Mensagem com botões |
+| POST | `/template` | Mensagem template |
+| POST | `/list` | Mensagem com lista |
+| POST | `/poll` | Criar enquete |
+| POST | `/interactive` | Mensagem interativa |
+| POST | `/disappearing` | Config mensagens temporárias |
+
+**Base DTO (SendMessageBaseDto):**
 ```typescript
-// Localização: src/database/database.service.ts
-// Extende PrismaClient com PostgreSQL adapter
-@Injectable()
-export class DatabaseService extends PrismaClient {
-  constructor(private configService: ConfigService) {
-    const connectionString = configService.get<string>('DATABASE_URL');
-    const pool = new Pool({ connectionString });
-    const adapter = new PrismaPg(pool);
-    super({ adapter });
-  }
+{
+  to: string;                    // Número destino
+  quoted?: QuotedMessageDto;     // Mensagem citada
+  ephemeralExpiration?: number;  // Tempo expiração
+  statusJidList?: string[];      // JIDs para status
 }
 ```
 
-### LoggerConfig e PinoLoggerService
+**Exemplo SendTextMessageDto:**
 ```typescript
-// Localização: src/logger/logger.config.ts
-// Configuração avançada de logging baseada em ambiente
-@Injectable()
-export class LoggerConfig {
-  createPinoOptions(): LoggerOptions {
-    // Configuração dinâmica baseada em variáveis de ambiente
-  }
-}
-
-// Localização: src/logger/logger.service.ts
-// Implementação NestJS LoggerService com Pino
-@Injectable()
-export class PinoLoggerService implements LoggerService {
-  // Logging estruturado com contexto automático
+{
+  to: "5511999999999",
+  text: "Olá!",
+  mentions?: ["5511888888888@s.whatsapp.net"]
 }
 ```
+
+---
+
+### Chats (`/sessions/:sessionId/chats`)
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/` | Listar todos os chats |
+| POST | `/:jid/archive` | Arquivar chat |
+| POST | `/:jid/unarchive` | Desarquivar chat |
+| POST | `/:jid/mute` | Silenciar chat |
+| POST | `/:jid/unmute` | Dessilenciar chat |
+| POST | `/:jid/pin` | Fixar chat |
+| POST | `/:jid/unpin` | Desafixar chat |
+| POST | `/:jid/mark-read` | Marcar como lido |
+| POST | `/:jid/mark-unread` | Marcar como não lido |
+| DELETE | `/:jid` | Deletar chat |
+| POST | `/:jid/clear` | Limpar mensagens |
+| POST | `/read-messages` | Marcar múltiplas como lidas |
+
+---
+
+### Groups (`/sessions/:sessionId/groups`)
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/` | Listar grupos |
+| POST | `/` | Criar grupo |
+| GET | `/:groupId` | Metadados do grupo |
+| DELETE | `/:groupId` | Sair do grupo |
+| POST | `/:groupId/participants` | Adicionar participantes |
+| DELETE | `/:groupId/participants` | Remover participantes |
+| POST | `/:groupId/participants/promote` | Promover a admin |
+| POST | `/:groupId/participants/demote` | Rebaixar de admin |
+| POST | `/:groupId/subject` | Atualizar nome |
+| POST | `/:groupId/description` | Atualizar descrição |
+| POST | `/:groupId/picture` | Atualizar foto |
+| GET | `/:groupId/picture` | Obter foto |
+| POST | `/:groupId/settings` | Atualizar configurações |
+| GET | `/:groupId/invite` | Obter código convite |
+| POST | `/:groupId/invite` | Revogar código convite |
+| POST | `/invite` | Aceitar convite |
+| GET | `/invite/:code` | Info do convite |
+
+---
+
+### Contacts (`/sessions/:sessionId/contacts`)
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/` | Listar contatos |
+| POST | `/validate` | Validar números no WhatsApp |
+| GET | `/business/:jid` | Perfil de negócio |
+
+---
+
+### Profile (`/sessions/:sessionId/profile`)
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/` | Obter perfil próprio |
+| GET | `/status/:jid` | Status de um contato |
+| PUT | `/status` | Atualizar status |
+| PUT | `/name` | Atualizar nome |
+| GET | `/picture/:jid` | Obter foto de perfil |
+| PUT | `/picture` | Atualizar foto |
+| PUT | `/picture/remove` | Remover foto |
+| POST | `/block` | Bloquear usuário |
+| POST | `/unblock` | Desbloquear usuário |
+| GET | `/blocklist` | Lista de bloqueados |
+
+---
+
+### Presence (`/sessions/:sessionId/presence`)
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| POST | `/update` | Atualizar presença (online/typing) |
+| POST | `/subscribe` | Inscrever em atualizações |
+| GET | `/cache` | Obter cache de presenças |
+
+---
+
+### Media (`/sessions/:sessionId/media`)
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| POST | `/download` | Download de mídia |
+| POST | `/update` | Re-upload de mídia |
+
+---
+
+### Settings (`/sessions/:sessionId/settings`)
+
+Configurações de privacidade e comportamento da sessão.
+
+```typescript
+interface SessionSettings {
+  rejectCall: boolean;
+  groupsIgnore: boolean;
+  alwaysOnline: boolean;
+  readMessages: boolean;
+  readStatus: boolean;
+  syncFullHistory: boolean;
+  profilePicture: WAPrivacyValue;
+  status: WAPrivacyValue;
+  lastSeen: WAPrivacyValue;
+  online: WAPrivacyOnlineValue;
+  call: WAPrivacyCallValue;
+  groupsAdd: WAPrivacyGroupAddValue;
+}
+```
+
+---
+
+### Persistence (`/sessions/:sessionId`)
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/chats` | Listar chats persistidos |
+| GET | `/chats/:chatId` | Detalhes do chat |
+| GET | `/chats/:chatId/messages` | Mensagens do chat |
+| GET | `/contacts` | Listar contatos persistidos |
+
+---
+
+### Webhooks
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| POST | `/session/:sessionId/webhook/set` | Configurar webhook |
+| GET | `/session/:sessionId/webhook/find` | Buscar configuração |
+| GET | `/webhook/events` | Listar eventos disponíveis |
+| POST | `/session/:sessionId/webhook/test` | Testar webhook |
+
+---
+
+### Chatwoot
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| POST | `/session/:sessionId/chatwoot/set` | Configurar integração |
+| GET | `/session/:sessionId/chatwoot/find` | Buscar configuração |
+| DELETE | `/session/:sessionId/chatwoot` | Remover configuração |
+| POST | `/chatwoot/webhook/:sessionId` | Webhook Chatwoot (público) |
+| POST | `/chatwoot/receive/:sessionId` | Receber eventos zpwoot (público) |
+
+---
+
+## Módulos Core
 
 ### WhatsAppService
 ```typescript
-// Localização: src/whatsapp/whatsapp.service.ts
-// Core service para integração com Whaileys
+// src/core/whatsapp/whatsapp.service.ts
 @Injectable()
 export class WhatsAppService {
-  // Gerenciamento de conexões, eventos, reconexão automática
+  async createSocket(sessionId: string): Promise<{ socket: WASocket; qr?: string }>
+  getSocket(sessionId: string): WASocket | undefined
+  getQRCode(sessionId: string): string | undefined
+  async disconnectSocket(sessionId: string): Promise<void>
   async reconnectActiveSessions(): Promise<void>
 }
 ```
+
+### Event Handlers
+
+| Handler | Eventos |
+|---------|---------|
+| `ConnectionHandler` | `connection.update`, `creds.update` |
+| `MessagesHandler` | `messages.upsert`, `messages.update`, `messages.delete`, `message-receipt.update` |
+| `ChatsHandler` | `chats.upsert`, `chats.update`, `chats.delete` |
+| `HistoryHandler` | `messaging-history.set` |
+
+### PersistenceService
+```typescript
+// src/core/persistence/persistence.service.ts
+@Injectable()
+export class PersistenceService {
+  // Contatos
+  async createOrUpdateContact(sessionId, contactData)
+  async createContactsBatch(sessionId, contacts)
+  async getContacts(sessionId, filters)
+  
+  // Chats
+  async createOrUpdateChat(sessionId, chatData)
+  async createChatsBatch(sessionId, chats)
+  async getChats(sessionId, filters)
+  async getChat(sessionId, chatId)
+  
+  // Mensagens
+  async createMessage(sessionId, messageData)
+  async createMessagesBatch(sessionId, messages)
+  async getMessages(chatId, filters)
+  async updateMessageStatus(sessionId, messageId, status)
+  async markMessageAsDeleted(sessionId, messageId)
+  
+  // Chatwoot tracking
+  async updateMessageChatwoot(sessionId, messageId, chatwootData)
+  async findMessageByChatwootId(sessionId, chatwootMessageId)
+  async findMessageByWAId(sessionId, waMessageId)
+}
+```
+
+---
+
+## Integrações
+
+### Sistema de Webhooks
+
+#### 23 Eventos Disponíveis
+```typescript
+const VALID_WEBHOOK_EVENTS = [
+  // Conexão
+  'connection.update', 'creds.update',
+  
+  // Histórico
+  'messaging-history.set',
+  
+  // Chats
+  'chats.upsert', 'chats.update', 'chats.delete',
+  
+  // Presença
+  'presence.update',
+  
+  // Contatos
+  'contacts.upsert', 'contacts.update', 'contacts.phone-number-share',
+  
+  // Mensagens
+  'messages.pdo-response', 'messages.delete', 'messages.update',
+  'messages.media-update', 'messages.upsert', 'messages.reaction',
+  'message-receipt.update',
+  
+  // Grupos
+  'groups.upsert', 'groups.update', 'group-participants.update',
+  
+  // Bloqueio
+  'blocklist.set', 'blocklist.update',
+  
+  // Chamadas
+  'call',
+];
+```
+
+#### Payload
+```json
+{
+  "sessionId": "uuid",
+  "event": "messages.upsert",
+  "timestamp": "2025-01-01T00:00:00.000Z",
+  "data": { }
+}
+```
+
+### Integração Chatwoot
+
+#### Configuração
+```typescript
+{
+  sessionId: string;
+  enabled: boolean;
+  accountId: string;
+  token: string;
+  url: string;
+  nameInbox: string;
+  signMsg: boolean;           // Assinar msgs em grupos
+  signDelimiter: string;
+  reopenConversation: boolean;
+  conversationPending: boolean;
+  mergeBrazilContacts: boolean;
+  importContacts: boolean;
+  importMessages: boolean;
+  daysLimitImportMessages: number;
+  ignoreJids: string[];
+}
+```
+
+#### Fluxo WhatsApp → Chatwoot
+1. `messages.upsert` recebido
+2. `MessagesHandler.forwardToChatwoot()` processa
+3. Busca/cria contato no Chatwoot
+4. Busca/cria conversa
+5. Cria mensagem com `sourceId`
+6. Atualiza tracking: `chatwootConversationId`, `chatwootMessageId`
+
+#### Fluxo Chatwoot → WhatsApp
+1. Webhook em `/chatwoot/webhook/:sessionId`
+2. Valida evento `message_created`, `outgoing`, `sender.type=user`
+3. Ignora se tem `source_id` (evita loop)
+4. Extrai `identifier` do contato
+5. Valida número com `onWhatsApp()` (suporte a LID)
+6. Envia mensagem via `MessagesService`
+
+#### Suporte a Reply
+O Chatwoot envia `content_attributes.in_reply_to` ou `in_reply_to_external_id`. O sistema busca a mensagem original via `waMessageKey` para enviar como quoted.
 
 ---
 
 ## Banco de Dados
 
-### Modelo de Entidades Principais
+### Schema Principal
 
 #### Session
 ```prisma
@@ -217,8 +560,17 @@ model Session {
   status      SessionStatus    @default(disconnected)
   qrCode      String?
   phoneNumber String?
-  // Relacionamentos com todas as outras entidades
+  
+  authState   AuthState[]
+  webhooks    Webhook[]
+  contacts    Contact[]
+  chats       Chat[]
+  messages    Message[]
+  settings    SessionSettings?
+  chatwoot    Chatwoot?
 }
+
+enum SessionStatus { disconnected, connecting, connected }
 ```
 
 #### Message
@@ -227,521 +579,299 @@ model Message {
   id            String        @id @default(uuid())
   sessionId     String
   chatId        String
+  remoteJid     String
   messageId     String
+  fromMe        Boolean
+  senderJid     String?
+  senderName    String?
+  timestamp     BigInt
   messageType   String
-  content       Json          // Conteúdo estruturado
+  
+  // Campos otimizados
+  textContent   String?
+  mediaUrl      String?
+  fileLength    BigInt?
+  content       Json
+  
+  // Chatwoot tracking
+  chatwootConversationId  Int?
+  chatwootMessageId       Int?
+  chatwootInboxId         Int?
+  chatwootContactId       Int?
+  
+  // WhatsApp message key (reply/edit/delete)
+  waMessageKey  Json?
+  
   status        MessageStatus @default(pending)
-  // Timestamps e metadados
+  isDeleted     Boolean       @default(false)
+  
+  @@unique([sessionId, messageId])
+  @@index([sessionId, chatId, timestamp])
+  @@index([chatwootConversationId])
+  @@index([chatwootMessageId])
+}
+
+enum MessageStatus { pending, sent, delivered, read, failed }
+```
+
+#### Chatwoot
+```prisma
+model Chatwoot {
+  id                      String   @id @default(cuid())
+  sessionId               String   @unique
+  enabled                 Boolean  @default(false)
+  accountId               String?
+  token                   String?
+  url                     String?
+  nameInbox               String?
+  signMsg                 Boolean  @default(false)
+  signDelimiter           String?  @default("\\n")
+  reopenConversation      Boolean  @default(false)
+  conversationPending     Boolean  @default(false)
+  mergeBrazilContacts     Boolean  @default(false)
+  importContacts          Boolean  @default(false)
+  importMessages          Boolean  @default(false)
+  daysLimitImportMessages Int?     @default(3)
+  ignoreJids              String[] @default([])
 }
 ```
 
-#### Enums de Privacidade WhatsApp
-- `WAPrivacyValue`: `all | contacts | contact_blacklist | none`
-- `WAPrivacyOnlineValue`: `all | match_last_seen`
-- `WAPrivacyCallValue`: `all | known`
-- Configurações detalhadas em `SessionSettings`
+#### Enums de Privacidade
+```prisma
+enum WAPrivacyValue { all, contacts, contact_blacklist, none }
+enum WAPrivacyOnlineValue { all, match_last_seen }
+enum WAPrivacyCallValue { all, known }
+enum WAPrivacyMessagesValue { all, contacts }
+enum WAReadReceiptsValue { all, none }
+enum WAPrivacyGroupAddValue { all, contacts, contact_blacklist }
+```
+
+---
+
+## Sistema de Eventos e Webhooks
+
+### Arquitetura
+```
+WhatsApp Server
+      │
+      ▼
+┌─────────────────┐
+│  Whaileys SDK   │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────────────────────┐
+│         Event Handlers          │
+├─────────────────────────────────┤
+│ ConnectionHandler               │
+│ MessagesHandler → Chatwoot      │
+│ ChatsHandler                    │
+│ HistoryHandler                  │
+└────────┬─────────────┬──────────┘
+         │             │
+         ▼             ▼
+┌────────────────┐  ┌─────────────┐
+│ Persistence    │  │ Webhooks    │
+│ Service        │  │ Service     │
+└────────────────┘  └──────┬──────┘
+                           │
+                    ┌──────┴──────┐
+                    ▼             ▼
+              URL Config 1   Chatwoot
+```
 
 ---
 
 ## Fluxos de Trabalho Essenciais
 
-### 1. Criação de Nova Sessão
-```typescript
-// POST /sessions
-// Body: { "name": "Minha Sessão" }
-// Response: SessionResponseDto com QR code para pairing
+### 1. Criar e Conectar Sessão
+```bash
+# Criar
+POST /sessions/create
+Body: { "name": "Minha Sessão" }
+
+# Conectar
+POST /sessions/:id/connect
+
+# Obter QR
+GET /sessions/:id/qr
+
+# Verificar status
+GET /sessions/:id/status
 ```
 
-### 2. Envio de Mensagem de Texto
-```typescript
-// POST /messages/text
-// Body: {
-//   "sessionId": "uuid",
-//   "remoteJid": "5511999998888@s.whatsapp.net",
-//   "text": "Olá mundo!"
-// }
+### 2. Enviar Mensagem
+```bash
+POST /sessions/:sessionId/messages/text
+Headers: { "apikey": "your-api-key" }
+Body: {
+  "to": "5511999999999",
+  "text": "Olá!"
+}
 ```
 
-### 3. Configuração de Webhook
-```typescript
-// POST /webhooks
-// Body: {
-//   "sessionId": "uuid",
-//   "url": "https://meu-webhook.com/events",
-//   "events": ["messages.upsert", "connection.update"]
-// }
+### 3. Configurar Webhook
+```bash
+POST /session/:sessionId/webhook/set
+Body: {
+  "url": "https://meu-webhook.com/events",
+  "events": ["messages.upsert", "connection.update"]
+}
 ```
 
-### 4. Recuperação de Histórico
-```typescript
-// GET /persistence/messages?sessionId=uuid&limit=50&offset=0
-// Response: Lista paginada de mensagens persistidas
+### 4. Configurar Chatwoot
+```bash
+POST /session/:sessionId/chatwoot/set
+Body: {
+  "enabled": true,
+  "accountId": "1",
+  "token": "chatwoot-token",
+  "url": "https://chatwoot.example.com",
+  "nameInbox": "WhatsApp"
+}
 ```
 
 ---
 
 ## Padrões e Convenções
 
+### DTOs com Validação
+```typescript
+import { IsString, IsNotEmpty, IsOptional, IsArray } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+export class SendTextMessageDto extends SendMessageBaseDto {
+  @ApiProperty({ description: 'Texto da mensagem' })
+  @IsString()
+  @IsNotEmpty()
+  text: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  mentions?: string[];
+}
+```
+
+### Guards e Decorators
+```typescript
+@UseGuards(ApiKeyGuard)
+@Controller('sessions')
+export class SessionsController {}
+
+@Public()  // Endpoint público
+@Post('webhook/:sessionId')
+async handleWebhook() {}
+```
+
 ### Injeção de Dependências
 ```typescript
 constructor(
-  private readonly sessionsService: SessionsService,
-  private readonly databaseService: DatabaseService,
-  private readonly logger: PinoLoggerService,
+  private readonly service: MyService,
+  @Inject(forwardRef(() => CircularService))
+  private readonly circularService: CircularService,
 ) {}
-```
-
-### DTOs e Validação
-```typescript
-@Body() createSessionDto: CreateSessionDto
-// Todos os DTOs usam class-validator e class-transformer
-// Validação global via ValidationPipe com whitelist: true
-```
-
-### Autenticação
-```typescript
-@UseGuards(ApiKeyGuard)  // API Key via header 'apikey'
-@Public()                 // Endpoints públicos (ex: QR code generation)
-```
-
-### Repositories Pattern
-```typescript
-// Localização: src/database/repositories/
-// BaseRepository com métodos CRUD padrão
-// Repositories específicos por entidade (SessionRepository, MessageRepository...)
 ```
 
 ### Tratamento de Erros
 ```typescript
-// Usar @hapi/Boom para erros HTTP
+import * as Boom from '@hapi/boom';
+
 throw Boom.notFound('Session not found');
-throw Boom.badRequest('Invalid phone number');
+throw new NotFoundException(`Session ${id} not found`);
+throw new BadRequestException('Invalid parameters');
 ```
 
 ---
 
-## Logging Estruturado
+## Logging
 
-O projeto utiliza Pino Logger com configuração avançada baseada em variáveis de ambiente, suportando tanto saída JSON estruturada para produção quanto saída pretty para desenvolvimento.
+### PinoLoggerService
+```typescript
+// Uso
+private readonly logger = new Logger(MyService.name);
 
-### Variáveis de Ambiente
+this.logger.log(`Message sent`, { sessionId, messageId });
+this.logger.error(`Failed`, error.stack);
+this.logger.debug(`Processing`, { data });
+```
+
+### Variáveis
 ```env
-# Nível de log: trace, debug, info, warn, error, fatal
-LOG_LEVEL=info
-
-# Formato de saída: pretty (console colorido), json (estruturado), mixed (adaptativo)
-LOG_FORMAT=pretty
-
-# Opções de formatação pretty
-LOG_PRETTY_COLORIZE=true
-LOG_PRETTY_SINGLE_LINE=true
-
-# Opções de metadados estruturados
-LOG_INCLUDE_TIMESTAMP=true
-LOG_SERVICE_NAME=zpwoot
-LOG_STRUCTURED_METADATA=true
-```
-
-### Formatos de Log Suportados
-
-#### `pretty` - Desenvolvimento
-- Saída colorida e formatada para console
-- Timestamps em formato legível
-- Single line para melhor readability
-- Ideal para desenvolvimento local
-
-#### `json` - Produção/Containers
-- Saída JSON pura estruturada
-- Metadados consistentes para log aggregators
-- Otimizado para parsing automatizado
-- Ideal para produção e ambientes containerizados
-
-#### `mixed` - Adaptativo
-- Detecta automaticamente TTY capability
-- Pretty quando em terminal interativo
-- JSON quando redirecionado para arquivo/pipe
-- Flexível para diferentes cenários
-
-### Melhores Práticas de Logging
-
-#### 1. Logs Informativos com Contexto
-```typescript
-// Logs de operações importantes
-this.logger.log(`Session ${sessionId} connected`, 'SessionsService');
-
-// Logs com metadados estruturados
-this.logger.log(
-  `Message processed successfully`,
-  { 
-    sessionId, 
-    messageId, 
-    messageType, 
-    processingTime: Date.now() - startTime 
-  },
-  'MessageProcessor'
-);
-```
-
-#### 2. Logs de Erro com Detalhes
-```typescript
-// Sempre incluir objeto de erro quando disponível
-this.logger.error(
-  `Failed to send message to ${remoteJid}`,
-  error,
-  'MessagesService'
-);
-
-// Logs de erro com contexto adicional
-this.logger.error(
-  `Database connection failed`,
-  { 
-    error: error.message, 
-    stack: error.stack,
-    query: sqlQuery,
-    params: queryParams 
-  },
-  'DatabaseService'
-);
-```
-
-#### 3. Logs de Debug para Troubleshooting
-```typescript
-// Debug com informações detalhadas
-this.logger.debug(
-  `Processing webhook event`,
-  { 
-    eventType, 
-    sessionId, 
-    payload: JSON.stringify(eventPayload),
-    processingId: generateId() 
-  },
-  'WebhookService'
-);
-```
-
-#### 4. Logs de Performance
-```typescript
-const startTime = Date.now();
-// ... operação ...
-this.logger.log(
-  `Operation completed`,
-  { 
-    operation: 'sendBulkMessages',
-    duration: Date.now() - startTime,
-    messageCount: messages.length,
-    successCount: successCount,
-    failureCount: failureCount 
-  },
-  'MessagesService'
-);
-```
-
-### Estrutura de Log JSON (Produção)
-```json
-{
-  "level": "info",
-  "time": "2025-01-01T00:00:00.000Z",
-  "service": "zpwoot",
-  "version": "1.0.0",
-  "environment": "production",
-  "pid": 1234,
-  "context": "SessionsService",
-  "sessionId": "uuid-123",
-  "msg": "Session connected successfully"
-}
-```
-
-### Exemplos de Saída
-
-#### Pretty Mode (Desenvolvimento)
-```
-[19:45:32.123] INFO (SessionsService): Session uuid-123 connected successfully
-[19:45:32.124] ERROR (MessagesService): Failed to send message to 5511999998888@s.whatsapp.net
-[19:45:32.125] DEBUG (WebhookService): Processing webhook event {eventType: "messages.upsert"}
-```
-
-#### JSON Mode (Produção)
-```json
-{"level":"info","time":"2025-01-01T19:45:32.123Z","service":"zpwoot","environment":"production","pid":1234,"context":"SessionsService","sessionId":"uuid-123","msg":"Session connected successfully"}
-{"level":"error","time":"2025-01-01T19:45:32.124Z","service":"zpwoot","environment":"production","pid":1234,"context":"MessagesService","remoteJid":"5511999998888@s.whatsapp.net","err":{"message":"Connection timeout"},"msg":"Failed to send message"}
-{"level":"debug","time":"2025-01-01T19:45:32.125Z","service":"zpwoot","environment":"production","pid":1234,"context":"WebhookService","eventType":"messages.upsert","msg":"Processing webhook event"}
-```
-
----
-
-## Exemplos Práticos
-
-### Controller Completo com Logging
-```typescript
-@Controller('sessions')
-@UseGuards(ApiKeyGuard)
-export class SessionsController {
-  constructor(
-    private readonly sessionsService: SessionsService,
-    private readonly logger: PinoLoggerService
-  ) {
-    this.logger.setContext('SessionsController');
-  }
-
-  @Post()
-  async create(@Body() createSessionDto: CreateSessionDto) {
-    this.logger.log(`Creating new session: ${createSessionDto.name}`);
-    
-    try {
-      const result = await this.sessionsService.create(createSessionDto);
-      this.logger.log(`Session created successfully: ${result.id}`, { sessionId: result.id });
-      return result;
-    } catch (error) {
-      this.logger.error(`Failed to create session`, error, { name: createSessionDto.name });
-      throw error;
-    }
-  }
-
-  @Get(':id/qrcode')
-  @Public()  // Endpoint público para QR code
-  async getQrCode(@Param('id') id: string) {
-    this.logger.debug(`QR code requested for session: ${id}`, { sessionId: id });
-    
-    const qrCode = await this.sessionsService.getQrCode(id);
-    this.logger.log(`QR code generated for session: ${id}`, { sessionId: id });
-    
-    return qrCode;
-  }
-}
-```
-
-### Service com Repository e Logging Estruturado
-```typescript
-@Injectable()
-export class MessagesService {
-  constructor(
-    private readonly messageRepository: MessageRepository,
-    private readonly whatsappService: WhatsAppService,
-    private readonly logger: PinoLoggerService
-  ) {
-    this.logger.setContext('MessagesService');
-  }
-
-  async sendTextMessage(dto: SendTextMessageDto) {
-    const startTime = Date.now();
-    
-    this.logger.debug(`Starting message send operation`, {
-      sessionId: dto.sessionId,
-      remoteJid: dto.remoteJid,
-      messageLength: dto.text.length
-    });
-
-    try {
-      const session = await this.whatsappService.getSession(dto.sessionId);
-      const result = await session.sendMessage(dto.remoteJid, {
-        text: dto.text,
-      });
-      
-      await this.messageRepository.create({
-        ...dto,
-        messageId: result.key.id,
-        status: MessageStatus.SENT,
-      });
-
-      const duration = Date.now() - startTime;
-      this.logger.log(
-        `Message sent successfully`,
-        {
-          sessionId: dto.sessionId,
-          messageId: result.key.id,
-          remoteJid: dto.remoteJid,
-          duration,
-          messageType: 'text'
-        }
-      );
-      
-      return result;
-    } catch (error) {
-      const duration = Date.now() - startTime;
-      this.logger.error(
-        `Failed to send message`,
-        error,
-        {
-          sessionId: dto.sessionId,
-          remoteJid: dto.remoteJid,
-          duration,
-          errorType: error.constructor.name
-        }
-      );
-      throw error;
-    }
-  }
-}
-```
-
-### DTO Complexo com Validação
-```typescript
-export class SendTextMessageDto {
-  @IsUUID()
-  sessionId: string;
-
-  @IsString()
-  @Matches(/^\d+@\w+\.net$/)
-  remoteJid: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(4096)
-  text: string;
-}
-```
-
----
-
-## API Documentation
-
-### Swagger/OpenAPI
-- **URL**: `http://localhost:3000/api/docs`
-- **Autenticação**: Header `apikey` requerido para maioria dos endpoints
-- **Schemas**: Todos os DTOs documentados com exemplos
-
-### Endpoints Principais
-```
-POST   /sessions                    # Criar sessão
-GET    /sessions                    # Listar sessões
-GET    /sessions/:id/qrcode         # Obter QR code
-DELETE /sessions/:id                # Remover sessão
-
-POST   /messages/text               # Enviar texto
-POST   /messages/image             # Enviar imagem
-POST   /messages/audio              # Enviar áudio
-POST   /messages/document          # Enviar documento
-
-GET    /chats                       # Listar conversas
-POST   /chats/:id/archive          # Arquivar conversa
-
-GET    /contacts/validate/:number   # Validar número
-GET    /groups/:id/metadata         # Metadados do grupo
+LOG_LEVEL=info    # trace, debug, info, warn, error
+LOG_FORMAT=pretty # pretty (dev), json (prod)
 ```
 
 ---
 
 ## Troubleshooting
 
-### Problemas Comuns
-
-#### 1. Sessão não conecta
+### Sessão não conecta
 ```bash
-# Verificar logs com diferentes níveis
 LOG_LEVEL=debug npm run start:dev
-
-# Verificar logs específicos do serviço
-grep "SessionsService" logs/app.log
-
-# Verificar estado da sessão no banco
-npx prisma studio
+# Verificar AuthState no banco
+DELETE FROM "AuthState" WHERE "sessionId" = 'uuid';
 ```
 
-#### 2. QR Code inválido
-- Limpar dados da sessão: `DELETE FROM "AuthState" WHERE sessionId = 'uuid'`
-- Reiniciar aplicação para gerar novo QR code
-- Verificar logs de autenticação com `LOG_LEVEL=debug`
+### Mensagens não enviadas
+- Verificar status: `GET /sessions/:id/status` → `connected`
+- Formato número: `5511999999999` (sem + ou espaços)
 
-#### 3. Mensagens não são enviadas
-- Verificar status da sessão: deve ser `connected`
-- Validar formato do `remoteJid`: `5511999998888@s.whatsapp.net`
-- Verificar logs de erro no `MessagesService`
-- Testar com `LOG_FORMAT=json` para melhor parsing
-
-#### 4. Performance lenta
+### Webhook não dispara
 ```bash
-# Analisar logs de performance
-grep "duration" logs/app.log | jq '.duration'
-
-# Indexes necessários no PostgreSQL
-CREATE INDEX CONCURRENTLY idx_message_session_timestamp 
-ON "Message" (sessionId, timestamp);
-
-CREATE INDEX CONCURRENTLY idx_chat_session_unread 
-ON "Chat" (sessionId, unreadCount);
+GET /session/:sessionId/webhook/find
+POST /session/:sessionId/webhook/test
 ```
 
-### Debug e Monitoramento
+### Chatwoot não recebe mensagens
+- Verificar `enabled: true`
+- Inbox criado corretamente
+- webhookUrl: `http://servidor/chatwoot/webhook/:sessionId`
 
-#### Análise de Logs Estruturados
-```bash
-# Filtrar logs por nível
-jq 'select(.level == "error")' logs/app.log
+### Database Queries Úteis
+```sql
+-- Sessões conectadas
+SELECT id, name, status FROM "Session" WHERE status = 'connected';
 
-# Filtrar por contexto
-jq 'select(.context == "SessionsService")' logs/app.log
+-- Mensagens recentes
+SELECT "messageId", "messageType", "textContent"
+FROM "Message"
+WHERE "sessionId" = 'uuid'
+ORDER BY timestamp DESC LIMIT 10;
 
-# Analisar performance
-jq 'select(.duration) | {duration, operation, timestamp}' logs/app.log
-
-# Contar erros por tipo
-jq 'select(.level == "error") | .errorType' logs/app.log | sort | uniq -c
-```
-
-#### Health Checks
-```bash
-# Verificar se API está respondendo
-curl http://localhost:3000/health
-
-# Verificar conexão com banco
-curl http://localhost:3000/health/database
-
-# Verificar status das sessões
-curl -H "apikey: $API_KEY" http://localhost:3000/sessions
-```
-
-#### Monitoramento em Produção
-```bash
-# Configuração recomendada para produção
-LOG_LEVEL=info
-LOG_FORMAT=json
-LOG_STRUCTURED_METADATA=true
-LOG_INCLUDE_TIMESTAMP=true
-
-# Exemplo de configuração Docker
-docker run -e LOG_LEVEL=warn -e LOG_FORMAT=json zpwoot:latest
+-- Tracking Chatwoot
+SELECT "messageId", "chatwootConversationId", "chatwootMessageId"
+FROM "Message"
+WHERE "chatwootMessageId" IS NOT NULL;
 ```
 
 ---
 
-## Recursos Externos
+## Contribuição
 
-### Documentação Oficial
-- [NestJS Documentation](https://docs.nestjs.com)
-- [Prisma Documentation](https://www.prisma.io/docs)
-- [Whaileys Documentation](https://github.com/pedroslopez/whatsapp-web.js)
+### Adicionar Nova Feature
+1. `nest generate module api/new-feature`
+2. Criar DTOs com class-validator
+3. Implementar Service
+4. Criar Controller com Swagger decorators
+5. Adicionar ao AppModule
+6. Atualizar AGENTS.md
+
+### Checklist
+- [ ] DTO com validação
+- [ ] Documentação Swagger
+- [ ] Logging adequado
+- [ ] Tratamento de erros
+- [ ] Testes
+- [ ] AGENTS.md atualizado
+
+---
+
+## Recursos
+
+- [NestJS Docs](https://docs.nestjs.com)
+- [Prisma Docs](https://www.prisma.io/docs)
+- [Whaileys (Baileys)](https://github.com/WhiskeySockets/Baileys)
+- [Chatwoot API](https://www.chatwoot.com/developers/api/)
 - [Pino Logger](https://getpino.io)
-- [Swagger/OpenAPI](https://swagger.io)
-
-### Ferramentas Úteis
-- [Prisma Studio](https://www.prisma.io/studio) - Database GUI
-- [DBGate](http://localhost:3001) - Interface PostgreSQL via Docker
-- [Postman](https://www.postman.com) - Testes de API
-- [Docker Desktop](https://www.docker.com/products/docker-desktop) - Container management
-- [jq](https://stedolan.github.io/jq/) - Processamento de JSON logs
-
----
-
-## Contribuição e Melhorias
-
-### Para Adicionar Novas Funcionalidades:
-
-1. **Criar módulo**: `nest generate module new-feature`
-2. **Criar DTOs**: Com validação usando class-validator
-3. **Implementar Service**: Com injeção de dependências e logging estruturado
-4. **Criar Controller**: Com guards, documentação e logging adequado
-5. **Atualizar AGENTS.md**: Manter documentação atualizada
-
-### Padrões de Code Review:
-- Seguir convenções de nomenclatura existentes
-- Incluir logging estruturado em operações importantes
-- Adicionar metadados relevantes nos logs
-- Usar níveis de log apropriados (debug, info, warn, error)
-- Documentar novas variáveis de ambiente no .env.example
-
-### Logging Guidelines:
-- **DEBUG**: Informações detalhadas para troubleshooting
-- **INFO**: Operações importantes e eventos de negócio
-- **WARN**: Situações anômalas que não causam falha
-- **ERROR**: Falhas que requerem atenção imediata
-- **TRACE**: Detalhes extremamente granulares (desenvolvimento apenas)
