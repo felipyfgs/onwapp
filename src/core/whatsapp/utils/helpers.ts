@@ -19,7 +19,7 @@ export function shouldReconnectSession(
   }
 
   // 405 = methodNotAllowed - versão inválida, NÃO reconectar
-  if (statusCode === 405) {
+  if ((statusCode as number) === 405) {
     return false;
   }
 
