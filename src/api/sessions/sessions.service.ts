@@ -2,39 +2,112 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
-import { SessionRepository } from '../../database/repositories/session.repository';
+import {
+  SessionRepository,
+  SessionWithConfigs,
+} from '../../database/repositories/session.repository';
 import { WhatsAppService } from '../../core/whatsapp/whatsapp.service';
+import { DatabaseService } from '../../database/database.service';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { PairPhoneDto } from './dto/pair-phone.dto';
 import { SessionResponseDto } from './dto/session-response.dto';
 
 @Injectable()
 export class SessionsService {
+  private readonly logger = new Logger(SessionsService.name);
+
   constructor(
     private readonly sessionRepository: SessionRepository,
+    private readonly prisma: DatabaseService,
     private whatsapp: WhatsAppService,
   ) {}
 
   async createSession(
     createSessionDto: CreateSessionDto,
   ): Promise<SessionResponseDto> {
-    const session = await this.sessionRepository.create({
-      name: createSessionDto.name,
-      status: 'disconnected',
+    const { name, webhook, chatwoot, proxy } = createSessionDto;
+
+    // Create session with all configs in a transaction
+    const session = await this.prisma.$transaction(async (tx) => {
+      // Create the session
+      const newSession = await tx.session.create({
+        data: {
+          name,
+          status: 'disconnected',
+        },
+      });
+
+      // Create webhook config if provided
+      if (webhook?.url) {
+        await tx.webhook.create({
+          data: {
+            sessionId: newSession.id,
+            enabled: webhook.enabled ?? true,
+            url: webhook.url,
+            events: webhook.events ?? [],
+          },
+        });
+      }
+
+      // Create chatwoot config if provided
+      if (chatwoot) {
+        await tx.chatwoot.create({
+          data: {
+            sessionId: newSession.id,
+            enabled: chatwoot.enabled ?? false,
+            accountId: chatwoot.accountId,
+            token: chatwoot.token,
+            url: chatwoot.url,
+            nameInbox: chatwoot.nameInbox,
+            signMsg: chatwoot.signMsg ?? false,
+            signDelimiter: chatwoot.signDelimiter ?? '\\n',
+            reopenConversation: chatwoot.reopenConversation ?? false,
+            conversationPending: chatwoot.conversationPending ?? false,
+            mergeBrazilContacts: chatwoot.mergeBrazilContacts ?? false,
+            importContacts: chatwoot.importContacts ?? false,
+            importMessages: chatwoot.importMessages ?? false,
+            daysLimitImportMessages: chatwoot.daysLimitImportMessages ?? 3,
+            ignoreJids: chatwoot.ignoreJids ?? [],
+          },
+        });
+      }
+
+      // Create proxy config if provided
+      if (proxy) {
+        await tx.proxy.create({
+          data: {
+            sessionId: newSession.id,
+            enabled: proxy.enabled ?? false,
+            host: proxy.host,
+            port: proxy.port,
+            protocol: proxy.protocol ?? 'http',
+            username: proxy.username,
+            password: proxy.password,
+          },
+        });
+      }
+
+      return newSession.id;
     });
 
-    return this.mapToResponseDto(session);
+    // Fetch the complete session with configs
+    const fullSession =
+      await this.sessionRepository.findByIdWithConfigs(session);
+
+    this.logger.log(`Session created: ${fullSession!.id} (${name})`);
+
+    return this.mapToResponseDto(fullSession!);
   }
 
   async getSessions(): Promise<SessionResponseDto[]> {
-    const sessions = await this.sessionRepository.findAll();
-
+    const sessions = await this.sessionRepository.findAllWithConfigs();
     return sessions.map((session) => this.mapToResponseDto(session));
   }
 
   async getSession(id: string): Promise<SessionResponseDto> {
-    const session = await this.sessionRepository.findById(id);
+    const session = await this.sessionRepository.findByIdWithConfigs(id);
 
     if (!session) {
       throw new NotFoundException(`Session with ID ${id} not found`);
@@ -51,12 +124,13 @@ export class SessionsService {
     }
 
     await this.whatsapp.deleteSession(session.id);
-
     await this.sessionRepository.delete(id);
+
+    this.logger.log(`Session deleted: ${id}`);
   }
 
   async connectSession(id: string): Promise<SessionResponseDto> {
-    const session = await this.sessionRepository.findById(id);
+    const session = await this.sessionRepository.findByIdWithConfigs(id);
 
     if (!session) {
       throw new NotFoundException(`Session with ID ${id} not found`);
@@ -66,10 +140,10 @@ export class SessionsService {
       throw new BadRequestException('Session is already connected');
     }
 
-    await this.whatsapp.createSocket(session.id);
+    // Pass proxy config to WhatsApp service if enabled
+    await this.whatsapp.createSocket(session.id, session.proxy ?? undefined);
 
-    const updatedSession = await this.sessionRepository.findById(id);
-
+    const updatedSession = await this.sessionRepository.findByIdWithConfigs(id);
     return this.mapToResponseDto(updatedSession!);
   }
 
@@ -82,7 +156,7 @@ export class SessionsService {
 
     await this.whatsapp.disconnectSocket(session.id);
 
-    const updatedSession = await this.sessionRepository.update(id, {
+    const updatedSession = await this.sessionRepository.updateWithConfigs(id, {
       status: 'disconnected',
       qrCode: null,
     });
@@ -99,7 +173,7 @@ export class SessionsService {
 
     await this.whatsapp.disconnectSocket(session.id);
 
-    const updatedSession = await this.sessionRepository.update(id, {
+    const updatedSession = await this.sessionRepository.updateWithConfigs(id, {
       status: 'disconnected',
       qrCode: null,
     });
@@ -124,7 +198,7 @@ export class SessionsService {
     id: string,
     pairPhoneDto: PairPhoneDto,
   ): Promise<SessionResponseDto> {
-    const session = await this.sessionRepository.findById(id);
+    const session = await this.sessionRepository.findByIdWithConfigs(id);
 
     if (!session) {
       throw new NotFoundException(`Session with ID ${id} not found`);
@@ -140,7 +214,7 @@ export class SessionsService {
 
     await socket.requestPairingCode(pairPhoneDto.phoneNumber);
 
-    const updatedSession = await this.sessionRepository.update(id, {
+    const updatedSession = await this.sessionRepository.updateWithConfigs(id, {
       phoneNumber: pairPhoneDto.phoneNumber,
     });
 
@@ -157,13 +231,52 @@ export class SessionsService {
     return { status: session.status };
   }
 
-  private mapToResponseDto(session: any): SessionResponseDto {
+  private mapToResponseDto(session: SessionWithConfigs): SessionResponseDto {
     return {
       id: session.id,
       name: session.name,
       status: session.status,
       qrCode: session.qrCode ?? undefined,
       phoneNumber: session.phoneNumber ?? undefined,
+      webhook: session.webhook
+        ? {
+            id: session.webhook.id,
+            sessionId: session.webhook.sessionId,
+            enabled: session.webhook.enabled,
+            url: session.webhook.url,
+            events: session.webhook.events,
+            createdAt: session.webhook.createdAt,
+            updatedAt: session.webhook.updatedAt,
+          }
+        : undefined,
+      chatwoot: session.chatwoot
+        ? {
+            id: session.chatwoot.id,
+            sessionId: session.chatwoot.sessionId,
+            enabled: session.chatwoot.enabled,
+            accountId: session.chatwoot.accountId ?? undefined,
+            url: session.chatwoot.url ?? undefined,
+            nameInbox: session.chatwoot.nameInbox ?? undefined,
+            signMsg: session.chatwoot.signMsg,
+            reopenConversation: session.chatwoot.reopenConversation,
+            conversationPending: session.chatwoot.conversationPending,
+            createdAt: session.chatwoot.createdAt,
+            updatedAt: session.chatwoot.updatedAt,
+          }
+        : undefined,
+      proxy: session.proxy
+        ? {
+            id: session.proxy.id,
+            sessionId: session.proxy.sessionId,
+            enabled: session.proxy.enabled,
+            host: session.proxy.host ?? undefined,
+            port: session.proxy.port ?? undefined,
+            protocol: session.proxy.protocol ?? undefined,
+            username: session.proxy.username ?? undefined,
+            createdAt: session.proxy.createdAt,
+            updatedAt: session.proxy.updatedAt,
+          }
+        : undefined,
       createdAt: session.createdAt,
       updatedAt: session.updatedAt,
     };

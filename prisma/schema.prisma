@@ -54,14 +54,31 @@ model Session {
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   authState   AuthState[]
-  webhooks    Webhook[]
+  webhook     Webhook?
   contacts    Contact[]
   chats       Chat[]
   messages    Message[]
   settings    SessionSettings?
   chatwoot    Chatwoot?
+  proxy       Proxy?
 
   @@map("Session")
+}
+
+model Proxy {
+  id        String   @id @default(cuid())
+  sessionId String   @unique
+  enabled   Boolean  @default(false)
+  host      String?
+  port      Int?
+  protocol  String?  @default("http") // http, https, socks4, socks5
+  username  String?
+  password  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("Proxy")
 }
 
 model AuthState {

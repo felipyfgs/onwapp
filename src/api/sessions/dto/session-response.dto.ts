@@ -1,4 +1,41 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { WebhookResponseDto } from './webhook-config.dto';
+import { ProxyResponseDto } from './proxy.dto';
+
+export class ChatwootResponseDto {
+  @ApiProperty({ description: 'ID do Chatwoot' })
+  id: string;
+
+  @ApiProperty({ description: 'ID da sessão' })
+  sessionId: string;
+
+  @ApiPropertyOptional({ description: 'Habilitado' })
+  enabled?: boolean;
+
+  @ApiPropertyOptional({ description: 'ID da conta' })
+  accountId?: string;
+
+  @ApiPropertyOptional({ description: 'URL do Chatwoot' })
+  url?: string;
+
+  @ApiPropertyOptional({ description: 'Nome do inbox' })
+  nameInbox?: string;
+
+  @ApiPropertyOptional({ description: 'Assinar mensagens' })
+  signMsg?: boolean;
+
+  @ApiPropertyOptional({ description: 'Reabrir conversas' })
+  reopenConversation?: boolean;
+
+  @ApiPropertyOptional({ description: 'Conversas pendentes' })
+  conversationPending?: boolean;
+
+  @ApiProperty({ description: 'Data de criação' })
+  createdAt: Date;
+
+  @ApiProperty({ description: 'Data de atualização' })
+  updatedAt: Date;
+}
 
 export class SessionResponseDto {
   @ApiProperty({
@@ -16,23 +53,39 @@ export class SessionResponseDto {
   @ApiProperty({
     description: 'Status da sessão',
     example: 'connected',
-    enum: ['connected', 'disconnected', 'connecting', 'qr'],
+    enum: ['connected', 'disconnected', 'connecting'],
   })
   status: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Código QR para pareamento',
-    required: false,
     example: 'data:image/png;base64,iVBORw0KGgoAAAANS...',
   })
   qrCode?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Número de telefone pareado',
-    required: false,
     example: '+5511999999999',
   })
   phoneNumber?: string;
+
+  @ApiPropertyOptional({
+    description: 'Configuração de webhook',
+    type: WebhookResponseDto,
+  })
+  webhook?: WebhookResponseDto;
+
+  @ApiPropertyOptional({
+    description: 'Configuração do Chatwoot',
+    type: ChatwootResponseDto,
+  })
+  chatwoot?: ChatwootResponseDto;
+
+  @ApiPropertyOptional({
+    description: 'Configuração de proxy',
+    type: ProxyResponseDto,
+  })
+  proxy?: ProxyResponseDto;
 
   @ApiProperty({
     description: 'Data de criação',
