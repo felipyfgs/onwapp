@@ -213,7 +213,12 @@ export class MessagesHandler {
   private async forwardToChatwoot(
     sessionId: string,
     msg: {
-      key: { id: string; remoteJid: string; fromMe?: boolean; participant?: string };
+      key: {
+        id: string;
+        remoteJid: string;
+        fromMe?: boolean;
+        participant?: string;
+      };
       message?: Record<string, unknown>;
       pushName?: string;
     },
@@ -226,6 +231,9 @@ export class MessagesHandler {
       const { key, message, pushName } = msg;
       const { remoteJid, fromMe, participant } = key;
 
+      // Skip outgoing messages (sent by us/Chatwoot) to avoid loop
+      if (fromMe) return;
+
       // Skip status broadcasts
       if (remoteJid === 'status@broadcast') return;
 
@@ -237,6 +245,11 @@ export class MessagesHandler {
         ? remoteJid
         : remoteJid.replace('@s.whatsapp.net', '').split(':')[0];
 
+      // DEBUG: Log incoming message details
+      this.logger.debug(
+        `[${sid}] [CW-FWD] remoteJid="${remoteJid}", phoneNumber="${phoneNumber}", isGroup=${isGroup}, pushName="${pushName}"`,
+      );
+
       // Get or create inbox
       const inbox = await this.chatwootService.getInbox(sessionId);
       if (!inbox) {
@@ -245,8 +258,17 @@ export class MessagesHandler {
       }
 
       // Find or create contact
-      let contact = await this.chatwootService.findContact(sessionId, remoteJid);
+      let contact = await this.chatwootService.findContact(
+        sessionId,
+        remoteJid,
+      );
+      this.logger.debug(
+        `[${sid}] [CW-FWD] findContact result: ${contact ? `id=${contact.id}, identifier=${contact.identifier}` : 'null'}`,
+      );
       if (!contact) {
+        this.logger.debug(
+          `[${sid}] [CW-FWD] Creating contact: phoneNumber="${phoneNumber}", identifier="${remoteJid}", name="${pushName || phoneNumber}"`,
+        );
         contact = await this.chatwootService.createContact(sessionId, {
           phoneNumber,
           inboxId: inbox.id,
@@ -255,6 +277,9 @@ export class MessagesHandler {
           identifier: remoteJid,
         });
         if (!contact) return;
+        this.logger.debug(
+          `[${sid}] [CW-FWD] Contact created: id=${contact.id}, identifier=${contact.identifier}`,
+        );
       }
 
       // Get or create conversation
@@ -265,14 +290,18 @@ export class MessagesHandler {
       if (!conversationId) return;
 
       // Get message content
-      const messageContent = this.chatwootService.getMessageContent(message || null);
+      const messageContent = this.chatwootService.getMessageContent(
+        message || null,
+      );
       if (!messageContent) return;
 
       // Format for groups
       let finalContent = messageContent;
       if (isGroup && config.signMsg) {
         const participantJid = participant || remoteJid;
-        const senderName = pushName || participantJid.replace('@s.whatsapp.net', '').split(':')[0];
+        const senderName =
+          pushName ||
+          participantJid.replace('@s.whatsapp.net', '').split(':')[0];
         finalContent = this.chatwootService.formatMessageContent(
           messageContent,
           true,
@@ -282,15 +311,33 @@ export class MessagesHandler {
       }
 
       // Send to Chatwoot
-      await this.chatwootService.createMessage(sessionId, conversationId, {
-        content: finalContent,
-        messageType: fromMe ? 'outgoing' : 'incoming',
-        sourceId: key.id,
-      });
+      const chatwootMessage = await this.chatwootService.createMessage(
+        sessionId,
+        conversationId,
+        {
+          content: finalContent,
+          messageType: fromMe ? 'outgoing' : 'incoming',
+          sourceId: key.id,
+        },
+      );
 
-      this.logger.debug(`[${sid}] Message forwarded to Chatwoot`);
+      // Update message with Chatwoot tracking data
+      if (chatwootMessage) {
+        await this.persistenceService.updateMessageChatwoot(sessionId, key.id, {
+          chatwootConversationId: conversationId,
+          chatwootMessageId: chatwootMessage.id,
+          chatwootInboxId: inbox.id,
+          chatwootContactId: contact.id,
+        });
+      }
+
+      this.logger.debug(
+        `[${sid}] Message forwarded to Chatwoot (msgId=${chatwootMessage?.id}, convId=${conversationId})`,
+      );
     } catch (error) {
-      this.logger.error(`[${sid}] Chatwoot forward error: ${(error as Error).message}`);
+      this.logger.error(
+        `[${sid}] Chatwoot forward error: ${(error as Error).message}`,
+      );
     }
   }
 }

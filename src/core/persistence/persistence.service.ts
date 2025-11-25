@@ -29,6 +29,11 @@ interface MessageData {
   textContent?: string | null;
   mediaUrl?: string | null;
   metadata: Record<string, any>;
+  // Chatwoot tracking
+  chatwootConversationId?: number | null;
+  chatwootMessageId?: number | null;
+  chatwootInboxId?: number | null;
+  chatwootContactId?: number | null;
 }
 
 @Injectable()
@@ -155,6 +160,11 @@ export class PersistenceService {
           status: messageData.fromMe
             ? MessageStatus.sent
             : MessageStatus.delivered,
+          // Chatwoot tracking
+          chatwootConversationId: messageData.chatwootConversationId,
+          chatwootMessageId: messageData.chatwootMessageId,
+          chatwootInboxId: messageData.chatwootInboxId,
+          chatwootContactId: messageData.chatwootContactId,
         },
       });
 
@@ -223,6 +233,60 @@ export class PersistenceService {
         `Erro ao marcar mensagem como deletada: ${error.message}`,
         error.stack,
       );
+    }
+  }
+
+  async updateMessageChatwoot(
+    sessionId: string,
+    messageId: string,
+    chatwootData: {
+      chatwootConversationId?: number;
+      chatwootMessageId?: number;
+      chatwootInboxId?: number;
+      chatwootContactId?: number;
+    },
+  ): Promise<void> {
+    try {
+      await this.prisma.message.updateMany({
+        where: {
+          sessionId,
+          messageId,
+        },
+        data: chatwootData,
+      });
+
+      this.logger.debug(
+        `Chatwoot data updated for message: ${messageId} -> conv=${chatwootData.chatwootConversationId}, msg=${chatwootData.chatwootMessageId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Erro ao atualizar dados Chatwoot: ${error.message}`,
+        error.stack,
+      );
+    }
+  }
+
+  async findMessageByChatwootId(
+    sessionId: string,
+    chatwootMessageId: number,
+  ): Promise<{ messageId: string; remoteJid: string } | null> {
+    try {
+      const message = await this.prisma.message.findFirst({
+        where: {
+          sessionId,
+          chatwootMessageId,
+        },
+        select: {
+          messageId: true,
+          remoteJid: true,
+        },
+      });
+      return message;
+    } catch (error) {
+      this.logger.error(
+        `Erro ao buscar mensagem por Chatwoot ID: ${error.message}`,
+      );
+      return null;
     }
   }
 

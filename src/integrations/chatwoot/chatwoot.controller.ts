@@ -17,6 +17,7 @@ import { ChatwootDto } from './dto/chatwoot.dto';
 import { ApiKeyGuard } from '../../common/guards/api-key.guard';
 import { Public } from '../../common/decorators/public.decorator';
 import { MessagesService } from '../../api/messages/messages.service';
+import { WhatsAppService } from '../../core/whatsapp/whatsapp.service';
 import axios from 'axios';
 
 interface ChatwootWebhookPayload {
@@ -24,6 +25,7 @@ interface ChatwootWebhookPayload {
   message_type?: string;
   content?: string;
   private?: boolean;
+  source_id?: string;
   conversation?: {
     id: number;
     status?: string;
@@ -64,6 +66,8 @@ export class ChatwootController {
     private readonly chatwootEventHandler: ChatwootEventHandler,
     @Inject(forwardRef(() => MessagesService))
     private readonly messagesService: MessagesService,
+    @Inject(forwardRef(() => WhatsAppService))
+    private readonly whatsappService: WhatsAppService,
   ) {}
 
   @Post('session/:sessionId/chatwoot/set')
@@ -134,7 +138,19 @@ export class ChatwootController {
     @Param('sessionId') sessionId: string,
     @Body() body: ChatwootWebhookPayload,
   ) {
-    this.logger.debug(`Received Chatwoot webhook for session: ${sessionId}`);
+    // DEBUG: Log full payload structure
+    this.logger.debug(
+      `[CW-WEBHOOK] event=${body.event}, type=${body.message_type}, sender=${body.sender?.type}, private=${body.private}, source_id=${body.source_id}`,
+    );
+    this.logger.debug(
+      `[CW-WEBHOOK] conversation.id=${body.conversation?.id}, meta.sender.identifier=${body.conversation?.meta?.sender?.identifier}, meta.sender.phone=${body.conversation?.meta?.sender?.phone_number}`,
+    );
+    this.logger.debug(`[CW-WEBHOOK] content="${body.content?.slice(0, 100)}"`);
+
+    // Only process message_created events
+    if (body.event !== 'message_created') {
+      return { status: 'ignored', reason: `Event ${body.event} not handled` };
+    }
 
     // Ignore private messages and non-outgoing messages
     if (body.private) {
@@ -150,13 +166,52 @@ export class ChatwootController {
       return { status: 'ignored', reason: 'Not from agent' };
     }
 
+    // Ignore messages created via API (to avoid loop)
+    if (body.source_id) {
+      return { status: 'ignored', reason: 'Message from API (has source_id)' };
+    }
+
     // Get chat ID from conversation metadata
     const chatId = this.extractChatId(body);
+    this.logger.debug(`[CW-WEBHOOK] extractChatId result: "${chatId}"`);
     if (!chatId) {
+      this.logger.warn(`[CW-WEBHOOK] Could not extract chatId from payload`);
       return { status: 'error', reason: 'Could not determine chat ID' };
     }
 
-    const remoteJid = this.formatRemoteJid(chatId);
+    let remoteJid = this.formatRemoteJid(chatId);
+    this.logger.debug(
+      `[CW-WEBHOOK] formatRemoteJid: "${chatId}" -> "${remoteJid}"`,
+    );
+
+    // Validate and get correct JID/LID using onWhatsApp (for non-group chats)
+    if (!remoteJid.includes('@g.us')) {
+      try {
+        const socket = this.whatsappService.getSocket(sessionId);
+        if (socket) {
+          const phoneNumber = chatId
+            .replace('@s.whatsapp.net', '')
+            .split(':')[0];
+          const results = await socket.onWhatsApp(phoneNumber);
+          if (results && results.length > 0 && results[0].exists) {
+            // Prefer LID if available, otherwise use JID
+            const validJid = results[0].lid || results[0].jid;
+            this.logger.debug(
+              `[CW-WEBHOOK] onWhatsApp validated: "${phoneNumber}" -> jid="${results[0].jid}", lid="${results[0].lid}", using="${validJid}"`,
+            );
+            remoteJid = validJid;
+          } else {
+            this.logger.warn(
+              `[CW-WEBHOOK] Number not found on WhatsApp: ${phoneNumber}`,
+            );
+          }
+        }
+      } catch (error) {
+        this.logger.error(
+          `[CW-WEBHOOK] onWhatsApp error: ${(error as Error).message}`,
+        );
+      }
+    }
 
     try {
       // Handle attachments first

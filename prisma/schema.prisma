@@ -154,6 +154,12 @@ model Message {
   // JSON mantido mas limpo (sem dados pesados)
   content       Json           // Apenas metadados leves
   
+  // Chatwoot tracking fields
+  chatwootConversationId  Int?     // ID da conversa no Chatwoot
+  chatwootMessageId       Int?     // ID da mensagem no Chatwoot
+  chatwootInboxId         Int?     // ID do inbox no Chatwoot
+  chatwootContactId       Int?     // ID do contato no Chatwoot
+  
   status        MessageStatus @default(pending)
   isDeleted     Boolean       @default(false)
   createdAt     DateTime      @default(now())
@@ -170,6 +176,8 @@ model Message {
   @@index([mediaUrl])                  // Para filtrar mídias
   @@index([messageType])                // Para filtrar tipos
   @@index([timestamp])                  // Para queries por tempo
+  @@index([chatwootConversationId])     // Para buscar msgs por conversa Chatwoot
+  @@index([chatwootMessageId])          // Para buscar msg específica do Chatwoot
   @@map("Message")
 }
 
