@@ -28,6 +28,7 @@ import { SendInteractiveMessageDto } from './dto/send-interactive-message.dto';
 import { EditMessageDto } from './dto/edit-message.dto';
 import { SendLiveLocationMessageDto } from './dto/send-live-location-message.dto';
 import { AudioService } from '../../core/audio/audio.service';
+import { parseMediaBuffer, formatJid } from '../../common/utils';
 
 @Injectable()
 export class MessagesService {
@@ -55,15 +56,6 @@ export class MessagesService {
     }
 
     return socket;
-  }
-
-  private formatJid(phoneNumber: string): string {
-    if (phoneNumber.includes('@')) {
-      return phoneNumber;
-    }
-
-    const cleaned = phoneNumber.replace(/\D/g, '');
-    return `${cleaned}@s.whatsapp.net`;
   }
 
   /**
@@ -98,19 +90,6 @@ export class MessagesService {
     return result;
   }
 
-  private parseMediaUpload(media: string): { url: string } | Buffer {
-    if (media.startsWith('http://') || media.startsWith('https://')) {
-      return { url: media };
-    }
-
-    if (media.startsWith('data:')) {
-      const base64Data = media.split(',')[1];
-      return Buffer.from(base64Data, 'base64');
-    }
-
-    return Buffer.from(media, 'base64');
-  }
-
   private mapToMessageResponseDto(
     message: proto.WebMessageInfo,
   ): MessageResponseDto {
@@ -131,7 +110,7 @@ export class MessagesService {
     dto: SendTextMessageDto,
   ): Promise<MessageResponseDto> {
     const socket = await this.validateSessionConnected(sessionId);
-    const jid = this.formatJid(dto.to);
+    const jid = formatJid(dto.to);
 
     const content: AnyMessageContent = {
       text: dto.text,
@@ -160,10 +139,10 @@ export class MessagesService {
     dto: SendImageMessageDto,
   ): Promise<MessageResponseDto> {
     const socket = await this.validateSessionConnected(sessionId);
-    const jid = this.formatJid(dto.to);
+    const jid = formatJid(dto.to);
 
     const content: AnyMessageContent = {
-      image: this.parseMediaUpload(dto.image),
+      image: parseMediaBuffer(dto.image),
       caption: dto.caption,
       jpegThumbnail: dto.jpegThumbnail,
       mentions: dto.mentions,
@@ -191,10 +170,10 @@ export class MessagesService {
     dto: SendVideoMessageDto,
   ): Promise<MessageResponseDto> {
     const socket = await this.validateSessionConnected(sessionId);
-    const jid = this.formatJid(dto.to);
+    const jid = formatJid(dto.to);
 
     const content: AnyMessageContent = {
-      video: this.parseMediaUpload(dto.video),
+      video: parseMediaBuffer(dto.video),
       caption: dto.caption,
       gifPlayback: dto.gifPlayback,
       jpegThumbnail: dto.jpegThumbnail,
@@ -223,7 +202,7 @@ export class MessagesService {
     dto: SendAudioMessageDto,
   ): Promise<MessageResponseDto> {
     const socket = await this.validateSessionConnected(sessionId);
-    const jid = this.formatJid(dto.to);
+    const jid = formatJid(dto.to);
 
     // Default to encoding=true for PTT (voice notes)
     const shouldEncode = dto.encoding !== false;
@@ -240,7 +219,7 @@ export class MessagesService {
       ptt = true;
     } else {
       // Send as-is without conversion
-      audioData = this.parseMediaUpload(dto.audio);
+      audioData = parseMediaBuffer(dto.audio);
     }
 
     const content: AnyMessageContent = {
@@ -270,10 +249,10 @@ export class MessagesService {
     dto: SendDocumentMessageDto,
   ): Promise<MessageResponseDto> {
     const socket = await this.validateSessionConnected(sessionId);
-    const jid = this.formatJid(dto.to);
+    const jid = formatJid(dto.to);
 
     const content: AnyMessageContent = {
-      document: this.parseMediaUpload(dto.document),
+      document: parseMediaBuffer(dto.document),
       mimetype: dto.mimetype,
       fileName: dto.fileName,
     };
@@ -298,10 +277,10 @@ export class MessagesService {
     dto: SendStickerMessageDto,
   ): Promise<MessageResponseDto> {
     const socket = await this.validateSessionConnected(sessionId);
-    const jid = this.formatJid(dto.to);
+    const jid = formatJid(dto.to);
 
     const content: AnyMessageContent = {
-      sticker: this.parseMediaUpload(dto.sticker),
+      sticker: parseMediaBuffer(dto.sticker),
       isAnimated: dto.isAnimated,
     };
 
@@ -325,7 +304,7 @@ export class MessagesService {
     dto: SendContactMessageDto,
   ): Promise<MessageResponseDto> {
     const socket = await this.validateSessionConnected(sessionId);
-    const jid = this.formatJid(dto.to);
+    const jid = formatJid(dto.to);
 
     const content: AnyMessageContent = {
       contacts: {
@@ -358,7 +337,7 @@ export class MessagesService {
     dto: SendLocationMessageDto,
   ): Promise<MessageResponseDto> {
     const socket = await this.validateSessionConnected(sessionId);
-    const jid = this.formatJid(dto.to);
+    const jid = formatJid(dto.to);
 
     const content: AnyMessageContent = {
       location: {
@@ -391,7 +370,7 @@ export class MessagesService {
     dto: SendReactionMessageDto,
   ): Promise<MessageResponseDto> {
     const socket = await this.validateSessionConnected(sessionId);
-    const jid = this.formatJid(dto.to);
+    const jid = formatJid(dto.to);
 
     const content: AnyMessageContent = {
       react: {
@@ -419,7 +398,7 @@ export class MessagesService {
     dto: SendForwardMessageDto,
   ): Promise<MessageResponseDto> {
     const socket = await this.validateSessionConnected(sessionId);
-    const jid = this.formatJid(dto.to);
+    const jid = formatJid(dto.to);
 
     const content: AnyMessageContent = {
       forward: dto.message,
@@ -468,7 +447,7 @@ export class MessagesService {
     dto: SendButtonsMessageDto,
   ): Promise<MessageResponseDto> {
     const socket = await this.validateSessionConnected(sessionId);
-    const jid = this.formatJid(dto.to);
+    const jid = formatJid(dto.to);
 
     if (dto.buttons.length > 3) {
       throw new BadRequestException('Maximum 3 buttons allowed');
@@ -486,7 +465,7 @@ export class MessagesService {
     };
 
     if (dto.image) {
-      content.image = this.parseMediaUpload(dto.image);
+      content.image = parseMediaBuffer(dto.image);
     }
 
     const options = {
@@ -509,7 +488,7 @@ export class MessagesService {
     dto: SendTemplateMessageDto,
   ): Promise<MessageResponseDto> {
     const socket = await this.validateSessionConnected(sessionId);
-    const jid = this.formatJid(dto.to);
+    const jid = formatJid(dto.to);
 
     const content: any = {
       text: dto.text,
@@ -518,7 +497,7 @@ export class MessagesService {
     };
 
     if (dto.image) {
-      content.image = this.parseMediaUpload(dto.image);
+      content.image = parseMediaBuffer(dto.image);
     }
 
     const options = {
@@ -541,7 +520,7 @@ export class MessagesService {
     dto: SendListMessageDto,
   ): Promise<MessageResponseDto> {
     const socket = await this.validateSessionConnected(sessionId);
-    const jid = this.formatJid(dto.to);
+    const jid = formatJid(dto.to);
 
     if (!dto.buttonText) {
       throw new BadRequestException('buttonText is required');
@@ -583,7 +562,7 @@ export class MessagesService {
     dto: SendPollMessageDto,
   ): Promise<MessageResponseDto> {
     const socket = await this.validateSessionConnected(sessionId);
-    const jid = this.formatJid(dto.to);
+    const jid = formatJid(dto.to);
 
     if (!dto.options || dto.options.length < 2) {
       throw new BadRequestException('At least 2 options are required');
@@ -628,7 +607,7 @@ export class MessagesService {
     dto: SendInteractiveMessageDto,
   ): Promise<MessageResponseDto> {
     const socket = await this.validateSessionConnected(sessionId);
-    const jid = this.formatJid(dto.to);
+    const jid = formatJid(dto.to);
 
     const content: AnyMessageContent = {
       interactiveMessage: dto.interactiveMessage,
@@ -655,7 +634,7 @@ export class MessagesService {
     dto: EditMessageDto,
   ): Promise<MessageResponseDto> {
     const socket = await this.validateSessionConnected(sessionId);
-    const jid = this.formatJid(dto.to);
+    const jid = formatJid(dto.to);
 
     if (!dto.messageKey.fromMe) {
       throw new BadRequestException(
@@ -688,7 +667,7 @@ export class MessagesService {
     dto: SendLiveLocationMessageDto,
   ): Promise<MessageResponseDto> {
     const socket = await this.validateSessionConnected(sessionId);
-    const jid = this.formatJid(dto.to);
+    const jid = formatJid(dto.to);
 
     const content: any = {
       liveLocation: {

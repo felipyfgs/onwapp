@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../../database/database.service';
 import { MessageStatus, Prisma } from '@prisma/client';
+import { WAMessageKey } from '../../common/interfaces';
 
 interface ContactData {
   remoteJid: string;
@@ -16,13 +17,6 @@ interface ChatData {
   archived?: boolean;
   pinned?: boolean;
   muted?: boolean;
-}
-
-interface WAMessageKey {
-  id: string;
-  remoteJid: string;
-  fromMe: boolean;
-  participant?: string;
 }
 
 interface MessageData {

@@ -45,20 +45,3 @@ export function createSilentLogger(): Record<string, unknown> {
   silentLogger.child = () => createSilentLogger();
   return silentLogger;
 }
-
-export function getMediaExtension(message: Record<string, unknown>): string {
-  if (message?.imageMessage) return 'jpg';
-  if (message?.videoMessage) return 'mp4';
-  if (message?.audioMessage) {
-    const audio = message.audioMessage as { ptt?: boolean };
-    return audio.ptt ? 'ogg' : 'mp3';
-  }
-  if (message?.documentMessage) {
-    const doc = message.documentMessage as { fileName?: string };
-    const fileName = doc.fileName || '';
-    const ext = fileName.split('.').pop();
-    return ext || 'bin';
-  }
-  if (message?.stickerMessage) return 'webp';
-  return 'bin';
-}

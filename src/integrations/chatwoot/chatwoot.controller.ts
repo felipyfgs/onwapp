@@ -19,6 +19,7 @@ import { Public } from '../../common/decorators/public.decorator';
 import { MessagesService } from '../../api/messages/messages.service';
 import { WhatsAppService } from '../../core/whatsapp/whatsapp.service';
 import { PersistenceService } from '../../core/persistence/persistence.service';
+import { formatRemoteJid, getMimeType } from '../../common/utils';
 import axios from 'axios';
 
 interface ChatwootWebhookPayload {
@@ -182,7 +183,7 @@ export class ChatwootController {
       return { status: 'error', reason: 'Could not determine chat ID' };
     }
 
-    let remoteJid = this.formatRemoteJid(chatId);
+    let remoteJid = formatRemoteJid(chatId);
 
     // Validate number exists on WhatsApp (for non-group chats)
     // Following Evolution API pattern - always use JID (@s.whatsapp.net), not LID
@@ -335,12 +336,6 @@ export class ChatwootController {
     return null;
   }
 
-  private formatRemoteJid(chatId: string): string {
-    if (chatId.includes('@')) return chatId;
-    if (chatId.includes('-')) return `${chatId}@g.us`;
-    return `${chatId}@s.whatsapp.net`;
-  }
-
   private async sendAttachment(
     sessionId: string,
     remoteJid: string,
@@ -369,7 +364,7 @@ export class ChatwootController {
       const response = await axios.get(data_url, {
         responseType: 'arraybuffer',
       });
-      mediaData = `data:${this.getMimeType(file_type, file_name)};base64,${Buffer.from(response.data).toString('base64')}`;
+      mediaData = `data:${getMimeType(file_type, file_name)};base64,${Buffer.from(response.data).toString('base64')}`;
     } catch (error) {
       this.logger.error(
         `Failed to download attachment: ${(error as Error).message}`,
@@ -405,37 +400,11 @@ export class ChatwootController {
         return await this.messagesService.sendDocumentMessage(sessionId, {
           to: remoteJid,
           document: mediaData,
-          mimetype: this.getMimeType(file_type, file_name),
+          mimetype: getMimeType(file_type, file_name),
           fileName: file_name || 'document',
           quoted,
         });
     }
-  }
-
-  private getMimeType(fileType: string, fileName?: string): string {
-    const ext = fileName?.split('.').pop()?.toLowerCase();
-
-    const mimeTypes: Record<string, string> = {
-      image: 'image/jpeg',
-      video: 'video/mp4',
-      audio: 'audio/mpeg',
-      file: 'application/octet-stream',
-      jpg: 'image/jpeg',
-      jpeg: 'image/jpeg',
-      png: 'image/png',
-      gif: 'image/gif',
-      webp: 'image/webp',
-      mp4: 'video/mp4',
-      mp3: 'audio/mpeg',
-      ogg: 'audio/ogg',
-      pdf: 'application/pdf',
-      doc: 'application/msword',
-      docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    };
-
-    return (
-      mimeTypes[ext || ''] || mimeTypes[fileType] || 'application/octet-stream'
-    );
   }
 
   /**

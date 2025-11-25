@@ -5,7 +5,8 @@ import { ChatwootService } from '../../../integrations/chatwoot/chatwoot.service
 import { WhatsAppService } from '../whatsapp.service';
 import { parseMessageContent } from '../../persistence/utils/message-parser';
 import { MessageStatus } from '@prisma/client';
-import { formatSessionId } from '../utils/helpers';
+import { formatSessionId, createSilentLogger } from '../utils/helpers';
+import { getMediaFilename, isMediaMessage } from '../../../common/utils';
 
 @Injectable()
 export class MessagesHandler {
@@ -492,18 +493,15 @@ export class MessagesHandler {
       }
 
       // Check if this is a media message
-      const isMediaMessage = this.chatwootService.isMediaMessage(
-        message || null,
-      );
+      const hasMedia = isMediaMessage(message || null);
 
       let chatwootMessage: { id: number } | null = null;
 
-      if (isMediaMessage) {
+      if (hasMedia) {
         // Try to download and forward media
         const mediaBuffer = await this.downloadMedia(sessionId, msg, sid);
         if (mediaBuffer) {
-          const extension = this.getMediaExtension(waMessage);
-          const filename = this.getMediaFilename(waMessage, key.id, extension);
+          const filename = getMediaFilename(waMessage, key.id);
 
           chatwootMessage =
             await this.chatwootService.createMessageWithAttachment(
@@ -567,20 +565,6 @@ export class MessagesHandler {
     }
   }
 
-  private createSilentLogger(): Record<string, unknown> {
-    return {
-      level: 'silent',
-      fatal: () => {},
-      error: () => {},
-      warn: () => {},
-      info: () => {},
-      debug: () => {},
-      trace: () => {},
-      silent: () => {},
-      child: () => this.createSilentLogger(),
-    };
-  }
-
   private async downloadMedia(
     sessionId: string,
     msg: {
@@ -598,7 +582,7 @@ export class MessagesHandler {
         'buffer',
         {},
         {
-          logger: this.createSilentLogger() as Parameters<
+          logger: createSilentLogger() as Parameters<
             typeof downloadMediaMessage
           >[3] extends { logger: infer L }
             ? L
@@ -614,39 +598,5 @@ export class MessagesHandler {
       );
       return null;
     }
-  }
-
-  private getMediaExtension(
-    message: Record<string, unknown> | undefined,
-  ): string {
-    if (!message) return 'bin';
-
-    if (message.imageMessage) return 'jpg';
-    if (message.videoMessage) return 'mp4';
-    if (message.audioMessage) {
-      const audio = message.audioMessage as { ptt?: boolean };
-      return audio.ptt ? 'ogg' : 'mp3';
-    }
-    if (message.documentMessage) {
-      const doc = message.documentMessage as { fileName?: string };
-      const fileName = doc.fileName || '';
-      const ext = fileName.split('.').pop();
-      return ext || 'bin';
-    }
-    if (message.stickerMessage) return 'webp';
-
-    return 'bin';
-  }
-
-  private getMediaFilename(
-    message: Record<string, unknown> | undefined,
-    messageId: string,
-    extension: string,
-  ): string {
-    if (message?.documentMessage) {
-      const doc = message.documentMessage as { fileName?: string };
-      if (doc.fileName) return doc.fileName;
-    }
-    return `${messageId}.${extension}`;
   }
 }
