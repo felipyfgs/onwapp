@@ -42,14 +42,11 @@ export class MessageStatusHistoryRepository {
     });
   }
 
-  async findByMessageIdAndStatus(
-    messageId: string,
-    status: MessageStatus,
-  ) {
+  async findByMessageIdAndStatus(messageId: string, status: MessageStatus) {
     return this.prisma.messageStatusHistory.findMany({
-      where: { 
+      where: {
         messageId,
-        status 
+        status,
       },
       orderBy: { timestamp: 'desc' },
     });
@@ -113,7 +110,7 @@ export class MessageStatusHistoryRepository {
       },
     });
 
-    return metrics.map(item => ({
+    return metrics.map((item) => ({
       status: item.status,
       count: item._count.id,
     }));
@@ -131,6 +128,12 @@ export class MessageStatusHistoryRepository {
       where: {
         sessionId,
         isDeleted: false,
+        ...(options?.startDate && {
+          timestamp: { gte: BigInt(options.startDate.getTime()) },
+        }),
+        ...(options?.endDate && {
+          timestamp: { lte: BigInt(options.endDate.getTime()) },
+        }),
       },
       include: {
         statusHistory: {
@@ -142,11 +145,16 @@ export class MessageStatusHistoryRepository {
     // Calcular tempo de entrega médio
     const metrics: DeliveryTimeMetric[] = [];
     for (const message of messagesWithHistory) {
-      const pendingStatus = message.statusHistory.find(h => h.status === 'pending');
-      const deliveredStatus = message.statusHistory.find(h => h.status === 'delivered');
-      
+      const pendingStatus = message.statusHistory.find(
+        (h) => h.status === 'pending',
+      );
+      const deliveredStatus = message.statusHistory.find(
+        (h) => h.status === 'delivered',
+      );
+
       if (pendingStatus && deliveredStatus) {
-        const deliveryTime = Number(deliveredStatus.timestamp) - Number(pendingStatus.timestamp);
+        const deliveryTime =
+          Number(deliveredStatus.timestamp) - Number(pendingStatus.timestamp);
         metrics.push({
           messageId: message.id,
           deliveryTimeMs: deliveryTime,
@@ -157,12 +165,14 @@ export class MessageStatusHistoryRepository {
     return metrics;
   }
 
-  async createBatch(dataArray: Array<{
-    messageId: string;
-    status: MessageStatus;
-    timestamp: bigint;
-    recipientJid?: string;
-  }>) {
+  async createBatch(
+    dataArray: Array<{
+      messageId: string;
+      status: MessageStatus;
+      timestamp: bigint;
+      recipientJid?: string;
+    }>,
+  ) {
     if (dataArray.length === 0) return [];
 
     return this.prisma.$transaction(async (tx) => {
@@ -188,7 +198,7 @@ export class MessageStatusHistoryRepository {
       select: { id: true },
     });
 
-    const messageIds = messages.map(m => m.id);
+    const messageIds = messages.map((m) => m.id);
 
     // Deletar histórico em batch
     return this.prisma.messageStatusHistory.deleteMany({

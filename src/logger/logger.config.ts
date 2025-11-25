@@ -21,22 +21,32 @@ export class LoggerConfig {
   getOptions(): LoggerConfigOptions {
     return {
       level: this.configService.get<string>('LOG_LEVEL', 'info'),
-      format: (this.configService.get<string>('LOG_FORMAT', 'pretty') as LogFormat) || 'pretty',
-      prettyColorize: this.configService.get<string>('LOG_PRETTY_COLORIZE', 'true') === 'true',
-      prettySingleLine: this.configService.get<string>('LOG_PRETTY_SINGLE_LINE', 'true') === 'true',
-      includeTimestamp: this.configService.get<string>('LOG_INCLUDE_TIMESTAMP', 'true') === 'true',
+      format:
+        (this.configService.get<string>('LOG_FORMAT', 'pretty') as LogFormat) ||
+        'pretty',
+      prettyColorize:
+        this.configService.get<string>('LOG_PRETTY_COLORIZE', 'true') ===
+        'true',
+      prettySingleLine:
+        this.configService.get<string>('LOG_PRETTY_SINGLE_LINE', 'true') ===
+        'true',
+      includeTimestamp:
+        this.configService.get<string>('LOG_INCLUDE_TIMESTAMP', 'true') ===
+        'true',
       serviceName: this.configService.get<string>('LOG_SERVICE_NAME', 'zpwoot'),
-      structuredMetadata: this.configService.get<string>('LOG_STRUCTURED_METADATA', 'true') === 'true',
+      structuredMetadata:
+        this.configService.get<string>('LOG_STRUCTURED_METADATA', 'true') ===
+        'true',
     };
   }
 
   createPinoOptions(): LoggerOptions {
     const config = this.getOptions();
-    
+
     const baseOptions: LoggerOptions = {
       level: config.level,
       base: this.createBaseOptions(config),
-      formatters: this.createFormatters(config),
+      formatters: this.createFormatters(),
     };
 
     // Configure transport based on format
@@ -48,7 +58,9 @@ export class LoggerConfig {
     return baseOptions;
   }
 
-  private createBaseOptions(config: LoggerConfigOptions): Record<string, any> | undefined {
+  private createBaseOptions(
+    config: LoggerConfigOptions,
+  ): Record<string, any> | undefined {
     if (!config.structuredMetadata) {
       return undefined;
     }
@@ -67,7 +79,7 @@ export class LoggerConfig {
     return base;
   }
 
-  private createFormatters(config: LoggerConfigOptions): LoggerOptions['formatters'] {
+  private createFormatters(): LoggerOptions['formatters'] {
     return {
       level: (label) => ({ level: label }),
       log: (object) => {
@@ -77,11 +89,16 @@ export class LoggerConfig {
     };
   }
 
-  private createTransport(config: LoggerConfigOptions): TransportTargetOptions | undefined {
+  private createTransport(
+    config: LoggerConfigOptions,
+  ): TransportTargetOptions | undefined {
     const nodeEnv = process.env.NODE_ENV || 'development';
-    
+
     // Force JSON in production unless explicitly overridden
-    const effectiveFormat = nodeEnv === 'production' && config.format === 'pretty' ? 'json' : config.format;
+    const effectiveFormat =
+      nodeEnv === 'production' && config.format === 'pretty'
+        ? 'json'
+        : config.format;
 
     switch (effectiveFormat) {
       case 'json':
@@ -96,7 +113,9 @@ export class LoggerConfig {
             colorize: config.prettyColorize,
             translateTime: config.includeTimestamp ? 'SYS:standard' : false,
             singleLine: config.prettySingleLine,
-            ignore: config.structuredMetadata ? 'pid,hostname' : 'pid,hostname,service,version,environment',
+            ignore: config.structuredMetadata
+              ? 'pid,hostname'
+              : 'pid,hostname,service,version,environment',
             messageFormat: '{msg}',
           },
         };
@@ -109,7 +128,9 @@ export class LoggerConfig {
             colorize: config.prettyColorize && process.stdout.isTTY,
             translateTime: config.includeTimestamp ? 'SYS:standard' : false,
             singleLine: config.prettySingleLine,
-            ignore: config.structuredMetadata ? 'pid,hostname' : 'pid,hostname,service,version,environment',
+            ignore: config.structuredMetadata
+              ? 'pid,hostname'
+              : 'pid,hostname,service,version,environment',
             messageFormat: '{msg}',
           },
         };

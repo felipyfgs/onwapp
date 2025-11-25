@@ -192,7 +192,7 @@ export class MessageRepository extends BaseRepository {
     },
   ): Promise<Message[]> {
     return this.prisma.message.findMany({
-      where: { 
+      where: {
         sessionId,
         isDeleted: false,
       },
@@ -245,7 +245,7 @@ export class MessageRepository extends BaseRepository {
     if (filters.chatId) where.chatId = filters.chatId;
     if (filters.messageType) where.messageType = filters.messageType;
     if (filters.status) where.status = filters.status;
-    
+
     if (filters.textSearch) {
       where.textContent = {
         contains: filters.textSearch,
@@ -390,7 +390,9 @@ export class MessageRepository extends BaseRepository {
   }
 
   // Otimização: contagem usando índices
-  async getCountByStatus(sessionId: string): Promise<Record<MessageStatus, number>> {
+  async getCountByStatus(
+    sessionId: string,
+  ): Promise<Record<MessageStatus, number>> {
     const counts = await this.prisma.message.groupBy({
       by: ['status'],
       where: {
@@ -402,16 +404,22 @@ export class MessageRepository extends BaseRepository {
       },
     });
 
-    return counts.reduce((acc, item) => {
-      acc[item.status as MessageStatus] = item._count.id;
-      return acc;
-    }, {} as Record<MessageStatus, number>);
+    return counts.reduce(
+      (acc, item) => {
+        acc[item.status] = item._count.id;
+        return acc;
+      },
+      {} as Record<MessageStatus, number>,
+    );
   }
 
-  async getMetrics(sessionId: string, options?: {
-    startDate?: Date;
-    endDate?: Date;
-  }): Promise<{
+  async getMetrics(
+    sessionId: string,
+    options?: {
+      startDate?: Date;
+      endDate?: Date;
+    },
+  ): Promise<{
     totalMessages: number;
     messagesWithMedia: number;
     totalFileSize: bigint;
@@ -445,18 +453,22 @@ export class MessageRepository extends BaseRepository {
       }),
     ]);
 
-    const statusDistribution = statusStats.reduce((acc, item) => {
-      acc[item.status as MessageStatus] = item._count.id;
-      return acc;
-    }, {} as Record<MessageStatus, number>);
+    const statusDistribution = statusStats.reduce(
+      (acc, item) => {
+        acc[item.status] = item._count.id;
+        return acc;
+      },
+      {} as Record<MessageStatus, number>,
+    );
 
     return {
       totalMessages: total,
       messagesWithMedia: mediaStats._count.id,
       totalFileSize: mediaStats._sum.fileLength || BigInt(0),
-      averageFileSize: mediaStats._count.id > 0 
-        ? Number(mediaStats._sum.fileLength) / mediaStats._count.id 
-        : 0,
+      averageFileSize:
+        mediaStats._count.id > 0
+          ? Number(mediaStats._sum.fileLength) / mediaStats._count.id
+          : 0,
       statusDistribution,
     };
   }
