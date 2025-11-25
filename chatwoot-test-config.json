@@ -1,0 +1,33 @@
+{
+  "session": {
+    "id": "0266f21d-4981-40df-8460-f699627dfa31",
+    "name": "Minha Sessão WhatsApp",
+    "status": "connected",
+    "phoneNumber": "559981769536"
+  },
+  "chatwoot": {
+    "enabled": true,
+    "url": "https://chat.yourdomain.com",
+    "accountId": "1",
+    "token": "3fRWpPFSHd3k8PkyuwdZ4PLK",
+    "nameInbox": "WhatsApp Zpwoot",
+    "signMsg": true,
+    "signDelimiter": "\n",
+    "reopenConversation": true,
+    "conversationPending": false,
+    "mergeBrazilContacts": true,
+    "importContacts": false,
+    "importMessages": false,
+    "daysLimitImportMessages": 3
+  },
+  "endpoints": {
+    "setChatwoot": "POST /session/{sessionId}/chatwoot/set",
+    "findChatwoot": "GET /session/{sessionId}/chatwoot/find",
+    "zpwootWebhookReceiver": "POST /chatwoot/receive/{sessionId}",
+    "chatwootWebhook": "POST /chatwoot/webhook/{sessionId}"
+  },
+  "notes": {
+    "autoInbox": "A rota /chatwoot/set agora cria automaticamente o inbox no Chatwoot",
+    "webhookUrl": "O webhook URL do Chatwoot será configurado automaticamente no inbox"
+  }
+}

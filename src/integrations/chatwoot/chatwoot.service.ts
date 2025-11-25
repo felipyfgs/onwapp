@@ -74,9 +74,25 @@ export class ChatwootService {
       this.configService.get<string>('SERVER_URL') ||
       `http://localhost:${this.configService.get<number>('PORT') || 3000}`;
 
+    const webhookUrl = `${serverUrl}/chatwoot/webhook/${sessionId}`;
+
+    // Auto-create inbox if enabled
+    if (dto.enabled && dto.nameInbox) {
+      try {
+        const inbox = await this.getOrCreateInbox(sessionId, webhookUrl);
+        if (inbox) {
+          this.logger.log(`Inbox "${inbox.name}" ready (id: ${inbox.id})`);
+        }
+      } catch (error) {
+        this.logger.error(
+          `Failed to create inbox: ${(error as Error).message}`,
+        );
+      }
+    }
+
     return {
       ...result,
-      webhookUrl: `${serverUrl}/chatwoot/webhook/${sessionId}`,
+      webhookUrl,
     };
   }
 
@@ -118,7 +134,49 @@ export class ChatwootService {
         inboxes.payload.find((inbox) => inbox.name === config.nameInbox) || null
       );
     } catch (error) {
-      this.logger.error(`Error getting inbox: ${error.message}`);
+      this.logger.error(`Error getting inbox: ${(error as Error).message}`);
+      return null;
+    }
+  }
+
+  async getOrCreateInbox(
+    sessionId: string,
+    webhookUrl: string,
+  ): Promise<ChatwootInbox | null> {
+    const config = await this.getConfig(sessionId);
+    if (!config) return null;
+
+    const client = this.getClient(config);
+    if (!client) return null;
+
+    try {
+      // First, try to find existing inbox
+      const inboxes = await client.listInboxes();
+      let inbox = inboxes.payload.find(
+        (inbox) => inbox.name === config.nameInbox,
+      );
+
+      if (inbox) {
+        // Update webhook URL if needed
+        if (inbox.webhook_url !== webhookUrl) {
+          inbox = await client.updateInbox(inbox.id, {
+            webhook_url: webhookUrl,
+          });
+          this.logger.log(`Inbox webhook URL updated: ${webhookUrl}`);
+        }
+        return inbox;
+      }
+
+      // Create new inbox
+      this.logger.log(`Creating new inbox: ${config.nameInbox}`);
+      inbox = await client.createApiInbox({
+        name: config.nameInbox || `WhatsApp ${sessionId.slice(0, 8)}`,
+        webhook_url: webhookUrl,
+      });
+
+      return inbox;
+    } catch (error) {
+      this.logger.error(`Error creating inbox: ${(error as Error).message}`);
       return null;
     }
   }

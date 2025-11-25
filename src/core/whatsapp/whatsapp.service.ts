@@ -1,32 +1,19 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
-import makeWASocket, { DisconnectReason, WASocket, downloadMediaMessage } from 'whaileys';
-import { Boom } from '@hapi/boom';
+import makeWASocket, { WASocket } from 'whaileys';
 import { DatabaseService } from '../../database/database.service';
 import { AuthStateRepository } from '../../database/repositories/auth-state.repository';
 import { SessionRepository } from '../../database/repositories/session.repository';
 import { SocketManager } from './managers/socket.manager';
-import * as qrcode from 'qrcode-terminal';
 import { useAuthState } from './auth-state';
 import { WebhooksService } from '../../integrations/webhooks/webhooks.service';
-import { ChatwootService } from '../../integrations/chatwoot/chatwoot.service';
-import { PersistenceService } from '../persistence/persistence.service';
-import { HistorySyncService } from '../persistence/history-sync.service';
-import { SettingsService } from '../../api/settings/settings.service';
-import { parseMessageContent } from '../persistence/utils/message-parser';
-import { MessageStatus } from '@prisma/client';
-
-interface SessionData {
-  qrCode?: string;
-  isNewLogin: boolean;
-  logoutAttempts: number;
-}
-
-const RECONNECT_DELAYS = {
-  DEFAULT: 3000,
-  RESTART_REQUIRED: 10000,
-} as const;
-
-const MAX_LOGOUT_ATTEMPTS = 2;
+import {
+  ConnectionHandler,
+  MessagesHandler,
+  ChatsHandler,
+  HistoryHandler,
+} from './handlers';
+import { SessionData, QRCodeRef } from './whatsapp.types';
+import { formatSessionId, createSilentLogger } from './utils/helpers';
 
 @Injectable()
 export class WhatsAppService {
@@ -39,94 +26,12 @@ export class WhatsAppService {
     private readonly authStateRepository: AuthStateRepository,
     private readonly sessionRepository: SessionRepository,
     @Inject(forwardRef(() => WebhooksService))
-    private webhooksService: WebhooksService,
-    @Inject(forwardRef(() => PersistenceService))
-    private persistenceService: PersistenceService,
-    @Inject(forwardRef(() => HistorySyncService))
-    private historySyncService: HistorySyncService,
-    @Inject(forwardRef(() => SettingsService))
-    private settingsService: SettingsService,
+    private readonly webhooksService: WebhooksService,
+    private readonly connectionHandler: ConnectionHandler,
+    private readonly messagesHandler: MessagesHandler,
+    private readonly chatsHandler: ChatsHandler,
+    private readonly historyHandler: HistoryHandler,
   ) {}
-
-  private formatSessionId(sessionId: string): string {
-    return sessionId.slice(0, 8);
-  }
-
-  private createSilentLogger() {
-    return {
-      level: 'silent',
-      fatal: () => {},
-      error: () => {},
-      warn: () => {},
-      info: () => {},
-      debug: () => {},
-      trace: () => {},
-      silent: () => {},
-      child: () => this.createSilentLogger(),
-    };
-  }
-
-  private extractPhoneNumber(socket: WASocket): string | null {
-    return socket.user?.id ? socket.user.id.split(':')[0] : null;
-  }
-
-  private shouldReconnectSession(
-    statusCode: DisconnectReason,
-    logoutAttempts: number,
-  ): boolean {
-    const isLoggedOut = statusCode === DisconnectReason.loggedOut;
-    const isRestartRequired = statusCode === DisconnectReason.restartRequired;
-    const isBadSession = statusCode === DisconnectReason.badSession;
-
-    return (
-      !isLoggedOut ||
-      logoutAttempts < MAX_LOGOUT_ATTEMPTS ||
-      isRestartRequired ||
-      isBadSession
-    );
-  }
-
-  private getReconnectDelay(statusCode: DisconnectReason): number {
-    return statusCode === DisconnectReason.restartRequired
-      ? RECONNECT_DELAYS.RESTART_REQUIRED
-      : RECONNECT_DELAYS.DEFAULT;
-  }
-
-  private async updateSessionStatus(
-    sessionId: string,
-    data: any,
-  ): Promise<void> {
-    try {
-      await this.sessionRepository.update(sessionId, data);
-    } catch (error) {
-      this.logger.error(
-        `[${sessionId}] Operation: updateSessionStatus | Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        error,
-      );
-    }
-  }
-
-  private async clearSessionCredentials(sessionId: string): Promise<void> {
-    try {
-      await this.authStateRepository.deleteBySession(sessionId);
-    } catch (error) {
-      this.logger.error(
-        `[${sessionId}] Operation: clearSessionCredentials | Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        error,
-      );
-    }
-  }
-
-  private scheduleReconnect(sessionId: string, delay: number): void {
-    setTimeout(() => {
-      this.createSocket(sessionId).catch((err) =>
-        this.logger.error(
-          `[${sessionId}] Operation: scheduleReconnect | Error: ${err instanceof Error ? err.message : 'Unknown error'}`,
-          err,
-        ),
-      );
-    }, delay);
-  }
 
   async reconnectActiveSessions(): Promise<void> {
     const activeSessions = await this.sessionRepository.findAllConnected();
@@ -146,436 +51,15 @@ export class WhatsAppService {
     }
   }
 
-  private async handleQRCode(sessionId: string, qr: string): Promise<void> {
-    const sessionDataEntry = this.sessionData.get(sessionId);
-    if (sessionDataEntry) {
-      sessionDataEntry.qrCode = qr;
-    }
-    const sid = this.formatSessionId(sessionId);
-    this.logger.log(`[${sid}] QR gerado`);
-    qrcode.generate(qr, { small: true });
-    await this.updateSessionStatus(sessionId, {
-      qrCode: qr,
-      status: 'connecting',
-    });
-  }
-
-  private async handleConnectionOpen(
-    sessionId: string,
-    socket: WASocket,
-  ): Promise<void> {
-    const sessionDataEntry = this.sessionData.get(sessionId);
-    if (sessionDataEntry) {
-      sessionDataEntry.logoutAttempts = 0;
-      sessionDataEntry.isNewLogin = false;
-    }
-
-    const phoneNumber = this.extractPhoneNumber(socket);
-    const sid = this.formatSessionId(sessionId);
-    this.logger.log(
-      `[${sid}] ✓ Conectado${phoneNumber ? ` | Tel: +${phoneNumber}` : ''}`,
-    );
-
-    await this.updateSessionStatus(sessionId, {
-      status: 'connected',
-      qrCode: null,
-      phoneNumber,
-    });
-  }
-
-  private async handleConnectionClose(
-    sessionId: string,
-    statusCode: DisconnectReason,
-  ): Promise<void> {
-    const isLoggedOut = statusCode === DisconnectReason.loggedOut;
-    const isRestartRequired = statusCode === DisconnectReason.restartRequired;
-
-    const sessionDataEntry = this.sessionData.get(sessionId);
-    const currentLogoutAttempts = (sessionDataEntry?.logoutAttempts ?? 0) + 1;
-    const shouldReconnect = this.shouldReconnectSession(
-      statusCode,
-      currentLogoutAttempts,
-    );
-
-    const sid = this.formatSessionId(sessionId);
-    this.logger.log(
-      `[${sid}] ✗ Desconectado | Code: ${statusCode} | Retry: ${shouldReconnect ? `✓ (${currentLogoutAttempts})` : '✗'}`,
-    );
-
-    this.socketManager.deleteSocket(sessionId);
-    this.sessionData.delete(sessionId);
-
-    if (
-      isLoggedOut &&
-      !sessionDataEntry?.isNewLogin &&
-      currentLogoutAttempts >= MAX_LOGOUT_ATTEMPTS
-    ) {
-      this.logger.warn(
-        `[${sid}] Sessão invalidada (${currentLogoutAttempts} tentativas) | Limpando credenciais`,
+  private scheduleReconnect(sessionId: string, delay: number): void {
+    setTimeout(() => {
+      this.createSocket(sessionId).catch((err) =>
+        this.logger.error(
+          `[${sessionId}] Operation: scheduleReconnect | Error: ${err instanceof Error ? err.message : 'Unknown error'}`,
+          err,
+        ),
       );
-      await this.clearSessionCredentials(sessionId);
-      await this.updateSessionStatus(sessionId, { status: 'disconnected' });
-    } else if (isLoggedOut || isRestartRequired) {
-      await this.updateSessionStatus(sessionId, { status: 'connecting' });
-    } else {
-      await this.updateSessionStatus(sessionId, { status: 'disconnected' });
-    }
-
-    if (shouldReconnect) {
-      const delay = this.getReconnectDelay(statusCode);
-      this.scheduleReconnect(sessionId, delay);
-    }
-  }
-
-  private handleCredsUpdate(
-    sessionId: string,
-    saveCreds: () => Promise<void>,
-  ): void {
-    saveCreds().catch((err) => {
-      const sid = this.formatSessionId(sessionId);
-      this.logger.error(
-        `[${sid}] Falha ao salvar credenciais: ${err instanceof Error ? err.message : 'Erro desconhecido'}`,
-      );
-    });
-  }
-
-  private getConnectionUpdateHandler(
-    sessionId: string,
-    socket: WASocket,
-    saveCreds: () => Promise<void>,
-    currentQRRef: { value?: string },
-  ) {
-    return async (update: any) => {
-      const { connection, lastDisconnect, qr } = update;
-
-      if (qr) {
-        currentQRRef.value = qr;
-        await this.handleQRCode(sessionId, qr);
-      }
-
-      if (connection === 'open') {
-        await this.handleConnectionOpen(sessionId, socket);
-      } else if (connection === 'connecting') {
-        await this.updateSessionStatus(sessionId, { status: 'connecting' });
-      } else if (connection === 'close') {
-        const statusCode = (lastDisconnect?.error as Boom)?.output
-          ?.statusCode as DisconnectReason;
-        await this.handleConnectionClose(sessionId, statusCode);
-      }
-    };
-  }
-
-  private registerMainEventListeners(
-    sessionId: string,
-    socket: WASocket,
-  ): void {
-    const sid = this.formatSessionId(sessionId);
-
-    socket.ev.on('messaging-history.set' as any, (payload: any) => {
-      void (async () => {
-        this.logger.log(`[${sid}] 📨 messaging-history.set`, {
-          event: 'messaging-history.set',
-          chatsCount: payload.chats?.length || 0,
-          contactsCount: payload.contacts?.length || 0,
-          messagesCount: payload.messages?.length || 0,
-          isLatest: payload.isLatest,
-          progress: payload.progress,
-        });
-
-        try {
-          let settings;
-          try {
-            settings = await this.settingsService.getSettings(sessionId);
-          } catch {
-            settings = {};
-          }
-
-          const shouldSync = settings?.syncFullHistory !== false;
-
-          if (shouldSync) {
-            await this.historySyncService.processHistorySync(
-              sessionId,
-              payload,
-            );
-          } else {
-            this.logger.debug(
-              `[${sid}] Sincronização de histórico desabilitada (syncFullHistory: false)`,
-            );
-          }
-        } catch (error) {
-          this.logger.error(
-            `[${sid}] Erro ao processar messaging-history.set: ${error.message}`,
-          );
-        }
-      })();
-    });
-
-    socket.ev.on('messages.upsert' as any, (payload: any) => {
-      void (async () => {
-        this.logger.log(`[${sid}] 📨 messages.upsert`, {
-          event: 'messages.upsert',
-          payload,
-        });
-
-        try {
-          const { messages } = payload;
-
-          for (const msg of messages) {
-            if (!msg.key || !msg.key.id || !msg.key.remoteJid) continue;
-
-            const parsedContent = parseMessageContent(msg);
-
-            await this.persistenceService.createMessage(sessionId, {
-              remoteJid: msg.key.remoteJid,
-              messageId: msg.key.id,
-              fromMe: msg.key.fromMe || false,
-              senderJid: msg.key.participant || msg.key.remoteJid,
-              senderName: msg.pushName,
-              timestamp: msg.messageTimestamp || Date.now(),
-              messageType: parsedContent.messageType,
-              textContent: parsedContent.textContent,
-              mediaUrl: parsedContent.mediaUrl,
-              metadata: parsedContent.metadata,
-            });
-
-            if (msg.pushName && msg.key.remoteJid) {
-              await this.persistenceService.createOrUpdateContact(sessionId, {
-                remoteJid: msg.key.remoteJid,
-                name: msg.pushName,
-              });
-            }
-          }
-        } catch (error) {
-          this.logger.error(
-            `[${sid}] Erro ao persistir messages.upsert: ${error.message}`,
-          );
-        }
-      })();
-    });
-
-    socket.ev.on('messages.update' as any, (payload: any) => {
-      void (async () => {
-        this.logger.log(`[${sid}] 📨 messages.update`, {
-          event: 'messages.update',
-          payload,
-        });
-
-        try {
-          for (const update of payload) {
-            if (!update.key || !update.key.id) continue;
-
-            let status: MessageStatus | undefined;
-
-            if (update.update?.status !== undefined) {
-              const statusMap: Record<number, MessageStatus> = {
-                0: MessageStatus.pending,
-                1: MessageStatus.sent,
-                2: MessageStatus.delivered,
-                3: MessageStatus.read,
-                4: MessageStatus.failed,
-              };
-              status = statusMap[update.update.status];
-            }
-
-            if (status) {
-              await this.persistenceService.updateMessageStatus(
-                sessionId,
-                update.key.id,
-                status,
-              );
-            }
-          }
-        } catch (error) {
-          this.logger.error(
-            `[${sid}] Erro ao persistir messages.update: ${error.message}`,
-          );
-        }
-      })();
-    });
-
-    socket.ev.on('messages.delete' as any, (payload: any) => {
-      void (async () => {
-        this.logger.log(`[${sid}] 📨 messages.delete`, {
-          event: 'messages.delete',
-          payload,
-        });
-
-        try {
-          const { keys } = payload;
-          for (const key of keys) {
-            if (key.id) {
-              await this.persistenceService.markMessageAsDeleted(
-                sessionId,
-                key.id,
-              );
-            }
-          }
-        } catch (error) {
-          this.logger.error(
-            `[${sid}] Erro ao persistir messages.delete: ${error.message}`,
-          );
-        }
-      })();
-    });
-
-    socket.ev.on('message-receipt.update' as any, (payload: any) => {
-      void (async () => {
-        this.logger.log(`[${sid}] 📨 message-receipt.update`, {
-          event: 'message-receipt.update',
-          payload,
-        });
-
-        try {
-          for (const receipt of payload) {
-            if (!receipt.key || !receipt.key.id) continue;
-
-            let status: MessageStatus | undefined;
-
-            if (receipt.receipt?.receiptTimestamp) {
-              status = receipt.receipt.readTimestamp
-                ? MessageStatus.read
-                : MessageStatus.delivered;
-            }
-
-            if (status) {
-              await this.persistenceService.updateMessageStatus(
-                sessionId,
-                receipt.key.id,
-                status,
-              );
-            }
-          }
-        } catch (error) {
-          this.logger.error(
-            `[${sid}] Erro ao persistir message-receipt.update: ${error.message}`,
-          );
-        }
-      })();
-    });
-
-    socket.ev.on('chats.upsert' as any, (payload: any) => {
-      void (async () => {
-        this.logger.log(`[${sid}] 📨 chats.upsert`, {
-          event: 'chats.upsert',
-          payload,
-        });
-
-        try {
-          for (const chat of payload) {
-            await this.persistenceService.createOrUpdateChat(sessionId, {
-              remoteJid: chat.id,
-              name: chat.name,
-              unreadCount: chat.unreadCount,
-              lastMessageTimestamp: chat.conversationTimestamp,
-              archived: chat.archived,
-              pinned: chat.pinned,
-              muted: chat.mute?.endTimestamp ? true : false,
-            });
-          }
-        } catch (error) {
-          this.logger.error(
-            `[${sid}] Erro ao persistir chats.upsert: ${error.message}`,
-          );
-        }
-      })();
-    });
-
-    socket.ev.on('chats.update' as any, (payload: any) => {
-      void (async () => {
-        this.logger.log(`[${sid}] 📨 chats.update`, {
-          event: 'chats.update',
-          payload,
-        });
-
-        try {
-          for (const chat of payload) {
-            const updateData: any = { remoteJid: chat.id };
-
-            if (chat.name !== undefined) updateData.name = chat.name;
-            if (chat.unreadCount !== undefined)
-              updateData.unreadCount = chat.unreadCount;
-            if (chat.conversationTimestamp !== undefined) {
-              updateData.lastMessageTimestamp = chat.conversationTimestamp;
-            }
-            if (chat.archived !== undefined)
-              updateData.archived = chat.archived;
-            if (chat.pinned !== undefined) updateData.pinned = chat.pinned;
-            if (chat.mute !== undefined) {
-              updateData.muted = chat.mute?.endTimestamp ? true : false;
-            }
-
-            await this.persistenceService.createOrUpdateChat(
-              sessionId,
-              updateData,
-            );
-          }
-        } catch (error) {
-          this.logger.error(
-            `[${sid}] Erro ao persistir chats.update: ${error.message}`,
-          );
-        }
-      })();
-    });
-
-    socket.ev.on('contacts.upsert' as any, (payload: any) => {
-      void (async () => {
-        this.logger.log(`[${sid}] 📨 contacts.upsert`, {
-          event: 'contacts.upsert',
-          payload,
-        });
-
-        try {
-          for (const contact of payload) {
-            await this.persistenceService.createOrUpdateContact(sessionId, {
-              remoteJid: contact.id,
-              name: contact.notify || contact.name,
-              profilePicUrl: contact.imgUrl,
-            });
-          }
-        } catch (error) {
-          this.logger.error(
-            `[${sid}] Erro ao persistir contacts.upsert: ${error.message}`,
-          );
-        }
-      })();
-    });
-
-    socket.ev.on('contacts.update' as any, (payload: any) => {
-      void (async () => {
-        this.logger.log(`[${sid}] 📨 contacts.update`, {
-          event: 'contacts.update',
-          payload,
-        });
-
-        try {
-          for (const contact of payload) {
-            await this.persistenceService.createOrUpdateContact(sessionId, {
-              remoteJid: contact.id,
-              name: contact.notify || contact.name,
-              profilePicUrl: contact.imgUrl,
-            });
-          }
-        } catch (error) {
-          this.logger.error(
-            `[${sid}] Erro ao persistir contacts.update: ${error.message}`,
-          );
-        }
-      })();
-    });
-
-    const otherEvents = [
-      'presence.update',
-      'chats.delete',
-      'groups.upsert',
-      'groups.update',
-      'call',
-    ];
-
-    otherEvents.forEach((event) => {
-      socket.ev.on(event as any, (payload: any) => {
-        this.logger.log(`[${sid}] 📨 ${event}`, { event, payload });
-      });
-    });
+    }, delay);
   }
 
   private async registerWebhookListeners(
@@ -584,14 +68,14 @@ export class WhatsAppService {
   ): Promise<void> {
     try {
       const webhook = await this.webhooksService.findBySessionId(sessionId);
-      const sid = this.formatSessionId(sessionId);
+      const sid = formatSessionId(sessionId);
 
       if (!webhook || !webhook.enabled || webhook.events.length === 0) {
         return;
       }
 
       webhook.events.forEach((event) => {
-        socket.ev.on(event as any, (payload: any) => {
+        socket.ev.on(event as never, (payload: unknown) => {
           void this.webhooksService.trigger(sessionId, event, payload);
         });
       });
@@ -613,37 +97,53 @@ export class WhatsAppService {
       await this.authStateRepository.findBySessionAndType(sessionId, 'creds');
     const isNewLogin = !hasExistingCreds || hasExistingCreds.length === 0;
 
-    const sid = this.formatSessionId(sessionId);
+    const sid = formatSessionId(sessionId);
     this.logger.log(
       `[${sid}] Criando socket${isNewLogin ? ' | Novo login' : ' | Reconexão'}`,
     );
 
     const { state, saveCreds } = await useAuthState(sessionId, this.prisma);
-    const currentQRRef = { value: undefined as string | undefined };
+    const currentQRRef: QRCodeRef = { value: undefined };
 
     const socket = makeWASocket({
       auth: state,
       printQRInTerminal: false,
-      logger: this.createSilentLogger() as any,
+      logger: createSilentLogger() as unknown as Parameters<
+        typeof makeWASocket
+      >[0]['logger'],
     });
 
-    socket.ev.on('connection.update', (update: any) => {
-      void this.getConnectionUpdateHandler(
+    // Connection events
+    socket.ev.on('connection.update', (update: unknown) => {
+      void this.connectionHandler.createConnectionUpdateHandler(
         sessionId,
         socket,
         saveCreds,
         currentQRRef,
-      )(update);
+        this.sessionData,
+        (sid, delay) => this.scheduleReconnect(sid, delay),
+      )(
+        update as {
+          connection?: string;
+          lastDisconnect?: { error: Error };
+          qr?: string;
+        },
+      );
     });
 
     socket.ev.on('creds.update', () => {
-      void this.handleCredsUpdate(sessionId, saveCreds);
+      this.connectionHandler.handleCredsUpdate(sessionId, saveCreds);
     });
 
-    this.registerMainEventListeners(sessionId, socket);
+    // Register all event handlers
+    this.messagesHandler.registerMessageListeners(sessionId, socket);
+    this.chatsHandler.registerChatListeners(sessionId, socket);
+    this.historyHandler.registerHistoryListeners(sessionId, socket);
 
+    // Register webhook listeners
     void this.registerWebhookListeners(sessionId, socket);
 
+    // Store socket and session data
     this.socketManager.createSocket(sessionId, socket);
     this.sessionData.set(sessionId, {
       qrCode: currentQRRef.value,

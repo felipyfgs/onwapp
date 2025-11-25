@@ -1,6 +1,12 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { WhatsAppService } from './whatsapp.service';
 import { SocketManager } from './managers/socket.manager';
+import {
+  ConnectionHandler,
+  MessagesHandler,
+  ChatsHandler,
+  HistoryHandler,
+} from './handlers';
 import { WebhooksModule } from '../../integrations/webhooks/webhooks.module';
 import { ChatwootModule } from '../../integrations/chatwoot/chatwoot.module';
 import { PersistenceModule } from '../persistence/persistence.module';
@@ -13,7 +19,14 @@ import { SettingsModule } from '../../api/settings/settings.module';
     forwardRef(() => PersistenceModule),
     forwardRef(() => SettingsModule),
   ],
-  providers: [WhatsAppService, SocketManager],
+  providers: [
+    WhatsAppService,
+    SocketManager,
+    ConnectionHandler,
+    MessagesHandler,
+    ChatsHandler,
+    HistoryHandler,
+  ],
   exports: [WhatsAppService, SocketManager],
 })
 export class WhatsAppModule {}
