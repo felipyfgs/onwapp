@@ -5,7 +5,7 @@ import * as qrcode from 'qrcode-terminal';
 import { SessionRepository } from '../../../database/repositories/session.repository';
 import { AuthStateRepository } from '../../../database/repositories/auth-state.repository';
 import { SocketManager } from '../managers/socket.manager';
-import { SessionData, QRCodeRef, MAX_LOGOUT_ATTEMPTS } from '../whatsapp.types';
+import { SessionData, QRCodeRef } from '../whatsapp.types';
 import {
   formatSessionId,
   extractPhoneNumber,
@@ -61,7 +61,7 @@ export class ConnectionHandler {
     await this.updateSessionStatus(sessionId, {
       status: 'connected',
       qrCode: null,
-      phoneNumber,
+      phone: phoneNumber,
     });
   }
 
@@ -89,17 +89,21 @@ export class ConnectionHandler {
     this.socketManager.deleteSocket(sessionId);
     sessionData.delete(sessionId);
 
-    if (
-      isLoggedOut &&
-      !sessionDataEntry?.isNewLogin &&
-      currentLogoutAttempts >= MAX_LOGOUT_ATTEMPTS
-    ) {
+    // 401 = loggedOut - sessão foi invalidada (logout do celular, etc)
+    if (isLoggedOut) {
       this.logger.warn(
-        `[${sid}] Sessão invalidada (${currentLogoutAttempts} tentativas) | Limpando credenciais`,
+        `[${sid}] Sessão invalidada (loggedOut) | Limpando credenciais`,
       );
       await this.clearSessionCredentials(sessionId);
-      await this.updateSessionStatus(sessionId, { status: 'disconnected' });
-    } else if (isLoggedOut || isRestartRequired) {
+      await this.updateSessionStatus(sessionId, {
+        status: 'disconnected',
+        qrCode: null,
+      });
+      return; // Não reconectar
+    }
+
+    // 515 = restartRequired - apenas reiniciar conexão
+    if (isRestartRequired) {
       await this.updateSessionStatus(sessionId, { status: 'connecting' });
     } else {
       await this.updateSessionStatus(sessionId, { status: 'disconnected' });

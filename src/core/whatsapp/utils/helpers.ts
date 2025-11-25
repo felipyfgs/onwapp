@@ -13,16 +13,31 @@ export function shouldReconnectSession(
   statusCode: DisconnectReason,
   logoutAttempts: number,
 ): boolean {
-  const isLoggedOut = statusCode === DisconnectReason.loggedOut;
-  const isRestartRequired = statusCode === DisconnectReason.restartRequired;
+  // 401 = loggedOut - sessão invalidada, NÃO reconectar
+  if (statusCode === DisconnectReason.loggedOut) {
+    return false;
+  }
+
+  // 405 = methodNotAllowed - versão inválida, NÃO reconectar
+  if (statusCode === 405) {
+    return false;
+  }
+
+  // 408 = timedOut - reconectar
+  // 411 = multideviceMismatch - reconectar
+  // 428 = connectionClosed - reconectar
+  // 440 = connectionReplaced - reconectar
+  // 500 = badSession - reconectar com limite
+  // 515 = restartRequired - reconectar
+
   const isBadSession = statusCode === DisconnectReason.badSession;
 
-  return (
-    !isLoggedOut ||
-    logoutAttempts < MAX_LOGOUT_ATTEMPTS ||
-    isRestartRequired ||
-    isBadSession
-  );
+  // Para badSession, limitar tentativas
+  if (isBadSession && logoutAttempts >= MAX_LOGOUT_ATTEMPTS) {
+    return false;
+  }
+
+  return true;
 }
 
 export function getReconnectDelay(statusCode: DisconnectReason): number {

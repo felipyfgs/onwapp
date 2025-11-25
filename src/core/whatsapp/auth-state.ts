@@ -34,8 +34,6 @@ export async function useAuthState(
   saveCreds: () => Promise<void>;
   clearState: () => Promise<void>;
 }> {
-  let creds: AuthenticationCreds;
-
   const loadCreds = async (): Promise<AuthenticationCreds> => {
     try {
       const credsRecord = await prisma.authState.findUnique({
@@ -61,49 +59,7 @@ export async function useAuthState(
     return initAuthCreds();
   };
 
-  const saveCreds = async (): Promise<void> => {
-    try {
-      await prisma.authState.upsert({
-        where: {
-          sessionId_keyType_keyId: {
-            sessionId,
-            keyType: 'creds',
-            keyId: 'creds',
-          },
-        },
-        create: {
-          sessionId,
-          keyType: 'creds',
-          keyId: 'creds',
-          keyData: serializeToJson(creds),
-        },
-        update: {
-          keyData: serializeToJson(creds),
-        },
-      });
-    } catch (error) {
-      const sid = formatSessionId(sessionId);
-      logger.error(
-        `[${sid}] Falha ao salvar credenciais: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
-      );
-    }
-  };
-
-  const clearState = async (): Promise<void> => {
-    try {
-      await prisma.authState.deleteMany({
-        where: { sessionId },
-      });
-      creds = initAuthCreds();
-    } catch (error) {
-      const sid = formatSessionId(sessionId);
-      logger.error(
-        `[${sid}] Falha ao limpar estado: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
-      );
-    }
-  };
-
-  creds = await loadCreds();
+  const creds = await loadCreds();
 
   const state: AuthenticationState = {
     creds,
@@ -175,6 +131,55 @@ export async function useAuthState(
         }
       },
     },
+  };
+
+  // saveCreds deve usar state.creds para capturar atualizações do Baileys
+  const saveCreds = async (): Promise<void> => {
+    try {
+      const sid = formatSessionId(sessionId);
+      logger.debug(`[${sid}] Salvando credenciais...`);
+
+      await prisma.authState.upsert({
+        where: {
+          sessionId_keyType_keyId: {
+            sessionId,
+            keyType: 'creds',
+            keyId: 'creds',
+          },
+        },
+        create: {
+          sessionId,
+          keyType: 'creds',
+          keyId: 'creds',
+          keyData: serializeToJson(state.creds),
+        },
+        update: {
+          keyData: serializeToJson(state.creds),
+        },
+      });
+
+      logger.debug(`[${sid}] Credenciais salvas com sucesso`);
+    } catch (error) {
+      const sid = formatSessionId(sessionId);
+      logger.error(
+        `[${sid}] Falha ao salvar credenciais: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+      );
+    }
+  };
+
+  const clearState = async (): Promise<void> => {
+    try {
+      await prisma.authState.deleteMany({
+        where: { sessionId },
+      });
+      // Reinicializa as credenciais no objeto state
+      Object.assign(state.creds, initAuthCreds());
+    } catch (error) {
+      const sid = formatSessionId(sessionId);
+      logger.error(
+        `[${sid}] Falha ao limpar estado: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+      );
+    }
   };
 
   return {
