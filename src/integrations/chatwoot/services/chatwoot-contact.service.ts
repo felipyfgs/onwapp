@@ -1,5 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { ChatwootConfigService } from './chatwoot-config.service';
+import { ChatwootImportService } from './chatwoot-import.service';
 import {
   ChatwootContact,
   FilterPayloadItem,
@@ -16,7 +17,11 @@ import { getBrazilPhoneVariations } from '../../../common/utils';
 export class ChatwootContactService {
   private readonly logger = new Logger(ChatwootContactService.name);
 
-  constructor(private readonly configService: ChatwootConfigService) {}
+  constructor(
+    private readonly configService: ChatwootConfigService,
+    @Inject(forwardRef(() => ChatwootImportService))
+    private readonly importService: ChatwootImportService,
+  ) {}
 
   /**
    * Find a contact by phone number or group JID
@@ -95,10 +100,24 @@ export class ChatwootContactService {
       }
 
       const result = await client.createContact(contactData);
-      this.logger.debug(
-        `Created contact for session ${sessionId}: ${result.payload?.contact?.id}`,
-      );
-      return result.payload?.contact || null;
+      const contact = result.payload?.contact;
+
+      if (contact?.id) {
+        this.logger.debug(
+          `Created contact for session ${sessionId}: ${contact.id}`,
+        );
+
+        // Add label/tag to contact (requires PostgreSQL access)
+        this.importService
+          .addLabelToContact(sessionId, contact.id)
+          .catch((err) =>
+            this.logger.debug(
+              `Could not add label to contact: ${(err as Error).message}`,
+            ),
+          );
+      }
+
+      return contact || null;
     } catch (error) {
       this.logger.error(
         `Error creating contact for session ${sessionId}: ${(error as Error).message}`,

@@ -17,7 +17,7 @@ import {
   ApiParam,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { ChatwootConfigService } from './services';
+import { ChatwootConfigService, ChatwootImportService } from './services';
 import { ChatwootEventHandler } from './chatwoot-event.handler';
 import { ChatwootWebhookHandler } from './handlers';
 import {
@@ -49,6 +49,7 @@ export class ChatwootController {
     private readonly configService: ChatwootConfigService,
     private readonly eventHandler: ChatwootEventHandler,
     private readonly webhookHandler: ChatwootWebhookHandler,
+    private readonly importService: ChatwootImportService,
   ) {}
 
   /**
@@ -248,5 +249,123 @@ export class ChatwootController {
           });
         });
     });
+  }
+
+  // ==================== Import/Sync Endpoints (PostgreSQL) ====================
+
+  /**
+   * Check if PostgreSQL import features are available
+   */
+  @Get('sessions/:sessionId/chatwoot/import/status')
+  @UseGuards(ApiKeyGuard)
+  @ApiBearerAuth('apikey')
+  @ApiOperation({
+    summary: 'Check import availability',
+    description:
+      'Check if PostgreSQL import features are available for this session',
+  })
+  @ApiParam({ name: 'sessionId', description: 'Session ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Import status',
+  })
+  async checkImportStatus(
+    @Param('sessionId') sessionId: string,
+  ): Promise<{ available: boolean; message: string }> {
+    const available = await this.importService.isImportAvailable(sessionId);
+    return {
+      available,
+      message: available
+        ? 'PostgreSQL import features are available'
+        : 'PostgreSQL URL not configured or connection failed',
+    };
+  }
+
+  /**
+   * Sync lost messages from the last 6 hours
+   */
+  @Post('sessions/:sessionId/chatwoot/sync')
+  @UseGuards(ApiKeyGuard)
+  @ApiBearerAuth('apikey')
+  @ApiOperation({
+    summary: 'Sync lost messages',
+    description:
+      'Sync messages from the last 6 hours that may have been lost between WhatsApp and Chatwoot',
+  })
+  @ApiParam({ name: 'sessionId', description: 'Session ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Sync result',
+  })
+  async syncLostMessages(
+    @Param('sessionId') sessionId: string,
+  ): Promise<{ success: boolean; imported: number; errors: string[] }> {
+    this.logger.log('Syncing lost messages', {
+      event: 'chatwoot.sync.start',
+      sessionId,
+    });
+    return this.importService.syncLostMessages(sessionId);
+  }
+
+  /**
+   * Import contacts to Chatwoot
+   */
+  @Post('sessions/:sessionId/chatwoot/import/contacts')
+  @UseGuards(ApiKeyGuard)
+  @ApiBearerAuth('apikey')
+  @ApiOperation({
+    summary: 'Import contacts',
+    description:
+      'Import WhatsApp contacts to Chatwoot via direct database access',
+  })
+  @ApiParam({ name: 'sessionId', description: 'Session ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Import result',
+  })
+  async importContacts(
+    @Param('sessionId') sessionId: string,
+  ): Promise<{ success: boolean; imported: number; errors: string[] }> {
+    this.logger.log('Importing contacts to Chatwoot', {
+      event: 'chatwoot.import.contacts.start',
+      sessionId,
+    });
+    return this.importService.importHistoryContacts(sessionId);
+  }
+
+  /**
+   * Import messages to Chatwoot
+   */
+  @Post('sessions/:sessionId/chatwoot/import/messages')
+  @UseGuards(ApiKeyGuard)
+  @ApiBearerAuth('apikey')
+  @ApiOperation({
+    summary: 'Import messages',
+    description:
+      'Import WhatsApp message history to Chatwoot via direct database access',
+  })
+  @ApiParam({ name: 'sessionId', description: 'Session ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Import result',
+  })
+  async importMessages(
+    @Param('sessionId') sessionId: string,
+  ): Promise<{ success: boolean; imported: number; errors: string[] }> {
+    this.logger.log('Importing messages to Chatwoot', {
+      event: 'chatwoot.import.messages.start',
+      sessionId,
+    });
+
+    const inbox = await this.configService.getInbox(sessionId);
+    if (!inbox) {
+      return {
+        success: false,
+        imported: 0,
+        errors: ['Inbox not found'],
+      };
+    }
+
+    return this.importService.importHistoryMessages(sessionId, inbox);
   }
 }

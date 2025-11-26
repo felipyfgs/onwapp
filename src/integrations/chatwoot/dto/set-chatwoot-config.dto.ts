@@ -171,4 +171,13 @@ export class SetChatwootConfigDto {
   @IsString({ each: true })
   @IsOptional()
   ignoreJids?: string[];
+
+  @ApiPropertyOptional({
+    description:
+      'PostgreSQL connection URL for direct Chatwoot database access (enables labels, import, sync)',
+    example: 'postgresql://postgres:password@localhost:5432/chatwoot',
+  })
+  @IsString()
+  @IsOptional()
+  postgresUrl?: string;
 }

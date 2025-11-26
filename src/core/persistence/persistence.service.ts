@@ -848,4 +848,45 @@ export class PersistenceService {
       });
     }
   }
+
+  /**
+   * Get messages after a certain timestamp (for sync lost messages)
+   */
+  async getMessagesAfterTimestamp(sessionId: string, timestampSeconds: number) {
+    try {
+      return await this.prisma.message.findMany({
+        where: {
+          sessionId,
+          timestamp: { gte: BigInt(timestampSeconds) },
+          deleted: false,
+        },
+        orderBy: { timestamp: 'asc' },
+      });
+    } catch (error) {
+      this.logger.error('Erro ao buscar mensagens após timestamp', {
+        event: 'persistence.messages.after-timestamp.failure',
+        sessionId,
+        error: (error as Error).message,
+      });
+      return [];
+    }
+  }
+
+  /**
+   * Get all contacts for a session (for import)
+   */
+  async getAllContacts(sessionId: string) {
+    try {
+      return await this.prisma.contact.findMany({
+        where: { sessionId },
+      });
+    } catch (error) {
+      this.logger.error('Erro ao buscar contatos', {
+        event: 'persistence.contacts.all.failure',
+        sessionId,
+        error: (error as Error).message,
+      });
+      return [];
+    }
+  }
 }

@@ -10,8 +10,10 @@ import {
   ChatwootConversationService,
   ChatwootMessageService,
   ChatwootBotService,
+  ChatwootImportService,
 } from './services';
 import { ChatwootWebhookHandler } from './handlers';
+import { ChatwootPostgresClient } from './libs/chatwoot-postgres.client';
 import { MessagesModule } from '../../api/messages/messages.module';
 import { WhatsAppModule } from '../../core/whatsapp/whatsapp.module';
 import { PersistenceModule } from '../../core/persistence/persistence.module';
@@ -43,12 +45,16 @@ import { PersistenceModule } from '../../core/persistence/persistence.module';
     // Client factory
     ChatwootClientFactory,
 
+    // PostgreSQL client for direct Chatwoot database access
+    ChatwootPostgresClient,
+
     // Focused services
     ChatwootConfigService,
     ChatwootContactService,
     ChatwootConversationService,
     ChatwootMessageService,
     ChatwootBotService,
+    ChatwootImportService,
 
     // Event handlers
     ChatwootEventHandler,
@@ -66,6 +72,8 @@ import { PersistenceModule } from '../../core/persistence/persistence.module';
     ChatwootConversationService,
     ChatwootMessageService,
     ChatwootBotService,
+    ChatwootImportService,
+    ChatwootPostgresClient,
   ],
 })
 export class ChatwootModule {}
