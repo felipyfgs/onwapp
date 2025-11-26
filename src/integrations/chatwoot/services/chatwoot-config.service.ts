@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Chatwoot } from '@prisma/client';
 import { ChatwootRepository } from '../chatwoot.repository';

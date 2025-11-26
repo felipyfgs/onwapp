@@ -131,6 +131,7 @@ export interface ZpwootWebhookPayload {
 export interface ZpwootEventData {
   messages?: ZpwootMessageEvent[];
   type?: string;
+  [key: string]: unknown; // Allow additional properties
 }
 
 /**

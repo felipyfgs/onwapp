@@ -193,16 +193,24 @@ export class ChatwootWebhookHandler {
         quoted,
       );
 
-      // Link WA message ID to Chatwoot message ID for reply tracking
+      // Persist outgoing message with Chatwoot tracking for reply support
       if (result?.id && payload.id && payload.conversation?.id) {
-        await this.persistenceService.updateMessageChatwoot(
-          sessionId,
-          result.id,
-          {
-            cwMessageId: payload.id,
-            cwConversationId: payload.conversation.id,
+        await this.persistenceService.createMessage(sessionId, {
+          remoteJid,
+          messageId: result.id,
+          fromMe: true,
+          timestamp: Date.now(),
+          messageType: attachment.file_type || 'file',
+          textContent: payload.content,
+          metadata: { fileName: attachment.file_name },
+          cwMessageId: payload.id,
+          cwConversationId: payload.conversation.id,
+          waMessageKey: {
+            id: result.id,
+            remoteJid,
+            fromMe: true,
           },
-        );
+        });
       }
     }
 
@@ -224,11 +232,23 @@ export class ChatwootWebhookHandler {
       quoted,
     });
 
-    // Link WA message ID to Chatwoot message ID for reply tracking
+    // Persist outgoing message with Chatwoot tracking for reply support
     if (result?.id && payload.id && payload.conversation?.id) {
-      await this.persistenceService.updateMessageChatwoot(sessionId, result.id, {
+      await this.persistenceService.createMessage(sessionId, {
+        remoteJid,
+        messageId: result.id,
+        fromMe: true,
+        timestamp: Date.now(),
+        messageType: 'conversation',
+        textContent: payload.content,
+        metadata: {},
         cwMessageId: payload.id,
         cwConversationId: payload.conversation.id,
+        waMessageKey: {
+          id: result.id,
+          remoteJid,
+          fromMe: true,
+        },
       });
     }
   }

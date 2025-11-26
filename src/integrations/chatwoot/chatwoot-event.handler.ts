@@ -151,10 +151,11 @@ export class ChatwootEventHandler {
     }
 
     // Get or create conversation
-    const conversationId = await this.conversationService.getOrCreateConversation(
-      sessionId,
-      { contactId: contact.id, inboxId: inbox.id },
-    );
+    const conversationId =
+      await this.conversationService.getOrCreateConversation(sessionId, {
+        contactId: contact.id,
+        inboxId: inbox.id,
+      });
 
     if (!conversationId) {
       this.logger.error(`[${sessionId}] Failed to create conversation`);

@@ -87,18 +87,21 @@ export class ChatwootMessageService {
             }
           : undefined;
 
-      const message = await client.createMessageWithAttachments(conversationId, {
-        content: params.content,
-        message_type: params.messageType,
-        source_id: params.sourceId,
-        attachments: [
-          {
-            content: params.file.buffer,
-            filename: params.file.filename,
-          },
-        ],
-        content_attributes: contentAttributes,
-      });
+      const message = await client.createMessageWithAttachments(
+        conversationId,
+        {
+          content: params.content,
+          message_type: params.messageType,
+          source_id: params.sourceId,
+          attachments: [
+            {
+              content: params.file.buffer,
+              filename: params.file.filename,
+            },
+          ],
+          content_attributes: contentAttributes,
+        },
+      );
 
       this.logger.debug(
         `Created message with attachment ${message.id} in conversation ${conversationId} for session ${sessionId}`,
@@ -161,10 +164,8 @@ export class ChatwootMessageService {
 
     if (message.conversation) return message.conversation;
     if (message.extendedTextMessage) return message.extendedTextMessage.text;
-    if (message.imageMessage)
-      return message.imageMessage.caption || '[Image]';
-    if (message.videoMessage)
-      return message.videoMessage.caption || '[Video]';
+    if (message.imageMessage) return message.imageMessage.caption || '[Image]';
+    if (message.videoMessage) return message.videoMessage.caption || '[Video]';
     if (message.audioMessage) return '[Audio]';
     if (message.documentMessage)
       return message.documentMessage.fileName || '[Document]';

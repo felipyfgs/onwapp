@@ -130,6 +130,36 @@ export class ChatwootWebhookAttachmentDto {
 }
 
 /**
+ * Account reference in webhook payload
+ */
+export class ChatwootWebhookAccountDto {
+  @ApiPropertyOptional()
+  @IsNumber()
+  @IsOptional()
+  id?: number;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  name?: string;
+}
+
+/**
+ * Inbox reference in webhook payload
+ */
+export class ChatwootWebhookInboxDto {
+  @ApiPropertyOptional()
+  @IsNumber()
+  @IsOptional()
+  id?: number;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  name?: string;
+}
+
+/**
  * Full Chatwoot webhook payload DTO
  */
 export class ChatwootWebhookPayloadDto {
@@ -213,6 +243,51 @@ export class ChatwootWebhookPayloadDto {
   @IsArray()
   @IsOptional()
   attachments?: ChatwootWebhookAttachmentDto[];
+
+  @ApiPropertyOptional({
+    description: 'Account reference',
+    type: ChatwootWebhookAccountDto,
+  })
+  @ValidateNested()
+  @Type(() => ChatwootWebhookAccountDto)
+  @IsOptional()
+  account?: ChatwootWebhookAccountDto;
+
+  @ApiPropertyOptional({
+    description: 'Inbox reference',
+    type: ChatwootWebhookInboxDto,
+  })
+  @ValidateNested()
+  @Type(() => ChatwootWebhookInboxDto)
+  @IsOptional()
+  inbox?: ChatwootWebhookInboxDto;
+
+  @ApiPropertyOptional({
+    description: 'Additional attributes',
+  })
+  @IsObject()
+  @IsOptional()
+  additional_attributes?: Record<string, unknown>;
+
+  @ApiPropertyOptional({
+    description: 'Content type',
+  })
+  @IsString()
+  @IsOptional()
+  content_type?: string;
+
+  @ApiPropertyOptional({
+    description: 'Created timestamp',
+  })
+  @IsOptional()
+  created_at?: number | string;
+
+  @ApiPropertyOptional({
+    description: 'Message status',
+  })
+  @IsString()
+  @IsOptional()
+  status?: string;
 }
 
 /**
@@ -243,5 +318,9 @@ export class ZpwootEventPayloadDto {
     description: 'Event data',
   })
   @IsObject()
-  data: Record<string, unknown>;
+  data: {
+    messages?: unknown[];
+    type?: string;
+    [key: string]: unknown;
+  };
 }

@@ -384,7 +384,9 @@ export class ChatwootClientFactory {
     const cacheKey = `${sessionId}:${config.accountId}`;
 
     if (!this.clients.has(cacheKey)) {
-      this.logger.debug(`Creating new Chatwoot client for session: ${sessionId}`);
+      this.logger.debug(
+        `Creating new Chatwoot client for session: ${sessionId}`,
+      );
       this.clients.set(cacheKey, new ChatwootClient(config));
     }
 

@@ -83,9 +83,18 @@ export class MessagesHandler {
       }>) {
         if (!msg.key || !msg.key.id || !msg.key.remoteJid) continue;
 
+        // Check if this is a protocol message (edit or delete)
+        const protocolMessage = msg.message?.protocolMessage;
+        
+        // Handle message deletion (REVOKE = type 0)
+        if (protocolMessage?.type === 0 && protocolMessage?.key?.id) {
+          await this.handleMessageRevoke(sessionId, protocolMessage, sid);
+          continue;
+        }
+
         // Check if this is an edited message (protocolMessage with editedMessage)
         const editedMessage =
-          msg.message?.protocolMessage ||
+          protocolMessage ||
           msg.message?.editedMessage?.message?.protocolMessage;
 
         if (editedMessage?.editedMessage) {
@@ -244,6 +253,83 @@ export class MessagesHandler {
   }
 
   /**
+   * Handle message revoke (delete) from WhatsApp client
+   */
+  private async handleMessageRevoke(
+    sessionId: string,
+    protocolMessage: {
+      key?: { id: string; remoteJid: string; fromMe?: boolean };
+      type?: number;
+    },
+    sid: string,
+  ): Promise<void> {
+    const revokedMessageId = protocolMessage.key?.id;
+    if (!revokedMessageId) return;
+
+    this.logger.log(`[${sid}] 🗑️ Message revoked by sender: ${revokedMessageId}`);
+
+    try {
+      // Find the original message to get Chatwoot IDs
+      const originalMessage = await this.persistenceService.findMessageByWAId(
+        sessionId,
+        revokedMessageId,
+      );
+
+      // Mark as deleted in our database
+      await this.persistenceService.markMessageAsDeleted(sessionId, revokedMessageId);
+
+      // Forward delete notification to Chatwoot if message was synced
+      if (originalMessage?.cwMessageId && originalMessage?.cwConversationId) {
+        await this.forwardRevokeNotificationToChatwoot(
+          sessionId,
+          originalMessage.cwConversationId,
+          originalMessage.cwMessageId,
+          revokedMessageId,
+          sid,
+        );
+      } else {
+        this.logger.debug(`[${sid}] [CW] Revoked message not synced to Chatwoot: ${revokedMessageId}`);
+      }
+    } catch (error) {
+      this.logger.error(
+        `[${sid}] Error handling message revoke: ${(error as Error).message}`,
+      );
+    }
+  }
+
+  /**
+   * Forward message revoke notification to Chatwoot (WhatsApp style)
+   */
+  private async forwardRevokeNotificationToChatwoot(
+    sessionId: string,
+    conversationId: number,
+    cwMessageId: number,
+    waMessageId: string,
+    sid: string,
+  ): Promise<void> {
+    try {
+      const config = await this.chatwootService.getConfig(sessionId);
+      if (!config?.enabled) return;
+
+      // Create a notification message in WhatsApp style
+      const revokeNotification = '⊘ _Mensagem apagada_';
+
+      await this.chatwootService.createMessage(sessionId, conversationId, {
+        content: revokeNotification,
+        messageType: 'incoming',
+        sourceId: `revoked-${waMessageId}`,
+        inReplyTo: cwMessageId,
+      });
+
+      this.logger.log(`[${sid}] [CW] Revoke notification sent for message ${cwMessageId}`);
+    } catch (error) {
+      this.logger.error(
+        `[${sid}] [CW] Error sending revoke notification: ${(error as Error).message}`,
+      );
+    }
+  }
+
+  /**
    * Handle edited message from WhatsApp
    * Following Evolution API pattern: create a new message in Chatwoot with edited content
    * and reference the original message via stanzaId
@@ -376,13 +462,19 @@ export class MessagesHandler {
   ): Promise<void> {
     try {
       const config = await this.chatwootService.getConfig(sessionId);
-      if (!config?.enabled) return;
+      if (!config?.enabled) {
+        this.logger.debug(`[${sid}] [CW] Chatwoot not enabled or config not found`);
+        return;
+      }
 
       const { key, message, pushName } = msg;
       const { remoteJid, fromMe, participant } = key;
 
       // Skip outgoing messages (sent by us/Chatwoot) to avoid loop
-      if (fromMe) return;
+      if (fromMe) {
+        this.logger.debug(`[${sid}] [CW] Skipping outgoing message (fromMe=true)`);
+        return;
+      }
 
       // Skip status broadcasts
       if (remoteJid === 'status@broadcast') return;
@@ -448,7 +540,8 @@ export class MessagesHandler {
 
       // Extract stanzaId for reply support
       const waMessage = message as {
-        extendedTextMessage?: { contextInfo?: { stanzaId?: string } };
+        conversation?: string;
+        extendedTextMessage?: { contextInfo?: { stanzaId?: string; quotedMessage?: unknown } };
         imageMessage?: { contextInfo?: { stanzaId?: string } };
         videoMessage?: { contextInfo?: { stanzaId?: string } };
         audioMessage?: { contextInfo?: { stanzaId?: string; ptt?: boolean } };
@@ -466,7 +559,19 @@ export class MessagesHandler {
         waMessage?.videoMessage?.contextInfo?.stanzaId ||
         waMessage?.audioMessage?.contextInfo?.stanzaId ||
         waMessage?.documentMessage?.contextInfo?.stanzaId ||
+        waMessage?.stickerMessage?.contextInfo?.stanzaId ||
         waMessage?.contextInfo?.stanzaId;
+
+      // Debug: log reply detection
+      if (stanzaId) {
+        this.logger.debug(`[${sid}] [CW] Message is reply to: ${stanzaId}`);
+      } else if (waMessage?.extendedTextMessage?.contextInfo || waMessage?.contextInfo) {
+        this.logger.debug(`[${sid}] [CW] Message has contextInfo but no stanzaId`, {
+          hasExtendedTextContext: !!waMessage?.extendedTextMessage?.contextInfo,
+          hasRootContext: !!waMessage?.contextInfo,
+          messageKeys: Object.keys(message || {}),
+        });
+      }
 
       let inReplyTo: number | undefined;
       let inReplyToExternalId: string | undefined;

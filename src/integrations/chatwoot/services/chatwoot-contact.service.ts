@@ -144,7 +144,10 @@ export class ChatwootContactService {
     params: CreateContactParams,
   ): Promise<ChatwootContact | null> {
     // First try to find existing contact
-    const existingContact = await this.findContact(sessionId, params.identifier || params.phoneNumber);
+    const existingContact = await this.findContact(
+      sessionId,
+      params.identifier || params.phoneNumber,
+    );
     if (existingContact) {
       return existingContact;
     }
