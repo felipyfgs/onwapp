@@ -43,8 +43,19 @@ export class ChatwootConversationService {
       );
 
       if (existingConversation) {
-        // Update status to pending if configured
-        if (config.pending && existingConversation.status !== 'open') {
+        // Reopen resolved conversation if configured
+        if (config.reopen && existingConversation.status === 'resolved') {
+          const newStatus = config.pending ? 'pending' : 'open';
+          await client.toggleConversationStatus(
+            existingConversation.id,
+            newStatus,
+          );
+          this.logger.debug(
+            `Reopened conversation ${existingConversation.id} to ${newStatus} for session ${sessionId}`,
+          );
+        }
+        // Update status to pending if configured and conversation is not open
+        else if (config.pending && existingConversation.status !== 'open') {
           await client.toggleConversationStatus(
             existingConversation.id,
             'pending',

@@ -88,7 +88,7 @@ export class SessionsService {
           inbox: chatwoot.inbox || name, // Use session name as default inbox name
           signMsg: chatwoot.signMsg,
           signDelimiter: chatwoot.signDelimiter,
-          reopen: chatwoot.reopen,
+          reopenConversation: chatwoot.reopenConversation,
           pending: chatwoot.pending,
           mergeBrazil: chatwoot.mergeBrazil,
           importContacts: chatwoot.importContacts,
@@ -297,7 +297,7 @@ export class SessionsService {
             url: session.chatwoot.url ?? undefined,
             inbox: session.chatwoot.inbox ?? undefined,
             signMsg: session.chatwoot.signMsg,
-            reopen: session.chatwoot.reopen,
+            reopenConversation: session.chatwoot.reopen,
             pending: session.chatwoot.pending,
             createdAt: session.chatwoot.createdAt,
             updatedAt: session.chatwoot.updatedAt,

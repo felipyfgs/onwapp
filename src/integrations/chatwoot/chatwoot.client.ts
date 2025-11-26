@@ -348,6 +348,8 @@ export class ChatwootClient {
   }): Promise<ChatwootInbox> {
     const { data } = await this.client.post<ChatwootInbox>('/inboxes', {
       name: params.name,
+      lock_to_single_conversation: true, // Only one conversation per contact
+      allow_messages_after_resolved: true, // Allow messages to reopen conversations
       channel: {
         type: 'api',
         webhook_url: params.webhook_url,

@@ -83,14 +83,14 @@ export class SetChatwootConfigDto {
   signDelimiter?: string;
 
   @ApiPropertyOptional({
-    description: 'Reopen resolved conversations on new messages',
-    example: false,
-    default: false,
+    description: 'Reopen resolved conversations on new messages (single conversation per contact)',
+    example: true,
+    default: true,
   })
   @IsBoolean()
   @IsOptional()
   @Transform(({ value }) => value === true || value === 'true')
-  reopen?: boolean;
+  reopenConversation?: boolean;
 
   @ApiPropertyOptional({
     description: 'Create new conversations as pending',

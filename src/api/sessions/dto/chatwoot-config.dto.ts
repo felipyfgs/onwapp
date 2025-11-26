@@ -57,12 +57,12 @@ export class ChatwootConfigDto {
   signDelimiter?: string;
 
   @ApiPropertyOptional({
-    description: 'Reabrir conversas resolvidas',
-    default: false,
+    description: 'Reabrir conversas resolvidas (conversa única por contato)',
+    default: true,
   })
   @IsBoolean()
   @IsOptional()
-  reopen?: boolean;
+  reopenConversation?: boolean;
 
   @ApiPropertyOptional({
     description: 'Criar conversas como pendentes',
