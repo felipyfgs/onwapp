@@ -138,28 +138,86 @@ export function getMediaFilename(
 
 /**
  * Get MIME type from file type or extension
+ * Comprehensive mapping for common file types
  */
 export function getMimeType(fileType: string, fileName?: string): string {
   const ext = fileName?.split('.').pop()?.toLowerCase();
 
   const mimeTypes: Record<string, string> = {
+    // Chatwoot file types
     image: 'image/jpeg',
     video: 'video/mp4',
     audio: 'audio/mpeg',
     file: 'application/octet-stream',
+
+    // Images
     jpg: 'image/jpeg',
     jpeg: 'image/jpeg',
     png: 'image/png',
     gif: 'image/gif',
     webp: 'image/webp',
+    svg: 'image/svg+xml',
+    bmp: 'image/bmp',
+    ico: 'image/x-icon',
+    tiff: 'image/tiff',
+    tif: 'image/tiff',
+
+    // Videos
     mp4: 'video/mp4',
+    avi: 'video/x-msvideo',
+    mov: 'video/quicktime',
+    wmv: 'video/x-ms-wmv',
+    flv: 'video/x-flv',
+    mkv: 'video/x-matroska',
+    webm: 'video/webm',
+    '3gp': 'video/3gpp',
+
+    // Audio
     mp3: 'audio/mpeg',
     ogg: 'audio/ogg',
+    wav: 'audio/wav',
+    aac: 'audio/aac',
+    flac: 'audio/flac',
+    m4a: 'audio/mp4',
+    wma: 'audio/x-ms-wma',
+    opus: 'audio/opus',
+
+    // Documents
     pdf: 'application/pdf',
     doc: 'application/msword',
     docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    xls: 'application/vnd.ms-excel',
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ppt: 'application/vnd.ms-powerpoint',
+    pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    odt: 'application/vnd.oasis.opendocument.text',
+    ods: 'application/vnd.oasis.opendocument.spreadsheet',
+    odp: 'application/vnd.oasis.opendocument.presentation',
+    rtf: 'application/rtf',
+    txt: 'text/plain',
+    csv: 'text/csv',
+
+    // Archives
+    zip: 'application/zip',
+    rar: 'application/vnd.rar',
+    '7z': 'application/x-7z-compressed',
+    tar: 'application/x-tar',
+    gz: 'application/gzip',
+
+    // Code/Data
+    json: 'application/json',
+    xml: 'application/xml',
+    html: 'text/html',
+    css: 'text/css',
+    js: 'application/javascript',
+
+    // Other
+    apk: 'application/vnd.android.package-archive',
+    exe: 'application/x-msdownload',
+    dmg: 'application/x-apple-diskimage',
   };
 
+  // Try extension first, then file type
   return (
     mimeTypes[ext || ''] || mimeTypes[fileType] || 'application/octet-stream'
   );

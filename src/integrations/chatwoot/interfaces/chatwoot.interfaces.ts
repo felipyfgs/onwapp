@@ -85,6 +85,8 @@ export interface ChatwootWebhookPayload {
   conversation?: ChatwootWebhookConversation;
   sender?: ChatwootWebhookSender;
   attachments?: ChatwootWebhookAttachment[];
+  inbox?: { id?: number; name?: string };
+  account?: { id?: number; name?: string };
 }
 
 export interface ChatwootContentAttributes {

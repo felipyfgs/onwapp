@@ -29,6 +29,7 @@ interface MessageData {
   messageType: string;
   textContent?: string | null;
   mediaUrl?: string | null;
+  fileLength?: bigint | number | string | null;
   metadata: Record<string, any>;
   // Chatwoot tracking
   cwConversationId?: number | null;
@@ -141,9 +142,15 @@ export class PersistenceService {
         throw new Error('Falha ao obter ou criar chat');
       }
 
+      // Extract fileLength from metadata if not provided directly
+      const fileLength =
+        messageData.fileLength ?? messageData.metadata?.fileLength ?? null;
+
+      // Build content JSON with all metadata
       const content = {
         textContent: messageData.textContent,
         mediaUrl: messageData.mediaUrl,
+        fileLength: fileLength?.toString() ?? null,
         ...messageData.metadata,
       };
 
@@ -158,6 +165,10 @@ export class PersistenceService {
           sender: messageData.sender,
           timestamp: BigInt(messageData.timestamp.toString()),
           messageType: messageData.messageType,
+          // Populate top-level fields for indexing and querying
+          textContent: messageData.textContent ?? null,
+          mediaUrl: messageData.mediaUrl ?? null,
+          fileLength: fileLength ? BigInt(fileLength.toString()) : null,
           content,
           status: messageData.fromMe
             ? MessageStatus.sent

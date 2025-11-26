@@ -114,6 +114,7 @@ export class MessagesHandler {
           messageType: parsedContent.messageType,
           textContent: parsedContent.textContent,
           mediaUrl: parsedContent.mediaUrl,
+          fileLength: parsedContent.fileLength,
           metadata: parsedContent.metadata,
           // Store WAMessageKey for reply/edit/delete operations
           waMessageKey: {
@@ -475,16 +476,27 @@ export class MessagesHandler {
       const { key, message, pushName } = msg;
       const { remoteJid, fromMe, participant } = key;
 
-      // Skip outgoing messages (sent by us/Chatwoot) to avoid loop
-      if (fromMe) {
-        this.logger.debug(
-          `[${sid}] [CW] Skipping outgoing message (fromMe=true)`,
-        );
-        return;
-      }
-
       // Skip status broadcasts
       if (remoteJid === 'status@broadcast') return;
+
+      // For outgoing messages (fromMe=true), check if it was sent via Chatwoot
+      // If it was, skip to avoid duplicates. If not, forward to Chatwoot as agent message.
+      if (fromMe) {
+        // Check if this message was already created by Chatwoot webhook
+        const existingMessage = await this.persistenceService.findMessageByWAId(
+          sessionId,
+          key.id,
+        );
+        if (existingMessage?.cwMessageId) {
+          this.logger.debug(
+            `[${sid}] [CW] Skipping outgoing message - already synced via Chatwoot (cwMsgId=${existingMessage.cwMessageId})`,
+          );
+          return;
+        }
+        this.logger.debug(
+          `[${sid}] [CW] Forwarding outgoing message from WhatsApp to Chatwoot`,
+        );
+      }
 
       // Check ignored JIDs
       if (config.ignoreJids?.includes(remoteJid)) return;

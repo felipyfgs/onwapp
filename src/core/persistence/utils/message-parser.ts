@@ -4,6 +4,7 @@ export interface ParsedMessageContent {
   messageType: string;
   textContent: string | null;
   mediaUrl: string | null;
+  fileLength: string | null;
   metadata: Record<string, any>;
 }
 
@@ -17,6 +18,7 @@ export function parseMessageContent(
       messageType: 'empty',
       textContent: null,
       mediaUrl: null,
+      fileLength: null,
       metadata: {},
     };
   }
@@ -28,6 +30,7 @@ export function parseMessageContent(
       messageType: 'conversation',
       textContent: msg.conversation,
       mediaUrl: null,
+      fileLength: null,
       metadata: {},
     };
   }
@@ -37,6 +40,7 @@ export function parseMessageContent(
       messageType: 'conversation', // Unified as 'conversation' for consistency
       textContent: msg.extendedTextMessage.text || null,
       mediaUrl: null,
+      fileLength: null,
       metadata: {
         contextInfo: msg.extendedTextMessage.contextInfo,
         matchedText: msg.extendedTextMessage.matchedText,
@@ -51,9 +55,9 @@ export function parseMessageContent(
       messageType: 'imageMessage',
       textContent: msg.imageMessage.caption || null,
       mediaUrl: msg.imageMessage.url || null,
+      fileLength: msg.imageMessage.fileLength?.toString() || null,
       metadata: {
         mimetype: msg.imageMessage.mimetype,
-        fileLength: msg.imageMessage.fileLength?.toString(),
         height: msg.imageMessage.height,
         width: msg.imageMessage.width,
         fileSha256: msg.imageMessage.fileSha256,
@@ -67,9 +71,9 @@ export function parseMessageContent(
       messageType: 'videoMessage',
       textContent: msg.videoMessage.caption || null,
       mediaUrl: msg.videoMessage.url || null,
+      fileLength: msg.videoMessage.fileLength?.toString() || null,
       metadata: {
         mimetype: msg.videoMessage.mimetype,
-        fileLength: msg.videoMessage.fileLength?.toString(),
         seconds: msg.videoMessage.seconds,
         height: msg.videoMessage.height,
         width: msg.videoMessage.width,
@@ -84,9 +88,9 @@ export function parseMessageContent(
       messageType: 'audioMessage',
       textContent: null,
       mediaUrl: msg.audioMessage.url || null,
+      fileLength: msg.audioMessage.fileLength?.toString() || null,
       metadata: {
         mimetype: msg.audioMessage.mimetype,
-        fileLength: msg.audioMessage.fileLength?.toString(),
         seconds: msg.audioMessage.seconds,
         ptt: msg.audioMessage.ptt,
         fileSha256: msg.audioMessage.fileSha256,
@@ -100,9 +104,9 @@ export function parseMessageContent(
       messageType: 'documentMessage',
       textContent: msg.documentMessage.caption || null,
       mediaUrl: msg.documentMessage.url || null,
+      fileLength: msg.documentMessage.fileLength?.toString() || null,
       metadata: {
         mimetype: msg.documentMessage.mimetype,
-        fileLength: msg.documentMessage.fileLength?.toString(),
         fileName: msg.documentMessage.fileName,
         fileSha256: msg.documentMessage.fileSha256,
         mediaKey: msg.documentMessage.mediaKey,
@@ -115,9 +119,9 @@ export function parseMessageContent(
       messageType: 'stickerMessage',
       textContent: null,
       mediaUrl: msg.stickerMessage.url || null,
+      fileLength: msg.stickerMessage.fileLength?.toString() || null,
       metadata: {
         mimetype: msg.stickerMessage.mimetype,
-        fileLength: msg.stickerMessage.fileLength?.toString(),
         height: msg.stickerMessage.height,
         width: msg.stickerMessage.width,
         fileSha256: msg.stickerMessage.fileSha256,
@@ -131,6 +135,7 @@ export function parseMessageContent(
       messageType: 'locationMessage',
       textContent: msg.locationMessage.name || null,
       mediaUrl: null,
+      fileLength: null,
       metadata: {
         degreesLatitude: msg.locationMessage.degreesLatitude,
         degreesLongitude: msg.locationMessage.degreesLongitude,
@@ -144,6 +149,7 @@ export function parseMessageContent(
       messageType: 'contactMessage',
       textContent: msg.contactMessage.displayName || null,
       mediaUrl: null,
+      fileLength: null,
       metadata: {
         vcard: msg.contactMessage.vcard,
       },
@@ -155,6 +161,7 @@ export function parseMessageContent(
       messageType: 'contactsArrayMessage',
       textContent: msg.contactsArrayMessage.displayName || null,
       mediaUrl: null,
+      fileLength: null,
       metadata: {
         contacts: msg.contactsArrayMessage.contacts,
       },
@@ -166,6 +173,7 @@ export function parseMessageContent(
       messageType: 'reactionMessage',
       textContent: msg.reactionMessage.text || null,
       mediaUrl: null,
+      fileLength: null,
       metadata: {
         key: msg.reactionMessage.key,
       },
@@ -178,6 +186,7 @@ export function parseMessageContent(
       messageType: 'pollCreationMessage',
       textContent: pollMsg?.name || null,
       mediaUrl: null,
+      fileLength: null,
       metadata: {
         options: pollMsg?.options,
         selectableOptionsCount: pollMsg?.selectableOptionsCount,
@@ -190,6 +199,7 @@ export function parseMessageContent(
       messageType: 'pollUpdateMessage',
       textContent: null,
       mediaUrl: null,
+      fileLength: null,
       metadata: {
         pollCreationMessageKey: msg.pollUpdateMessage.pollCreationMessageKey,
         vote: msg.pollUpdateMessage.vote,
@@ -202,6 +212,7 @@ export function parseMessageContent(
       messageType: 'liveLocationMessage',
       textContent: msg.liveLocationMessage.caption || null,
       mediaUrl: null,
+      fileLength: null,
       metadata: {
         degreesLatitude: msg.liveLocationMessage.degreesLatitude,
         degreesLongitude: msg.liveLocationMessage.degreesLongitude,
@@ -216,6 +227,7 @@ export function parseMessageContent(
       messageType: 'interactiveMessage',
       textContent: msg.interactiveMessage.header?.title || null,
       mediaUrl: null,
+      fileLength: null,
       metadata: {
         header: msg.interactiveMessage.header,
         body: msg.interactiveMessage.body,
@@ -230,6 +242,7 @@ export function parseMessageContent(
       messageType: 'buttonsMessage',
       textContent: msg.buttonsMessage.contentText || null,
       mediaUrl: null,
+      fileLength: null,
       metadata: {
         buttons: msg.buttonsMessage.buttons,
         headerType: msg.buttonsMessage.headerType,
@@ -243,6 +256,7 @@ export function parseMessageContent(
       messageType: 'listMessage',
       textContent: msg.listMessage.description || null,
       mediaUrl: null,
+      fileLength: null,
       metadata: {
         title: msg.listMessage.title,
         buttonText: msg.listMessage.buttonText,
@@ -257,6 +271,7 @@ export function parseMessageContent(
       messageType: 'templateMessage',
       textContent: null,
       mediaUrl: null,
+      fileLength: null,
       metadata: {
         hydratedTemplate: msg.templateMessage.hydratedTemplate,
       },
@@ -267,6 +282,7 @@ export function parseMessageContent(
     messageType: 'unknown',
     textContent: null,
     mediaUrl: null,
+    fileLength: null,
     metadata: { raw: msg },
   };
 }

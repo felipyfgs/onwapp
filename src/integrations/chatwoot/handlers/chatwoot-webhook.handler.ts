@@ -227,6 +227,7 @@ export class ChatwootWebhookHandler {
           metadata: { fileName: attachment.file_name, attachmentIndex: i },
           cwMessageId: payload.id, // All files link to same Chatwoot message
           cwConversationId: conversationId,
+          cwInboxId: payload.inbox?.id,
           waMessageKey: {
             id: result.id,
             remoteJid,
@@ -266,6 +267,7 @@ export class ChatwootWebhookHandler {
         metadata: {},
         cwMessageId: payload.id,
         cwConversationId: payload.conversation.id,
+        cwInboxId: payload.inbox?.id,
         waMessageKey: {
           id: result.id,
           remoteJid,
@@ -287,6 +289,29 @@ export class ChatwootWebhookHandler {
   ): Promise<{ id: string } | null> {
     const { file_type, data_url, file_name } = attachment;
 
+    // Log full attachment for debugging
+    this.logger.debug(
+      `[${sessionId}] Attachment payload: ${JSON.stringify(attachment)}`,
+    );
+
+    // Try to extract filename from data_url if not provided
+    let actualFileName = file_name;
+    if (!actualFileName && data_url) {
+      // Try to extract from URL path (e.g., .../filename.pdf?...)
+      const urlPath = data_url.split('?')[0];
+      const urlFileName = urlPath.split('/').pop();
+      if (urlFileName && urlFileName.includes('.')) {
+        actualFileName = decodeURIComponent(urlFileName);
+      }
+    }
+
+    // Determine mimetype from file name extension
+    const mimetype = getMimeType(file_type, actualFileName);
+
+    this.logger.debug(
+      `[${sessionId}] Processing attachment: type=${file_type}, name=${actualFileName}, mimetype=${mimetype}`,
+    );
+
     // Download the attachment
     let mediaData: string;
     try {
@@ -294,7 +319,7 @@ export class ChatwootWebhookHandler {
         responseType: 'arraybuffer',
         timeout: 30000, // 30 second timeout for large files
       });
-      mediaData = `data:${getMimeType(file_type, file_name)};base64,${Buffer.from(response.data).toString('base64')}`;
+      mediaData = `data:${mimetype};base64,${Buffer.from(response.data).toString('base64')}`;
     } catch (error) {
       const axiosError = error as AxiosError;
       const errorMessage =
@@ -334,8 +359,8 @@ export class ChatwootWebhookHandler {
         return this.messagesService.sendDocumentMessage(sessionId, {
           to: remoteJid,
           document: mediaData,
-          mimetype: getMimeType(file_type, file_name),
-          fileName: file_name || 'document',
+          mimetype, // Use pre-calculated mimetype
+          fileName: actualFileName || 'document',
           quoted,
         });
     }
