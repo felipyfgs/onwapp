@@ -190,10 +190,46 @@ export interface WAMessageContent {
   contactsArrayMessage?: Record<string, unknown>;
   locationMessage?: Record<string, unknown>;
   liveLocationMessage?: Record<string, unknown>;
-  listMessage?: Record<string, unknown>;
-  listResponseMessage?: Record<string, unknown>;
-  buttonsResponseMessage?: Record<string, unknown>;
-  templateButtonReplyMessage?: Record<string, unknown>;
+  listMessage?: {
+    title?: string;
+    description?: string;
+    buttonText?: string;
+    listType?: number;
+    sections?: Array<{
+      title?: string;
+      rows?: Array<{
+        title?: string;
+        description?: string;
+        rowId?: string;
+      }>;
+    }>;
+  };
+  buttonsMessage?: {
+    contentText?: string;
+    footerText?: string;
+    headerType?: number;
+    buttons?: Array<{
+      buttonId?: string;
+      buttonText?: { displayText?: string };
+      type?: number;
+    }>;
+  };
+  listResponseMessage?: {
+    title?: string;
+    listType?: number;
+    singleSelectReply?: { selectedRowId?: string };
+    description?: string;
+  };
+  buttonsResponseMessage?: {
+    selectedButtonId?: string;
+    selectedDisplayText?: string;
+    type?: number;
+  };
+  templateButtonReplyMessage?: {
+    selectedId?: string;
+    selectedDisplayText?: string;
+    selectedIndex?: number;
+  };
   reactionMessage?: { text?: string };
   pollCreationMessage?: Record<string, unknown>;
 }

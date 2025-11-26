@@ -278,6 +278,91 @@ export function parseMessageContent(
     };
   }
 
+  // List response message (user selected an option from a list)
+  if (msg.listResponseMessage) {
+    const listResponse = msg.listResponseMessage as {
+      title?: string;
+      listType?: number;
+      singleSelectReply?: {
+        selectedRowId?: string;
+      };
+      description?: string;
+    };
+    const selectedId = listResponse.singleSelectReply?.selectedRowId || '';
+    const title = listResponse.title || '';
+    let textContent = '[List Response]';
+    if (title && selectedId)
+      textContent = `[List Response] ${title}\n📋 ID: ${selectedId}`;
+    else if (title) textContent = `[List Response] ${title}`;
+    else if (selectedId) textContent = `[List Response] ID: ${selectedId}`;
+    return {
+      messageType: 'listResponseMessage',
+      textContent,
+      mediaUrl: null,
+      fileLength: null,
+      metadata: {
+        title: listResponse.title,
+        description: listResponse.description,
+        selectedRowId: selectedId,
+        listType: listResponse.listType,
+      },
+    };
+  }
+
+  // Buttons response message (user clicked a button)
+  if (msg.buttonsResponseMessage) {
+    const buttonResponse = msg.buttonsResponseMessage as {
+      selectedButtonId?: string;
+      selectedDisplayText?: string;
+      type?: number;
+    };
+    const buttonId = buttonResponse.selectedButtonId || '';
+    const buttonText = buttonResponse.selectedDisplayText || '';
+    let textContent = '[Button Response]';
+    if (buttonText && buttonId)
+      textContent = `[Button Response] ${buttonText}\n🔘 ID: ${buttonId}`;
+    else if (buttonText) textContent = `[Button Response] ${buttonText}`;
+    else if (buttonId) textContent = `[Button Response] ID: ${buttonId}`;
+    return {
+      messageType: 'buttonsResponseMessage',
+      textContent,
+      mediaUrl: null,
+      fileLength: null,
+      metadata: {
+        selectedButtonId: buttonId,
+        selectedDisplayText: buttonText,
+        type: buttonResponse.type,
+      },
+    };
+  }
+
+  // Template button reply message
+  if (msg.templateButtonReplyMessage) {
+    const templateReply = msg.templateButtonReplyMessage as {
+      selectedId?: string;
+      selectedDisplayText?: string;
+      selectedIndex?: number;
+    };
+    const selectedId = templateReply.selectedId || '';
+    const selectedText = templateReply.selectedDisplayText || '';
+    let textContent = '[Template Response]';
+    if (selectedText && selectedId)
+      textContent = `[Template Response] ${selectedText}\n📝 ID: ${selectedId}`;
+    else if (selectedText) textContent = `[Template Response] ${selectedText}`;
+    else if (selectedId) textContent = `[Template Response] ID: ${selectedId}`;
+    return {
+      messageType: 'templateButtonReplyMessage',
+      textContent,
+      mediaUrl: null,
+      fileLength: null,
+      metadata: {
+        selectedId,
+        selectedDisplayText: selectedText,
+        selectedIndex: templateReply.selectedIndex,
+      },
+    };
+  }
+
   return {
     messageType: 'unknown',
     textContent: null,

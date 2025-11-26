@@ -29,13 +29,20 @@ import { EditMessageDto } from './dto/edit-message.dto';
 import { SendLiveLocationMessageDto } from './dto/send-live-location-message.dto';
 import { AudioService } from '../../core/audio/audio.service';
 import { parseMediaBuffer, formatJid } from '../../common/utils';
+import { ChatwootService } from '../../integrations/chatwoot/chatwoot.service';
+import { PersistenceService } from '../../core/persistence/persistence.service';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class MessagesService {
+  private readonly logger = new Logger(MessagesService.name);
+
   constructor(
     private prisma: DatabaseService,
     private whatsapp: WhatsAppService,
     private audioService: AudioService,
+    private chatwootService: ChatwootService,
+    private persistenceService: PersistenceService,
   ) {}
 
   private async validateSessionConnected(sessionId: string): Promise<WASocket> {
@@ -480,6 +487,29 @@ export class MessagesService {
       throw new BadRequestException('Failed to send buttons message');
     }
 
+    // Save message to database and forward to Chatwoot
+    const messageId = message.key?.id;
+    if (messageId) {
+      // First persist the message locally
+      await this.persistenceService.createMessage(sessionId, {
+        remoteJid: jid,
+        messageId,
+        fromMe: true,
+        timestamp: BigInt(Date.now()),
+        messageType: 'buttonsMessage',
+        textContent: dto.text,
+        metadata: { buttonsMessage: content },
+      });
+
+      // Then forward to Chatwoot
+      this.forwardButtonsToChatwoot(sessionId, jid, dto, messageId).catch(
+        (err) =>
+          this.logger.error(
+            `Failed to forward buttons to Chatwoot: ${err.message}`,
+          ),
+      );
+    }
+
     return this.mapToMessageResponseDto(message);
   }
 
@@ -552,6 +582,26 @@ export class MessagesService {
 
     if (!message) {
       throw new BadRequestException('Failed to send list message');
+    }
+
+    // Save message to database and forward to Chatwoot
+    const messageId = message.key?.id;
+    if (messageId) {
+      // First persist the message locally
+      await this.persistenceService.createMessage(sessionId, {
+        remoteJid: jid,
+        messageId,
+        fromMe: true,
+        timestamp: BigInt(Date.now()),
+        messageType: 'listMessage',
+        textContent: dto.text,
+        metadata: { listMessage: content },
+      });
+
+      // Then forward to Chatwoot
+      this.forwardListToChatwoot(sessionId, jid, dto, messageId).catch((err) =>
+        this.logger.error(`Failed to forward list to Chatwoot: ${err.message}`),
+      );
     }
 
     return this.mapToMessageResponseDto(message);
@@ -696,5 +746,163 @@ export class MessagesService {
     }
 
     return this.mapToMessageResponseDto(message);
+  }
+
+  /**
+   * Helper: Prepares Chatwoot context for forwarding messages
+   * Returns null if Chatwoot is not enabled or setup fails
+   */
+  private async prepareChatwootContext(
+    sessionId: string,
+    jid: string,
+  ): Promise<{ conversationId: number } | null> {
+    const config = await this.chatwootService.getConfig(sessionId);
+    if (!config?.enabled) return null;
+
+    const inbox = await this.chatwootService.getInbox(sessionId);
+    if (!inbox) return null;
+
+    let contact = await this.chatwootService.findContact(sessionId, jid);
+    if (!contact) {
+      const phoneNumber = jid.replace('@s.whatsapp.net', '').split(':')[0];
+      contact = await this.chatwootService.createContact(sessionId, {
+        phoneNumber,
+        inboxId: inbox.id,
+        isGroup: jid.includes('@g.us'),
+        name: phoneNumber,
+        identifier: jid,
+      });
+      if (!contact) return null;
+    }
+
+    const conversationId = await this.chatwootService.createConversation(
+      sessionId,
+      { contactId: contact.id, inboxId: inbox.id },
+    );
+    if (!conversationId) return null;
+
+    return { conversationId };
+  }
+
+  /**
+   * Helper: Sends message to Chatwoot and updates local tracking
+   */
+  private async sendToChatwootAndTrack(
+    sessionId: string,
+    conversationId: number,
+    content: string,
+    sourceId: string,
+    messageType: 'list' | 'buttons',
+  ): Promise<void> {
+    const cwMessage = await this.chatwootService.createMessage(
+      sessionId,
+      conversationId,
+      {
+        content,
+        messageType: 'outgoing',
+        private: false,
+        sourceId,
+      },
+    );
+
+    if (cwMessage?.id) {
+      await this.persistenceService.updateMessageChatwoot(sessionId, sourceId, {
+        cwMessageId: cwMessage.id,
+        cwConversationId: conversationId,
+      });
+    }
+
+    this.logger.debug(
+      `[${sessionId}] ${messageType} message forwarded to Chatwoot (sourceId=${sourceId}, cwMsgId=${cwMessage?.id})`,
+    );
+  }
+
+  /**
+   * Format list message content for Chatwoot display
+   */
+  private formatListContent(dto: SendListMessageDto): string {
+    const lines: string[] = ['📋 *Lista*'];
+    if (dto.text) lines.push(dto.text);
+    if (dto.sections) {
+      for (const section of dto.sections) {
+        if (section.rows) {
+          for (const row of section.rows) {
+            lines.push(`• ${row.title} (${row.rowId})`);
+          }
+        }
+      }
+    }
+    return lines.join('\n').trim();
+  }
+
+  /**
+   * Format buttons message content for Chatwoot display
+   */
+  private formatButtonsContent(dto: SendButtonsMessageDto): string {
+    const lines: string[] = ['🔘 *Botões*'];
+    if (dto.text) lines.push(dto.text);
+    if (dto.buttons) {
+      for (const button of dto.buttons) {
+        const text = button.buttonText?.displayText || 'Botão';
+        lines.push(`• ${text} (${button.buttonId})`);
+      }
+    }
+    return lines.join('\n').trim();
+  }
+
+  /**
+   * Forward list message to Chatwoot
+   */
+  private async forwardListToChatwoot(
+    sessionId: string,
+    jid: string,
+    dto: SendListMessageDto,
+    sourceId: string,
+  ): Promise<void> {
+    try {
+      const context = await this.prepareChatwootContext(sessionId, jid);
+      if (!context) return;
+
+      const content = this.formatListContent(dto);
+      await this.sendToChatwootAndTrack(
+        sessionId,
+        context.conversationId,
+        content,
+        sourceId,
+        'list',
+      );
+    } catch (error) {
+      this.logger.error(
+        `[${sessionId}] Failed to forward list to Chatwoot: ${error}`,
+      );
+    }
+  }
+
+  /**
+   * Forward buttons message to Chatwoot
+   */
+  private async forwardButtonsToChatwoot(
+    sessionId: string,
+    jid: string,
+    dto: SendButtonsMessageDto,
+    sourceId: string,
+  ): Promise<void> {
+    try {
+      const context = await this.prepareChatwootContext(sessionId, jid);
+      if (!context) return;
+
+      const content = this.formatButtonsContent(dto);
+      await this.sendToChatwootAndTrack(
+        sessionId,
+        context.conversationId,
+        content,
+        sourceId,
+        'buttons',
+      );
+    } catch (error) {
+      this.logger.error(
+        `[${sessionId}] Failed to forward buttons to Chatwoot: ${error}`,
+      );
+    }
   }
 }

@@ -540,7 +540,12 @@ export class MessagesHandler {
       const messageContent = this.chatwootService.getMessageContent(
         message || null,
       );
-      if (!messageContent) return;
+      if (!messageContent) {
+        this.logger.debug(
+          `[${sid}] [CW] No message content extracted, message keys: ${Object.keys(message || {}).join(', ')}`,
+        );
+        return;
+      }
 
       // Format for groups
       let finalContent = messageContent;
@@ -558,47 +563,22 @@ export class MessagesHandler {
       }
 
       // Extract stanzaId for reply support
-      const waMessage = message as {
-        conversation?: string;
-        extendedTextMessage?: {
-          contextInfo?: { stanzaId?: string; quotedMessage?: unknown };
-        };
-        imageMessage?: { contextInfo?: { stanzaId?: string } };
-        videoMessage?: { contextInfo?: { stanzaId?: string } };
-        audioMessage?: { contextInfo?: { stanzaId?: string; ptt?: boolean } };
-        documentMessage?: {
-          contextInfo?: { stanzaId?: string };
-          fileName?: string;
-        };
-        stickerMessage?: { contextInfo?: { stanzaId?: string } };
-        contextInfo?: { stanzaId?: string };
-      };
-
-      const stanzaId =
-        waMessage?.extendedTextMessage?.contextInfo?.stanzaId ||
-        waMessage?.imageMessage?.contextInfo?.stanzaId ||
-        waMessage?.videoMessage?.contextInfo?.stanzaId ||
-        waMessage?.audioMessage?.contextInfo?.stanzaId ||
-        waMessage?.documentMessage?.contextInfo?.stanzaId ||
-        waMessage?.stickerMessage?.contextInfo?.stanzaId ||
-        waMessage?.contextInfo?.stanzaId;
+      const stanzaId = this.extractStanzaId(message);
 
       // Debug: log reply detection
       if (stanzaId) {
         this.logger.debug(`[${sid}] [CW] Message is reply to: ${stanzaId}`);
-      } else if (
-        waMessage?.extendedTextMessage?.contextInfo ||
-        waMessage?.contextInfo
-      ) {
-        this.logger.debug(
-          `[${sid}] [CW] Message has contextInfo but no stanzaId`,
-          {
-            hasExtendedTextContext:
-              !!waMessage?.extendedTextMessage?.contextInfo,
-            hasRootContext: !!waMessage?.contextInfo,
-            messageKeys: Object.keys(message || {}),
-          },
+      } else if (message) {
+        const waMsg = message as Record<string, { contextInfo?: unknown }>;
+        const hasContextInfo = Object.values(waMsg).some(
+          (v) => v && typeof v === 'object' && 'contextInfo' in v,
         );
+        if (hasContextInfo) {
+          this.logger.debug(
+            `[${sid}] [CW] Message has contextInfo but no stanzaId`,
+            { messageKeys: Object.keys(message) },
+          );
+        }
       }
 
       let inReplyTo: number | undefined;
@@ -624,7 +604,7 @@ export class MessagesHandler {
         // Try to download and forward media
         const mediaBuffer = await this.downloadMedia(sessionId, msg, sid);
         if (mediaBuffer) {
-          const filename = getMediaFilename(waMessage, key.id);
+          const filename = getMediaFilename(message, key.id);
 
           chatwootMessage =
             await this.chatwootService.createMessageWithAttachment(
@@ -686,6 +666,44 @@ export class MessagesHandler {
         `[${sid}] Chatwoot forward error: ${(error as Error).message}`,
       );
     }
+  }
+
+  /**
+   * Extract stanzaId from WhatsApp message for reply support
+   * Checks all known message types that can contain contextInfo
+   */
+  private extractStanzaId(
+    message: Record<string, unknown> | undefined,
+  ): string | undefined {
+    if (!message) return undefined;
+
+    // List of message type keys that may contain contextInfo with stanzaId
+    const messageTypesWithContext = [
+      'extendedTextMessage',
+      'imageMessage',
+      'videoMessage',
+      'audioMessage',
+      'documentMessage',
+      'stickerMessage',
+      'listResponseMessage',
+      'buttonsResponseMessage',
+      'templateButtonReplyMessage',
+    ];
+
+    for (const key of messageTypesWithContext) {
+      const msgPart = message[key] as
+        | { contextInfo?: { stanzaId?: string } }
+        | undefined;
+      if (msgPart?.contextInfo?.stanzaId) {
+        return msgPart.contextInfo.stanzaId;
+      }
+    }
+
+    // Check root contextInfo as fallback
+    const rootContext = message.contextInfo as
+      | { stanzaId?: string }
+      | undefined;
+    return rootContext?.stanzaId;
   }
 
   private async downloadMedia(
