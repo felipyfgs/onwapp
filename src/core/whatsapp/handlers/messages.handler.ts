@@ -43,7 +43,7 @@ export class MessagesHandler {
     payload: { keys: { id: string; remoteJid: string }[] } | { jid: string; all: true },
   ): void {
     const sid = formatSessionId(sessionId);
-    void this.processMessagesDelete(sessionId, payload, sid);
+    void this.processMessagesDeleteEvent(sessionId, payload as any, sid);
   }
 
   // Método público para messages.reaction
@@ -51,7 +51,7 @@ export class MessagesHandler {
     sessionId: string,
     payload: Array<{
       key: { id: string; remoteJid: string; fromMe?: boolean };
-      reaction: { text?: string; key?: { id: string } };
+      reaction: { text?: string; key?: { id: string; participant?: string } };
     }>,
   ): void {
     const sid = formatSessionId(sessionId);
@@ -61,7 +61,7 @@ export class MessagesHandler {
   // Método público para message-receipt.update
   handleMessageReceiptUpdate(sessionId: string, payload: unknown[]): void {
     const sid = formatSessionId(sessionId);
-    void this.processMessageReceiptUpdate(sessionId, payload, sid);
+    void this.processMessageReceiptUpdateEvent(sessionId, payload, sid);
   }
 
   // Método público para messages.media-update
@@ -235,7 +235,7 @@ export class MessagesHandler {
     }
   }
 
-  private async handleMessagesDelete(
+  private async processMessagesDeleteEvent(
     sessionId: string,
     payload: { keys: { id: string }[] },
     sid: string,
@@ -483,7 +483,7 @@ export class MessagesHandler {
     }
   }
 
-  private async handleMessageReceiptUpdate(
+  private async processMessageReceiptUpdateEvent(
     sessionId: string,
     payload: unknown[],
     _sid: string,
@@ -498,6 +498,7 @@ export class MessagesHandler {
       for (const receipt of payload as Array<{
         key: { id: string };
         receipt?: { receiptTimestamp?: number; readTimestamp?: number };
+        userReceipt?: Array<{ userJid: string; receiptTimestamp?: number; readTimestamp?: number }>;
       }>) {
         if (!receipt.key || !receipt.key.id) continue;
 
@@ -515,6 +516,17 @@ export class MessagesHandler {
             receipt.key.id,
             status,
           );
+        }
+
+        if (receipt.userReceipt) {
+          for (const userReceipt of receipt.userReceipt) {
+            await this.persistenceService.addMessageStatusHistory(
+              sessionId,
+              receipt.key.id,
+              userReceipt.readTimestamp ? MessageStatus.read : MessageStatus.delivered,
+              userReceipt.userJid,
+            );
+          }
         }
       }
     } catch (error) {
@@ -794,35 +806,6 @@ export class MessagesHandler {
     }
   }
 
-  private async processMessagesDelete(
-    sessionId: string,
-    payload: { keys: { id: string; remoteJid: string }[] } | { jid: string; all: true },
-    _sid: string,
-  ): Promise<void> {
-    this.logger.log('Mensagens deletadas', {
-      event: 'whatsapp.messages.delete',
-      sessionId,
-    });
-
-    try {
-      if ('all' in payload && payload.all) {
-        this.logger.log(`[${sessionId}] Deletando todas mensagens de ${payload.jid}`);
-        return;
-      }
-
-      const { keys } = payload as { keys: { id: string; remoteJid: string }[] };
-      
-      for (const key of keys) {
-        await this.persistenceService.markMessageAsDeleted(sessionId, key.id);
-        this.logger.debug(`[${sessionId}] Mensagem ${key.id} marcada como deletada`);
-      }
-    } catch (error) {
-      this.logger.error(
-        `[${sessionId}] Erro ao processar messages.delete: ${error instanceof Error ? error.message : 'Erro'}`,
-      );
-    }
-  }
-
   private async processMessagesReaction(
     sessionId: string,
     payload: Array<{
@@ -857,61 +840,6 @@ export class MessagesHandler {
     } catch (error) {
       this.logger.error(
         `[${sessionId}] Erro ao processar messages.reaction: ${error instanceof Error ? error.message : 'Erro'}`,
-      );
-    }
-  }
-
-  private async processMessageReceiptUpdate(
-    sessionId: string,
-    payload: unknown[],
-    _sid: string,
-  ): Promise<void> {
-    this.logger.log('Recibo de mensagem atualizado', {
-      event: 'whatsapp.message-receipt.update',
-      sessionId,
-      count: payload.length,
-    });
-
-    try {
-      for (const receipt of payload as Array<{
-        key: { id: string; remoteJid: string };
-        receipt: { receiptTimestamp?: number; readTimestamp?: number; playedTimestamp?: number };
-        userReceipt?: Array<{ userJid: string; receiptTimestamp?: number; readTimestamp?: number }>;
-      }>) {
-        if (!receipt.key?.id) continue;
-
-        let status: MessageStatus | undefined;
-
-        if (receipt.receipt?.playedTimestamp) {
-          status = MessageStatus.read;
-        } else if (receipt.receipt?.readTimestamp) {
-          status = MessageStatus.read;
-        } else if (receipt.receipt?.receiptTimestamp) {
-          status = MessageStatus.delivered;
-        }
-
-        if (status) {
-          await this.persistenceService.updateMessageStatus(
-            sessionId,
-            receipt.key.id,
-            status,
-          );
-        }
-
-        if (receipt.userReceipt) {
-          for (const userReceipt of receipt.userReceipt) {
-            await this.persistenceService.addMessageStatusHistory(
-              sessionId,
-              receipt.key.id,
-              userReceipt.readTimestamp ? MessageStatus.read : MessageStatus.delivered,
-              userReceipt.userJid,
-            );
-          }
-        }
-      }
-    } catch (error) {
-      this.logger.error(
-        `[${sessionId}] Erro ao processar message-receipt.update: ${error instanceof Error ? error.message : 'Erro'}`,
       );
     }
   }

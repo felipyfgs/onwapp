@@ -818,10 +818,11 @@ export class PersistenceService {
             messageId: message.id,
             senderJid,
             reaction: reactionText,
+            timestamp: BigInt(Date.now()),
           },
           update: {
             reaction: reactionText,
-            updatedAt: new Date(),
+            timestamp: BigInt(Date.now()),
           },
         });
       }

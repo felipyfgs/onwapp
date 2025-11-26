@@ -404,9 +404,10 @@ export class WhatsAppService {
 
       // Blocklist
       if (events['blocklist.set']) {
+        const blocklist = events['blocklist.set'] as { blocklist: string[] };
         this.blocklistHandler.handleBlocklistSet(
           sessionId,
-          events['blocklist.set'] as string[],
+          blocklist.blocklist || [],
         );
       }
 
