@@ -14,6 +14,7 @@ import { ApiKeyGuard } from '../../common/guards/api-key.guard';
 import { DownloadMediaDto } from './dto/download-media.dto';
 import { DownloadMediaResponseDto } from './dto/download-media-response.dto';
 import { UpdateMediaDto } from './dto/update-media.dto';
+import { UploadMediaDto } from './dto/upload-media.dto';
 
 @ApiTags('Media')
 @ApiSecurity('apikey')
