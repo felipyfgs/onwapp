@@ -8,7 +8,8 @@ import { WhatsAppService } from '../../../core/whatsapp/whatsapp.service';
 
 const BOT_PHONE_NUMBER = '123456';
 const BOT_DEFAULT_NAME = 'Zpwoot Bot';
-const BOT_DEFAULT_LOGO = 'https://evolution-api.com/files/evolution-api.png';
+const BOT_DEFAULT_LOGO =
+  'https://raw.githubusercontent.com/felipyfgs/zpwoot/main/public/images/image.png';
 
 /**
  * Service for managing Chatwoot bot contact

@@ -165,11 +165,14 @@ export class ChatwootClient {
       });
     }
 
+    const headers = formData.getHeaders();
     const { data } = await this.client.put<ChatwootContact>(
       `/contacts/${contactId}`,
       formData,
       {
-        headers: formData.getHeaders(),
+        headers: {
+          'Content-Type': headers['content-type'], // Override default JSON content-type with FormData multipart
+        },
       },
     );
     return data;
