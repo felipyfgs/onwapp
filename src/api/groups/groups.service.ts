@@ -543,4 +543,157 @@ export class GroupsService {
       );
     }
   }
+
+  async toggleEphemeral(
+    sessionId: string,
+    groupId: string,
+    expiration: number,
+  ) {
+    const socket = this.validateSocket(sessionId);
+    const normalizedGroupId = this.normalizeGroupId(groupId);
+
+    try {
+      this.logger.log(
+        `[${sessionId}] Alterando mensagens temporárias do grupo: ${normalizedGroupId}`,
+      );
+
+      await socket.groupToggleEphemeral(normalizedGroupId, expiration);
+
+      this.logger.log(
+        `[${sessionId}] Mensagens temporárias alteradas: ${normalizedGroupId}`,
+      );
+      return {
+        success: true,
+        message: `Mensagens temporárias ${expiration > 0 ? `ativadas (${expiration}s)` : 'desativadas'}`,
+      };
+    } catch (error) {
+      this.logger.error(
+        `[${sessionId}] Erro ao alterar mensagens temporárias: ${error.message}`,
+      );
+      throw new BadRequestException(
+        `Erro ao alterar mensagens temporárias: ${error.message}`,
+      );
+    }
+  }
+
+  async getJoinRequests(sessionId: string, groupId: string) {
+    const socket = this.validateSocket(sessionId);
+    const normalizedGroupId = this.normalizeGroupId(groupId);
+
+    try {
+      this.logger.log(
+        `[${sessionId}] Obtendo solicitações de entrada do grupo: ${normalizedGroupId}`,
+      );
+
+      const requests =
+        await socket.groupRequestParticipantsList(normalizedGroupId);
+
+      return { requests };
+    } catch (error) {
+      this.logger.error(
+        `[${sessionId}] Erro ao obter solicitações: ${error.message}`,
+      );
+      throw new BadRequestException(
+        `Erro ao obter solicitações: ${error.message}`,
+      );
+    }
+  }
+
+  async handleJoinRequest(
+    sessionId: string,
+    groupId: string,
+    participants: string[],
+    action: 'approve' | 'reject',
+  ) {
+    const socket = this.validateSocket(sessionId);
+    const normalizedGroupId = this.normalizeGroupId(groupId);
+
+    try {
+      this.logger.log(
+        `[${sessionId}] ${action === 'approve' ? 'Aprovando' : 'Rejeitando'} solicitações no grupo: ${normalizedGroupId}`,
+      );
+
+      const result = await socket.groupRequestParticipantsUpdate(
+        normalizedGroupId,
+        participants,
+        action,
+      );
+
+      this.logger.log(
+        `[${sessionId}] Solicitações ${action === 'approve' ? 'aprovadas' : 'rejeitadas'}: ${normalizedGroupId}`,
+      );
+      return result;
+    } catch (error) {
+      this.logger.error(
+        `[${sessionId}] Erro ao processar solicitações: ${error.message}`,
+      );
+      throw new BadRequestException(
+        `Erro ao processar solicitações: ${error.message}`,
+      );
+    }
+  }
+
+  async setMemberAddMode(
+    sessionId: string,
+    groupId: string,
+    mode: 'all_member_add' | 'admin_add',
+  ) {
+    const socket = this.validateSocket(sessionId);
+    const normalizedGroupId = this.normalizeGroupId(groupId);
+
+    try {
+      this.logger.log(
+        `[${sessionId}] Alterando modo de adição de membros: ${normalizedGroupId}`,
+      );
+
+      await socket.groupMemberAddMode(normalizedGroupId, mode);
+
+      this.logger.log(
+        `[${sessionId}] Modo de adição alterado: ${normalizedGroupId}`,
+      );
+      return {
+        success: true,
+        message: `Modo de adição: ${mode === 'all_member_add' ? 'todos' : 'apenas admins'}`,
+      };
+    } catch (error) {
+      this.logger.error(
+        `[${sessionId}] Erro ao alterar modo de adição: ${error.message}`,
+      );
+      throw new BadRequestException(
+        `Erro ao alterar modo de adição: ${error.message}`,
+      );
+    }
+  }
+
+  async setJoinApprovalMode(
+    sessionId: string,
+    groupId: string,
+    mode: 'on' | 'off',
+  ) {
+    const socket = this.validateSocket(sessionId);
+    const normalizedGroupId = this.normalizeGroupId(groupId);
+
+    try {
+      this.logger.log(
+        `[${sessionId}] Alterando aprovação de entrada: ${normalizedGroupId}`,
+      );
+
+      await socket.groupJoinApprovalMode(normalizedGroupId, mode);
+
+      this.logger.log(
+        `[${sessionId}] Aprovação de entrada alterada: ${normalizedGroupId}`,
+      );
+      return {
+        success: true,
+        message: `Aprovação de entrada: ${mode === 'on' ? 'ativada' : 'desativada'}`,
+      };
+    } catch (error) {
+      this.logger.error(
+        `[${sessionId}] Erro ao alterar aprovação de entrada: ${error.message}`,
+      );
+      throw new BadRequestException(
+        `Erro ao alterar aprovação de entrada: ${error.message}`,
+      );
+    }
+  }
 }

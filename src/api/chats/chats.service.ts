@@ -201,4 +201,16 @@ export class ChatsService {
       );
     }
   }
+
+  async starMessage(
+    sessionId: string,
+    jid: string,
+    messageId: string,
+    star: boolean,
+  ): Promise<void> {
+    const socket = this.whatsappService.getSocket(sessionId);
+    validateSocket(socket);
+
+    await socket.star(jid, [messageId], star);
+  }
 }
