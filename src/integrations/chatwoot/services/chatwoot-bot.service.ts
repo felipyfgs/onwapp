@@ -7,7 +7,8 @@ import { WhatsAppService } from '../../../core/whatsapp/whatsapp.service';
 
 const BOT_PHONE_NUMBER = '123456';
 const BOT_DEFAULT_NAME = 'Zpwoot Bot';
-const BOT_DEFAULT_LOGO = 'https://raw.githubusercontent.com/EvolutionAPI/evolution-api/main/public/images/evolution-api-favicon.png';
+const BOT_DEFAULT_LOGO =
+  'https://raw.githubusercontent.com/EvolutionAPI/evolution-api/main/public/images/evolution-api-favicon.png';
 
 /**
  * Service for managing Chatwoot bot contact
@@ -38,8 +39,11 @@ export class ChatwootBotService {
     if (!inbox) return null;
 
     // Find or create bot contact
-    let contact = await this.contactService.findContact(sessionId, BOT_PHONE_NUMBER);
-    
+    let contact = await this.contactService.findContact(
+      sessionId,
+      BOT_PHONE_NUMBER,
+    );
+
     if (!contact) {
       contact = await this.contactService.createContact(sessionId, {
         phoneNumber: BOT_PHONE_NUMBER,
@@ -54,10 +58,11 @@ export class ChatwootBotService {
     if (!contact) return null;
 
     // Get or create conversation with bot
-    const conversationId = await this.conversationService.getOrCreateConversation(
-      sessionId,
-      { contactId: contact.id, inboxId: inbox.id },
-    );
+    const conversationId =
+      await this.conversationService.getOrCreateConversation(sessionId, {
+        contactId: contact.id,
+        inboxId: inbox.id,
+      });
 
     if (!conversationId) return null;
 
@@ -138,8 +143,9 @@ export class ChatwootBotService {
       });
 
       // Send pairing code message if available
-      let message = '⚡ *QR Code gerado com sucesso!*\n\nEscaneie o código acima para conectar o WhatsApp.';
-      
+      let message =
+        '⚡ *QR Code gerado com sucesso!*\n\nEscaneie o código acima para conectar o WhatsApp.';
+
       if (pairingCode) {
         const formattedCode = `${pairingCode.substring(0, 4)}-${pairingCode.substring(4, 8)}`;
         message += `\n\n*Código de Pareamento:* ${formattedCode}`;
@@ -174,13 +180,20 @@ export class ChatwootBotService {
     status: 'connected' | 'disconnected' | 'connecting' | 'qr_timeout',
   ): Promise<boolean> {
     const messages: Record<string, string> = {
-      connected: '✅ *WhatsApp conectado com sucesso!*\n\nA sessão está pronta para enviar e receber mensagens.',
-      disconnected: '❌ *WhatsApp desconectado*\n\nA sessão foi desconectada. Envie `/init` para reconectar.',
-      connecting: '🔄 *Conectando ao WhatsApp...*\n\nAguarde enquanto estabelecemos a conexão.',
-      qr_timeout: '⚠️ *QR Code expirado*\n\nO tempo para escanear o QR Code esgotou. Envie `/init` para gerar um novo.',
+      connected:
+        '✅ *WhatsApp conectado com sucesso!*\n\nA sessão está pronta para enviar e receber mensagens.',
+      disconnected:
+        '❌ *WhatsApp desconectado*\n\nA sessão foi desconectada. Envie `/init` para reconectar.',
+      connecting:
+        '🔄 *Conectando ao WhatsApp...*\n\nAguarde enquanto estabelecemos a conexão.',
+      qr_timeout:
+        '⚠️ *QR Code expirado*\n\nO tempo para escanear o QR Code esgotou. Envie `/init` para gerar um novo.',
     };
 
-    return this.sendBotMessage(sessionId, messages[status] || `Status: ${status}`);
+    return this.sendBotMessage(
+      sessionId,
+      messages[status] || `Status: ${status}`,
+    );
   }
 
   /**
@@ -189,7 +202,7 @@ export class ChatwootBotService {
   async handleBotCommand(
     sessionId: string,
     command: string,
-    phoneNumber?: string,
+    _phoneNumber?: string,
   ): Promise<{ handled: boolean; message?: string }> {
     const cmd = command.toLowerCase().replace('/', '').trim();
 
@@ -207,8 +220,11 @@ export class ChatwootBotService {
         }
 
         // Trigger reconnection
-        await this.sendBotMessage(sessionId, '🔄 *Iniciando conexão...*\n\nAguarde o QR Code.');
-        
+        await this.sendBotMessage(
+          sessionId,
+          '🔄 *Iniciando conexão...*\n\nAguarde o QR Code.',
+        );
+
         try {
           await this.whatsappService.createSocket(sessionId);
           return { handled: true };
@@ -236,7 +252,8 @@ export class ChatwootBotService {
           await this.whatsappService.disconnectSocket(sessionId);
           return {
             handled: true,
-            message: '🔌 *Sessão desconectada com sucesso!*\n\nEnvie `/init` para reconectar.',
+            message:
+              '🔌 *Sessão desconectada com sucesso!*\n\nEnvie `/init` para reconectar.',
           };
         } catch (error) {
           return {

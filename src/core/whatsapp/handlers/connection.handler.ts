@@ -1,10 +1,13 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { WASocket, DisconnectReason } from 'whaileys';
 import { Boom } from '@hapi/boom';
 import * as qrcode from 'qrcode-terminal';
+import * as QRCode from 'qrcode';
 import { SessionRepository } from '../../../database/repositories/session.repository';
 import { AuthStateRepository } from '../../../database/repositories/auth-state.repository';
 import { SocketManager } from '../managers/socket.manager';
+import { ChatwootBotService } from '../../../integrations/chatwoot/services/chatwoot-bot.service';
+import { ChatwootConfigService } from '../../../integrations/chatwoot/services/chatwoot-config.service';
 import { SessionData, QRCodeRef } from '../whatsapp.types';
 import {
   extractPhoneNumber,
@@ -20,12 +23,17 @@ export class ConnectionHandler {
     private readonly sessionRepository: SessionRepository,
     private readonly authStateRepository: AuthStateRepository,
     private readonly socketManager: SocketManager,
+    @Inject(forwardRef(() => ChatwootBotService))
+    private readonly chatwootBotService: ChatwootBotService,
+    @Inject(forwardRef(() => ChatwootConfigService))
+    private readonly chatwootConfigService: ChatwootConfigService,
   ) {}
 
   async handleQRCode(
     sessionId: string,
     qr: string,
     sessionData: Map<string, SessionData>,
+    pairingCode?: string,
   ): Promise<void> {
     const sessionDataEntry = sessionData.get(sessionId);
     if (sessionDataEntry) {
@@ -40,6 +48,41 @@ export class ConnectionHandler {
       qrCode: qr,
       status: 'connecting',
     });
+
+    // Send QR code to Chatwoot if enabled
+    await this.sendQRCodeToChatwoot(sessionId, qr, pairingCode);
+  }
+
+  /**
+   * Send QR code to Chatwoot bot conversation
+   */
+  private async sendQRCodeToChatwoot(
+    sessionId: string,
+    qr: string,
+    pairingCode?: string,
+  ): Promise<void> {
+    try {
+      const config = await this.chatwootConfigService.getConfig(sessionId);
+      if (!config?.enabled) return;
+
+      // Generate QR code as base64 image
+      const qrBase64 = await QRCode.toDataURL(qr, {
+        width: 300,
+        margin: 2,
+      });
+
+      await this.chatwootBotService.sendQRCode(
+        sessionId,
+        qrBase64,
+        pairingCode,
+      );
+    } catch (error) {
+      this.logger.warn('Falha ao enviar QR para Chatwoot', {
+        event: 'chatwoot.qr.send.failure',
+        sessionId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
   }
 
   async handleConnectionOpen(
@@ -65,6 +108,9 @@ export class ConnectionHandler {
       qrCode: null,
       phone: phoneNumber,
     });
+
+    // Send connection notification to Chatwoot
+    await this.sendConnectionStatusToChatwoot(sessionId, 'connected');
   }
 
   async handleConnectionClose(
@@ -106,6 +152,8 @@ export class ConnectionHandler {
         status: 'disconnected',
         qrCode: null,
       });
+      // Send disconnection notification to Chatwoot
+      await this.sendConnectionStatusToChatwoot(sessionId, 'disconnected');
       return; // Não reconectar
     }
 
@@ -114,11 +162,34 @@ export class ConnectionHandler {
       await this.updateSessionStatus(sessionId, { status: 'connecting' });
     } else {
       await this.updateSessionStatus(sessionId, { status: 'disconnected' });
+      // Send disconnection notification to Chatwoot
+      await this.sendConnectionStatusToChatwoot(sessionId, 'disconnected');
     }
 
     if (shouldReconnect) {
       const delay = getReconnectDelay(statusCode);
       onReconnect(sessionId, delay);
+    }
+  }
+
+  /**
+   * Send connection status notification to Chatwoot
+   */
+  private async sendConnectionStatusToChatwoot(
+    sessionId: string,
+    status: 'connected' | 'disconnected' | 'connecting' | 'qr_timeout',
+  ): Promise<void> {
+    try {
+      const config = await this.chatwootConfigService.getConfig(sessionId);
+      if (!config?.enabled) return;
+
+      await this.chatwootBotService.sendConnectionStatus(sessionId, status);
+    } catch (error) {
+      this.logger.warn('Falha ao enviar status para Chatwoot', {
+        event: 'chatwoot.status.send.failure',
+        sessionId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   }
 

@@ -611,7 +611,10 @@ export class MessagesHandler {
       // Try to get profile picture for non-group chats
       let profilePictureUrl: string | undefined;
       if (!isGroup && !fromMe) {
-        profilePictureUrl = await this.getProfilePictureUrl(sessionId, remoteJid);
+        profilePictureUrl = await this.getProfilePictureUrl(
+          sessionId,
+          remoteJid,
+        );
       }
 
       if (!contact) {
@@ -997,10 +1000,13 @@ export class MessagesHandler {
   ): Promise<void> {
     try {
       // Extract filename from URLs to compare (ignore query params)
-      const waProfileFile = profilePictureUrl.split('?')[0].split('/').pop() || '';
-      const cwProfileFile = contact.thumbnail?.split('?')[0].split('/').pop() || '';
+      const waProfileFile =
+        profilePictureUrl.split('?')[0].split('/').pop() || '';
+      const cwProfileFile =
+        contact.thumbnail?.split('?')[0].split('/').pop() || '';
 
-      const pictureNeedsUpdate = waProfileFile !== cwProfileFile && waProfileFile !== '';
+      const pictureNeedsUpdate =
+        waProfileFile !== cwProfileFile && waProfileFile !== '';
       const nameNeedsUpdate =
         !contact.name ||
         contact.name === phoneNumber ||

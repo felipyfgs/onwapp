@@ -24,6 +24,13 @@ Este documento compara as funcionalidades da integração Chatwoot entre o **Zpw
 | **mergeBrazilContacts** | Merge de contatos brasileiros (com/sem 9) | ✅ Implementado |
 | **ignoreJids** | Lista de JIDs a ignorar | ✅ Implementado |
 | **Criação automática de Inbox** | Cria inbox automaticamente se não existir | ✅ Implementado |
+| **Formatação de Location Message** | Coordenadas + link Google Maps | ✅ Implementado |
+| **Formatação de Contact Message** | Parse de vCard com nome/telefone/email | ✅ Implementado |
+| **Ads/Link Preview Message** | Preview de links compartilhados | ✅ Implementado |
+| **Sincronização de Foto de Perfil** | Atualiza avatar do contato automaticamente | ✅ Implementado |
+| **Bot Contact & QR Code** | Gerenciar sessão pelo Chatwoot | ✅ Implementado |
+| **Notificações de Conexão** | Status updates no Chatwoot | ✅ Implementado |
+| **Comandos do Bot** | /init, /status, /disconnect, /help | ✅ Implementado |
 
 ---
 

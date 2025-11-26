@@ -71,7 +71,11 @@ export class ChatwootWebhookHandler {
     const chatId = this.extractChatId(payload);
 
     // Check if this is a bot command (message to bot contact 123456)
-    if (chatId === BOT_PHONE_NUMBER && payload.message_type === 'outgoing' && payload.content) {
+    if (
+      chatId === BOT_PHONE_NUMBER &&
+      payload.message_type === 'outgoing' &&
+      payload.content
+    ) {
       return this.handleBotCommand(sessionId, payload.content);
     }
     if (!chatId) {
@@ -651,5 +655,33 @@ export class ChatwootWebhookHandler {
     }
 
     return simplified;
+  }
+
+  /**
+   * Handle bot commands from Chatwoot
+   */
+  private async handleBotCommand(
+    sessionId: string,
+    content: string,
+  ): Promise<WebhookProcessingResult> {
+    try {
+      const result = await this.botService.handleBotCommand(sessionId, content);
+
+      if (result.handled) {
+        if (result.message) {
+          await this.botService.sendBotMessage(sessionId, result.message);
+        }
+        return { status: 'bot_command', reason: `Command handled: ${content}` };
+      }
+
+      return { status: 'ignored', reason: 'Unknown bot command' };
+    } catch (error) {
+      this.logger.error('Erro ao processar comando do bot', {
+        event: 'chatwoot.bot.command.failure',
+        sessionId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return { status: 'error', error: 'Failed to process bot command' };
+    }
   }
 }

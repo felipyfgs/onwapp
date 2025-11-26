@@ -270,10 +270,14 @@ export class ChatwootMessageService {
     if (message.documentMessage)
       return message.documentMessage.fileName || '[Document]';
     if (message.stickerMessage) return '[Sticker]';
-    if (message.contactMessage) return this.formatContactMessage(message.contactMessage);
-    if (message.contactsArrayMessage) return this.formatContactsArrayMessage(message.contactsArrayMessage);
-    if (message.locationMessage) return this.formatLocationMessage(message.locationMessage);
-    if (message.liveLocationMessage) return this.formatLocationMessage(message.liveLocationMessage, true);
+    if (message.contactMessage)
+      return this.formatContactMessage(message.contactMessage);
+    if (message.contactsArrayMessage)
+      return this.formatContactsArrayMessage(message.contactsArrayMessage);
+    if (message.locationMessage)
+      return this.formatLocationMessage(message.locationMessage);
+    if (message.liveLocationMessage)
+      return this.formatLocationMessage(message.liveLocationMessage, true);
     if (message.listMessage) {
       return this.formatListMessage(message.listMessage);
     }
@@ -515,7 +519,10 @@ export class ChatwootMessageService {
       return '👥 [Contatos]';
     }
 
-    const lines: string[] = [`👥 *${contacts.length} Contatos Compartilhados:*`, ''];
+    const lines: string[] = [
+      `👥 *${contacts.length} Contatos Compartilhados:*`,
+      '',
+    ];
 
     for (const contact of contacts) {
       const name = contact.displayName || 'Sem nome';
@@ -539,8 +546,10 @@ export class ChatwootMessageService {
   private formatAdsMessage(message: WAMessageContent): string | null {
     // Check for external ad reply in extended text message or context info
     const extMsg = message.extendedTextMessage;
-    const contextInfo = extMsg?.contextInfo as Record<string, unknown> | undefined;
-    const externalAdReply = contextInfo?.externalAdReply as Record<string, unknown> | undefined;
+    const contextInfo = extMsg?.contextInfo;
+    const externalAdReply = contextInfo?.externalAdReply as
+      | Record<string, unknown>
+      | undefined;
 
     if (!externalAdReply) return null;
 
