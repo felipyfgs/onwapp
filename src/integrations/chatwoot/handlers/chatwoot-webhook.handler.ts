@@ -5,6 +5,7 @@ import { WhatsAppService } from '../../../core/whatsapp/whatsapp.service';
 import { PersistenceService } from '../../../core/persistence/persistence.service';
 import { ChatwootConfigService } from '../services/chatwoot-config.service';
 import { ChatwootMessageService } from '../services/chatwoot-message.service';
+import { ChatwootConversationService } from '../services/chatwoot-conversation.service';
 import { ChatwootBotService } from '../services/chatwoot-bot.service';
 import {
   ChatwootWebhookPayload,
@@ -30,6 +31,7 @@ export class ChatwootWebhookHandler {
   constructor(
     private readonly configService: ChatwootConfigService,
     private readonly messageService: ChatwootMessageService,
+    private readonly conversationService: ChatwootConversationService,
     private readonly botService: ChatwootBotService,
     @Inject(forwardRef(() => MessagesService))
     private readonly messagesService: MessagesService,
@@ -45,6 +47,16 @@ export class ChatwootWebhookHandler {
     sessionId: string,
     payload: ChatwootWebhookPayload,
   ): Promise<WebhookProcessingResult> {
+    this.logger.debug('Webhook recebido do Chatwoot', {
+      event: 'chatwoot.webhook.received',
+      sessionId,
+      eventType: payload.event,
+      messageType: payload.message_type,
+      senderType: payload.sender?.type,
+      hasSourceId: !!payload.source_id,
+      conversationId: payload.conversation?.id,
+    });
+
     // Handle message deletion
     if (
       payload.event === CHATWOOT_EVENTS.MESSAGE_UPDATED &&
@@ -64,11 +76,24 @@ export class ChatwootWebhookHandler {
     // Validate the message should be processed
     const validationResult = this.validateOutgoingMessage(payload);
     if (validationResult) {
+      this.logger.debug('Mensagem ignorada na validação', {
+        event: 'chatwoot.webhook.validation.skip',
+        sessionId,
+        reason: validationResult.reason,
+      });
       return validationResult;
     }
 
     // Extract chat ID from webhook payload
     const chatId = this.extractChatId(payload);
+    
+    this.logger.debug('Chat ID extraído do payload', {
+      event: 'chatwoot.webhook.chatid.extracted',
+      sessionId,
+      chatId,
+      senderIdentifier: payload.conversation?.meta?.sender?.identifier,
+      senderPhone: payload.conversation?.meta?.sender?.phone_number,
+    });
 
     // Check if this is a bot command (message to bot contact 123456)
     if (
@@ -88,7 +113,23 @@ export class ChatwootWebhookHandler {
 
     // Format and validate the remote JID
     let remoteJid = formatRemoteJid(chatId);
+    const isGroup = remoteJid.includes('@g.us');
+    
+    this.logger.debug('JID formatado', {
+      event: 'chatwoot.webhook.jid.format',
+      sessionId,
+      chatId,
+      remoteJid,
+      isGroup,
+    });
+    
     remoteJid = await this.validateAndResolveJid(sessionId, remoteJid, chatId);
+    
+    this.logger.debug('JID após validação', {
+      event: 'chatwoot.webhook.jid.validated',
+      sessionId,
+      remoteJid,
+    });
 
     // Get Chatwoot config for signMsg
     const config = await this.configService.findConfig(sessionId);
@@ -312,6 +353,11 @@ export class ChatwootWebhookHandler {
       }
     }
 
+    // Update conversation status to "open" to confirm message was sent
+    if (conversationId) {
+      await this.confirmMessageDelivery(sessionId, conversationId);
+    }
+
     return { status: 'sent', type: 'media', chatId: remoteJid };
   }
 
@@ -349,6 +395,40 @@ export class ChatwootWebhookHandler {
           remoteJid,
           fromMe: true,
         },
+      });
+
+      // Update conversation status to "open" to confirm message was sent
+      // This removes the "Waiting for message" status in Chatwoot
+      await this.confirmMessageDelivery(sessionId, payload.conversation.id);
+    }
+  }
+
+  /**
+   * Confirm message delivery by updating conversation status to "open"
+   * This removes the "Waiting for message" indicator in Chatwoot
+   */
+  private async confirmMessageDelivery(
+    sessionId: string,
+    conversationId: number,
+  ): Promise<void> {
+    try {
+      await this.conversationService.updateStatus(
+        sessionId,
+        conversationId,
+        'open',
+      );
+      this.logger.debug('Status da conversa atualizado para open', {
+        event: 'chatwoot.conversation.status.updated',
+        sessionId,
+        conversationId,
+      });
+    } catch (error) {
+      // Non-critical error - don't fail the message send
+      this.logger.warn('Falha ao atualizar status da conversa', {
+        event: 'chatwoot.conversation.status.failure',
+        sessionId,
+        conversationId,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }

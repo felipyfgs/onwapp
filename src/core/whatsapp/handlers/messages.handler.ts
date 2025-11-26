@@ -88,6 +88,7 @@ export class MessagesHandler {
       event: 'whatsapp.messages.upsert',
       sessionId,
       count: payload.messages?.length || 0,
+      type: payload.type,
     });
 
     try {
@@ -192,6 +193,13 @@ export class MessagesHandler {
         // type === 'notify' means real-time message, 'append' means history sync
         if (payload.type === 'notify') {
           await this.forwardToChatwoot(sessionId, msg, sid);
+        } else {
+          this.logger.debug('Mensagem não encaminhada ao Chatwoot (não é notify)', {
+            event: 'chatwoot.message.forward.skip',
+            sessionId,
+            waMessageId: msg.key.id,
+            type: payload.type,
+          });
         }
       }
     } catch (error) {
@@ -576,10 +584,25 @@ export class MessagesHandler {
   ): Promise<void> {
     try {
       const config = await this.chatwootService.getConfig(sessionId);
-      if (!config?.enabled) return;
+      if (!config?.enabled) {
+        this.logger.debug('Chatwoot não habilitado, ignorando', {
+          event: 'chatwoot.message.forward.skip',
+          sessionId,
+          reason: 'chatwoot_disabled',
+        });
+        return;
+      }
 
       const { key, message, pushName } = msg;
       const { remoteJid, fromMe, participant } = key;
+
+      this.logger.debug('Iniciando encaminhamento ao Chatwoot', {
+        event: 'chatwoot.message.forward.start',
+        sessionId,
+        waMessageId: key.id,
+        remoteJid,
+        fromMe,
+      });
 
       // Skip status broadcasts
       if (remoteJid === 'status@broadcast') return;
@@ -605,7 +628,16 @@ export class MessagesHandler {
       }
 
       // Check ignored JIDs
-      if (config.ignoreJids?.includes(remoteJid)) return;
+      if (config.ignoreJids?.includes(remoteJid)) {
+        this.logger.debug('JID ignorado', {
+          event: 'chatwoot.message.forward.skip',
+          sessionId,
+          waMessageId: key.id,
+          reason: 'jid_ignored',
+          remoteJid,
+        });
+        return;
+      }
 
       const isGroup = remoteJid.includes('@g.us');
       const phoneNumber = isGroup
@@ -663,7 +695,15 @@ export class MessagesHandler {
           identifier: remoteJid,
           avatarUrl: profilePictureUrl,
         });
-        if (!contact) return;
+        if (!contact) {
+          this.logger.warn('Falha ao criar contato no Chatwoot', {
+            event: 'chatwoot.message.forward.skip',
+            sessionId,
+            waMessageId: key.id,
+            reason: 'contact_creation_failed',
+          });
+          return;
+        }
       } else if (!fromMe && profilePictureUrl) {
         // Update contact with profile picture if changed
         await this.updateContactProfilePicture(
@@ -681,13 +721,30 @@ export class MessagesHandler {
         sessionId,
         { contactId: contact.id, inboxId: inbox.id, isGroup },
       );
-      if (!conversationId) return;
+      if (!conversationId) {
+        this.logger.warn('Falha ao criar/obter conversa no Chatwoot', {
+          event: 'chatwoot.message.forward.skip',
+          sessionId,
+          waMessageId: key.id,
+          reason: 'conversation_creation_failed',
+        });
+        return;
+      }
 
       // Get message content
       const messageContent = this.chatwootService.getMessageContent(
         message || null,
       );
-      if (!messageContent) return;
+      if (!messageContent) {
+        this.logger.debug('Conteúdo da mensagem vazio', {
+          event: 'chatwoot.message.forward.skip',
+          sessionId,
+          waMessageId: key.id,
+          reason: 'empty_content',
+          messageKeys: message ? Object.keys(message) : [],
+        });
+        return;
+      }
 
       // Format for groups
       let finalContent = messageContent;
