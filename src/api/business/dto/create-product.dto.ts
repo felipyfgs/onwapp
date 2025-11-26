@@ -1,5 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsOptional, IsNumber, IsArray, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsNumber,
+  IsArray,
+  IsBoolean,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 class ProductImageDto {
@@ -14,20 +22,19 @@ export class CreateProductDto {
   @IsNotEmpty()
   name: string;
 
-  @ApiPropertyOptional({ description: 'Descrição do produto' })
+  @ApiProperty({ description: 'Descrição do produto' })
   @IsString()
-  @IsOptional()
-  description?: string;
+  @IsNotEmpty()
+  description: string;
 
-  @ApiPropertyOptional({ description: 'Preço do produto (em centavos)' })
+  @ApiProperty({ description: 'Preço do produto (em centavos)' })
   @IsNumber()
-  @IsOptional()
-  price?: number;
+  price: number;
 
-  @ApiPropertyOptional({ description: 'Código da moeda (ex: BRL)' })
+  @ApiProperty({ description: 'Código da moeda (ex: BRL)' })
   @IsString()
-  @IsOptional()
-  currency?: string;
+  @IsNotEmpty()
+  currency: string;
 
   @ApiPropertyOptional({ description: 'URL do produto' })
   @IsString()
@@ -39,10 +46,22 @@ export class CreateProductDto {
   @IsOptional()
   retailerId?: string;
 
-  @ApiPropertyOptional({ description: 'Imagens do produto', type: [ProductImageDto] })
+  @ApiPropertyOptional({ description: 'Se o produto está oculto' })
+  @IsBoolean()
+  @IsOptional()
+  isHidden?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Código do país de origem (ISO)',
+    example: 'BR',
+  })
+  @IsString()
+  @IsOptional()
+  originCountryCode?: string;
+
+  @ApiProperty({ description: 'Imagens do produto', type: [ProductImageDto] })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ProductImageDto)
-  @IsOptional()
-  images?: ProductImageDto[];
+  images: ProductImageDto[];
 }

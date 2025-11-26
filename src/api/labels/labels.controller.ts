@@ -33,79 +33,105 @@ export class LabelsController {
   constructor(private readonly labelsService: LabelsService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Criar novo label' })
+  @ApiOperation({
+    summary: 'Criar label',
+    description:
+      'Nota: Este método pode não estar disponível na versão atual do whaileys',
+  })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiBody({ type: CreateLabelDto })
-  @ApiOkResponse({ description: 'Label criado com sucesso' })
+  @ApiOkResponse({ description: 'Label criada com sucesso' })
   @ApiBadRequestResponse({ description: 'Erro ao criar label' })
-  async addLabel(
+  async createLabel(
     @Param('sessionId') sessionId: string,
     @Body() dto: CreateLabelDto,
   ) {
-    return this.labelsService.addLabel(sessionId, dto.name, dto.color);
+    return this.labelsService.createLabel(sessionId, dto.name, dto.color);
   }
 
-  @Post(':labelId/chats')
+  @Post('chat')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Adicionar label a um chat' })
+  @ApiOperation({
+    summary: 'Adicionar label a um chat',
+    description:
+      'Nota: Este método pode não estar disponível na versão atual do whaileys',
+  })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
-  @ApiParam({ name: 'labelId', description: 'ID do label' })
   @ApiBody({ type: ChatLabelDto })
-  @ApiOkResponse({ description: 'Label adicionado ao chat' })
+  @ApiOkResponse({ description: 'Label adicionada ao chat' })
   @ApiBadRequestResponse({ description: 'Erro ao adicionar label' })
   async addChatLabel(
     @Param('sessionId') sessionId: string,
-    @Param('labelId') labelId: string,
     @Body() dto: ChatLabelDto,
   ) {
-    return this.labelsService.addChatLabel(sessionId, labelId, dto.chatId);
+    return this.labelsService.addChatLabel(sessionId, dto.chatId, dto.labelId);
   }
 
-  @Delete(':labelId/chats/:chatId')
-  @ApiOperation({ summary: 'Remover label de um chat' })
+  @Delete('chat')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Remover label de um chat',
+    description:
+      'Nota: Este método pode não estar disponível na versão atual do whaileys',
+  })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
-  @ApiParam({ name: 'labelId', description: 'ID do label' })
-  @ApiParam({ name: 'chatId', description: 'JID do chat' })
-  @ApiOkResponse({ description: 'Label removido do chat' })
+  @ApiBody({ type: ChatLabelDto })
+  @ApiOkResponse({ description: 'Label removida do chat' })
   @ApiBadRequestResponse({ description: 'Erro ao remover label' })
   async removeChatLabel(
     @Param('sessionId') sessionId: string,
-    @Param('labelId') labelId: string,
-    @Param('chatId') chatId: string,
+    @Body() dto: ChatLabelDto,
   ) {
-    return this.labelsService.removeChatLabel(sessionId, labelId, chatId);
+    return this.labelsService.removeChatLabel(
+      sessionId,
+      dto.chatId,
+      dto.labelId,
+    );
   }
 
-  @Post(':labelId/messages')
+  @Post('message')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Adicionar label a uma mensagem' })
+  @ApiOperation({
+    summary: 'Adicionar label a uma mensagem',
+    description:
+      'Nota: Este método pode não estar disponível na versão atual do whaileys',
+  })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
-  @ApiParam({ name: 'labelId', description: 'ID do label' })
   @ApiBody({ type: MessageLabelDto })
-  @ApiOkResponse({ description: 'Label adicionado à mensagem' })
+  @ApiOkResponse({ description: 'Label adicionada à mensagem' })
   @ApiBadRequestResponse({ description: 'Erro ao adicionar label' })
   async addMessageLabel(
     @Param('sessionId') sessionId: string,
-    @Param('labelId') labelId: string,
     @Body() dto: MessageLabelDto,
   ) {
-    return this.labelsService.addMessageLabel(sessionId, labelId, dto.chatId, dto.messageId);
+    return this.labelsService.addMessageLabel(
+      sessionId,
+      dto.chatId,
+      dto.messageId,
+      dto.labelId,
+    );
   }
 
-  @Delete(':labelId/messages/:chatId/:messageId')
-  @ApiOperation({ summary: 'Remover label de uma mensagem' })
+  @Delete('message')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Remover label de uma mensagem',
+    description:
+      'Nota: Este método pode não estar disponível na versão atual do whaileys',
+  })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
-  @ApiParam({ name: 'labelId', description: 'ID do label' })
-  @ApiParam({ name: 'chatId', description: 'JID do chat' })
-  @ApiParam({ name: 'messageId', description: 'ID da mensagem' })
-  @ApiOkResponse({ description: 'Label removido da mensagem' })
+  @ApiBody({ type: MessageLabelDto })
+  @ApiOkResponse({ description: 'Label removida da mensagem' })
   @ApiBadRequestResponse({ description: 'Erro ao remover label' })
   async removeMessageLabel(
     @Param('sessionId') sessionId: string,
-    @Param('labelId') labelId: string,
-    @Param('chatId') chatId: string,
-    @Param('messageId') messageId: string,
+    @Body() dto: MessageLabelDto,
   ) {
-    return this.labelsService.removeMessageLabel(sessionId, labelId, chatId, messageId);
+    return this.labelsService.removeMessageLabel(
+      sessionId,
+      dto.chatId,
+      dto.messageId,
+      dto.labelId,
+    );
   }
 }

@@ -26,10 +26,12 @@ import {
 import { NewslettersService } from './newsletters.service';
 import { ApiKeyGuard } from '../../common/guards/api-key.guard';
 import { CreateNewsletterDto } from './dto/create-newsletter.dto';
-import { UpdateNewsletterNameDto } from './dto/update-newsletter-name.dto';
-import { UpdateNewsletterDescriptionDto } from './dto/update-newsletter-description.dto';
-import { UpdateNewsletterPictureDto } from './dto/update-newsletter-picture.dto';
-import { ReactNewsletterMessageDto } from './dto/react-newsletter-message.dto';
+import {
+  UpdateNewsletterNameDto,
+  UpdateNewsletterDescriptionDto,
+  UpdateNewsletterPictureDto,
+  ReactNewsletterMessageDto,
+} from './dto/update-newsletter.dto';
 
 @ApiTags('Newsletters')
 @ApiSecurity('apikey')
@@ -148,7 +150,11 @@ export class NewslettersController {
     @Param('jid') jid: string,
     @Body() dto: UpdateNewsletterDescriptionDto,
   ) {
-    return this.newslettersService.updateDescription(sessionId, jid, dto.description);
+    return this.newslettersService.updateDescription(
+      sessionId,
+      jid,
+      dto.description,
+    );
   }
 
   @Put(':jid/picture')
@@ -192,14 +198,23 @@ export class NewslettersController {
     @Param('jid') jid: string,
     @Body() dto: ReactNewsletterMessageDto,
   ) {
-    return this.newslettersService.react(sessionId, jid, dto.serverId, dto.reaction);
+    return this.newslettersService.react(
+      sessionId,
+      jid,
+      dto.serverId,
+      dto.reaction,
+    );
   }
 
   @Get(':jid/messages')
   @ApiOperation({ summary: 'Buscar mensagens do canal' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiParam({ name: 'jid', description: 'JID do canal' })
-  @ApiQuery({ name: 'count', required: false, description: 'Número de mensagens (padrão: 50)' })
+  @ApiQuery({
+    name: 'count',
+    required: false,
+    description: 'Número de mensagens (padrão: 50)',
+  })
   @ApiOkResponse({ description: 'Mensagens obtidas com sucesso' })
   @ApiBadRequestResponse({ description: 'Erro ao buscar mensagens' })
   async fetchMessages(

@@ -33,9 +33,6 @@ import { UpdateGroupSettingsDto } from './dto/update-group-settings.dto';
 import { AcceptInviteDto } from './dto/accept-invite.dto';
 import { GroupMetadataResponseDto } from './dto/group-metadata-response.dto';
 import { ToggleEphemeralDto } from './dto/toggle-ephemeral.dto';
-import { HandleJoinRequestDto } from './dto/handle-join-request.dto';
-import { MemberAddModeDto } from './dto/member-add-mode.dto';
-import { JoinApprovalModeDto } from './dto/join-approval-mode.dto';
 
 @ApiTags('Groups')
 @ApiSecurity('apikey')
@@ -365,70 +362,4 @@ export class GroupsController {
     return this.groupsService.toggleEphemeral(sessionId, groupId, dto.expiration);
   }
 
-  @Get(':groupId/requests')
-  @ApiOperation({ summary: 'Listar solicitações de entrada pendentes' })
-  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
-  @ApiParam({ name: 'groupId', description: 'ID do grupo' })
-  @ApiOkResponse({ description: 'Solicitações listadas com sucesso' })
-  @ApiBadRequestResponse({ description: 'Erro ao listar solicitações' })
-  @ApiNotFoundResponse({ description: 'Sessão não encontrada' })
-  async getJoinRequests(
-    @Param('sessionId') sessionId: string,
-    @Param('groupId') groupId: string,
-  ) {
-    return this.groupsService.getJoinRequests(sessionId, groupId);
-  }
-
-  @Post(':groupId/requests')
-  @ApiOperation({ summary: 'Aprovar ou rejeitar solicitações de entrada' })
-  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
-  @ApiParam({ name: 'groupId', description: 'ID do grupo' })
-  @ApiBody({ type: HandleJoinRequestDto })
-  @ApiOkResponse({ description: 'Solicitações processadas com sucesso' })
-  @ApiBadRequestResponse({ description: 'Erro ao processar solicitações' })
-  @ApiNotFoundResponse({ description: 'Sessão não encontrada' })
-  async handleJoinRequest(
-    @Param('sessionId') sessionId: string,
-    @Param('groupId') groupId: string,
-    @Body() dto: HandleJoinRequestDto,
-  ) {
-    return this.groupsService.handleJoinRequest(
-      sessionId,
-      groupId,
-      dto.participants,
-      dto.action,
-    );
-  }
-
-  @Post(':groupId/member-add-mode')
-  @ApiOperation({ summary: 'Definir quem pode adicionar membros' })
-  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
-  @ApiParam({ name: 'groupId', description: 'ID do grupo' })
-  @ApiBody({ type: MemberAddModeDto })
-  @ApiOkResponse({ description: 'Modo de adição alterado com sucesso' })
-  @ApiBadRequestResponse({ description: 'Erro ao alterar modo de adição' })
-  @ApiNotFoundResponse({ description: 'Sessão não encontrada' })
-  async setMemberAddMode(
-    @Param('sessionId') sessionId: string,
-    @Param('groupId') groupId: string,
-    @Body() dto: MemberAddModeDto,
-  ) {
-    return this.groupsService.setMemberAddMode(sessionId, groupId, dto.mode);
-  }
-
-  @Post(':groupId/join-approval')
-  @ApiOperation({ summary: 'Ativar/desativar aprovação de entrada' })
-  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
-  @ApiParam({ name: 'groupId', description: 'ID do grupo' })
-  @ApiBody({ type: JoinApprovalModeDto })
-  @ApiOkResponse({ description: 'Modo de aprovação alterado com sucesso' })
-  @ApiBadRequestResponse({ description: 'Erro ao alterar modo de aprovação' })
-  @ApiNotFoundResponse({ description: 'Sessão não encontrada' })
-  async setJoinApprovalMode(
-    @Param('sessionId') sessionId: string,
-    @Param('groupId') groupId: string,
-    @Body() dto: JoinApprovalModeDto,
-  ) {
-    return this.groupsService.setJoinApprovalMode(sessionId, groupId, dto.mode);
-  }
 }

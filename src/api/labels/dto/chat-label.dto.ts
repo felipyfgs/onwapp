@@ -6,4 +6,9 @@ export class ChatLabelDto {
   @IsString()
   @IsNotEmpty()
   chatId: string;
+
+  @ApiProperty({ description: 'ID da label' })
+  @IsString()
+  @IsNotEmpty()
+  labelId: string;
 }

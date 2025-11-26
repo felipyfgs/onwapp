@@ -11,11 +11,13 @@ import { ChatsModule } from './api/chats/chats.module';
 import { PresenceModule } from './api/presence/presence.module';
 import { MediaModule } from './api/media/media.module';
 import { SettingsModule } from './api/settings/settings.module';
-import { CallsModule } from './api/calls/calls.module';
-import { NewslettersModule } from './api/newsletters/newsletters.module';
-import { BusinessModule } from './api/business/business.module';
-import { LabelsModule } from './api/labels/labels.module';
-import { CommunitiesModule } from './api/communities/communities.module';
+// Note: These modules require newer whaileys version with additional methods
+// Uncomment when whaileys is updated:
+// import { CallsModule } from './api/calls/calls.module';
+// import { NewslettersModule } from './api/newsletters/newsletters.module';
+// import { BusinessModule } from './api/business/business.module';
+// import { LabelsModule } from './api/labels/labels.module';
+// import { CommunitiesModule } from './api/communities/communities.module';
 import { WebhooksModule } from './integrations/webhooks/webhooks.module';
 import { ChatwootModule } from './integrations/chatwoot/chatwoot.module';
 import { PersistenceModule } from './core/persistence/persistence.module';
@@ -37,11 +39,11 @@ import { AudioModule } from './core/audio/audio.module';
     PresenceModule,
     MediaModule,
     SettingsModule,
-    CallsModule,
-    NewslettersModule,
-    BusinessModule,
-    LabelsModule,
-    CommunitiesModule,
+    // CallsModule,
+    // NewslettersModule,
+    // BusinessModule,
+    // LabelsModule,
+    // CommunitiesModule,
     WebhooksModule,
     ChatwootModule,
     PersistenceModule,

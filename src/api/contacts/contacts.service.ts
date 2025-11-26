@@ -119,7 +119,7 @@ export class ContactsService implements OnModuleInit {
     const socket = this.whatsappService.getSocket(sessionId);
     validateSocket(socket);
 
-    await socket.addOrEditContact(jid, name);
+    await socket.addOrEditContact(jid, { fullName: name });
 
     return { success: true, message: 'Contato adicionado/editado com sucesso' };
   }
@@ -134,17 +134,5 @@ export class ContactsService implements OnModuleInit {
     await socket.removeContact(jid);
 
     return { success: true, message: 'Contato removido com sucesso' };
-  }
-
-  async fetchDisappearingDuration(
-    sessionId: string,
-    jid: string,
-  ): Promise<{ duration: number | null }> {
-    const socket = this.whatsappService.getSocket(sessionId);
-    validateSocket(socket);
-
-    const duration = await socket.fetchDisappearingDuration(jid);
-
-    return { duration };
   }
 }

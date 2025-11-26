@@ -1,6 +1,10 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { WhatsAppService } from '../../core/whatsapp/whatsapp.service';
 import { validateSocket } from '../../common/utils/socket-validator';
+import {
+  ExtendedWASocket,
+  hasMethod,
+} from '../../common/utils/extended-socket.type';
 
 @Injectable()
 export class CallsService {
@@ -9,8 +13,16 @@ export class CallsService {
   constructor(private readonly whatsappService: WhatsAppService) {}
 
   async createCallLink(sessionId: string) {
-    const socket = this.whatsappService.getSocket(sessionId);
+    const socket = this.whatsappService.getSocket(
+      sessionId,
+    ) as ExtendedWASocket;
     validateSocket(socket);
+
+    if (!hasMethod(socket, 'createCallLink')) {
+      throw new BadRequestException(
+        'createCallLink not available in current whaileys version. Please update the library.',
+      );
+    }
 
     try {
       this.logger.log(`[${sessionId}] Criando link de chamada`);

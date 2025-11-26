@@ -23,7 +23,7 @@ import {
 import { BusinessService } from './business.service';
 import { ApiKeyGuard } from '../../common/guards/api-key.guard';
 import { CreateProductDto } from './dto/create-product.dto';
-import { UpdateBusinessProfileDto } from './dto/update-business-profile.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
 import { DeleteProductsDto } from './dto/delete-products.dto';
 
 @ApiTags('Business')
@@ -37,27 +37,43 @@ export class BusinessController {
   @Get('catalog')
   @ApiOperation({ summary: 'Obter catálogo de produtos' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
-  @ApiQuery({ name: 'jid', required: false, description: 'JID do negócio (opcional)' })
+  @ApiQuery({
+    name: 'jid',
+    required: false,
+    description: 'JID do negócio (opcional)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Limite de produtos',
+  })
   @ApiOkResponse({ description: 'Catálogo obtido com sucesso' })
   @ApiBadRequestResponse({ description: 'Erro ao obter catálogo' })
   async getCatalog(
     @Param('sessionId') sessionId: string,
     @Query('jid') jid?: string,
+    @Query('limit') limit?: number,
   ) {
-    return this.businessService.getCatalog(sessionId, jid);
+    return this.businessService.getCatalog(sessionId, jid, limit);
   }
 
   @Get('collections')
   @ApiOperation({ summary: 'Obter coleções do catálogo' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
-  @ApiQuery({ name: 'jid', required: false, description: 'JID do negócio (opcional)' })
+  @ApiQuery({
+    name: 'jid',
+    required: false,
+    description: 'JID do negócio (opcional)',
+  })
+  @ApiQuery({ name: 'limit', required: false, description: 'Limite de coleções' })
   @ApiOkResponse({ description: 'Coleções obtidas com sucesso' })
   @ApiBadRequestResponse({ description: 'Erro ao obter coleções' })
   async getCollections(
     @Param('sessionId') sessionId: string,
     @Query('jid') jid?: string,
+    @Query('limit') limit?: number,
   ) {
-    return this.businessService.getCollections(sessionId, jid);
+    return this.businessService.getCollections(sessionId, jid, limit);
   }
 
   @Get('orders/:orderId')
@@ -75,6 +91,19 @@ export class BusinessController {
     return this.businessService.getOrderDetails(sessionId, orderId, token);
   }
 
+  @Get('profile/:jid')
+  @ApiOperation({ summary: 'Obter perfil de negócio de um contato' })
+  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
+  @ApiParam({ name: 'jid', description: 'JID do contato' })
+  @ApiOkResponse({ description: 'Perfil obtido com sucesso' })
+  @ApiBadRequestResponse({ description: 'Erro ao obter perfil' })
+  async getBusinessProfile(
+    @Param('sessionId') sessionId: string,
+    @Param('jid') jid: string,
+  ) {
+    return this.businessService.getBusinessProfile(sessionId, jid);
+  }
+
   @Post('products')
   @ApiOperation({ summary: 'Criar produto no catálogo' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
@@ -85,22 +114,32 @@ export class BusinessController {
     @Param('sessionId') sessionId: string,
     @Body() dto: CreateProductDto,
   ) {
-    return this.businessService.createProduct(sessionId, dto);
+    return this.businessService.createProduct(sessionId, {
+      name: dto.name,
+      description: dto.description,
+      price: dto.price,
+      currency: dto.currency,
+      url: dto.url,
+      retailerId: dto.retailerId,
+      isHidden: dto.isHidden,
+      originCountryCode: dto.originCountryCode,
+      images: dto.images,
+    });
   }
 
   @Put('products/:productId')
   @ApiOperation({ summary: 'Atualizar produto do catálogo' })
   @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
   @ApiParam({ name: 'productId', description: 'ID do produto' })
-  @ApiBody({ type: CreateProductDto })
+  @ApiBody({ type: UpdateProductDto })
   @ApiOkResponse({ description: 'Produto atualizado com sucesso' })
   @ApiBadRequestResponse({ description: 'Erro ao atualizar produto' })
   async updateProduct(
     @Param('sessionId') sessionId: string,
     @Param('productId') productId: string,
-    @Body() dto: CreateProductDto,
+    @Body() dto: UpdateProductDto,
   ) {
-    return this.businessService.updateProduct(sessionId, productId, dto);
+    return this.businessService.updateProduct(sessionId, productId, dto as any);
   }
 
   @Delete('products')
@@ -113,19 +152,6 @@ export class BusinessController {
     @Param('sessionId') sessionId: string,
     @Body() dto: DeleteProductsDto,
   ) {
-    return this.businessService.deleteProduct(sessionId, dto.productIds);
-  }
-
-  @Put('profile')
-  @ApiOperation({ summary: 'Atualizar perfil de negócio' })
-  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
-  @ApiBody({ type: UpdateBusinessProfileDto })
-  @ApiOkResponse({ description: 'Perfil atualizado com sucesso' })
-  @ApiBadRequestResponse({ description: 'Erro ao atualizar perfil' })
-  async updateBusinessProfile(
-    @Param('sessionId') sessionId: string,
-    @Body() dto: UpdateBusinessProfileDto,
-  ) {
-    return this.businessService.updateBusinessProfile(sessionId, dto);
+    return this.businessService.deleteProducts(sessionId, dto.productIds);
   }
 }

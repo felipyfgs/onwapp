@@ -11,4 +11,9 @@ export class MessageLabelDto {
   @IsString()
   @IsNotEmpty()
   messageId: string;
+
+  @ApiProperty({ description: 'ID da label' })
+  @IsString()
+  @IsNotEmpty()
+  labelId: string;
 }

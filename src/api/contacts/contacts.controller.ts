@@ -131,19 +131,4 @@ export class ContactsController {
     return this.contactsService.removeContact(sessionId, jid);
   }
 
-  @Get(':jid/disappearing')
-  @ApiOperation({
-    summary: 'Obter duração de mensagens temporárias',
-    description: 'Retorna a duração configurada para mensagens temporárias com o contato',
-  })
-  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
-  @ApiParam({ name: 'jid', description: 'JID do contato' })
-  @ApiOkResponse({ description: 'Duração obtida com sucesso' })
-  @ApiBadRequestResponse({ description: 'Sessão desconectada' })
-  async fetchDisappearingDuration(
-    @Param('sessionId') sessionId: string,
-    @Param('jid') jid: string,
-  ) {
-    return this.contactsService.fetchDisappearingDuration(sessionId, jid);
-  }
 }

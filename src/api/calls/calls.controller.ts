@@ -1,9 +1,4 @@
-import {
-  Controller,
-  Post,
-  Param,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Post, Param, UseGuards } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
