@@ -72,4 +72,53 @@ export class MediaController {
   ): Promise<any> {
     return this.mediaService.updateMedia(sessionId, dto);
   }
+
+  @Post('upload')
+  @ApiOperation({
+    summary: 'Upload de mídia para servidor',
+    description:
+      'Faz upload de mídia diretamente para os servidores do WhatsApp sem enviar mensagem',
+  })
+  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
+  @ApiBody({ type: UploadMediaDto })
+  @ApiOkResponse({
+    description: 'Mídia enviada com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL da mídia' },
+        directPath: { type: 'string', description: 'Caminho direto' },
+        mediaKey: { type: 'string', description: 'Chave de criptografia (base64)' },
+        fileEncSha256: { type: 'string', description: 'SHA256 do arquivo criptografado (base64)' },
+        fileSha256: { type: 'string', description: 'SHA256 do arquivo (base64)' },
+        fileLength: { type: 'number', description: 'Tamanho do arquivo' },
+        mediaKeyTimestamp: { type: 'number', description: 'Timestamp da chave' },
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'Sessão desconectada ou erro no upload',
+  })
+  async uploadToServer(
+    @Param('sessionId') sessionId: string,
+    @Body() dto: UploadMediaDto,
+  ) {
+    const buffer = Buffer.from(dto.base64, 'base64');
+    const result = await this.mediaService.uploadToServer(
+      sessionId,
+      dto.mediaType,
+      buffer,
+      { mimetype: dto.mimetype, fileEncSha256B64: dto.fileEncSha256B64 },
+    );
+
+    return {
+      url: result.url,
+      directPath: result.directPath,
+      mediaKey: result.mediaKey.toString('base64'),
+      fileEncSha256: result.fileEncSha256.toString('base64'),
+      fileSha256: result.fileSha256.toString('base64'),
+      fileLength: result.fileLength,
+      mediaKeyTimestamp: result.mediaKeyTimestamp,
+    };
+  }
 }
