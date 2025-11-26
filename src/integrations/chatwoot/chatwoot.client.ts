@@ -279,6 +279,18 @@ export class ChatwootClient {
     );
   }
 
+  async updateMessage(
+    conversationId: number,
+    messageId: number,
+    params: { content: string },
+  ): Promise<ChatwootMessage> {
+    const { data } = await this.client.patch<ChatwootMessage>(
+      `/conversations/${conversationId}/messages/${messageId}`,
+      params,
+    );
+    return data;
+  }
+
   // ==================== INBOXES ====================
 
   async listInboxes(): Promise<InboxesListResponse> {

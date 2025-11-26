@@ -140,6 +140,18 @@ export class ChatwootService {
     );
   }
 
+  async markMessageAsDeleted(
+    sessionId: string,
+    conversationId: number,
+    messageId: number,
+  ) {
+    return this.messageService.markMessageAsDeleted(
+      sessionId,
+      conversationId,
+      messageId,
+    );
+  }
+
   // ==================== Message Utility Methods ====================
 
   formatMessageContent(

@@ -298,7 +298,7 @@ export class MessagesHandler {
   }
 
   /**
-   * Forward message revoke notification to Chatwoot (WhatsApp style)
+   * Forward message revoke to Chatwoot by deleting the message
    */
   private async forwardRevokeNotificationToChatwoot(
     sessionId: string,
@@ -311,20 +311,16 @@ export class MessagesHandler {
       const config = await this.chatwootService.getConfig(sessionId);
       if (!config?.enabled) return;
 
-      // Create a notification message in WhatsApp style
-      const revokeNotification = '⊘ _Mensagem apagada_';
+      await this.chatwootService.deleteMessage(
+        sessionId,
+        conversationId,
+        cwMessageId,
+      );
 
-      await this.chatwootService.createMessage(sessionId, conversationId, {
-        content: revokeNotification,
-        messageType: 'incoming',
-        sourceId: `revoked-${waMessageId}`,
-        inReplyTo: cwMessageId,
-      });
-
-      this.logger.log(`[${sid}] [CW] Revoke notification sent for message ${cwMessageId}`);
+      this.logger.log(`[${sid}] [CW] Message deleted (msgId=${cwMessageId})`);
     } catch (error) {
       this.logger.error(
-        `[${sid}] [CW] Error sending revoke notification: ${(error as Error).message}`,
+        `[${sid}] [CW] Error deleting message: ${(error as Error).message}`,
       );
     }
   }

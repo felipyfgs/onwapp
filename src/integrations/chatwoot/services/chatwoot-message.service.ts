@@ -141,6 +141,33 @@ export class ChatwootMessageService {
   }
 
   /**
+   * Mark a message as deleted by updating its content (WhatsApp style)
+   */
+  async markMessageAsDeleted(
+    sessionId: string,
+    conversationId: number,
+    messageId: number,
+  ): Promise<boolean> {
+    const client = await this.configService.getClient(sessionId);
+    if (!client) return false;
+
+    try {
+      await client.updateMessage(conversationId, messageId, {
+        content: '⦸ _Mensagem apagada_',
+      });
+      this.logger.debug(
+        `Marked message ${messageId} as deleted in conversation ${conversationId} for session ${sessionId}`,
+      );
+      return true;
+    } catch (error) {
+      this.logger.error(
+        `Error marking message as deleted for session ${sessionId}: ${(error as Error).message}`,
+      );
+      return false;
+    }
+  }
+
+  /**
    * Format message content with sender signature (for groups)
    */
   formatMessageContent(

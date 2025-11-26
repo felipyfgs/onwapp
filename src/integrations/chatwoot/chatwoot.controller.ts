@@ -183,6 +183,9 @@ export class ChatwootController {
    *
    * This endpoint receives events from Chatwoot when agents send messages.
    * Configure this URL in your Chatwoot inbox webhook settings.
+   *
+   * Note: Processing is done asynchronously to avoid Chatwoot webhook timeout.
+   * The response is sent immediately to acknowledge receipt.
    */
   @Post('chatwoot/webhook/:sessionId')
   @Public()
@@ -195,7 +198,7 @@ export class ChatwootController {
   @ApiParam({ name: 'sessionId', description: 'Session ID' })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Webhook processed',
+    description: 'Webhook received',
     type: ChatwootWebhookResponseDto,
   })
   async receiveChatwootWebhook(
@@ -206,13 +209,22 @@ export class ChatwootController {
       `[${sessionId}] Received Chatwoot webhook: ${body.event}`,
     );
 
-    try {
-      return await this.webhookHandler.handleWebhook(sessionId, body);
-    } catch (error) {
-      this.logger.error(
-        `[${sessionId}] Error processing Chatwoot webhook: ${(error as Error).message}`,
-      );
-      return { status: 'error', error: (error as Error).message };
-    }
+    // Process webhook asynchronously to avoid Chatwoot timeout
+    // Chatwoot has a short timeout (~5s) and sending media can take longer
+    setImmediate(async () => {
+      try {
+        const result = await this.webhookHandler.handleWebhook(sessionId, body);
+        this.logger.debug(
+          `[${sessionId}] Webhook processed: ${JSON.stringify(result)}`,
+        );
+      } catch (error) {
+        this.logger.error(
+          `[${sessionId}] Error processing Chatwoot webhook: ${(error as Error).message}`,
+        );
+      }
+    });
+
+    // Return immediately to acknowledge receipt
+    return { status: 'received' };
   }
 }

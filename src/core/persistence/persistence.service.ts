@@ -346,6 +346,46 @@ export class PersistenceService {
     }
   }
 
+  /**
+   * Find all messages linked to the same Chatwoot message ID
+   * Used for deleting multiple WhatsApp messages when a Chatwoot message with multiple attachments is deleted
+   */
+  async findAllMessagesByChatwootId(
+    sessionId: string,
+    cwMessageId: number,
+  ): Promise<
+    Array<{
+      messageId: string;
+      remoteJid: string;
+      waMessageKey: WAMessageKey | null;
+    }>
+  > {
+    try {
+      const messages = await this.prisma.message.findMany({
+        where: {
+          sessionId,
+          cwMessageId,
+          deleted: false,
+        },
+        select: {
+          messageId: true,
+          remoteJid: true,
+          waMessageKey: true,
+        },
+      });
+      return messages.map((m) => ({
+        messageId: m.messageId,
+        remoteJid: m.remoteJid,
+        waMessageKey: m.waMessageKey as WAMessageKey | null,
+      }));
+    } catch (error) {
+      this.logger.error(
+        `Erro ao buscar mensagens por Chatwoot ID: ${error.message}`,
+      );
+      return [];
+    }
+  }
+
   async findMessageByWAId(
     sessionId: string,
     waMessageId: string,

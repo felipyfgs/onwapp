@@ -177,6 +177,8 @@ export class ChatwootWebhookHandler {
 
   /**
    * Handle message attachments
+   * Each attachment is sent separately to WhatsApp (WhatsApp doesn't support multiple files in one message)
+   * The original Chatwoot message keeps all attachments as sent by the agent
    */
   private async handleAttachments(
     sessionId: string,
@@ -184,27 +186,42 @@ export class ChatwootWebhookHandler {
     payload: ChatwootWebhookPayload,
     quoted?: QuotedMessage,
   ): Promise<WebhookProcessingResult> {
-    for (const attachment of payload.attachments!) {
+    const attachments = payload.attachments!;
+    const conversationId = payload.conversation?.id;
+
+    if (attachments.length > 1) {
+      this.logger.log(
+        `[${sessionId}] Sending ${attachments.length} attachments separately to WhatsApp`,
+      );
+    }
+
+    // Send each attachment separately to WhatsApp
+    // First attachment gets the caption and quote, subsequent ones don't
+    for (let i = 0; i < attachments.length; i++) {
+      const attachment = attachments[i];
+      const isFirst = i === 0;
+
       const result = await this.sendAttachment(
         sessionId,
         remoteJid,
         attachment,
-        payload.content,
-        quoted,
+        isFirst ? payload.content : undefined, // Caption only on first
+        isFirst ? quoted : undefined, // Quote only on first
       );
 
-      // Persist outgoing message with Chatwoot tracking for reply support
-      if (result?.id && payload.id && payload.conversation?.id) {
+      // Persist outgoing message with Chatwoot tracking
+      // All messages link to the same Chatwoot message ID for deletion support
+      if (result?.id && payload.id && conversationId) {
         await this.persistenceService.createMessage(sessionId, {
           remoteJid,
           messageId: result.id,
           fromMe: true,
           timestamp: Date.now(),
           messageType: attachment.file_type || 'file',
-          textContent: payload.content,
-          metadata: { fileName: attachment.file_name },
-          cwMessageId: payload.id,
-          cwConversationId: payload.conversation.id,
+          textContent: isFirst ? payload.content : undefined,
+          metadata: { fileName: attachment.file_name, attachmentIndex: i },
+          cwMessageId: payload.id, // All files link to same Chatwoot message
+          cwConversationId: conversationId,
           waMessageKey: {
             id: result.id,
             remoteJid,
@@ -320,6 +337,7 @@ export class ChatwootWebhookHandler {
 
   /**
    * Handle message deletion from Chatwoot
+   * Supports deleting multiple WhatsApp messages if the Chatwoot message had multiple attachments
    */
   private async handleMessageDelete(
     sessionId: string,
@@ -330,15 +348,17 @@ export class ChatwootWebhookHandler {
     }
 
     try {
-      // Find the WhatsApp message by Chatwoot message ID
-      const message = await this.persistenceService.findMessageByChatwootId(
-        sessionId,
-        payload.id,
-      );
+      // Find ALL WhatsApp messages linked to this Chatwoot message ID
+      // (multiple files sent together share the same cwMessageId)
+      const messages =
+        await this.persistenceService.findAllMessagesByChatwootId(
+          sessionId,
+          payload.id,
+        );
 
-      if (!message?.waMessageKey) {
+      if (messages.length === 0) {
         this.logger.warn(
-          `[${sessionId}] Message not found for delete: chatwootId=${payload.id}`,
+          `[${sessionId}] No messages found for delete: chatwootId=${payload.id}`,
         );
         return { status: 'ignored', reason: 'Message not found in database' };
       }
@@ -348,21 +368,42 @@ export class ChatwootWebhookHandler {
         return { status: 'error', reason: 'Session not connected' };
       }
 
-      // Delete the message on WhatsApp
-      const key = message.waMessageKey as {
-        id: string;
-        remoteJid: string;
-        fromMe: boolean;
-        participant?: string;
+      // Delete all linked messages on WhatsApp
+      let deletedCount = 0;
+      for (const message of messages) {
+        if (!message.waMessageKey) continue;
+
+        const key = message.waMessageKey as {
+          id: string;
+          remoteJid: string;
+          fromMe: boolean;
+          participant?: string;
+        };
+
+        try {
+          await socket.sendMessage(key.remoteJid, { delete: key });
+          await this.persistenceService.markMessageAsDeleted(
+            sessionId,
+            key.id,
+          );
+          deletedCount++;
+          this.logger.debug(
+            `[${sessionId}] Deleted message on WhatsApp: ${key.id}`,
+          );
+        } catch (err) {
+          this.logger.error(
+            `[${sessionId}] Failed to delete message ${key.id}: ${(err as Error).message}`,
+          );
+        }
+      }
+
+      this.logger.log(
+        `[${sessionId}] Deleted ${deletedCount}/${messages.length} messages on WhatsApp for chatwootId=${payload.id}`,
+      );
+      return {
+        status: 'deleted',
+        reason: `Deleted ${deletedCount} message(s) on WhatsApp`,
       };
-
-      await socket.sendMessage(key.remoteJid, { delete: key });
-
-      // Mark as deleted in our database
-      await this.persistenceService.markMessageAsDeleted(sessionId, key.id);
-
-      this.logger.log(`[${sessionId}] Message deleted on WhatsApp: ${key.id}`);
-      return { status: 'deleted', reason: 'Message deleted on WhatsApp' };
     } catch (error) {
       this.logger.error(
         `[${sessionId}] Error deleting message: ${(error as Error).message}`,
