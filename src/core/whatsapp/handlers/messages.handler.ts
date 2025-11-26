@@ -40,7 +40,9 @@ export class MessagesHandler {
   // Método público para messages.delete
   handleMessagesDelete(
     sessionId: string,
-    payload: { keys: { id: string; remoteJid: string }[] } | { jid: string; all: true },
+    payload:
+      | { keys: { id: string; remoteJid: string }[] }
+      | { jid: string; all: true },
   ): void {
     const sid = formatSessionId(sessionId);
     void this.processMessagesDeleteEvent(sessionId, payload as any, sid);
@@ -498,7 +500,11 @@ export class MessagesHandler {
       for (const receipt of payload as Array<{
         key: { id: string };
         receipt?: { receiptTimestamp?: number; readTimestamp?: number };
-        userReceipt?: Array<{ userJid: string; receiptTimestamp?: number; readTimestamp?: number }>;
+        userReceipt?: Array<{
+          userJid: string;
+          receiptTimestamp?: number;
+          readTimestamp?: number;
+        }>;
       }>) {
         if (!receipt.key || !receipt.key.id) continue;
 
@@ -523,7 +529,9 @@ export class MessagesHandler {
             await this.persistenceService.addMessageStatusHistory(
               sessionId,
               receipt.key.id,
-              userReceipt.readTimestamp ? MessageStatus.read : MessageStatus.delivered,
+              userReceipt.readTimestamp
+                ? MessageStatus.read
+                : MessageStatus.delivered,
               userReceipt.userJid,
             );
           }
@@ -844,7 +852,7 @@ export class MessagesHandler {
     }
   }
 
-  private async processMessagesMediaUpdate(
+  private processMessagesMediaUpdate(
     sessionId: string,
     payload: Array<{
       key: { id: string; remoteJid: string };
@@ -852,7 +860,7 @@ export class MessagesHandler {
       error?: unknown;
     }>,
     _sid: string,
-  ): Promise<void> {
+  ): void {
     this.logger.log('Atualização de mídia', {
       event: 'whatsapp.messages.media-update',
       sessionId,

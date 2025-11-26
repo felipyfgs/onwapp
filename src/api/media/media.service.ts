@@ -92,15 +92,10 @@ export class MediaService {
   async uploadToServer(
     sessionId: string,
     mediaType: 'image' | 'video' | 'audio' | 'document' | 'sticker',
-    buffer: Buffer,
-    mediaOptions?: { fileEncSha256B64?: string; mimetype?: string },
+    filePath: string,
+    fileEncSha256B64: string,
   ): Promise<{
-    mediaKey: Buffer;
-    fileEncSha256: Buffer;
-    fileSha256: Buffer;
-    fileLength: number;
-    mediaKeyTimestamp: number;
-    url: string;
+    mediaUrl: string;
     directPath: string;
   }> {
     const socket = this.whatsappService.getSocket(sessionId);
@@ -109,13 +104,11 @@ export class MediaService {
     }
 
     try {
-      const result = await socket.waUploadToServer(
-        { stream: buffer },
+      const result = await socket.waUploadToServer(filePath, {
         mediaType,
-        mediaOptions?.fileEncSha256B64,
-        mediaOptions?.mimetype,
-      );
-      return result as any;
+        fileEncSha256B64,
+      });
+      return result;
     } catch (error) {
       throw new BadRequestException(
         `Erro ao fazer upload da mídia: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,

@@ -273,7 +273,12 @@ export class ChatsService {
 
   async sendReceipts(
     sessionId: string,
-    keys: Array<{ id: string; remoteJid: string; fromMe?: boolean; participant?: string }>,
+    keys: Array<{
+      id: string;
+      remoteJid: string;
+      fromMe?: boolean;
+      participant?: string;
+    }>,
     type: 'read' | 'read-self' | 'played',
   ): Promise<void> {
     const socket = this.whatsappService.getSocket(sessionId);

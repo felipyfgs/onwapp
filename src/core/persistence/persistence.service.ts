@@ -760,25 +760,6 @@ export class PersistenceService {
     }
   }
 
-  async markMessageAsDeleted(
-    sessionId: string,
-    messageId: string,
-  ): Promise<void> {
-    try {
-      await this.prisma.message.updateMany({
-        where: { sessionId, messageId },
-        data: { deleted: true },
-      });
-    } catch (error) {
-      this.logger.error('Erro ao marcar mensagem como deletada', {
-        event: 'persistence.message.delete.failure',
-        sessionId,
-        messageId,
-        error: error.message,
-      });
-    }
-  }
-
   async upsertMessageReaction(
     sessionId: string,
     messageId: string,

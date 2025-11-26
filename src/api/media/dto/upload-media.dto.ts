@@ -1,13 +1,13 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsIn, IsOptional } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsIn } from 'class-validator';
 
 export class UploadMediaDto {
   @ApiProperty({
-    description: 'Base64 encoded media content',
-    example: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+    description: 'File path on server to upload',
+    example: '/tmp/media/image.png',
   })
   @IsString()
-  base64: string;
+  filePath: string;
 
   @ApiProperty({
     description: 'Media type',
@@ -17,18 +17,9 @@ export class UploadMediaDto {
   @IsIn(['image', 'video', 'audio', 'document', 'sticker'])
   mediaType: 'image' | 'video' | 'audio' | 'document' | 'sticker';
 
-  @ApiPropertyOptional({
-    description: 'MIME type of the file',
-    example: 'image/png',
+  @ApiProperty({
+    description: 'File encryption SHA256 in base64',
   })
-  @IsOptional()
   @IsString()
-  mimetype?: string;
-
-  @ApiPropertyOptional({
-    description: 'File encryption SHA256 in base64 (for re-uploads)',
-  })
-  @IsOptional()
-  @IsString()
-  fileEncSha256B64?: string;
+  fileEncSha256B64: string;
 }
