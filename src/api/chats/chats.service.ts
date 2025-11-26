@@ -270,4 +270,35 @@ export class ChatsService {
 
     await socket.sendReceipt(jid, participant, messageIds, type);
   }
+
+  async sendReceipts(
+    sessionId: string,
+    keys: Array<{ id: string; remoteJid: string; fromMe?: boolean; participant?: string }>,
+    type: 'read' | 'read-self' | 'played',
+  ): Promise<void> {
+    const socket = this.whatsappService.getSocket(sessionId);
+    validateSocket(socket);
+
+    await socket.sendReceipts(keys as any, type);
+  }
+
+  async requestPlaceholderResend(
+    sessionId: string,
+    messageKeys: Array<{
+      messageKey: { id: string; remoteJid: string; fromMe?: boolean };
+    }>,
+  ): Promise<void> {
+    const socket = this.whatsappService.getSocket(
+      sessionId,
+    ) as ExtendedWASocket;
+    validateSocket(socket);
+
+    if (!hasMethod(socket, 'requestPlaceholderResend')) {
+      throw new BadRequestException(
+        'requestPlaceholderResend method not available in current whaileys version',
+      );
+    }
+
+    await socket.requestPlaceholderResend(messageKeys as any);
+  }
 }

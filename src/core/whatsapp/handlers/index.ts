@@ -10,3 +10,4 @@ export { ContactsHandler } from './contacts.handler';
 export { GroupsPersistenceHandler } from './groups-persistence.handler';
 export { CallsHandler } from './calls.handler';
 export { PresenceHandler } from './presence.handler';
+export { BlocklistHandler } from './blocklist.handler';

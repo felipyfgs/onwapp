@@ -759,4 +759,111 @@ export class PersistenceService {
       return totalProcessed;
     }
   }
+
+  async markMessageAsDeleted(
+    sessionId: string,
+    messageId: string,
+  ): Promise<void> {
+    try {
+      await this.prisma.message.updateMany({
+        where: { sessionId, messageId },
+        data: { deleted: true },
+      });
+    } catch (error) {
+      this.logger.error('Erro ao marcar mensagem como deletada', {
+        event: 'persistence.message.delete.failure',
+        sessionId,
+        messageId,
+        error: error.message,
+      });
+    }
+  }
+
+  async upsertMessageReaction(
+    sessionId: string,
+    messageId: string,
+    senderJid: string,
+    reactionText: string,
+  ): Promise<void> {
+    try {
+      const message = await this.prisma.message.findFirst({
+        where: { sessionId, messageId },
+        select: { id: true },
+      });
+
+      if (!message) {
+        this.logger.warn('Mensagem não encontrada para reação', {
+          sessionId,
+          messageId,
+        });
+        return;
+      }
+
+      if (reactionText === '') {
+        await this.prisma.messageReaction.deleteMany({
+          where: {
+            messageId: message.id,
+            senderJid,
+          },
+        });
+      } else {
+        await this.prisma.messageReaction.upsert({
+          where: {
+            messageId_senderJid: {
+              messageId: message.id,
+              senderJid,
+            },
+          },
+          create: {
+            messageId: message.id,
+            senderJid,
+            reaction: reactionText,
+          },
+          update: {
+            reaction: reactionText,
+            updatedAt: new Date(),
+          },
+        });
+      }
+    } catch (error) {
+      this.logger.error('Erro ao persistir reação', {
+        event: 'persistence.reaction.upsert.failure',
+        sessionId,
+        messageId,
+        error: error.message,
+      });
+    }
+  }
+
+  async addMessageStatusHistory(
+    sessionId: string,
+    messageId: string,
+    status: MessageStatus,
+    recipientJid: string,
+  ): Promise<void> {
+    try {
+      const message = await this.prisma.message.findFirst({
+        where: { sessionId, messageId },
+        select: { id: true },
+      });
+
+      if (!message) return;
+
+      await this.prisma.messageStatusHistory.create({
+        data: {
+          messageId: message.id,
+          status,
+          recipientJid,
+          timestamp: BigInt(Date.now()),
+        },
+      });
+    } catch (error) {
+      this.logger.error('Erro ao adicionar histórico de status', {
+        event: 'persistence.status-history.failure',
+        sessionId,
+        messageId,
+        error: error.message,
+      });
+    }
+  }
 }

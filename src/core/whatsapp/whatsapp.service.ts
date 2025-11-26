@@ -26,6 +26,7 @@ import {
   GroupsPersistenceHandler,
   CallsHandler,
   PresenceHandler,
+  BlocklistHandler,
 } from './handlers';
 import { SessionData, QRCodeRef } from './whatsapp.types';
 import { formatSessionId, createSilentLogger } from './utils/helpers';
@@ -54,6 +55,7 @@ export class WhatsAppService {
     private readonly groupsPersistenceHandler: GroupsPersistenceHandler,
     private readonly callsHandler: CallsHandler,
     private readonly presenceHandler: PresenceHandler,
+    private readonly blocklistHandler: BlocklistHandler,
   ) {}
 
   async reconnectActiveSessions(): Promise<void> {
@@ -365,6 +367,53 @@ export class WhatsAppService {
           socket,
           events['call'] as any,
           settings?.rejectCall ?? false,
+        );
+      }
+
+      // Messages delete
+      if (events['messages.delete']) {
+        this.messagesHandler.handleMessagesDelete(
+          sessionId,
+          events['messages.delete'] as any,
+        );
+      }
+
+      // Messages reaction
+      if (events['messages.reaction']) {
+        this.messagesHandler.handleMessagesReaction(
+          sessionId,
+          events['messages.reaction'] as any,
+        );
+      }
+
+      // Message receipt update
+      if (events['message-receipt.update']) {
+        this.messagesHandler.handleMessageReceiptUpdate(
+          sessionId,
+          events['message-receipt.update'] as any,
+        );
+      }
+
+      // Messages media update
+      if (events['messages.media-update']) {
+        this.messagesHandler.handleMessagesMediaUpdate(
+          sessionId,
+          events['messages.media-update'] as any,
+        );
+      }
+
+      // Blocklist
+      if (events['blocklist.set']) {
+        this.blocklistHandler.handleBlocklistSet(
+          sessionId,
+          events['blocklist.set'] as string[],
+        );
+      }
+
+      if (events['blocklist.update']) {
+        this.blocklistHandler.handleBlocklistUpdate(
+          sessionId,
+          events['blocklist.update'] as any,
         );
       }
     });

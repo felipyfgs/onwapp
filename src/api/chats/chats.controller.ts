@@ -30,6 +30,8 @@ import { ReadMessagesDto } from './dto/read-messages.dto';
 import { StarMessageDto } from './dto/star-message.dto';
 import { FetchHistoryDto } from './dto/fetch-history.dto';
 import { SendReceiptDto } from './dto/send-receipt.dto';
+import { SendReceiptsDto } from './dto/send-receipts.dto';
+import { RequestPlaceholderResendDto } from './dto/request-placeholder-resend.dto';
 
 @ApiTags('Chats')
 @ApiSecurity('apikey')
@@ -339,6 +341,43 @@ export class ChatsController {
       dto.participant,
       dto.messageIds,
       dto.type,
+    );
+  }
+
+  @Post('receipts')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Enviar recibos em lote',
+    description: 'Envia recibos de leitura para múltiplas mensagens',
+  })
+  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
+  @ApiBody({ type: SendReceiptsDto })
+  @ApiNoContentResponse({ description: 'Recibos enviados com sucesso' })
+  @ApiBadRequestResponse({ description: 'Erro ao enviar recibos' })
+  async sendReceipts(
+    @Param('sessionId') sessionId: string,
+    @Body() dto: SendReceiptsDto,
+  ): Promise<void> {
+    return this.chatsService.sendReceipts(sessionId, dto.keys, dto.type);
+  }
+
+  @Post('placeholder-resend')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Reenviar mensagens placeholder',
+    description: 'Solicita reenvio de mensagens que falharam na sincronização',
+  })
+  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
+  @ApiBody({ type: RequestPlaceholderResendDto })
+  @ApiNoContentResponse({ description: 'Solicitação enviada com sucesso' })
+  @ApiBadRequestResponse({ description: 'Erro ao solicitar reenvio' })
+  async requestPlaceholderResend(
+    @Param('sessionId') sessionId: string,
+    @Body() dto: RequestPlaceholderResendDto,
+  ): Promise<void> {
+    return this.chatsService.requestPlaceholderResend(
+      sessionId,
+      dto.messageKeys,
     );
   }
 }
