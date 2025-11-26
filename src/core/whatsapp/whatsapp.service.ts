@@ -237,61 +237,61 @@ export class WhatsAppService {
         );
       }
 
-      // Labels (WhatsApp Business)
+      // Labels (WhatsApp Business) - available in newer whaileys versions
       if (events['labels.edit']) {
-        this.labelsHandler.handleLabelsEdit(
+        void this.labelsHandler.handleLabelsEdit(
           sessionId,
           events['labels.edit'] as any,
         );
       }
 
       if (events['labels.association']) {
-        this.labelsHandler.handleLabelsAssociation(
+        void this.labelsHandler.handleLabelsAssociation(
           sessionId,
           events['labels.association'] as any,
         );
       }
 
-      // Group join requests
+      // Group join requests - available in newer whaileys versions
       if (events['group.join-request']) {
-        this.groupsExtendedHandler.handleGroupJoinRequest(
+        void this.groupsExtendedHandler.handleGroupJoinRequest(
           sessionId,
           events['group.join-request'] as any,
         );
       }
 
-      // LID mapping
+      // LID mapping - available in newer whaileys versions
       if (events['lid-mapping.update']) {
-        this.miscHandler.handleLidMappingUpdate(
+        void this.miscHandler.handleLidMappingUpdate(
           sessionId,
           events['lid-mapping.update'] as any,
         );
       }
 
-      // Newsletter events
+      // Newsletter events - available in newer whaileys versions
       if (events['newsletter.reaction']) {
-        this.newsletterHandler.handleNewsletterReaction(
+        void this.newsletterHandler.handleNewsletterReaction(
           sessionId,
           events['newsletter.reaction'] as any,
         );
       }
 
       if (events['newsletter.view']) {
-        this.newsletterHandler.handleNewsletterView(
+        void this.newsletterHandler.handleNewsletterView(
           sessionId,
           events['newsletter.view'] as any,
         );
       }
 
       if (events['newsletter-participants.update']) {
-        this.newsletterHandler.handleNewsletterParticipantsUpdate(
+        void this.newsletterHandler.handleNewsletterParticipantsUpdate(
           sessionId,
           events['newsletter-participants.update'] as any,
         );
       }
 
       if (events['newsletter-settings.update']) {
-        this.newsletterHandler.handleNewsletterSettingsUpdate(
+        void this.newsletterHandler.handleNewsletterSettingsUpdate(
           sessionId,
           events['newsletter-settings.update'] as any,
         );

@@ -54,7 +54,7 @@ export class ChatwootController {
   /**
    * Configure Chatwoot integration for a session
    */
-  @Post('session/:sessionId/chatwoot/set')
+  @Post('sessions/:sessionId/chatwoot/set')
   @UseGuards(ApiKeyGuard)
   @ApiBearerAuth('apikey')
   @ApiOperation({
@@ -83,7 +83,7 @@ export class ChatwootController {
   /**
    * Get Chatwoot configuration for a session
    */
-  @Get('session/:sessionId/chatwoot/find')
+  @Get('sessions/:sessionId/chatwoot/find')
   @UseGuards(ApiKeyGuard)
   @ApiBearerAuth('apikey')
   @ApiOperation({
@@ -117,7 +117,7 @@ export class ChatwootController {
   /**
    * Delete Chatwoot configuration for a session
    */
-  @Delete('session/:sessionId/chatwoot')
+  @Delete('sessions/:sessionId/chatwoot')
   @UseGuards(ApiKeyGuard)
   @ApiBearerAuth('apikey')
   @ApiOperation({

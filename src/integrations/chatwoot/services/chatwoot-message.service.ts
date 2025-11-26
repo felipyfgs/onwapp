@@ -407,7 +407,9 @@ export class ChatwootMessageService {
               }
             }
           } else if (button.name === 'quick_reply') {
-            lines.push(`• ${params.display_text || 'Botão'} (${params.id || ''})`);
+            lines.push(
+              `• ${params.display_text || 'Botão'} (${params.id || ''})`,
+            );
           }
         } catch {
           lines.push('• [Opção]');

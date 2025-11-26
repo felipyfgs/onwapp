@@ -1,7 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { WebhooksService } from '../../../integrations/webhooks/webhooks.service';
 import { formatSessionId } from '../utils/helpers';
-import type { Label } from 'whaileys/lib/Types';
+
+// Label type definition (for future whaileys versions that support labels)
+interface Label {
+  id: string;
+  name: string;
+  color: number;
+  predefinedId?: string;
+}
 
 interface LabelAssociation {
   labelId: string;

@@ -9,7 +9,7 @@ import { ApiKeyGuard } from '../../common/guards/api-key.guard';
 export class WebhooksController {
   constructor(private readonly webhooksService: WebhooksService) {}
 
-  @Post('session/:sessionId/webhook/set')
+  @Post('sessions/:sessionId/webhook/set')
   set(
     @Param('sessionId') sessionId: string,
     @Body() setWebhookDto: SetWebhookDto,
@@ -17,17 +17,17 @@ export class WebhooksController {
     return this.webhooksService.set(sessionId, setWebhookDto);
   }
 
-  @Get('session/:sessionId/webhook/find')
+  @Get('sessions/:sessionId/webhook/find')
   find(@Param('sessionId') sessionId: string) {
     return this.webhooksService.findBySessionId(sessionId);
   }
 
-  @Get('webhook/events')
+  @Get('sessions/webhook/events')
   getEvents() {
     return this.webhooksService.getAvailableEvents();
   }
 
-  @Post('session/:sessionId/webhook/test')
+  @Post('sessions/:sessionId/webhook/test')
   async test(
     @Param('sessionId') sessionId: string,
     @Body() testWebhookDto: TestWebhookDto,
