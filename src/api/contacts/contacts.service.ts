@@ -110,4 +110,41 @@ export class ContactsService implements OnModuleInit {
     const cachedData = this.contactsCache.get(sessionId);
     return cachedData?.contacts || [];
   }
+
+  async addOrEditContact(
+    sessionId: string,
+    jid: string,
+    name: string,
+  ): Promise<{ success: boolean; message: string }> {
+    const socket = this.whatsappService.getSocket(sessionId);
+    validateSocket(socket);
+
+    await socket.addOrEditContact(jid, name);
+
+    return { success: true, message: 'Contato adicionado/editado com sucesso' };
+  }
+
+  async removeContact(
+    sessionId: string,
+    jid: string,
+  ): Promise<{ success: boolean; message: string }> {
+    const socket = this.whatsappService.getSocket(sessionId);
+    validateSocket(socket);
+
+    await socket.removeContact(jid);
+
+    return { success: true, message: 'Contato removido com sucesso' };
+  }
+
+  async fetchDisappearingDuration(
+    sessionId: string,
+    jid: string,
+  ): Promise<{ duration: number | null }> {
+    const socket = this.whatsappService.getSocket(sessionId);
+    validateSocket(socket);
+
+    const duration = await socket.fetchDisappearingDuration(jid);
+
+    return { duration };
+  }
 }

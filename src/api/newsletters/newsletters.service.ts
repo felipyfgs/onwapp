@@ -2,6 +2,25 @@ import { Injectable, BadRequestException, NotFoundException, Logger } from '@nes
 import { WhatsAppService } from '../../core/whatsapp/whatsapp.service';
 import { validateSocket } from '../../common/utils/socket-validator';
 
+// Type assertion for methods that may not exist in current whaileys version
+type ExtendedSocket = ReturnType<WhatsAppService['getSocket']> & {
+  newsletterCreate?: (name: string, description?: string) => Promise<any>;
+  newsletterMetadata?: (type: string, jid: string) => Promise<any>;
+  newsletterFollow?: (jid: string) => Promise<void>;
+  newsletterUnfollow?: (jid: string) => Promise<void>;
+  newsletterMute?: (jid: string) => Promise<void>;
+  newsletterUnmute?: (jid: string) => Promise<void>;
+  newsletterUpdateName?: (jid: string, name: string) => Promise<void>;
+  newsletterUpdateDescription?: (jid: string, description: string) => Promise<void>;
+  newsletterUpdatePicture?: (jid: string, content: { url: string }) => Promise<void>;
+  newsletterRemovePicture?: (jid: string) => Promise<void>;
+  newsletterReactMessage?: (jid: string, serverId: string, reaction?: string) => Promise<void>;
+  newsletterFetchMessages?: (jid: string, count: number, cursor?: unknown) => Promise<any[]>;
+  newsletterDelete?: (jid: string) => Promise<void>;
+  newsletterAdminCount?: (jid: string) => Promise<number>;
+  newsletterSubscribers?: (jid: string) => Promise<any[]>;
+};
+
 @Injectable()
 export class NewslettersService {
   private readonly logger = new Logger(NewslettersService.name);
@@ -16,8 +35,12 @@ export class NewslettersService {
   }
 
   async create(sessionId: string, name: string, description?: string) {
-    const socket = this.whatsappService.getSocket(sessionId);
+    const socket = this.whatsappService.getSocket(sessionId) as ExtendedSocket;
     validateSocket(socket);
+
+    if (!socket?.newsletterCreate) {
+      throw new BadRequestException('Newsletter methods not available in current whaileys version');
+    }
 
     try {
       this.logger.log(`[${sessionId}] Criando newsletter: ${name}`);

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, UseGuards } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -15,6 +15,7 @@ import { ApiKeyGuard } from '../../common/guards/api-key.guard';
 import { ValidateNumberDto } from './dto/validate-number.dto';
 import { ValidateNumberResponseDto } from './dto/validate-number-response.dto';
 import { BusinessProfileResponseDto } from './dto/business-profile-response.dto';
+import { AddContactDto } from './dto/add-contact.dto';
 
 @ApiTags('Contacts')
 @ApiSecurity('apikey')
@@ -96,5 +97,53 @@ export class ContactsController {
   @ApiBadRequestResponse({ description: 'Sessão desconectada' })
   listContacts(@Param('sessionId') sessionId: string): any[] {
     return this.contactsService.listContacts(sessionId);
+  }
+
+  @Post()
+  @ApiOperation({
+    summary: 'Adicionar ou editar contato',
+    description: 'Adiciona um novo contato ou edita um existente',
+  })
+  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
+  @ApiBody({ type: AddContactDto })
+  @ApiOkResponse({ description: 'Contato adicionado/editado com sucesso' })
+  @ApiBadRequestResponse({ description: 'Sessão desconectada' })
+  async addOrEditContact(
+    @Param('sessionId') sessionId: string,
+    @Body() dto: AddContactDto,
+  ) {
+    return this.contactsService.addOrEditContact(sessionId, dto.jid, dto.name);
+  }
+
+  @Delete(':jid')
+  @ApiOperation({
+    summary: 'Remover contato',
+    description: 'Remove um contato da lista',
+  })
+  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
+  @ApiParam({ name: 'jid', description: 'JID do contato' })
+  @ApiOkResponse({ description: 'Contato removido com sucesso' })
+  @ApiBadRequestResponse({ description: 'Sessão desconectada' })
+  async removeContact(
+    @Param('sessionId') sessionId: string,
+    @Param('jid') jid: string,
+  ) {
+    return this.contactsService.removeContact(sessionId, jid);
+  }
+
+  @Get(':jid/disappearing')
+  @ApiOperation({
+    summary: 'Obter duração de mensagens temporárias',
+    description: 'Retorna a duração configurada para mensagens temporárias com o contato',
+  })
+  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
+  @ApiParam({ name: 'jid', description: 'JID do contato' })
+  @ApiOkResponse({ description: 'Duração obtida com sucesso' })
+  @ApiBadRequestResponse({ description: 'Sessão desconectada' })
+  async fetchDisappearingDuration(
+    @Param('sessionId') sessionId: string,
+    @Param('jid') jid: string,
+  ) {
+    return this.contactsService.fetchDisappearingDuration(sessionId, jid);
   }
 }
