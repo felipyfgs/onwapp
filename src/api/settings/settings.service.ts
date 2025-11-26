@@ -142,4 +142,13 @@ export class SettingsService {
       groupsAdd: settings.groupsAdd ?? undefined,
     };
   }
+
+  async fetchPrivacySettings(sessionId: string) {
+    const socket = this.whatsappService.getSocket(sessionId);
+    validateSocket(socket);
+
+    const privacy = await socket.fetchPrivacySettings(true);
+
+    return { privacy };
+  }
 }

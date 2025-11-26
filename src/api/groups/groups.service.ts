@@ -715,4 +715,48 @@ export class GroupsService {
       );
     }
   }
+
+  async acceptInviteV4(
+    sessionId: string,
+    keyId: string,
+    keyRemoteJid: string,
+    keyFromMe: boolean,
+    inviteCode: string,
+    inviteExpiration: number,
+    groupJid: string,
+    groupName?: string,
+  ) {
+    const socket = this.validateSocket(sessionId);
+
+    try {
+      this.logger.log(
+        `[${sessionId}] Aceitando convite V4 para grupo: ${groupJid}`,
+      );
+
+      const key = {
+        id: keyId,
+        remoteJid: keyRemoteJid,
+        fromMe: keyFromMe,
+      };
+
+      const inviteMessage = {
+        groupJid,
+        inviteCode,
+        inviteExpiration,
+        groupName,
+      };
+
+      const result = await socket.groupAcceptInviteV4(key, inviteMessage);
+
+      this.logger.log(`[${sessionId}] Convite V4 aceito: ${result}`);
+      return { groupId: result };
+    } catch (error) {
+      this.logger.error(
+        `[${sessionId}] Erro ao aceitar convite V4: ${error instanceof Error ? error.message : 'Erro'}`,
+      );
+      throw new BadRequestException(
+        `Erro ao aceitar convite V4: ${error instanceof Error ? error.message : 'Erro'}`,
+      );
+    }
+  }
 }

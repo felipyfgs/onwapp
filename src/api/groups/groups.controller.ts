@@ -36,6 +36,7 @@ import { ToggleEphemeralDto } from './dto/toggle-ephemeral.dto';
 import { HandleJoinRequestDto } from './dto/handle-join-request.dto';
 import { MemberAddModeDto } from './dto/member-add-mode.dto';
 import { JoinApprovalModeDto } from './dto/join-approval-mode.dto';
+import { AcceptInviteV4Dto } from './dto/accept-invite-v4.dto';
 
 @ApiTags('Groups')
 @ApiSecurity('apikey')
@@ -451,5 +452,30 @@ export class GroupsController {
     @Body() dto: JoinApprovalModeDto,
   ) {
     return this.groupsService.setJoinApprovalMode(sessionId, groupId, dto.mode);
+  }
+
+  @Post('invite/v4')
+  @ApiOperation({
+    summary: 'Aceitar convite de grupo via mensagem (V4)',
+    description: 'Aceita um convite de grupo recebido via mensagem',
+  })
+  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
+  @ApiBody({ type: AcceptInviteV4Dto })
+  @ApiOkResponse({ description: 'Convite aceito com sucesso' })
+  @ApiBadRequestResponse({ description: 'Erro ao aceitar convite' })
+  async acceptInviteV4(
+    @Param('sessionId') sessionId: string,
+    @Body() dto: AcceptInviteV4Dto,
+  ) {
+    return this.groupsService.acceptInviteV4(
+      sessionId,
+      dto.keyId,
+      dto.keyRemoteJid,
+      dto.keyFromMe,
+      dto.inviteCode,
+      dto.inviteExpiration,
+      dto.groupJid,
+      dto.groupName,
+    );
   }
 }

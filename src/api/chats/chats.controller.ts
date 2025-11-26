@@ -28,6 +28,8 @@ import { MarkReadDto } from './dto/mark-read.dto';
 import { ClearMessagesDto } from './dto/clear-messages.dto';
 import { ReadMessagesDto } from './dto/read-messages.dto';
 import { StarMessageDto } from './dto/star-message.dto';
+import { FetchHistoryDto } from './dto/fetch-history.dto';
+import { SendReceiptDto } from './dto/send-receipt.dto';
 
 @ApiTags('Chats')
 @ApiSecurity('apikey')
@@ -291,6 +293,52 @@ export class ChatsController {
       jid,
       dto.messageId,
       dto.star,
+    );
+  }
+
+  @Post('history')
+  @ApiOperation({
+    summary: 'Buscar histórico de mensagens',
+    description: 'Solicita mensagens antigas do WhatsApp (assíncrono)',
+  })
+  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
+  @ApiBody({ type: FetchHistoryDto })
+  @ApiOkResponse({ description: 'Solicitação de histórico enviada' })
+  @ApiBadRequestResponse({ description: 'Erro ao buscar histórico' })
+  async fetchMessageHistory(
+    @Param('sessionId') sessionId: string,
+    @Body() dto: FetchHistoryDto,
+  ) {
+    return this.chatsService.fetchMessageHistory(
+      sessionId,
+      dto.count,
+      dto.oldestMsgId,
+      dto.oldestMsgFromMe,
+      dto.oldestMsgJid,
+      dto.oldestMsgTimestamp,
+    );
+  }
+
+  @Post('receipt')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Enviar recibo de leitura',
+    description: 'Envia recibo de leitura/visualização para mensagens',
+  })
+  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
+  @ApiBody({ type: SendReceiptDto })
+  @ApiNoContentResponse({ description: 'Recibo enviado com sucesso' })
+  @ApiBadRequestResponse({ description: 'Erro ao enviar recibo' })
+  async sendReceipt(
+    @Param('sessionId') sessionId: string,
+    @Body() dto: SendReceiptDto,
+  ): Promise<void> {
+    return this.chatsService.sendReceipt(
+      sessionId,
+      dto.jid,
+      dto.participant,
+      dto.messageIds,
+      dto.type,
     );
   }
 }

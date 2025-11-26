@@ -1,6 +1,6 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
-import { WASocket } from 'whaileys';
 import { PersistenceService } from '../../persistence/persistence.service';
+import { DatabaseService } from '../../../database/database.service';
 import { formatSessionId } from '../utils/helpers';
 
 interface ChatPayload {
@@ -27,6 +27,7 @@ export class ChatsHandler {
   constructor(
     @Inject(forwardRef(() => PersistenceService))
     private readonly persistenceService: PersistenceService,
+    private readonly prisma: DatabaseService,
   ) {}
 
   // Métodos públicos para uso com ev.process()
@@ -38,6 +39,11 @@ export class ChatsHandler {
   handleChatsUpdate(sessionId: string, payload: ChatPayload[]): void {
     const sid = formatSessionId(sessionId);
     void this.processChatsUpdate(sessionId, payload, sid);
+  }
+
+  handleChatsDelete(sessionId: string, chatIds: string[]): void {
+    const sid = formatSessionId(sessionId);
+    void this.processChatsDelete(sessionId, chatIds, sid);
   }
 
   private async processChatsUpsert(
@@ -100,6 +106,44 @@ export class ChatsHandler {
     }
   }
 
+  private async processChatsDelete(
+    sessionId: string,
+    chatIds: string[],
+    sid: string,
+  ): Promise<void> {
+    this.logger.log(`[${sid}] 📨 chats.delete`, {
+      event: 'chats.delete',
+      count: chatIds.length,
+    });
+
+    try {
+      for (const chatJid of chatIds) {
+        const chat = await this.prisma.chat.findFirst({
+          where: {
+            sessionId,
+            remoteJid: chatJid,
+          },
+        });
+
+        if (chat) {
+          await this.prisma.message.deleteMany({
+            where: { chatId: chat.id },
+          });
+
+          await this.prisma.chat.delete({
+            where: { id: chat.id },
+          });
+
+          this.logger.log(`[${sid}] Chat ${chatJid} deletado`);
+        }
+      }
+    } catch (error) {
+      this.logger.error(
+        `[${sid}] Erro ao processar chats.delete: ${(error as Error).message}`,
+      );
+    }
+  }
+
   private async handleContactsUpsert(
     sessionId: string,
     payload: ContactPayload[],
@@ -123,46 +167,5 @@ export class ChatsHandler {
         `[${sid}] Erro ao persistir contacts.upsert: ${(error as Error).message}`,
       );
     }
-  }
-
-  private async handleContactsUpdate(
-    sessionId: string,
-    payload: ContactPayload[],
-    sid: string,
-  ): Promise<void> {
-    this.logger.log(`[${sid}] 📨 contacts.update`, {
-      event: 'contacts.update',
-      count: payload.length,
-    });
-
-    try {
-      for (const contact of payload) {
-        await this.persistenceService.createOrUpdateContact(sessionId, {
-          remoteJid: contact.id,
-          name: contact.notify || contact.name,
-          avatarUrl: contact.imgUrl,
-        });
-      }
-    } catch (error) {
-      this.logger.error(
-        `[${sid}] Erro ao persistir contacts.update: ${(error as Error).message}`,
-      );
-    }
-  }
-
-  private registerOtherEvents(socket: WASocket, sid: string): void {
-    const otherEvents = [
-      'presence.update',
-      'chats.delete',
-      'groups.upsert',
-      'groups.update',
-      'call',
-    ];
-
-    otherEvents.forEach((event) => {
-      socket.ev.on(event as never, (payload: unknown) => {
-        this.logger.log(`[${sid}] 📨 ${event}`, { event, payload });
-      });
-    });
   }
 }

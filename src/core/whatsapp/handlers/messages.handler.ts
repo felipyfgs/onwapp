@@ -37,6 +37,46 @@ export class MessagesHandler {
     void this.processMessagesUpdate(sessionId, payload, sid);
   }
 
+  // Método público para messages.delete
+  handleMessagesDelete(
+    sessionId: string,
+    payload: { keys: { id: string; remoteJid: string }[] } | { jid: string; all: true },
+  ): void {
+    const sid = formatSessionId(sessionId);
+    void this.processMessagesDelete(sessionId, payload, sid);
+  }
+
+  // Método público para messages.reaction
+  handleMessagesReaction(
+    sessionId: string,
+    payload: Array<{
+      key: { id: string; remoteJid: string; fromMe?: boolean };
+      reaction: { text?: string; key?: { id: string } };
+    }>,
+  ): void {
+    const sid = formatSessionId(sessionId);
+    void this.processMessagesReaction(sessionId, payload, sid);
+  }
+
+  // Método público para message-receipt.update
+  handleMessageReceiptUpdate(sessionId: string, payload: unknown[]): void {
+    const sid = formatSessionId(sessionId);
+    void this.processMessageReceiptUpdate(sessionId, payload, sid);
+  }
+
+  // Método público para messages.media-update
+  handleMessagesMediaUpdate(
+    sessionId: string,
+    payload: Array<{
+      key: { id: string; remoteJid: string };
+      media?: { ciphertext: Uint8Array; iv: Uint8Array };
+      error?: unknown;
+    }>,
+  ): void {
+    const sid = formatSessionId(sessionId);
+    void this.processMessagesMediaUpdate(sessionId, payload, sid);
+  }
+
   private async processMessagesUpsert(
     sessionId: string,
     payload: { messages: unknown[]; type?: string },
@@ -751,6 +791,165 @@ export class MessagesHandler {
         error: (error as Error).message,
       });
       return null;
+    }
+  }
+
+  private async processMessagesDelete(
+    sessionId: string,
+    payload: { keys: { id: string; remoteJid: string }[] } | { jid: string; all: true },
+    _sid: string,
+  ): Promise<void> {
+    this.logger.log('Mensagens deletadas', {
+      event: 'whatsapp.messages.delete',
+      sessionId,
+    });
+
+    try {
+      if ('all' in payload && payload.all) {
+        this.logger.log(`[${sessionId}] Deletando todas mensagens de ${payload.jid}`);
+        return;
+      }
+
+      const { keys } = payload as { keys: { id: string; remoteJid: string }[] };
+      
+      for (const key of keys) {
+        await this.persistenceService.markMessageAsDeleted(sessionId, key.id);
+        this.logger.debug(`[${sessionId}] Mensagem ${key.id} marcada como deletada`);
+      }
+    } catch (error) {
+      this.logger.error(
+        `[${sessionId}] Erro ao processar messages.delete: ${error instanceof Error ? error.message : 'Erro'}`,
+      );
+    }
+  }
+
+  private async processMessagesReaction(
+    sessionId: string,
+    payload: Array<{
+      key: { id: string; remoteJid: string; fromMe?: boolean };
+      reaction: { text?: string; key?: { id: string; participant?: string } };
+    }>,
+    _sid: string,
+  ): Promise<void> {
+    this.logger.log('Reações de mensagens', {
+      event: 'whatsapp.messages.reaction',
+      sessionId,
+      count: payload.length,
+    });
+
+    try {
+      for (const item of payload) {
+        const { key, reaction } = item;
+        const reactionText = reaction.text || '';
+        const senderJid = reaction.key?.participant || key.remoteJid;
+
+        await this.persistenceService.upsertMessageReaction(
+          sessionId,
+          key.id,
+          senderJid,
+          reactionText,
+        );
+
+        this.logger.debug(
+          `[${sessionId}] Reação ${reactionText || '(removida)'} na mensagem ${key.id}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `[${sessionId}] Erro ao processar messages.reaction: ${error instanceof Error ? error.message : 'Erro'}`,
+      );
+    }
+  }
+
+  private async processMessageReceiptUpdate(
+    sessionId: string,
+    payload: unknown[],
+    _sid: string,
+  ): Promise<void> {
+    this.logger.log('Recibo de mensagem atualizado', {
+      event: 'whatsapp.message-receipt.update',
+      sessionId,
+      count: payload.length,
+    });
+
+    try {
+      for (const receipt of payload as Array<{
+        key: { id: string; remoteJid: string };
+        receipt: { receiptTimestamp?: number; readTimestamp?: number; playedTimestamp?: number };
+        userReceipt?: Array<{ userJid: string; receiptTimestamp?: number; readTimestamp?: number }>;
+      }>) {
+        if (!receipt.key?.id) continue;
+
+        let status: MessageStatus | undefined;
+
+        if (receipt.receipt?.playedTimestamp) {
+          status = MessageStatus.read;
+        } else if (receipt.receipt?.readTimestamp) {
+          status = MessageStatus.read;
+        } else if (receipt.receipt?.receiptTimestamp) {
+          status = MessageStatus.delivered;
+        }
+
+        if (status) {
+          await this.persistenceService.updateMessageStatus(
+            sessionId,
+            receipt.key.id,
+            status,
+          );
+        }
+
+        if (receipt.userReceipt) {
+          for (const userReceipt of receipt.userReceipt) {
+            await this.persistenceService.addMessageStatusHistory(
+              sessionId,
+              receipt.key.id,
+              userReceipt.readTimestamp ? MessageStatus.read : MessageStatus.delivered,
+              userReceipt.userJid,
+            );
+          }
+        }
+      }
+    } catch (error) {
+      this.logger.error(
+        `[${sessionId}] Erro ao processar message-receipt.update: ${error instanceof Error ? error.message : 'Erro'}`,
+      );
+    }
+  }
+
+  private async processMessagesMediaUpdate(
+    sessionId: string,
+    payload: Array<{
+      key: { id: string; remoteJid: string };
+      media?: { ciphertext: Uint8Array; iv: Uint8Array };
+      error?: unknown;
+    }>,
+    _sid: string,
+  ): Promise<void> {
+    this.logger.log('Atualização de mídia', {
+      event: 'whatsapp.messages.media-update',
+      sessionId,
+      count: payload.length,
+    });
+
+    try {
+      for (const update of payload) {
+        if (update.error) {
+          this.logger.warn(
+            `[${sessionId}] Erro na mídia da mensagem ${update.key.id}`,
+          );
+          continue;
+        }
+
+        if (update.media) {
+          this.logger.debug(
+            `[${sessionId}] Mídia atualizada para mensagem ${update.key.id}`,
+          );
+        }
+      }
+    } catch (error) {
+      this.logger.error(
+        `[${sessionId}] Erro ao processar messages.media-update: ${error instanceof Error ? error.message : 'Erro'}`,
+      );
     }
   }
 }

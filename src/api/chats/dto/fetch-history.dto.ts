@@ -11,7 +11,9 @@ export class FetchHistoryDto {
   @IsNotEmpty()
   oldestMsgId: string;
 
-  @ApiProperty({ description: 'Se a mensagem mais antiga é do próprio usuário' })
+  @ApiProperty({
+    description: 'Se a mensagem mais antiga é do próprio usuário',
+  })
   @IsBoolean()
   oldestMsgFromMe: boolean;
 

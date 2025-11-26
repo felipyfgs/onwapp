@@ -6,3 +6,7 @@ export { LabelsHandler } from './labels.handler';
 export { GroupsExtendedHandler } from './groups-extended.handler';
 export { NewsletterHandler } from './newsletter.handler';
 export { MiscHandler } from './misc.handler';
+export { ContactsHandler } from './contacts.handler';
+export { GroupsPersistenceHandler } from './groups-persistence.handler';
+export { CallsHandler } from './calls.handler';
+export { PresenceHandler } from './presence.handler';

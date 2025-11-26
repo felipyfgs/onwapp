@@ -22,6 +22,10 @@ import {
   GroupsExtendedHandler,
   NewsletterHandler,
   MiscHandler,
+  ContactsHandler,
+  GroupsPersistenceHandler,
+  CallsHandler,
+  PresenceHandler,
 } from './handlers';
 import { SessionData, QRCodeRef } from './whatsapp.types';
 import { formatSessionId, createSilentLogger } from './utils/helpers';
@@ -46,6 +50,10 @@ export class WhatsAppService {
     private readonly groupsExtendedHandler: GroupsExtendedHandler,
     private readonly newsletterHandler: NewsletterHandler,
     private readonly miscHandler: MiscHandler,
+    private readonly contactsHandler: ContactsHandler,
+    private readonly groupsPersistenceHandler: GroupsPersistenceHandler,
+    private readonly callsHandler: CallsHandler,
+    private readonly presenceHandler: PresenceHandler,
   ) {}
 
   async reconnectActiveSessions(): Promise<void> {
@@ -294,6 +302,69 @@ export class WhatsAppService {
         void this.newsletterHandler.handleNewsletterSettingsUpdate(
           sessionId,
           events['newsletter-settings.update'] as any,
+        );
+      }
+
+      // Contacts persistence
+      if (events['contacts.upsert']) {
+        void this.contactsHandler.handleContactsUpsert(
+          sessionId,
+          events['contacts.upsert'] as any,
+        );
+      }
+
+      if (events['contacts.update']) {
+        void this.contactsHandler.handleContactsUpdate(
+          sessionId,
+          events['contacts.update'] as any,
+        );
+      }
+
+      // Groups persistence
+      if (events['groups.upsert']) {
+        void this.groupsPersistenceHandler.handleGroupsUpsert(
+          sessionId,
+          events['groups.upsert'] as any,
+        );
+      }
+
+      if (events['groups.update']) {
+        void this.groupsPersistenceHandler.handleGroupsUpdate(
+          sessionId,
+          events['groups.update'] as any,
+        );
+      }
+
+      if (events['group-participants.update']) {
+        void this.groupsPersistenceHandler.handleGroupParticipantsUpdate(
+          sessionId,
+          events['group-participants.update'] as any,
+        );
+      }
+
+      // Chats delete
+      if (events['chats.delete']) {
+        this.chatsHandler.handleChatsDelete(sessionId, events['chats.delete']);
+      }
+
+      // Presence (cache only)
+      if (events['presence.update']) {
+        this.presenceHandler.handlePresenceUpdate(
+          sessionId,
+          events['presence.update'] as any,
+        );
+      }
+
+      // Calls
+      if (events['call']) {
+        const settings = await this.prisma.sessionSettings.findUnique({
+          where: { sessionId },
+        });
+        void this.callsHandler.handleCall(
+          sessionId,
+          socket,
+          events['call'] as any,
+          settings?.rejectCall ?? false,
         );
       }
     });

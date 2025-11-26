@@ -10,6 +10,10 @@ import {
   GroupsExtendedHandler,
   NewsletterHandler,
   MiscHandler,
+  ContactsHandler,
+  GroupsPersistenceHandler,
+  CallsHandler,
+  PresenceHandler,
 } from './handlers';
 import { WebhooksModule } from '../../integrations/webhooks/webhooks.module';
 import { ChatwootModule } from '../../integrations/chatwoot/chatwoot.module';
@@ -34,6 +38,10 @@ import { SettingsModule } from '../../api/settings/settings.module';
     GroupsExtendedHandler,
     NewsletterHandler,
     MiscHandler,
+    ContactsHandler,
+    GroupsPersistenceHandler,
+    CallsHandler,
+    PresenceHandler,
   ],
   exports: [WhatsAppService, SocketManager],
 })

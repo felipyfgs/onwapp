@@ -111,4 +111,17 @@ export class SettingsController {
   ): Promise<SettingsResponseDto> {
     return this.settingsService.getSettings(sessionId);
   }
+
+  @Get('privacy')
+  @ApiOperation({
+    summary: 'Obter configurações de privacidade do WhatsApp',
+    description:
+      'Busca as configurações de privacidade atuais diretamente do WhatsApp',
+  })
+  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
+  @ApiOkResponse({ description: 'Configurações de privacidade retornadas' })
+  @ApiBadRequestResponse({ description: 'Sessão desconectada' })
+  async fetchPrivacySettings(@Param('sessionId') sessionId: string) {
+    return this.settingsService.fetchPrivacySettings(sessionId);
+  }
 }

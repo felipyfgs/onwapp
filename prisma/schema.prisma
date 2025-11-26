@@ -61,6 +61,8 @@ model Session {
   settings    SessionSettings?
   chatwoot    Chatwoot?
   proxy       Proxy?
+  groups      Group[]
+  calls       Call[]
 
   @@map("Session")
 }
@@ -186,6 +188,7 @@ model Message {
   session       Session              @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   chat          Chat                 @relation(fields: [chatId], references: [id], onDelete: Cascade)
   statusHistory MessageStatusHistory[]
+  reactions     MessageReaction[]
 
   @@unique([sessionId, messageId])
   @@index([sessionId, chatId, timestamp])
@@ -262,4 +265,72 @@ model Chatwoot {
   session         Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@map("Chatwoot")
+}
+
+model Group {
+  id            String   @id @default(uuid())
+  sessionId     String
+  groupJid      String
+  subject       String?
+  owner         String?
+  description   String?
+  participants  Json?
+  creation      BigInt?
+  restrict      Boolean  @default(false)
+  announce      Boolean  @default(false)
+  size          Int?
+  ephemeral     Int?
+  inviteCode    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  session       Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  @@unique([sessionId, groupJid])
+  @@index([sessionId])
+  @@map("Group")
+}
+
+model MessageReaction {
+  id          String   @id @default(uuid())
+  messageId   String
+  senderJid   String
+  reaction    String
+  timestamp   BigInt
+  createdAt   DateTime @default(now())
+  
+  message     Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  
+  @@unique([messageId, senderJid])
+  @@index([messageId])
+  @@map("MessageReaction")
+}
+
+enum CallStatus {
+  ringing
+  accepted
+  rejected
+  missed
+  timeout
+}
+
+model Call {
+  id          String     @id @default(uuid())
+  sessionId   String
+  callId      String
+  fromJid     String
+  toJid       String?
+  status      CallStatus @default(ringing)
+  isVideo     Boolean    @default(false)
+  isGroup     Boolean    @default(false)
+  timestamp   BigInt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  session     Session    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  @@unique([sessionId, callId])
+  @@index([sessionId])
+  @@index([timestamp])
+  @@map("Call")
 }
