@@ -40,4 +40,27 @@ export class CallsService {
       );
     }
   }
+
+  async rejectCall(sessionId: string, callId: string, callFrom: string) {
+    const socket = this.whatsappService.getSocket(sessionId);
+    validateSocket(socket);
+
+    try {
+      this.logger.log(
+        `[${sessionId}] Rejeitando chamada ${callId} de ${callFrom}`,
+      );
+
+      await socket.rejectCall(callId, callFrom);
+
+      this.logger.log(`[${sessionId}] Chamada rejeitada: ${callId}`);
+      return { success: true, message: 'Chamada rejeitada com sucesso' };
+    } catch (error) {
+      this.logger.error(
+        `[${sessionId}] Erro ao rejeitar chamada: ${error instanceof Error ? error.message : 'Erro'}`,
+      );
+      throw new BadRequestException(
+        `Erro ao rejeitar chamada: ${error instanceof Error ? error.message : 'Erro'}`,
+      );
+    }
+  }
 }

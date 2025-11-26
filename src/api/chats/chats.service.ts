@@ -225,4 +225,49 @@ export class ChatsService {
 
     await socket.star(jid, [messageId], star);
   }
+
+  async fetchMessageHistory(
+    sessionId: string,
+    count: number,
+    oldestMsgId: string,
+    oldestMsgFromMe: boolean,
+    oldestMsgJid: string,
+    oldestMsgTimestamp: number,
+  ) {
+    const socket = this.whatsappService.getSocket(sessionId);
+    validateSocket(socket);
+
+    try {
+      const oldestMsgKey = {
+        id: oldestMsgId,
+        fromMe: oldestMsgFromMe,
+        remoteJid: oldestMsgJid,
+      };
+
+      const result = await socket.fetchMessageHistory(
+        count,
+        oldestMsgKey,
+        oldestMsgTimestamp,
+      );
+
+      return { requestId: result };
+    } catch (error) {
+      throw new BadRequestException(
+        `Erro ao buscar histórico: ${error instanceof Error ? error.message : 'Erro'}`,
+      );
+    }
+  }
+
+  async sendReceipt(
+    sessionId: string,
+    jid: string,
+    participant: string | undefined,
+    messageIds: string[],
+    type: 'read' | 'read-self' | 'played',
+  ): Promise<void> {
+    const socket = this.whatsappService.getSocket(sessionId);
+    validateSocket(socket);
+
+    await socket.sendReceipt(jid, participant, messageIds, type);
+  }
 }

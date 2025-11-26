@@ -44,8 +44,8 @@ export class NewslettersService {
     try {
       this.logger.log(`[${sessionId}] Criando newsletter: ${name}`);
       const result = await socket.newsletterCreate(name, description);
-      this.logger.log(`[${sessionId}] Newsletter criado: ${result.id}`);
-      return result;
+      this.logger.log(`[${sessionId}] Newsletter criado`);
+      return result as unknown;
     } catch (error) {
       this.logger.error(
         `[${sessionId}] Erro ao criar newsletter: ${error instanceof Error ? error.message : 'Erro'}`,
@@ -71,7 +71,7 @@ export class NewslettersService {
         `[${sessionId}] Obtendo metadados do newsletter: ${normalizedJid}`,
       );
       const metadata = await socket.newsletterMetadata('jid', normalizedJid);
-      return metadata;
+      return metadata as unknown;
     } catch (error) {
       this.logger.error(
         `[${sessionId}] Erro ao obter metadados: ${error instanceof Error ? error.message : 'Erro'}`,

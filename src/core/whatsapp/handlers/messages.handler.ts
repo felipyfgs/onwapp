@@ -150,7 +150,7 @@ export class MessagesHandler {
   private async processMessagesUpdate(
     sessionId: string,
     payload: unknown[],
-    sid: string,
+    _sid: string,
   ): Promise<void> {
     this.logger.log('Status de mensagens atualizado', {
       event: 'whatsapp.messages.update',
@@ -243,7 +243,7 @@ export class MessagesHandler {
     sessionId: string,
     conversationId: number,
     messageId: number,
-    sid: string,
+    _sid: string,
   ): Promise<void> {
     try {
       const config = await this.chatwootService.getConfig(sessionId);
@@ -331,7 +331,7 @@ export class MessagesHandler {
     conversationId: number,
     cwMessageId: number,
     waMessageId: string,
-    sid: string,
+    _sid: string,
   ): Promise<void> {
     try {
       const config = await this.chatwootService.getConfig(sessionId);
@@ -373,7 +373,7 @@ export class MessagesHandler {
         extendedTextMessage?: { text?: string };
       };
     },
-    sid: string,
+    _sid: string,
   ): Promise<void> {
     try {
       const config = await this.chatwootService.getConfig(sessionId);
@@ -446,7 +446,7 @@ export class MessagesHandler {
   private async handleMessageReceiptUpdate(
     sessionId: string,
     payload: unknown[],
-    sid: string,
+    _sid: string,
   ): Promise<void> {
     this.logger.log('Recibo de mensagem atualizado', {
       event: 'whatsapp.receipt.update',
@@ -723,7 +723,7 @@ export class MessagesHandler {
       key: { id: string; remoteJid: string; fromMe?: boolean };
       message?: Record<string, unknown>;
     },
-    sid: string,
+    _sid: string,
   ): Promise<Buffer | null> {
     try {
       const socket = this.whatsappService.getSocket(sessionId);

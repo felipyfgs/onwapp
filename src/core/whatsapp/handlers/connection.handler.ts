@@ -7,7 +7,6 @@ import { AuthStateRepository } from '../../../database/repositories/auth-state.r
 import { SocketManager } from '../managers/socket.manager';
 import { SessionData, QRCodeRef } from '../whatsapp.types';
 import {
-  formatSessionId,
   extractPhoneNumber,
   shouldReconnectSession,
   getReconnectDelay,

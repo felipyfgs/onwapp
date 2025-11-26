@@ -1,8 +1,9 @@
-import { Controller, Post, Param, UseGuards } from '@nestjs/common';
+import { Controller, Post, Param, Body, UseGuards } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiParam,
+  ApiBody,
   ApiSecurity,
   ApiOkResponse,
   ApiBadRequestResponse,
@@ -11,6 +12,7 @@ import {
 } from '@nestjs/swagger';
 import { CallsService } from './calls.service';
 import { ApiKeyGuard } from '../../common/guards/api-key.guard';
+import { RejectCallDto } from './dto/reject-call.dto';
 
 @ApiTags('Calls')
 @ApiSecurity('apikey')
@@ -28,5 +30,18 @@ export class CallsController {
   @ApiNotFoundResponse({ description: 'Sessão não encontrada' })
   async createCallLink(@Param('sessionId') sessionId: string) {
     return this.callsService.createCallLink(sessionId);
+  }
+
+  @Post('reject')
+  @ApiOperation({ summary: 'Rejeitar chamada recebida' })
+  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
+  @ApiBody({ type: RejectCallDto })
+  @ApiOkResponse({ description: 'Chamada rejeitada com sucesso' })
+  @ApiBadRequestResponse({ description: 'Erro ao rejeitar chamada' })
+  async rejectCall(
+    @Param('sessionId') sessionId: string,
+    @Body() dto: RejectCallDto,
+  ) {
+    return this.callsService.rejectCall(sessionId, dto.callId, dto.callFrom);
   }
 }
