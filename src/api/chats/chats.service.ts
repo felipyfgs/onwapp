@@ -6,6 +6,10 @@ import { MarkReadDto } from './dto/mark-read.dto';
 import { ClearMessagesDto } from './dto/clear-messages.dto';
 import { ReadMessagesDto } from './dto/read-messages.dto';
 import { validateSocket } from '../../common/utils/socket-validator';
+import {
+  ExtendedWASocket,
+  hasMethod,
+} from '../../common/utils/extended-socket.type';
 
 @Injectable()
 export class ChatsService {
@@ -202,4 +206,23 @@ export class ChatsService {
     }
   }
 
+  async starMessage(
+    sessionId: string,
+    jid: string,
+    messageId: string,
+    star: boolean,
+  ): Promise<void> {
+    const socket = this.whatsappService.getSocket(
+      sessionId,
+    ) as ExtendedWASocket;
+    validateSocket(socket);
+
+    if (!hasMethod(socket, 'star')) {
+      throw new BadRequestException(
+        'star method not available in current whaileys version',
+      );
+    }
+
+    await socket.star(jid, [messageId], star);
+  }
 }

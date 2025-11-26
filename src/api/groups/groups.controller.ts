@@ -355,14 +355,20 @@ export class GroupsController {
   @ApiParam({ name: 'groupId', description: 'ID do grupo' })
   @ApiBody({ type: ToggleEphemeralDto })
   @ApiOkResponse({ description: 'Mensagens temporárias alteradas com sucesso' })
-  @ApiBadRequestResponse({ description: 'Erro ao alterar mensagens temporárias' })
+  @ApiBadRequestResponse({
+    description: 'Erro ao alterar mensagens temporárias',
+  })
   @ApiNotFoundResponse({ description: 'Sessão não encontrada' })
   async toggleEphemeral(
     @Param('sessionId') sessionId: string,
     @Param('groupId') groupId: string,
     @Body() dto: ToggleEphemeralDto,
   ) {
-    return this.groupsService.toggleEphemeral(sessionId, groupId, dto.expiration);
+    return this.groupsService.toggleEphemeral(
+      sessionId,
+      groupId,
+      dto.expiration,
+    );
   }
 
   @Get(':groupId/join-requests')

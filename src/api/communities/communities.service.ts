@@ -42,7 +42,7 @@ export class CommunitiesService {
         linkedGroups,
       );
       this.logger.log(`[${sessionId}] Comunidade criada com sucesso`);
-      return result;
+      return result as unknown;
     } catch (error) {
       this.logger.error(
         `[${sessionId}] Erro ao criar comunidade: ${error instanceof Error ? error.message : 'Erro'}`,
@@ -65,7 +65,7 @@ export class CommunitiesService {
     try {
       this.logger.log(`[${sessionId}] Obtendo metadados da comunidade: ${jid}`);
       const metadata = await socket.communityMetadata(jid);
-      return metadata;
+      return metadata as unknown;
     } catch (error) {
       this.logger.error(
         `[${sessionId}] Erro ao obter metadados: ${error instanceof Error ? error.message : 'Erro'}`,
@@ -122,7 +122,7 @@ export class CommunitiesService {
         subject,
         participants,
       );
-      return result;
+      return result as unknown;
     } catch (error) {
       this.logger.error(
         `[${sessionId}] Erro ao criar grupo: ${error instanceof Error ? error.message : 'Erro'}`,
@@ -133,7 +133,11 @@ export class CommunitiesService {
     }
   }
 
-  async linkGroups(sessionId: string, communityJid: string, groupIds: string[]) {
+  async linkGroups(
+    sessionId: string,
+    communityJid: string,
+    groupIds: string[],
+  ) {
     const socket = this.getSocket(sessionId);
 
     if (!hasMethod(socket, 'communityLinkGroup')) {
@@ -305,7 +309,9 @@ export class CommunitiesService {
     }
 
     try {
-      this.logger.log(`[${sessionId}] Aceitando convite de comunidade: ${code}`);
+      this.logger.log(
+        `[${sessionId}] Aceitando convite de comunidade: ${code}`,
+      );
       const jid = await socket.communityAcceptInvite(code);
       return { jid };
     } catch (error) {
@@ -366,7 +372,7 @@ export class CommunitiesService {
         participants,
         action,
       );
-      return result;
+      return result as unknown;
     } catch (error) {
       this.logger.error(
         `[${sessionId}] Erro ao atualizar participantes: ${error instanceof Error ? error.message : 'Erro'}`,

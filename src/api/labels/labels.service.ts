@@ -33,7 +33,7 @@ export class LabelsService {
       this.logger.log(`[${sessionId}] Criando label: ${name}`);
       const result = await socket.addLabel(name, color);
       this.logger.log(`[${sessionId}] Label criada com sucesso`);
-      return result;
+      return result as unknown;
     } catch (error) {
       this.logger.error(
         `[${sessionId}] Erro ao criar label: ${error instanceof Error ? error.message : 'Erro'}`,

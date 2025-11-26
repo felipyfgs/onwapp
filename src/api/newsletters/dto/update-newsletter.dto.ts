@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, MaxLength, IsUrl, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  MaxLength,
+  IsUrl,
+  IsOptional,
+} from 'class-validator';
 
 export class UpdateNewsletterNameDto {
   @ApiProperty({ description: 'Novo nome do canal', maxLength: 120 })

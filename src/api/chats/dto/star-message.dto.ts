@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsBoolean, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsBoolean } from 'class-validator';
 
 export class StarMessageDto {
   @ApiProperty({ description: 'ID da mensagem' })
@@ -7,7 +7,7 @@ export class StarMessageDto {
   @IsNotEmpty()
   messageId: string;
 
-  @ApiProperty({ description: 'true para favoritar, false para desfavoritar' })
+  @ApiProperty({ description: 'True para favoritar, false para desfavoritar' })
   @IsBoolean()
   star: boolean;
 }

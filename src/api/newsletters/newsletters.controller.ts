@@ -102,10 +102,7 @@ export class NewslettersController {
   @ApiParam({ name: 'jid', description: 'JID do canal' })
   @ApiOkResponse({ description: 'Canal silenciado com sucesso' })
   @ApiBadRequestResponse({ description: 'Erro ao silenciar canal' })
-  async mute(
-    @Param('sessionId') sessionId: string,
-    @Param('jid') jid: string,
-  ) {
+  async mute(@Param('sessionId') sessionId: string, @Param('jid') jid: string) {
     return this.newslettersService.mute(sessionId, jid);
   }
 

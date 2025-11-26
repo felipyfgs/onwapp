@@ -65,7 +65,11 @@ export class BusinessController {
     required: false,
     description: 'JID do negócio (opcional)',
   })
-  @ApiQuery({ name: 'limit', required: false, description: 'Limite de coleções' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Limite de coleções',
+  })
   @ApiOkResponse({ description: 'Coleções obtidas com sucesso' })
   @ApiBadRequestResponse({ description: 'Erro ao obter coleções' })
   async getCollections(

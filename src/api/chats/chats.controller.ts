@@ -27,7 +27,7 @@ import { MuteChatDto } from './dto/mute-chat.dto';
 import { MarkReadDto } from './dto/mark-read.dto';
 import { ClearMessagesDto } from './dto/clear-messages.dto';
 import { ReadMessagesDto } from './dto/read-messages.dto';
-
+import { StarMessageDto } from './dto/star-message.dto';
 
 @ApiTags('Chats')
 @ApiSecurity('apikey')
@@ -265,4 +265,32 @@ export class ChatsController {
     return this.chatsService.listChats(sessionId);
   }
 
+  @Post(':jid/star')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Favoritar/desfavoritar mensagem',
+    description:
+      'Nota: Este método pode não estar disponível na versão atual do whaileys',
+  })
+  @ApiParam({ name: 'sessionId', description: 'ID da sessão' })
+  @ApiParam({ name: 'jid', description: 'JID do chat' })
+  @ApiBody({ type: StarMessageDto })
+  @ApiNoContentResponse({
+    description: 'Mensagem favoritada/desfavoritada com sucesso',
+  })
+  @ApiBadRequestResponse({
+    description: 'Sessão desconectada ou método não disponível',
+  })
+  async starMessage(
+    @Param('sessionId') sessionId: string,
+    @Param('jid') jid: string,
+    @Body() dto: StarMessageDto,
+  ): Promise<void> {
+    return this.chatsService.starMessage(
+      sessionId,
+      jid,
+      dto.messageId,
+      dto.star,
+    );
+  }
 }

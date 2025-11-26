@@ -635,7 +635,7 @@ export class GroupsService {
         action,
       );
 
-      return result;
+      return result as unknown;
     } catch (error) {
       this.logger.error(
         `[${sessionId}] Erro ao processar solicitações: ${error instanceof Error ? error.message : 'Erro'}`,

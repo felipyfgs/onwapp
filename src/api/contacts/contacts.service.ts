@@ -1,9 +1,13 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, BadRequestException } from '@nestjs/common';
 import { WhatsAppService } from '../../core/whatsapp/whatsapp.service';
 import { ValidateNumberDto } from './dto/validate-number.dto';
 import { ValidateNumberResponseDto } from './dto/validate-number-response.dto';
 import { BusinessProfileResponseDto } from './dto/business-profile-response.dto';
 import { validateSocket } from '../../common/utils/socket-validator';
+import {
+  ExtendedWASocket,
+  hasMethod,
+} from '../../common/utils/extended-socket.type';
 
 interface ContactsData {
   contacts: any[];
@@ -134,5 +138,25 @@ export class ContactsService implements OnModuleInit {
     await socket.removeContact(jid);
 
     return { success: true, message: 'Contato removido com sucesso' };
+  }
+
+  async fetchDisappearingDuration(
+    sessionId: string,
+    jid: string,
+  ): Promise<{ duration: number | null }> {
+    const socket = this.whatsappService.getSocket(
+      sessionId,
+    ) as ExtendedWASocket;
+    validateSocket(socket);
+
+    if (!hasMethod(socket, 'fetchDisappearingDuration')) {
+      throw new BadRequestException(
+        'fetchDisappearingDuration not available in current whaileys version',
+      );
+    }
+
+    const duration = await socket.fetchDisappearingDuration(jid);
+
+    return { duration };
   }
 }
