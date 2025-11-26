@@ -64,9 +64,10 @@ export class ChatwootWebhookHandler {
     // Extract chat ID from webhook payload
     const chatId = this.extractChatId(payload);
     if (!chatId) {
-      this.logger.warn(
-        `[${sessionId}] Could not extract chatId from webhook payload`,
-      );
+      this.logger.warn('Chat ID não encontrado no payload', {
+        event: 'chatwoot.webhook.chatid.missing',
+        sessionId,
+      });
       return { status: 'error', reason: 'Could not determine chat ID' };
     }
 
@@ -86,7 +87,11 @@ export class ChatwootWebhookHandler {
       // Send text message
       if (payload.content) {
         await this.sendTextMessage(sessionId, remoteJid, payload, quoted);
-        this.logger.log(`[${sessionId}] Message sent to ${remoteJid}`);
+        this.logger.log('Mensagem enviada para WhatsApp', {
+          event: 'chatwoot.webhook.message.sent',
+          sessionId,
+          remoteJid,
+        });
         return { status: 'sent', chatId: remoteJid };
       }
 
@@ -94,10 +99,12 @@ export class ChatwootWebhookHandler {
       return { status: 'ignored', reason: 'No content or attachments to send' };
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(
-        `[${sessionId}] Error sending message to ${remoteJid}: ${errorMsg}`,
-        error instanceof Error ? error.stack : undefined,
-      );
+      this.logger.error('Erro ao enviar mensagem para WhatsApp', {
+        event: 'chatwoot.webhook.message.failure',
+        sessionId,
+        remoteJid,
+        error: errorMsg,
+      });
       return { status: 'error', error: errorMsg };
     }
   }
@@ -167,14 +174,18 @@ export class ChatwootWebhookHandler {
         if (results && results.length > 0 && results[0].exists) {
           return results[0].jid;
         }
-        this.logger.warn(
-          `[${sessionId}] Number not on WhatsApp: ${phoneNumber}`,
-        );
+        this.logger.warn('Número não encontrado no WhatsApp', {
+          event: 'chatwoot.whatsapp.number.notfound',
+          sessionId,
+          phoneNumber,
+        });
       }
     } catch (error) {
-      this.logger.error(
-        `[${sessionId}] onWhatsApp error: ${(error as Error).message}`,
-      );
+      this.logger.error('Erro ao verificar número no WhatsApp', {
+        event: 'chatwoot.whatsapp.number.failure',
+        sessionId,
+        error: (error as Error).message,
+      });
     }
 
     return remoteJid;
@@ -195,9 +206,11 @@ export class ChatwootWebhookHandler {
     const conversationId = payload.conversation?.id;
 
     if (attachments.length > 1) {
-      this.logger.log(
-        `[${sessionId}] Sending ${attachments.length} attachments separately to WhatsApp`,
-      );
+      this.logger.log('Enviando múltiplos anexos separadamente', {
+        event: 'chatwoot.webhook.attachments.multiple',
+        sessionId,
+        count: attachments.length,
+      });
     }
 
     // Send each attachment separately to WhatsApp
@@ -289,10 +302,13 @@ export class ChatwootWebhookHandler {
   ): Promise<{ id: string } | null> {
     const { file_type, data_url, file_name } = attachment;
 
-    // Log full attachment for debugging
-    this.logger.debug(
-      `[${sessionId}] Attachment payload: ${JSON.stringify(attachment)}`,
-    );
+    // Log attachment info
+    this.logger.debug('Processando anexo', {
+      event: 'chatwoot.attachment.process',
+      sessionId,
+      fileType: file_type,
+      fileName: file_name,
+    });
 
     // Try to extract filename from data_url if not provided
     let actualFileName = file_name;
@@ -308,9 +324,7 @@ export class ChatwootWebhookHandler {
     // Determine mimetype from file name extension
     const mimetype = getMimeType(file_type, actualFileName);
 
-    this.logger.debug(
-      `[${sessionId}] Processing attachment: type=${file_type}, name=${actualFileName}, mimetype=${mimetype}`,
-    );
+    // mimetype já determinado na função anterior
 
     // Download the attachment
     let mediaData: string;
@@ -326,9 +340,11 @@ export class ChatwootWebhookHandler {
         axiosError.response?.status !== undefined
           ? `HTTP ${axiosError.response.status}`
           : axiosError.message;
-      this.logger.error(
-        `[${sessionId}] Failed to download attachment from ${data_url}: ${errorMessage}`,
-      );
+      this.logger.error('Falha ao baixar anexo', {
+        event: 'chatwoot.attachment.download.failure',
+        sessionId,
+        error: errorMessage,
+      });
       throw new Error(`Attachment download failed: ${errorMessage}`);
     }
 

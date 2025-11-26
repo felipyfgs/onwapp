@@ -32,8 +32,10 @@ export class ConnectionHandler {
     if (sessionDataEntry) {
       sessionDataEntry.qrCode = qr;
     }
-    const sid = formatSessionId(sessionId);
-    this.logger.log(`[${sid}] QR gerado`);
+    this.logger.log('QR Code gerado', {
+      event: 'whatsapp.qr.generated',
+      sessionId,
+    });
     qrcode.generate(qr, { small: true });
     await this.updateSessionStatus(sessionId, {
       qrCode: qr,
@@ -53,10 +55,11 @@ export class ConnectionHandler {
     }
 
     const phoneNumber = extractPhoneNumber(socket);
-    const sid = formatSessionId(sessionId);
-    this.logger.log(
-      `[${sid}] ✓ Conectado${phoneNumber ? ` | Tel: +${phoneNumber}` : ''}`,
-    );
+    this.logger.log('Sessão conectada', {
+      event: 'whatsapp.connection.open',
+      sessionId,
+      phoneNumber: phoneNumber ? `+${phoneNumber}` : undefined,
+    });
 
     await this.updateSessionStatus(sessionId, {
       status: 'connected',
@@ -81,19 +84,24 @@ export class ConnectionHandler {
       currentLogoutAttempts,
     );
 
-    const sid = formatSessionId(sessionId);
-    this.logger.log(
-      `[${sid}] ✗ Desconectado | Code: ${statusCode} | Retry: ${shouldReconnect ? `✓ (${currentLogoutAttempts})` : '✗'}`,
-    );
+    this.logger.log('Sessão desconectada', {
+      event: 'whatsapp.connection.close',
+      sessionId,
+      statusCode,
+      shouldReconnect,
+      logoutAttempts: currentLogoutAttempts,
+    });
 
     this.socketManager.deleteSocket(sessionId);
     sessionData.delete(sessionId);
 
     // 401 = loggedOut - sessão foi invalidada (logout do celular, etc)
     if (isLoggedOut) {
-      this.logger.warn(
-        `[${sid}] Sessão invalidada (loggedOut) | Limpando credenciais`,
-      );
+      this.logger.warn('Sessão invalidada', {
+        event: 'whatsapp.session.logout',
+        sessionId,
+        reason: 'loggedOut',
+      });
       await this.clearSessionCredentials(sessionId);
       await this.updateSessionStatus(sessionId, {
         status: 'disconnected',
@@ -117,10 +125,11 @@ export class ConnectionHandler {
 
   handleCredsUpdate(sessionId: string, saveCreds: () => Promise<void>): void {
     saveCreds().catch((err) => {
-      const sid = formatSessionId(sessionId);
-      this.logger.error(
-        `[${sid}] Falha ao salvar credenciais: ${err instanceof Error ? err.message : 'Erro desconhecido'}`,
-      );
+      this.logger.error('Falha ao salvar credenciais', {
+        event: 'whatsapp.creds.save.failure',
+        sessionId,
+        error: err instanceof Error ? err.message : 'Unknown error',
+      });
     });
   }
 
@@ -168,10 +177,11 @@ export class ConnectionHandler {
     try {
       await this.sessionRepository.update(sessionId, data);
     } catch (error) {
-      this.logger.error(
-        `[${sessionId}] Operation: updateSessionStatus | Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        error,
-      );
+      this.logger.error('Erro ao atualizar status da sessão', {
+        event: 'session.status.update.failure',
+        sessionId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   }
 
@@ -179,10 +189,11 @@ export class ConnectionHandler {
     try {
       await this.authStateRepository.deleteBySession(sessionId);
     } catch (error) {
-      this.logger.error(
-        `[${sessionId}] Operation: clearSessionCredentials | Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        error,
-      );
+      this.logger.error('Erro ao limpar credenciais da sessão', {
+        event: 'session.creds.clear.failure',
+        sessionId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   }
 }

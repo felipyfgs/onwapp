@@ -72,10 +72,11 @@ export class PersistenceService {
         },
       });
     } catch (error) {
-      this.logger.error(
-        `Erro ao criar/atualizar contato: ${error.message}`,
-        error.stack,
-      );
+      this.logger.error('Erro ao criar/atualizar contato', {
+        event: 'persistence.contact.upsert.failure',
+        sessionId,
+        error: error.message,
+      });
     }
   }
 
@@ -120,10 +121,11 @@ export class PersistenceService {
 
       return chat.id;
     } catch (error) {
-      this.logger.error(
-        `Erro ao criar/atualizar chat: ${error.message}`,
-        error.stack,
-      );
+      this.logger.error('Erro ao criar/atualizar chat', {
+        event: 'persistence.chat.upsert.failure',
+        sessionId,
+        error: error.message,
+      });
       return null;
     }
   }
@@ -189,19 +191,22 @@ export class PersistenceService {
         },
       });
 
-      this.logger.debug(
-        `Mensagem persistida: ${messageData.messageId} (${messageData.messageType})`,
-      );
+      this.logger.log('Mensagem persistida', {
+        event: 'persistence.message.create.success',
+        sessionId,
+        messageId: messageData.messageId,
+        messageType: messageData.messageType,
+      });
     } catch (error) {
       if (error.code === 'P2002') {
-        this.logger.debug(
-          `Mensagem duplicada ignorada: ${messageData.messageId}`,
-        );
+        // Mensagem duplicada - ignorar silenciosamente
       } else {
-        this.logger.error(
-          `Erro ao criar mensagem: ${error.message}`,
-          error.stack,
-        );
+        this.logger.error('Erro ao criar mensagem', {
+          event: 'persistence.message.create.failure',
+          sessionId,
+          messageId: messageData.messageId,
+          error: error.message,
+        });
       }
     }
   }
@@ -222,14 +227,19 @@ export class PersistenceService {
         },
       });
 
-      this.logger.debug(
-        `Status da mensagem atualizado: ${messageId} -> ${status}`,
-      );
+      this.logger.debug('Status da mensagem atualizado', {
+        event: 'persistence.message.status.update',
+        sessionId,
+        messageId,
+        status,
+      });
     } catch (error) {
-      this.logger.error(
-        `Erro ao atualizar status da mensagem: ${error.message}`,
-        error.stack,
-      );
+      this.logger.error('Erro ao atualizar status da mensagem', {
+        event: 'persistence.message.status.failure',
+        sessionId,
+        messageId,
+        error: error.message,
+      });
     }
   }
 
@@ -248,12 +258,18 @@ export class PersistenceService {
         },
       });
 
-      this.logger.debug(`Mensagem marcada como deletada: ${messageId}`);
+      this.logger.debug('Mensagem marcada como deletada', {
+        event: 'persistence.message.delete.mark',
+        sessionId,
+        messageId,
+      });
     } catch (error) {
-      this.logger.error(
-        `Erro ao marcar mensagem como deletada: ${error.message}`,
-        error.stack,
-      );
+      this.logger.error('Erro ao marcar mensagem como deletada', {
+        event: 'persistence.message.delete.failure',
+        sessionId,
+        messageId,
+        error: error.message,
+      });
     }
   }
 
@@ -273,12 +289,18 @@ export class PersistenceService {
         },
       });
 
-      this.logger.debug(`Conteúdo da mensagem atualizado: ${messageId}`);
+      this.logger.debug('Conteúdo da mensagem atualizado', {
+        event: 'persistence.message.content.update',
+        sessionId,
+        messageId,
+      });
     } catch (error) {
-      this.logger.error(
-        `Erro ao atualizar conteúdo da mensagem: ${error.message}`,
-        error.stack,
-      );
+      this.logger.error('Erro ao atualizar conteúdo da mensagem', {
+        event: 'persistence.message.content.failure',
+        sessionId,
+        messageId,
+        error: error.message,
+      });
     }
   }
 
@@ -313,10 +335,12 @@ export class PersistenceService {
         });
       }
     } catch (error) {
-      this.logger.error(
-        `Erro ao atualizar dados Chatwoot: ${error.message}`,
-        error.stack,
-      );
+      this.logger.error('Erro ao atualizar dados Chatwoot', {
+        event: 'persistence.message.chatwoot.failure',
+        sessionId,
+        messageId,
+        error: error.message,
+      });
     }
   }
 
@@ -350,9 +374,12 @@ export class PersistenceService {
         waMessage: message.waMessage as Record<string, unknown> | null,
       };
     } catch (error) {
-      this.logger.error(
-        `Erro ao buscar mensagem por Chatwoot ID: ${error.message}`,
-      );
+      this.logger.error('Erro ao buscar mensagem por Chatwoot ID', {
+        event: 'persistence.message.find.failure',
+        sessionId,
+        cwMessageId,
+        error: error.message,
+      });
       return null;
     }
   }
@@ -390,9 +417,12 @@ export class PersistenceService {
         waMessageKey: m.waMessageKey as WAMessageKey | null,
       }));
     } catch (error) {
-      this.logger.error(
-        `Erro ao buscar mensagens por Chatwoot ID: ${error.message}`,
-      );
+      this.logger.error('Erro ao buscar mensagens por Chatwoot ID', {
+        event: 'persistence.messages.find.failure',
+        sessionId,
+        cwMessageId,
+        error: error.message,
+      });
       return [];
     }
   }
@@ -433,9 +463,12 @@ export class PersistenceService {
         cwConversationId: message.cwConversationId,
       };
     } catch (error) {
-      this.logger.error(
-        `Erro ao buscar mensagem por WA ID: ${(error as Error).message}`,
-      );
+      this.logger.error('Erro ao buscar mensagem por WA ID', {
+        event: 'persistence.message.find.failure',
+        sessionId,
+        waMessageId,
+        error: (error as Error).message,
+      });
       return null;
     }
   }
@@ -579,15 +612,18 @@ export class PersistenceService {
         }
       });
 
-      this.logger.debug(
-        `Batch de contatos persistido: ${processedCount} contatos`,
-      );
+      this.logger.debug('Batch de contatos persistido', {
+        event: 'persistence.contacts.batch.success',
+        sessionId,
+        count: processedCount,
+      });
       return processedCount;
     } catch (error) {
-      this.logger.error(
-        `Erro ao persistir batch de contatos: ${error.message}`,
-        error.stack,
-      );
+      this.logger.error('Erro ao persistir batch de contatos', {
+        event: 'persistence.contacts.batch.failure',
+        sessionId,
+        error: error.message,
+      });
       return 0;
     }
   }
@@ -637,13 +673,18 @@ export class PersistenceService {
         }
       });
 
-      this.logger.debug(`Batch de chats persistido: ${processedCount} chats`);
+      this.logger.debug('Batch de chats persistido', {
+        event: 'persistence.chats.batch.success',
+        sessionId,
+        count: processedCount,
+      });
       return processedCount;
     } catch (error) {
-      this.logger.error(
-        `Erro ao persistir batch de chats: ${error.message}`,
-        error.stack,
-      );
+      this.logger.error('Erro ao persistir batch de chats', {
+        event: 'persistence.chats.batch.failure',
+        sessionId,
+        error: error.message,
+      });
       return 0;
     }
   }
@@ -703,15 +744,18 @@ export class PersistenceService {
         }
       }
 
-      this.logger.debug(
-        `Batch de mensagens persistido: ${totalProcessed} mensagens`,
-      );
+      this.logger.debug('Batch de mensagens persistido', {
+        event: 'persistence.messages.batch.success',
+        sessionId,
+        count: totalProcessed,
+      });
       return totalProcessed;
     } catch (error) {
-      this.logger.error(
-        `Erro ao persistir batch de mensagens: ${error.message}`,
-        error.stack,
-      );
+      this.logger.error('Erro ao persistir batch de mensagens', {
+        event: 'persistence.messages.batch.failure',
+        sessionId,
+        error: error.message,
+      });
       return totalProcessed;
     }
   }

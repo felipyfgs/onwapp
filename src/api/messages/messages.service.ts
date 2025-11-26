@@ -504,9 +504,12 @@ export class MessagesService {
       // Then forward to Chatwoot
       this.forwardButtonsToChatwoot(sessionId, jid, dto, messageId).catch(
         (err) =>
-          this.logger.error(
-            `Failed to forward buttons to Chatwoot: ${err.message}`,
-          ),
+          this.logger.error('Falha ao encaminhar botões para Chatwoot', {
+            event: 'chatwoot.forward.failure',
+            sessionId,
+            messageId,
+            error: err.message,
+          }),
       );
     }
 
@@ -600,7 +603,12 @@ export class MessagesService {
 
       // Then forward to Chatwoot
       this.forwardListToChatwoot(sessionId, jid, dto, messageId).catch((err) =>
-        this.logger.error(`Failed to forward list to Chatwoot: ${err.message}`),
+        this.logger.error('Falha ao encaminhar lista para Chatwoot', {
+          event: 'chatwoot.forward.failure',
+          sessionId,
+          messageId,
+          error: err.message,
+        }),
       );
     }
 
@@ -812,9 +820,13 @@ export class MessagesService {
       });
     }
 
-    this.logger.debug(
-      `[${sessionId}] ${messageType} message forwarded to Chatwoot (sourceId=${sourceId}, cwMsgId=${cwMessage?.id})`,
-    );
+    this.logger.log('Mensagem encaminhada para Chatwoot', {
+      event: 'chatwoot.forward.success',
+      sessionId,
+      messageType,
+      sourceId,
+      cwMessageId: cwMessage?.id,
+    });
   }
 
   /**
@@ -872,9 +884,12 @@ export class MessagesService {
         'list',
       );
     } catch (error) {
-      this.logger.error(
-        `[${sessionId}] Failed to forward list to Chatwoot: ${error}`,
-      );
+      this.logger.error('Falha ao encaminhar lista para Chatwoot', {
+        event: 'chatwoot.forward.failure',
+        sessionId,
+        sourceId,
+        error: String(error),
+      });
     }
   }
 
@@ -900,9 +915,12 @@ export class MessagesService {
         'buttons',
       );
     } catch (error) {
-      this.logger.error(
-        `[${sessionId}] Failed to forward buttons to Chatwoot: ${error}`,
-      );
+      this.logger.error('Falha ao encaminhar botões para Chatwoot', {
+        event: 'chatwoot.forward.failure',
+        sessionId,
+        sourceId,
+        error: String(error),
+      });
     }
   }
 }

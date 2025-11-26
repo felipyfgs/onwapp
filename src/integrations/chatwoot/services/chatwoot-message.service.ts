@@ -40,9 +40,11 @@ export class ChatwootMessageService {
   ): Promise<ChatwootMessage | null> {
     const client = await this.configService.getClient(sessionId);
     if (!client) {
-      this.logger.warn(
-        `[${sessionId}] Cannot create message: Chatwoot client not available`,
-      );
+      this.logger.warn('Cliente Chatwoot não disponível', {
+        event: 'chatwoot.message.create.skip',
+        sessionId,
+        reason: 'client_unavailable',
+      });
       return null;
     }
 
@@ -70,15 +72,20 @@ export class ChatwootMessageService {
           : undefined,
       });
 
-      this.logger.debug(
-        `[${sessionId}] Created message ${message.id} in conversation ${conversationId}`,
-      );
+      this.logger.log('Mensagem criada no Chatwoot', {
+        event: 'chatwoot.message.create.success',
+        sessionId,
+        conversationId,
+        messageId: message.id,
+      });
       return message;
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(
-        `[${sessionId}] Error creating message in conversation ${conversationId}: ${errorMsg}`,
-      );
+      this.logger.error('Falha ao criar mensagem no Chatwoot', {
+        event: 'chatwoot.message.create.failure',
+        sessionId,
+        conversationId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
       return null;
     }
   }
@@ -93,9 +100,11 @@ export class ChatwootMessageService {
   ): Promise<ChatwootMessage | null> {
     const client = await this.configService.getClient(sessionId);
     if (!client) {
-      this.logger.warn(
-        `[${sessionId}] Cannot create message with attachment: Chatwoot client not available`,
-      );
+      this.logger.warn('Cliente Chatwoot não disponível', {
+        event: 'chatwoot.message.attachment.skip',
+        sessionId,
+        reason: 'client_unavailable',
+      });
       return null;
     }
 
@@ -125,15 +134,21 @@ export class ChatwootMessageService {
         },
       );
 
-      this.logger.debug(
-        `[${sessionId}] Created message with attachment ${message.id} in conversation ${conversationId}`,
-      );
+      this.logger.log('Mensagem com anexo criada no Chatwoot', {
+        event: 'chatwoot.message.attachment.success',
+        sessionId,
+        conversationId,
+        messageId: message.id,
+        filename: params.file.filename,
+      });
       return message;
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(
-        `[${sessionId}] Error creating message with attachment in conversation ${conversationId}: ${errorMsg}`,
-      );
+      this.logger.error('Falha ao criar mensagem com anexo no Chatwoot', {
+        event: 'chatwoot.message.attachment.failure',
+        sessionId,
+        conversationId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
       return null;
     }
   }
@@ -150,23 +165,30 @@ export class ChatwootMessageService {
   ): Promise<boolean> {
     const client = await this.configService.getClient(sessionId);
     if (!client) {
-      this.logger.warn(
-        `[${sessionId}] Cannot delete message: Chatwoot client not available`,
-      );
+      this.logger.warn('Cliente Chatwoot não disponível', {
+        event: 'chatwoot.message.delete.skip',
+        sessionId,
+        reason: 'client_unavailable',
+      });
       return false;
     }
 
     try {
       await client.deleteMessage(conversationId, messageId);
-      this.logger.debug(
-        `[${sessionId}] Deleted message ${messageId} from conversation ${conversationId}`,
-      );
+      this.logger.log('Mensagem deletada no Chatwoot', {
+        event: 'chatwoot.message.delete.success',
+        sessionId,
+        conversationId,
+        messageId,
+      });
       return true;
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(
-        `[${sessionId}] Error deleting message ${messageId}: ${errorMsg}`,
-      );
+      this.logger.error('Falha ao deletar mensagem no Chatwoot', {
+        event: 'chatwoot.message.delete.failure',
+        sessionId,
+        messageId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
       return false;
     }
   }
@@ -184,9 +206,11 @@ export class ChatwootMessageService {
   ): Promise<boolean> {
     const client = await this.configService.getClient(sessionId);
     if (!client) {
-      this.logger.warn(
-        `[${sessionId}] Cannot mark message as deleted: Chatwoot client not available`,
-      );
+      this.logger.warn('Cliente Chatwoot não disponível', {
+        event: 'chatwoot.message.mark_deleted.skip',
+        sessionId,
+        reason: 'client_unavailable',
+      });
       return false;
     }
 
@@ -194,15 +218,20 @@ export class ChatwootMessageService {
       await client.updateMessage(conversationId, messageId, {
         content: '⦸ _Mensagem apagada_',
       });
-      this.logger.debug(
-        `[${sessionId}] Marked message ${messageId} as deleted in conversation ${conversationId}`,
-      );
+      this.logger.log('Mensagem marcada como apagada no Chatwoot', {
+        event: 'chatwoot.message.mark_deleted.success',
+        sessionId,
+        conversationId,
+        messageId,
+      });
       return true;
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(
-        `[${sessionId}] Error marking message ${messageId} as deleted: ${errorMsg}`,
-      );
+      this.logger.error('Falha ao marcar mensagem como apagada no Chatwoot', {
+        event: 'chatwoot.message.mark_deleted.failure',
+        sessionId,
+        messageId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
       return false;
     }
   }
@@ -228,18 +257,6 @@ export class ChatwootMessageService {
    */
   getMessageContent(message: WAMessageContent | null): string | null {
     if (!message) return null;
-
-    // Debug: log message structure for interactive messages
-    const msgKeys = Object.keys(message);
-    if (
-      msgKeys.some((k) =>
-        ['listMessage', 'buttonsMessage', 'interactiveMessage'].includes(k),
-      )
-    ) {
-      this.logger.debug(
-        `Interactive message detected, keys: ${msgKeys.join(', ')}`,
-      );
-    }
 
     if (message.conversation) return message.conversation;
     if (message.extendedTextMessage) return message.extendedTextMessage.text;
@@ -325,86 +342,39 @@ export class ChatwootMessageService {
   }
 
   /**
-   * Format list message for Chatwoot display
+   * Format list message for Chatwoot display (simplified)
    */
   private formatListMessage(
     listMessage: NonNullable<WAMessageContent['listMessage']>,
   ): string {
-    const lines: string[] = [];
-
-    // Header
-    lines.push('📋 *[List]*');
-    if (listMessage.title) {
-      lines.push(`*${listMessage.title}*`);
-    }
-    if (listMessage.description) {
-      lines.push(listMessage.description);
-    }
-    lines.push('');
-
-    // Button text
-    if (listMessage.buttonText) {
-      lines.push(`🔽 _${listMessage.buttonText}_`);
-      lines.push('');
-    }
-
-    // Sections
-    if (listMessage.sections && listMessage.sections.length > 0) {
+    const lines: string[] = ['📋 *Lista*'];
+    if (listMessage.description) lines.push(listMessage.description);
+    if (listMessage.sections) {
       for (const section of listMessage.sections) {
-        if (section.title) {
-          lines.push(`▸ *${section.title}*`);
-        }
-        if (section.rows && section.rows.length > 0) {
+        if (section.rows) {
           for (const row of section.rows) {
-            const title = row.title || 'Opção';
-            const rowId = row.rowId || '';
-            const description = row.description ? ` - ${row.description}` : '';
-            lines.push(`   • ${title}${description}`);
-            if (rowId) {
-              lines.push(`     _ID: ${rowId}_`);
-            }
+            lines.push(`• ${row.title || 'Opção'} (${row.rowId || ''})`);
           }
         }
-        lines.push('');
       }
     }
-
     return lines.join('\n').trim();
   }
 
   /**
-   * Format buttons message for Chatwoot display
+   * Format buttons message for Chatwoot display (simplified)
    */
   private formatButtonsMessage(
     buttonsMessage: NonNullable<WAMessageContent['buttonsMessage']>,
   ): string {
-    const lines: string[] = [];
-
-    // Header
-    lines.push('🔘 *[Buttons]*');
-    if (buttonsMessage.contentText) {
-      lines.push(buttonsMessage.contentText);
-    }
-    lines.push('');
-
-    // Buttons
-    if (buttonsMessage.buttons && buttonsMessage.buttons.length > 0) {
+    const lines: string[] = ['🔘 *Botões*'];
+    if (buttonsMessage.contentText) lines.push(buttonsMessage.contentText);
+    if (buttonsMessage.buttons) {
       for (const button of buttonsMessage.buttons) {
         const text = button.buttonText?.displayText || 'Botão';
-        const buttonId = button.buttonId || '';
-        lines.push(`   ▪ ${text}`);
-        if (buttonId) {
-          lines.push(`     _ID: ${buttonId}_`);
-        }
+        lines.push(`• ${text} (${button.buttonId || ''})`);
       }
-      lines.push('');
     }
-
-    // Footer
-    if (buttonsMessage.footerText) {
-      lines.push(`_${buttonsMessage.footerText}_`);
-    }
-
     return lines.join('\n').trim();
   }
 
@@ -413,96 +383,36 @@ export class ChatwootMessageService {
    */
   private formatInteractiveMessage(interactiveMessage: unknown): string {
     const msg = interactiveMessage as {
-      header?: { title?: string; subtitle?: string };
       body?: { text?: string };
-      footer?: { text?: string };
       nativeFlowMessage?: {
         buttons?: Array<{ name?: string; buttonParamsJson?: string }>;
-        messageParamsJson?: string;
       };
     };
 
-    const lines: string[] = [];
+    const lines: string[] = ['📋 *Interativo*'];
+    if (msg.body?.text) lines.push(msg.body.text);
 
-    // Try to detect type from structure
-    const hasNativeFlow = !!msg.nativeFlowMessage;
-
-    if (hasNativeFlow) {
-      lines.push('📋 *[Interactive]*');
-    } else {
-      lines.push('💬 *[Interactive]*');
-    }
-
-    // Header
-    if (msg.header?.title) {
-      lines.push(`*${msg.header.title}*`);
-    }
-    if (msg.header?.subtitle) {
-      lines.push(msg.header.subtitle);
-    }
-
-    // Body
-    if (msg.body?.text) {
-      lines.push(msg.body.text);
-    }
-    lines.push('');
-
-    // Native flow buttons (list/buttons in newer format)
     if (msg.nativeFlowMessage?.buttons) {
       for (const button of msg.nativeFlowMessage.buttons) {
-        if (button.name === 'single_select') {
-          // This is a list
-          try {
-            const params = JSON.parse(button.buttonParamsJson || '{}');
-            if (params.title) {
-              lines.push(`🔽 _${params.title}_`);
-              lines.push('');
-            }
-            if (params.sections) {
-              for (const section of params.sections as Array<{
-                title?: string;
-                rows?: Array<{
-                  title?: string;
-                  id?: string;
-                  description?: string;
-                }>;
-              }>) {
-                if (section.title) {
-                  lines.push(`▸ *${section.title}*`);
+        try {
+          const params = JSON.parse(button.buttonParamsJson || '{}');
+          if (button.name === 'single_select' && params.sections) {
+            for (const section of params.sections as Array<{
+              rows?: Array<{ title?: string; id?: string }>;
+            }>) {
+              if (section.rows) {
+                for (const row of section.rows) {
+                  lines.push(`• ${row.title || 'Opção'} (${row.id || ''})`);
                 }
-                if (section.rows) {
-                  for (const row of section.rows) {
-                    const desc = row.description ? ` - ${row.description}` : '';
-                    lines.push(`   • ${row.title || 'Opção'}${desc}`);
-                    if (row.id) {
-                      lines.push(`     _ID: ${row.id}_`);
-                    }
-                  }
-                }
-                lines.push('');
               }
             }
-          } catch {
-            lines.push('   [Lista de opções]');
+          } else if (button.name === 'quick_reply') {
+            lines.push(`• ${params.display_text || 'Botão'} (${params.id || ''})`);
           }
-        } else if (button.name === 'quick_reply') {
-          // Quick reply button
-          try {
-            const params = JSON.parse(button.buttonParamsJson || '{}');
-            lines.push(`   ▪ ${params.display_text || 'Botão'}`);
-            if (params.id) {
-              lines.push(`     _ID: ${params.id}_`);
-            }
-          } catch {
-            lines.push('   ▪ [Botão]');
-          }
+        } catch {
+          lines.push('• [Opção]');
         }
       }
-    }
-
-    // Footer
-    if (msg.footer?.text) {
-      lines.push(`_${msg.footer.text}_`);
     }
 
     return lines.join('\n').trim();

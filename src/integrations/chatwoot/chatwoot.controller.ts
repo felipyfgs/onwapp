@@ -72,7 +72,10 @@ export class ChatwootController {
     @Param('sessionId') sessionId: string,
     @Body() dto: SetChatwootConfigDto,
   ): Promise<ChatwootConfigResponseDto> {
-    this.logger.log(`Setting Chatwoot config for session: ${sessionId}`);
+    this.logger.log('Configurando integração Chatwoot', {
+      event: 'chatwoot.config.set',
+      sessionId,
+    });
     const result = await this.configService.upsertConfig(sessionId, dto);
     return result as ChatwootConfigResponseDto;
   }
@@ -158,10 +161,6 @@ export class ChatwootController {
     @Param('sessionId') sessionId: string,
     @Body() payload: ZpwootEventPayloadDto,
   ): Promise<ZpwootEventResponseDto> {
-    this.logger.debug(
-      `[${sessionId}] Received zpwoot event for Chatwoot: ${payload.event}`,
-    );
-
     try {
       const result = await this.eventHandler.handleWebhookEvent({
         sessionId,
@@ -173,9 +172,12 @@ export class ChatwootController {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(
-        `[${sessionId}] Error processing zpwoot event: ${errorMessage}`,
-      );
+      this.logger.error('Erro ao processar evento zpwoot', {
+        event: 'chatwoot.zpwoot.event.failure',
+        sessionId,
+        eventType: payload.event,
+        error: errorMessage,
+      });
       return { processed: false, error: errorMessage };
     }
   }
@@ -207,10 +209,6 @@ export class ChatwootController {
     @Param('sessionId') sessionId: string,
     @Body() body: ChatwootWebhookPayloadDto,
   ): ChatwootWebhookResponseDto {
-    this.logger.debug(
-      `[${sessionId}] Received Chatwoot webhook: ${body.event}`,
-    );
-
     // Process webhook asynchronously to avoid Chatwoot timeout
     // Chatwoot has a short timeout (~5s) and sending media can take longer
     this.processWebhookAsync(sessionId, body);
@@ -233,21 +231,21 @@ export class ChatwootController {
         .handleWebhook(sessionId, body)
         .then((result) => {
           if (result.status === 'error') {
-            this.logger.warn(
-              `[${sessionId}] Webhook processed with error: ${result.error || result.reason}`,
-            );
-          } else {
-            this.logger.debug(
-              `[${sessionId}] Webhook processed: status=${result.status}, chatId=${result.chatId || 'N/A'}`,
-            );
+            this.logger.warn('Webhook processado com erro', {
+              event: 'chatwoot.webhook.process.warning',
+              sessionId,
+              error: result.error || result.reason,
+            });
           }
         })
         .catch((error: unknown) => {
           const errorMessage =
             error instanceof Error ? error.message : 'Unknown error';
-          this.logger.error(
-            `[${sessionId}] Error processing Chatwoot webhook: ${errorMessage}`,
-          );
+          this.logger.error('Erro ao processar webhook Chatwoot', {
+            event: 'chatwoot.webhook.process.failure',
+            sessionId,
+            error: errorMessage,
+          });
         });
     });
   }

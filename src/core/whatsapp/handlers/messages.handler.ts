@@ -42,8 +42,9 @@ export class MessagesHandler {
     payload: { messages: unknown[]; type?: string },
     sid: string,
   ): Promise<void> {
-    this.logger.log(`[${sid}] 📨 messages.upsert`, {
-      event: 'messages.upsert',
+    this.logger.log('Mensagens recebidas', {
+      event: 'whatsapp.messages.upsert',
+      sessionId,
       count: payload.messages?.length || 0,
     });
 
@@ -138,9 +139,11 @@ export class MessagesHandler {
         await this.forwardToChatwoot(sessionId, msg, sid);
       }
     } catch (error) {
-      this.logger.error(
-        `[${sid}] Erro ao persistir messages.upsert: ${(error as Error).message}`,
-      );
+      this.logger.error('Erro ao processar messages.upsert', {
+        event: 'messages.upsert.failure',
+        sessionId,
+        error: (error as Error).message,
+      });
     }
   }
 
@@ -149,8 +152,9 @@ export class MessagesHandler {
     payload: unknown[],
     sid: string,
   ): Promise<void> {
-    this.logger.log(`[${sid}] 📨 messages.update`, {
-      event: 'messages.update',
+    this.logger.log('Status de mensagens atualizado', {
+      event: 'whatsapp.messages.update',
+      sessionId,
       count: payload.length,
     });
 
@@ -183,9 +187,11 @@ export class MessagesHandler {
         }
       }
     } catch (error) {
-      this.logger.error(
-        `[${sid}] Erro ao persistir messages.update: ${(error as Error).message}`,
-      );
+      this.logger.error('Erro ao processar messages.update', {
+        event: 'whatsapp.messages.update.failure',
+        sessionId,
+        error: (error as Error).message,
+      });
     }
   }
 
@@ -194,8 +200,9 @@ export class MessagesHandler {
     payload: { keys: { id: string }[] },
     sid: string,
   ): Promise<void> {
-    this.logger.log(`[${sid}] 📨 messages.delete`, {
-      event: 'messages.delete',
+    this.logger.log('Mensagens deletadas', {
+      event: 'whatsapp.messages.delete',
+      sessionId,
       count: payload.keys?.length || 0,
     });
 
@@ -224,9 +231,11 @@ export class MessagesHandler {
         }
       }
     } catch (error) {
-      this.logger.error(
-        `[${sid}] Erro ao persistir messages.delete: ${(error as Error).message}`,
-      );
+      this.logger.error('Erro ao processar messages.delete', {
+        event: 'whatsapp.messages.delete.failure',
+        sessionId,
+        error: (error as Error).message,
+      });
     }
   }
 
@@ -245,11 +254,19 @@ export class MessagesHandler {
         conversationId,
         messageId,
       );
-      this.logger.log(`[${sid}] [CW] Message deleted (msgId=${messageId})`);
+      this.logger.log('Mensagem deletada no Chatwoot', {
+        event: 'chatwoot.message.delete.success',
+        sessionId,
+        conversationId,
+        messageId,
+      });
     } catch (error) {
-      this.logger.error(
-        `[${sid}] [CW] Error forwarding delete: ${(error as Error).message}`,
-      );
+      this.logger.error('Erro ao deletar mensagem no Chatwoot', {
+        event: 'chatwoot.message.delete.failure',
+        sessionId,
+        messageId,
+        error: (error as Error).message,
+      });
     }
   }
 
@@ -267,9 +284,11 @@ export class MessagesHandler {
     const revokedMessageId = protocolMessage.key?.id;
     if (!revokedMessageId) return;
 
-    this.logger.log(
-      `[${sid}] 🗑️ Message revoked by sender: ${revokedMessageId}`,
-    );
+    this.logger.log('Mensagem revogada pelo remetente', {
+      event: 'whatsapp.message.revoke',
+      sessionId,
+      messageId: revokedMessageId,
+    });
 
     try {
       // Find the original message to get Chatwoot IDs
@@ -293,15 +312,14 @@ export class MessagesHandler {
           revokedMessageId,
           sid,
         );
-      } else {
-        this.logger.debug(
-          `[${sid}] [CW] Revoked message not synced to Chatwoot: ${revokedMessageId}`,
-        );
       }
     } catch (error) {
-      this.logger.error(
-        `[${sid}] Error handling message revoke: ${(error as Error).message}`,
-      );
+      this.logger.error('Erro ao processar revogação de mensagem', {
+        event: 'whatsapp.message.revoke.failure',
+        sessionId,
+        messageId: revokedMessageId,
+        error: (error as Error).message,
+      });
     }
   }
 
@@ -325,11 +343,19 @@ export class MessagesHandler {
         cwMessageId,
       );
 
-      this.logger.log(`[${sid}] [CW] Message deleted (msgId=${cwMessageId})`);
+      this.logger.log('Mensagem revogada deletada no Chatwoot', {
+        event: 'chatwoot.message.revoke.success',
+        sessionId,
+        cwMessageId,
+        waMessageId,
+      });
     } catch (error) {
-      this.logger.error(
-        `[${sid}] [CW] Error deleting message: ${(error as Error).message}`,
-      );
+      this.logger.error('Erro ao deletar mensagem revogada no Chatwoot', {
+        event: 'chatwoot.message.revoke.failure',
+        sessionId,
+        cwMessageId,
+        error: (error as Error).message,
+      });
     }
   }
 
@@ -370,9 +396,12 @@ export class MessagesHandler {
       );
 
       if (!originalMessage?.cwConversationId) {
-        this.logger.warn(
-          `[${sid}] [CW] Original message not found for edit: ${originalMessageId}`,
-        );
+        this.logger.warn('Mensagem original não encontrada para edição', {
+          event: 'chatwoot.message.edit.skip',
+          sessionId,
+          messageId: originalMessageId,
+          reason: 'original_not_found',
+        });
         return;
       }
 
@@ -400,13 +429,17 @@ export class MessagesHandler {
         },
       );
 
-      this.logger.log(
-        `[${sid}] [CW] Message edit shown for: ${originalMessageId}`,
-      );
+      this.logger.log('Mensagem editada encaminhada ao Chatwoot', {
+        event: 'chatwoot.message.edit.success',
+        sessionId,
+        messageId: originalMessageId,
+      });
     } catch (error) {
-      this.logger.error(
-        `[${sid}] [CW] Error handling message edit: ${(error as Error).message}`,
-      );
+      this.logger.error('Erro ao processar edição de mensagem', {
+        event: 'chatwoot.message.edit.failure',
+        sessionId,
+        error: (error as Error).message,
+      });
     }
   }
 
@@ -415,8 +448,9 @@ export class MessagesHandler {
     payload: unknown[],
     sid: string,
   ): Promise<void> {
-    this.logger.log(`[${sid}] 📨 message-receipt.update`, {
-      event: 'message-receipt.update',
+    this.logger.log('Recibo de mensagem atualizado', {
+      event: 'whatsapp.receipt.update',
+      sessionId,
       count: payload.length,
     });
 
@@ -444,9 +478,11 @@ export class MessagesHandler {
         }
       }
     } catch (error) {
-      this.logger.error(
-        `[${sid}] Erro ao persistir message-receipt.update: ${(error as Error).message}`,
-      );
+      this.logger.error('Erro ao processar recibo de mensagem', {
+        event: 'whatsapp.receipt.update.failure',
+        sessionId,
+        error: (error as Error).message,
+      });
     }
   }
 
@@ -466,12 +502,7 @@ export class MessagesHandler {
   ): Promise<void> {
     try {
       const config = await this.chatwootService.getConfig(sessionId);
-      if (!config?.enabled) {
-        this.logger.debug(
-          `[${sid}] [CW] Chatwoot not enabled or config not found`,
-        );
-        return;
-      }
+      if (!config?.enabled) return;
 
       const { key, message, pushName } = msg;
       const { remoteJid, fromMe, participant } = key;
@@ -487,15 +518,7 @@ export class MessagesHandler {
           sessionId,
           key.id,
         );
-        if (existingMessage?.cwMessageId) {
-          this.logger.debug(
-            `[${sid}] [CW] Skipping outgoing message - already synced via Chatwoot (cwMsgId=${existingMessage.cwMessageId})`,
-          );
-          return;
-        }
-        this.logger.debug(
-          `[${sid}] [CW] Forwarding outgoing message from WhatsApp to Chatwoot`,
-        );
+        if (existingMessage?.cwMessageId) return;
       }
 
       // Check ignored JIDs
@@ -509,7 +532,10 @@ export class MessagesHandler {
       // Get or create inbox
       const inbox = await this.chatwootService.getInbox(sessionId);
       if (!inbox) {
-        this.logger.warn(`[${sid}] [CW] Inbox not found`);
+        this.logger.warn('Inbox não encontrado', {
+          event: 'chatwoot.inbox.not_found',
+          sessionId,
+        });
         return;
       }
 
@@ -540,12 +566,7 @@ export class MessagesHandler {
       const messageContent = this.chatwootService.getMessageContent(
         message || null,
       );
-      if (!messageContent) {
-        this.logger.debug(
-          `[${sid}] [CW] No message content extracted, message keys: ${Object.keys(message || {}).join(', ')}`,
-        );
-        return;
-      }
+      if (!messageContent) return;
 
       // Format for groups
       let finalContent = messageContent;
@@ -564,22 +585,6 @@ export class MessagesHandler {
 
       // Extract stanzaId for reply support
       const stanzaId = this.extractStanzaId(message);
-
-      // Debug: log reply detection
-      if (stanzaId) {
-        this.logger.debug(`[${sid}] [CW] Message is reply to: ${stanzaId}`);
-      } else if (message) {
-        const waMsg = message as Record<string, { contextInfo?: unknown }>;
-        const hasContextInfo = Object.values(waMsg).some(
-          (v) => v && typeof v === 'object' && 'contextInfo' in v,
-        );
-        if (hasContextInfo) {
-          this.logger.debug(
-            `[${sid}] [CW] Message has contextInfo but no stanzaId`,
-            { messageKeys: Object.keys(message) },
-          );
-        }
-      }
 
       let inReplyTo: number | undefined;
       let inReplyToExternalId: string | undefined;
@@ -657,14 +662,20 @@ export class MessagesHandler {
           cwInboxId: inbox.id,
           cwContactId: contact.id,
         });
-        this.logger.log(
-          `[${sid}] [CW] Message forwarded (msgId=${chatwootMessage.id})`,
-        );
+        this.logger.log('Mensagem encaminhada ao Chatwoot', {
+          event: 'chatwoot.message.forward.success',
+          sessionId,
+          conversationId,
+          cwMessageId: chatwootMessage.id,
+          waMessageId: key.id,
+        });
       }
     } catch (error) {
-      this.logger.error(
-        `[${sid}] Chatwoot forward error: ${(error as Error).message}`,
-      );
+      this.logger.error('Erro ao encaminhar mensagem ao Chatwoot', {
+        event: 'chatwoot.message.forward.failure',
+        sessionId,
+        error: (error as Error).message,
+      });
     }
   }
 
@@ -734,9 +745,11 @@ export class MessagesHandler {
 
       return buffer as Buffer;
     } catch (error) {
-      this.logger.warn(
-        `[${sid}] [CW] Media download failed: ${(error as Error).message}`,
-      );
+      this.logger.warn('Falha ao baixar mídia', {
+        event: 'whatsapp.media.download.failure',
+        sessionId,
+        error: (error as Error).message,
+      });
       return null;
     }
   }
