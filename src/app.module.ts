@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { PinoLoggerService } from './logger/logger.service';
 import { DatabaseModule } from './database/database.module';
+import { SharedServicesModule } from './common/services/services.module';
 import { SessionsModule } from './api/sessions/sessions.module';
 import { MessagesModule } from './api/messages/messages.module';
 import { GroupsModule } from './api/groups/groups.module';
@@ -20,6 +22,8 @@ import { WebhooksModule } from './integrations/webhooks/webhooks.module';
 import { ChatwootModule } from './integrations/chatwoot/chatwoot.module';
 import { PersistenceModule } from './core/persistence/persistence.module';
 import { AudioModule } from './core/audio/audio.module';
+import { AllExceptionsFilter } from './common/filters';
+import { LoggingInterceptor, TimeoutInterceptor } from './common/interceptors';
 
 @Module({
   imports: [
@@ -28,6 +32,7 @@ import { AudioModule } from './core/audio/audio.module';
       envFilePath: '.env',
     }),
     DatabaseModule,
+    SharedServicesModule,
     SessionsModule,
     MessagesModule,
     GroupsModule,
@@ -47,7 +52,24 @@ import { AudioModule } from './core/audio/audio.module';
     PersistenceModule,
     AudioModule,
   ],
-  providers: [PinoLoggerService],
+  providers: [
+    PinoLoggerService,
+    // Global exception filter for consistent error responses
+    {
+      provide: APP_FILTER,
+      useClass: AllExceptionsFilter,
+    },
+    // Global logging interceptor
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
+    // Global timeout interceptor (30s default)
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: TimeoutInterceptor,
+    },
+  ],
   exports: [PinoLoggerService],
 })
 export class AppModule {}

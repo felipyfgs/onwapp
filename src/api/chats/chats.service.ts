@@ -1,27 +1,27 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { WhatsAppService } from '../../core/whatsapp/whatsapp.service';
 import { ArchiveChatDto } from './dto/archive-chat.dto';
 import { MuteChatDto } from './dto/mute-chat.dto';
 import { MarkReadDto } from './dto/mark-read.dto';
 import { ClearMessagesDto } from './dto/clear-messages.dto';
 import { ReadMessagesDto } from './dto/read-messages.dto';
-import { validateSocket } from '../../common/utils/socket-validator';
 import {
   ExtendedWASocket,
   hasMethod,
 } from '../../common/utils/extended-socket.type';
+import { SessionValidationService } from '../../common/services/session-validation.service';
 
 @Injectable()
 export class ChatsService {
-  constructor(private readonly whatsappService: WhatsAppService) {}
+  constructor(
+    private readonly sessionValidation: SessionValidationService,
+  ) {}
 
   async archiveChat(
     sessionId: string,
     jid: string,
     dto: ArchiveChatDto,
   ): Promise<void> {
-    const socket = this.whatsappService.getSocket(sessionId);
-    validateSocket(socket);
+    const socket = this.sessionValidation.getValidatedSocket(sessionId);
 
     await socket.chatModify(
       {
@@ -37,8 +37,7 @@ export class ChatsService {
     jid: string,
     dto: ArchiveChatDto,
   ): Promise<void> {
-    const socket = this.whatsappService.getSocket(sessionId);
-    validateSocket(socket);
+    const socket = this.sessionValidation.getValidatedSocket(sessionId);
 
     await socket.chatModify(
       {
@@ -54,8 +53,7 @@ export class ChatsService {
     jid: string,
     dto: MuteChatDto,
   ): Promise<void> {
-    const socket = this.whatsappService.getSocket(sessionId);
-    validateSocket(socket);
+    const socket = this.sessionValidation.getValidatedSocket(sessionId);
 
     await socket.chatModify(
       {
@@ -66,8 +64,7 @@ export class ChatsService {
   }
 
   async unmuteChat(sessionId: string, jid: string): Promise<void> {
-    const socket = this.whatsappService.getSocket(sessionId);
-    validateSocket(socket);
+    const socket = this.sessionValidation.getValidatedSocket(sessionId);
 
     await socket.chatModify(
       {
@@ -78,8 +75,7 @@ export class ChatsService {
   }
 
   async pinChat(sessionId: string, jid: string): Promise<void> {
-    const socket = this.whatsappService.getSocket(sessionId);
-    validateSocket(socket);
+    const socket = this.sessionValidation.getValidatedSocket(sessionId);
 
     await socket.chatModify(
       {
@@ -90,8 +86,7 @@ export class ChatsService {
   }
 
   async unpinChat(sessionId: string, jid: string): Promise<void> {
-    const socket = this.whatsappService.getSocket(sessionId);
-    validateSocket(socket);
+    const socket = this.sessionValidation.getValidatedSocket(sessionId);
 
     await socket.chatModify(
       {
@@ -106,8 +101,7 @@ export class ChatsService {
     jid: string,
     dto: MarkReadDto,
   ): Promise<void> {
-    const socket = this.whatsappService.getSocket(sessionId);
-    validateSocket(socket);
+    const socket = this.sessionValidation.getValidatedSocket(sessionId);
 
     await socket.chatModify(
       {
@@ -123,8 +117,7 @@ export class ChatsService {
     jid: string,
     dto: MarkReadDto,
   ): Promise<void> {
-    const socket = this.whatsappService.getSocket(sessionId);
-    validateSocket(socket);
+    const socket = this.sessionValidation.getValidatedSocket(sessionId);
 
     await socket.chatModify(
       {
@@ -140,8 +133,7 @@ export class ChatsService {
     jid: string,
     dto: ArchiveChatDto,
   ): Promise<void> {
-    const socket = this.whatsappService.getSocket(sessionId);
-    validateSocket(socket);
+    const socket = this.sessionValidation.getValidatedSocket(sessionId);
 
     await socket.chatModify(
       {
@@ -157,8 +149,7 @@ export class ChatsService {
     jid: string,
     dto: ClearMessagesDto,
   ): Promise<void> {
-    const socket = this.whatsappService.getSocket(sessionId);
-    validateSocket(socket);
+    const socket = this.sessionValidation.getValidatedSocket(sessionId);
 
     if (!dto.messages || dto.messages.length === 0) {
       await socket.chatModify(
@@ -180,15 +171,13 @@ export class ChatsService {
   }
 
   async readMessages(sessionId: string, dto: ReadMessagesDto): Promise<void> {
-    const socket = this.whatsappService.getSocket(sessionId);
-    validateSocket(socket);
+    const socket = this.sessionValidation.getValidatedSocket(sessionId);
 
     await socket.readMessages(dto.keys);
   }
 
   async listChats(sessionId: string): Promise<any[]> {
-    const socket = this.whatsappService.getSocket(sessionId);
-    validateSocket(socket);
+    const socket = this.sessionValidation.getValidatedSocket(sessionId);
 
     try {
       const chats = await socket.groupFetchAllParticipating();
@@ -212,10 +201,9 @@ export class ChatsService {
     messageId: string,
     star: boolean,
   ): Promise<void> {
-    const socket = this.whatsappService.getSocket(
+    const socket = this.sessionValidation.getValidatedSocket(
       sessionId,
     ) as ExtendedWASocket;
-    validateSocket(socket);
 
     if (!hasMethod(socket, 'star')) {
       throw new BadRequestException(
@@ -234,8 +222,7 @@ export class ChatsService {
     oldestMsgJid: string,
     oldestMsgTimestamp: number,
   ) {
-    const socket = this.whatsappService.getSocket(sessionId);
-    validateSocket(socket);
+    const socket = this.sessionValidation.getValidatedSocket(sessionId);
 
     try {
       const oldestMsgKey = {
@@ -265,8 +252,7 @@ export class ChatsService {
     messageIds: string[],
     type: 'read' | 'read-self' | 'played',
   ): Promise<void> {
-    const socket = this.whatsappService.getSocket(sessionId);
-    validateSocket(socket);
+    const socket = this.sessionValidation.getValidatedSocket(sessionId);
 
     await socket.sendReceipt(jid, participant, messageIds, type);
   }
@@ -281,8 +267,7 @@ export class ChatsService {
     }>,
     type: 'read' | 'read-self' | 'played',
   ): Promise<void> {
-    const socket = this.whatsappService.getSocket(sessionId);
-    validateSocket(socket);
+    const socket = this.sessionValidation.getValidatedSocket(sessionId);
 
     await socket.sendReceipts(keys as any, type);
   }
@@ -293,10 +278,9 @@ export class ChatsService {
       messageKey: { id: string; remoteJid: string; fromMe?: boolean };
     }>,
   ): Promise<void> {
-    const socket = this.whatsappService.getSocket(
+    const socket = this.sessionValidation.getValidatedSocket(
       sessionId,
     ) as ExtendedWASocket;
-    validateSocket(socket);
 
     if (!hasMethod(socket, 'requestPlaceholderResend')) {
       throw new BadRequestException(

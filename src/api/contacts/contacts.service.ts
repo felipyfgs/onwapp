@@ -1,13 +1,12 @@
 import { Injectable, OnModuleInit, BadRequestException } from '@nestjs/common';
-import { WhatsAppService } from '../../core/whatsapp/whatsapp.service';
 import { ValidateNumberDto } from './dto/validate-number.dto';
 import { ValidateNumberResponseDto } from './dto/validate-number-response.dto';
 import { BusinessProfileResponseDto } from './dto/business-profile-response.dto';
-import { validateSocket } from '../../common/utils/socket-validator';
 import {
   ExtendedWASocket,
   hasMethod,
 } from '../../common/utils/extended-socket.type';
+import { SessionValidationService } from '../../common/services/session-validation.service';
 
 interface ContactsData {
   contacts: any[];
@@ -19,7 +18,7 @@ export class ContactsService implements OnModuleInit {
   private contactsCache: Map<string, ContactsData> = new Map();
   private readonly CACHE_TTL = 5 * 60 * 1000;
 
-  constructor(private readonly whatsappService: WhatsAppService) {}
+  constructor(private readonly sessionValidation: SessionValidationService) {}
 
   onModuleInit() {
     this.startCacheCleanup();
@@ -40,8 +39,7 @@ export class ContactsService implements OnModuleInit {
     sessionId: string,
     dto: ValidateNumberDto,
   ): Promise<ValidateNumberResponseDto> {
-    const socket = this.whatsappService.getSocket(sessionId);
-    validateSocket(socket);
+    const socket = this.sessionValidation.getValidatedSocket(sessionId);
 
     const results = await socket.onWhatsApp(...dto.numbers);
 
@@ -58,8 +56,7 @@ export class ContactsService implements OnModuleInit {
     sessionId: string,
     jid: string,
   ): Promise<BusinessProfileResponseDto | null> {
-    const socket = this.whatsappService.getSocket(sessionId);
-    validateSocket(socket);
+    const socket = this.sessionValidation.getValidatedSocket(sessionId);
 
     const profile = await socket.getBusinessProfile(jid);
 
@@ -79,7 +76,7 @@ export class ContactsService implements OnModuleInit {
   }
 
   registerContactsListener(sessionId: string) {
-    const socket = this.whatsappService.getSocket(sessionId);
+    const socket = this.sessionValidation.getSocketOrNull(sessionId);
     if (!socket) {
       return;
     }
@@ -106,9 +103,7 @@ export class ContactsService implements OnModuleInit {
   }
 
   listContacts(sessionId: string): any[] {
-    const socket = this.whatsappService.getSocket(sessionId);
-    validateSocket(socket);
-
+    this.sessionValidation.getValidatedSocket(sessionId);
     this.registerContactsListener(sessionId);
 
     const cachedData = this.contactsCache.get(sessionId);
@@ -120,8 +115,7 @@ export class ContactsService implements OnModuleInit {
     jid: string,
     name: string,
   ): Promise<{ success: boolean; message: string }> {
-    const socket = this.whatsappService.getSocket(sessionId);
-    validateSocket(socket);
+    const socket = this.sessionValidation.getValidatedSocket(sessionId);
 
     await socket.addOrEditContact(jid, { fullName: name });
 
@@ -132,8 +126,7 @@ export class ContactsService implements OnModuleInit {
     sessionId: string,
     jid: string,
   ): Promise<{ success: boolean; message: string }> {
-    const socket = this.whatsappService.getSocket(sessionId);
-    validateSocket(socket);
+    const socket = this.sessionValidation.getValidatedSocket(sessionId);
 
     await socket.removeContact(jid);
 
@@ -144,10 +137,9 @@ export class ContactsService implements OnModuleInit {
     sessionId: string,
     jid: string,
   ): Promise<{ duration: number | null }> {
-    const socket = this.whatsappService.getSocket(
+    const socket = this.sessionValidation.getValidatedSocket(
       sessionId,
     ) as ExtendedWASocket;
-    validateSocket(socket);
 
     if (!hasMethod(socket, 'fetchDisappearingDuration')) {
       throw new BadRequestException(

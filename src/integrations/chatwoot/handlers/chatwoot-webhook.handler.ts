@@ -13,10 +13,12 @@ import {
   QuotedMessage,
   WebhookProcessingResult,
 } from '../interfaces';
-import { CHATWOOT_EVENTS, CHATWOOT_SENDER_TYPES } from '../constants';
+import {
+  CHATWOOT_BOT,
+  CHATWOOT_EVENTS,
+  CHATWOOT_SENDER_TYPES,
+} from '../constants';
 import { formatRemoteJid, getMimeType } from '../../../common/utils';
-
-const BOT_PHONE_NUMBER = '123456';
 
 /**
  * Handler for incoming webhooks from Chatwoot
@@ -95,9 +97,9 @@ export class ChatwootWebhookHandler {
       senderPhone: payload.conversation?.meta?.sender?.phone_number,
     });
 
-    // Check if this is a bot command (message to bot contact 123456)
+    // Check if this is a bot command (message to bot contact)
     if (
-      chatId === BOT_PHONE_NUMBER &&
+      chatId === CHATWOOT_BOT.PHONE_NUMBER &&
       payload.message_type === 'outgoing' &&
       payload.content
     ) {

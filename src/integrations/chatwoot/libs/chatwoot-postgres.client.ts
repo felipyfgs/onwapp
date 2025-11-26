@@ -1,12 +1,16 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import pg from 'pg';
+import pg, { Pool, PoolClient, QueryResult as PgQueryResult } from 'pg';
 
-const { Pool } = pg;
-
+/**
+ * Generic query result row type
+ */
 interface QueryResultRow {
   [key: string]: unknown;
 }
 
+/**
+ * Query result wrapper with typed rows
+ */
 interface QueryResult<T = QueryResultRow> {
   rows: T[];
   rowCount: number | null;
@@ -19,29 +23,36 @@ interface QueryResult<T = QueryResultRow> {
  * - Labels/Tags on contacts
  * - Import history (contacts and messages)
  * - Sync lost messages
+ *
+ * This client manages connection pools per connection string and handles
+ * automatic cleanup on module destruction.
  */
 @Injectable()
 export class ChatwootPostgresClient implements OnModuleDestroy {
   private readonly logger = new Logger(ChatwootPostgresClient.name);
 
-  private pools = new Map<string, any>();
+  /**
+   * Map of connection strings to their respective connection pools
+   */
+  private readonly pools = new Map<string, Pool>();
 
   /**
    * Get or create a connection pool for a given connection string
+   * @param connectionString - PostgreSQL connection URL
    * @returns Pool instance or null if connection string is empty
    */
-
-  getConnection(connectionString: string): any {
+  getConnection(connectionString: string): Pool | null {
     if (!connectionString) {
       return null;
     }
 
-    if (this.pools.has(connectionString)) {
-      return this.pools.get(connectionString)!;
+    const existingPool = this.pools.get(connectionString);
+    if (existingPool) {
+      return existingPool;
     }
 
     try {
-      const pool = new Pool({
+      const pool = new pg.Pool({
         connectionString,
         ssl: {
           rejectUnauthorized: false,
@@ -51,25 +62,35 @@ export class ChatwootPostgresClient implements OnModuleDestroy {
         connectionTimeoutMillis: 10000,
       });
 
-      pool.on('error', (err) => {
-        this.logger.error(`Chatwoot PostgreSQL pool error: ${err.message}`);
+      pool.on('error', (err: Error) => {
+        this.logger.error('Erro no pool PostgreSQL do Chatwoot', {
+          event: 'chatwoot.postgres.pool.error',
+          error: err.message,
+        });
         this.pools.delete(connectionString);
       });
 
       this.pools.set(connectionString, pool);
-      this.logger.log('Chatwoot PostgreSQL connection pool created');
+      this.logger.log('Pool de conexão PostgreSQL do Chatwoot criado', {
+        event: 'chatwoot.postgres.pool.created',
+      });
 
       return pool;
     } catch (error) {
-      this.logger.error(
-        `Failed to create Chatwoot PostgreSQL pool: ${(error as Error).message}`,
-      );
+      this.logger.error('Falha ao criar pool PostgreSQL do Chatwoot', {
+        event: 'chatwoot.postgres.pool.create.failure',
+        error: (error as Error).message,
+      });
       return null;
     }
   }
 
   /**
    * Execute a query on the Chatwoot database
+   * @param connectionString - PostgreSQL connection URL
+   * @param sql - SQL query string
+   * @param params - Query parameters
+   * @returns Query result with typed rows or null if no connection
    */
   async query<T = QueryResultRow>(
     connectionString: string,
@@ -82,21 +103,26 @@ export class ChatwootPostgresClient implements OnModuleDestroy {
     }
 
     try {
-      const result = await pool.query(sql, params);
-      return result as QueryResult<T>;
+      const result: PgQueryResult<T> = await pool.query<T>(sql, params);
+      return {
+        rows: result.rows,
+        rowCount: result.rowCount,
+      };
     } catch (error) {
-      this.logger.error(
-        `Chatwoot PostgreSQL query error: ${(error as Error).message}`,
-      );
+      this.logger.error('Erro na query PostgreSQL do Chatwoot', {
+        event: 'chatwoot.postgres.query.error',
+        error: (error as Error).message,
+      });
       throw error;
     }
   }
 
   /**
    * Get a client for transaction support
+   * @param connectionString - PostgreSQL connection URL
+   * @returns PoolClient for transaction operations or null
    */
-
-  async getClient(connectionString: string): Promise<any> {
+  async getClient(connectionString: string): Promise<PoolClient | null> {
     const pool = this.getConnection(connectionString);
     if (!pool) {
       return null;
@@ -105,19 +131,25 @@ export class ChatwootPostgresClient implements OnModuleDestroy {
     try {
       return await pool.connect();
     } catch (error) {
-      this.logger.error(
-        `Failed to get Chatwoot PostgreSQL client: ${(error as Error).message}`,
-      );
+      this.logger.error('Falha ao obter cliente PostgreSQL do Chatwoot', {
+        event: 'chatwoot.postgres.client.failure',
+        error: (error as Error).message,
+      });
       return null;
     }
   }
 
   /**
    * Test connection to the Chatwoot database
+   * @param connectionString - PostgreSQL connection URL
+   * @returns true if connection is successful
    */
   async testConnection(connectionString: string): Promise<boolean> {
     try {
-      const result = await this.query(connectionString, 'SELECT 1 as test');
+      const result = await this.query<{ test: number }>(
+        connectionString,
+        'SELECT 1 as test',
+      );
       return result?.rows?.[0]?.test === 1;
     } catch {
       return false;
@@ -126,26 +158,37 @@ export class ChatwootPostgresClient implements OnModuleDestroy {
 
   /**
    * Close a specific connection pool
+   * @param connectionString - PostgreSQL connection URL
    */
   async closeConnection(connectionString: string): Promise<void> {
     const pool = this.pools.get(connectionString);
     if (pool) {
       await pool.end();
       this.pools.delete(connectionString);
-      this.logger.log('Chatwoot PostgreSQL connection pool closed');
+      this.logger.log('Pool de conexão PostgreSQL do Chatwoot fechado', {
+        event: 'chatwoot.postgres.pool.closed',
+      });
     }
   }
 
   /**
    * Close all connection pools on module destroy
    */
-  async onModuleDestroy() {
+  async onModuleDestroy(): Promise<void> {
+    const closePromises: Promise<void>[] = [];
+
     for (const [url, pool] of this.pools) {
-      await pool.end();
-      this.logger.debug(
-        `Closed Chatwoot PostgreSQL pool: ${url.slice(0, 30)}...`,
+      closePromises.push(
+        pool.end().then(() => {
+          this.logger.debug('Pool PostgreSQL do Chatwoot fechado', {
+            event: 'chatwoot.postgres.pool.destroy',
+            url: url.slice(0, 30) + '...',
+          });
+        }),
       );
     }
+
+    await Promise.all(closePromises);
     this.pools.clear();
   }
 }

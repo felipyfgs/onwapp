@@ -84,3 +84,17 @@ export const CHATWOOT_DEFAULTS = {
   IMPORT_DAYS: 3,
   HTTP_TIMEOUT: 30000,
 } as const;
+
+/**
+ * Bot contact configuration
+ * Used for internal bot messages in Chatwoot
+ */
+export const CHATWOOT_BOT = {
+  /** Virtual phone number for bot contact */
+  PHONE_NUMBER: '123456',
+  /** Default bot display name */
+  DEFAULT_NAME: 'Zpwoot Bot',
+  /** Default bot logo URL */
+  DEFAULT_LOGO:
+    'https://raw.githubusercontent.com/felipyfgs/zpwoot/main/public/images/image.png',
+} as const;

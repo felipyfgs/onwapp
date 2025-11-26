@@ -1,15 +1,10 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
-import { Readable } from 'stream';
 import axios from 'axios';
 import { ChatwootConfigService } from './chatwoot-config.service';
 import { ChatwootContactService } from './chatwoot-contact.service';
 import { ChatwootConversationService } from './chatwoot-conversation.service';
 import { WhatsAppService } from '../../../core/whatsapp/whatsapp.service';
-
-const BOT_PHONE_NUMBER = '123456';
-const BOT_DEFAULT_NAME = 'Zpwoot Bot';
-const BOT_DEFAULT_LOGO =
-  'https://raw.githubusercontent.com/felipyfgs/zpwoot/main/public/images/image.png';
+import { CHATWOOT_BOT } from '../constants';
 
 /**
  * Service for managing Chatwoot bot contact
@@ -41,23 +36,23 @@ export class ChatwootBotService {
     if (!inbox) return null;
 
     // Get organization and logo from config
-    const organization = config.organization || BOT_DEFAULT_NAME;
-    const logo = config.logo || BOT_DEFAULT_LOGO;
+    const organization = config.organization || CHATWOOT_BOT.DEFAULT_NAME;
+    const logo = config.logo || CHATWOOT_BOT.DEFAULT_LOGO;
 
     // Find or create bot contact
     let contact = await this.contactService.findContact(
       sessionId,
-      BOT_PHONE_NUMBER,
+      CHATWOOT_BOT.PHONE_NUMBER,
     );
 
     if (!contact) {
       // Create contact first (without avatar due to Chatwoot API bug with avatar_url)
       contact = await this.contactService.createContact(sessionId, {
-        phoneNumber: BOT_PHONE_NUMBER,
+        phoneNumber: CHATWOOT_BOT.PHONE_NUMBER,
         inboxId: inbox.id,
         isGroup: false,
         name: organization,
-        identifier: BOT_PHONE_NUMBER,
+        identifier: CHATWOOT_BOT.PHONE_NUMBER,
       });
       this.logger.log(`Bot contact created with name: ${organization}`, {
         event: 'chatwoot.bot.contact.created',
