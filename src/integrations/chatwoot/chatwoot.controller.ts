@@ -78,7 +78,10 @@ export class ChatwootController {
       sessionId,
     });
     const result = await this.configService.upsertConfig(sessionId, dto);
-    return result as ChatwootConfigResponseDto;
+    return {
+      ...result,
+      reopenConversation: result.reopen,
+    } as ChatwootConfigResponseDto;
   }
 
   /**
@@ -112,7 +115,10 @@ export class ChatwootController {
         message: 'Chatwoot not configured for this session',
       };
     }
-    return config as ChatwootConfigResponseDto;
+    return {
+      ...config,
+      reopenConversation: config.reopen,
+    } as ChatwootConfigResponseDto;
   }
 
   /**

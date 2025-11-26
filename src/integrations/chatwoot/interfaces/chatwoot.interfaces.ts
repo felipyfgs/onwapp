@@ -296,6 +296,7 @@ export interface CreateConversationParams {
   contactId: number;
   inboxId: number;
   status?: 'open' | 'pending';
+  isGroup?: boolean;
 }
 
 /**

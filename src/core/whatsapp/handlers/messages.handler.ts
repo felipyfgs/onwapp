@@ -170,11 +170,22 @@ export class MessagesHandler {
           waMessage: msg.message || null,
         });
 
-        if (msg.pushName && msg.key.remoteJid) {
-          await this.persistenceService.createOrUpdateContact(sessionId, {
-            remoteJid: msg.key.remoteJid,
-            name: msg.pushName,
-          });
+        // Update contact name from pushName (following Evolution API logic)
+        // Only update if contact has no name or name equals phone number
+        // For groups, use participant JID; for individual chats, use remoteJid
+        if (msg.pushName && !msg.key.fromMe) {
+          const isGroup = msg.key.remoteJid.includes('@g.us');
+          const contactJid = isGroup
+            ? msg.key.participant
+            : msg.key.remoteJid;
+          if (contactJid) {
+            const phoneNumber = contactJid.split('@')[0].split(':')[0];
+            await this.persistenceService.createOrUpdateContactIfNeeded(sessionId, {
+              remoteJid: contactJid,
+              name: msg.pushName,
+              phoneNumber,
+            });
+          }
         }
 
         // Forward to Chatwoot if enabled (only for real-time messages, not history)
@@ -620,12 +631,29 @@ export class MessagesHandler {
         );
       }
 
+      // Get contact name - for groups, use group subject
+      let contactName = pushName || phoneNumber;
+      if (isGroup && !contact) {
+        try {
+          const socket = this.whatsappService.getSocket(sessionId);
+          if (socket) {
+            const groupMetadata = await socket.groupMetadata(remoteJid);
+            contactName = groupMetadata?.subject
+              ? `${groupMetadata.subject} (GROUP)`
+              : phoneNumber;
+          }
+        } catch {
+          // Fallback to phoneNumber if group metadata fails
+          contactName = phoneNumber;
+        }
+      }
+
       if (!contact) {
         contact = await this.chatwootService.createContact(sessionId, {
           phoneNumber,
           inboxId: inbox.id,
           isGroup,
-          name: pushName || phoneNumber,
+          name: contactName,
           identifier: remoteJid,
           avatarUrl: profilePictureUrl,
         });
@@ -642,9 +670,10 @@ export class MessagesHandler {
       }
 
       // Get or create conversation
+      // For groups, always reopen (single conversation per group)
       const conversationId = await this.chatwootService.createConversation(
         sessionId,
-        { contactId: contact.id, inboxId: inbox.id },
+        { contactId: contact.id, inboxId: inbox.id, isGroup },
       );
       if (!conversationId) return;
 

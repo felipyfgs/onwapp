@@ -80,6 +80,62 @@ export class PersistenceService {
     }
   }
 
+  /**
+   * Create or update contact only if name is missing or equals phone number
+   * Following Evolution API logic to avoid overwriting manually set names
+   */
+  async createOrUpdateContactIfNeeded(
+    sessionId: string,
+    contactData: { remoteJid: string; name: string; phoneNumber: string },
+  ): Promise<void> {
+    try {
+      const existing = await this.prisma.contact.findUnique({
+        where: {
+          sessionId_remoteJid: {
+            sessionId,
+            remoteJid: contactData.remoteJid,
+          },
+        },
+        select: { name: true },
+      });
+
+      // Only update if:
+      // 1. Contact doesn't exist (will create)
+      // 2. Contact has no name
+      // 3. Contact name equals phone number (with or without +)
+      const shouldUpdate =
+        !existing ||
+        !existing.name ||
+        existing.name === contactData.phoneNumber ||
+        existing.name === `+${contactData.phoneNumber}`;
+
+      if (shouldUpdate) {
+        await this.prisma.contact.upsert({
+          where: {
+            sessionId_remoteJid: {
+              sessionId,
+              remoteJid: contactData.remoteJid,
+            },
+          },
+          create: {
+            sessionId,
+            remoteJid: contactData.remoteJid,
+            name: contactData.name,
+          },
+          update: {
+            name: contactData.name,
+          },
+        });
+      }
+    } catch (error) {
+      this.logger.error('Erro ao criar/atualizar contato', {
+        event: 'persistence.contact.upsert.failure',
+        sessionId,
+        error: error.message,
+      });
+    }
+  }
+
   async createOrUpdateChat(
     sessionId: string,
     chatData: ChatData,

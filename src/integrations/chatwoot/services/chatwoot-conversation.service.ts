@@ -35,16 +35,20 @@ export class ChatwootConversationService {
         params.contactId,
       );
 
+      // For groups, always reopen conversations (single conversation per group)
+      // For individual chats, respect reopenConversation config
+      const shouldReopen = params.isGroup || config.reopen;
+
       // Find existing conversation in the same inbox
       const existingConversation = conversations.payload.find(
         (conv) =>
           conv.inbox_id === params.inboxId &&
-          (config.reopen || conv.status !== 'resolved'),
+          (shouldReopen || conv.status !== 'resolved'),
       );
 
       if (existingConversation) {
-        // Reopen resolved conversation if configured
-        if (config.reopen && existingConversation.status === 'resolved') {
+        // Reopen resolved conversation if needed
+        if (shouldReopen && existingConversation.status === 'resolved') {
           const newStatus = config.pending ? 'pending' : 'open';
           await client.toggleConversationStatus(
             existingConversation.id,
