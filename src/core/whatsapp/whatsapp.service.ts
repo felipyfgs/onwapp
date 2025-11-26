@@ -18,6 +18,10 @@ import {
   MessagesHandler,
   ChatsHandler,
   HistoryHandler,
+  LabelsHandler,
+  GroupsExtendedHandler,
+  NewsletterHandler,
+  MiscHandler,
 } from './handlers';
 import { SessionData, QRCodeRef } from './whatsapp.types';
 import { formatSessionId, createSilentLogger } from './utils/helpers';
@@ -38,6 +42,10 @@ export class WhatsAppService {
     private readonly messagesHandler: MessagesHandler,
     private readonly chatsHandler: ChatsHandler,
     private readonly historyHandler: HistoryHandler,
+    private readonly labelsHandler: LabelsHandler,
+    private readonly groupsExtendedHandler: GroupsExtendedHandler,
+    private readonly newsletterHandler: NewsletterHandler,
+    private readonly miscHandler: MiscHandler,
   ) {}
 
   async reconnectActiveSessions(): Promise<void> {
@@ -226,6 +234,66 @@ export class WhatsAppService {
         this.historyHandler.handleHistorySet(
           sessionId,
           events['messaging-history.set'] as any,
+        );
+      }
+
+      // Labels (WhatsApp Business)
+      if (events['labels.edit']) {
+        this.labelsHandler.handleLabelsEdit(
+          sessionId,
+          events['labels.edit'] as any,
+        );
+      }
+
+      if (events['labels.association']) {
+        this.labelsHandler.handleLabelsAssociation(
+          sessionId,
+          events['labels.association'] as any,
+        );
+      }
+
+      // Group join requests
+      if (events['group.join-request']) {
+        this.groupsExtendedHandler.handleGroupJoinRequest(
+          sessionId,
+          events['group.join-request'] as any,
+        );
+      }
+
+      // LID mapping
+      if (events['lid-mapping.update']) {
+        this.miscHandler.handleLidMappingUpdate(
+          sessionId,
+          events['lid-mapping.update'] as any,
+        );
+      }
+
+      // Newsletter events
+      if (events['newsletter.reaction']) {
+        this.newsletterHandler.handleNewsletterReaction(
+          sessionId,
+          events['newsletter.reaction'] as any,
+        );
+      }
+
+      if (events['newsletter.view']) {
+        this.newsletterHandler.handleNewsletterView(
+          sessionId,
+          events['newsletter.view'] as any,
+        );
+      }
+
+      if (events['newsletter-participants.update']) {
+        this.newsletterHandler.handleNewsletterParticipantsUpdate(
+          sessionId,
+          events['newsletter-participants.update'] as any,
+        );
+      }
+
+      if (events['newsletter-settings.update']) {
+        this.newsletterHandler.handleNewsletterSettingsUpdate(
+          sessionId,
+          events['newsletter-settings.update'] as any,
         );
       }
     });
