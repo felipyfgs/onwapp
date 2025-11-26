@@ -7,8 +7,11 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
+import { ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { SessionService } from './session.service';
 
+@ApiTags('Sessions')
+@ApiSecurity('apikey')
 @Controller('sessions')
 export class SessionController {
   constructor(private readonly sessionService: SessionService) {}
