@@ -10,6 +10,7 @@ import {
 } from '../../database/repositories/session.repository';
 import { WhatsAppService } from '../../core/whatsapp/whatsapp.service';
 import { DatabaseService } from '../../database/database.service';
+import { ChatwootConfigService } from '../../integrations/chatwoot/services/chatwoot-config.service';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { PairPhoneDto } from './dto/pair-phone.dto';
 import { SessionResponseDto } from './dto/session-response.dto';
@@ -22,6 +23,7 @@ export class SessionsService {
     private readonly sessionRepository: SessionRepository,
     private readonly prisma: DatabaseService,
     private whatsapp: WhatsAppService,
+    private readonly chatwootConfigService: ChatwootConfigService,
   ) {}
 
   async createSession(

@@ -675,10 +675,7 @@ export class ChatwootImportService {
    * @param sessionId - Session ID
    * @param hours - Number of hours to look back (default: 6, max: 72)
    */
-  async syncLostMessages(
-    sessionId: string,
-    hours = 6,
-  ): Promise<ImportResult> {
+  async syncLostMessages(sessionId: string, hours = 6): Promise<ImportResult> {
     const result: ImportResult = { success: false, imported: 0, errors: [] };
 
     // Validate hours (min 1, max 72)

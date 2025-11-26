@@ -282,7 +282,7 @@ export class ChatwootController {
   }
 
   /**
-   * Sync lost messages from the last 6 hours
+   * Sync lost messages from the last N hours
    */
   @Post('sessions/:sessionId/chatwoot/sync')
   @UseGuards(ApiKeyGuard)
@@ -290,7 +290,7 @@ export class ChatwootController {
   @ApiOperation({
     summary: 'Sync lost messages',
     description:
-      'Sync messages from the last 6 hours that may have been lost between WhatsApp and Chatwoot',
+      'Sync messages that may have been lost between WhatsApp and Chatwoot. Default: 6 hours, max: 72 hours.',
   })
   @ApiParam({ name: 'sessionId', description: 'Session ID' })
   @ApiResponse({
@@ -299,12 +299,21 @@ export class ChatwootController {
   })
   async syncLostMessages(
     @Param('sessionId') sessionId: string,
-  ): Promise<{ success: boolean; imported: number; errors: string[] }> {
+    @Body() body?: { hours?: number },
+  ): Promise<{
+    success: boolean;
+    imported: number;
+    errors: string[];
+    hours: number;
+  }> {
+    const hours = body?.hours || 6;
     this.logger.log('Syncing lost messages', {
       event: 'chatwoot.sync.start',
       sessionId,
+      hours,
     });
-    return this.importService.syncLostMessages(sessionId);
+    const result = await this.importService.syncLostMessages(sessionId, hours);
+    return { ...result, hours: Math.min(Math.max(hours, 1), 72) };
   }
 
   /**

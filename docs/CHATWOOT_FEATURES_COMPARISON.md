@@ -66,7 +66,7 @@ Este documento compara as funcionalidades da integracao Chatwoot entre o **Zpwoo
 | **Labels/Tags nos Contatos** | Adiciona label do inbox ao contato | Implementado | `chatwoot-import.service.ts` |
 | **Import de Contatos** | Importa contatos existentes via SQL | Implementado | `chatwoot-import.service.ts` |
 | **Import de Mensagens** | Importa historico de mensagens via SQL | Implementado | `chatwoot-import.service.ts` |
-| **Sync Lost Messages** | Sincroniza mensagens perdidas (6h) | Implementado | `chatwoot-import.service.ts` |
+| **Sync Lost Messages** | Sincroniza mensagens perdidas (1-72h) | Implementado | `chatwoot-import.service.ts` |
 
 ---
 
@@ -107,9 +107,28 @@ Resposta:
 | Metodo | Endpoint | Descricao |
 |--------|----------|-----------|
 | GET | `/sessions/:sessionId/chatwoot/import/status` | Verificar se import esta disponivel |
-| POST | `/sessions/:sessionId/chatwoot/sync` | Sincronizar mensagens perdidas (6h) |
+| POST | `/sessions/:sessionId/chatwoot/sync` | Sincronizar mensagens perdidas (1-72h, default: 6h) |
 | POST | `/sessions/:sessionId/chatwoot/import/contacts` | Importar contatos |
 | POST | `/sessions/:sessionId/chatwoot/import/messages` | Importar mensagens |
+
+### 4. Sync com Tempo Customizado
+
+```bash
+POST /sessions/:sessionId/chatwoot/sync
+{
+  "hours": 24
+}
+```
+
+Resposta:
+```json
+{
+  "success": true,
+  "imported": 15,
+  "errors": [],
+  "hours": 24
+}
+```
 
 ---
 
