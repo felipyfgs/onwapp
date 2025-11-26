@@ -587,15 +587,21 @@ export class MessagesHandler {
       // Skip reaction messages - they are handled by forwardReactionToChatwoot
       if (message?.reactionMessage) return;
 
-      // For outgoing messages (fromMe=true), check if it was sent via Chatwoot
-      // If it was, skip to avoid duplicates. If not, forward to Chatwoot as agent message.
-      if (fromMe) {
-        // Check if this message was already created by Chatwoot webhook
-        const existingMessage = await this.persistenceService.findMessageByWAId(
+      // Check if this message was already forwarded to Chatwoot (deduplication)
+      // This prevents duplicate messages when WhatsApp sends multiple upsert events
+      // for the same message (common in groups)
+      const existingMessage = await this.persistenceService.findMessageByWAId(
+        sessionId,
+        key.id,
+      );
+      if (existingMessage?.cwMessageId) {
+        this.logger.debug('Mensagem já encaminhada ao Chatwoot, ignorando', {
+          event: 'chatwoot.message.forward.skip',
           sessionId,
-          key.id,
-        );
-        if (existingMessage?.cwMessageId) return;
+          waMessageId: key.id,
+          cwMessageId: existingMessage.cwMessageId,
+        });
+        return;
       }
 
       // Check ignored JIDs
