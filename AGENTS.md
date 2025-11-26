@@ -37,6 +37,7 @@ Este projeto é uma API robusta para gerenciamento de sessões WhatsApp constru�
 | Swagger | 11.x | Documentação API |
 | Axios | 1.13+ | HTTP Client |
 | class-validator | 0.14+ | Validação de DTOs |
+| fluent-ffmpeg | 2.1+ | Conversão de áudio |
 
 ### Dependências Principais
 ```json
@@ -50,19 +51,28 @@ Este projeto é uma API robusta para gerenciamento de sessões WhatsApp constru�
   "whaileys": "^6.4.2",
   "pino": "^9.14.0",
   "class-validator": "^0.14.2",
-  "@hapi/boom": "^10.0.1"
+  "@hapi/boom": "^10.0.1",
+  "fluent-ffmpeg": "^2.1.3",
+  "@ffmpeg-installer/ffmpeg": "^1.1.0"
 }
 ```
 
 ### Principais Características
 - Multi-sessões WhatsApp independentes
-- 23 eventos de webhook suportados
+- 35 eventos de webhook suportados
 - Integração bidirecional com Chatwoot
-- Persistência completa de mensagens, contatos e chats
+- Persistência completa de mensagens, contatos, chats e grupos
 - Sincronização de histórico WhatsApp
 - Suporte a 18+ tipos de mensagens
 - Rastreamento de mensagens Chatwoot ↔ WhatsApp
 - Reconexão automática de sessões
+- Suporte a Newsletters/Canais
+- Suporte a Comunidades
+- Suporte a Labels (WhatsApp Business)
+- Suporte a Catálogo de Produtos
+- Gestão de Chamadas
+- Conversão automática de áudio para PTT
+- Suporte a Proxy por sessão
 - API RESTful documentada com Swagger
 
 ---
@@ -139,43 +149,96 @@ src/
 │   ├── media/                       # Download/upload mídia
 │   ├── presence/                    # Status de presença
 │   ├── profile/                     # Perfil do usuário
-│   └── settings/                    # Configurações
+│   ├── settings/                    # Configurações
+│   ├── calls/                       # Gestão de chamadas
+│   ├── newsletters/                 # Gestão de canais
+│   ├── labels/                      # Gestão de labels
+│   ├── communities/                 # Gestão de comunidades
+│   └── business/                    # Catálogo de produtos
 │
 ├── core/                            # Lógica principal
 │   ├── whatsapp/                    # Integração Whaileys
 │   │   ├── whatsapp.service.ts
+│   │   ├── whatsapp.types.ts
 │   │   ├── auth-state.ts
 │   │   ├── managers/socket.manager.ts
 │   │   ├── handlers/
 │   │   │   ├── connection.handler.ts
 │   │   │   ├── messages.handler.ts
 │   │   │   ├── chats.handler.ts
-│   │   │   └── history.handler.ts
+│   │   │   ├── history.handler.ts
+│   │   │   ├── contacts.handler.ts
+│   │   │   ├── presence.handler.ts
+│   │   │   ├── groups-persistence.handler.ts
+│   │   │   ├── groups-extended.handler.ts
+│   │   │   ├── calls.handler.ts
+│   │   │   ├── labels.handler.ts
+│   │   │   ├── newsletter.handler.ts
+│   │   │   ├── blocklist.handler.ts
+│   │   │   └── misc.handler.ts
 │   │   └── utils/helpers.ts
-│   └── persistence/                 # Persistência
-│       ├── persistence.service.ts
-│       ├── persistence.controller.ts
-│       ├── history-sync.service.ts
-│       └── utils/message-parser.ts
+│   ├── persistence/                 # Persistência
+│   │   ├── persistence.service.ts
+│   │   ├── persistence.controller.ts
+│   │   ├── history-sync.service.ts
+│   │   └── utils/message-parser.ts
+│   └── audio/                       # Conversão de áudio
+│       ├── audio.service.ts
+│       └── audio.module.ts
 │
 ├── integrations/                    # Integrações externas
 │   ├── webhooks/                    # Sistema de webhooks
 │   └── chatwoot/                    # Integração Chatwoot
+│       ├── chatwoot.controller.ts
+│       ├── chatwoot.service.ts
+│       ├── chatwoot.client.ts
+│       ├── chatwoot.repository.ts
+│       ├── chatwoot-event.handler.ts
+│       ├── handlers/
+│       │   └── chatwoot-webhook.handler.ts
+│       ├── services/
+│       │   ├── chatwoot-config.service.ts
+│       │   ├── chatwoot-contact.service.ts
+│       │   ├── chatwoot-conversation.service.ts
+│       │   ├── chatwoot-message.service.ts
+│       │   ├── chatwoot-import.service.ts
+│       │   └── chatwoot-bot.service.ts
+│       └── libs/
+│           └── chatwoot-postgres.client.ts
 │
 ├── database/                        # Camada de dados
 │   ├── database.service.ts          # Prisma client
-│   └── repositories/                # Repositories
+│   └── repositories/
+│       ├── session.repository.ts
+│       ├── auth-state.repository.ts
+│       ├── webhook.repository.ts
+│       ├── contact.repository.ts
+│       ├── chat.repository.ts
+│       ├── message.repository.ts
+│       ├── message-status-history.repository.ts
+│       └── session-settings.repository.ts
 │
 ├── logger/                          # Logging
 │   ├── pino.logger.ts
-│   └── logger.service.ts
+│   ├── logger.service.ts
+│   └── logger.config.ts
 │
 └── common/                          # Compartilhados
     ├── guards/api-key.guard.ts
     ├── decorators/public.decorator.ts
+    ├── repositories/base.repository.ts
     ├── dto/
     ├── interfaces/
+    │   ├── message-key.interface.ts
+    │   └── last-message.interface.ts
+    ├── utils/
+    │   ├── socket-validator.ts
+    │   ├── media-parser.ts
+    │   ├── jid-formatter.ts
+    │   └── extended-socket.type.ts
     └── constants/
+        ├── presence.enum.ts
+        └── privacy.enum.ts
 ```
 
 ---
@@ -243,15 +306,6 @@ src/
 }
 ```
 
-**Exemplo SendTextMessageDto:**
-```typescript
-{
-  to: "5511999999999",
-  text: "Olá!",
-  mentions?: ["5511888888888@s.whatsapp.net"]
-}
-```
-
 ---
 
 ### Chats (`/sessions/:sessionId/chats`)
@@ -270,6 +324,11 @@ src/
 | DELETE | `/:jid` | Deletar chat |
 | POST | `/:jid/clear` | Limpar mensagens |
 | POST | `/read-messages` | Marcar múltiplas como lidas |
+| POST | `/:jid/star` | Favoritar/desfavoritar mensagem |
+| POST | `/history` | Buscar histórico de mensagens |
+| POST | `/receipt` | Enviar recibo de leitura |
+| POST | `/receipts` | Enviar recibos em lote |
+| POST | `/placeholder-resend` | Reenviar mensagens placeholder |
 
 ---
 
@@ -294,6 +353,12 @@ src/
 | POST | `/:groupId/invite` | Revogar código convite |
 | POST | `/invite` | Aceitar convite |
 | GET | `/invite/:code` | Info do convite |
+| POST | `/:groupId/ephemeral` | Ativar/desativar msg temporárias |
+| GET | `/:groupId/join-requests` | Listar solicitações de entrada |
+| POST | `/:groupId/join-requests` | Aprovar/rejeitar solicitações |
+| POST | `/:groupId/member-add-mode` | Definir quem pode adicionar |
+| POST | `/:groupId/join-approval-mode` | Definir modo de aprovação |
+| POST | `/invite/v4` | Aceitar convite via mensagem |
 
 ---
 
@@ -302,8 +367,11 @@ src/
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
 | GET | `/` | Listar contatos |
+| POST | `/` | Adicionar/editar contato |
+| DELETE | `/:jid` | Remover contato |
 | POST | `/validate` | Validar números no WhatsApp |
 | GET | `/business/:jid` | Perfil de negócio |
+| GET | `/:jid/disappearing` | Duração de msg temporárias |
 
 ---
 
@@ -332,6 +400,17 @@ src/
 | POST | `/subscribe` | Inscrever em atualizações |
 | GET | `/cache` | Obter cache de presenças |
 
+**Tipos de Presença:**
+```typescript
+enum WAPresence {
+  UNAVAILABLE = 'unavailable',
+  AVAILABLE = 'available',
+  COMPOSING = 'composing',
+  RECORDING = 'recording',
+  PAUSED = 'paused',
+}
+```
+
 ---
 
 ### Media (`/sessions/:sessionId/media`)
@@ -340,12 +419,17 @@ src/
 |--------|----------|-----------|
 | POST | `/download` | Download de mídia |
 | POST | `/update` | Re-upload de mídia |
+| POST | `/upload` | Upload direto para servidor |
 
 ---
 
 ### Settings (`/sessions/:sessionId/settings`)
 
-Configurações de privacidade e comportamento da sessão.
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| POST | `/` | Atualizar configurações |
+| GET | `/` | Obter configurações |
+| GET | `/privacy` | Obter privacidade do WhatsApp |
 
 ```typescript
 interface SessionSettings {
@@ -360,9 +444,88 @@ interface SessionSettings {
   lastSeen: WAPrivacyValue;
   online: WAPrivacyOnlineValue;
   call: WAPrivacyCallValue;
+  messages: WAPrivacyMessagesValue;
+  readReceipts: WAReadReceiptsValue;
   groupsAdd: WAPrivacyGroupAddValue;
 }
 ```
+
+---
+
+### Calls (`/sessions/:sessionId/calls`)
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| POST | `/link` | Criar link de chamada |
+| POST | `/reject` | Rejeitar chamada recebida |
+
+---
+
+### Newsletters (`/sessions/:sessionId/newsletters`)
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| POST | `/` | Criar canal/newsletter |
+| GET | `/:jid` | Obter metadados do canal |
+| POST | `/:jid/follow` | Seguir canal |
+| POST | `/:jid/unfollow` | Deixar de seguir |
+| POST | `/:jid/mute` | Silenciar canal |
+| POST | `/:jid/unmute` | Dessilenciar canal |
+| PUT | `/:jid/name` | Atualizar nome |
+| PUT | `/:jid/description` | Atualizar descrição |
+| PUT | `/:jid/picture` | Atualizar foto |
+| DELETE | `/:jid/picture` | Remover foto |
+| POST | `/:jid/react` | Reagir a mensagem |
+| GET | `/:jid/messages` | Buscar mensagens |
+| DELETE | `/:jid` | Deletar canal |
+| GET | `/:jid/admin-count` | Contagem de admins |
+| GET | `/:jid/subscribers` | Lista de inscritos |
+
+---
+
+### Labels (`/sessions/:sessionId/labels`)
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| POST | `/` | Criar label |
+| POST | `/chat` | Adicionar label a chat |
+| DELETE | `/chat` | Remover label de chat |
+| POST | `/message` | Adicionar label a mensagem |
+| DELETE | `/message` | Remover label de mensagem |
+
+---
+
+### Communities (`/sessions/:sessionId/communities`)
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| POST | `/` | Criar comunidade |
+| GET | `/:jid` | Obter metadados |
+| DELETE | `/:jid` | Sair da comunidade |
+| POST | `/:jid/groups` | Criar grupo na comunidade |
+| GET | `/:jid/groups` | Listar grupos vinculados |
+| POST | `/:jid/groups/link` | Vincular grupos |
+| POST | `/:jid/groups/unlink` | Desvincular grupos |
+| PUT | `/:jid/subject` | Atualizar nome |
+| PUT | `/:jid/description` | Atualizar descrição |
+| GET | `/:jid/invite` | Obter código convite |
+| POST | `/invite/accept` | Aceitar convite |
+| POST | `/:jid/invite/revoke` | Revogar convite |
+| POST | `/:jid/participants` | Atualizar participantes |
+
+---
+
+### Business (`/sessions/:sessionId/business`)
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/catalog` | Obter catálogo de produtos |
+| GET | `/collections` | Obter coleções |
+| GET | `/orders/:orderId` | Detalhes de pedido |
+| GET | `/profile/:jid` | Perfil de negócio |
+| POST | `/products` | Criar produto |
+| PUT | `/products/:productId` | Atualizar produto |
+| DELETE | `/products` | Deletar produtos |
 
 ---
 
@@ -377,26 +540,34 @@ interface SessionSettings {
 
 ---
 
-### Webhooks
+### Webhooks (`/sessions`)
 
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| POST | `/session/:sessionId/webhook/set` | Configurar webhook |
-| GET | `/session/:sessionId/webhook/find` | Buscar configuração |
+| POST | `/:sessionId/webhook/set` | Configurar webhook |
+| GET | `/:sessionId/webhook/find` | Buscar configuração |
 | GET | `/webhook/events` | Listar eventos disponíveis |
-| POST | `/session/:sessionId/webhook/test` | Testar webhook |
+| POST | `/:sessionId/webhook/test` | Testar webhook |
 
 ---
 
-### Chatwoot
+### Chatwoot (`/sessions/:sessionId/chatwoot`)
 
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| POST | `/session/:sessionId/chatwoot/set` | Configurar integração |
-| GET | `/session/:sessionId/chatwoot/find` | Buscar configuração |
-| DELETE | `/session/:sessionId/chatwoot` | Remover configuração |
-| POST | `/chatwoot/webhook/:sessionId` | Webhook Chatwoot (público) |
-| POST | `/chatwoot/receive/:sessionId` | Receber eventos zpwoot (público) |
+| POST | `/set` | Configurar integração |
+| GET | `/find` | Buscar configuração |
+| DELETE | `/` | Remover configuração |
+| GET | `/import/status` | Status do import PostgreSQL |
+| POST | `/sync` | Sincronizar mensagens perdidas |
+| POST | `/import/contacts` | Importar contatos |
+| POST | `/import/messages` | Importar mensagens |
+
+**Endpoints públicos:**
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| POST | `/chatwoot/webhook/:sessionId` | Webhook do Chatwoot |
+| POST | `/chatwoot/receive/:sessionId` | Receber eventos zpwoot |
 
 ---
 
@@ -423,6 +594,15 @@ export class WhatsAppService {
 | `MessagesHandler` | `messages.upsert`, `messages.update`, `messages.delete`, `message-receipt.update` |
 | `ChatsHandler` | `chats.upsert`, `chats.update`, `chats.delete` |
 | `HistoryHandler` | `messaging-history.set` |
+| `ContactsHandler` | `contacts.upsert`, `contacts.update` |
+| `PresenceHandler` | `presence.update` |
+| `GroupsPersistenceHandler` | `groups.upsert`, `groups.update` |
+| `GroupsExtendedHandler` | `group-participants.update`, `group.join-request` |
+| `CallsHandler` | `call` |
+| `LabelsHandler` | `labels.edit`, `labels.association` |
+| `NewsletterHandler` | `newsletter.*` |
+| `BlocklistHandler` | `blocklist.set`, `blocklist.update` |
+| `MiscHandler` | Outros eventos diversos |
 
 ### PersistenceService
 ```typescript
@@ -454,13 +634,23 @@ export class PersistenceService {
 }
 ```
 
+### AudioService
+```typescript
+// src/core/audio/audio.service.ts
+@Injectable()
+export class AudioService {
+  async convertToOpus(inputPath: string): Promise<Buffer>
+  async convertToPTT(inputPath: string): Promise<Buffer>
+}
+```
+
 ---
 
 ## Integrações
 
 ### Sistema de Webhooks
 
-#### 23 Eventos Disponíveis
+#### 35 Eventos Disponíveis
 ```typescript
 const VALID_WEBHOOK_EVENTS = [
   // Conexão
@@ -485,12 +675,23 @@ const VALID_WEBHOOK_EVENTS = [
   
   // Grupos
   'groups.upsert', 'groups.update', 'group-participants.update',
+  'group.join-request',
   
   // Bloqueio
   'blocklist.set', 'blocklist.update',
   
   // Chamadas
   'call',
+  
+  // Labels (WhatsApp Business)
+  'labels.edit', 'labels.association',
+  
+  // LID Mapping
+  'lid-mapping.update',
+  
+  // Newsletter (Canais)
+  'newsletter.reaction', 'newsletter.view',
+  'newsletter-participants.update', 'newsletter-settings.update',
 ];
 ```
 
@@ -514,16 +715,19 @@ const VALID_WEBHOOK_EVENTS = [
   accountId: string;
   token: string;
   url: string;
-  nameInbox: string;
+  inbox: string;
   signMsg: boolean;           // Assinar msgs em grupos
   signDelimiter: string;
   reopenConversation: boolean;
-  conversationPending: boolean;
-  mergeBrazilContacts: boolean;
+  pending: boolean;
+  mergeBrazil: boolean;
   importContacts: boolean;
   importMessages: boolean;
-  daysLimitImportMessages: number;
+  importDays: number;
+  organization: string;
+  logo: string;
   ignoreJids: string[];
+  postgresUrl: string;        // Conexão direta PostgreSQL
 }
 ```
 
@@ -533,7 +737,7 @@ const VALID_WEBHOOK_EVENTS = [
 3. Busca/cria contato no Chatwoot
 4. Busca/cria conversa
 5. Cria mensagem com `sourceId`
-6. Atualiza tracking: `chatwootConversationId`, `chatwootMessageId`
+6. Atualiza tracking: `cwConversationId`, `cwMessageId`
 
 #### Fluxo Chatwoot → WhatsApp
 1. Webhook em `/chatwoot/webhook/:sessionId`
@@ -543,8 +747,11 @@ const VALID_WEBHOOK_EVENTS = [
 5. Valida número com `onWhatsApp()` (suporte a LID)
 6. Envia mensagem via `MessagesService`
 
-#### Suporte a Reply
-O Chatwoot envia `content_attributes.in_reply_to` ou `in_reply_to_external_id`. O sistema busca a mensagem original via `waMessageKey` para enviar como quoted.
+#### Import PostgreSQL
+Com `postgresUrl` configurado, é possível:
+- Sincronizar mensagens perdidas (`/sync`)
+- Importar contatos em lote (`/import/contacts`)
+- Importar histórico de mensagens (`/import/messages`)
 
 ---
 
@@ -555,19 +762,24 @@ O Chatwoot envia `content_attributes.in_reply_to` ou `in_reply_to_external_id`. 
 #### Session
 ```prisma
 model Session {
-  id          String           @id @default(uuid())
-  name        String
-  status      SessionStatus    @default(disconnected)
-  qrCode      String?
-  phoneNumber String?
+  id        String           @id @default(uuid())
+  name      String
+  status    SessionStatus    @default(disconnected)
+  qrCode    String?
+  phone     String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
   
   authState   AuthState[]
-  webhooks    Webhook[]
+  webhook     Webhook?
   contacts    Contact[]
   chats       Chat[]
   messages    Message[]
   settings    SessionSettings?
   chatwoot    Chatwoot?
+  proxy       Proxy?
+  groups      Group[]
+  calls       Call[]
 }
 
 enum SessionStatus { disconnected, connecting, connected }
@@ -576,63 +788,138 @@ enum SessionStatus { disconnected, connecting, connected }
 #### Message
 ```prisma
 model Message {
-  id            String        @id @default(uuid())
-  sessionId     String
-  chatId        String
-  remoteJid     String
-  messageId     String
-  fromMe        Boolean
-  senderJid     String?
-  senderName    String?
-  timestamp     BigInt
-  messageType   String
+  id          String        @id @default(uuid())
+  sessionId   String
+  chatId      String
+  remoteJid   String
+  messageId   String
+  fromMe      Boolean
+  senderJid   String?
+  sender      String?
+  timestamp   BigInt
+  messageType String
   
-  // Campos otimizados
-  textContent   String?
-  mediaUrl      String?
-  fileLength    BigInt?
-  content       Json
+  textContent String?
+  mediaUrl    String?
+  fileLength  BigInt?
+  content     Json
   
   // Chatwoot tracking
-  chatwootConversationId  Int?
-  chatwootMessageId       Int?
-  chatwootInboxId         Int?
-  chatwootContactId       Int?
+  cwConversationId Int?
+  cwMessageId      Int?
+  cwInboxId        Int?
+  cwContactId      Int?
   
-  // WhatsApp message key (reply/edit/delete)
-  waMessageKey  Json?
+  // WhatsApp message key
+  waMessageKey Json?
+  waMessage    Json?
   
-  status        MessageStatus @default(pending)
-  isDeleted     Boolean       @default(false)
+  status    MessageStatus @default(pending)
+  deleted   Boolean       @default(false)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  
+  statusHistory MessageStatusHistory[]
+  reactions     MessageReaction[]
   
   @@unique([sessionId, messageId])
   @@index([sessionId, chatId, timestamp])
-  @@index([chatwootConversationId])
-  @@index([chatwootMessageId])
+  @@index([cwConversationId])
+  @@index([cwMessageId])
 }
 
 enum MessageStatus { pending, sent, delivered, read, failed }
 ```
 
+#### Group
+```prisma
+model Group {
+  id            String   @id @default(uuid())
+  sessionId     String
+  groupJid      String
+  subject       String?
+  owner         String?
+  description   String?
+  participants  Json?
+  creation      BigInt?
+  restrict      Boolean  @default(false)
+  announce      Boolean  @default(false)
+  size          Int?
+  ephemeral     Int?
+  inviteCode    String?
+  
+  @@unique([sessionId, groupJid])
+}
+```
+
+#### Call
+```prisma
+model Call {
+  id          String     @id @default(uuid())
+  sessionId   String
+  callId      String
+  fromJid     String
+  toJid       String?
+  status      CallStatus @default(ringing)
+  isVideo     Boolean    @default(false)
+  isGroup     Boolean    @default(false)
+  timestamp   BigInt
+  
+  @@unique([sessionId, callId])
+}
+
+enum CallStatus { ringing, accepted, rejected, missed, timeout }
+```
+
+#### Proxy
+```prisma
+model Proxy {
+  id        String   @id @default(cuid())
+  sessionId String   @unique
+  enabled   Boolean  @default(false)
+  host      String?
+  port      Int?
+  protocol  String?  @default("http") // http, https, socks4, socks5
+  username  String?
+  password  String?
+}
+```
+
 #### Chatwoot
 ```prisma
 model Chatwoot {
-  id                      String   @id @default(cuid())
-  sessionId               String   @unique
-  enabled                 Boolean  @default(false)
-  accountId               String?
-  token                   String?
-  url                     String?
-  nameInbox               String?
-  signMsg                 Boolean  @default(false)
-  signDelimiter           String?  @default("\\n")
-  reopenConversation      Boolean  @default(false)
-  conversationPending     Boolean  @default(false)
-  mergeBrazilContacts     Boolean  @default(false)
-  importContacts          Boolean  @default(false)
-  importMessages          Boolean  @default(false)
-  daysLimitImportMessages Int?     @default(3)
-  ignoreJids              String[] @default([])
+  id              String   @id @default(cuid())
+  sessionId       String   @unique
+  enabled         Boolean  @default(false)
+  accountId       String?
+  token           String?
+  url             String?
+  inbox           String?
+  signMsg         Boolean  @default(false)
+  signDelimiter   String?  @default("\\n")
+  reopen          Boolean  @default(false)
+  pending         Boolean  @default(false)
+  mergeBrazil     Boolean  @default(false)
+  importContacts  Boolean  @default(false)
+  importMessages  Boolean  @default(false)
+  importDays      Int?     @default(3)
+  organization    String?
+  logo            String?
+  ignoreJids      String[] @default([])
+  postgresUrl     String?
+}
+```
+
+#### MessageReaction
+```prisma
+model MessageReaction {
+  id          String   @id @default(uuid())
+  messageId   String
+  senderJid   String
+  reaction    String
+  timestamp   BigInt
+  
+  @@unique([messageId, senderJid])
 }
 ```
 
@@ -667,6 +954,13 @@ WhatsApp Server
 │ MessagesHandler → Chatwoot      │
 │ ChatsHandler                    │
 │ HistoryHandler                  │
+│ ContactsHandler                 │
+│ PresenceHandler                 │
+│ GroupsPersistenceHandler        │
+│ CallsHandler                    │
+│ LabelsHandler                   │
+│ NewsletterHandler               │
+│ BlocklistHandler                │
 └────────┬─────────────┬──────────┘
          │             │
          ▼             ▼
@@ -712,7 +1006,7 @@ Body: {
 
 ### 3. Configurar Webhook
 ```bash
-POST /session/:sessionId/webhook/set
+POST /sessions/:sessionId/webhook/set
 Body: {
   "url": "https://meu-webhook.com/events",
   "events": ["messages.upsert", "connection.update"]
@@ -721,13 +1015,14 @@ Body: {
 
 ### 4. Configurar Chatwoot
 ```bash
-POST /session/:sessionId/chatwoot/set
+POST /sessions/:sessionId/chatwoot/set
 Body: {
   "enabled": true,
   "accountId": "1",
   "token": "chatwoot-token",
   "url": "https://chatwoot.example.com",
-  "nameInbox": "WhatsApp"
+  "inbox": "WhatsApp",
+  "reopenConversation": true
 }
 ```
 
@@ -820,8 +1115,8 @@ DELETE FROM "AuthState" WHERE "sessionId" = 'uuid';
 
 ### Webhook não dispara
 ```bash
-GET /session/:sessionId/webhook/find
-POST /session/:sessionId/webhook/test
+GET /sessions/:sessionId/webhook/find
+POST /sessions/:sessionId/webhook/test
 ```
 
 ### Chatwoot não recebe mensagens
@@ -841,9 +1136,20 @@ WHERE "sessionId" = 'uuid'
 ORDER BY timestamp DESC LIMIT 10;
 
 -- Tracking Chatwoot
-SELECT "messageId", "chatwootConversationId", "chatwootMessageId"
+SELECT "messageId", "cwConversationId", "cwMessageId"
 FROM "Message"
-WHERE "chatwootMessageId" IS NOT NULL;
+WHERE "cwMessageId" IS NOT NULL;
+
+-- Grupos da sessão
+SELECT "groupJid", subject, size
+FROM "Group"
+WHERE "sessionId" = 'uuid';
+
+-- Chamadas recebidas
+SELECT "callId", "fromJid", status, "isVideo"
+FROM "Call"
+WHERE "sessionId" = 'uuid'
+ORDER BY timestamp DESC;
 ```
 
 ---

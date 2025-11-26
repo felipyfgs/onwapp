@@ -83,7 +83,8 @@ export class SetChatwootConfigDto {
   signDelimiter?: string;
 
   @ApiPropertyOptional({
-    description: 'Reopen resolved conversations on new messages (single conversation per contact)',
+    description:
+      'Reopen resolved conversations on new messages (single conversation per contact)',
     example: true,
     default: true,
   })

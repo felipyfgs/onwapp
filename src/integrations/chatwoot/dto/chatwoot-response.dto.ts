@@ -53,7 +53,8 @@ export class ChatwootConfigResponseDto {
   signDelimiter?: string | null;
 
   @ApiProperty({
-    description: 'Reopen resolved conversations (single conversation per contact)',
+    description:
+      'Reopen resolved conversations (single conversation per contact)',
     example: true,
   })
   reopenConversation: boolean;

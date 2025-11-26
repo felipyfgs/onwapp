@@ -24,7 +24,9 @@ export class ChatwootResponseDto {
   @ApiPropertyOptional({ description: 'Assinar mensagens' })
   signMsg?: boolean;
 
-  @ApiPropertyOptional({ description: 'Reabrir conversas resolvidas (conversa única por contato)' })
+  @ApiPropertyOptional({
+    description: 'Reabrir conversas resolvidas (conversa única por contato)',
+  })
   reopenConversation?: boolean;
 
   @ApiPropertyOptional({ description: 'Conversas pendentes' })

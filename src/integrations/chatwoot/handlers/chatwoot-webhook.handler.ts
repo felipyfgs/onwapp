@@ -86,7 +86,7 @@ export class ChatwootWebhookHandler {
 
     // Extract chat ID from webhook payload
     const chatId = this.extractChatId(payload);
-    
+
     this.logger.debug('Chat ID extraído do payload', {
       event: 'chatwoot.webhook.chatid.extracted',
       sessionId,
@@ -114,7 +114,7 @@ export class ChatwootWebhookHandler {
     // Format and validate the remote JID
     let remoteJid = formatRemoteJid(chatId);
     const isGroup = remoteJid.includes('@g.us');
-    
+
     this.logger.debug('JID formatado', {
       event: 'chatwoot.webhook.jid.format',
       sessionId,
@@ -122,9 +122,9 @@ export class ChatwootWebhookHandler {
       remoteJid,
       isGroup,
     });
-    
+
     remoteJid = await this.validateAndResolveJid(sessionId, remoteJid, chatId);
-    
+
     this.logger.debug('JID após validação', {
       event: 'chatwoot.webhook.jid.validated',
       sessionId,

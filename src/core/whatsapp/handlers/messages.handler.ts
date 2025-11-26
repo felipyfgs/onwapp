@@ -176,16 +176,17 @@ export class MessagesHandler {
         // For groups, use participant JID; for individual chats, use remoteJid
         if (msg.pushName && !msg.key.fromMe) {
           const isGroup = msg.key.remoteJid.includes('@g.us');
-          const contactJid = isGroup
-            ? msg.key.participant
-            : msg.key.remoteJid;
+          const contactJid = isGroup ? msg.key.participant : msg.key.remoteJid;
           if (contactJid) {
             const phoneNumber = contactJid.split('@')[0].split(':')[0];
-            await this.persistenceService.createOrUpdateContactIfNeeded(sessionId, {
-              remoteJid: contactJid,
-              name: msg.pushName,
-              phoneNumber,
-            });
+            await this.persistenceService.createOrUpdateContactIfNeeded(
+              sessionId,
+              {
+                remoteJid: contactJid,
+                name: msg.pushName,
+                phoneNumber,
+              },
+            );
           }
         }
 
@@ -194,12 +195,15 @@ export class MessagesHandler {
         if (payload.type === 'notify') {
           await this.forwardToChatwoot(sessionId, msg, sid);
         } else {
-          this.logger.debug('Mensagem não encaminhada ao Chatwoot (não é notify)', {
-            event: 'chatwoot.message.forward.skip',
-            sessionId,
-            waMessageId: msg.key.id,
-            type: payload.type,
-          });
+          this.logger.debug(
+            'Mensagem não encaminhada ao Chatwoot (não é notify)',
+            {
+              event: 'chatwoot.message.forward.skip',
+              sessionId,
+              waMessageId: msg.key.id,
+              type: payload.type,
+            },
+          );
         }
       }
     } catch (error) {
