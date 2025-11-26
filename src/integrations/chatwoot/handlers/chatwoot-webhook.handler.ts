@@ -1,11 +1,12 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { MessagesService } from '../../../api/messages/messages.service';
 import { WhatsAppService } from '../../../core/whatsapp/whatsapp.service';
 import { PersistenceService } from '../../../core/persistence/persistence.service';
 import { ChatwootConfigService } from '../services/chatwoot-config.service';
 import {
   ChatwootWebhookPayload,
+  ChatwootWebhookAttachment,
   QuotedMessage,
   WebhookProcessingResult,
 } from '../interfaces';
@@ -85,15 +86,19 @@ export class ChatwootWebhookHandler {
       // Send text message
       if (payload.content) {
         await this.sendTextMessage(sessionId, remoteJid, payload, quoted);
+        this.logger.log(`[${sessionId}] Message sent to ${remoteJid}`);
+        return { status: 'sent', chatId: remoteJid };
       }
 
-      this.logger.log(`[${sessionId}] Message sent to ${remoteJid}`);
-      return { status: 'sent', chatId: remoteJid };
+      // No content to send
+      return { status: 'ignored', reason: 'No content or attachments to send' };
     } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(
-        `[${sessionId}] Error sending message: ${(error as Error).message}`,
+        `[${sessionId}] Error sending message to ${remoteJid}: ${errorMsg}`,
+        error instanceof Error ? error.stack : undefined,
       );
-      return { status: 'error', error: (error as Error).message };
+      return { status: 'error', error: errorMsg };
     }
   }
 
@@ -276,12 +281,7 @@ export class ChatwootWebhookHandler {
   private async sendAttachment(
     sessionId: string,
     remoteJid: string,
-    attachment: {
-      file_type: string;
-      data_url: string;
-      thumb_url?: string;
-      file_name?: string;
-    },
+    attachment: ChatwootWebhookAttachment,
     caption?: string,
     quoted?: QuotedMessage,
   ): Promise<{ id: string } | null> {
@@ -290,15 +290,21 @@ export class ChatwootWebhookHandler {
     // Download the attachment
     let mediaData: string;
     try {
-      const response = await axios.get(data_url, {
+      const response = await axios.get<ArrayBuffer>(data_url, {
         responseType: 'arraybuffer',
+        timeout: 30000, // 30 second timeout for large files
       });
       mediaData = `data:${getMimeType(file_type, file_name)};base64,${Buffer.from(response.data).toString('base64')}`;
     } catch (error) {
+      const axiosError = error as AxiosError;
+      const errorMessage =
+        axiosError.response?.status !== undefined
+          ? `HTTP ${axiosError.response.status}`
+          : axiosError.message;
       this.logger.error(
-        `Failed to download attachment: ${(error as Error).message}`,
+        `[${sessionId}] Failed to download attachment from ${data_url}: ${errorMessage}`,
       );
-      throw error;
+      throw new Error(`Attachment download failed: ${errorMessage}`);
     }
 
     // Send based on file type
@@ -343,7 +349,8 @@ export class ChatwootWebhookHandler {
     sessionId: string,
     payload: ChatwootWebhookPayload,
   ): Promise<WebhookProcessingResult> {
-    if (!payload.id) {
+    const chatwootMessageId = payload.id;
+    if (!chatwootMessageId) {
       return { status: 'error', reason: 'No message ID in payload' };
     }
 
@@ -353,25 +360,35 @@ export class ChatwootWebhookHandler {
       const messages =
         await this.persistenceService.findAllMessagesByChatwootId(
           sessionId,
-          payload.id,
+          chatwootMessageId,
         );
 
       if (messages.length === 0) {
-        this.logger.warn(
-          `[${sessionId}] No messages found for delete: chatwootId=${payload.id}`,
+        this.logger.debug(
+          `[${sessionId}] No messages found for delete: chatwootId=${chatwootMessageId}`,
         );
         return { status: 'ignored', reason: 'Message not found in database' };
       }
 
       const socket = this.whatsappService.getSocket(sessionId);
       if (!socket) {
+        this.logger.warn(
+          `[${sessionId}] Cannot delete message: session not connected`,
+        );
         return { status: 'error', reason: 'Session not connected' };
       }
 
       // Delete all linked messages on WhatsApp
       let deletedCount = 0;
+      const errors: string[] = [];
+
       for (const message of messages) {
-        if (!message.waMessageKey) continue;
+        if (!message.waMessageKey) {
+          this.logger.debug(
+            `[${sessionId}] Skipping message without waMessageKey: ${message.messageId}`,
+          );
+          continue;
+        }
 
         const key = message.waMessageKey as {
           id: string;
@@ -382,33 +399,40 @@ export class ChatwootWebhookHandler {
 
         try {
           await socket.sendMessage(key.remoteJid, { delete: key });
-          await this.persistenceService.markMessageAsDeleted(
-            sessionId,
-            key.id,
-          );
+          await this.persistenceService.markMessageAsDeleted(sessionId, key.id);
           deletedCount++;
           this.logger.debug(
             `[${sessionId}] Deleted message on WhatsApp: ${key.id}`,
           );
         } catch (err) {
+          const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+          errors.push(`${key.id}: ${errorMsg}`);
           this.logger.error(
-            `[${sessionId}] Failed to delete message ${key.id}: ${(err as Error).message}`,
+            `[${sessionId}] Failed to delete message ${key.id}: ${errorMsg}`,
           );
         }
       }
 
-      this.logger.log(
-        `[${sessionId}] Deleted ${deletedCount}/${messages.length} messages on WhatsApp for chatwootId=${payload.id}`,
-      );
+      if (deletedCount > 0) {
+        this.logger.log(
+          `[${sessionId}] Deleted ${deletedCount}/${messages.length} messages on WhatsApp for chatwootId=${chatwootMessageId}`,
+        );
+      }
+
       return {
-        status: 'deleted',
-        reason: `Deleted ${deletedCount} message(s) on WhatsApp`,
+        status: deletedCount > 0 ? 'deleted' : 'error',
+        reason:
+          deletedCount > 0
+            ? `Deleted ${deletedCount} message(s) on WhatsApp`
+            : `Failed to delete messages: ${errors.join(', ')}`,
       };
     } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(
-        `[${sessionId}] Error deleting message: ${(error as Error).message}`,
+        `[${sessionId}] Error deleting message: ${errorMsg}`,
+        error instanceof Error ? error.stack : undefined,
       );
-      return { status: 'error', reason: (error as Error).message };
+      return { status: 'error', reason: errorMsg };
     }
   }
 

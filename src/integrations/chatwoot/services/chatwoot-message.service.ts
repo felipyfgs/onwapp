@@ -9,6 +9,17 @@ import {
 import { CHATWOOT_DEFAULTS } from '../constants';
 
 /**
+ * Media type constants for WhatsApp message types
+ */
+const WA_MEDIA_TYPES = {
+  IMAGE: 'image',
+  VIDEO: 'video',
+  AUDIO: 'audio',
+  DOCUMENT: 'document',
+  STICKER: 'sticker',
+} as const;
+
+/**
  * Service responsible for Chatwoot message operations
  *
  * Handles message creation, formatting, and media handling.
@@ -28,7 +39,12 @@ export class ChatwootMessageService {
     params: CreateMessageParams,
   ): Promise<ChatwootMessage | null> {
     const client = await this.configService.getClient(sessionId);
-    if (!client) return null;
+    if (!client) {
+      this.logger.warn(
+        `[${sessionId}] Cannot create message: Chatwoot client not available`,
+      );
+      return null;
+    }
 
     try {
       // Build content_attributes for reply support
@@ -55,12 +71,13 @@ export class ChatwootMessageService {
       });
 
       this.logger.debug(
-        `Created message ${message.id} in conversation ${conversationId} for session ${sessionId}`,
+        `[${sessionId}] Created message ${message.id} in conversation ${conversationId}`,
       );
       return message;
     } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(
-        `Error creating message for session ${sessionId}: ${(error as Error).message}`,
+        `[${sessionId}] Error creating message in conversation ${conversationId}: ${errorMsg}`,
       );
       return null;
     }
@@ -75,7 +92,12 @@ export class ChatwootMessageService {
     params: CreateMessageWithAttachmentParams,
   ): Promise<ChatwootMessage | null> {
     const client = await this.configService.getClient(sessionId);
-    if (!client) return null;
+    if (!client) {
+      this.logger.warn(
+        `[${sessionId}] Cannot create message with attachment: Chatwoot client not available`,
+      );
+      return null;
+    }
 
     try {
       // Build content_attributes for reply support
@@ -104,12 +126,13 @@ export class ChatwootMessageService {
       );
 
       this.logger.debug(
-        `Created message with attachment ${message.id} in conversation ${conversationId} for session ${sessionId}`,
+        `[${sessionId}] Created message with attachment ${message.id} in conversation ${conversationId}`,
       );
       return message;
     } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(
-        `Error creating message with attachment for session ${sessionId}: ${(error as Error).message}`,
+        `[${sessionId}] Error creating message with attachment in conversation ${conversationId}: ${errorMsg}`,
       );
       return null;
     }
@@ -117,6 +140,8 @@ export class ChatwootMessageService {
 
   /**
    * Delete a message from Chatwoot
+   *
+   * Used when forwarding WhatsApp message deletions to Chatwoot.
    */
   async deleteMessage(
     sessionId: string,
@@ -124,17 +149,23 @@ export class ChatwootMessageService {
     messageId: number,
   ): Promise<boolean> {
     const client = await this.configService.getClient(sessionId);
-    if (!client) return false;
+    if (!client) {
+      this.logger.warn(
+        `[${sessionId}] Cannot delete message: Chatwoot client not available`,
+      );
+      return false;
+    }
 
     try {
       await client.deleteMessage(conversationId, messageId);
       this.logger.debug(
-        `Deleted message ${messageId} from conversation ${conversationId} for session ${sessionId}`,
+        `[${sessionId}] Deleted message ${messageId} from conversation ${conversationId}`,
       );
       return true;
     } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(
-        `Error deleting message for session ${sessionId}: ${(error as Error).message}`,
+        `[${sessionId}] Error deleting message ${messageId}: ${errorMsg}`,
       );
       return false;
     }
@@ -142,6 +173,9 @@ export class ChatwootMessageService {
 
   /**
    * Mark a message as deleted by updating its content (WhatsApp style)
+   *
+   * This is an alternative to hard delete - shows a "message deleted" placeholder.
+   * Currently used when we want to preserve the message in Chatwoot but indicate it was deleted.
    */
   async markMessageAsDeleted(
     sessionId: string,
@@ -149,19 +183,25 @@ export class ChatwootMessageService {
     messageId: number,
   ): Promise<boolean> {
     const client = await this.configService.getClient(sessionId);
-    if (!client) return false;
+    if (!client) {
+      this.logger.warn(
+        `[${sessionId}] Cannot mark message as deleted: Chatwoot client not available`,
+      );
+      return false;
+    }
 
     try {
       await client.updateMessage(conversationId, messageId, {
         content: '⦸ _Mensagem apagada_',
       });
       this.logger.debug(
-        `Marked message ${messageId} as deleted in conversation ${conversationId} for session ${sessionId}`,
+        `[${sessionId}] Marked message ${messageId} as deleted in conversation ${conversationId}`,
       );
       return true;
     } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(
-        `Error marking message as deleted for session ${sessionId}: ${(error as Error).message}`,
+        `[${sessionId}] Error marking message ${messageId} as deleted: ${errorMsg}`,
       );
       return false;
     }
@@ -229,11 +269,11 @@ export class ChatwootMessageService {
    */
   getMediaType(message: WAMessageContent | null): string | null {
     if (!message) return null;
-    if (message.imageMessage) return 'image';
-    if (message.videoMessage) return 'video';
-    if (message.audioMessage) return 'audio';
-    if (message.documentMessage) return 'document';
-    if (message.stickerMessage) return 'sticker';
+    if (message.imageMessage) return WA_MEDIA_TYPES.IMAGE;
+    if (message.videoMessage) return WA_MEDIA_TYPES.VIDEO;
+    if (message.audioMessage) return WA_MEDIA_TYPES.AUDIO;
+    if (message.documentMessage) return WA_MEDIA_TYPES.DOCUMENT;
+    if (message.stickerMessage) return WA_MEDIA_TYPES.STICKER;
     return null;
   }
 }

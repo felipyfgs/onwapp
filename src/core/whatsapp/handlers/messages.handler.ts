@@ -85,7 +85,7 @@ export class MessagesHandler {
 
         // Check if this is a protocol message (edit or delete)
         const protocolMessage = msg.message?.protocolMessage;
-        
+
         // Handle message deletion (REVOKE = type 0)
         if (protocolMessage?.type === 0 && protocolMessage?.key?.id) {
           await this.handleMessageRevoke(sessionId, protocolMessage, sid);
@@ -266,7 +266,9 @@ export class MessagesHandler {
     const revokedMessageId = protocolMessage.key?.id;
     if (!revokedMessageId) return;
 
-    this.logger.log(`[${sid}] 🗑️ Message revoked by sender: ${revokedMessageId}`);
+    this.logger.log(
+      `[${sid}] 🗑️ Message revoked by sender: ${revokedMessageId}`,
+    );
 
     try {
       // Find the original message to get Chatwoot IDs
@@ -276,7 +278,10 @@ export class MessagesHandler {
       );
 
       // Mark as deleted in our database
-      await this.persistenceService.markMessageAsDeleted(sessionId, revokedMessageId);
+      await this.persistenceService.markMessageAsDeleted(
+        sessionId,
+        revokedMessageId,
+      );
 
       // Forward delete notification to Chatwoot if message was synced
       if (originalMessage?.cwMessageId && originalMessage?.cwConversationId) {
@@ -288,7 +293,9 @@ export class MessagesHandler {
           sid,
         );
       } else {
-        this.logger.debug(`[${sid}] [CW] Revoked message not synced to Chatwoot: ${revokedMessageId}`);
+        this.logger.debug(
+          `[${sid}] [CW] Revoked message not synced to Chatwoot: ${revokedMessageId}`,
+        );
       }
     } catch (error) {
       this.logger.error(
@@ -459,7 +466,9 @@ export class MessagesHandler {
     try {
       const config = await this.chatwootService.getConfig(sessionId);
       if (!config?.enabled) {
-        this.logger.debug(`[${sid}] [CW] Chatwoot not enabled or config not found`);
+        this.logger.debug(
+          `[${sid}] [CW] Chatwoot not enabled or config not found`,
+        );
         return;
       }
 
@@ -468,7 +477,9 @@ export class MessagesHandler {
 
       // Skip outgoing messages (sent by us/Chatwoot) to avoid loop
       if (fromMe) {
-        this.logger.debug(`[${sid}] [CW] Skipping outgoing message (fromMe=true)`);
+        this.logger.debug(
+          `[${sid}] [CW] Skipping outgoing message (fromMe=true)`,
+        );
         return;
       }
 
@@ -537,7 +548,9 @@ export class MessagesHandler {
       // Extract stanzaId for reply support
       const waMessage = message as {
         conversation?: string;
-        extendedTextMessage?: { contextInfo?: { stanzaId?: string; quotedMessage?: unknown } };
+        extendedTextMessage?: {
+          contextInfo?: { stanzaId?: string; quotedMessage?: unknown };
+        };
         imageMessage?: { contextInfo?: { stanzaId?: string } };
         videoMessage?: { contextInfo?: { stanzaId?: string } };
         audioMessage?: { contextInfo?: { stanzaId?: string; ptt?: boolean } };
@@ -561,12 +574,19 @@ export class MessagesHandler {
       // Debug: log reply detection
       if (stanzaId) {
         this.logger.debug(`[${sid}] [CW] Message is reply to: ${stanzaId}`);
-      } else if (waMessage?.extendedTextMessage?.contextInfo || waMessage?.contextInfo) {
-        this.logger.debug(`[${sid}] [CW] Message has contextInfo but no stanzaId`, {
-          hasExtendedTextContext: !!waMessage?.extendedTextMessage?.contextInfo,
-          hasRootContext: !!waMessage?.contextInfo,
-          messageKeys: Object.keys(message || {}),
-        });
+      } else if (
+        waMessage?.extendedTextMessage?.contextInfo ||
+        waMessage?.contextInfo
+      ) {
+        this.logger.debug(
+          `[${sid}] [CW] Message has contextInfo but no stanzaId`,
+          {
+            hasExtendedTextContext:
+              !!waMessage?.extendedTextMessage?.contextInfo,
+            hasRootContext: !!waMessage?.contextInfo,
+            messageKeys: Object.keys(message || {}),
+          },
+        );
       }
 
       let inReplyTo: number | undefined;

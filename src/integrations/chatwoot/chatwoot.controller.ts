@@ -30,6 +30,7 @@ import {
   ChatwootWebhookPayloadDto,
   ZpwootEventPayloadDto,
 } from './dto';
+import { ZpwootEventData } from './interfaces';
 import { ApiKeyGuard } from '../../common/guards/api-key.guard';
 import { Public } from '../../common/decorators/public.decorator';
 
@@ -166,15 +167,16 @@ export class ChatwootController {
         sessionId,
         event: payload.event,
         timestamp: payload.timestamp,
-
-        data: payload.data as any,
+        data: payload.data as ZpwootEventData,
       });
       return result;
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(
-        `[${sessionId}] Error processing zpwoot event: ${(error as Error).message}`,
+        `[${sessionId}] Error processing zpwoot event: ${errorMessage}`,
       );
-      return { processed: false, error: (error as Error).message };
+      return { processed: false, error: errorMessage };
     }
   }
 
@@ -201,30 +203,52 @@ export class ChatwootController {
     description: 'Webhook received',
     type: ChatwootWebhookResponseDto,
   })
-  async receiveChatwootWebhook(
+  receiveChatwootWebhook(
     @Param('sessionId') sessionId: string,
     @Body() body: ChatwootWebhookPayloadDto,
-  ): Promise<ChatwootWebhookResponseDto> {
+  ): ChatwootWebhookResponseDto {
     this.logger.debug(
       `[${sessionId}] Received Chatwoot webhook: ${body.event}`,
     );
 
     // Process webhook asynchronously to avoid Chatwoot timeout
     // Chatwoot has a short timeout (~5s) and sending media can take longer
-    setImmediate(async () => {
-      try {
-        const result = await this.webhookHandler.handleWebhook(sessionId, body);
-        this.logger.debug(
-          `[${sessionId}] Webhook processed: ${JSON.stringify(result)}`,
-        );
-      } catch (error) {
-        this.logger.error(
-          `[${sessionId}] Error processing Chatwoot webhook: ${(error as Error).message}`,
-        );
-      }
-    });
+    this.processWebhookAsync(sessionId, body);
 
     // Return immediately to acknowledge receipt
     return { status: 'received' };
+  }
+
+  /**
+   * Process webhook asynchronously using setImmediate to avoid blocking
+   * Chatwoot has a short timeout (~5s) and sending media can take longer
+   * @private
+   */
+  private processWebhookAsync(
+    sessionId: string,
+    body: ChatwootWebhookPayloadDto,
+  ): void {
+    setImmediate(() => {
+      this.webhookHandler
+        .handleWebhook(sessionId, body)
+        .then((result) => {
+          if (result.status === 'error') {
+            this.logger.warn(
+              `[${sessionId}] Webhook processed with error: ${result.error || result.reason}`,
+            );
+          } else {
+            this.logger.debug(
+              `[${sessionId}] Webhook processed: status=${result.status}, chatId=${result.chatId || 'N/A'}`,
+            );
+          }
+        })
+        .catch((error: unknown) => {
+          const errorMessage =
+            error instanceof Error ? error.message : 'Unknown error';
+          this.logger.error(
+            `[${sessionId}] Error processing Chatwoot webhook: ${errorMessage}`,
+          );
+        });
+    });
   }
 }
