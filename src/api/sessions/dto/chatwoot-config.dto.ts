@@ -103,4 +103,29 @@ export class ChatwootConfigDto {
   @IsString({ each: true })
   @IsOptional()
   ignoreJids?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Criar bot automaticamente e iniciar conexão com QR code',
+    example: true,
+    default: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  autoCreate?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Nome da organização para o bot',
+    example: 'Minha Empresa',
+  })
+  @IsString()
+  @IsOptional()
+  organization?: string;
+
+  @ApiPropertyOptional({
+    description: 'URL do logo para o bot',
+    example: 'https://example.com/logo.png',
+  })
+  @IsString()
+  @IsOptional()
+  logo?: string;
 }

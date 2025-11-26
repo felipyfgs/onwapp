@@ -11,6 +11,7 @@ import {
 import { WhatsAppService } from '../../core/whatsapp/whatsapp.service';
 import { DatabaseService } from '../../database/database.service';
 import { ChatwootConfigService } from '../../integrations/chatwoot/services/chatwoot-config.service';
+import { ChatwootBotService } from '../../integrations/chatwoot/services/chatwoot-bot.service';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { PairPhoneDto } from './dto/pair-phone.dto';
 import { SessionResponseDto } from './dto/session-response.dto';
@@ -24,12 +25,14 @@ export class SessionsService {
     private readonly prisma: DatabaseService,
     private whatsapp: WhatsAppService,
     private readonly chatwootConfigService: ChatwootConfigService,
+    private readonly chatwootBotService: ChatwootBotService,
   ) {}
 
   async createSession(
     createSessionDto: CreateSessionDto,
   ): Promise<SessionResponseDto> {
     const { name, webhook, chatwoot, proxy } = createSessionDto;
+    const autoCreate = chatwoot?.autoCreate ?? false;
 
     // Create session with all configs in a transaction
     const session = await this.prisma.$transaction(async (tx) => {
@@ -53,28 +56,8 @@ export class SessionsService {
         });
       }
 
-      // Create chatwoot config if provided
-      if (chatwoot) {
-        await tx.chatwoot.create({
-          data: {
-            sessionId: newSession.id,
-            enabled: chatwoot.enabled ?? false,
-            accountId: chatwoot.accountId,
-            token: chatwoot.token,
-            url: chatwoot.url,
-            inbox: chatwoot.inbox,
-            signMsg: chatwoot.signMsg ?? false,
-            signDelimiter: chatwoot.signDelimiter ?? '\\n',
-            reopen: chatwoot.reopen ?? false,
-            pending: chatwoot.pending ?? false,
-            mergeBrazil: chatwoot.mergeBrazil ?? false,
-            importContacts: chatwoot.importContacts ?? false,
-            importMessages: chatwoot.importMessages ?? false,
-            importDays: chatwoot.importDays ?? 3,
-            ignoreJids: chatwoot.ignoreJids ?? [],
-          },
-        });
-      }
+      // Chatwoot config will be created after transaction via ChatwootConfigService
+      // to ensure inbox is auto-created in Chatwoot
 
       // Create proxy config if provided
       if (proxy) {
@@ -93,6 +76,60 @@ export class SessionsService {
 
       return newSession.id;
     });
+
+    // Create Chatwoot config via ChatwootConfigService (auto-creates inbox)
+    if (chatwoot && chatwoot.enabled) {
+      try {
+        await this.chatwootConfigService.upsertConfig(session, {
+          enabled: chatwoot.enabled,
+          accountId: chatwoot.accountId,
+          token: chatwoot.token,
+          url: chatwoot.url,
+          inbox: chatwoot.inbox,
+          signMsg: chatwoot.signMsg,
+          signDelimiter: chatwoot.signDelimiter,
+          reopen: chatwoot.reopen,
+          pending: chatwoot.pending,
+          mergeBrazil: chatwoot.mergeBrazil,
+          importContacts: chatwoot.importContacts,
+          importMessages: chatwoot.importMessages,
+          importDays: chatwoot.importDays,
+          ignoreJids: chatwoot.ignoreJids,
+          organization: chatwoot.organization,
+          logo: chatwoot.logo,
+        });
+        this.logger.log(`Chatwoot configured for session: ${session}`);
+
+        // Initialize bot contact with welcome message
+        const welcomeMessage = autoCreate
+          ? '🤖 *Zpwoot Bot*\n\nSessão criada! Aguarde o QR Code...\n\n_Comandos: /init, /status, /disconnect, /help_'
+          : '🤖 *Zpwoot Bot*\n\nSessão criada! Envie `/init` para conectar.\n\n_Comandos: /init, /status, /disconnect, /help_';
+
+        await this.chatwootBotService.sendBotMessage(session, welcomeMessage);
+        this.logger.log(`Bot initialized for session: ${session}`);
+      } catch (error) {
+        this.logger.error(
+          `Failed to configure Chatwoot for session ${session}: ${(error as Error).message}`,
+        );
+      }
+    }
+
+    // Auto-connect if autoCreate is true (generates QR code and sends to Chatwoot bot)
+    if (autoCreate) {
+      try {
+        const sessionWithProxy =
+          await this.sessionRepository.findByIdWithConfigs(session);
+        await this.whatsapp.createSocket(
+          session,
+          sessionWithProxy?.proxy ?? undefined,
+        );
+        this.logger.log(`Auto-connecting session: ${session}`);
+      } catch (error) {
+        this.logger.error(
+          `Failed to auto-connect session ${session}: ${(error as Error).message}`,
+        );
+      }
+    }
 
     // Fetch the complete session with configs
     const fullSession =

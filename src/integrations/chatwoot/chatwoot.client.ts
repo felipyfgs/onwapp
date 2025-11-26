@@ -141,6 +141,40 @@ export class ChatwootClient {
     return data;
   }
 
+  /**
+   * Update contact with avatar file (workaround for avatar_url bug)
+   */
+  async updateContactWithAvatar(
+    contactId: number,
+    contact: {
+      name?: string;
+      avatarBuffer?: Buffer;
+      avatarFilename?: string;
+    },
+  ): Promise<ChatwootContact> {
+    const formData = new FormData();
+
+    if (contact.name) {
+      formData.append('name', contact.name);
+    }
+
+    if (contact.avatarBuffer && contact.avatarFilename) {
+      formData.append('avatar', contact.avatarBuffer, {
+        filename: contact.avatarFilename,
+        contentType: 'image/png',
+      });
+    }
+
+    const { data } = await this.client.put<ChatwootContact>(
+      `/contacts/${contactId}`,
+      formData,
+      {
+        headers: formData.getHeaders(),
+      },
+    );
+    return data;
+  }
+
   async getContactConversations(
     contactId: number,
   ): Promise<ConversationsListResponse> {

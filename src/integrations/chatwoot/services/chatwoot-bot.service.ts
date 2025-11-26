@@ -1,5 +1,6 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { Readable } from 'stream';
+import axios from 'axios';
 import { ChatwootConfigService } from './chatwoot-config.service';
 import { ChatwootContactService } from './chatwoot-contact.service';
 import { ChatwootConversationService } from './chatwoot-conversation.service';
@@ -7,8 +8,7 @@ import { WhatsAppService } from '../../../core/whatsapp/whatsapp.service';
 
 const BOT_PHONE_NUMBER = '123456';
 const BOT_DEFAULT_NAME = 'Zpwoot Bot';
-const BOT_DEFAULT_LOGO =
-  'https://raw.githubusercontent.com/EvolutionAPI/evolution-api/main/public/images/evolution-api-favicon.png';
+const BOT_DEFAULT_LOGO = 'https://evolution-api.com/files/evolution-api.png';
 
 /**
  * Service for managing Chatwoot bot contact
@@ -32,11 +32,16 @@ export class ChatwootBotService {
    */
   async getOrCreateBotContact(
     sessionId: string,
-    organization?: string,
-    logo?: string,
   ): Promise<{ contactId: number; conversationId: number } | null> {
+    const config = await this.configService.getConfig(sessionId);
+    if (!config) return null;
+
     const inbox = await this.configService.getInbox(sessionId);
     if (!inbox) return null;
+
+    // Get organization and logo from config
+    const organization = config.organization || BOT_DEFAULT_NAME;
+    const logo = config.logo || BOT_DEFAULT_LOGO;
 
     // Find or create bot contact
     let contact = await this.contactService.findContact(
@@ -45,14 +50,85 @@ export class ChatwootBotService {
     );
 
     if (!contact) {
+      // Create contact first (without avatar due to Chatwoot API bug with avatar_url)
       contact = await this.contactService.createContact(sessionId, {
         phoneNumber: BOT_PHONE_NUMBER,
         inboxId: inbox.id,
         isGroup: false,
-        name: organization || BOT_DEFAULT_NAME,
-        avatarUrl: logo || BOT_DEFAULT_LOGO,
+        name: organization,
         identifier: BOT_PHONE_NUMBER,
       });
+      this.logger.log(`Bot contact created with name: ${organization}`, {
+        event: 'chatwoot.bot.contact.created',
+        sessionId,
+      });
+
+      // Upload avatar as file (workaround for avatar_url bug)
+      if (logo && contact) {
+        try {
+          const client = await this.configService.getClient(sessionId);
+          if (client) {
+            const response = await axios.get(logo, {
+              responseType: 'arraybuffer',
+              timeout: 10000,
+            });
+            const avatarBuffer = Buffer.from(response.data);
+            await client.updateContactWithAvatar(contact.id, {
+              avatarBuffer,
+              avatarFilename: 'avatar.png',
+            });
+            this.logger.log(`Bot contact avatar uploaded successfully`, {
+              event: 'chatwoot.bot.avatar.uploaded',
+              sessionId,
+            });
+          }
+        } catch (error) {
+          this.logger.warn(
+            `Failed to upload bot avatar: ${(error as Error).message}`,
+          );
+        }
+      }
+    } else {
+      // Update existing contact with current config (name and avatar)
+      const needsUpdate = contact.name !== organization || !contact.thumbnail;
+      if (needsUpdate) {
+        try {
+          // Download logo and upload as file (workaround for avatar_url bug)
+          const client = await this.configService.getClient(sessionId);
+          if (client && logo) {
+            const response = await axios.get(logo, {
+              responseType: 'arraybuffer',
+              timeout: 10000,
+            });
+            const avatarBuffer = Buffer.from(response.data);
+            await client.updateContactWithAvatar(contact.id, {
+              name: organization,
+              avatarBuffer,
+              avatarFilename: 'avatar.png',
+            });
+            this.logger.log(
+              `Bot contact updated with avatar: ${organization}`,
+              {
+                event: 'chatwoot.bot.contact.updated',
+                sessionId,
+              },
+            );
+          } else {
+            // Fallback to regular update without avatar
+            await this.contactService.updateContact(sessionId, contact.id, {
+              name: organization,
+            });
+          }
+        } catch (error) {
+          this.logger.warn(
+            `Failed to update bot avatar: ${(error as Error).message}`,
+          );
+          // Try updating just the name
+          await this.contactService.updateContact(sessionId, contact.id, {
+            name: organization,
+          });
+        }
+      }
     }
 
     if (!contact) return null;
