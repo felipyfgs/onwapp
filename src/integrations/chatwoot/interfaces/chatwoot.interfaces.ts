@@ -110,6 +110,7 @@ export interface ChatwootWebhookConversation {
 export interface ChatwootWebhookSender {
   id: number;
   name?: string;
+  available_name?: string;
   type?: string;
 }
 

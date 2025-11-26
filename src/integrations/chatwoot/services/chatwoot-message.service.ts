@@ -258,6 +258,10 @@ export class ChatwootMessageService {
   getMessageContent(message: WAMessageContent | null): string | null {
     if (!message) return null;
 
+    // Check for ads/link preview in extended text message
+    const adsContent = this.formatAdsMessage(message);
+    if (adsContent) return adsContent;
+
     if (message.conversation) return message.conversation;
     if (message.extendedTextMessage) return message.extendedTextMessage.text;
     if (message.imageMessage) return message.imageMessage.caption || '[Image]';
@@ -266,9 +270,10 @@ export class ChatwootMessageService {
     if (message.documentMessage)
       return message.documentMessage.fileName || '[Document]';
     if (message.stickerMessage) return '[Sticker]';
-    if (message.contactMessage) return '[Contact]';
-    if (message.locationMessage) return '[Location]';
-    if (message.liveLocationMessage) return '[Live Location]';
+    if (message.contactMessage) return this.formatContactMessage(message.contactMessage);
+    if (message.contactsArrayMessage) return this.formatContactsArrayMessage(message.contactsArrayMessage);
+    if (message.locationMessage) return this.formatLocationMessage(message.locationMessage);
+    if (message.liveLocationMessage) return this.formatLocationMessage(message.liveLocationMessage, true);
     if (message.listMessage) {
       return this.formatListMessage(message.listMessage);
     }
@@ -416,6 +421,148 @@ export class ChatwootMessageService {
         }
       }
     }
+
+    return lines.join('\n').trim();
+  }
+
+  /**
+   * Format location message with coordinates and Google Maps link
+   */
+  private formatLocationMessage(
+    location: Record<string, unknown>,
+    isLive = false,
+  ): string {
+    const latitude = location.degreesLatitude as number;
+    const longitude = location.degreesLongitude as number;
+    const locationName = location.name as string | undefined;
+    const locationAddress = location.address as string | undefined;
+
+    const lines: string[] = [
+      isLive ? '📍 *Localização ao Vivo:*' : '📍 *Localização:*',
+      '',
+    ];
+
+    if (locationName) lines.push(`_Nome:_ ${locationName}`);
+    if (locationAddress) lines.push(`_Endereço:_ ${locationAddress}`);
+    lines.push(`_Latitude:_ ${latitude}`);
+    lines.push(`_Longitude:_ ${longitude}`);
+    lines.push('');
+    lines.push(
+      `🗺️ https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`,
+    );
+
+    return lines.join('\n').trim();
+  }
+
+  /**
+   * Format contact message by parsing vCard
+   */
+  private formatContactMessage(contact: Record<string, unknown>): string {
+    const vcard = contact.vcard as string | undefined;
+    const displayName = contact.displayName as string | undefined;
+
+    if (!vcard) {
+      return displayName ? `👤 *Contato:* ${displayName}` : '👤 [Contato]';
+    }
+
+    const lines: string[] = ['👤 *Contato Compartilhado:*', ''];
+
+    // Parse vCard
+    const vcardLines = vcard.split('\n');
+    let name = displayName || '';
+    const phones: string[] = [];
+    let email = '';
+    let org = '';
+
+    for (const line of vcardLines) {
+      const trimmedLine = line.trim();
+      if (trimmedLine.startsWith('FN:')) {
+        name = trimmedLine.substring(3);
+      } else if (trimmedLine.startsWith('TEL')) {
+        // Handle TEL;type=CELL:+123456 or TEL:+123456
+        const match = trimmedLine.match(/TEL[^:]*:(.+)/);
+        if (match) phones.push(match[1].trim());
+      } else if (trimmedLine.startsWith('EMAIL')) {
+        const match = trimmedLine.match(/EMAIL[^:]*:(.+)/);
+        if (match) email = match[1].trim();
+      } else if (trimmedLine.startsWith('ORG:')) {
+        org = trimmedLine.substring(4);
+      }
+    }
+
+    if (name) lines.push(`*Nome:* ${name}`);
+    if (org) lines.push(`*Empresa:* ${org}`);
+    for (const phone of phones) {
+      lines.push(`*Telefone:* ${phone}`);
+    }
+    if (email) lines.push(`*Email:* ${email}`);
+
+    return lines.join('\n').trim();
+  }
+
+  /**
+   * Format contacts array message
+   */
+  private formatContactsArrayMessage(
+    contactsArray: Record<string, unknown>,
+  ): string {
+    const contacts = contactsArray.contacts as Array<{
+      displayName?: string;
+      vcard?: string;
+    }>;
+
+    if (!contacts || contacts.length === 0) {
+      return '👥 [Contatos]';
+    }
+
+    const lines: string[] = [`👥 *${contacts.length} Contatos Compartilhados:*`, ''];
+
+    for (const contact of contacts) {
+      const name = contact.displayName || 'Sem nome';
+      lines.push(`• ${name}`);
+
+      // Try to extract phone from vcard
+      if (contact.vcard) {
+        const phoneMatch = contact.vcard.match(/TEL[^:]*:(.+)/);
+        if (phoneMatch) {
+          lines.push(`  📞 ${phoneMatch[1].trim()}`);
+        }
+      }
+    }
+
+    return lines.join('\n').trim();
+  }
+
+  /**
+   * Format ads/link preview message
+   */
+  private formatAdsMessage(message: WAMessageContent): string | null {
+    // Check for external ad reply in extended text message or context info
+    const extMsg = message.extendedTextMessage;
+    const contextInfo = extMsg?.contextInfo as Record<string, unknown> | undefined;
+    const externalAdReply = contextInfo?.externalAdReply as Record<string, unknown> | undefined;
+
+    if (!externalAdReply) return null;
+
+    const title = externalAdReply.title as string | undefined;
+    const body = externalAdReply.body as string | undefined;
+    const sourceUrl = externalAdReply.sourceUrl as string | undefined;
+    const text = extMsg?.text || '';
+
+    // Only format if we have ad content
+    if (!title && !body && !sourceUrl) return null;
+
+    const lines: string[] = [];
+
+    // Add the main text first
+    if (text) lines.push(text);
+
+    // Add separator and link preview
+    lines.push('');
+    lines.push('🔗 *Link Preview:*');
+    if (title) lines.push(`*${title}*`);
+    if (body) lines.push(body);
+    if (sourceUrl) lines.push(sourceUrl);
 
     return lines.join('\n').trim();
   }

@@ -9,6 +9,7 @@ import {
   ChatwootContactService,
   ChatwootConversationService,
   ChatwootMessageService,
+  ChatwootBotService,
 } from './services';
 import { ChatwootWebhookHandler } from './handlers';
 import { MessagesModule } from '../../api/messages/messages.module';
@@ -47,6 +48,7 @@ import { PersistenceModule } from '../../core/persistence/persistence.module';
     ChatwootContactService,
     ChatwootConversationService,
     ChatwootMessageService,
+    ChatwootBotService,
 
     // Event handlers
     ChatwootEventHandler,
@@ -63,6 +65,7 @@ import { PersistenceModule } from '../../core/persistence/persistence.module';
     ChatwootContactService,
     ChatwootConversationService,
     ChatwootMessageService,
+    ChatwootBotService,
   ],
 })
 export class ChatwootModule {}

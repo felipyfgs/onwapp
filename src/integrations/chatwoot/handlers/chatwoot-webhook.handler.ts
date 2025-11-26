@@ -4,6 +4,8 @@ import { MessagesService } from '../../../api/messages/messages.service';
 import { WhatsAppService } from '../../../core/whatsapp/whatsapp.service';
 import { PersistenceService } from '../../../core/persistence/persistence.service';
 import { ChatwootConfigService } from '../services/chatwoot-config.service';
+import { ChatwootMessageService } from '../services/chatwoot-message.service';
+import { ChatwootBotService } from '../services/chatwoot-bot.service';
 import {
   ChatwootWebhookPayload,
   ChatwootWebhookAttachment,
@@ -12,6 +14,8 @@ import {
 } from '../interfaces';
 import { CHATWOOT_EVENTS, CHATWOOT_SENDER_TYPES } from '../constants';
 import { formatRemoteJid, getMimeType } from '../../../common/utils';
+
+const BOT_PHONE_NUMBER = '123456';
 
 /**
  * Handler for incoming webhooks from Chatwoot
@@ -25,6 +29,8 @@ export class ChatwootWebhookHandler {
 
   constructor(
     private readonly configService: ChatwootConfigService,
+    private readonly messageService: ChatwootMessageService,
+    private readonly botService: ChatwootBotService,
     @Inject(forwardRef(() => MessagesService))
     private readonly messagesService: MessagesService,
     @Inject(forwardRef(() => WhatsAppService))
@@ -63,6 +69,11 @@ export class ChatwootWebhookHandler {
 
     // Extract chat ID from webhook payload
     const chatId = this.extractChatId(payload);
+
+    // Check if this is a bot command (message to bot contact 123456)
+    if (chatId === BOT_PHONE_NUMBER && payload.message_type === 'outgoing' && payload.content) {
+      return this.handleBotCommand(sessionId, payload.content);
+    }
     if (!chatId) {
       this.logger.warn('Chat ID não encontrado no payload', {
         event: 'chatwoot.webhook.chatid.missing',
@@ -75,18 +86,45 @@ export class ChatwootWebhookHandler {
     let remoteJid = formatRemoteJid(chatId);
     remoteJid = await this.validateAndResolveJid(sessionId, remoteJid, chatId);
 
+    // Get Chatwoot config for signMsg
+    const config = await this.configService.findConfig(sessionId);
+
+    // Get sender name for signMsg (from agent)
+    const senderName =
+      payload.sender?.available_name || payload.sender?.name || null;
+
+    // Format message content with signature if enabled
+    const formattedContent = this.formatContentWithSignature(
+      payload.content,
+      config?.signMsg ?? false,
+      config?.signDelimiter ?? '\n',
+      senderName,
+    );
+
     try {
       // Get quoted message for reply support
       const quoted = await this.getQuotedMessage(sessionId, payload);
 
       // Handle attachments first
       if (payload.attachments && payload.attachments.length > 0) {
-        return this.handleAttachments(sessionId, remoteJid, payload, quoted);
+        return this.handleAttachments(
+          sessionId,
+          remoteJid,
+          payload,
+          quoted,
+          formattedContent,
+        );
       }
 
       // Send text message
       if (payload.content) {
-        await this.sendTextMessage(sessionId, remoteJid, payload, quoted);
+        await this.sendTextMessage(
+          sessionId,
+          remoteJid,
+          payload,
+          quoted,
+          formattedContent,
+        );
         this.logger.log('Mensagem enviada para WhatsApp', {
           event: 'chatwoot.webhook.message.sent',
           sessionId,
@@ -154,6 +192,25 @@ export class ChatwootWebhookHandler {
   }
 
   /**
+   * Format message content with sender signature
+   * Following Evolution API pattern: *senderName:* + delimiter + content
+   */
+  private formatContentWithSignature(
+    content: string | undefined,
+    signMsg: boolean,
+    signDelimiter: string,
+    senderName: string | null,
+  ): string | null {
+    if (!content) return null;
+    if (!signMsg || !senderName) return content;
+
+    // Replace escaped newlines with actual newlines (like Evolution API)
+    const formattedDelimiter = signDelimiter.replaceAll('\\n', '\n');
+
+    return `*${senderName}:*${formattedDelimiter}${content}`;
+  }
+
+  /**
    * Validate and resolve JID using WhatsApp
    */
   private async validateAndResolveJid(
@@ -201,6 +258,7 @@ export class ChatwootWebhookHandler {
     remoteJid: string,
     payload: ChatwootWebhookPayload,
     quoted?: QuotedMessage,
+    formattedContent?: string | null,
   ): Promise<WebhookProcessingResult> {
     const attachments = payload.attachments!;
     const conversationId = payload.conversation?.id;
@@ -223,7 +281,7 @@ export class ChatwootWebhookHandler {
         sessionId,
         remoteJid,
         attachment,
-        isFirst ? payload.content : undefined, // Caption only on first
+        isFirst ? (formattedContent ?? payload.content) : undefined, // Caption only on first
         isFirst ? quoted : undefined, // Quote only on first
       );
 
@@ -261,10 +319,11 @@ export class ChatwootWebhookHandler {
     remoteJid: string,
     payload: ChatwootWebhookPayload,
     quoted?: QuotedMessage,
+    formattedContent?: string | null,
   ): Promise<void> {
     const result = await this.messagesService.sendTextMessage(sessionId, {
       to: remoteJid,
-      text: payload.content!,
+      text: formattedContent ?? payload.content!,
       quoted,
     });
 

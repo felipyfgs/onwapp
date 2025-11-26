@@ -570,6 +570,9 @@ export class MessagesHandler {
       // Skip status broadcasts
       if (remoteJid === 'status@broadcast') return;
 
+      // Skip reaction messages - they are handled by forwardReactionToChatwoot
+      if (message?.reactionMessage) return;
+
       // For outgoing messages (fromMe=true), check if it was sent via Chatwoot
       // If it was, skip to avoid duplicates. If not, forward to Chatwoot as agent message.
       if (fromMe) {
@@ -604,6 +607,13 @@ export class MessagesHandler {
         sessionId,
         remoteJid,
       );
+
+      // Try to get profile picture for non-group chats
+      let profilePictureUrl: string | undefined;
+      if (!isGroup && !fromMe) {
+        profilePictureUrl = await this.getProfilePictureUrl(sessionId, remoteJid);
+      }
+
       if (!contact) {
         contact = await this.chatwootService.createContact(sessionId, {
           phoneNumber,
@@ -611,8 +621,18 @@ export class MessagesHandler {
           isGroup,
           name: pushName || phoneNumber,
           identifier: remoteJid,
+          avatarUrl: profilePictureUrl,
         });
         if (!contact) return;
+      } else if (!fromMe && profilePictureUrl) {
+        // Update contact with profile picture if changed
+        await this.updateContactProfilePicture(
+          sessionId,
+          contact,
+          pushName,
+          phoneNumber,
+          profilePictureUrl,
+        );
       }
 
       // Get or create conversation
@@ -820,7 +840,7 @@ export class MessagesHandler {
       key: { id: string; remoteJid: string; fromMe?: boolean };
       reaction: { text?: string; key?: { id: string; participant?: string } };
     }>,
-    _sid: string,
+    sid: string,
   ): Promise<void> {
     this.logger.log('Reações de mensagens', {
       event: 'whatsapp.messages.reaction',
@@ -841,6 +861,9 @@ export class MessagesHandler {
           reactionText,
         );
 
+        // Forward reaction to Chatwoot
+        await this.forwardReactionToChatwoot(sessionId, key, reaction, sid);
+
         this.logger.debug(
           `[${sessionId}] Reação ${reactionText || '(removida)'} na mensagem ${key.id}`,
         );
@@ -848,6 +871,60 @@ export class MessagesHandler {
     } catch (error) {
       this.logger.error(
         `[${sessionId}] Erro ao processar messages.reaction: ${error instanceof Error ? error.message : 'Erro'}`,
+      );
+    }
+  }
+
+  /**
+   * Forward reaction to Chatwoot
+   * Creates a message with the reaction emoji citing the original message
+   */
+  private async forwardReactionToChatwoot(
+    sessionId: string,
+    key: { id: string; remoteJid: string; fromMe?: boolean },
+    reaction: { text?: string; key?: { id: string; participant?: string } },
+    _sid: string,
+  ): Promise<void> {
+    try {
+      const config = await this.chatwootService.getConfig(sessionId);
+      if (!config?.enabled) return;
+
+      const reactionText = reaction.text;
+      // Only forward reactions with emoji (ignore reaction removal)
+      if (!reactionText) return;
+
+      // Find the original message in our database
+      const originalMessage = await this.persistenceService.findMessageByWAId(
+        sessionId,
+        key.id,
+      );
+
+      if (!originalMessage?.cwConversationId) {
+        this.logger.debug(
+          `[${sessionId}] Mensagem original não encontrada para reação: ${key.id}`,
+        );
+        return;
+      }
+
+      // Create reaction message in Chatwoot citing the original message
+      await this.chatwootService.createMessage(
+        sessionId,
+        originalMessage.cwConversationId,
+        {
+          content: reactionText,
+          messageType: 'incoming',
+          sourceId: `reaction-${key.id}-${Date.now()}`,
+          inReplyTo: originalMessage.cwMessageId || undefined,
+          inReplyToExternalId: key.id,
+        },
+      );
+
+      this.logger.debug(
+        `[${sessionId}] Reação ${reactionText} encaminhada para Chatwoot`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `[${sessionId}] Erro ao encaminhar reação para Chatwoot: ${error instanceof Error ? error.message : 'Erro'}`,
       );
     }
   }
@@ -886,6 +963,69 @@ export class MessagesHandler {
       this.logger.error(
         `[${sessionId}] Erro ao processar messages.media-update: ${error instanceof Error ? error.message : 'Erro'}`,
       );
+    }
+  }
+
+  /**
+   * Get profile picture URL for a contact
+   */
+  private async getProfilePictureUrl(
+    sessionId: string,
+    jid: string,
+  ): Promise<string | undefined> {
+    try {
+      const socket = this.whatsappService.getSocket(sessionId);
+      if (!socket) return undefined;
+
+      const url = await socket.profilePictureUrl(jid, 'preview');
+      return url || undefined;
+    } catch {
+      // Profile picture not available or error - return undefined silently
+      return undefined;
+    }
+  }
+
+  /**
+   * Update contact profile picture in Chatwoot if changed
+   */
+  private async updateContactProfilePicture(
+    sessionId: string,
+    contact: { id: number; name?: string; thumbnail?: string },
+    pushName: string | undefined,
+    phoneNumber: string,
+    profilePictureUrl: string,
+  ): Promise<void> {
+    try {
+      // Extract filename from URLs to compare (ignore query params)
+      const waProfileFile = profilePictureUrl.split('?')[0].split('/').pop() || '';
+      const cwProfileFile = contact.thumbnail?.split('?')[0].split('/').pop() || '';
+
+      const pictureNeedsUpdate = waProfileFile !== cwProfileFile && waProfileFile !== '';
+      const nameNeedsUpdate =
+        !contact.name ||
+        contact.name === phoneNumber ||
+        contact.name === `+${phoneNumber}`;
+
+      if (pictureNeedsUpdate || (nameNeedsUpdate && pushName)) {
+        await this.chatwootService.updateContact(sessionId, contact.id, {
+          ...(nameNeedsUpdate && pushName ? { name: pushName } : {}),
+          ...(pictureNeedsUpdate ? { avatar_url: profilePictureUrl } : {}),
+        });
+
+        this.logger.debug('Contato atualizado no Chatwoot', {
+          event: 'chatwoot.contact.update.success',
+          sessionId,
+          contactId: contact.id,
+          pictureUpdated: pictureNeedsUpdate,
+          nameUpdated: nameNeedsUpdate && !!pushName,
+        });
+      }
+    } catch (error) {
+      this.logger.warn('Falha ao atualizar foto do contato', {
+        event: 'chatwoot.contact.picture.failure',
+        sessionId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
   }
 }
