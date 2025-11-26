@@ -177,8 +177,11 @@ export class MessagesHandler {
           });
         }
 
-        // Forward to Chatwoot if enabled (independent of webhook)
-        await this.forwardToChatwoot(sessionId, msg, sid);
+        // Forward to Chatwoot if enabled (only for real-time messages, not history)
+        // type === 'notify' means real-time message, 'append' means history sync
+        if (payload.type === 'notify') {
+          await this.forwardToChatwoot(sessionId, msg, sid);
+        }
       }
     } catch (error) {
       this.logger.error('Erro ao processar messages.upsert', {

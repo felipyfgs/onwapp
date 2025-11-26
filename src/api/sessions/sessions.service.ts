@@ -85,7 +85,7 @@ export class SessionsService {
           accountId: chatwoot.accountId,
           token: chatwoot.token,
           url: chatwoot.url,
-          inbox: chatwoot.inbox,
+          inbox: chatwoot.inbox || name, // Use session name as default inbox name
           signMsg: chatwoot.signMsg,
           signDelimiter: chatwoot.signDelimiter,
           reopen: chatwoot.reopen,
