@@ -12,6 +12,10 @@ import { UpdateGroupDescriptionDto } from './dto/update-group-description.dto';
 import { UpdateGroupPictureDto } from './dto/update-group-picture.dto';
 import { UpdateGroupSettingsDto } from './dto/update-group-settings.dto';
 import { AcceptInviteDto } from './dto/accept-invite.dto';
+import {
+  ExtendedWASocket,
+  hasMethod,
+} from '../../common/utils/extended-socket.type';
 
 @Injectable()
 export class GroupsService {
@@ -572,6 +576,142 @@ export class GroupsService {
       );
       throw new BadRequestException(
         `Erro ao alterar mensagens temporárias: ${error.message}`,
+      );
+    }
+  }
+
+  async getJoinRequests(sessionId: string, groupId: string) {
+    const socket = this.validateSocket(sessionId) as ExtendedWASocket;
+    const normalizedGroupId = this.normalizeGroupId(groupId);
+
+    if (!hasMethod(socket, 'groupRequestParticipantsList')) {
+      throw new BadRequestException(
+        'groupRequestParticipantsList not available in current whaileys version',
+      );
+    }
+
+    try {
+      this.logger.log(
+        `[${sessionId}] Obtendo solicitações de entrada do grupo: ${normalizedGroupId}`,
+      );
+
+      const requests =
+        await socket.groupRequestParticipantsList(normalizedGroupId);
+
+      return { requests };
+    } catch (error) {
+      this.logger.error(
+        `[${sessionId}] Erro ao obter solicitações: ${error instanceof Error ? error.message : 'Erro'}`,
+      );
+      throw new BadRequestException(
+        `Erro ao obter solicitações: ${error instanceof Error ? error.message : 'Erro'}`,
+      );
+    }
+  }
+
+  async handleJoinRequest(
+    sessionId: string,
+    groupId: string,
+    participants: string[],
+    action: 'approve' | 'reject',
+  ) {
+    const socket = this.validateSocket(sessionId) as ExtendedWASocket;
+    const normalizedGroupId = this.normalizeGroupId(groupId);
+
+    if (!hasMethod(socket, 'groupRequestParticipantsUpdate')) {
+      throw new BadRequestException(
+        'groupRequestParticipantsUpdate not available in current whaileys version',
+      );
+    }
+
+    try {
+      this.logger.log(
+        `[${sessionId}] ${action === 'approve' ? 'Aprovando' : 'Rejeitando'} solicitações do grupo: ${normalizedGroupId}`,
+      );
+
+      const result = await socket.groupRequestParticipantsUpdate(
+        normalizedGroupId,
+        participants,
+        action,
+      );
+
+      return result;
+    } catch (error) {
+      this.logger.error(
+        `[${sessionId}] Erro ao processar solicitações: ${error instanceof Error ? error.message : 'Erro'}`,
+      );
+      throw new BadRequestException(
+        `Erro ao processar solicitações: ${error instanceof Error ? error.message : 'Erro'}`,
+      );
+    }
+  }
+
+  async setMemberAddMode(
+    sessionId: string,
+    groupId: string,
+    mode: 'all_member_add' | 'admin_add',
+  ) {
+    const socket = this.validateSocket(sessionId) as ExtendedWASocket;
+    const normalizedGroupId = this.normalizeGroupId(groupId);
+
+    if (!hasMethod(socket, 'groupMemberAddMode')) {
+      throw new BadRequestException(
+        'groupMemberAddMode not available in current whaileys version',
+      );
+    }
+
+    try {
+      this.logger.log(
+        `[${sessionId}] Alterando modo de adição de membros do grupo: ${normalizedGroupId}`,
+      );
+
+      await socket.groupMemberAddMode(normalizedGroupId, mode);
+
+      return {
+        success: true,
+        message: `Modo de adição alterado para: ${mode}`,
+      };
+    } catch (error) {
+      this.logger.error(
+        `[${sessionId}] Erro ao alterar modo de adição: ${error instanceof Error ? error.message : 'Erro'}`,
+      );
+      throw new BadRequestException(
+        `Erro ao alterar modo de adição: ${error instanceof Error ? error.message : 'Erro'}`,
+      );
+    }
+  }
+
+  async setJoinApprovalMode(
+    sessionId: string,
+    groupId: string,
+    mode: 'on' | 'off',
+  ) {
+    const socket = this.validateSocket(sessionId) as ExtendedWASocket;
+    const normalizedGroupId = this.normalizeGroupId(groupId);
+
+    if (!hasMethod(socket, 'groupJoinApprovalMode')) {
+      throw new BadRequestException(
+        'groupJoinApprovalMode not available in current whaileys version',
+      );
+    }
+
+    try {
+      this.logger.log(
+        `[${sessionId}] Alterando modo de aprovação de entrada do grupo: ${normalizedGroupId}`,
+      );
+
+      await socket.groupJoinApprovalMode(normalizedGroupId, mode);
+
+      return {
+        success: true,
+        message: `Modo de aprovação alterado para: ${mode}`,
+      };
+    } catch (error) {
+      this.logger.error(
+        `[${sessionId}] Erro ao alterar modo de aprovação: ${error instanceof Error ? error.message : 'Erro'}`,
+      );
+      throw new BadRequestException(
+        `Erro ao alterar modo de aprovação: ${error instanceof Error ? error.message : 'Erro'}`,
       );
     }
   }

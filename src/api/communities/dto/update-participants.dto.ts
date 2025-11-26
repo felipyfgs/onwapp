@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsString, ArrayMinSize, IsIn } from 'class-validator';
 
-export class HandleJoinRequestDto {
+export class UpdateCommunityParticipantsDto {
   @ApiProperty({ description: 'JIDs dos participantes' })
   @IsArray()
   @IsString({ each: true })
@@ -10,9 +10,9 @@ export class HandleJoinRequestDto {
 
   @ApiProperty({
     description: 'Ação a realizar',
-    enum: ['approve', 'reject'],
+    enum: ['add', 'remove', 'promote', 'demote'],
   })
   @IsString()
-  @IsIn(['approve', 'reject'])
-  action: 'approve' | 'reject';
+  @IsIn(['add', 'remove', 'promote', 'demote'])
+  action: 'add' | 'remove' | 'promote' | 'demote';
 }
