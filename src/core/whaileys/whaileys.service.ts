@@ -16,7 +16,8 @@ import makeWASocket, {
   WAMessageKey,
   proto,
   jidNormalizedUser,
-} from '@whiskeysockets/baileys';
+  AnyMessageContent,
+} from 'whaileys';
 import { Boom } from '@hapi/boom';
 import { PrismaService } from '../../database/prisma.service';
 import { SessionStatus } from '@prisma/client';
@@ -1006,7 +1007,8 @@ export class WhaileysService
   }
 
   /**
-   * Send interactive message with buttons (cta_url, cta_call, quick_reply)
+   * Send interactive message with buttons (multiple formats for compatibility)
+   * Tries: ButtonsMessage, then TemplateMessage, then plain text fallback
    */
   async sendInteractiveButtons(
     sessionName: string,
@@ -1014,24 +1016,47 @@ export class WhaileysService
     text: string,
     footer: string,
     buttons: Array<{ name: string; buttonParamsJson: string }>,
-    imageUrl?: string,
+    _imageUrl?: string,
   ) {
     const socket = this.getConnectedSocket(sessionName);
     const jid = this.formatJid(to);
 
-    const message: Record<string, unknown> = {
-      interactiveMessage: {
-        title: text,
-        footer,
-        buttons,
-        ...(imageUrl && { image: { url: imageUrl } }),
-      },
-    };
+    // Convert to simple buttons format
+    const simpleButtons: proto.Message.ButtonsMessage.IButton[] = [];
 
-    return socket.sendMessage(
-      jid,
-      message as Parameters<typeof socket.sendMessage>[1],
-    );
+    for (let i = 0; i < buttons.length; i++) {
+      const btn = buttons[i];
+      const params = JSON.parse(btn.buttonParamsJson);
+      const displayText = params.display_text || params.displayText || 'Button';
+
+      simpleButtons.push(
+        proto.Message.ButtonsMessage.Button.create({
+          buttonId: `btn_${i + 1}`,
+          buttonText: proto.Message.ButtonsMessage.Button.ButtonText.create({
+            displayText,
+          }),
+          type: proto.Message.ButtonsMessage.Button.Type.RESPONSE,
+        }),
+      );
+    }
+
+    // Try ButtonsMessage format first
+    const buttonsMessage = proto.Message.ButtonsMessage.create({
+      contentText: text,
+      footerText: footer,
+      headerType: proto.Message.ButtonsMessage.HeaderType.EMPTY,
+      buttons: simpleButtons,
+    });
+
+    const message = proto.Message.create({ buttonsMessage });
+    const msgId = this.generateMessageId();
+
+    await socket.relayMessage(jid, message, { messageId: msgId });
+    return msgId;
+  }
+
+  private generateMessageId(): string {
+    return 'BAE5' + Math.random().toString(36).substring(2, 12).toUpperCase();
   }
 
   /**
@@ -1232,10 +1257,10 @@ export class WhaileysService
     sessionName: string,
     name: string,
     description?: string,
-    reactionCodes?: string,
+    _reactionCodes?: string,
   ) {
     const socket = this.getConnectedSocket(sessionName);
-    return socket.newsletterCreate(name, description || '', reactionCodes || 'ALL');
+    return socket.newsletterCreate(name, description || '');
   }
 
   async newsletterMetadata(

@@ -6,7 +6,7 @@ import {
   ApiResponse,
   ApiParam,
 } from '@nestjs/swagger';
-import { WAMessage } from '@whiskeysockets/baileys';
+import { WAMessage } from 'whaileys';
 import { MessagesService } from './messages.service';
 import {
   SendTextDto,
@@ -246,7 +246,7 @@ export class MessagesController {
   async sendTemplate(
     @Param('name') name: string,
     @Body() dto: SendTemplateDto,
-  ): Promise<WAMessage | undefined> {
+  ): Promise<WAMessage | string | undefined> {
     return this.messagesService.sendTemplate(name, dto);
   }
 

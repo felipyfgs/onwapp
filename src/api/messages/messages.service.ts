@@ -3,7 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { AnyMessageContent } from '@whiskeysockets/baileys';
+import { AnyMessageContent } from 'whaileys';
 import { WhaileysService } from '../../core/whaileys/whaileys.service';
 import { SessionStatus } from '@prisma/client';
 import {
