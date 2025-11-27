@@ -726,3 +726,246 @@ func (w *WhatsAppService) SendGroupMessage(ctx context.Context, sessionName, gro
 
 	return client.SendMessage(ctx, jid, msg)
 }
+
+// CONTACT METHODS
+
+// GetContacts obtém todos os contatos
+func (w *WhatsAppService) GetContacts(ctx context.Context, sessionName string) (map[string]interface{}, error) {
+	session, err := w.sessionService.Get(sessionName)
+	if err != nil {
+		return nil, err
+	}
+
+	contacts, err := session.Client.Store.Contacts.GetAllContacts(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get contacts: %w", err)
+	}
+
+	result := make(map[string]interface{})
+	for jid, contact := range contacts {
+		result[jid.String()] = map[string]interface{}{
+			"pushName":     contact.PushName,
+			"businessName": contact.BusinessName,
+			"fullName":     contact.FullName,
+			"firstName":    contact.FirstName,
+		}
+	}
+
+	return result, nil
+}
+
+// SendChatPresenceRaw envia presença de chat com strings
+func (w *WhatsAppService) SendChatPresenceRaw(ctx context.Context, sessionName, phone, state, media string) error {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return err
+	}
+
+	jid, err := parseJID(phone)
+	if err != nil {
+		return fmt.Errorf("invalid phone number: %w", err)
+	}
+
+	var chatPresence types.ChatPresence
+	switch state {
+	case "composing":
+		chatPresence = types.ChatPresenceComposing
+	case "paused":
+		chatPresence = types.ChatPresencePaused
+	default:
+		chatPresence = types.ChatPresencePaused
+	}
+
+	var chatMedia types.ChatPresenceMedia
+	switch media {
+	case "audio":
+		chatMedia = types.ChatPresenceMediaAudio
+	default:
+		chatMedia = types.ChatPresenceMediaText
+	}
+
+	return client.SendChatPresence(ctx, jid, chatPresence, chatMedia)
+}
+
+// CHAT METHODS
+
+// ArchiveChat arquiva ou desarquiva um chat
+func (w *WhatsAppService) ArchiveChat(ctx context.Context, sessionName, phone string, archive bool) error {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return err
+	}
+
+	jid, err := parseJID(phone)
+	if err != nil {
+		return fmt.Errorf("invalid phone number: %w", err)
+	}
+
+	return client.SendAppState(ctx, appstate.BuildArchive(jid, archive, time.Time{}, nil))
+}
+
+// DeleteMessage deleta uma mensagem
+func (w *WhatsAppService) DeleteMessage(ctx context.Context, sessionName, phone, messageID string, forMe bool) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return whatsmeow.SendResponse{}, err
+	}
+
+	jid, err := parseJID(phone)
+	if err != nil {
+		return whatsmeow.SendResponse{}, fmt.Errorf("invalid phone number: %w", err)
+	}
+
+	if forMe {
+		return client.SendMessage(ctx, jid, client.BuildRevoke(jid, types.EmptyJID, messageID))
+	}
+
+	return client.SendMessage(ctx, jid, client.BuildRevoke(jid, jid, messageID))
+}
+
+// EditMessage edita uma mensagem
+func (w *WhatsAppService) EditMessage(ctx context.Context, sessionName, phone, messageID, newText string) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return whatsmeow.SendResponse{}, err
+	}
+
+	jid, err := parseJID(phone)
+	if err != nil {
+		return whatsmeow.SendResponse{}, fmt.Errorf("invalid phone number: %w", err)
+	}
+
+	return client.SendMessage(ctx, jid, client.BuildEdit(jid, messageID, &waE2E.Message{
+		Conversation: proto.String(newText),
+	}))
+}
+
+// PROFILE METHODS
+
+// GetOwnProfile obtém o perfil próprio
+func (w *WhatsAppService) GetOwnProfile(ctx context.Context, sessionName string) (map[string]interface{}, error) {
+	session, err := w.sessionService.Get(sessionName)
+	if err != nil {
+		return nil, err
+	}
+
+	client := session.Client
+	if client.Store.ID == nil {
+		return nil, fmt.Errorf("session not authenticated")
+	}
+
+	profile := map[string]interface{}{
+		"jid":      client.Store.ID.String(),
+		"pushName": client.Store.PushName,
+	}
+
+	return profile, nil
+}
+
+// SetStatusMessage define a mensagem de status
+func (w *WhatsAppService) SetStatusMessage(ctx context.Context, sessionName, status string) error {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return err
+	}
+
+	return client.SetStatusMessage(ctx, status)
+}
+
+// SetPushName define o nome de exibição
+func (w *WhatsAppService) SetPushName(ctx context.Context, sessionName, name string) error {
+	session, err := w.sessionService.Get(sessionName)
+	if err != nil {
+		return err
+	}
+
+	session.Client.Store.PushName = name
+	return nil
+}
+
+// SetProfilePicture define a foto de perfil
+func (w *WhatsAppService) SetProfilePicture(ctx context.Context, sessionName string, imageData []byte) (string, error) {
+	session, err := w.sessionService.Get(sessionName)
+	if err != nil {
+		return "", err
+	}
+
+	if session.Client.Store.ID == nil {
+		return "", fmt.Errorf("session not authenticated")
+	}
+
+	pictureID, err := session.Client.SetGroupPhoto(ctx, *session.Client.Store.ID, imageData)
+	if err != nil {
+		return "", fmt.Errorf("failed to set profile picture: %w", err)
+	}
+
+	return pictureID, nil
+}
+
+// DeleteProfilePicture remove a foto de perfil
+func (w *WhatsAppService) DeleteProfilePicture(ctx context.Context, sessionName string) error {
+	session, err := w.sessionService.Get(sessionName)
+	if err != nil {
+		return err
+	}
+
+	if session.Client.Store.ID == nil {
+		return fmt.Errorf("session not authenticated")
+	}
+
+	_, err = session.Client.SetGroupPhoto(ctx, *session.Client.Store.ID, nil)
+	return err
+}
+
+// GetPrivacySettings obtém configurações de privacidade
+func (w *WhatsAppService) GetPrivacySettings(ctx context.Context, sessionName string) (map[string]interface{}, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return nil, err
+	}
+
+	settings, err := client.GetPrivacySettings(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get privacy settings: %w", err)
+	}
+
+	return map[string]interface{}{
+		"groupAdd":       string(settings.GroupAdd),
+		"lastSeen":       string(settings.LastSeen),
+		"status":         string(settings.Status),
+		"profile":        string(settings.Profile),
+		"readReceipts":   string(settings.ReadReceipts),
+		"callAdd":        string(settings.CallAdd),
+		"online":         string(settings.Online),
+	}, nil
+}
+
+// SetPrivacySettings define configurações de privacidade
+func (w *WhatsAppService) SetPrivacySettings(ctx context.Context, sessionName string, settings map[string]string, readReceipts bool) error {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return err
+	}
+
+	privacySettings := types.PrivacySettings{}
+	
+	if v, ok := settings["lastSeen"]; ok {
+		privacySettings.LastSeen = types.PrivacySetting(v)
+	}
+	if v, ok := settings["profilePicture"]; ok {
+		privacySettings.Profile = types.PrivacySetting(v)
+	}
+	if v, ok := settings["status"]; ok {
+		privacySettings.Status = types.PrivacySetting(v)
+	}
+	if v, ok := settings["groupsAdd"]; ok {
+		privacySettings.GroupAdd = types.PrivacySetting(v)
+	}
+	if readReceipts {
+		privacySettings.ReadReceipts = types.PrivacySettingAll
+	} else {
+		privacySettings.ReadReceipts = types.PrivacySettingNone
+	}
+
+	return client.SetPrivacySettings(ctx, privacySettings)
+}
