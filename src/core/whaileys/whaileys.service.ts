@@ -1007,8 +1007,8 @@ export class WhaileysService
   }
 
   /**
-   * Send interactive message with buttons (multiple formats for compatibility)
-   * Tries: ButtonsMessage, then TemplateMessage, then plain text fallback
+   * Send interactive message with template buttons (URL, Call, Quick Reply)
+   * Uses whaileys format with templateButtons for HydratedFourRowTemplate
    */
   async sendInteractiveButtons(
     sessionName: string,
@@ -1021,42 +1021,99 @@ export class WhaileysService
     const socket = this.getConnectedSocket(sessionName);
     const jid = this.formatJid(to);
 
-    // Convert to simple buttons format
-    const simpleButtons: proto.Message.ButtonsMessage.IButton[] = [];
+    // Convert to templateButtons format (HydratedTemplateButton)
+    const templateButtons: proto.IHydratedTemplateButton[] = [];
 
     for (let i = 0; i < buttons.length; i++) {
       const btn = buttons[i];
       const params = JSON.parse(btn.buttonParamsJson);
-      const displayText = params.display_text || params.displayText || 'Button';
 
-      simpleButtons.push(
-        proto.Message.ButtonsMessage.Button.create({
-          buttonId: `btn_${i + 1}`,
-          buttonText: proto.Message.ButtonsMessage.Button.ButtonText.create({
-            displayText,
-          }),
-          type: proto.Message.ButtonsMessage.Button.Type.RESPONSE,
-        }),
-      );
+      if (btn.name === 'cta_url') {
+        templateButtons.push({
+          index: i + 1,
+          urlButton: {
+            displayText: params.display_text,
+            url: params.url,
+          },
+        });
+      } else if (btn.name === 'cta_call') {
+        templateButtons.push({
+          index: i + 1,
+          callButton: {
+            displayText: params.display_text,
+            phoneNumber: params.phone_number,
+          },
+        });
+      } else if (btn.name === 'quick_reply') {
+        templateButtons.push({
+          index: i + 1,
+          quickReplyButton: {
+            displayText: params.display_text,
+            id: params.id,
+          },
+        });
+      }
     }
 
-    // Try ButtonsMessage format first
-    const buttonsMessage = proto.Message.ButtonsMessage.create({
-      contentText: text,
-      footerText: footer,
-      headerType: proto.Message.ButtonsMessage.HeaderType.EMPTY,
-      buttons: simpleButtons,
-    });
+    // Use whaileys sendMessage with templateButtons
+    const content: AnyMessageContent = {
+      text,
+      footer,
+      templateButtons,
+    };
 
-    const message = proto.Message.create({ buttonsMessage });
-    const msgId = this.generateMessageId();
-
-    await socket.relayMessage(jid, message, { messageId: msgId });
-    return msgId;
+    return socket.sendMessage(jid, content);
   }
 
-  private generateMessageId(): string {
-    return 'BAE5' + Math.random().toString(36).substring(2, 12).toUpperCase();
+  /**
+   * Send buttons message (simple buttons with buttonId)
+   */
+  async sendButtonsMessage(
+    sessionName: string,
+    to: string,
+    text: string,
+    footer: string,
+    buttonsList: Array<{ buttonId: string; buttonText: { displayText: string } }>,
+  ) {
+    const socket = this.getConnectedSocket(sessionName);
+    const jid = this.formatJid(to);
+
+    const content: AnyMessageContent = {
+      text,
+      footer,
+      buttons: buttonsList,
+    };
+
+    return socket.sendMessage(jid, content);
+  }
+
+  /**
+   * Send list message with sections
+   */
+  async sendListMessage(
+    sessionName: string,
+    to: string,
+    text: string,
+    footer: string,
+    title: string,
+    buttonText: string,
+    sections: Array<{
+      title: string;
+      rows: Array<{ title: string; rowId: string; description?: string }>;
+    }>,
+  ) {
+    const socket = this.getConnectedSocket(sessionName);
+    const jid = this.formatJid(to);
+
+    const content: AnyMessageContent = {
+      text,
+      footer,
+      title,
+      buttonText,
+      sections,
+    };
+
+    return socket.sendMessage(jid, content);
   }
 
   /**
