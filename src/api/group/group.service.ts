@@ -186,11 +186,11 @@ export class GroupService {
       groupName?: string;
     },
   ): Promise<string> {
-    const result = (await this.whaileysService.groupAcceptInviteV4(
+    const result = await this.whaileysService.groupAcceptInviteV4(
       sessionName,
       senderId,
       inviteMessage,
-    )) as string | undefined;
+    );
     return result || '';
   }
 }
