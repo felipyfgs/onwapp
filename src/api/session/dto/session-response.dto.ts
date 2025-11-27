@@ -1,6 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SessionStatus } from '@prisma/client';
 
+export class SuccessResponseDto {
+  @ApiProperty({ example: true, description: 'Operation successful' })
+  success: boolean;
+}
+
 export class SessionResponseDto {
   @ApiProperty({ example: 'cm1234567890', description: 'Session ID' })
   id: string;
@@ -98,5 +103,3 @@ export class SessionInfoResponseDto {
   @ApiPropertyOptional({ description: 'WhatsApp user info' })
   user?: unknown;
 }
-
-

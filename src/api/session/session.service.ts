@@ -1,62 +1,90 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { WhaileysService } from '../../core/whaileys/whaileys.service';
-import { MessageSentResponseDto } from './dto';
+import {
+  SessionResponseDto,
+  SessionStatusResponseDto,
+  SessionConnectResponseDto,
+  SessionInfoResponseDto,
+} from './dto';
 
 @Injectable()
 export class SessionService {
   constructor(private readonly whaileysService: WhaileysService) {}
 
-  async create(name: string) {
+  async create(name: string): Promise<SessionResponseDto> {
     return this.whaileysService.createSession(name);
   }
 
-  async findAll() {
+  async findAll(): Promise<SessionResponseDto[]> {
     return this.whaileysService.getAllSessions();
   }
 
-  async connect(name: string) {
-    return this.whaileysService.connectSession(name);
+  async connect(name: string): Promise<SessionConnectResponseDto> {
+    try {
+      return await this.whaileysService.connectSession(name);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('not found')) {
+        throw new NotFoundException(`Session '${name}' not found`);
+      }
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Failed to connect session',
+      );
+    }
   }
 
-  async getQr(name: string) {
+  async getQr(name: string): Promise<string | null> {
     return this.whaileysService.getQr(name);
   }
 
-  async getStatus(name: string) {
-    return this.whaileysService.getStatus(name);
+  async getStatus(name: string): Promise<SessionStatusResponseDto> {
+    try {
+      return await this.whaileysService.getStatus(name);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('not found')) {
+        throw new NotFoundException(`Session '${name}' not found`);
+      }
+      throw error;
+    }
   }
 
-  async logout(name: string) {
-    return this.whaileysService.logoutSession(name);
+  async logout(name: string): Promise<void> {
+    try {
+      await this.whaileysService.logoutSession(name);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('not found')) {
+        throw new NotFoundException(`Session '${name}' not found`);
+      }
+      throw error;
+    }
   }
 
-  async restart(name: string) {
-    return this.whaileysService.restartSession(name);
+  async restart(name: string): Promise<SessionConnectResponseDto> {
+    try {
+      return await this.whaileysService.restartSession(name);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('not found')) {
+        throw new NotFoundException(`Session '${name}' not found`);
+      }
+      throw error;
+    }
   }
 
-  async remove(name: string) {
-    return this.whaileysService.deleteSession(name);
+  async remove(name: string): Promise<void> {
+    await this.whaileysService.deleteSession(name);
   }
 
-  async getInfo(name: string) {
-    return this.whaileysService.getSessionInfo(name);
-  }
-
-  async sendMessage(
-    sessionName: string,
-    to: string,
-    message: string,
-  ): Promise<MessageSentResponseDto> {
-    const result = await this.whaileysService.sendMessage(
-      sessionName,
-      to,
-      message,
-    );
-    const jid = to.includes('@') ? to : `${to}@s.whatsapp.net`;
-    return {
-      success: true,
-      messageId: result?.key?.id || '',
-      to: jid,
-    };
+  async getInfo(name: string): Promise<SessionInfoResponseDto> {
+    try {
+      return await this.whaileysService.getSessionInfo(name);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('not found')) {
+        throw new NotFoundException(`Session '${name}' not found`);
+      }
+      throw error;
+    }
   }
 }

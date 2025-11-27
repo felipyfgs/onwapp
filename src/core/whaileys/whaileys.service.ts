@@ -3,6 +3,8 @@ import {
   Logger,
   OnModuleDestroy,
   OnApplicationBootstrap,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import makeWASocket, {
   DisconnectReason,
@@ -16,11 +18,13 @@ import { SessionStatus } from '@prisma/client';
 import { useDbAuthState } from './auth-state.service';
 import * as qrcodeTerminal from 'qrcode-terminal';
 import { LoggerService } from '../../logger/logger.service';
+import { WebhookService } from '../../integrations/webhook/webhook.service';
 
 export interface SessionInstance {
   socket: WASocket;
   status: SessionStatus;
   qrcode?: string;
+  dbSessionId?: string;
 }
 
 @Injectable()
@@ -33,6 +37,8 @@ export class WhaileysService
   constructor(
     private prisma: PrismaService,
     private loggerService: LoggerService,
+    @Inject(forwardRef(() => WebhookService))
+    private webhookService: WebhookService,
   ) {}
 
   async onApplicationBootstrap() {
@@ -149,6 +155,7 @@ export class WhaileysService
     const sessionInstance: SessionInstance = {
       socket,
       status: SessionStatus.connecting,
+      dbSessionId: dbSession.id,
     };
 
     this.sessions.set(name, sessionInstance);
@@ -173,12 +180,21 @@ export class WhaileysService
 
   private registerEventListeners(name: string, socket: WASocket) {
     const pinoLogger = this.loggerService.child({ session: name });
+    const sessionInstance = this.sessions.get(name);
+    const sessionId = sessionInstance?.dbSessionId;
+
+    const dispatchWebhook = (event: string, data: unknown) => {
+      if (sessionId) {
+        void this.webhookService.dispatch(sessionId, event, data);
+      }
+    };
 
     socket.ev.on('messages.upsert', (payload) => {
       pinoLogger.info(
         { event: 'messages.upsert', payload },
         `messages.upsert (${payload.type}): ${payload.messages.length} messages`,
       );
+      dispatchWebhook('messages.upsert', payload);
     });
 
     socket.ev.on('messages.update', (payload) => {
@@ -186,6 +202,7 @@ export class WhaileysService
         { event: 'messages.update', payload },
         `messages.update: ${payload.length} updates`,
       );
+      dispatchWebhook('messages.update', payload);
     });
 
     socket.ev.on('messages.reaction', (payload) => {
@@ -193,6 +210,7 @@ export class WhaileysService
         { event: 'messages.reaction', payload },
         `messages.reaction: ${payload.length} reactions`,
       );
+      dispatchWebhook('messages.reaction', payload);
     });
 
     socket.ev.on('message-receipt.update', (payload) => {
@@ -200,6 +218,7 @@ export class WhaileysService
         { event: 'message-receipt.update', payload },
         `message-receipt.update: ${payload.length} receipts`,
       );
+      dispatchWebhook('message-receipt.update', payload);
     });
 
     socket.ev.on('chats.upsert', (payload) => {
@@ -207,6 +226,7 @@ export class WhaileysService
         { event: 'chats.upsert', payload },
         `chats.upsert: ${payload.length} chats`,
       );
+      dispatchWebhook('chats.upsert', payload);
     });
 
     socket.ev.on('chats.update', (payload) => {
@@ -214,6 +234,7 @@ export class WhaileysService
         { event: 'chats.update', payload },
         `chats.update: ${payload.length} chats`,
       );
+      dispatchWebhook('chats.update', payload);
     });
 
     socket.ev.on('chats.delete', (payload) => {
@@ -221,6 +242,7 @@ export class WhaileysService
         { event: 'chats.delete', payload },
         `chats.delete: ${payload.length} chats`,
       );
+      dispatchWebhook('chats.delete', payload);
     });
 
     socket.ev.on('contacts.upsert', (payload) => {
@@ -228,6 +250,7 @@ export class WhaileysService
         { event: 'contacts.upsert', payload },
         `contacts.upsert: ${payload.length} contacts`,
       );
+      dispatchWebhook('contacts.upsert', payload);
     });
 
     socket.ev.on('contacts.update', (payload) => {
@@ -235,6 +258,7 @@ export class WhaileysService
         { event: 'contacts.update', payload },
         `contacts.update: ${payload.length} contacts`,
       );
+      dispatchWebhook('contacts.update', payload);
     });
 
     socket.ev.on('groups.upsert', (payload) => {
@@ -242,6 +266,7 @@ export class WhaileysService
         { event: 'groups.upsert', payload },
         `groups.upsert: ${payload.length} groups`,
       );
+      dispatchWebhook('groups.upsert', payload);
     });
 
     socket.ev.on('groups.update', (payload) => {
@@ -249,6 +274,7 @@ export class WhaileysService
         { event: 'groups.update', payload },
         `groups.update: ${payload.length} groups`,
       );
+      dispatchWebhook('groups.update', payload);
     });
 
     socket.ev.on('group-participants.update', (payload) => {
@@ -256,6 +282,7 @@ export class WhaileysService
         { event: 'group-participants.update', payload },
         `group-participants.update: ${payload.action} ${payload.participants.length} in ${payload.id}`,
       );
+      dispatchWebhook('group-participants.update', payload);
     });
 
     socket.ev.on('presence.update', (payload) => {
@@ -264,6 +291,7 @@ export class WhaileysService
         { event: 'presence.update', payload },
         `presence.update: ${entries.length} presences in ${payload.id}`,
       );
+      dispatchWebhook('presence.update', payload);
     });
 
     socket.ev.on('messaging-history.set', (payload) => {
@@ -292,6 +320,7 @@ export class WhaileysService
         { event: 'call', payload },
         `call: ${payload.length} calls`,
       );
+      dispatchWebhook('call', payload);
     });
   }
 
@@ -302,6 +331,17 @@ export class WhaileysService
     update: Partial<ConnectionState>,
   ) {
     const { connection, lastDisconnect, qr } = update;
+
+    if (sessionInstance.dbSessionId) {
+      void this.webhookService.dispatch(
+        sessionInstance.dbSessionId,
+        'connection.update',
+        {
+          connection,
+          qr: qr ? true : undefined,
+        },
+      );
+    }
 
     if (qr) {
       sessionInstance.qrcode = qr;
@@ -459,5 +499,172 @@ export class WhaileysService
       phone: dbSession.phone || undefined,
       user: session?.socket.user || undefined,
     };
+  }
+
+  getConnectedSocket(sessionName: string): WASocket {
+    const session = this.sessions.get(sessionName);
+    if (!session || session.status !== SessionStatus.connected) {
+      throw new Error(`Session ${sessionName} not connected`);
+    }
+    return session.socket;
+  }
+
+  // Chat operations
+  async archiveChat(sessionName: string, jid: string, archive: boolean) {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.chatModify({ archive, lastMessages: [] }, jid);
+  }
+
+  async muteChat(sessionName: string, jid: string, mute: number | null) {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.chatModify({ mute }, jid);
+  }
+
+  async pinChat(sessionName: string, jid: string, pin: boolean) {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.chatModify({ pin }, jid);
+  }
+
+  async markChatRead(sessionName: string, jid: string, read: boolean) {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.chatModify({ markRead: read, lastMessages: [] }, jid);
+  }
+
+  async deleteChat(sessionName: string, jid: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.chatModify({ delete: true, lastMessages: [] }, jid);
+  }
+
+  // Contact operations
+  async blockContact(sessionName: string, jid: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.updateBlockStatus(jid, 'block');
+  }
+
+  async unblockContact(sessionName: string, jid: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.updateBlockStatus(jid, 'unblock');
+  }
+
+  async checkNumberExists(sessionName: string, phone: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    const [result] = await socket.onWhatsApp(phone);
+    return result;
+  }
+
+  async getProfilePicture(sessionName: string, jid: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    try {
+      return await socket.profilePictureUrl(jid, 'image');
+    } catch {
+      return null;
+    }
+  }
+
+  async getContactStatus(sessionName: string, jid: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    return socket.fetchStatus(jid);
+  }
+
+  async getBusinessProfile(sessionName: string, jid: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    return socket.getBusinessProfile(jid);
+  }
+
+  // Profile operations
+  async updateProfileStatus(sessionName: string, status: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.updateProfileStatus(status);
+  }
+
+  async updateProfileName(sessionName: string, name: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.updateProfileName(name);
+  }
+
+  async updateProfilePicture(sessionName: string, imageUrl: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.updateProfilePicture(socket.user?.id || '', { url: imageUrl });
+  }
+
+  async sendPresenceUpdate(
+    sessionName: string,
+    presence:
+      | 'available'
+      | 'unavailable'
+      | 'composing'
+      | 'recording'
+      | 'paused',
+    jid?: string,
+  ) {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.sendPresenceUpdate(presence, jid);
+  }
+
+  async presenceSubscribe(sessionName: string, jid: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.presenceSubscribe(jid);
+  }
+
+  async setDisappearingMessages(
+    sessionName: string,
+    jid: string,
+    expiration: number | boolean,
+  ) {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.sendMessage(jid, {
+      disappearingMessagesInChat: expiration,
+    });
+  }
+
+  async starMessage(
+    sessionName: string,
+    jid: string,
+    messageId: string,
+    star: boolean,
+  ) {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.chatModify(
+      {
+        star: {
+          messages: [{ id: messageId, fromMe: true }],
+          star,
+        },
+      },
+      jid,
+    );
+  }
+
+  async updateGroupPicture(
+    sessionName: string,
+    groupJid: string,
+    imageUrl: string,
+  ) {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.updateProfilePicture(groupJid, { url: imageUrl });
+  }
+
+  async getBroadcastListInfo(sessionName: string, broadcastId: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    const metadata = await socket.groupMetadata(broadcastId);
+    return {
+      id: metadata.id,
+      name: metadata.subject,
+      recipients: metadata.participants?.map((p) => p.id) || [],
+    };
+  }
+
+  async groupAcceptInviteV4(
+    sessionName: string,
+    senderId: string,
+    inviteMessage: {
+      groupJid: string;
+      inviteCode: string;
+      inviteExpiration: number;
+      groupName?: string;
+    },
+  ) {
+    const socket = this.getConnectedSocket(sessionName);
+    return socket.groupAcceptInviteV4(senderId, inviteMessage);
   }
 }

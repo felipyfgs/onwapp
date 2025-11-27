@@ -23,6 +23,7 @@ import {
   SessionQrResponseDto,
   SessionConnectResponseDto,
   SessionInfoResponseDto,
+  SuccessResponseDto,
 } from './dto';
 
 @ApiTags('Sessions')
@@ -104,9 +105,13 @@ export class SessionController {
   @Post(':name/logout')
   @ApiOperation({ summary: 'Logout from WhatsApp (clears credentials)' })
   @ApiParam({ name: 'name', description: 'Session name' })
-  @ApiResponse({ status: 200, description: 'Logged out successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Logged out successfully',
+    type: SuccessResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'Session not found' })
-  async logout(@Param('name') name: string): Promise<{ success: boolean }> {
+  async logout(@Param('name') name: string): Promise<SuccessResponseDto> {
     await this.sessionService.logout(name);
     return { success: true };
   }
@@ -131,9 +136,13 @@ export class SessionController {
   @Delete(':name')
   @ApiOperation({ summary: 'Delete a session' })
   @ApiParam({ name: 'name', description: 'Session name' })
-  @ApiResponse({ status: 200, description: 'Session deleted' })
+  @ApiResponse({
+    status: 200,
+    description: 'Session deleted',
+    type: SuccessResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'Session not found' })
-  async remove(@Param('name') name: string): Promise<{ success: boolean }> {
+  async remove(@Param('name') name: string): Promise<SuccessResponseDto> {
     await this.sessionService.remove(name);
     return { success: true };
   }
@@ -150,5 +159,4 @@ export class SessionController {
   async getInfo(@Param('name') name: string): Promise<SessionInfoResponseDto> {
     return this.sessionService.getInfo(name);
   }
-
 }

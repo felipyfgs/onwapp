@@ -21,6 +21,37 @@ model Session {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
   authState AuthState[]
+  webhook   Webhook?
+  proxy     Proxy?
+}
+
+model Webhook {
+  id        String   @id @default(cuid())
+  sessionId String   @unique
+  enabled   Boolean  @default(true)
+  url       String
+  events    String[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("webhooks")
+}
+
+model Proxy {
+  id        String   @id @default(cuid())
+  sessionId String   @unique
+  enabled   Boolean  @default(false)
+  host      String?
+  port      Int?
+  protocol  String?  @default("http")
+  username  String?
+  password  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("proxies")
 }
 
 model AuthState {
