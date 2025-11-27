@@ -5,52 +5,43 @@ import { WhaileysService } from '../../core/whaileys/whaileys.service';
 export class SessionService {
   constructor(private readonly whaileysService: WhaileysService) {}
 
-  async create(name: string): Promise<{ qrcode?: string; status: string }> {
+  async create(name: string) {
     return this.whaileysService.createSession(name);
   }
 
-  async findAll(): Promise<{ name: string; status: string; phone?: string }[]> {
+  async findAll() {
     return this.whaileysService.getAllSessions();
   }
 
-  async connect(name: string): Promise<{ qrcode?: string; status: string }> {
+  async connect(name: string) {
     return this.whaileysService.connectSession(name);
   }
 
-  async getQr(name: string): Promise<string | null> {
+  async getQr(name: string) {
     return this.whaileysService.getQr(name);
   }
 
-  async getStatus(name: string): Promise<{ status: string; phone?: string }> {
+  async getStatus(name: string) {
     return this.whaileysService.getStatus(name);
   }
 
-  async logout(name: string): Promise<void> {
+  async logout(name: string) {
     return this.whaileysService.logoutSession(name);
   }
 
-  async restart(name: string): Promise<{ qrcode?: string; status: string }> {
+  async restart(name: string) {
     return this.whaileysService.restartSession(name);
   }
 
-  async remove(name: string): Promise<void> {
+  async remove(name: string) {
     return this.whaileysService.deleteSession(name);
   }
 
-  async getInfo(name: string): Promise<{
-    name: string;
-    status: string;
-    phone?: string;
-    user?: any;
-  }> {
+  async getInfo(name: string) {
     return this.whaileysService.getSessionInfo(name);
   }
 
-  async sendMessage(
-    sessionName: string,
-    to: string,
-    message: string,
-  ): Promise<any> {
+  sendMessage(sessionName: string, to: string, message: string) {
     return this.whaileysService.sendMessage(sessionName, to, message);
   }
 }

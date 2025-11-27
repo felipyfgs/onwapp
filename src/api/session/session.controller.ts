@@ -4,11 +4,13 @@ import {
   Post,
   Delete,
   Param,
+  Body,
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
 import { ApiSecurity, ApiTags } from '@nestjs/swagger';
 import { SessionService } from './session.service';
+import { CreateSessionDto } from './dto/create-session.dto';
 
 @ApiTags('Sessions')
 @ApiSecurity('apikey')
@@ -21,47 +23,47 @@ export class SessionController {
     return this.sessionService.findAll();
   }
 
-  @Post(':id/create')
-  async create(@Param('id') id: string) {
-    return this.sessionService.create(id);
+  @Post('create')
+  async create(@Body() dto: CreateSessionDto) {
+    return this.sessionService.create(dto.name);
   }
 
-  @Post(':id/connect')
-  async connect(@Param('id') id: string) {
-    return this.sessionService.connect(id);
+  @Post(':name/connect')
+  async connect(@Param('name') name: string) {
+    return this.sessionService.connect(name);
   }
 
-  @Get(':id/qr')
-  async getQr(@Param('id') id: string) {
-    const qr = await this.sessionService.getQr(id);
+  @Get(':name/qr')
+  async getQr(@Param('name') name: string) {
+    const qr = await this.sessionService.getQr(name);
     if (!qr) {
       throw new HttpException('QR not available', HttpStatus.NOT_FOUND);
     }
     return { qr };
   }
 
-  @Get(':id/status')
-  async getStatus(@Param('id') id: string) {
-    return this.sessionService.getStatus(id);
+  @Get(':name/status')
+  async getStatus(@Param('name') name: string) {
+    return this.sessionService.getStatus(name);
   }
 
-  @Post(':id/logout')
-  async logout(@Param('id') id: string) {
-    return this.sessionService.logout(id);
+  @Post(':name/logout')
+  async logout(@Param('name') name: string) {
+    return this.sessionService.logout(name);
   }
 
-  @Post(':id/restart')
-  async restart(@Param('id') id: string) {
-    return this.sessionService.restart(id);
+  @Post(':name/restart')
+  async restart(@Param('name') name: string) {
+    return this.sessionService.restart(name);
   }
 
-  @Delete(':id')
-  async remove(@Param('id') id: string) {
-    return this.sessionService.remove(id);
+  @Delete(':name')
+  async remove(@Param('name') name: string) {
+    return this.sessionService.remove(name);
   }
 
-  @Get(':id/info')
-  async getInfo(@Param('id') id: string) {
-    return this.sessionService.getInfo(id);
+  @Get(':name/info')
+  async getInfo(@Param('name') name: string) {
+    return this.sessionService.getInfo(name);
   }
 }
