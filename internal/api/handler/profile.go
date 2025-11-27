@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.mau.fi/whatsmeow/types"
 
 	"zpwoot/internal/api/dto"
 	"zpwoot/internal/service"
@@ -229,18 +230,17 @@ func (h *ProfileHandler) SetPrivacySettings(c *gin.Context) {
 		return
 	}
 
-	settings := map[string]string{
-		"lastSeen": req.LastSeen,
-		"profile":  req.Profile,
-		"status":   req.Status,
-	}
+	settingType := types.PrivacySettingType(req.Setting)
+	value := types.PrivacySetting(req.Value)
 
-	if err := h.whatsappService.SetPrivacySettings(c.Request.Context(), name, settings, req.ReadReceipts); err != nil {
+	settings, err := h.whatsappService.SetPrivacySettings(c.Request.Context(), name, settingType, value)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessResponse{
-		Success: true,
+	c.JSON(http.StatusOK, dto.PrivacySettingsResponse{
+		Success:  true,
+		Settings: settings,
 	})
 }

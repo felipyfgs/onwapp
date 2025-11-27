@@ -10,6 +10,7 @@ import (
 	"go.mau.fi/whatsmeow/appstate"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
+	"go.mau.fi/whatsmeow/types/events"
 	"google.golang.org/protobuf/proto"
 
 	"zpwoot/internal/model"
@@ -938,14 +939,520 @@ func (w *WhatsAppService) GetPrivacySettings(ctx context.Context, sessionName st
 	}, nil
 }
 
-// SetPrivacySettings define configurações de privacidade (placeholder - API limitada)
-func (w *WhatsAppService) SetPrivacySettings(ctx context.Context, sessionName string, settings map[string]string, readReceipts bool) error {
-	_, err := w.getClient(sessionName)
+// SetPrivacySettings define configurações de privacidade
+func (w *WhatsAppService) SetPrivacySettings(ctx context.Context, sessionName string, settingName types.PrivacySettingType, value types.PrivacySetting) (types.PrivacySettings, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return types.PrivacySettings{}, err
+	}
+	return client.SetPrivacySetting(ctx, settingName, value)
+}
+
+// POLL METHODS
+
+// SendPoll envia uma enquete
+func (w *WhatsAppService) SendPoll(ctx context.Context, sessionName, phone, name string, options []string, selectableCount int) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return whatsmeow.SendResponse{}, err
+	}
+
+	jid, err := parseJID(phone)
+	if err != nil {
+		return whatsmeow.SendResponse{}, fmt.Errorf("invalid phone number: %w", err)
+	}
+
+	if selectableCount <= 0 {
+		selectableCount = 1
+	}
+
+	msg := client.BuildPollCreation(name, options, selectableCount)
+	return client.SendMessage(ctx, jid, msg)
+}
+
+// SendPollVote vota em uma enquete
+func (w *WhatsAppService) SendPollVote(ctx context.Context, sessionName, phone, pollMsgID string, selectedOptions []string) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return whatsmeow.SendResponse{}, err
+	}
+
+	jid, err := parseJID(phone)
+	if err != nil {
+		return whatsmeow.SendResponse{}, fmt.Errorf("invalid phone number: %w", err)
+	}
+
+	pollInfo := &types.MessageInfo{
+		ID: types.MessageID(pollMsgID),
+		MessageSource: types.MessageSource{
+			Chat:   jid,
+			Sender: jid,
+		},
+	}
+
+	msg, err := client.BuildPollVote(ctx, pollInfo, selectedOptions)
+	if err != nil {
+		return whatsmeow.SendResponse{}, fmt.Errorf("failed to build poll vote: %w", err)
+	}
+
+	return client.SendMessage(ctx, jid, msg)
+}
+
+// BLOCKLIST METHODS
+
+// GetBlocklist obtém lista de bloqueados
+func (w *WhatsAppService) GetBlocklist(ctx context.Context, sessionName string) (*types.Blocklist, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return nil, err
+	}
+	return client.GetBlocklist(ctx)
+}
+
+// UpdateBlocklist bloqueia ou desbloqueia um contato
+func (w *WhatsAppService) UpdateBlocklist(ctx context.Context, sessionName, phone string, block bool) (*types.Blocklist, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return nil, err
+	}
+
+	jid, err := parseJID(phone)
+	if err != nil {
+		return nil, fmt.Errorf("invalid phone number: %w", err)
+	}
+
+	var action events.BlocklistChangeAction
+	if block {
+		action = events.BlocklistChangeActionBlock
+	} else {
+		action = events.BlocklistChangeActionUnblock
+	}
+
+	return client.UpdateBlocklist(ctx, jid, action)
+}
+
+// DISAPPEARING MESSAGES
+
+// SetDisappearingTimer define timer de mensagens temporárias para um chat
+func (w *WhatsAppService) SetDisappearingTimer(ctx context.Context, sessionName, phone string, timer time.Duration) error {
+	client, err := w.getClient(sessionName)
 	if err != nil {
 		return err
 	}
 
-	// whatsmeow não tem método SetPrivacySettings público
-	// As configurações de privacidade só podem ser lidas, não alteradas via API
-	return fmt.Errorf("privacy settings cannot be changed via API")
+	jid, err := parseJID(phone)
+	if err != nil {
+		return fmt.Errorf("invalid phone number: %w", err)
+	}
+
+	return client.SetDisappearingTimer(ctx, jid, timer, time.Now())
+}
+
+// SetDefaultDisappearingTimer define timer padrão de mensagens temporárias
+func (w *WhatsAppService) SetDefaultDisappearingTimer(ctx context.Context, sessionName string, timer time.Duration) error {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return err
+	}
+	return client.SetDefaultDisappearingTimer(ctx, timer)
+}
+
+// GROUP SETTINGS METHODS
+
+// SetGroupAnnounce define se só admins podem enviar mensagens
+func (w *WhatsAppService) SetGroupAnnounce(ctx context.Context, sessionName, groupID string, announce bool) error {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return err
+	}
+
+	jid, err := parseGroupJID(groupID)
+	if err != nil {
+		return fmt.Errorf("invalid group ID: %w", err)
+	}
+
+	return client.SetGroupAnnounce(ctx, jid, announce)
+}
+
+// SetGroupLocked define se só admins podem editar info do grupo
+func (w *WhatsAppService) SetGroupLocked(ctx context.Context, sessionName, groupID string, locked bool) error {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return err
+	}
+
+	jid, err := parseGroupJID(groupID)
+	if err != nil {
+		return fmt.Errorf("invalid group ID: %w", err)
+	}
+
+	return client.SetGroupLocked(ctx, jid, locked)
+}
+
+// SetGroupPhoto define foto do grupo
+func (w *WhatsAppService) SetGroupPhoto(ctx context.Context, sessionName, groupID string, imageData []byte) (string, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return "", err
+	}
+
+	jid, err := parseGroupJID(groupID)
+	if err != nil {
+		return "", fmt.Errorf("invalid group ID: %w", err)
+	}
+
+	return client.SetGroupPhoto(ctx, jid, imageData)
+}
+
+// SetGroupJoinApprovalMode define modo de aprovação para entrar no grupo
+func (w *WhatsAppService) SetGroupJoinApprovalMode(ctx context.Context, sessionName, groupID string, mode bool) error {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return err
+	}
+
+	jid, err := parseGroupJID(groupID)
+	if err != nil {
+		return fmt.Errorf("invalid group ID: %w", err)
+	}
+
+	return client.SetGroupJoinApprovalMode(ctx, jid, mode)
+}
+
+// SetGroupMemberAddMode define quem pode adicionar membros
+func (w *WhatsAppService) SetGroupMemberAddMode(ctx context.Context, sessionName, groupID string, mode types.GroupMemberAddMode) error {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return err
+	}
+
+	jid, err := parseGroupJID(groupID)
+	if err != nil {
+		return fmt.Errorf("invalid group ID: %w", err)
+	}
+
+	return client.SetGroupMemberAddMode(ctx, jid, mode)
+}
+
+// GetGroupRequestParticipants obtém solicitações pendentes de entrada no grupo
+func (w *WhatsAppService) GetGroupRequestParticipants(ctx context.Context, sessionName, groupID string) ([]types.GroupParticipantRequest, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return nil, err
+	}
+
+	jid, err := parseGroupJID(groupID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid group ID: %w", err)
+	}
+
+	return client.GetGroupRequestParticipants(ctx, jid)
+}
+
+// UpdateGroupRequestParticipants aprova ou rejeita solicitações de entrada
+func (w *WhatsAppService) UpdateGroupRequestParticipants(ctx context.Context, sessionName, groupID string, participants []string, action whatsmeow.ParticipantRequestChange) ([]types.GroupParticipant, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return nil, err
+	}
+
+	groupJID, err := parseGroupJID(groupID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid group ID: %w", err)
+	}
+
+	jids := make([]types.JID, len(participants))
+	for i, phone := range participants {
+		jid, err := parseJID(phone)
+		if err != nil {
+			return nil, fmt.Errorf("invalid phone number %s: %w", phone, err)
+		}
+		jids[i] = jid
+	}
+
+	return client.UpdateGroupRequestParticipants(ctx, groupJID, jids, action)
+}
+
+// GetGroupInfoFromLink obtém info do grupo pelo link de convite
+func (w *WhatsAppService) GetGroupInfoFromLink(ctx context.Context, sessionName, code string) (*types.GroupInfo, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return nil, err
+	}
+	return client.GetGroupInfoFromLink(ctx, code)
+}
+
+// NEWSLETTER METHODS
+
+// CreateNewsletter cria um canal/newsletter
+func (w *WhatsAppService) CreateNewsletter(ctx context.Context, sessionName, name, description string) (*types.NewsletterMetadata, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return nil, err
+	}
+
+	params := whatsmeow.CreateNewsletterParams{
+		Name:        name,
+		Description: description,
+	}
+
+	return client.CreateNewsletter(ctx, params)
+}
+
+// FollowNewsletter segue um canal
+func (w *WhatsAppService) FollowNewsletter(ctx context.Context, sessionName, newsletterJID string) error {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return err
+	}
+
+	jid, err := types.ParseJID(newsletterJID)
+	if err != nil {
+		return fmt.Errorf("invalid newsletter JID: %w", err)
+	}
+
+	return client.FollowNewsletter(ctx, jid)
+}
+
+// UnfollowNewsletter deixa de seguir um canal
+func (w *WhatsAppService) UnfollowNewsletter(ctx context.Context, sessionName, newsletterJID string) error {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return err
+	}
+
+	jid, err := types.ParseJID(newsletterJID)
+	if err != nil {
+		return fmt.Errorf("invalid newsletter JID: %w", err)
+	}
+
+	return client.UnfollowNewsletter(ctx, jid)
+}
+
+// GetNewsletterInfo obtém info de um canal
+func (w *WhatsAppService) GetNewsletterInfo(ctx context.Context, sessionName, newsletterJID string) (*types.NewsletterMetadata, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return nil, err
+	}
+
+	jid, err := types.ParseJID(newsletterJID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid newsletter JID: %w", err)
+	}
+
+	return client.GetNewsletterInfo(ctx, jid)
+}
+
+// GetSubscribedNewsletters lista canais seguidos
+func (w *WhatsAppService) GetSubscribedNewsletters(ctx context.Context, sessionName string) ([]*types.NewsletterMetadata, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return nil, err
+	}
+	return client.GetSubscribedNewsletters(ctx)
+}
+
+// GetNewsletterMessages obtém mensagens de um canal
+func (w *WhatsAppService) GetNewsletterMessages(ctx context.Context, sessionName, newsletterJID string, count int, before types.MessageServerID) ([]*types.NewsletterMessage, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return nil, err
+	}
+
+	jid, err := types.ParseJID(newsletterJID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid newsletter JID: %w", err)
+	}
+
+	params := &whatsmeow.GetNewsletterMessagesParams{
+		Count:  count,
+		Before: before,
+	}
+
+	return client.GetNewsletterMessages(ctx, jid, params)
+}
+
+// NewsletterSendReaction envia reação em mensagem do canal
+func (w *WhatsAppService) NewsletterSendReaction(ctx context.Context, sessionName, newsletterJID string, serverID types.MessageServerID, reaction string, messageID types.MessageID) error {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return err
+	}
+
+	jid, err := types.ParseJID(newsletterJID)
+	if err != nil {
+		return fmt.Errorf("invalid newsletter JID: %w", err)
+	}
+
+	return client.NewsletterSendReaction(ctx, jid, serverID, reaction, messageID)
+}
+
+// NewsletterToggleMute silencia ou ativa notificações do canal
+func (w *WhatsAppService) NewsletterToggleMute(ctx context.Context, sessionName, newsletterJID string, mute bool) error {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return err
+	}
+
+	jid, err := types.ParseJID(newsletterJID)
+	if err != nil {
+		return fmt.Errorf("invalid newsletter JID: %w", err)
+	}
+
+	return client.NewsletterToggleMute(ctx, jid, mute)
+}
+
+// CONTACT METHODS (extended)
+
+// SubscribePresence inscreve para receber atualizações de presença
+func (w *WhatsAppService) SubscribePresence(ctx context.Context, sessionName, phone string) error {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return err
+	}
+
+	jid, err := parseJID(phone)
+	if err != nil {
+		return fmt.Errorf("invalid phone number: %w", err)
+	}
+
+	return client.SubscribePresence(ctx, jid)
+}
+
+// GetContactQRLink obtém QR link para adicionar contato
+func (w *WhatsAppService) GetContactQRLink(ctx context.Context, sessionName string, revoke bool) (string, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return "", err
+	}
+	return client.GetContactQRLink(ctx, revoke)
+}
+
+// GetBusinessProfile obtém perfil comercial de um contato
+func (w *WhatsAppService) GetBusinessProfile(ctx context.Context, sessionName, phone string) (*types.BusinessProfile, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return nil, err
+	}
+
+	jid, err := parseJID(phone)
+	if err != nil {
+		return nil, fmt.Errorf("invalid phone number: %w", err)
+	}
+
+	return client.GetBusinessProfile(ctx, jid)
+}
+
+// STATUS METHODS
+
+// GetStatusPrivacy obtém configurações de privacidade do status
+func (w *WhatsAppService) GetStatusPrivacy(ctx context.Context, sessionName string) ([]types.StatusPrivacy, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return nil, err
+	}
+	return client.GetStatusPrivacy(ctx)
+}
+
+// SendStatus envia status/story (experimental)
+func (w *WhatsAppService) SendStatus(ctx context.Context, sessionName string, msg *waE2E.Message) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return whatsmeow.SendResponse{}, err
+	}
+
+	statusJID := types.StatusBroadcastJID
+	return client.SendMessage(ctx, statusJID, msg)
+}
+
+// CALL METHODS
+
+// RejectCall rejeita uma chamada
+func (w *WhatsAppService) RejectCall(ctx context.Context, sessionName, callFrom, callID string) error {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return err
+	}
+
+	jid, err := parseJID(callFrom)
+	if err != nil {
+		return fmt.Errorf("invalid phone number: %w", err)
+	}
+
+	return client.RejectCall(ctx, jid, callID)
+}
+
+// SESSION METHODS (extended)
+
+// PairPhone pareia usando número de telefone
+func (w *WhatsAppService) PairPhone(ctx context.Context, sessionName, phone string) (string, error) {
+	session, err := w.sessionService.Get(sessionName)
+	if err != nil {
+		return "", err
+	}
+
+	code, err := session.Client.PairPhone(ctx, phone, true, whatsmeow.PairClientChrome, "Chrome")
+	if err != nil {
+		return "", fmt.Errorf("failed to pair phone: %w", err)
+	}
+
+	return code, nil
+}
+
+// COMMUNITY METHODS
+
+// LinkGroup vincula um grupo a uma comunidade
+func (w *WhatsAppService) LinkGroup(ctx context.Context, sessionName, parentGroupID, childGroupID string) error {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return err
+	}
+
+	parentJID, err := parseGroupJID(parentGroupID)
+	if err != nil {
+		return fmt.Errorf("invalid parent group ID: %w", err)
+	}
+
+	childJID, err := parseGroupJID(childGroupID)
+	if err != nil {
+		return fmt.Errorf("invalid child group ID: %w", err)
+	}
+
+	return client.LinkGroup(ctx, parentJID, childJID)
+}
+
+// UnlinkGroup desvincula um grupo de uma comunidade
+func (w *WhatsAppService) UnlinkGroup(ctx context.Context, sessionName, parentGroupID, childGroupID string) error {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return err
+	}
+
+	parentJID, err := parseGroupJID(parentGroupID)
+	if err != nil {
+		return fmt.Errorf("invalid parent group ID: %w", err)
+	}
+
+	childJID, err := parseGroupJID(childGroupID)
+	if err != nil {
+		return fmt.Errorf("invalid child group ID: %w", err)
+	}
+
+	return client.UnlinkGroup(ctx, parentJID, childJID)
+}
+
+// GetSubGroups obtém subgrupos de uma comunidade
+func (w *WhatsAppService) GetSubGroups(ctx context.Context, sessionName, communityID string) ([]*types.GroupLinkTarget, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return nil, err
+	}
+
+	jid, err := parseGroupJID(communityID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid community ID: %w", err)
+	}
+
+	return client.GetSubGroups(ctx, jid)
 }

@@ -1,9 +1,13 @@
 package handler
 
 import (
+	"encoding/base64"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
+	"go.mau.fi/whatsmeow"
+	"go.mau.fi/whatsmeow/types"
 
 	"zpwoot/internal/api/dto"
 	"zpwoot/internal/service"

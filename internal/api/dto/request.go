@@ -167,10 +167,8 @@ type SetProfilePictureRequest struct {
 }
 
 type SetPrivacyRequest struct {
-	LastSeen     string `json:"lastSeen" example:"contacts"`
-	Profile      string `json:"profile" example:"all"`
-	Status       string `json:"status" example:"contacts"`
-	ReadReceipts bool   `json:"readReceipts" example:"true"`
+	Setting string `json:"setting" binding:"required" example:"last_seen"` // last_seen, online, profile, status, read_receipts, group_add, call_add
+	Value   string `json:"value" binding:"required" example:"contacts"`    // all, contacts, contact_blacklist, match_last_seen, known, none
 }
 
 // Poll requests

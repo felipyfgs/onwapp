@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -126,4 +127,53 @@ func (h *ChatHandler) EditMessage(c *gin.Context) {
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
 	})
+}
+
+// SetDisappearingTimer godoc
+// @Summary      Set disappearing messages timer
+// @Description  Set the disappearing messages timer for a chat
+// @Tags         chat
+// @Accept       json
+// @Produce      json
+// @Param        name path string true "Session name"
+// @Param        body body dto.DisappearingRequest true "Timer data"
+// @Success      200 {object} dto.SuccessResponse
+// @Failure      400 {object} dto.ErrorResponse
+// @Failure      500 {object} dto.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /sessions/{name}/chat/disappearing [put]
+func (h *ChatHandler) SetDisappearingTimer(c *gin.Context) {
+	name := c.Param("name")
+
+	var req dto.DisappearingRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	var timer time.Duration
+	switch req.Timer {
+	case "24h":
+		timer = 24 * time.Hour
+	case "7d":
+		timer = 7 * 24 * time.Hour
+	case "90d":
+		timer = 90 * 24 * time.Hour
+	case "off", "0":
+		timer = 0
+	default:
+		parsed, err := time.ParseDuration(req.Timer)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid timer format. Use: 24h, 7d, 90d, off, or Go duration"})
+			return
+		}
+		timer = parsed
+	}
+
+	if err := h.whatsappService.SetDisappearingTimer(c.Request.Context(), name, req.Phone, timer); err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.SuccessResponse{Success: true, Message: "timer set to " + req.Timer})
 }
