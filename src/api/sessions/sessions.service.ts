@@ -12,7 +12,7 @@ import {
 } from './dto';
 
 @Injectable()
-export class SessionService {
+export class SessionsService {
   constructor(private readonly whaileysService: WhaileysService) {}
 
   async create(name: string): Promise<SessionResponseDto> {

@@ -2,7 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { WhaileysService } from '../../core/whaileys/whaileys.service';
 
 @Injectable()
-export class ProfileService {
+export class ProfilesService {
   constructor(private readonly whaileysService: WhaileysService) {}
 
   async updateStatus(sessionName: string, status: string): Promise<void> {

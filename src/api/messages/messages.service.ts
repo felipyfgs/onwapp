@@ -26,7 +26,7 @@ import {
 } from './dto';
 
 @Injectable()
-export class MessageService {
+export class MessagesService {
   constructor(private readonly whaileysService: WhaileysService) {}
 
   private getSessionOrThrow(sessionName: string) {

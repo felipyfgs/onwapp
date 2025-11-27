@@ -16,7 +16,7 @@ import {
 } from './dto';
 
 @Injectable()
-export class GroupService {
+export class GroupsService {
   constructor(private readonly whaileysService: WhaileysService) {}
 
   private getSocket(sessionName: string) {

@@ -15,7 +15,7 @@ import {
   ApiResponse,
   ApiParam,
 } from '@nestjs/swagger';
-import { SessionService } from './session.service';
+import { SessionsService } from './sessions.service';
 import {
   CreateSessionDto,
   SessionResponseDto,
@@ -29,8 +29,8 @@ import {
 @ApiTags('Sessions')
 @ApiSecurity('apikey')
 @Controller('sessions')
-export class SessionController {
-  constructor(private readonly sessionService: SessionService) {}
+export class SessionsController {
+  constructor(private readonly sessionsService: SessionsService) {}
 
   @Get()
   @ApiOperation({ summary: 'List all sessions' })
@@ -40,7 +40,7 @@ export class SessionController {
     type: [SessionResponseDto],
   })
   async findAll(): Promise<SessionResponseDto[]> {
-    return this.sessionService.findAll();
+    return this.sessionsService.findAll();
   }
 
   @Post('create')
@@ -52,7 +52,7 @@ export class SessionController {
   })
   @ApiResponse({ status: 400, description: 'Invalid session name' })
   async create(@Body() dto: CreateSessionDto): Promise<SessionResponseDto> {
-    return this.sessionService.create(dto.name);
+    return this.sessionsService.create(dto.name);
   }
 
   @Post(':name/connect')
@@ -67,7 +67,7 @@ export class SessionController {
   async connect(
     @Param('name') name: string,
   ): Promise<SessionConnectResponseDto> {
-    return this.sessionService.connect(name);
+    return this.sessionsService.connect(name);
   }
 
   @Get(':name/qr')
@@ -80,7 +80,7 @@ export class SessionController {
   })
   @ApiResponse({ status: 404, description: 'QR not available' })
   async getQr(@Param('name') name: string): Promise<SessionQrResponseDto> {
-    const qr = await this.sessionService.getQr(name);
+    const qr = await this.sessionsService.getQr(name);
     if (!qr) {
       throw new HttpException('QR not available', HttpStatus.NOT_FOUND);
     }
@@ -99,7 +99,7 @@ export class SessionController {
   async getStatus(
     @Param('name') name: string,
   ): Promise<SessionStatusResponseDto> {
-    return this.sessionService.getStatus(name);
+    return this.sessionsService.getStatus(name);
   }
 
   @Post(':name/logout')
@@ -112,7 +112,7 @@ export class SessionController {
   })
   @ApiResponse({ status: 404, description: 'Session not found' })
   async logout(@Param('name') name: string): Promise<SuccessResponseDto> {
-    await this.sessionService.logout(name);
+    await this.sessionsService.logout(name);
     return { success: true };
   }
 
@@ -130,7 +130,7 @@ export class SessionController {
   async restart(
     @Param('name') name: string,
   ): Promise<SessionConnectResponseDto> {
-    return this.sessionService.restart(name);
+    return this.sessionsService.restart(name);
   }
 
   @Delete(':name')
@@ -143,7 +143,7 @@ export class SessionController {
   })
   @ApiResponse({ status: 404, description: 'Session not found' })
   async remove(@Param('name') name: string): Promise<SuccessResponseDto> {
-    await this.sessionService.remove(name);
+    await this.sessionsService.remove(name);
     return { success: true };
   }
 
@@ -157,6 +157,6 @@ export class SessionController {
   })
   @ApiResponse({ status: 404, description: 'Session not found' })
   async getInfo(@Param('name') name: string): Promise<SessionInfoResponseDto> {
-    return this.sessionService.getInfo(name);
+    return this.sessionsService.getInfo(name);
   }
 }

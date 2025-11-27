@@ -34,7 +34,7 @@ export class ProfilesController {
     @Param('session') session: string,
     @Body() dto: UpdateStatusDto,
   ): Promise<SuccessResponseDto> {
-    await this.profileService.updateStatus(session, dto.status);
+    await this.profilesService.updateStatus(session, dto.status);
     return { success: true };
   }
 
@@ -50,7 +50,7 @@ export class ProfilesController {
     @Param('session') session: string,
     @Body() dto: UpdateNameDto,
   ): Promise<SuccessResponseDto> {
-    await this.profileService.updateName(session, dto.name);
+    await this.profilesService.updateName(session, dto.name);
     return { success: true };
   }
 
@@ -66,7 +66,7 @@ export class ProfilesController {
     @Param('session') session: string,
     @Body() dto: UpdatePictureDto,
   ): Promise<SuccessResponseDto> {
-    await this.profileService.updatePicture(session, dto.imageUrl);
+    await this.profilesService.updatePicture(session, dto.imageUrl);
     return { success: true };
   }
 
@@ -82,7 +82,7 @@ export class ProfilesController {
     @Param('session') session: string,
     @Body() dto: UpdatePresenceDto,
   ): Promise<SuccessResponseDto> {
-    await this.profileService.updatePresence(session, dto.presence, dto.jid);
+    await this.profilesService.updatePresence(session, dto.presence, dto.jid);
     return { success: true };
   }
 
@@ -98,7 +98,7 @@ export class ProfilesController {
     @Param('session') session: string,
     @Body() dto: SubscribePresenceDto,
   ): Promise<SuccessResponseDto> {
-    await this.profileService.subscribePresence(session, dto.jid);
+    await this.profilesService.subscribePresence(session, dto.jid);
     return { success: true };
   }
 }

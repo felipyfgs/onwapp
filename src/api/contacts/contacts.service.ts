@@ -8,7 +8,7 @@ import {
 } from './dto';
 
 @Injectable()
-export class ContactService {
+export class ContactsService {
   constructor(private readonly whaileysService: WhaileysService) {}
 
   async block(sessionName: string, jid: string): Promise<void> {
