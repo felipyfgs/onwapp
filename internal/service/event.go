@@ -336,11 +336,12 @@ func (s *EventService) handleReaction(ctx context.Context, session *model.Sessio
 	})
 
 	update := &model.MessageUpdate{
-		MsgID:   targetMsgID,
-		Type:    updateType,
-		Actor:   senderJid,
-		Data:    data,
-		EventAt: timestamp,
+		SessionID: session.ID,
+		MsgID:     targetMsgID,
+		Type:      updateType,
+		Actor:     senderJid,
+		Data:      data,
+		EventAt:   timestamp,
 	}
 
 	if _, err := s.database.MessageUpdates.Save(ctx, update); err != nil {
@@ -382,11 +383,12 @@ func (s *EventService) handleProtocolMessage(ctx context.Context, session *model
 		})
 
 		update := &model.MessageUpdate{
-			MsgID:   targetMsgID,
-			Type:    model.UpdateTypeDelete,
-			Actor:   senderJid,
-			Data:    data,
-			EventAt: e.Info.Timestamp,
+			SessionID: session.ID,
+			MsgID:     targetMsgID,
+			Type:      model.UpdateTypeDelete,
+			Actor:     senderJid,
+			Data:      data,
+			EventAt:   e.Info.Timestamp,
 		}
 
 		if _, err := s.database.MessageUpdates.Save(ctx, update); err != nil {
@@ -429,11 +431,12 @@ func (s *EventService) handleMessageEdit(ctx context.Context, session *model.Ses
 	})
 
 	update := &model.MessageUpdate{
-		MsgID:   targetMsgID,
-		Type:    model.UpdateTypeEdit,
-		Actor:   senderJid,
-		Data:    data,
-		EventAt: e.Info.Timestamp,
+		SessionID: session.ID,
+		MsgID:     targetMsgID,
+		Type:      model.UpdateTypeEdit,
+		Actor:     senderJid,
+		Data:      data,
+		EventAt:   e.Info.Timestamp,
 	}
 
 	if _, err := s.database.MessageUpdates.Save(ctx, update); err != nil {

@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS "zpMessages" (
     "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Unique constraint for deduplication
+-- Unique constraint for deduplication (per session)
 CREATE UNIQUE INDEX IF NOT EXISTS "idx_zpMessages_session_message_unique" ON "zpMessages"("sessionId", "messageId");
 
 -- Basic indexes

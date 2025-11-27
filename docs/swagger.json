@@ -8,6 +8,31 @@
     },
     "basePath": "/",
     "paths": {
+        "/events": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get a list of all available webhook event types organized by category",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "webhook"
+                ],
+                "summary": "List available webhook events",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/EventsResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/sessions/fetch": {
             "get": {
                 "security": [
@@ -32,14 +57,14 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/zpwoot_internal_api_dto.SessionResponse"
+                                "$ref": "#/definitions/SessionResponse"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -77,7 +102,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ArchiveChatRequest"
+                            "$ref": "#/definitions/ArchiveChatRequest"
                         }
                     }
                 ],
@@ -85,25 +110,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ChatActionResponse"
+                            "$ref": "#/definitions/ChatActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -141,7 +166,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.DeleteMessageRequest"
+                            "$ref": "#/definitions/DeleteMessageRequest"
                         }
                     }
                 ],
@@ -149,25 +174,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
+                            "$ref": "#/definitions/SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -205,7 +230,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.EditMessageRequest"
+                            "$ref": "#/definitions/EditMessageRequest"
                         }
                     }
                 ],
@@ -213,25 +238,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
+                            "$ref": "#/definitions/SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -268,19 +293,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.MessageResponse"
+                            "$ref": "#/definitions/MessageResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -318,7 +343,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.CheckPhoneRequest"
+                            "$ref": "#/definitions/CheckPhoneRequest"
                         }
                     }
                 ],
@@ -326,25 +351,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.CheckPhoneResultsResponse"
+                            "$ref": "#/definitions/CheckPhoneResultsResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -382,7 +407,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ContactInfoRequest"
+                            "$ref": "#/definitions/ContactInfoRequest"
                         }
                     }
                 ],
@@ -390,25 +415,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ContactInfoResponse"
+                            "$ref": "#/definitions/ContactInfoResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -445,19 +470,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ContactsListResponse"
+                            "$ref": "#/definitions/ContactsListResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -495,7 +520,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.MarkReadRequest"
+                            "$ref": "#/definitions/MarkReadRequest"
                         }
                     }
                 ],
@@ -503,25 +528,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SuccessResponse"
+                            "$ref": "#/definitions/SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -559,7 +584,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SetPresenceRequest"
+                            "$ref": "#/definitions/SetPresenceRequest"
                         }
                     }
                 ],
@@ -567,25 +592,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.PresenceResponse"
+                            "$ref": "#/definitions/PresenceResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -623,7 +648,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ChatPresenceRequest"
+                            "$ref": "#/definitions/ChatPresenceRequest"
                         }
                     }
                 ],
@@ -631,25 +656,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ChatPresenceResponse"
+                            "$ref": "#/definitions/ChatPresenceResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -693,19 +718,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.AvatarResponse"
+                            "$ref": "#/definitions/AvatarResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -742,19 +767,19 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SessionResponse"
+                            "$ref": "#/definitions/SessionResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -791,19 +816,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.MessageResponse"
+                            "$ref": "#/definitions/MessageResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -841,7 +866,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.CreateGroupRequest"
+                            "$ref": "#/definitions/CreateGroupRequest"
                         }
                     }
                 ],
@@ -849,25 +874,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupActionResponse"
+                            "$ref": "#/definitions/GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -905,7 +930,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupUpdateRequest"
+                            "$ref": "#/definitions/GroupUpdateRequest"
                         }
                     }
                 ],
@@ -913,25 +938,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupActionResponse"
+                            "$ref": "#/definitions/GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -969,7 +994,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.JoinGroupRequest"
+                            "$ref": "#/definitions/JoinGroupRequest"
                         }
                     }
                 ],
@@ -977,25 +1002,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupActionResponse"
+                            "$ref": "#/definitions/GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -1032,19 +1057,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupActionResponse"
+                            "$ref": "#/definitions/GroupActionResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -1082,7 +1107,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupUpdateRequest"
+                            "$ref": "#/definitions/GroupUpdateRequest"
                         }
                     }
                 ],
@@ -1090,25 +1115,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupActionResponse"
+                            "$ref": "#/definitions/GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -1146,7 +1171,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupParticipantsRequest"
+                            "$ref": "#/definitions/GroupParticipantsRequest"
                         }
                     }
                 ],
@@ -1154,25 +1179,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupActionResponse"
+                            "$ref": "#/definitions/GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -1210,7 +1235,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupParticipantsRequest"
+                            "$ref": "#/definitions/GroupParticipantsRequest"
                         }
                     }
                 ],
@@ -1218,25 +1243,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupActionResponse"
+                            "$ref": "#/definitions/GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -1274,7 +1299,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupParticipantsRequest"
+                            "$ref": "#/definitions/GroupParticipantsRequest"
                         }
                     }
                 ],
@@ -1282,25 +1307,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupActionResponse"
+                            "$ref": "#/definitions/GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -1338,7 +1363,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupParticipantsRequest"
+                            "$ref": "#/definitions/GroupParticipantsRequest"
                         }
                     }
                 ],
@@ -1346,25 +1371,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupActionResponse"
+                            "$ref": "#/definitions/GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -1402,7 +1427,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendGroupMessageRequest"
+                            "$ref": "#/definitions/SendGroupMessageRequest"
                         }
                     }
                 ],
@@ -1410,25 +1435,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
+                            "$ref": "#/definitions/SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -1472,25 +1497,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupActionResponse"
+                            "$ref": "#/definitions/GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -1540,19 +1565,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupInviteLinkResponse"
+                            "$ref": "#/definitions/GroupInviteLinkResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -1596,19 +1621,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupActionResponse"
+                            "$ref": "#/definitions/GroupActionResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -1645,19 +1670,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SessionResponse"
+                            "$ref": "#/definitions/SessionResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -1694,19 +1719,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.MessageResponse"
+                            "$ref": "#/definitions/MessageResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -1743,19 +1768,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ProfileInfoResponse"
+                            "$ref": "#/definitions/ProfileInfoResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -1793,7 +1818,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SetPushNameRequest"
+                            "$ref": "#/definitions/SetPushNameRequest"
                         }
                     }
                 ],
@@ -1801,25 +1826,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SetNameResponse"
+                            "$ref": "#/definitions/SetNameResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -1857,7 +1882,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SetProfilePictureRequest"
+                            "$ref": "#/definitions/SetProfilePictureRequest"
                         }
                     }
                 ],
@@ -1865,25 +1890,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SetPictureResponse"
+                            "$ref": "#/definitions/SetPictureResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -1918,19 +1943,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SuccessResponse"
+                            "$ref": "#/definitions/SuccessResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -1967,19 +1992,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.PrivacySettingsResponse"
+                            "$ref": "#/definitions/PrivacySettingsResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -2015,7 +2040,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SetPrivacyRequest"
+                            "$ref": "#/definitions/SetPrivacyRequest"
                         }
                     }
                 ],
@@ -2023,25 +2048,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SuccessResponse"
+                            "$ref": "#/definitions/SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -2079,7 +2104,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SetStatusRequest"
+                            "$ref": "#/definitions/SetStatusRequest"
                         }
                     }
                 ],
@@ -2087,25 +2112,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SetStatusResponse"
+                            "$ref": "#/definitions/SetStatusResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -2149,19 +2174,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.QRResponse"
+                            "$ref": "#/definitions/QRResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -2198,19 +2223,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.MessageResponse"
+                            "$ref": "#/definitions/MessageResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -2248,7 +2273,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendAudioRequest"
+                            "$ref": "#/definitions/SendAudioRequest"
                         }
                     }
                 ],
@@ -2256,25 +2281,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
+                            "$ref": "#/definitions/SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -2312,7 +2337,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendContactRequest"
+                            "$ref": "#/definitions/SendContactRequest"
                         }
                     }
                 ],
@@ -2320,25 +2345,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
+                            "$ref": "#/definitions/SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -2376,7 +2401,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendDocumentRequest"
+                            "$ref": "#/definitions/SendDocumentRequest"
                         }
                     }
                 ],
@@ -2384,25 +2409,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
+                            "$ref": "#/definitions/SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -2440,7 +2465,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendImageRequest"
+                            "$ref": "#/definitions/SendImageRequest"
                         }
                     }
                 ],
@@ -2448,25 +2473,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
+                            "$ref": "#/definitions/SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -2504,7 +2529,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendLocationRequest"
+                            "$ref": "#/definitions/SendLocationRequest"
                         }
                     }
                 ],
@@ -2512,25 +2537,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
+                            "$ref": "#/definitions/SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -2568,7 +2593,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendReactionRequest"
+                            "$ref": "#/definitions/SendReactionRequest"
                         }
                     }
                 ],
@@ -2576,25 +2601,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
+                            "$ref": "#/definitions/SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -2632,7 +2657,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendStickerRequest"
+                            "$ref": "#/definitions/SendStickerRequest"
                         }
                     }
                 ],
@@ -2640,25 +2665,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
+                            "$ref": "#/definitions/SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -2696,7 +2721,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendTextRequest"
+                            "$ref": "#/definitions/SendTextRequest"
                         }
                     }
                 ],
@@ -2704,25 +2729,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
+                            "$ref": "#/definitions/SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -2760,7 +2785,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendVideoRequest"
+                            "$ref": "#/definitions/SendVideoRequest"
                         }
                     }
                 ],
@@ -2768,25 +2793,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
+                            "$ref": "#/definitions/SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -2799,14 +2824,14 @@
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "List all webhooks for a session",
+                "description": "Get the webhook configuration for a session",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "webhook"
                 ],
-                "summary": "List webhooks",
+                "summary": "Get webhook",
                 "parameters": [
                     {
                         "type": "string",
@@ -2820,16 +2845,13 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/zpwoot_internal_api_dto.WebhookResponse"
-                            }
+                            "$ref": "#/definitions/WebhookResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -2840,7 +2862,7 @@
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create a new webhook for a session",
+                "description": "Set or update the webhook configuration for a session (one webhook per session)",
                 "consumes": [
                     "application/json"
                 ],
@@ -2850,7 +2872,7 @@
                 "tags": [
                     "webhook"
                 ],
-                "summary": "Create webhook",
+                "summary": "Set webhook",
                 "parameters": [
                     {
                         "type": "string",
@@ -2860,12 +2882,12 @@
                         "required": true
                     },
                     {
-                        "description": "Webhook data",
+                        "description": "Webhook configuration",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.CreateWebhookRequest"
+                            "$ref": "#/definitions/SetWebhookRequest"
                         }
                     }
                 ],
@@ -2873,123 +2895,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.WebhookResponse"
+                            "$ref": "#/definitions/WebhookResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/sessions/{name}/webhook/{id}": {
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Update an existing webhook",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "webhook"
-                ],
-                "summary": "Update webhook",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session name",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Webhook ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Webhook data",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.UpdateWebhookRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.MessageResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Delete a webhook",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "webhook"
-                ],
-                "summary": "Delete webhook",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session name",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Webhook ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.MessageResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -2997,7 +2915,7 @@
         }
     },
     "definitions": {
-        "zpwoot_internal_api_dto.ArchiveChatRequest": {
+        "ArchiveChatRequest": {
             "type": "object",
             "required": [
                 "phone"
@@ -3013,7 +2931,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.AvatarResponse": {
+        "AvatarResponse": {
             "type": "object",
             "properties": {
                 "id": {
@@ -3027,7 +2945,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.ChatActionResponse": {
+        "ChatActionResponse": {
             "type": "object",
             "properties": {
                 "status": {
@@ -3040,7 +2958,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.ChatPresenceRequest": {
+        "ChatPresenceRequest": {
             "type": "object",
             "required": [
                 "phone",
@@ -3061,7 +2979,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.ChatPresenceResponse": {
+        "ChatPresenceResponse": {
             "type": "object",
             "properties": {
                 "state": {
@@ -3072,7 +2990,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.CheckPhoneRequest": {
+        "CheckPhoneRequest": {
             "type": "object",
             "required": [
                 "phones"
@@ -3090,7 +3008,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.CheckPhoneResult": {
+        "CheckPhoneResult": {
             "type": "object",
             "properties": {
                 "isRegistered": {
@@ -3104,13 +3022,13 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.CheckPhoneResultsResponse": {
+        "CheckPhoneResultsResponse": {
             "type": "object",
             "properties": {
                 "results": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/zpwoot_internal_api_dto.CheckPhoneResult"
+                        "$ref": "#/definitions/CheckPhoneResult"
                     }
                 },
                 "success": {
@@ -3118,7 +3036,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.ContactInfoRequest": {
+        "ContactInfoRequest": {
             "type": "object",
             "required": [
                 "phones"
@@ -3132,7 +3050,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.ContactInfoResponse": {
+        "ContactInfoResponse": {
             "type": "object",
             "properties": {
                 "success": {
@@ -3144,7 +3062,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.ContactsListResponse": {
+        "ContactsListResponse": {
             "type": "object",
             "properties": {
                 "contacts": {},
@@ -3153,7 +3071,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.CreateGroupRequest": {
+        "CreateGroupRequest": {
             "type": "object",
             "required": [
                 "name",
@@ -3172,33 +3090,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.CreateWebhookRequest": {
-            "type": "object",
-            "required": [
-                "url"
-            ],
-            "properties": {
-                "events": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "message.received",
-                        "session.connected"
-                    ]
-                },
-                "secret": {
-                    "type": "string",
-                    "example": "my-secret-key"
-                },
-                "url": {
-                    "type": "string",
-                    "example": "https://example.com/webhook"
-                }
-            }
-        },
-        "zpwoot_internal_api_dto.DeleteMessageRequest": {
+        "DeleteMessageRequest": {
             "type": "object",
             "required": [
                 "messageId",
@@ -3219,7 +3111,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.EditMessageRequest": {
+        "EditMessageRequest": {
             "type": "object",
             "required": [
                 "messageId",
@@ -3241,7 +3133,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.ErrorResponse": {
+        "ErrorResponse": {
             "type": "object",
             "properties": {
                 "error": {
@@ -3250,7 +3142,27 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.GroupActionResponse": {
+        "EventsResponse": {
+            "type": "object",
+            "properties": {
+                "all": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "categories": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "GroupActionResponse": {
             "type": "object",
             "properties": {
                 "data": {},
@@ -3264,7 +3176,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.GroupInviteLinkResponse": {
+        "GroupInviteLinkResponse": {
             "type": "object",
             "properties": {
                 "groupId": {
@@ -3278,7 +3190,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.GroupParticipantsRequest": {
+        "GroupParticipantsRequest": {
             "type": "object",
             "required": [
                 "groupId",
@@ -3296,7 +3208,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.GroupUpdateRequest": {
+        "GroupUpdateRequest": {
             "type": "object",
             "required": [
                 "groupId",
@@ -3313,7 +3225,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.JoinGroupRequest": {
+        "JoinGroupRequest": {
             "type": "object",
             "required": [
                 "inviteLink"
@@ -3324,7 +3236,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.MarkReadRequest": {
+        "MarkReadRequest": {
             "type": "object",
             "required": [
                 "messageIds",
@@ -3343,7 +3255,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.MessageResponse": {
+        "MessageResponse": {
             "type": "object",
             "properties": {
                 "message": {
@@ -3356,7 +3268,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.PresenceResponse": {
+        "PresenceResponse": {
             "type": "object",
             "properties": {
                 "status": {
@@ -3367,7 +3279,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.PrivacySettingsResponse": {
+        "PrivacySettingsResponse": {
             "type": "object",
             "properties": {
                 "settings": {},
@@ -3376,7 +3288,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.ProfileInfoResponse": {
+        "ProfileInfoResponse": {
             "type": "object",
             "properties": {
                 "profile": {},
@@ -3385,7 +3297,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.QRResponse": {
+        "QRResponse": {
             "type": "object",
             "properties": {
                 "qr": {
@@ -3398,7 +3310,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.SendAudioRequest": {
+        "SendAudioRequest": {
             "type": "object",
             "required": [
                 "audio",
@@ -3423,7 +3335,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.SendContactRequest": {
+        "SendContactRequest": {
             "type": "object",
             "required": [
                 "contactName",
@@ -3445,7 +3357,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.SendDocumentRequest": {
+        "SendDocumentRequest": {
             "type": "object",
             "required": [
                 "document",
@@ -3471,7 +3383,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.SendGroupMessageRequest": {
+        "SendGroupMessageRequest": {
             "type": "object",
             "required": [
                 "groupId",
@@ -3488,7 +3400,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.SendImageRequest": {
+        "SendImageRequest": {
             "type": "object",
             "required": [
                 "image",
@@ -3513,7 +3425,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.SendLocationRequest": {
+        "SendLocationRequest": {
             "type": "object",
             "required": [
                 "latitude",
@@ -3543,7 +3455,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.SendReactionRequest": {
+        "SendReactionRequest": {
             "type": "object",
             "required": [
                 "emoji",
@@ -3565,7 +3477,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.SendResponse": {
+        "SendResponse": {
             "type": "object",
             "properties": {
                 "messageId": {
@@ -3582,7 +3494,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.SendStickerRequest": {
+        "SendStickerRequest": {
             "type": "object",
             "required": [
                 "phone",
@@ -3603,7 +3515,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.SendTextRequest": {
+        "SendTextRequest": {
             "type": "object",
             "required": [
                 "phone",
@@ -3620,7 +3532,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.SendVideoRequest": {
+        "SendVideoRequest": {
             "type": "object",
             "required": [
                 "phone",
@@ -3645,7 +3557,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.SessionResponse": {
+        "SessionResponse": {
             "type": "object",
             "properties": {
                 "jid": {
@@ -3662,7 +3574,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.SetNameResponse": {
+        "SetNameResponse": {
             "type": "object",
             "properties": {
                 "name": {
@@ -3673,7 +3585,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.SetPictureResponse": {
+        "SetPictureResponse": {
             "type": "object",
             "properties": {
                 "pictureId": {
@@ -3684,7 +3596,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.SetPresenceRequest": {
+        "SetPresenceRequest": {
             "type": "object",
             "properties": {
                 "available": {
@@ -3693,7 +3605,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.SetPrivacyRequest": {
+        "SetPrivacyRequest": {
             "type": "object",
             "properties": {
                 "lastSeen": {
@@ -3714,7 +3626,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.SetProfilePictureRequest": {
+        "SetProfilePictureRequest": {
             "type": "object",
             "required": [
                 "image"
@@ -3726,7 +3638,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.SetPushNameRequest": {
+        "SetPushNameRequest": {
             "type": "object",
             "required": [
                 "name"
@@ -3738,7 +3650,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.SetStatusRequest": {
+        "SetStatusRequest": {
             "type": "object",
             "required": [
                 "status"
@@ -3750,7 +3662,7 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.SetStatusResponse": {
+        "SetStatusResponse": {
             "type": "object",
             "properties": {
                 "status": {
@@ -3761,24 +3673,8 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.SuccessResponse": {
+        "SetWebhookRequest": {
             "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string",
-                    "example": "operation completed"
-                },
-                "success": {
-                    "type": "boolean",
-                    "example": true
-                }
-            }
-        },
-        "zpwoot_internal_api_dto.UpdateWebhookRequest": {
-            "type": "object",
-            "required": [
-                "url"
-            ],
             "properties": {
                 "enabled": {
                     "type": "boolean",
@@ -3804,7 +3700,20 @@
                 }
             }
         },
-        "zpwoot_internal_api_dto.WebhookResponse": {
+        "SuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "operation completed"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "WebhookResponse": {
             "type": "object",
             "properties": {
                 "enabled": {
@@ -3817,10 +3726,10 @@
                     }
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "sessionId": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "url": {
                     "type": "string"
@@ -3834,5 +3743,8 @@
             "name": "apikey",
             "in": "header"
         }
+    },
+    "x-extension-openapi": {
+        "disableSwaggerDefaultValue": true
     }
 }

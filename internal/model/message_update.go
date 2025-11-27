@@ -17,6 +17,7 @@ const (
 
 type MessageUpdate struct {
 	ID        string          `json:"id"`
+	SessionID string          `json:"sessionId"`
 	MsgID     string          `json:"msgId"` // WhatsApp message ID
 	Type      UpdateType      `json:"type"`
 	Actor     string          `json:"actor,omitempty"`

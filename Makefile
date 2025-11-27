@@ -26,7 +26,7 @@ clean:
 # Generate Swagger documentation
 swagger:
 	$(GO) install github.com/swaggo/swag/cmd/swag@latest
-	~/go/bin/swag init -g $(SWAGGER_PATH) -o ./docs --parseDependency --parseInternal
+	~/go/bin/swag init -g $(SWAGGER_PATH) -o ./docs --parseDependency --parseInternal --useStructName
 
 # Install dependencies
 deps:
