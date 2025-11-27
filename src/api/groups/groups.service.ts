@@ -15,9 +15,17 @@ import {
   GroupSetting,
 } from './dto';
 
+/**
+ * Service responsible for all group-related operations.
+ * Handles group creation, management, participants, and settings.
+ */
 @Injectable()
 export class GroupsService {
   constructor(private readonly whaileysService: WhaileysService) {}
+
+  // ============================================================================
+  // Private Helpers
+  // ============================================================================
 
   private getSocket(sessionName: string) {
     const session = this.whaileysService.getSession(sessionName);
@@ -39,6 +47,10 @@ export class GroupsService {
   private formatGroupJid(groupId: string): string {
     return groupId.includes('@') ? groupId : `${groupId}@g.us`;
   }
+
+  // ============================================================================
+  // Group CRUD Operations
+  // ============================================================================
 
   async createGroup(
     sessionName: string,
@@ -93,6 +105,10 @@ export class GroupsService {
     await socket.groupUpdateDescription(jid, description);
   }
 
+  // ============================================================================
+  // Participant Management
+  // ============================================================================
+
   async updateParticipants(
     sessionName: string,
     groupId: string,
@@ -105,6 +121,10 @@ export class GroupsService {
     return socket.groupParticipantsUpdate(jid, jids, action);
   }
 
+  // ============================================================================
+  // Group Settings
+  // ============================================================================
+
   async updateGroupSettings(
     sessionName: string,
     groupId: string,
@@ -114,6 +134,10 @@ export class GroupsService {
     const jid = this.formatGroupJid(groupId);
     await socket.groupSettingUpdate(jid, setting);
   }
+
+  // ============================================================================
+  // Invite Links & Join/Leave
+  // ============================================================================
 
   async getInviteCode(
     sessionName: string,

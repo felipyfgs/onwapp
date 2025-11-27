@@ -33,10 +33,21 @@ import {
   SendCarouselDto,
 } from './dto';
 
+/**
+ * Service responsible for all message-related operations.
+ * Handles sending, editing, deleting, and managing messages across WhatsApp sessions.
+ */
 @Injectable()
 export class MessagesService {
   constructor(private readonly whaileysService: WhaileysService) {}
 
+  // ============================================================================
+  // Private Helpers
+  // ============================================================================
+
+  /**
+   * Retrieves a connected session or throws an appropriate error
+   */
   private getSessionOrThrow(sessionName: string) {
     const session = this.whaileysService.getSession(sessionName);
     if (!session) {
@@ -50,9 +61,16 @@ export class MessagesService {
     return session;
   }
 
+  /**
+   * Formats a phone number to WhatsApp JID format
+   */
   private formatJid(to: string): string {
     return to.includes('@') ? to : `${to}@s.whatsapp.net`;
   }
+
+  // ============================================================================
+  // Text & Media Messages
+  // ============================================================================
 
   async sendText(sessionName: string, dto: SendTextDto) {
     const session = this.getSessionOrThrow(sessionName);
@@ -165,6 +183,10 @@ export class MessagesService {
     });
   }
 
+  // ============================================================================
+  // Interactive Messages (Buttons, Lists, Templates, Carousels)
+  // ============================================================================
+
   async sendButtons(sessionName: string, dto: SendButtonsDto) {
     const session = this.getSessionOrThrow(sessionName);
     const jid = this.formatJid(dto.to);
@@ -276,6 +298,10 @@ export class MessagesService {
     );
   }
 
+  // ============================================================================
+  // Message Management (Forward, Delete, Edit, Read)
+  // ============================================================================
+
   async forwardMessage(sessionName: string, dto: ForwardMessageDto) {
     const session = this.getSessionOrThrow(sessionName);
     const jid = this.formatJid(dto.to);
@@ -321,11 +347,14 @@ export class MessagesService {
     await session.socket.readMessages(dto.keys);
   }
 
+  // ============================================================================
+  // Polls & Special Messages
+  // ============================================================================
+
   async sendPoll(sessionName: string, dto: SendPollDto) {
     const session = this.getSessionOrThrow(sessionName);
     const jid = this.formatJid(dto.to);
 
-    // Poll messages use a special structure
     const pollContent = {
       pollCreationMessage: {
         name: dto.name,
@@ -358,6 +387,10 @@ export class MessagesService {
   async fetchMessageHistory(_sessionName: string, _dto: FetchMessageHistoryDto) {
     throw new Error('fetchMessageHistory not available in @fadzzzslebew/baileys');
   }
+
+  // ============================================================================
+  // Receipts & Acknowledgments
+  // ============================================================================
 
   async sendReceipt(sessionName: string, dto: SendReceiptDto) {
     const session = this.getSessionOrThrow(sessionName);

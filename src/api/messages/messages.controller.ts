@@ -36,6 +36,10 @@ import {
   SendCarouselDto,
 } from './dto';
 
+/**
+ * Controller for all message-related endpoints.
+ * Provides endpoints for sending text, media, interactive messages, and more.
+ */
 @ApiTags('Messages')
 @ApiSecurity('apikey')
 @Controller('sessions/:name/send')
