@@ -10,6 +10,8 @@ export * from './send-reaction.dto';
 export * from './send-buttons.dto';
 export * from './send-list.dto';
 export * from './send-template.dto';
+export * from './send-poll.dto';
+export * from './edit-message.dto';
 export * from './forward-message.dto';
 export * from './delete-message.dto';
 export * from './read-messages.dto';

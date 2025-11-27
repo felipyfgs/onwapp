@@ -21,6 +21,8 @@ import {
   SendButtonsDto,
   SendListDto,
   SendTemplateDto,
+  SendPollDto,
+  EditMessageDto,
   ForwardMessageDto,
   DeleteMessageDto,
   DeleteMessageForMeDto,
@@ -298,5 +300,39 @@ export class MessagesController {
   ): Promise<{ success: boolean }> {
     await this.messagesService.readMessages(name, dto);
     return { success: true };
+  }
+
+  @Post('poll')
+  @ApiOperation({ summary: 'Send a poll message' })
+  @ApiParam({ name: 'name', description: 'Session name' })
+  @ApiResponse({
+    status: 200,
+    description: 'Poll sent',
+    type: MessageResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Session not found' })
+  @ApiResponse({ status: 400, description: 'Session not connected' })
+  async sendPoll(
+    @Param('name') name: string,
+    @Body() dto: SendPollDto,
+  ): Promise<proto.WebMessageInfo | undefined> {
+    return this.messagesService.sendPoll(name, dto);
+  }
+
+  @Post('edit')
+  @ApiOperation({ summary: 'Edit a previously sent message' })
+  @ApiParam({ name: 'name', description: 'Session name' })
+  @ApiResponse({
+    status: 200,
+    description: 'Message edited',
+    type: MessageResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Session not found' })
+  @ApiResponse({ status: 400, description: 'Session not connected' })
+  async editMessage(
+    @Param('name') name: string,
+    @Body() dto: EditMessageDto,
+  ): Promise<proto.WebMessageInfo | undefined> {
+    return this.messagesService.editMessage(name, dto);
   }
 }

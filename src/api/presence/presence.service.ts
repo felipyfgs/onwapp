@@ -15,18 +15,21 @@ export class PresenceService {
         presence === 'online' ? 'available' : 'unavailable',
       );
     } else if (chatId) {
-      const presenceMap: Record<string, 'composing' | 'recording' | 'paused'> = {
-        typing: 'composing',
-        recording: 'recording',
-        paused: 'paused',
-      };
+      const presenceMap: Record<string, 'composing' | 'recording' | 'paused'> =
+        {
+          typing: 'composing',
+          recording: 'recording',
+          paused: 'paused',
+        };
       await this.whaileysService.sendPresenceUpdate(
         sessionName,
         presenceMap[presence],
         chatId,
       );
     } else {
-      throw new Error('chatId is required for typing/recording/paused presence');
+      throw new Error(
+        'chatId is required for typing/recording/paused presence',
+      );
     }
   }
 

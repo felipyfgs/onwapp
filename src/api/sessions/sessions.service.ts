@@ -9,6 +9,7 @@ import {
   SessionStatusResponseDto,
   SessionConnectResponseDto,
   SessionInfoResponseDto,
+  PairingCodeResponseDto,
 } from './dto';
 
 @Injectable()
@@ -85,6 +86,33 @@ export class SessionsService {
         throw new NotFoundException(`Session '${name}' not found`);
       }
       throw error;
+    }
+  }
+
+  async requestPairingCode(
+    name: string,
+    phoneNumber: string,
+    customCode?: string,
+  ): Promise<PairingCodeResponseDto> {
+    try {
+      const code = await this.whaileysService.requestPairingCode(
+        name,
+        phoneNumber,
+        customCode,
+      );
+      return { code };
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('not found')) {
+        throw new NotFoundException(`Session '${name}' not found`);
+      }
+      if (error instanceof Error && error.message.includes('not initialized')) {
+        throw new BadRequestException(
+          'Session not initialized. Call /connect first.',
+        );
+      }
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Failed to request pairing code',
+      );
     }
   }
 }

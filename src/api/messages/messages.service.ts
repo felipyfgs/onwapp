@@ -19,6 +19,8 @@ import {
   SendButtonsDto,
   SendListDto,
   SendTemplateDto,
+  SendPollDto,
+  EditMessageDto,
   ForwardMessageDto,
   DeleteMessageDto,
   DeleteMessageForMeDto,
@@ -265,5 +267,28 @@ export class MessagesService {
   async readMessages(sessionName: string, dto: ReadMessagesDto) {
     const session = this.getSessionOrThrow(sessionName);
     await session.socket.readMessages(dto.keys);
+  }
+
+  async sendPoll(sessionName: string, dto: SendPollDto) {
+    const session = this.getSessionOrThrow(sessionName);
+    const jid = this.formatJid(dto.to);
+
+    return session.socket.sendMessage(jid, {
+      poll: {
+        name: dto.name,
+        values: dto.options,
+        selectableCount: dto.selectableCount || 1,
+      },
+    } as AnyMessageContent);
+  }
+
+  async editMessage(sessionName: string, dto: EditMessageDto) {
+    const session = this.getSessionOrThrow(sessionName);
+    const jid = this.formatJid(dto.to);
+
+    return session.socket.sendMessage(jid, {
+      text: dto.newText,
+      edit: dto.messageKey,
+    });
   }
 }

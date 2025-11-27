@@ -821,4 +821,29 @@ export class WhaileysService
     }
   }
 
+  // Pairing code
+  async requestPairingCode(
+    sessionName: string,
+    phoneNumber: string,
+    customCode?: string,
+  ): Promise<string> {
+    const session = this.sessions.get(sessionName);
+    if (!session) {
+      throw new Error(`Session ${sessionName} not found`);
+    }
+    if (!session.socket) {
+      throw new Error(`Session ${sessionName} not initialized`);
+    }
+    return session.socket.requestPairingCode(phoneNumber, customCode);
+  }
+
+  // Calls
+  async rejectCall(
+    sessionName: string,
+    callId: string,
+    callFrom: string,
+  ): Promise<void> {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.rejectCall(callId, callFrom);
+  }
 }

@@ -7,6 +7,7 @@ import { ChatsModule } from './api/chats/chats.module';
 import { ContactsModule } from './api/contacts/contacts.module';
 import { SettingsModule } from './api/settings/settings.module';
 import { PresenceModule } from './api/presence/presence.module';
+import { CallsModule } from './api/calls/calls.module';
 import { WebhookModule } from './integrations/webhook/webhook.module';
 import { DatabaseModule } from './database/database.module';
 import { LoggerModule } from './logger/logger.module';
@@ -24,6 +25,7 @@ import { LoggerModule } from './logger/logger.module';
     ContactsModule,
     SettingsModule,
     PresenceModule,
+    CallsModule,
   ],
   controllers: [],
   providers: [],

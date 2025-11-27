@@ -24,6 +24,8 @@ import {
   SessionConnectResponseDto,
   SessionInfoResponseDto,
   SuccessResponseDto,
+  PairingCodeRequestDto,
+  PairingCodeResponseDto,
 } from './dto';
 
 @ApiTags('Sessions')
@@ -158,5 +160,30 @@ export class SessionsController {
   @ApiResponse({ status: 404, description: 'Session not found' })
   async getInfo(@Param('name') name: string): Promise<SessionInfoResponseDto> {
     return this.sessionsService.getInfo(name);
+  }
+
+  @Post(':name/pairing-code')
+  @ApiOperation({
+    summary: 'Request pairing code for phone linking (alternative to QR)',
+    description:
+      'Request a pairing code that can be entered on the phone to link the session. Call /connect first to initialize the session.',
+  })
+  @ApiParam({ name: 'name', description: 'Session name' })
+  @ApiResponse({
+    status: 200,
+    description: 'Pairing code returned',
+    type: PairingCodeResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Session not initialized' })
+  @ApiResponse({ status: 404, description: 'Session not found' })
+  async requestPairingCode(
+    @Param('name') name: string,
+    @Body() dto: PairingCodeRequestDto,
+  ): Promise<PairingCodeResponseDto> {
+    return this.sessionsService.requestPairingCode(
+      name,
+      dto.phoneNumber,
+      dto.customCode,
+    );
   }
 }
