@@ -193,4 +193,36 @@ export class GroupsService {
     );
     return result || '';
   }
+
+  async fetchAllParticipating(
+    sessionName: string,
+  ): Promise<Record<string, GroupMetadataResponseDto>> {
+    const socket = this.getSocket(sessionName);
+    const groups = await socket.groupFetchAllParticipating();
+    const result: Record<string, GroupMetadataResponseDto> = {};
+    for (const [id, metadata] of Object.entries(groups)) {
+      result[id] = {
+        id: metadata.id,
+        subject: metadata.subject,
+        desc: metadata.desc,
+        creation: metadata.creation,
+        owner: metadata.owner,
+        participants: metadata.participants.map((p) => ({
+          id: p.id,
+          admin: p.admin || undefined,
+        })),
+      };
+    }
+    return result;
+  }
+
+  async toggleEphemeral(
+    sessionName: string,
+    groupId: string,
+    expiration: number,
+  ): Promise<void> {
+    const socket = this.getSocket(sessionName);
+    const jid = this.formatGroupJid(groupId);
+    await socket.groupToggleEphemeral(jid, expiration);
+  }
 }
