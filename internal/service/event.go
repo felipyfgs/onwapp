@@ -9,6 +9,7 @@ import (
 
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/proto/waHistorySync"
+	"go.mau.fi/whatsmeow/proto/waWeb"
 	"go.mau.fi/whatsmeow/types/events"
 
 	"zpwoot/internal/db"
@@ -112,7 +113,7 @@ func (s *EventService) handleConnected(ctx context.Context, session *model.Sessi
 		logger.Warn().Err(err).Str("session", session.Name).Msg("Failed to update session status")
 	}
 
-	s.sendWebhook(ctx, session.ID, "session.connected", map[string]string{"session": session.Name})
+	s.sendWebhook(ctx, session, "session.connected", nil)
 }
 
 func (s *EventService) handleDisconnected(ctx context.Context, session *model.Session) {
@@ -127,7 +128,7 @@ func (s *EventService) handleDisconnected(ctx context.Context, session *model.Se
 		logger.Warn().Err(err).Str("session", session.Name).Msg("Failed to update session status")
 	}
 
-	s.sendWebhook(ctx, session.ID, "session.disconnected", map[string]string{"session": session.Name})
+	s.sendWebhook(ctx, session, "session.disconnected", nil)
 }
 
 func (s *EventService) handleLoggedOut(ctx context.Context, session *model.Session, e *events.LoggedOut) {
@@ -143,50 +144,41 @@ func (s *EventService) handleLoggedOut(ctx context.Context, session *model.Sessi
 		logger.Warn().Err(err).Str("session", session.Name).Msg("Failed to update session status")
 	}
 
-	s.sendWebhook(ctx, session.ID, "session.logged_out", map[string]interface{}{
-		"session": session.Name,
-		"reason":  e.Reason.String(),
-	})
+	s.sendWebhook(ctx, session, "session.logged_out", e)
 }
 
 // Message events
 
 func (s *EventService) handleMessage(ctx context.Context, session *model.Session, e *events.Message) {
-	msgType := "text"
-	content := ""
+	// Skip sender key distribution messages (encryption protocol)
+	if e.Message.GetSenderKeyDistributionMessage() != nil {
+		return
+	}
 
-	if e.Message.GetConversation() != "" {
-		content = e.Message.GetConversation()
-	} else if e.Message.GetExtendedTextMessage() != nil {
-		content = e.Message.GetExtendedTextMessage().GetText()
-	} else if e.Message.GetImageMessage() != nil {
-		msgType = "image"
-		content = e.Message.GetImageMessage().GetCaption()
-	} else if e.Message.GetVideoMessage() != nil {
-		msgType = "video"
-		content = e.Message.GetVideoMessage().GetCaption()
-	} else if e.Message.GetAudioMessage() != nil {
-		msgType = "audio"
-	} else if e.Message.GetDocumentMessage() != nil {
-		msgType = "document"
-		content = e.Message.GetDocumentMessage().GetFileName()
-	} else if e.Message.GetStickerMessage() != nil {
-		msgType = "sticker"
-	} else if e.Message.GetLocationMessage() != nil {
-		msgType = "location"
-		loc := e.Message.GetLocationMessage()
-		content = fmt.Sprintf("%.6f,%.6f", loc.GetDegreesLatitude(), loc.GetDegreesLongitude())
-	} else if e.Message.GetContactMessage() != nil {
-		msgType = "contact"
-		content = e.Message.GetContactMessage().GetDisplayName()
-	} else if e.Message.GetReactionMessage() != nil {
-		msgType = "reaction"
-		content = e.Message.GetReactionMessage().GetText()
-	} else if e.Message.GetPollCreationMessage() != nil {
-		msgType = "poll"
-		content = e.Message.GetPollCreationMessage().GetName()
-	} else if e.Message.GetPollUpdateMessage() != nil {
-		msgType = "poll_update"
+	// Handle reactions - save to MessageUpdate
+	if reaction := e.Message.GetReactionMessage(); reaction != nil {
+		s.handleReaction(ctx, session, e, reaction)
+		return
+	}
+
+	// Handle protocol messages (revoke/delete)
+	if proto := e.Message.GetProtocolMessage(); proto != nil {
+		s.handleProtocolMessage(ctx, session, e, proto)
+		return
+	}
+
+	// Handle edits
+	if e.IsEdit {
+		s.handleMessageEdit(ctx, session, e)
+		return
+	}
+
+	// Regular message
+	msgType, content := s.extractMessageTypeAndContent(e.Message)
+	
+	// Skip unknown messages with no content
+	if msgType == "unknown" && content == "" {
+		return
 	}
 
 	logger.Info().
@@ -199,13 +191,11 @@ func (s *EventService) handleMessage(ctx context.Context, session *model.Session
 		Interface("raw", e).
 		Msg("Message received")
 
-	// Serialize raw event to JSON
 	rawEvent, _ := json.Marshal(e)
 
-	// Determine initial status
 	status := model.MessageStatusSent
 	if !e.Info.IsFromMe {
-		status = model.MessageStatusDelivered // Received message
+		status = model.MessageStatusDelivered
 	}
 
 	msg := &model.Message{
@@ -224,8 +214,8 @@ func (s *EventService) handleMessage(ctx context.Context, session *model.Session
 		IsGroup:      e.Info.IsGroup,
 		IsEphemeral:  e.IsEphemeral,
 		IsViewOnce:   e.IsViewOnce || e.IsViewOnceV2,
-		IsEdit:       e.IsEdit,
-		EditTargetID: e.Info.MsgBotInfo.EditTargetID,
+		IsEdit:       false,
+		EditTargetID: "",
 		QuotedID:     e.Info.MsgMetaInfo.TargetID,
 		QuotedSender: e.Info.MsgMetaInfo.TargetSender.String(),
 		Status:       status,
@@ -236,16 +226,141 @@ func (s *EventService) handleMessage(ctx context.Context, session *model.Session
 		logger.Warn().Err(err).Str("session", session.Name).Str("messageId", e.Info.ID).Msg("Failed to save message")
 	}
 
-	s.sendWebhook(ctx, session.ID, "message.received", map[string]interface{}{
-		"messageId": e.Info.ID,
-		"chatJid":   e.Info.Chat.String(),
-		"senderJid": e.Info.Sender.String(),
-		"type":      msgType,
-		"content":   content,
-		"timestamp": e.Info.Timestamp,
-		"fromMe":    e.Info.IsFromMe,
-		"isGroup":   e.Info.IsGroup,
+	s.sendWebhook(ctx, session, "message.received", e)
+}
+
+func (s *EventService) handleReaction(ctx context.Context, session *model.Session, e *events.Message, reaction *waE2E.ReactionMessage) {
+	targetMsgID := reaction.GetKey().GetID()
+	emoji := reaction.GetText()
+	senderJid := e.Info.Sender.String()
+	timestamp := e.Info.Timestamp
+
+	logger.Info().
+		Str("session", session.Name).
+		Str("event", "reaction").
+		Str("target", targetMsgID).
+		Str("emoji", emoji).
+		Str("from", senderJid).
+		Msg("Reaction received")
+
+	// Determine update type
+	updateType := model.UpdateTypeReactionAdd
+	if emoji == "" {
+		updateType = model.UpdateTypeReactionRemove
+	}
+
+	// Save to MessageUpdate
+	data, _ := json.Marshal(map[string]interface{}{
+		"emoji":     emoji,
+		"timestamp": reaction.GetSenderTimestampMS(),
 	})
+
+	update := &model.MessageUpdate{
+		MsgID:   targetMsgID,
+		Type:    updateType,
+		Actor:   senderJid,
+		Data:    data,
+		EventAt: timestamp,
+	}
+
+	if _, err := s.database.MessageUpdates.Save(ctx, update); err != nil {
+		logger.Warn().Err(err).Str("msgId", targetMsgID).Msg("Failed to save reaction update")
+	}
+
+	// Update Message.reactions
+	if emoji != "" {
+		if err := s.database.Messages.AddReaction(ctx, session.ID, targetMsgID, emoji, senderJid, timestamp.Unix()); err != nil {
+			logger.Warn().Err(err).Str("msgId", targetMsgID).Msg("Failed to add reaction to message")
+		}
+	} else {
+		if err := s.database.Messages.RemoveReaction(ctx, session.ID, targetMsgID, senderJid); err != nil {
+			logger.Warn().Err(err).Str("msgId", targetMsgID).Msg("Failed to remove reaction from message")
+		}
+	}
+
+	s.sendWebhook(ctx, session, "message.reaction", e)
+}
+
+func (s *EventService) handleProtocolMessage(ctx context.Context, session *model.Session, e *events.Message, proto *waE2E.ProtocolMessage) {
+	protoType := proto.GetType()
+
+	// Handle message revoke (delete)
+	if protoType == waE2E.ProtocolMessage_REVOKE {
+		targetMsgID := proto.GetKey().GetID()
+		senderJid := e.Info.Sender.String()
+
+		logger.Info().
+			Str("session", session.Name).
+			Str("event", "message_delete").
+			Str("target", targetMsgID).
+			Str("from", senderJid).
+			Msg("Message deleted")
+
+		data, _ := json.Marshal(map[string]interface{}{
+			"deletedBy": senderJid,
+			"fromMe":    e.Info.IsFromMe,
+		})
+
+		update := &model.MessageUpdate{
+			MsgID:   targetMsgID,
+			Type:    model.UpdateTypeDelete,
+			Actor:   senderJid,
+			Data:    data,
+			EventAt: e.Info.Timestamp,
+		}
+
+		if _, err := s.database.MessageUpdates.Save(ctx, update); err != nil {
+			logger.Warn().Err(err).Str("msgId", targetMsgID).Msg("Failed to save delete update")
+		}
+
+		s.sendWebhook(ctx, session, "message.deleted", e)
+		return
+	}
+
+	// Log other protocol messages
+	logger.Info().
+		Str("session", session.Name).
+		Str("event", "protocol_message").
+		Str("type", protoType.String()).
+		Interface("raw", e).
+		Msg("Protocol message received")
+}
+
+func (s *EventService) handleMessageEdit(ctx context.Context, session *model.Session, e *events.Message) {
+	targetMsgID := e.Info.MsgBotInfo.EditTargetID
+	if targetMsgID == "" {
+		targetMsgID = e.Info.ID
+	}
+	senderJid := e.Info.Sender.String()
+	msgType, newContent := s.extractMessageTypeAndContent(e.Message)
+
+	logger.Info().
+		Str("session", session.Name).
+		Str("event", "message_edit").
+		Str("target", targetMsgID).
+		Str("from", senderJid).
+		Str("newContent", newContent).
+		Msg("Message edited")
+
+	data, _ := json.Marshal(map[string]interface{}{
+		"type":       msgType,
+		"newContent": newContent,
+		"editMsgId":  e.Info.ID,
+	})
+
+	update := &model.MessageUpdate{
+		MsgID:   targetMsgID,
+		Type:    model.UpdateTypeEdit,
+		Actor:   senderJid,
+		Data:    data,
+		EventAt: e.Info.Timestamp,
+	}
+
+	if _, err := s.database.MessageUpdates.Save(ctx, update); err != nil {
+		logger.Warn().Err(err).Str("msgId", targetMsgID).Msg("Failed to save edit update")
+	}
+
+	s.sendWebhook(ctx, session, "message.edited", e)
 }
 
 func (s *EventService) handleReceipt(ctx context.Context, session *model.Session, e *events.Receipt) {
@@ -258,13 +373,7 @@ func (s *EventService) handleReceipt(ctx context.Context, session *model.Session
 		Interface("raw", e).
 		Msg("Receipt received")
 
-	s.sendWebhook(ctx, session.ID, "message.receipt", map[string]interface{}{
-		"type":       string(e.Type),
-		"sender":     e.Sender.String(),
-		"chat":       e.Chat.String(),
-		"messageIds": e.MessageIDs,
-		"timestamp":  e.Timestamp,
-	})
+	s.sendWebhook(ctx, session, "message.receipt", e)
 }
 
 // Presence events
@@ -278,11 +387,7 @@ func (s *EventService) handlePresence(ctx context.Context, session *model.Sessio
 		Time("lastSeen", e.LastSeen).
 		Msg("Presence update")
 
-	s.sendWebhook(ctx, session.ID, "presence.update", map[string]interface{}{
-		"from":        e.From.String(),
-		"unavailable": e.Unavailable,
-		"lastSeen":    e.LastSeen,
-	})
+	s.sendWebhook(ctx, session, "presence.update", e)
 }
 
 func (s *EventService) handleChatPresence(ctx context.Context, session *model.Session, e *events.ChatPresence) {
@@ -295,12 +400,7 @@ func (s *EventService) handleChatPresence(ctx context.Context, session *model.Se
 		Str("media", string(e.Media)).
 		Msg("Chat presence")
 
-	s.sendWebhook(ctx, session.ID, "chat.presence", map[string]interface{}{
-		"chat":   e.Chat.String(),
-		"sender": e.Sender.String(),
-		"state":  string(e.State),
-		"media":  string(e.Media),
-	})
+	s.sendWebhook(ctx, session, "chat.presence", e)
 }
 
 // Sync events
@@ -352,8 +452,18 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 				continue
 			}
 
+			// Skip sender key distribution messages (encryption protocol)
+			if webMsg.GetMessage() != nil && webMsg.GetMessage().GetSenderKeyDistributionMessage() != nil {
+				continue
+			}
+
 			// Determine message type and content
 			msgType, content := s.extractMessageTypeAndContent(webMsg.GetMessage())
+			
+			// Skip unknown messages with no content
+			if msgType == "unknown" && content == "" {
+				continue
+			}
 
 			// Determine sender JID
 			senderJID := key.GetRemoteJID()
@@ -381,6 +491,12 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 				status = model.MessageStatusDelivered
 			}
 
+			// Extract reactions from history
+			var reactionsJSON []byte
+			if reactions := webMsg.GetReactions(); len(reactions) > 0 {
+				reactionsJSON = s.buildReactionsJSON(reactions)
+			}
+
 			msg := &model.Message{
 				SessionID:   session.ID,
 				MessageID:   key.GetID(),
@@ -395,9 +511,15 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 				IsEphemeral: webMsg.GetEphemeralDuration() > 0,
 				Status:      status,
 				RawEvent:    rawEvent,
+				Reactions:   reactionsJSON,
 			}
 
 			allMessages = append(allMessages, msg)
+
+			// Save reactions to MessageUpdates for history tracking
+			if len(webMsg.GetReactions()) > 0 {
+				s.saveHistoryReactions(ctx, key.GetID(), webMsg.GetReactions())
+			}
 		}
 	}
 
@@ -424,13 +546,61 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 	}
 
 	// Send webhook
-	s.sendWebhook(ctx, session.ID, "history.sync", map[string]interface{}{
-		"syncType":      syncType,
-		"chunkOrder":    chunkOrder,
-		"progress":      progress,
-		"conversations": len(conversations),
-		"messages":      totalMsgs,
-	})
+	s.sendWebhook(ctx, session, "history.sync", e)
+}
+
+func (s *EventService) buildReactionsJSON(reactions []*waWeb.Reaction) []byte {
+	if len(reactions) == 0 {
+		return nil
+	}
+
+	var reactionsList []map[string]interface{}
+	for _, r := range reactions {
+		if r.GetKey() == nil {
+			continue
+		}
+		reactionsList = append(reactionsList, map[string]interface{}{
+			"emoji":     r.GetText(),
+			"senderJid": r.GetKey().GetRemoteJID(),
+			"timestamp": r.GetSenderTimestampMS(),
+		})
+	}
+
+	if len(reactionsList) == 0 {
+		return nil
+	}
+
+	data, _ := json.Marshal(reactionsList)
+	return data
+}
+
+func (s *EventService) saveHistoryReactions(ctx context.Context, msgID string, reactions []*waWeb.Reaction) {
+	for _, r := range reactions {
+		if r.GetKey() == nil || r.GetText() == "" {
+			continue
+		}
+
+		senderJid := r.GetKey().GetRemoteJID()
+		timestamp := time.UnixMilli(r.GetSenderTimestampMS())
+
+		data, _ := json.Marshal(map[string]interface{}{
+			"emoji":     r.GetText(),
+			"timestamp": r.GetSenderTimestampMS(),
+			"source":    "history_sync",
+		})
+
+		update := &model.MessageUpdate{
+			MsgID:   msgID,
+			Type:    model.UpdateTypeReactionAdd,
+			Actor:   senderJid,
+			Data:    data,
+			EventAt: timestamp,
+		}
+
+		if _, err := s.database.MessageUpdates.Save(ctx, update); err != nil {
+			logger.Warn().Err(err).Str("msgId", msgID).Msg("Failed to save history reaction")
+		}
+	}
 }
 
 func (s *EventService) extractMessageTypeAndContent(msg *waE2E.Message) (string, string) {
@@ -617,11 +787,7 @@ func (s *EventService) handlePushName(ctx context.Context, session *model.Sessio
 		Str("newName", e.NewPushName).
 		Msg("Push name changed")
 
-	s.sendWebhook(ctx, session.ID, "contact.push_name", map[string]interface{}{
-		"jid":     e.JID.String(),
-		"oldName": e.OldPushName,
-		"newName": e.NewPushName,
-	})
+	s.sendWebhook(ctx, session, "contact.push_name", e)
 }
 
 func (s *EventService) handlePicture(ctx context.Context, session *model.Session, e *events.Picture) {
@@ -632,11 +798,7 @@ func (s *EventService) handlePicture(ctx context.Context, session *model.Session
 		Bool("removed", e.Remove).
 		Msg("Picture changed")
 
-	s.sendWebhook(ctx, session.ID, "contact.picture", map[string]interface{}{
-		"jid":       e.JID.String(),
-		"removed":   e.Remove,
-		"pictureId": e.PictureID,
-	})
+	s.sendWebhook(ctx, session, "contact.picture", e)
 }
 
 func (s *EventService) handleIdentityChange(ctx context.Context, session *model.Session, e *events.IdentityChange) {
@@ -667,10 +829,7 @@ func (s *EventService) handleCallOffer(ctx context.Context, session *model.Sessi
 		Str("callId", e.CallID).
 		Msg("Event: Call offer received")
 
-	s.sendWebhook(ctx, session.ID, "call.offer", map[string]interface{}{
-		"from":   e.CallCreator.String(),
-		"callId": e.CallID,
-	})
+	s.sendWebhook(ctx, session, "call.offer", e)
 }
 
 func (s *EventService) handleCallAccept(ctx context.Context, session *model.Session, e *events.CallAccept) {
@@ -681,10 +840,7 @@ func (s *EventService) handleCallAccept(ctx context.Context, session *model.Sess
 		Str("callId", e.CallID).
 		Msg("Event: Call accepted")
 
-	s.sendWebhook(ctx, session.ID, "call.accept", map[string]interface{}{
-		"from":   e.CallCreator.String(),
-		"callId": e.CallID,
-	})
+	s.sendWebhook(ctx, session, "call.accept", e)
 }
 
 func (s *EventService) handleCallTerminate(ctx context.Context, session *model.Session, e *events.CallTerminate) {
@@ -696,11 +852,7 @@ func (s *EventService) handleCallTerminate(ctx context.Context, session *model.S
 		Str("reason", e.Reason).
 		Msg("Event: Call terminated")
 
-	s.sendWebhook(ctx, session.ID, "call.terminate", map[string]interface{}{
-		"from":   e.CallCreator.String(),
-		"callId": e.CallID,
-		"reason": e.Reason,
-	})
+	s.sendWebhook(ctx, session, "call.terminate", e)
 }
 
 // Group events
@@ -713,11 +865,7 @@ func (s *EventService) handleGroupInfo(ctx context.Context, session *model.Sessi
 		Str("notify", e.Notify).
 		Msg("Event: Group info changed")
 
-	s.sendWebhook(ctx, session.ID, "group.update", map[string]interface{}{
-		"group":  e.JID.String(),
-		"notify": e.Notify,
-		"sender": e.Sender.String(),
-	})
+	s.sendWebhook(ctx, session, "group.update", e)
 }
 
 func (s *EventService) handleJoinedGroup(ctx context.Context, session *model.Session, e *events.JoinedGroup) {
@@ -728,10 +876,7 @@ func (s *EventService) handleJoinedGroup(ctx context.Context, session *model.Ses
 		Str("name", e.GroupInfo.GroupName.Name).
 		Msg("Event: Joined group")
 
-	s.sendWebhook(ctx, session.ID, "group.joined", map[string]interface{}{
-		"group": e.JID.String(),
-		"name":  e.GroupInfo.GroupName.Name,
-	})
+	s.sendWebhook(ctx, session, "group.joined", e)
 }
 
 // Privacy events
@@ -779,8 +924,8 @@ func (s *EventService) handleNewsletterLiveUpdate(ctx context.Context, session *
 
 // Helper
 
-func (s *EventService) sendWebhook(ctx context.Context, sessionID string, event string, data interface{}) {
+func (s *EventService) sendWebhook(ctx context.Context, session *model.Session, event string, rawEvent interface{}) {
 	if s.webhookService != nil {
-		s.webhookService.Send(ctx, sessionID, event, data)
+		s.webhookService.Send(ctx, session.ID, session.Name, event, rawEvent)
 	}
 }

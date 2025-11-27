@@ -70,15 +70,15 @@ func (r *MessageRepository) SaveBatch(ctx context.Context, msgs []*model.Message
 				"pushName", "senderAlt", "type", "mediaType", "category", "content",
 				"isFromMe", "isGroup", "isEphemeral", "isViewOnce", "isEdit",
 				"editTargetId", "quotedId", "quotedSender",
-				"status", "deliveredAt", "readAt", "rawEvent", "createdAt"
+				"status", "deliveredAt", "readAt", "reactions", "rawEvent", "createdAt"
 			)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, COALESCE($23, '[]'::jsonb), $24, $25)
 			ON CONFLICT ("sessionId", "messageId") DO NOTHING`,
 			msg.SessionID, msg.MessageID, msg.ChatJID, msg.SenderJID, msg.Timestamp,
 			msg.PushName, msg.SenderAlt, msg.Type, msg.MediaType, msg.Category, msg.Content,
 			msg.IsFromMe, msg.IsGroup, msg.IsEphemeral, msg.IsViewOnce, msg.IsEdit,
 			msg.EditTargetID, msg.QuotedID, msg.QuotedSender,
-			msg.Status, msg.DeliveredAt, msg.ReadAt, msg.RawEvent, now,
+			msg.Status, msg.DeliveredAt, msg.ReadAt, msg.Reactions, msg.RawEvent, now,
 		)
 	}
 

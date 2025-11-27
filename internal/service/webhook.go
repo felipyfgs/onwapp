@@ -35,7 +35,16 @@ func NewWebhookService(database *db.Database) *WebhookService {
 	}
 }
 
-func (w *WebhookService) Send(ctx context.Context, sessionID string, event string, data interface{}) {
+// WebhookPayload represents the webhook payload sent to subscribers
+type WebhookPayload struct {
+	Event       string      `json:"event"`
+	SessionID   string      `json:"sessionId"`
+	SessionName string      `json:"sessionName"`
+	Timestamp   int64       `json:"timestamp"`
+	Raw         interface{} `json:"raw"`
+}
+
+func (w *WebhookService) Send(ctx context.Context, sessionID, sessionName, event string, rawEvent interface{}) {
 	webhooks, err := w.database.Webhooks.GetEnabledBySession(ctx, sessionID)
 	if err != nil {
 		logger.Error().Err(err).Str("sessionId", sessionID).Msg("Failed to get webhooks")
@@ -46,11 +55,12 @@ func (w *WebhookService) Send(ctx context.Context, sessionID string, event strin
 		return
 	}
 
-	payload := map[string]interface{}{
-		"event":     event,
-		"sessionId": sessionID,
-		"timestamp": time.Now().Unix(),
-		"data":      data,
+	payload := WebhookPayload{
+		Event:       event,
+		SessionID:   sessionID,
+		SessionName: sessionName,
+		Timestamp:   time.Now().Unix(),
+		Raw:         rawEvent,
 	}
 
 	jsonPayload, err := json.Marshal(payload)
