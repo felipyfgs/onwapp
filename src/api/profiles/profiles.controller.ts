@@ -1,4 +1,4 @@
-import { Controller, Post, Param, Body } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Param, Body } from '@nestjs/common';
 import {
   ApiSecurity,
   ApiTags,
@@ -14,6 +14,8 @@ import {
   UpdatePresenceDto,
   SubscribePresenceDto,
   SuccessResponseDto,
+  ProfilePictureResponseDto,
+  MyStatusResponseDto,
 } from './dto';
 
 @ApiTags('Profile')
@@ -100,5 +102,49 @@ export class ProfilesController {
   ): Promise<SuccessResponseDto> {
     await this.profilesService.subscribePresence(session, dto.jid);
     return { success: true };
+  }
+
+  @Get('picture')
+  @ApiOperation({ summary: 'Get own profile picture URL' })
+  @ApiParam({ name: 'session', description: 'Session name' })
+  @ApiResponse({
+    status: 200,
+    description: 'Profile picture URL',
+    type: ProfilePictureResponseDto,
+  })
+  async getProfilePicture(
+    @Param('session') session: string,
+  ): Promise<ProfilePictureResponseDto> {
+    const url = await this.profilesService.getProfilePicture(session);
+    return { url };
+  }
+
+  @Delete('picture')
+  @ApiOperation({ summary: 'Remove profile picture' })
+  @ApiParam({ name: 'session', description: 'Session name' })
+  @ApiResponse({
+    status: 200,
+    description: 'Picture removed',
+    type: SuccessResponseDto,
+  })
+  async removeProfilePicture(
+    @Param('session') session: string,
+  ): Promise<SuccessResponseDto> {
+    await this.profilesService.removeProfilePicture(session);
+    return { success: true };
+  }
+
+  @Get('my-status')
+  @ApiOperation({ summary: 'Get own profile status' })
+  @ApiParam({ name: 'session', description: 'Session name' })
+  @ApiResponse({
+    status: 200,
+    description: 'Profile status',
+    type: MyStatusResponseDto,
+  })
+  async getMyStatus(
+    @Param('session') session: string,
+  ): Promise<MyStatusResponseDto> {
+    return this.profilesService.getMyStatus(session);
   }
 }

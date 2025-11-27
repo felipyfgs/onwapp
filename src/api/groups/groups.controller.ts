@@ -31,6 +31,7 @@ import {
   SuccessResponseDto,
   JoinGroupResponseDto,
   ParticipantsUpdateResponseDto,
+  ToggleEphemeralDto,
 } from './dto';
 
 @ApiTags('Groups')
@@ -284,5 +285,38 @@ export class GroupsController {
       dto.inviteMessage,
     );
     return { groupId };
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Get all groups the session is participating in' })
+  @ApiParam({ name: 'name', description: 'Session name' })
+  @ApiResponse({
+    status: 200,
+    description: 'All participating groups',
+  })
+  @ApiResponse({ status: 404, description: 'Session not found' })
+  async fetchAllParticipating(
+    @Param('name') name: string,
+  ): Promise<Record<string, GroupMetadataResponseDto>> {
+    return this.groupsService.fetchAllParticipating(name);
+  }
+
+  @Post(':groupId/ephemeral')
+  @ApiOperation({ summary: 'Toggle ephemeral (disappearing) messages in group' })
+  @ApiParam({ name: 'name', description: 'Session name' })
+  @ApiParam({ name: 'groupId', description: 'Group ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Ephemeral setting updated',
+    type: SuccessResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Session not found' })
+  async toggleEphemeral(
+    @Param('name') name: string,
+    @Param('groupId') groupId: string,
+    @Body() dto: ToggleEphemeralDto,
+  ): Promise<SuccessResponseDto> {
+    await this.groupsService.toggleEphemeral(name, groupId, dto.expiration);
+    return { success: true };
   }
 }

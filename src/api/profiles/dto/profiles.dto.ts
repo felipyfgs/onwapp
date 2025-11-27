@@ -62,3 +62,27 @@ export class SubscribePresenceDto {
   @IsNotEmpty()
   jid: string;
 }
+
+export class ProfilePictureResponseDto {
+  @ApiProperty({
+    example: 'https://...',
+    description: 'Profile picture URL',
+    required: false,
+  })
+  url: string | null;
+}
+
+export class MyStatusResponseDto {
+  @ApiProperty({
+    example: 'Hello World!',
+    description: 'Status message',
+    required: false,
+  })
+  status?: string;
+
+  @ApiProperty({
+    description: 'When the status was set',
+    required: false,
+  })
+  setAt?: Date;
+}

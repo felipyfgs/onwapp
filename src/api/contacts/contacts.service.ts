@@ -132,4 +132,38 @@ export class ContactsService {
       );
     }
   }
+
+  async getBlocklist(sessionName: string): Promise<string[]> {
+    try {
+      return await this.whaileysService.fetchBlocklist(sessionName);
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Failed to get blocklist',
+      );
+    }
+  }
+
+  async addContact(
+    sessionName: string,
+    jid: string,
+    contact: { fullName?: string; firstName?: string },
+  ): Promise<void> {
+    try {
+      await this.whaileysService.addOrEditContact(sessionName, jid, contact);
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Failed to add contact',
+      );
+    }
+  }
+
+  async removeContact(sessionName: string, jid: string): Promise<void> {
+    try {
+      await this.whaileysService.removeContact(sessionName, jid);
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Failed to remove contact',
+      );
+    }
+  }
 }

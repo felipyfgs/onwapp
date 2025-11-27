@@ -7,3 +7,4 @@ export * from './group-settings.dto';
 export * from './join-group.dto';
 export * from './accept-invite-v4.dto';
 export * from './group-response.dto';
+export * from './toggle-ephemeral.dto';

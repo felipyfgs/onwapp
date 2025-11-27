@@ -89,4 +89,14 @@ export class ChatsService {
       );
     }
   }
+
+  async clearMessages(sessionName: string, jid: string) {
+    try {
+      await this.whaileysService.clearChatMessages(sessionName, jid);
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Failed to clear messages',
+      );
+    }
+  }
 }

@@ -65,4 +65,40 @@ export class ProfilesService {
       );
     }
   }
+
+  async getProfilePicture(sessionName: string): Promise<string | null> {
+    try {
+      return await this.whaileysService.getMyProfilePicture(sessionName);
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error
+          ? error.message
+          : 'Failed to get profile picture',
+      );
+    }
+  }
+
+  async removeProfilePicture(sessionName: string): Promise<void> {
+    try {
+      await this.whaileysService.removeProfilePicture(sessionName);
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error
+          ? error.message
+          : 'Failed to remove profile picture',
+      );
+    }
+  }
+
+  async getMyStatus(
+    sessionName: string,
+  ): Promise<{ status?: string; setAt?: Date }> {
+    try {
+      return await this.whaileysService.getMyStatus(sessionName);
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Failed to get status',
+      );
+    }
+  }
 }

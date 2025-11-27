@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class ContactJidDto {
   @ApiProperty({
@@ -89,4 +89,38 @@ export class BusinessProfileResponseDto {
 
   @ApiPropertyOptional({ example: '123 Street, City', description: 'Address' })
   address?: string;
+}
+
+export class BlocklistResponseDto {
+  @ApiProperty({
+    example: ['5511999999999@s.whatsapp.net'],
+    description: 'List of blocked JIDs',
+  })
+  blocklist: string[];
+}
+
+export class AddContactDto {
+  @ApiProperty({
+    example: '5511999999999@s.whatsapp.net',
+    description: 'Contact JID',
+  })
+  @IsString()
+  @IsNotEmpty()
+  jid: string;
+
+  @ApiPropertyOptional({
+    example: 'John Doe',
+    description: 'Full name of the contact',
+  })
+  @IsString()
+  @IsOptional()
+  fullName?: string;
+
+  @ApiPropertyOptional({
+    example: 'John',
+    description: 'First name of the contact',
+  })
+  @IsString()
+  @IsOptional()
+  firstName?: string;
 }

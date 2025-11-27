@@ -144,4 +144,20 @@ export class ChatsController {
     );
     return { success: true };
   }
+
+  @Post('clear')
+  @ApiOperation({ summary: 'Clear all messages in a chat' })
+  @ApiParam({ name: 'session', description: 'Session name' })
+  @ApiResponse({
+    status: 200,
+    description: 'Messages cleared',
+    type: SuccessResponseDto,
+  })
+  async clearMessages(
+    @Param('session') session: string,
+    @Body() dto: ChatJidDto,
+  ): Promise<SuccessResponseDto> {
+    await this.chatsService.clearMessages(session, dto.jid);
+    return { success: true };
+  }
 }

@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Param, Body } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Param, Body } from '@nestjs/common';
 import {
   ApiSecurity,
   ApiTags,
@@ -15,6 +15,8 @@ import {
   ProfilePictureResponseDto,
   ContactStatusResponseDto,
   BusinessProfileResponseDto,
+  BlocklistResponseDto,
+  AddContactDto,
 } from './dto';
 
 @ApiTags('Contacts')
@@ -134,5 +136,56 @@ export class ContactsController {
     @Param('broadcastId') broadcastId: string,
   ) {
     return this.contactsService.getBroadcastListInfo(session, broadcastId);
+  }
+
+  @Get('blocklist')
+  @ApiOperation({ summary: 'Get list of blocked contacts' })
+  @ApiParam({ name: 'session', description: 'Session name' })
+  @ApiResponse({
+    status: 200,
+    description: 'Blocklist',
+    type: BlocklistResponseDto,
+  })
+  async getBlocklist(
+    @Param('session') session: string,
+  ): Promise<BlocklistResponseDto> {
+    const blocklist = await this.contactsService.getBlocklist(session);
+    return { blocklist };
+  }
+
+  @Post()
+  @ApiOperation({ summary: 'Add or edit a contact in address book' })
+  @ApiParam({ name: 'session', description: 'Session name' })
+  @ApiResponse({
+    status: 200,
+    description: 'Contact added/updated',
+    type: SuccessResponseDto,
+  })
+  async addContact(
+    @Param('session') session: string,
+    @Body() dto: AddContactDto,
+  ): Promise<SuccessResponseDto> {
+    await this.contactsService.addContact(session, dto.jid, {
+      fullName: dto.fullName,
+      firstName: dto.firstName,
+    });
+    return { success: true };
+  }
+
+  @Delete(':jid')
+  @ApiOperation({ summary: 'Remove a contact from address book' })
+  @ApiParam({ name: 'session', description: 'Session name' })
+  @ApiParam({ name: 'jid', description: 'Contact JID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Contact removed',
+    type: SuccessResponseDto,
+  })
+  async removeContact(
+    @Param('session') session: string,
+    @Param('jid') jid: string,
+  ): Promise<SuccessResponseDto> {
+    await this.contactsService.removeContact(session, jid);
+    return { success: true };
   }
 }
