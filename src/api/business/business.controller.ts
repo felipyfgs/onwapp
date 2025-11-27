@@ -26,6 +26,10 @@ import {
   SuccessResponseDto,
 } from './dto';
 
+/**
+ * Controller for WhatsApp Business features.
+ * Handles catalog, collections, products, and order management.
+ */
 @ApiTags('Business')
 @ApiSecurity('apikey')
 @Controller('sessions/:session/business')

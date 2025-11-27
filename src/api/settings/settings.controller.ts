@@ -3,6 +3,10 @@ import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { SettingsService } from './settings.service';
 import { UpdateSettingsDto, SettingsResponseDto } from './dto';
 
+/**
+ * Controller for session settings management.
+ * Handles privacy, profile, and behavior settings.
+ */
 @ApiTags('Settings')
 @Controller('sessions/:session/settings')
 export class SettingsController {

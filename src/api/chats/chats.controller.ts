@@ -18,6 +18,10 @@ import {
   StarMessageDto,
 } from './dto';
 
+/**
+ * Controller for chat management operations.
+ * Handles archiving, muting, pinning, and other chat-level operations.
+ */
 @ApiTags('Chats')
 @ApiSecurity('apikey')
 @Controller('sessions/:session/chats')

@@ -28,6 +28,10 @@ import {
   PairingCodeResponseDto,
 } from './dto';
 
+/**
+ * Controller for WhatsApp session management.
+ * Handles session creation, connection, status, and lifecycle operations.
+ */
 @ApiTags('Sessions')
 @ApiSecurity('apikey')
 @Controller('sessions')

@@ -34,6 +34,10 @@ import {
   ToggleEphemeralDto,
 } from './dto';
 
+/**
+ * Controller for WhatsApp group management.
+ * Handles group creation, participants, settings, and invite links.
+ */
 @ApiTags('Groups')
 @ApiSecurity('apikey')
 @Controller('sessions/:name/groups')

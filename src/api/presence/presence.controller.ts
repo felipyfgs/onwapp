@@ -9,6 +9,10 @@ import {
 import { PresenceService } from './presence.service';
 import { SetPresenceDto, SuccessResponseDto } from './dto';
 
+/**
+ * Controller for presence status management.
+ * Handles online/offline status and typing/recording indicators.
+ */
 @ApiTags('Presence')
 @ApiSecurity('apikey')
 @Controller('sessions/:session/presence')

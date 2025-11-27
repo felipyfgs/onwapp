@@ -19,6 +19,10 @@ import {
   AddContactDto,
 } from './dto';
 
+/**
+ * Controller for contact management operations.
+ * Handles blocking, checking numbers, and retrieving contact information.
+ */
 @ApiTags('Contacts')
 @ApiSecurity('apikey')
 @Controller('sessions/:session/contacts')

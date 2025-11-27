@@ -9,6 +9,10 @@ import {
 import { CallsService } from './calls.service';
 import { RejectCallDto, SuccessResponseDto } from './dto';
 
+/**
+ * Controller for WhatsApp call operations.
+ * Handles call rejection and call-related events.
+ */
 @ApiTags('Calls')
 @ApiSecurity('apikey')
 @Controller('sessions/:session/calls')
