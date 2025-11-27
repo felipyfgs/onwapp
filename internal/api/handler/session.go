@@ -1,4 +1,4 @@
-package api
+package handler
 
 import (
 	"encoding/base64"
@@ -12,36 +12,34 @@ import (
 	"zpwoot/internal/service"
 )
 
-type Handler struct {
+type SessionHandler struct {
 	sessionService *service.SessionService
 }
 
-func NewHandler(sessionService *service.SessionService) *Handler {
-	return &Handler{sessionService: sessionService}
+func NewSessionHandler(sessionService *service.SessionService) *SessionHandler {
+	return &SessionHandler{sessionService: sessionService}
 }
 
-// SessionResponse represents session info response
+// Response types
+
 type SessionResponse struct {
-	Name   string `json:"name" example:"my-session"`
-	Status string `json:"status" example:"connected"`
+	Name   string `json:"name" example:"default"`
 	JID    string `json:"jid,omitempty" example:"5511999999999@s.whatsapp.net"`
+	Status string `json:"status" example:"connected"`
 }
 
-// ErrorResponse represents error response
+type QRResponse struct {
+	QR     string `json:"qr,omitempty" example:"2@ABC123..."`
+	Status string `json:"status" example:"connecting"`
+}
+
 type ErrorResponse struct {
 	Error string `json:"error" example:"session not found"`
 }
 
-// MessageResponse represents message response
 type MessageResponse struct {
-	Message string `json:"message" example:"session deleted"`
-}
-
-// QRResponse represents QR code response
-type QRResponse struct {
-	QR       string `json:"qr" example:"2@ABC123..."`
-	QRBase64 string `json:"qr_base64" example:"data:image/png;base64,..."`
-	Status   string `json:"status" example:"qr"`
+	Message string `json:"message" example:"session created"`
+	Status  string `json:"status" example:"disconnected"`
 }
 
 // Fetch godoc
@@ -54,7 +52,7 @@ type QRResponse struct {
 // @Failure      401    {object}  ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/fetch [get]
-func (h *Handler) Fetch(c *gin.Context) {
+func (h *SessionHandler) Fetch(c *gin.Context) {
 	sessions := h.sessionService.List()
 
 	response := make([]SessionResponse, 0, len(sessions))
@@ -88,7 +86,7 @@ func (h *Handler) Fetch(c *gin.Context) {
 // @Failure      401    {object}  ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/create [post]
-func (h *Handler) Create(c *gin.Context) {
+func (h *SessionHandler) Create(c *gin.Context) {
 	name := c.Param("name")
 
 	session, err := h.sessionService.Create(c.Request.Context(), name)
@@ -115,7 +113,7 @@ func (h *Handler) Create(c *gin.Context) {
 // @Failure      401    {object}  ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/delete [delete]
-func (h *Handler) Delete(c *gin.Context) {
+func (h *SessionHandler) Delete(c *gin.Context) {
 	name := c.Param("name")
 
 	if err := h.sessionService.Delete(c.Request.Context(), name); err != nil {
@@ -138,7 +136,7 @@ func (h *Handler) Delete(c *gin.Context) {
 // @Failure      401    {object}  ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/info [get]
-func (h *Handler) Info(c *gin.Context) {
+func (h *SessionHandler) Info(c *gin.Context) {
 	name := c.Param("name")
 
 	session, err := h.sessionService.Get(name)
@@ -171,7 +169,7 @@ func (h *Handler) Info(c *gin.Context) {
 // @Failure      401    {object}  ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/connect [post]
-func (h *Handler) Connect(c *gin.Context) {
+func (h *SessionHandler) Connect(c *gin.Context) {
 	name := c.Param("name")
 
 	session, err := h.sessionService.Connect(c.Request.Context(), name)
@@ -192,17 +190,9 @@ func (h *Handler) Connect(c *gin.Context) {
 		return
 	}
 
-	if session.Client.IsConnected() {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "already connected",
-			"status":  string(session.GetStatus()),
-		})
-		return
-	}
-
 	c.JSON(http.StatusOK, gin.H{
 		"message": "connected",
-		"status":  string(model.StatusConnected),
+		"status":  string(session.GetStatus()),
 	})
 }
 
@@ -218,7 +208,7 @@ func (h *Handler) Connect(c *gin.Context) {
 // @Failure      401    {object}  ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/logout [post]
-func (h *Handler) Logout(c *gin.Context) {
+func (h *SessionHandler) Logout(c *gin.Context) {
 	name := c.Param("name")
 
 	if err := h.sessionService.Logout(c.Request.Context(), name); err != nil {
@@ -241,7 +231,7 @@ func (h *Handler) Logout(c *gin.Context) {
 // @Failure      401    {object}  ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/restart [post]
-func (h *Handler) Restart(c *gin.Context) {
+func (h *SessionHandler) Restart(c *gin.Context) {
 	name := c.Param("name")
 
 	session, err := h.sessionService.Restart(c.Request.Context(), name)
@@ -269,8 +259,9 @@ func (h *Handler) Restart(c *gin.Context) {
 // @Failure      401     {object}  ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/qr [get]
-func (h *Handler) QR(c *gin.Context) {
+func (h *SessionHandler) QR(c *gin.Context) {
 	name := c.Param("name")
+	format := c.DefaultQuery("format", "json")
 
 	session, err := h.sessionService.Get(name)
 	if err != nil {
@@ -278,19 +269,16 @@ func (h *Handler) QR(c *gin.Context) {
 		return
 	}
 
-	qrCode := session.GetQR()
-	if qrCode == "" {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error":  "no QR code available",
-			"status": string(session.GetStatus()),
+	qr := session.GetQR()
+	if qr == "" {
+		c.JSON(http.StatusOK, QRResponse{
+			Status: string(session.GetStatus()),
 		})
 		return
 	}
 
-	format := c.DefaultQuery("format", "json")
-
 	if format == "image" {
-		png, err := qrcode.Encode(qrCode, qrcode.Medium, 256)
+		png, err := qrcode.Encode(qr, qrcode.Medium, 256)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate QR image"})
 			return
@@ -299,12 +287,11 @@ func (h *Handler) QR(c *gin.Context) {
 		return
 	}
 
-	png, _ := qrcode.Encode(qrCode, qrcode.Medium, 256)
-	base64Img := base64.StdEncoding.EncodeToString(png)
+	image, _ := qrcode.Encode(qr, qrcode.Medium, 256)
+	base64QR := "data:image/png;base64," + base64.StdEncoding.EncodeToString(image)
 
-	c.JSON(http.StatusOK, gin.H{
-		"qr":        qrCode,
-		"qr_base64": "data:image/png;base64," + base64Img,
-		"status":    string(session.GetStatus()),
+	c.JSON(http.StatusOK, QRResponse{
+		QR:     base64QR,
+		Status: string(session.GetStatus()),
 	})
 }

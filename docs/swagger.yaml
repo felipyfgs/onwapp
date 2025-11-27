@@ -36,17 +36,9 @@ definitions:
         example: connected
         type: string
     type: object
-host: localhost:3000
 info:
-  contact:
-    email: support@swagger.io
-    name: API Support
-    url: http://www.swagger.io/support
+  contact: {}
   description: WhatsApp API using whatsmeow library
-  license:
-    name: MIT
-    url: https://opensource.org/licenses/MIT
-  termsOfService: http://swagger.io/terms/
   title: ZPWoot WhatsApp API
   version: "1.0"
 paths:
@@ -69,10 +61,16 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/api.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Connect session
       tags:
       - sessions
@@ -94,10 +92,16 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/api.SessionResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
         "409":
           description: Conflict
           schema:
             $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Create a new session
       tags:
       - sessions
@@ -119,10 +123,16 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/api.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Delete a session
       tags:
       - sessions
@@ -144,10 +154,16 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/api.SessionResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Get session info
       tags:
       - sessions
@@ -169,10 +185,16 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/api.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Logout session
       tags:
       - sessions
@@ -199,10 +221,16 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/api.QRResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Get QR code
       tags:
       - sessions
@@ -224,11 +252,45 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/api.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Restart session
       tags:
       - sessions
+  /sessions/fetch:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all WhatsApp sessions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.SessionResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Fetch all sessions
+      tags:
+      - sessions
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: apikey
+    type: apiKey
 swagger: "2.0"
