@@ -20,11 +20,21 @@ import * as qrcodeTerminal from 'qrcode-terminal';
 import { LoggerService } from '../../logger/logger.service';
 import { WebhookService } from '../../integrations/webhook/webhook.service';
 
+export interface BehaviorSettings {
+  reject_call?: boolean;
+  groups_ignore?: boolean;
+  always_online?: boolean;
+  read_messages?: boolean;
+  read_status?: boolean;
+  sync_full_history?: boolean;
+}
+
 export interface SessionInstance {
   socket: WASocket;
   status: SessionStatus;
   qrcode?: string;
   dbSessionId?: string;
+  behavior?: BehaviorSettings;
 }
 
 @Injectable()
@@ -782,4 +792,33 @@ export class WhaileysService
     const socket = this.getConnectedSocket(sessionName);
     await socket.chatModify({ clear: { messages: [] } }, jid);
   }
+
+  // Behavior settings
+  getBehaviorSettings(sessionName: string): BehaviorSettings {
+    const session = this.sessions.get(sessionName);
+    if (!session) {
+      throw new Error(`Session ${sessionName} not found`);
+    }
+    return session.behavior || {};
+  }
+
+  updateBehaviorSettings(
+    sessionName: string,
+    settings: Partial<BehaviorSettings>,
+  ): void {
+    const session = this.sessions.get(sessionName);
+    if (!session) {
+      throw new Error(`Session ${sessionName} not found`);
+    }
+
+    session.behavior = {
+      ...session.behavior,
+      ...settings,
+    };
+
+    if (settings.always_online !== undefined && settings.always_online) {
+      this.sendPresenceUpdate(sessionName, 'available').catch(() => {});
+    }
+  }
+
 }

@@ -5,8 +5,8 @@ import { MessagesModule } from './api/messages/messages.module';
 import { GroupsModule } from './api/groups/groups.module';
 import { ChatsModule } from './api/chats/chats.module';
 import { ContactsModule } from './api/contacts/contacts.module';
-import { ProfilesModule } from './api/profiles/profiles.module';
-import { PrivacyModule } from './api/privacy/privacy.module';
+import { SettingsModule } from './api/settings/settings.module';
+import { PresenceModule } from './api/presence/presence.module';
 import { WebhookModule } from './integrations/webhook/webhook.module';
 import { DatabaseModule } from './database/database.module';
 import { LoggerModule } from './logger/logger.module';
@@ -22,8 +22,8 @@ import { LoggerModule } from './logger/logger.module';
     GroupsModule,
     ChatsModule,
     ContactsModule,
-    ProfilesModule,
-    PrivacyModule,
+    SettingsModule,
+    PresenceModule,
   ],
   controllers: [],
   providers: [],

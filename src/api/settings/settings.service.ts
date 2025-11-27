@@ -33,7 +33,7 @@ export class SettingsService {
     }
 
     if (settings.behavior) {
-      await this.updateBehaviorSettings(sessionName, settings.behavior);
+      this.updateBehaviorSettings(sessionName, settings.behavior);
     }
 
     return this.getSettings(sessionName);
@@ -42,13 +42,16 @@ export class SettingsService {
   private async getPrivacySettings(
     sessionName: string,
   ): Promise<PrivacySettingsDto> {
-    const settings = await this.whaileysService.fetchPrivacySettings(sessionName);
+    const settings =
+      await this.whaileysService.fetchPrivacySettings(sessionName);
     return {
       last_seen: settings?.last as PrivacySettingsDto['last_seen'],
       online: settings?.online as PrivacySettingsDto['online'],
-      profile_picture: settings?.profile as PrivacySettingsDto['profile_picture'],
+      profile_picture:
+        settings?.profile as PrivacySettingsDto['profile_picture'],
       status: settings?.status as PrivacySettingsDto['status'],
-      read_receipts: settings?.readreceipts as PrivacySettingsDto['read_receipts'],
+      read_receipts:
+        settings?.readreceipts as PrivacySettingsDto['read_receipts'],
       groups_add: settings?.groupadd as PrivacySettingsDto['groups_add'],
       calls: settings?.calladd as PrivacySettingsDto['calls'],
       messages: settings?.messages as PrivacySettingsDto['messages'],
@@ -81,7 +84,10 @@ export class SettingsService {
 
     if (privacy.last_seen !== undefined) {
       updates.push(
-        this.whaileysService.updateLastSeenPrivacy(sessionName, privacy.last_seen),
+        this.whaileysService.updateLastSeenPrivacy(
+          sessionName,
+          privacy.last_seen,
+        ),
       );
     }
     if (privacy.online !== undefined) {
@@ -112,7 +118,10 @@ export class SettingsService {
     }
     if (privacy.groups_add !== undefined) {
       updates.push(
-        this.whaileysService.updateGroupsAddPrivacy(sessionName, privacy.groups_add),
+        this.whaileysService.updateGroupsAddPrivacy(
+          sessionName,
+          privacy.groups_add,
+        ),
       );
     }
     if (privacy.calls !== undefined) {
@@ -122,7 +131,10 @@ export class SettingsService {
     }
     if (privacy.messages !== undefined) {
       updates.push(
-        this.whaileysService.updateMessagesPrivacy(sessionName, privacy.messages),
+        this.whaileysService.updateMessagesPrivacy(
+          sessionName,
+          privacy.messages,
+        ),
       );
     }
 
@@ -136,7 +148,9 @@ export class SettingsService {
     const updates: Promise<void>[] = [];
 
     if (profile.name !== undefined) {
-      updates.push(this.whaileysService.updateProfileName(sessionName, profile.name));
+      updates.push(
+        this.whaileysService.updateProfileName(sessionName, profile.name),
+      );
     }
     if (profile.status !== undefined) {
       updates.push(
@@ -152,10 +166,10 @@ export class SettingsService {
     await Promise.all(updates);
   }
 
-  private async updateBehaviorSettings(
+  private updateBehaviorSettings(
     sessionName: string,
     behavior: BehaviorSettingsDto,
-  ): Promise<void> {
+  ): void {
     this.whaileysService.updateBehaviorSettings(sessionName, behavior);
   }
 }
