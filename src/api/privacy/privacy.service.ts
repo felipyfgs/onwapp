@@ -63,7 +63,10 @@ export class PrivacyService {
     value: PrivacyValue,
   ): Promise<void> {
     try {
-      await this.whaileysService.updateProfilePicturePrivacy(sessionName, value);
+      await this.whaileysService.updateProfilePicturePrivacy(
+        sessionName,
+        value,
+      );
     } catch (error) {
       throw new BadRequestException(
         error instanceof Error

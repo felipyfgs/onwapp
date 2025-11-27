@@ -8,11 +8,11 @@ Este documento compara os metodos disponiveis na biblioteca [whaileys](https://g
 |--------|--------------|----------|-----------|
 | Sessions | 9 | 0 | 100% |
 | Messages | 17 | 2 | 89% |
-| Groups | 14 | 2 | 87% |
-| Chats | 7 | 3 | 70% |
-| Contacts | 7 | 3 | 70% |
-| Profiles | 5 | 3 | 62% |
-| Privacy | 0 | 8 | 0% |
+| Groups | 16 | 0 | 100% |
+| Chats | 8 | 2 | 80% |
+| Contacts | 10 | 0 | 100% |
+| Profiles | 8 | 0 | 100% |
+| Privacy | 9 | 0 | 100% |
 
 ---
 
@@ -76,10 +76,11 @@ Nenhum metodo essencial faltando.
 - [x] `leaveGroup` - Sair do grupo
 - [x] `updateGroupPicture` - Atualizar foto do grupo
 - [x] `acceptInviteV4` - Aceitar convite V4
+- [x] `fetchAllParticipating` - Listar todos os grupos que participa
+- [x] `toggleEphemeral` - Ativar/desativar mensagens temporarias no grupo
 
 ### Faltando
-- [ ] `groupFetchAllParticipating` - Listar todos os grupos que participa
-- [ ] `groupToggleEphemeral` - Ativar/desativar mensagens temporarias no grupo
+Nenhum metodo essencial faltando.
 
 ---
 

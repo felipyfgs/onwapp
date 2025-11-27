@@ -302,7 +302,9 @@ export class GroupsController {
   }
 
   @Post(':groupId/ephemeral')
-  @ApiOperation({ summary: 'Toggle ephemeral (disappearing) messages in group' })
+  @ApiOperation({
+    summary: 'Toggle ephemeral (disappearing) messages in group',
+  })
   @ApiParam({ name: 'name', description: 'Session name' })
   @ApiParam({ name: 'groupId', description: 'Group ID' })
   @ApiResponse({

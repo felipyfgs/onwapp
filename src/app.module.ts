@@ -6,6 +6,7 @@ import { GroupsModule } from './api/groups/groups.module';
 import { ChatsModule } from './api/chats/chats.module';
 import { ContactsModule } from './api/contacts/contacts.module';
 import { ProfilesModule } from './api/profiles/profiles.module';
+import { PrivacyModule } from './api/privacy/privacy.module';
 import { WebhookModule } from './integrations/webhook/webhook.module';
 import { DatabaseModule } from './database/database.module';
 import { LoggerModule } from './logger/logger.module';
@@ -22,6 +23,7 @@ import { LoggerModule } from './logger/logger.module';
     ChatsModule,
     ContactsModule,
     ProfilesModule,
+    PrivacyModule,
   ],
   controllers: [],
   providers: [],

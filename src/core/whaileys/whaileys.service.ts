@@ -669,4 +669,117 @@ export class WhaileysService
       string | undefined
     >;
   }
+
+  // Privacy operations
+  async fetchPrivacySettings(sessionName: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    return socket.fetchPrivacySettings(true);
+  }
+
+  async updateLastSeenPrivacy(sessionName: string, value: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.updateLastSeenPrivacy(
+      value as 'all' | 'contacts' | 'contact_blacklist' | 'none',
+    );
+  }
+
+  async updateOnlinePrivacy(sessionName: string, value: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.updateOnlinePrivacy(value as 'all' | 'match_last_seen');
+  }
+
+  async updateProfilePicturePrivacy(sessionName: string, value: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.updateProfilePicturePrivacy(
+      value as 'all' | 'contacts' | 'contact_blacklist' | 'none',
+    );
+  }
+
+  async updateStatusPrivacy(sessionName: string, value: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.updateStatusPrivacy(
+      value as 'all' | 'contacts' | 'contact_blacklist' | 'none',
+    );
+  }
+
+  async updateReadReceiptsPrivacy(sessionName: string, value: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.updateReadReceiptsPrivacy(value as 'all' | 'none');
+  }
+
+  async updateGroupsAddPrivacy(sessionName: string, value: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.updateGroupsAddPrivacy(
+      value as 'all' | 'contacts' | 'contact_blacklist',
+    );
+  }
+
+  async updateCallPrivacy(sessionName: string, value: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.updateCallPrivacy(value as 'all' | 'known');
+  }
+
+  async updateMessagesPrivacy(sessionName: string, value: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.updateMessagesPrivacy(value as 'all' | 'contacts');
+  }
+
+  // Contact management
+  async fetchBlocklist(sessionName: string): Promise<string[]> {
+    const socket = this.getConnectedSocket(sessionName);
+    return socket.fetchBlocklist();
+  }
+
+  async addOrEditContact(
+    sessionName: string,
+    jid: string,
+    contact: { fullName?: string; firstName?: string },
+  ) {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.addOrEditContact(jid, contact);
+  }
+
+  async removeContact(sessionName: string, jid: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.removeContact(jid);
+  }
+
+  // Profile additional operations
+  async getMyProfilePicture(sessionName: string): Promise<string | null> {
+    const socket = this.getConnectedSocket(sessionName);
+    try {
+      const url = await socket.profilePictureUrl(
+        socket.user?.id || '',
+        'image',
+      );
+      return url ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  async removeProfilePicture(sessionName: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.updateProfilePicture(
+      socket.user?.id || '',
+      null as unknown as { url: string },
+    );
+  }
+
+  async getMyStatus(
+    sessionName: string,
+  ): Promise<{ status?: string; setAt?: Date }> {
+    const socket = this.getConnectedSocket(sessionName);
+    const result = await socket.fetchStatus(socket.user?.id || '');
+    return {
+      status: result?.status,
+      setAt: result?.setAt,
+    };
+  }
+
+  // Chat additional operations
+  async clearChatMessages(sessionName: string, jid: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    await socket.chatModify({ clear: { messages: [] } }, jid);
+  }
 }
