@@ -16,22 +16,6 @@ import (
 	"zpwoot/internal/model"
 )
 
-func toJSON(v interface{}) string {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return fmt.Sprintf("%+v", v)
-	}
-	return string(b)
-}
-
-func toPrettyJSON(v interface{}) string {
-	b, err := json.MarshalIndent(v, "", "  ")
-	if err != nil {
-		return fmt.Sprintf("%+v", v)
-	}
-	return string(b)
-}
-
 type EventService struct {
 	database       *db.Database
 	webhookService *WebhookService
@@ -152,7 +136,7 @@ func (s *EventService) handleLoggedOut(ctx context.Context, session *model.Sessi
 	logger.Info().
 		Str("session", session.Name).
 		Str("event", "logged_out").
-		Str("reason", string(e.Reason)).
+		Str("reason", e.Reason.String()).
 		Msg("Session logged out")
 
 	if err := s.database.Sessions.UpdateStatus(ctx, session.Name, "disconnected"); err != nil {
@@ -161,7 +145,7 @@ func (s *EventService) handleLoggedOut(ctx context.Context, session *model.Sessi
 
 	s.sendWebhook(ctx, session.ID, "session.logged_out", map[string]interface{}{
 		"session": session.Name,
-		"reason":  string(e.Reason),
+		"reason":  e.Reason.String(),
 	})
 }
 
@@ -641,36 +625,27 @@ func (s *EventService) handlePushName(ctx context.Context, session *model.Sessio
 }
 
 func (s *EventService) handlePicture(ctx context.Context, session *model.Session, e *events.Picture) {
-	rawData := map[string]interface{}{
-		"jid":       e.JID.String(),
-		"removed":   e.Remove,
-		"pictureId": e.PictureID,
-	}
-
 	logger.Info().
 		Str("session", session.Name).
 		Str("event", "picture").
 		Str("jid", e.JID.String()).
 		Bool("removed", e.Remove).
-		RawJSON("raw", []byte(toJSON(rawData))).
-		Msg("Event: Picture changed")
+		Msg("Picture changed")
 
-	s.sendWebhook(ctx, session.ID, "contact.picture", rawData)
+	s.sendWebhook(ctx, session.ID, "contact.picture", map[string]interface{}{
+		"jid":       e.JID.String(),
+		"removed":   e.Remove,
+		"pictureId": e.PictureID,
+	})
 }
 
 func (s *EventService) handleIdentityChange(ctx context.Context, session *model.Session, e *events.IdentityChange) {
-	rawData := map[string]interface{}{
-		"jid":      e.JID.String(),
-		"implicit": e.Implicit,
-	}
-
 	logger.Info().
 		Str("session", session.Name).
 		Str("event", "identity_change").
 		Str("jid", e.JID.String()).
 		Bool("implicit", e.Implicit).
-		RawJSON("raw", []byte(toJSON(rawData))).
-		Msg("Event: Identity changed")
+		Msg("Identity changed")
 }
 
 func (s *EventService) handleBlocklist(ctx context.Context, session *model.Session, e *events.Blocklist) {

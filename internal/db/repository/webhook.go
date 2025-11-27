@@ -78,16 +78,7 @@ func (r *WebhookRepository) GetEnabledBySession(ctx context.Context, sessionID s
 		return nil, err
 	}
 	defer rows.Close()
-
-	var webhooks []model.Webhook
-	for rows.Next() {
-		var w model.Webhook
-		if err := rows.Scan(&w.ID, &w.SessionID, &w.URL, &w.Events, &w.Enabled, &w.Secret); err != nil {
-			return nil, err
-		}
-		webhooks = append(webhooks, w)
-	}
-	return webhooks, rows.Err()
+	return scanWebhooks(rows)
 }
 
 func (r *WebhookRepository) Update(ctx context.Context, id string, url string, events []string, enabled bool, secret string) error {

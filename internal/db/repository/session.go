@@ -12,6 +12,8 @@ type SessionRepository struct {
 	pool *pgxpool.Pool
 }
 
+const sessionSelectFields = `"id", "name", COALESCE("deviceJid", ''), COALESCE("phone", ''), COALESCE("status", 'disconnected')`
+
 func NewSessionRepository(pool *pgxpool.Pool) *SessionRepository {
 	return &SessionRepository{pool: pool}
 }
@@ -28,9 +30,8 @@ func (r *SessionRepository) Create(ctx context.Context, name string) (string, er
 
 func (r *SessionRepository) GetByID(ctx context.Context, id string) (*model.SessionRecord, error) {
 	var s model.SessionRecord
-	err := r.pool.QueryRow(ctx, `
-		SELECT "id", "name", COALESCE("deviceJid", '') as "deviceJid", COALESCE("phone", '') as "phone", COALESCE("status", 'disconnected') as "status" 
-		FROM "zpSessions" WHERE "id" = $1`, id).Scan(&s.ID, &s.Name, &s.DeviceJID, &s.Phone, &s.Status)
+	err := r.pool.QueryRow(ctx, `SELECT `+sessionSelectFields+` FROM "zpSessions" WHERE "id" = $1`, id).
+		Scan(&s.ID, &s.Name, &s.DeviceJID, &s.Phone, &s.Status)
 	if err != nil {
 		return nil, err
 	}
@@ -39,9 +40,8 @@ func (r *SessionRepository) GetByID(ctx context.Context, id string) (*model.Sess
 
 func (r *SessionRepository) GetByName(ctx context.Context, name string) (*model.SessionRecord, error) {
 	var s model.SessionRecord
-	err := r.pool.QueryRow(ctx, `
-		SELECT "id", "name", COALESCE("deviceJid", '') as "deviceJid", COALESCE("phone", '') as "phone", COALESCE("status", 'disconnected') as "status" 
-		FROM "zpSessions" WHERE "name" = $1`, name).Scan(&s.ID, &s.Name, &s.DeviceJID, &s.Phone, &s.Status)
+	err := r.pool.QueryRow(ctx, `SELECT `+sessionSelectFields+` FROM "zpSessions" WHERE "name" = $1`, name).
+		Scan(&s.ID, &s.Name, &s.DeviceJID, &s.Phone, &s.Status)
 	if err != nil {
 		return nil, err
 	}
@@ -72,14 +72,10 @@ func (r *SessionRepository) GetAll(ctx context.Context) ([]model.SessionRecord, 
 }
 
 func (r *SessionRepository) GetAllPaginated(ctx context.Context, limit, offset int) ([]model.SessionRecord, error) {
-	query := `
-		SELECT "id", "name", COALESCE("deviceJid", '') as "deviceJid", COALESCE("phone", '') as "phone", COALESCE("status", 'disconnected') as "status" 
-		FROM "zpSessions"
-		ORDER BY "id"`
+	baseQuery := `SELECT ` + sessionSelectFields + ` FROM "zpSessions" ORDER BY "id"`
 
 	if limit > 0 {
-		query += ` LIMIT $1 OFFSET $2`
-		rows, err := r.pool.Query(ctx, query, limit, offset)
+		rows, err := r.pool.Query(ctx, baseQuery+` LIMIT $1 OFFSET $2`, limit, offset)
 		if err != nil {
 			return nil, err
 		}
@@ -87,7 +83,7 @@ func (r *SessionRepository) GetAllPaginated(ctx context.Context, limit, offset i
 		return scanSessions(rows)
 	}
 
-	rows, err := r.pool.Query(ctx, query)
+	rows, err := r.pool.Query(ctx, baseQuery)
 	if err != nil {
 		return nil, err
 	}

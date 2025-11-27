@@ -14,6 +14,13 @@ type MessageRepository struct {
 	pool *pgxpool.Pool
 }
 
+const messageSelectFields = `
+	"id", "sessionId", "messageId", "chatJid", COALESCE("senderJid", ''), "timestamp",
+	COALESCE("pushName", ''), COALESCE("senderAlt", ''), COALESCE("type", ''), COALESCE("mediaType", ''), COALESCE("category", ''), COALESCE("content", ''),
+	COALESCE("isFromMe", false), COALESCE("isGroup", false), COALESCE("isEphemeral", false), COALESCE("isViewOnce", false), COALESCE("isEdit", false),
+	COALESCE("editTargetId", ''), COALESCE("quotedId", ''), COALESCE("quotedSender", ''),
+	COALESCE("status", ''), "deliveredAt", "readAt", COALESCE("reactions", '[]'::jsonb), "rawEvent", "createdAt"`
+
 func NewMessageRepository(pool *pgxpool.Pool) *MessageRepository {
 	return &MessageRepository{pool: pool}
 }
@@ -100,13 +107,8 @@ func (r *MessageRepository) ExistsByMessageID(ctx context.Context, sessionID, me
 }
 
 func (r *MessageRepository) GetBySession(ctx context.Context, sessionID string, limit, offset int) ([]model.Message, error) {
-	rows, err := r.pool.Query(ctx, `
-		SELECT "id", "sessionId", "messageId", "chatJid", COALESCE("senderJid", ''), "timestamp",
-		       COALESCE("pushName", ''), COALESCE("senderAlt", ''), COALESCE("type", ''), COALESCE("mediaType", ''), COALESCE("category", ''), COALESCE("content", ''),
-		       COALESCE("isFromMe", false), COALESCE("isGroup", false), COALESCE("isEphemeral", false), COALESCE("isViewOnce", false), COALESCE("isEdit", false),
-		       COALESCE("editTargetId", ''), COALESCE("quotedId", ''), COALESCE("quotedSender", ''),
-		       COALESCE("status", ''), "deliveredAt", "readAt", COALESCE("reactions", '[]'::jsonb), "rawEvent", "createdAt"
-		FROM "zpMessages" WHERE "sessionId" = $1 ORDER BY "timestamp" DESC LIMIT $2 OFFSET $3`,
+	rows, err := r.pool.Query(ctx,
+		`SELECT `+messageSelectFields+` FROM "zpMessages" WHERE "sessionId" = $1 ORDER BY "timestamp" DESC LIMIT $2 OFFSET $3`,
 		sessionID, limit, offset)
 	if err != nil {
 		return nil, err
@@ -117,13 +119,8 @@ func (r *MessageRepository) GetBySession(ctx context.Context, sessionID string, 
 }
 
 func (r *MessageRepository) GetByChat(ctx context.Context, sessionID string, chatJID string, limit, offset int) ([]model.Message, error) {
-	rows, err := r.pool.Query(ctx, `
-		SELECT "id", "sessionId", "messageId", "chatJid", COALESCE("senderJid", ''), "timestamp",
-		       COALESCE("pushName", ''), COALESCE("senderAlt", ''), COALESCE("type", ''), COALESCE("mediaType", ''), COALESCE("category", ''), COALESCE("content", ''),
-		       COALESCE("isFromMe", false), COALESCE("isGroup", false), COALESCE("isEphemeral", false), COALESCE("isViewOnce", false), COALESCE("isEdit", false),
-		       COALESCE("editTargetId", ''), COALESCE("quotedId", ''), COALESCE("quotedSender", ''),
-		       COALESCE("status", ''), "deliveredAt", "readAt", COALESCE("reactions", '[]'::jsonb), "rawEvent", "createdAt"
-		FROM "zpMessages" WHERE "sessionId" = $1 AND "chatJid" = $2 ORDER BY "timestamp" DESC LIMIT $3 OFFSET $4`,
+	rows, err := r.pool.Query(ctx,
+		`SELECT `+messageSelectFields+` FROM "zpMessages" WHERE "sessionId" = $1 AND "chatJid" = $2 ORDER BY "timestamp" DESC LIMIT $3 OFFSET $4`,
 		sessionID, chatJID, limit, offset)
 	if err != nil {
 		return nil, err
@@ -158,13 +155,8 @@ func (r *MessageRepository) UpdateStatus(ctx context.Context, sessionID string, 
 }
 
 func (r *MessageRepository) GetByMessageID(ctx context.Context, sessionID string, messageID string) (*model.Message, error) {
-	row := r.pool.QueryRow(ctx, `
-		SELECT "id", "sessionId", "messageId", "chatJid", COALESCE("senderJid", ''), "timestamp",
-		       COALESCE("pushName", ''), COALESCE("senderAlt", ''), COALESCE("type", ''), COALESCE("mediaType", ''), COALESCE("category", ''), COALESCE("content", ''),
-		       COALESCE("isFromMe", false), COALESCE("isGroup", false), COALESCE("isEphemeral", false), COALESCE("isViewOnce", false), COALESCE("isEdit", false),
-		       COALESCE("editTargetId", ''), COALESCE("quotedId", ''), COALESCE("quotedSender", ''),
-		       COALESCE("status", ''), "deliveredAt", "readAt", COALESCE("reactions", '[]'::jsonb), "rawEvent", "createdAt"
-		FROM "zpMessages" WHERE "sessionId" = $1 AND "messageId" = $2`,
+	row := r.pool.QueryRow(ctx,
+		`SELECT `+messageSelectFields+` FROM "zpMessages" WHERE "sessionId" = $1 AND "messageId" = $2`,
 		sessionID, messageID)
 
 	var m model.Message
