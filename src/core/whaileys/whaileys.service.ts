@@ -1008,7 +1008,7 @@ export class WhaileysService
 
   /**
    * Send interactive message with template buttons (URL, Call, Quick Reply)
-   * Uses whaileys format with templateButtons for HydratedFourRowTemplate
+   * Uses interactiveMessage format which gets the documentWithCaptionMessage patch
    */
   async sendInteractiveButtons(
     sessionName: string,
@@ -1021,47 +1021,29 @@ export class WhaileysService
     const socket = this.getConnectedSocket(sessionName);
     const jid = this.formatJid(to);
 
-    // Convert to templateButtons format (HydratedTemplateButton)
-    const templateButtons: proto.IHydratedTemplateButton[] = [];
+    // Build interactiveMessage which receives the documentWithCaptionMessage patch
+    const interactiveMessage = proto.Message.InteractiveMessage.create({
+      body: proto.Message.InteractiveMessage.Body.create({ text }),
+      footer: proto.Message.InteractiveMessage.Footer.create({ text: footer }),
+      header: proto.Message.InteractiveMessage.Header.create({
+        title: '',
+        subtitle: '',
+        hasMediaAttachment: false,
+      }),
+      nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
+        buttons: buttons.map((btn) =>
+          proto.Message.InteractiveMessage.NativeFlowMessage.NativeFlowButton.create({
+            name: btn.name,
+            buttonParamsJson: btn.buttonParamsJson,
+          }),
+        ),
+        messageParamsJson: '',
+        messageVersion: 1,
+      }),
+    });
 
-    for (let i = 0; i < buttons.length; i++) {
-      const btn = buttons[i];
-      const params = JSON.parse(btn.buttonParamsJson);
-
-      if (btn.name === 'cta_url') {
-        templateButtons.push({
-          index: i + 1,
-          urlButton: {
-            displayText: params.display_text,
-            url: params.url,
-          },
-        });
-      } else if (btn.name === 'cta_call') {
-        templateButtons.push({
-          index: i + 1,
-          callButton: {
-            displayText: params.display_text,
-            phoneNumber: params.phone_number,
-          },
-        });
-      } else if (btn.name === 'quick_reply') {
-        templateButtons.push({
-          index: i + 1,
-          quickReplyButton: {
-            displayText: params.display_text,
-            id: params.id,
-          },
-        });
-      }
-    }
-
-    // Use whaileys sendMessage with templateButtons
-    const content: AnyMessageContent = {
-      text,
-      footer,
-      templateButtons,
-    };
-
+    // Use sendMessage with interactiveMessage - whaileys will apply the patch
+    const content = { interactiveMessage } as AnyMessageContent;
     return socket.sendMessage(jid, content);
   }
 
@@ -1140,32 +1122,62 @@ export class WhaileysService
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sock = socket as any;
 
-    const carouselCards = await this.buildCarouselCards(cards, sock);
+    // Send header message first
+    await socket.sendMessage(jid, {
+      text: `*${title}*\n\n${text}\n\n_${footer}_`,
+    } as AnyMessageContent);
 
-    const carouselMessage = {
-      interactiveMessage: {
-        body: { text },
-        footer: { text: footer || '' },
-        header: {
-          title: title || '',
+    // Send each card as a separate interactive message
+    const results: string[] = [];
+    for (let i = 0; i < cards.length; i++) {
+      const card = cards[i];
+
+      // Build nativeFlowMessage buttons for each card
+      const nativeFlowButtons = card.buttons.map((btn) =>
+        proto.Message.InteractiveMessage.NativeFlowMessage.NativeFlowButton.create({
+          name: btn.name,
+          buttonParamsJson: btn.buttonParamsJson,
+        }),
+      );
+
+      // Each card as a complete InteractiveMessage
+      const interactiveMessage = proto.Message.InteractiveMessage.create({
+        body: proto.Message.InteractiveMessage.Body.create({
+          text: `${card.title}\n${card.body}`,
+        }),
+        footer: proto.Message.InteractiveMessage.Footer.create({
+          text: card.footer || `Card ${i + 1}/${cards.length}`,
+        }),
+        header: proto.Message.InteractiveMessage.Header.create({
+          title: '',
           subtitle: '',
           hasMediaAttachment: false,
-        },
-        carouselMessage: {
-          cards: carouselCards,
-          messageVersion: 1,
-        },
-      },
-    };
+        }),
+        nativeFlowMessage:
+          proto.Message.InteractiveMessage.NativeFlowMessage.create({
+            buttons: nativeFlowButtons,
+            messageParamsJson: '',
+            messageVersion: 1,
+          }),
+      });
 
-    if (sock.relayMessage) {
-      return sock.relayMessage(jid, carouselMessage, {});
+      // Wrap in documentWithCaptionMessage for MD compatibility
+      const message = {
+        interactiveMessage,
+      } as AnyMessageContent;
+
+      const result = await socket.sendMessage(jid, message);
+      if (result?.key?.id) {
+        results.push(result.key.id);
+      }
+
+      // Small delay between messages
+      if (i < cards.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
     }
 
-    return socket.sendMessage(
-      jid,
-      carouselMessage as unknown as Parameters<typeof socket.sendMessage>[1],
-    );
+    return results.join(',');
   }
 
   /**
