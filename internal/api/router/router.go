@@ -1,11 +1,16 @@
 package router
 
 import (
+	"net/http"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"zpwoot/internal/api/handler"
+	"zpwoot/internal/api/middleware"
+	"zpwoot/internal/db"
 	"zpwoot/internal/logger"
 )
 
@@ -19,16 +24,55 @@ type Handlers struct {
 	Webhook *handler.WebhookHandler
 }
 
+type Config struct {
+	Handlers        *Handlers
+	APIKey          string
+	Database        *db.Database
+	RateLimitPerMin int
+	AllowedOrigins  []string
+}
+
 func Setup(handlers *Handlers, apiKey string) *gin.Engine {
+	return SetupWithConfig(&Config{
+		Handlers:        handlers,
+		APIKey:          apiKey,
+		RateLimitPerMin: 100,
+		AllowedOrigins:  []string{"*"},
+	})
+}
+
+func SetupWithConfig(cfg *Config) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Recovery())
 	r.Use(logger.GinMiddleware())
+	r.Use(middleware.CORS(cfg.AllowedOrigins))
+	r.Use(middleware.RateLimit(cfg.RateLimitPerMin))
+
+	// Health check endpoint
+	r.GET("/health", func(c *gin.Context) {
+		status := "healthy"
+		dbStatus := "connected"
+
+		if cfg.Database != nil {
+			if err := cfg.Database.Pool.Ping(c.Request.Context()); err != nil {
+				dbStatus = "disconnected"
+				status = "degraded"
+			}
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"status":   status,
+			"database": dbStatus,
+			"time":     time.Now().UTC().Format(time.RFC3339),
+		})
+	})
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	sessions := r.Group("/sessions")
-	sessions.Use(authMiddleware(apiKey))
+	sessions.Use(middleware.Auth(cfg.APIKey))
 	{
+		handlers := cfg.Handlers
 		// Session management
 		sessions.GET("/fetch", handlers.Session.Fetch)
 		sessions.POST("/:name/create", handlers.Session.Create)
@@ -96,27 +140,4 @@ func Setup(handlers *Handlers, apiKey string) *gin.Engine {
 	}
 
 	return r
-}
-
-func authMiddleware(apiKey string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		if apiKey == "" {
-			c.Next()
-			return
-		}
-
-		key := c.GetHeader("apikey")
-		if key == "" {
-			key = c.Query("apikey")
-		}
-
-		if key != apiKey {
-			c.AbortWithStatusJSON(401, gin.H{
-				"error": "invalid or missing apikey",
-			})
-			return
-		}
-
-		c.Next()
-	}
 }

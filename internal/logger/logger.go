@@ -6,9 +6,12 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
+
+const RequestIDKey = "X-Request-ID"
 
 var Log zerolog.Logger
 
@@ -43,6 +46,14 @@ func GinMiddleware() gin.HandlerFunc {
 		path := c.Request.URL.Path
 		query := c.Request.URL.RawQuery
 
+		// Generate or use existing request ID
+		requestID := c.GetHeader(RequestIDKey)
+		if requestID == "" {
+			requestID = uuid.New().String()
+		}
+		c.Set(RequestIDKey, requestID)
+		c.Header(RequestIDKey, requestID)
+
 		c.Next()
 
 		latency := time.Since(start)
@@ -60,6 +71,7 @@ func GinMiddleware() gin.HandlerFunc {
 		}
 
 		event.
+			Str("requestId", requestID).
 			Str("method", c.Request.Method).
 			Str("path", path).
 			Int("status", status).
@@ -67,6 +79,25 @@ func GinMiddleware() gin.HandlerFunc {
 			Str("ip", c.ClientIP()).
 			Msg("request")
 	}
+}
+
+func RequestIDMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		requestID := c.GetHeader(RequestIDKey)
+		if requestID == "" {
+			requestID = uuid.New().String()
+		}
+		c.Set(RequestIDKey, requestID)
+		c.Header(RequestIDKey, requestID)
+		c.Next()
+	}
+}
+
+func GetRequestID(c *gin.Context) string {
+	if id, exists := c.Get(RequestIDKey); exists {
+		return id.(string)
+	}
+	return ""
 }
 
 func Debug() *zerolog.Event {

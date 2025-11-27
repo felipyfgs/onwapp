@@ -68,14 +68,40 @@ func (r *SessionRepository) Delete(ctx context.Context, name string) error {
 }
 
 func (r *SessionRepository) GetAll(ctx context.Context) ([]model.SessionRecord, error) {
-	rows, err := r.pool.Query(ctx, `
+	return r.GetAllPaginated(ctx, 0, 0)
+}
+
+func (r *SessionRepository) GetAllPaginated(ctx context.Context, limit, offset int) ([]model.SessionRecord, error) {
+	query := `
 		SELECT "id", "name", COALESCE("deviceJid", '') as "deviceJid", COALESCE("phone", '') as "phone", COALESCE("status", 'disconnected') as "status" 
-		FROM "zpSessions"`)
+		FROM "zpSessions"
+		ORDER BY "id"`
+
+	if limit > 0 {
+		query += ` LIMIT $1 OFFSET $2`
+		rows, err := r.pool.Query(ctx, query, limit, offset)
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+		return scanSessions(rows)
+	}
+
+	rows, err := r.pool.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
+	return scanSessions(rows)
+}
 
+func (r *SessionRepository) Count(ctx context.Context) (int, error) {
+	var count int
+	err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM "zpSessions"`).Scan(&count)
+	return count, err
+}
+
+func scanSessions(rows interface{ Next() bool; Scan(...interface{}) error }) ([]model.SessionRecord, error) {
 	var sessions []model.SessionRecord
 	for rows.Next() {
 		var s model.SessionRecord
@@ -84,5 +110,5 @@ func (r *SessionRepository) GetAll(ctx context.Context) ([]model.SessionRecord, 
 		}
 		sessions = append(sessions, s)
 	}
-	return sessions, rows.Err()
+	return sessions, nil
 }

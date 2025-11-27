@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"zpwoot/internal/api/dto"
 	"zpwoot/internal/db"
 	"zpwoot/internal/service"
 )
@@ -23,33 +24,6 @@ func NewWebhookHandler(webhookService *service.WebhookService, database *db.Data
 	}
 }
 
-// Request types
-
-type CreateWebhookRequest struct {
-	URL    string   `json:"url" binding:"required" example:"https://example.com/webhook"`
-	Events []string `json:"events" example:"message.received,session.connected"`
-	Secret string   `json:"secret" example:"my-secret-key"`
-}
-
-type UpdateWebhookRequest struct {
-	URL     string   `json:"url" binding:"required" example:"https://example.com/webhook"`
-	Events  []string `json:"events" example:"message.received,session.connected"`
-	Enabled bool     `json:"enabled" example:"true"`
-	Secret  string   `json:"secret" example:"my-secret-key"`
-}
-
-// Response types
-
-type WebhookResponse struct {
-	ID        int      `json:"id"`
-	SessionID int      `json:"sessionId"`
-	URL       string   `json:"url"`
-	Events    []string `json:"events"`
-	Enabled   bool     `json:"enabled"`
-}
-
-// Handlers
-
 // CreateWebhook godoc
 // @Summary Create webhook
 // @Description Create a new webhook for a session
@@ -57,42 +31,42 @@ type WebhookResponse struct {
 // @Accept json
 // @Produce json
 // @Param name path string true "Session name"
-// @Param request body CreateWebhookRequest true "Webhook data"
-// @Success 200 {object} WebhookResponse
-// @Failure 400 {object} ErrorResponse
-// @Failure 404 {object} ErrorResponse
+// @Param request body dto.CreateWebhookRequest true "Webhook data"
+// @Success 200 {object} dto.WebhookResponse
+// @Failure 400 {object} dto.ErrorResponse
+// @Failure 404 {object} dto.ErrorResponse
 // @Security ApiKeyAuth
 // @Router /sessions/{name}/webhook [post]
 func (h *WebhookHandler) CreateWebhook(c *gin.Context) {
 	name := c.Param("name")
 
-	var req CreateWebhookRequest
+	var req dto.CreateWebhookRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	// Validate URL format
 	parsedURL, err := url.ParseRequestURI(req.URL)
 	if err != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid webhook URL: must be a valid http or https URL"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid webhook URL: must be a valid http or https URL"})
 		return
 	}
 
 	// Get session to find ID
 	session, err := h.sessions.Sessions.GetByName(c.Request.Context(), name)
 	if err != nil {
-		c.JSON(http.StatusNotFound, ErrorResponse{Error: "session not found"})
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "session not found"})
 		return
 	}
 
 	id, err := h.webhookService.Create(c.Request.Context(), session.ID, req.URL, req.Events, req.Secret)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, WebhookResponse{
+	c.JSON(http.StatusOK, dto.WebhookResponse{
 		ID:        id,
 		SessionID: session.ID,
 		URL:       req.URL,

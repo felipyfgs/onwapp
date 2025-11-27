@@ -20,28 +20,6 @@ func NewSessionHandler(sessionService *service.SessionService) *SessionHandler {
 	return &SessionHandler{sessionService: sessionService}
 }
 
-// Response types
-
-type SessionResponse struct {
-	Name   string `json:"name" example:"default"`
-	JID    string `json:"jid,omitempty" example:"5511999999999@s.whatsapp.net"`
-	Status string `json:"status" example:"connected"`
-}
-
-type QRResponse struct {
-	QR     string `json:"qr,omitempty" example:"2@ABC123..."`
-	Status string `json:"status" example:"connecting"`
-}
-
-type ErrorResponse struct {
-	Error string `json:"error" example:"session not found"`
-}
-
-type MessageResponse struct {
-	Message string `json:"message" example:"session created"`
-	Status  string `json:"status" example:"disconnected"`
-}
-
 // Fetch godoc
 // @Summary      Fetch all sessions
 // @Description  Get a list of all WhatsApp sessions

@@ -15,6 +15,12 @@ import (
 	"zpwoot/internal/model"
 )
 
+const (
+	webhookMaxRetries   = 3
+	webhookBaseDelay    = 1 * time.Second
+	webhookTimeout      = 10 * time.Second
+)
+
 type WebhookService struct {
 	database   *db.Database
 	httpClient *http.Client
@@ -74,31 +80,58 @@ func (w *WebhookService) shouldSendEvent(events []string, event string) bool {
 }
 
 func (w *WebhookService) sendWebhook(wh model.Webhook, payload []byte) {
-	req, err := http.NewRequest("POST", wh.URL, bytes.NewReader(payload))
-	if err != nil {
-		logger.Error().Err(err).Str("url", wh.URL).Msg("Failed to create webhook request")
-		return
-	}
+	var lastErr error
 
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "ZPWoot-Webhook/1.0")
+	for attempt := 0; attempt < webhookMaxRetries; attempt++ {
+		if attempt > 0 {
+			delay := webhookBaseDelay * time.Duration(1<<(attempt-1)) // exponential backoff: 1s, 2s, 4s
+			time.Sleep(delay)
+			logger.Debug().Str("url", wh.URL).Int("attempt", attempt+1).Msg("Retrying webhook")
+		}
 
-	if wh.Secret != "" {
-		signature := w.generateSignature(payload, wh.Secret)
-		req.Header.Set("X-Webhook-Signature", signature)
-	}
+		ctx, cancel := context.WithTimeout(context.Background(), webhookTimeout)
+		req, err := http.NewRequestWithContext(ctx, "POST", wh.URL, bytes.NewReader(payload))
+		if err != nil {
+			cancel()
+			logger.Error().Err(err).Str("url", wh.URL).Msg("Failed to create webhook request")
+			return
+		}
 
-	resp, err := w.httpClient.Do(req)
-	if err != nil {
-		logger.Warn().Err(err).Str("url", wh.URL).Msg("Failed to send webhook")
-		return
-	}
-	defer resp.Body.Close()
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("User-Agent", "ZPWoot-Webhook/1.0")
 
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		logger.Debug().Str("url", wh.URL).Int("status", resp.StatusCode).Msg("Webhook sent successfully")
-	} else {
+		if wh.Secret != "" {
+			signature := w.generateSignature(payload, wh.Secret)
+			req.Header.Set("X-Webhook-Signature", signature)
+		}
+
+		resp, err := w.httpClient.Do(req)
+		cancel()
+
+		if err != nil {
+			lastErr = err
+			logger.Warn().Err(err).Str("url", wh.URL).Int("attempt", attempt+1).Msg("Failed to send webhook")
+			continue
+		}
+		resp.Body.Close()
+
+		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+			logger.Debug().Str("url", wh.URL).Int("status", resp.StatusCode).Msg("Webhook sent successfully")
+			return
+		}
+
+		if resp.StatusCode >= 500 {
+			lastErr = err
+			logger.Warn().Str("url", wh.URL).Int("status", resp.StatusCode).Int("attempt", attempt+1).Msg("Webhook server error, will retry")
+			continue
+		}
+
 		logger.Warn().Str("url", wh.URL).Int("status", resp.StatusCode).Msg("Webhook returned non-2xx status")
+		return
+	}
+
+	if lastErr != nil {
+		logger.Error().Err(lastErr).Str("url", wh.URL).Int("maxRetries", webhookMaxRetries).Msg("Webhook failed after all retries")
 	}
 }
 

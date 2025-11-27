@@ -28,14 +28,34 @@ func (r *WebhookRepository) Create(ctx context.Context, wh *model.Webhook) (int,
 }
 
 func (r *WebhookRepository) GetBySession(ctx context.Context, sessionID int) ([]model.Webhook, error) {
-	rows, err := r.pool.Query(ctx, `
+	return r.GetBySessionPaginated(ctx, sessionID, 0, 0)
+}
+
+func (r *WebhookRepository) GetBySessionPaginated(ctx context.Context, sessionID, limit, offset int) ([]model.Webhook, error) {
+	query := `
 		SELECT "id", "sessionId", "url", "events", "enabled", COALESCE("secret", '') as "secret"
-		FROM "zpWebhooks" WHERE "sessionId" = $1`, sessionID)
+		FROM "zpWebhooks" WHERE "sessionId" = $1
+		ORDER BY "id"`
+
+	if limit > 0 {
+		query += ` LIMIT $2 OFFSET $3`
+		rows, err := r.pool.Query(ctx, query, sessionID, limit, offset)
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+		return scanWebhooks(rows)
+	}
+
+	rows, err := r.pool.Query(ctx, query, sessionID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
+	return scanWebhooks(rows)
+}
 
+func scanWebhooks(rows interface{ Next() bool; Scan(...interface{}) error }) ([]model.Webhook, error) {
 	var webhooks []model.Webhook
 	for rows.Next() {
 		var w model.Webhook
@@ -44,7 +64,7 @@ func (r *WebhookRepository) GetBySession(ctx context.Context, sessionID int) ([]
 		}
 		webhooks = append(webhooks, w)
 	}
-	return webhooks, rows.Err()
+	return webhooks, nil
 }
 
 func (r *WebhookRepository) GetEnabledBySession(ctx context.Context, sessionID int) ([]model.Webhook, error) {
