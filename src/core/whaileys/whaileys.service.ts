@@ -849,7 +849,7 @@ export class WhaileysService
   // Business
   async getCatalog(sessionName: string, jid?: string, _limit?: number) {
     const socket = this.getConnectedSocket(sessionName);
-    return socket.getCatalog({ jid });
+    return socket.getCatalog(jid);
   }
 
   async getCollections(sessionName: string, jid?: string, _limit?: number) {
@@ -1253,71 +1253,66 @@ export class WhaileysService
   }
 
   // Newsletter operations
+  // Newsletter functions not available in whaileys 6.4.3
   async newsletterCreate(
-    sessionName: string,
-    name: string,
-    description?: string,
+    _sessionName: string,
+    _name: string,
+    _description?: string,
     _reactionCodes?: string,
   ) {
-    const socket = this.getConnectedSocket(sessionName);
-    return socket.newsletterCreate(name, description || '');
+    throw new Error('Newsletter functions not available in whaileys 6.4.3');
   }
 
   async newsletterMetadata(
-    sessionName: string,
-    type: 'invite' | 'jid',
-    key: string,
+    _sessionName: string,
+    _type: 'invite' | 'jid',
+    _key: string,
   ) {
-    const socket = this.getConnectedSocket(sessionName);
-    return socket.newsletterMetadata(type, key);
+    throw new Error('Newsletter functions not available in whaileys 6.4.3');
   }
 
-  async newsletterFollow(sessionName: string, jid: string) {
-    const socket = this.getConnectedSocket(sessionName);
-    return socket.newsletterFollow(jid);
+  async newsletterFollow(_sessionName: string, _jid: string) {
+    throw new Error('Newsletter functions not available in whaileys 6.4.3');
   }
 
-  async newsletterUnfollow(sessionName: string, jid: string) {
-    const socket = this.getConnectedSocket(sessionName);
-    return socket.newsletterUnfollow(jid);
+  async newsletterUnfollow(_sessionName: string, _jid: string) {
+    throw new Error('Newsletter functions not available in whaileys 6.4.3');
   }
 
-  async newsletterMute(sessionName: string, jid: string) {
-    const socket = this.getConnectedSocket(sessionName);
-    return socket.newsletterMute(jid);
+  async newsletterMute(_sessionName: string, _jid: string) {
+    throw new Error('Newsletter functions not available in whaileys 6.4.3');
   }
 
-  async newsletterUnmute(sessionName: string, jid: string) {
-    const socket = this.getConnectedSocket(sessionName);
-    return socket.newsletterUnmute(jid);
+  async newsletterUnmute(_sessionName: string, _jid: string) {
+    throw new Error('Newsletter functions not available in whaileys 6.4.3');
   }
 
-  async newsletterUpdateName(sessionName: string, jid: string, name: string) {
-    const socket = this.getConnectedSocket(sessionName);
-    return socket.newsletterUpdateName(jid, name);
+  async newsletterUpdateName(
+    _sessionName: string,
+    _jid: string,
+    _name: string,
+  ) {
+    throw new Error('Newsletter functions not available in whaileys 6.4.3');
   }
 
   async newsletterUpdateDescription(
-    sessionName: string,
-    jid: string,
-    description: string,
+    _sessionName: string,
+    _jid: string,
+    _description: string,
   ) {
-    const socket = this.getConnectedSocket(sessionName);
-    return socket.newsletterUpdateDescription(jid, description);
+    throw new Error('Newsletter functions not available in whaileys 6.4.3');
   }
 
-  async newsletterDelete(sessionName: string, jid: string) {
-    const socket = this.getConnectedSocket(sessionName);
-    return socket.newsletterDelete(jid);
+  async newsletterDelete(_sessionName: string, _jid: string) {
+    throw new Error('Newsletter functions not available in whaileys 6.4.3');
   }
 
   async newsletterReactMessage(
-    sessionName: string,
-    jid: string,
-    messageId: string,
-    reaction: string,
+    _sessionName: string,
+    _jid: string,
+    _messageId: string,
+    _reaction: string,
   ) {
-    const socket = this.getConnectedSocket(sessionName);
-    return socket.newsletterReactMessage(jid, messageId, reaction);
+    throw new Error('Newsletter functions not available in whaileys 6.4.3');
   }
 }
