@@ -11,6 +11,7 @@ type Config struct {
 	Port        string
 	LogLevel    string
 	LogFormat   string
+	APIKey      string
 }
 
 func Load() *Config {
@@ -21,6 +22,7 @@ func Load() *Config {
 		Port:        getEnv("PORT", "3000"),
 		LogLevel:    getEnv("LOG_LEVEL", "info"),
 		LogFormat:   getEnv("LOG_FORMAT", "console"),
+		APIKey:      getEnv("API_KEY", ""),
 	}
 }
 

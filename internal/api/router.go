@@ -8,7 +8,7 @@ import (
 	"zpwoot/internal/logger"
 )
 
-func SetupRouter(handler *Handler) *gin.Engine {
+func SetupRouter(handler *Handler, apiKey string) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Recovery())
 	r.Use(logger.GinMiddleware())
@@ -16,6 +16,7 @@ func SetupRouter(handler *Handler) *gin.Engine {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	sessions := r.Group("/sessions")
+	sessions.Use(AuthMiddleware(apiKey))
 	{
 		sessions.POST("/:name/create", handler.Create)
 		sessions.DELETE("/:name/delete", handler.Delete)
