@@ -79,9 +79,10 @@ export class ContactsService {
         sessionName,
         jid,
       );
+      const firstResult = Array.isArray(result) ? result[0] : result;
       return {
-        status: result?.status,
-        setAt: result?.setAt,
+        status: firstResult?.status,
+        setAt: firstResult?.setAt,
       };
     } catch (error) {
       throw new BadRequestException(

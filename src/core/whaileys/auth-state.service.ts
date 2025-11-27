@@ -4,26 +4,77 @@ import {
   AuthenticationCreds,
   SignalDataTypeMap,
   initAuthCreds,
-  BufferJSON,
-} from 'whaileys';
+} from '@fadzzzslebew/baileys';
 import { Logger } from '@nestjs/common';
 
 const logger = new Logger('AuthState');
 
-function formatSessionId(sessionId: string): string {
-  return sessionId.slice(0, 8);
+// ============================================================================
+// Serialization Utilities
+// ============================================================================
+
+/**
+ * Custom JSON replacer for Buffer serialization
+ */
+function bufferReplacer(_key: string, value: unknown): unknown {
+  if (value instanceof Buffer || value instanceof Uint8Array) {
+    return { type: 'Buffer', data: Array.from(value) };
+  }
+  return value;
 }
 
+/**
+ * Serialize value to JSON with Buffer support
+ */
 function serializeToJson(value: unknown): unknown {
-  return JSON.parse(JSON.stringify(value, BufferJSON.replacer)) as unknown;
+  return JSON.parse(JSON.stringify(value, bufferReplacer));
 }
 
+/**
+ * Recursively revive Buffer objects from serialized format
+ */
+function reviveBuffers(obj: unknown): unknown {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(reviveBuffers);
+  }
+
+  if (typeof obj === 'object') {
+    const record = obj as Record<string, unknown>;
+
+    if (record.type === 'Buffer' && Array.isArray(record.data)) {
+      return Buffer.from(record.data as number[]);
+    }
+
+    const result: Record<string, unknown> = {};
+    for (const key in record) {
+      result[key] = reviveBuffers(record[key]);
+    }
+    return result;
+  }
+
+  return obj;
+}
+
+/**
+ * Deserialize JSON value with Buffer revival
+ */
 function deserializeFromJson(value: unknown): unknown {
   try {
-    return JSON.parse(JSON.stringify(value), BufferJSON.reviver) as unknown;
+    return reviveBuffers(value);
   } catch {
     return value;
   }
+}
+
+/**
+ * Format session ID for logging (first 8 chars)
+ */
+function formatSessionId(sessionId: string): string {
+  return sessionId.slice(0, 8);
 }
 
 export async function useDbAuthState(
@@ -64,8 +115,11 @@ export async function useDbAuthState(
   const state: AuthenticationState = {
     creds,
     keys: {
-      get: async (type: keyof SignalDataTypeMap, ids: string[]) => {
-        const data: Record<string, unknown> = {};
+      get: async <T extends keyof SignalDataTypeMap>(
+        type: T,
+        ids: string[],
+      ): Promise<{ [id: string]: SignalDataTypeMap[T] }> => {
+        const data: { [id: string]: SignalDataTypeMap[T] } = {};
 
         try {
           const records = await prisma.authState.findMany({
@@ -79,7 +133,9 @@ export async function useDbAuthState(
           for (const record of records) {
             const value = record.keyData;
             if (value) {
-              data[record.keyId] = deserializeFromJson(value);
+              data[record.keyId] = deserializeFromJson(
+                value,
+              ) as SignalDataTypeMap[T];
             }
           }
         } catch (error) {

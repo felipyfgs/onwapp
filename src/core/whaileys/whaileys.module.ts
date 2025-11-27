@@ -7,3 +7,7 @@ import { WhaileysService } from './whaileys.service';
   exports: [WhaileysService],
 })
 export class WhaileysModule {}
+
+// Re-export types for external usage
+export * from './types';
+export { WhaileysService } from './whaileys.service';

@@ -17,3 +17,4 @@ export * from './delete-message.dto';
 export * from './read-messages.dto';
 export * from './message-response.dto';
 export * from './advanced.dto';
+export * from './send-carousel.dto';

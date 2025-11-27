@@ -129,3 +129,24 @@ export class SendReceiptsDto {
   @IsNotEmpty()
   type: 'read' | 'read-self' | 'played';
 }
+
+export class PlaceholderResendKeyDto {
+  @ApiProperty({
+    type: MessageKeyDto,
+    description: 'Message key to request resend',
+  })
+  @ValidateNested()
+  @Type(() => MessageKeyDto)
+  messageKey: MessageKeyDto;
+}
+
+export class RequestPlaceholderResendDto {
+  @ApiProperty({
+    type: [PlaceholderResendKeyDto],
+    description: 'Array of message keys to request placeholder resend',
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PlaceholderResendKeyDto)
+  messageKeys: PlaceholderResendKeyDto[];
+}

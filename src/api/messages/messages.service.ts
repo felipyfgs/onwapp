@@ -3,7 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { AnyMessageContent } from 'whaileys';
+import { AnyMessageContent } from '@fadzzzslebew/baileys';
 import { WhaileysService } from '../../core/whaileys/whaileys.service';
 import { SessionStatus } from '@prisma/client';
 import {
@@ -29,6 +29,8 @@ import {
   FetchMessageHistoryDto,
   SendReceiptDto,
   SendReceiptsDto,
+  RequestPlaceholderResendDto,
+  SendCarouselDto,
 } from './dto';
 
 @Injectable()
@@ -208,24 +210,70 @@ export class MessagesService {
     const session = this.getSessionOrThrow(sessionName);
     const jid = this.formatJid(dto.to);
 
-    const templateButtons = dto.templateButtons.map((btn) => ({
-      index: btn.index,
-      ...(btn.urlButton && { urlButton: btn.urlButton }),
-      ...(btn.callButton && { callButton: btn.callButton }),
-      ...(btn.quickReplyButton && { quickReplyButton: btn.quickReplyButton }),
-    }));
+    // Build native flow buttons for @fadzzzslebew/baileys
+    const nativeFlowButtons: Array<{
+      name: string;
+      buttonParamsJson: string;
+    }> = [];
 
-    const message: Record<string, unknown> = {
-      text: dto.text,
-      footer: dto.footer,
-      templateButtons,
-    };
-
-    if (dto.imageUrl) {
-      message.image = { url: dto.imageUrl };
+    for (const btn of dto.templateButtons) {
+      if (btn.urlButton) {
+        nativeFlowButtons.push({
+          name: 'cta_url',
+          buttonParamsJson: JSON.stringify({
+            display_text: btn.urlButton.displayText,
+            url: btn.urlButton.url,
+          }),
+        });
+      }
+      if (btn.callButton) {
+        nativeFlowButtons.push({
+          name: 'cta_call',
+          buttonParamsJson: JSON.stringify({
+            display_text: btn.callButton.displayText,
+            phone_number: btn.callButton.phoneNumber,
+          }),
+        });
+      }
+      if (btn.quickReplyButton) {
+        nativeFlowButtons.push({
+          name: 'quick_reply',
+          buttonParamsJson: JSON.stringify({
+            display_text: btn.quickReplyButton.displayText,
+            id: btn.quickReplyButton.id,
+          }),
+        });
+      }
     }
 
-    return session.socket.sendMessage(jid, message as AnyMessageContent);
+    // Use the correct format for @fadzzzslebew/baileys interactive buttons
+    // Based on documentation: text, footer, interactive array
+    return this.whaileysService.sendInteractiveButtons(
+      sessionName,
+      dto.to,
+      dto.text,
+      dto.footer || '',
+      nativeFlowButtons,
+      dto.imageUrl,
+    );
+  }
+
+  async sendCarousel(sessionName: string, dto: SendCarouselDto) {
+    return this.whaileysService.sendCarouselMessage(
+      sessionName,
+      dto.to,
+      dto.text,
+      dto.title || '',
+      dto.footer || '',
+      dto.cards.map((card) => ({
+        imageUrl: card.imageUrl,
+        videoUrl: card.videoUrl,
+        title: card.title,
+        body: card.body,
+        footer: card.footer,
+        buttons: card.buttons,
+      })),
+    );
   }
 
   async forwardMessage(sessionName: string, dto: ForwardMessageDto) {
@@ -263,7 +311,7 @@ export class MessagesService {
             },
           ],
         },
-      },
+      } as Parameters<typeof session.socket.chatModify>[0],
       jid,
     );
   }
@@ -307,13 +355,8 @@ export class MessagesService {
     return session.socket.updateMediaMessage({ key: dto.key });
   }
 
-  async fetchMessageHistory(sessionName: string, dto: FetchMessageHistoryDto) {
-    const session = this.getSessionOrThrow(sessionName);
-    return session.socket.fetchMessageHistory(
-      dto.count,
-      dto.oldestMsgKey,
-      dto.oldestMsgTimestamp,
-    );
+  async fetchMessageHistory(_sessionName: string, _dto: FetchMessageHistoryDto) {
+    throw new Error('fetchMessageHistory not available in @fadzzzslebew/baileys');
   }
 
   async sendReceipt(sessionName: string, dto: SendReceiptDto) {
@@ -329,5 +372,15 @@ export class MessagesService {
   async sendReceipts(sessionName: string, dto: SendReceiptsDto) {
     const session = this.getSessionOrThrow(sessionName);
     await session.socket.sendReceipts(dto.keys, dto.type);
+  }
+
+  async requestPlaceholderResend(
+    sessionName: string,
+    dto: RequestPlaceholderResendDto,
+  ) {
+    return this.whaileysService.requestPlaceholderResend(
+      sessionName,
+      dto.messageKeys,
+    );
   }
 }

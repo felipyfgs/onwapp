@@ -6,7 +6,7 @@ import {
   ApiResponse,
   ApiParam,
 } from '@nestjs/swagger';
-import { proto } from 'whaileys';
+import { WAProto as proto } from '@fadzzzslebew/baileys';
 import { MessagesService } from './messages.service';
 import {
   SendTextDto,
@@ -32,6 +32,8 @@ import {
   FetchMessageHistoryDto,
   SendReceiptDto,
   SendReceiptsDto,
+  RequestPlaceholderResendDto,
+  SendCarouselDto,
 } from './dto';
 
 @ApiTags('Messages')
@@ -244,6 +246,23 @@ export class MessagesController {
     return this.messagesService.sendTemplate(name, dto);
   }
 
+  @Post('carousel')
+  @ApiOperation({ summary: 'Send a carousel message with interactive cards' })
+  @ApiParam({ name: 'name', description: 'Session name' })
+  @ApiResponse({
+    status: 200,
+    description: 'Carousel message sent',
+    type: MessageResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Session not found' })
+  @ApiResponse({ status: 400, description: 'Session not connected' })
+  async sendCarousel(
+    @Param('name') name: string,
+    @Body() dto: SendCarouselDto,
+  ): Promise<proto.WebMessageInfo | undefined> {
+    return this.messagesService.sendCarousel(name, dto);
+  }
+
   @Post('forward')
   @ApiOperation({ summary: 'Forward a message' })
   @ApiParam({ name: 'name', description: 'Session name' })
@@ -411,5 +430,22 @@ export class MessagesController {
   ): Promise<{ success: boolean }> {
     await this.messagesService.sendReceipts(name, dto);
     return { success: true };
+  }
+
+  @Post('request-placeholder-resend')
+  @ApiOperation({
+    summary: 'Request resend of placeholder messages',
+    description:
+      'Request WhatsApp to resend messages that failed to decrypt or were received as placeholders',
+  })
+  @ApiParam({ name: 'name', description: 'Session name' })
+  @ApiResponse({ status: 200, description: 'Resend requested' })
+  @ApiResponse({ status: 404, description: 'Session not found' })
+  @ApiResponse({ status: 400, description: 'Session not connected' })
+  async requestPlaceholderResend(
+    @Param('name') name: string,
+    @Body() dto: RequestPlaceholderResendDto,
+  ): Promise<void> {
+    await this.messagesService.requestPlaceholderResend(name, dto);
   }
 }

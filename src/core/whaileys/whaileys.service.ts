@@ -14,8 +14,8 @@ import makeWASocket, {
   ProductCreate,
   ProductUpdate,
   WAMessageKey,
-  proto,
-} from 'whaileys';
+  WAProto as proto,
+} from '@fadzzzslebew/baileys';
 import { Boom } from '@hapi/boom';
 import { PrismaService } from '../../database/prisma.service';
 import { SessionStatus } from '@prisma/client';
@@ -23,23 +23,16 @@ import { useDbAuthState } from './auth-state.service';
 import * as qrcodeTerminal from 'qrcode-terminal';
 import { LoggerService } from '../../logger/logger.service';
 import { WebhookService } from '../../integrations/webhook/webhook.service';
+import {
+  BehaviorSettings,
+  SessionInstance,
+  CarouselCard,
+  NativeFlowButton,
+  ButtonConfig,
+  ListSection,
+} from './types';
 
-export interface BehaviorSettings {
-  reject_call?: boolean;
-  groups_ignore?: boolean;
-  always_online?: boolean;
-  read_messages?: boolean;
-  read_status?: boolean;
-  sync_full_history?: boolean;
-}
-
-export interface SessionInstance {
-  socket: WASocket;
-  status: SessionStatus;
-  qrcode?: string;
-  dbSessionId?: string;
-  behavior?: BehaviorSettings;
-}
+export type { BehaviorSettings, SessionInstance } from './types';
 
 @Injectable()
 export class WhaileysService
@@ -562,8 +555,8 @@ export class WhaileysService
 
   async checkNumberExists(sessionName: string, phone: string) {
     const socket = this.getConnectedSocket(sessionName);
-    const [result] = await socket.onWhatsApp(phone);
-    return result;
+    const results = await socket.onWhatsApp(phone);
+    return results?.[0];
   }
 
   async getProfilePicture(sessionName: string, jid: string) {
@@ -728,14 +721,13 @@ export class WhaileysService
     );
   }
 
-  async updateCallPrivacy(sessionName: string, value: string) {
-    const socket = this.getConnectedSocket(sessionName);
-    await socket.updateCallPrivacy(value as 'all' | 'known');
+  // Note: updateCallPrivacy and updateMessagesPrivacy not available in @fadzzzslebew/baileys
+  async updateCallPrivacy(_sessionName: string, _value: string) {
+    throw new Error('updateCallPrivacy not available in @fadzzzslebew/baileys');
   }
 
-  async updateMessagesPrivacy(sessionName: string, value: string) {
-    const socket = this.getConnectedSocket(sessionName);
-    await socket.updateMessagesPrivacy(value as 'all' | 'contacts');
+  async updateMessagesPrivacy(_sessionName: string, _value: string) {
+    throw new Error('updateMessagesPrivacy not available in @fadzzzslebew/baileys');
   }
 
   // Contact management
@@ -744,18 +736,17 @@ export class WhaileysService
     return socket.fetchBlocklist();
   }
 
+  // Note: addOrEditContact and removeContact not available in @fadzzzslebew/baileys
   async addOrEditContact(
-    sessionName: string,
-    jid: string,
-    contact: { fullName?: string; firstName?: string },
+    _sessionName: string,
+    _jid: string,
+    _contact: { fullName?: string; firstName?: string },
   ) {
-    const socket = this.getConnectedSocket(sessionName);
-    await socket.addOrEditContact(jid, contact);
+    throw new Error('addOrEditContact not available in @fadzzzslebew/baileys');
   }
 
-  async removeContact(sessionName: string, jid: string) {
-    const socket = this.getConnectedSocket(sessionName);
-    await socket.removeContact(jid);
+  async removeContact(_sessionName: string, _jid: string) {
+    throw new Error('removeContact not available in @fadzzzslebew/baileys');
   }
 
   // Profile additional operations
@@ -838,7 +829,7 @@ export class WhaileysService
     if (!session.socket) {
       throw new Error(`Session ${sessionName} not initialized`);
     }
-    return session.socket.requestPairingCode(phoneNumber, customCode);
+    return session.socket.requestPairingCode(phoneNumber);
   }
 
   // Calls
@@ -852,14 +843,14 @@ export class WhaileysService
   }
 
   // Business
-  async getCatalog(sessionName: string, jid?: string, limit?: number) {
+  async getCatalog(sessionName: string, jid?: string, _limit?: number) {
     const socket = this.getConnectedSocket(sessionName);
-    return socket.getCatalog(jid, limit);
+    return socket.getCatalog({ jid });
   }
 
-  async getCollections(sessionName: string, jid?: string, limit?: number) {
+  async getCollections(sessionName: string, jid?: string, _limit?: number) {
     const socket = this.getConnectedSocket(sessionName);
-    return socket.getCollections(jid, limit);
+    return socket.getCollections(jid);
   }
 
   async getOrderDetails(
@@ -899,13 +890,405 @@ export class WhaileysService
     return socket.updateMediaMessage(message);
   }
 
+  // Note: fetchMessageHistory and requestPlaceholderResend not available in @fadzzzslebew/baileys
   async fetchMessageHistory(
+    _sessionName: string,
+    _count: number,
+    _oldestMsgKey: WAMessageKey,
+    _oldestMsgTimestamp: number,
+  ) {
+    throw new Error('fetchMessageHistory not available in @fadzzzslebew/baileys');
+  }
+
+  async requestPlaceholderResend(
+    _sessionName: string,
+    _messageKeys: { messageKey: WAMessageKey }[],
+  ) {
+    throw new Error('requestPlaceholderResend not available in @fadzzzslebew/baileys');
+  }
+
+  // Button messages (using @fadzzzslebew/baileys API)
+  async sendButtonMessage(
     sessionName: string,
-    count: number,
-    oldestMsgKey: WAMessageKey,
-    oldestMsgTimestamp: number,
+    to: string,
+    content: {
+      text: string;
+      footer?: string;
+      buttons: Array<{
+        buttonId: string;
+        buttonText: { displayText: string };
+        type?: number;
+      }>;
+      headerType?: number;
+      viewOnce?: boolean;
+      image?: { url: string } | Buffer;
+      video?: { url: string } | Buffer;
+    },
   ) {
     const socket = this.getConnectedSocket(sessionName);
-    return socket.fetchMessageHistory(count, oldestMsgKey, oldestMsgTimestamp);
+    const jid = to.includes('@') ? to : `${to}@s.whatsapp.net`;
+
+    // @fadzzzslebew/baileys uses direct button message format
+    const buttonMessage = {
+      text: content.text,
+      footer: content.footer || '',
+      buttons: content.buttons.map((b) => ({
+        buttonId: b.buttonId,
+        buttonText: { displayText: b.buttonText.displayText },
+        type: b.type || 1,
+      })),
+      headerType: content.headerType || 1,
+      viewOnce: content.viewOnce ?? true,
+      ...(content.image && { image: content.image, caption: content.text }),
+      ...(content.video && { video: content.video, caption: content.text }),
+    };
+
+    // Remove text if we have media (use caption instead)
+    if (content.image || content.video) {
+      delete (buttonMessage as Record<string, unknown>).text;
+    }
+
+    return socket.sendMessage(
+      jid,
+      buttonMessage as Parameters<typeof socket.sendMessage>[1],
+    );
+  }
+
+  // Interactive messages (native flow - URL, Copy, Quick Reply buttons)
+  async sendInteractiveMessage(
+    sessionName: string,
+    to: string,
+    content: {
+      text: string;
+      title?: string;
+      footer?: string;
+      interactive: Array<{
+        name: string;
+        buttonParamsJson: string;
+      }>;
+      image?: { url: string } | Buffer;
+      video?: { url: string } | Buffer;
+    },
+  ) {
+    const socket = this.getConnectedSocket(sessionName);
+    const jid = to.includes('@') ? to : `${to}@s.whatsapp.net`;
+
+    // @fadzzzslebew/baileys uses 'interactive' property for native flow buttons
+    const interactiveMessage = {
+      text: content.text,
+      title: content.title || '',
+      footer: content.footer || '',
+      interactive: content.interactive,
+      ...(content.image && {
+        image: content.image,
+        caption: content.text,
+        hasMediaAttachment: true,
+      }),
+      ...(content.video && {
+        video: content.video,
+        caption: content.text,
+        hasMediaAttachment: true,
+      }),
+    };
+
+    if (content.image || content.video) {
+      delete (interactiveMessage as Record<string, unknown>).text;
+    }
+
+    return socket.sendMessage(
+      jid,
+      interactiveMessage as Parameters<typeof socket.sendMessage>[1],
+    );
+  }
+
+  /**
+   * Send interactive message with buttons (cta_url, cta_call, quick_reply)
+   */
+  async sendInteractiveButtons(
+    sessionName: string,
+    to: string,
+    text: string,
+    footer: string,
+    buttons: Array<{ name: string; buttonParamsJson: string }>,
+    imageUrl?: string,
+  ) {
+    const socket = this.getConnectedSocket(sessionName);
+    const jid = this.formatJid(to);
+
+    const message: Record<string, unknown> = {
+      interactiveMessage: {
+        title: text,
+        footer,
+        buttons,
+        ...(imageUrl && { image: { url: imageUrl } }),
+      },
+    };
+
+    return socket.sendMessage(
+      jid,
+      message as Parameters<typeof socket.sendMessage>[1],
+    );
+  }
+
+  /**
+   * Send carousel message with horizontal scrollable cards
+   * Each card supports: image/video, title, body, footer, and action buttons
+   */
+  async sendCarouselMessage(
+    sessionName: string,
+    to: string,
+    text: string,
+    title: string,
+    footer: string,
+    cards: Array<{
+      imageUrl?: string;
+      videoUrl?: string;
+      title: string;
+      body: string;
+      footer?: string;
+      buttons: Array<{ name: string; buttonParamsJson: string }>;
+    }>,
+  ) {
+    const socket = this.getConnectedSocket(sessionName);
+    const jid = this.formatJid(to);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sock = socket as any;
+
+    const carouselCards = await this.buildCarouselCards(cards, sock);
+
+    const carouselMessage = {
+      interactiveMessage: {
+        body: { text },
+        footer: { text: footer || '' },
+        header: {
+          title: title || '',
+          subtitle: '',
+          hasMediaAttachment: false,
+        },
+        carouselMessage: {
+          cards: carouselCards,
+          messageVersion: 1,
+        },
+      },
+    };
+
+    if (sock.relayMessage) {
+      return sock.relayMessage(jid, carouselMessage, {});
+    }
+
+    return socket.sendMessage(
+      jid,
+      carouselMessage as unknown as Parameters<typeof socket.sendMessage>[1],
+    );
+  }
+
+  /**
+   * Build carousel cards with media upload support
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private async buildCarouselCards(
+    cards: Array<{
+      imageUrl?: string;
+      videoUrl?: string;
+      title: string;
+      body: string;
+      footer?: string;
+      buttons: Array<{ name: string; buttonParamsJson: string }>;
+    }>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    sock: any,
+  ): Promise<Array<Record<string, unknown>>> {
+    return Promise.all(
+      cards.map(async (card) => {
+        const header: Record<string, unknown> = {
+          title: card.title,
+          subtitle: '',
+          hasMediaAttachment: false,
+        };
+
+        if (card.imageUrl) {
+          const imageMessage = await this.uploadCardMedia(
+            sock,
+            'image',
+            card.imageUrl,
+          );
+          if (imageMessage) {
+            header.imageMessage = imageMessage;
+            header.hasMediaAttachment = true;
+          }
+        } else if (card.videoUrl) {
+          const videoMessage = await this.uploadCardMedia(
+            sock,
+            'video',
+            card.videoUrl,
+          );
+          if (videoMessage) {
+            header.videoMessage = videoMessage;
+            header.hasMediaAttachment = true;
+          }
+        }
+
+        return {
+          body: { text: card.body },
+          footer: { text: card.footer || '' },
+          header,
+          nativeFlowMessage: {
+            buttons: card.buttons,
+            messageParamsJson: '',
+          },
+        };
+      }),
+    );
+  }
+
+  /**
+   * Upload media for carousel card header
+   */
+  private async uploadCardMedia(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    sock: any,
+    type: 'image' | 'video',
+    url: string,
+  ): Promise<Record<string, unknown> | null> {
+    if (!sock.waUploadToServer || !sock.rahmi?.utils?.prepareWAMessageMedia) {
+      return null;
+    }
+
+    try {
+      const media = await sock.rahmi.utils.prepareWAMessageMedia(
+        { [type]: { url } },
+        { upload: sock.waUploadToServer },
+      );
+      return media?.[`${type}Message`] || null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Format phone number to WhatsApp JID
+   */
+  private formatJid(to: string): string {
+    return to.includes('@') ? to : `${to}@s.whatsapp.net`;
+  }
+
+  // List messages (using native flow single_select)
+  async sendListMessage(
+    sessionName: string,
+    to: string,
+    content: {
+      text: string;
+      footer?: string;
+      title?: string;
+      buttonText: string;
+      sections: Array<{
+        title: string;
+        rows: Array<{
+          title: string;
+          rowId: string;
+          description?: string;
+        }>;
+      }>;
+    },
+  ) {
+    const socket = this.getConnectedSocket(sessionName);
+    const jid = to.includes('@') ? to : `${to}@s.whatsapp.net`;
+
+    // @fadzzzslebew/baileys uses native flow for list messages
+    const listMessage = {
+      text: content.text,
+      footer: content.footer || '',
+      title: content.title || '',
+      interactive: [
+        {
+          name: 'single_select',
+          buttonParamsJson: JSON.stringify({
+            title: content.buttonText,
+            sections: content.sections.map((s) => ({
+              title: s.title,
+              rows: s.rows.map((r) => ({
+                title: r.title,
+                id: r.rowId,
+                description: r.description || '',
+              })),
+            })),
+          }),
+        },
+      ],
+    };
+
+    return socket.sendMessage(
+      jid,
+      listMessage as Parameters<typeof socket.sendMessage>[1],
+    );
+  }
+
+  // Newsletter operations
+  async newsletterCreate(
+    sessionName: string,
+    name: string,
+    description?: string,
+    reactionCodes?: string,
+  ) {
+    const socket = this.getConnectedSocket(sessionName);
+    return socket.newsletterCreate(name, description || '', reactionCodes || 'ALL');
+  }
+
+  async newsletterMetadata(
+    sessionName: string,
+    type: 'invite' | 'jid',
+    key: string,
+  ) {
+    const socket = this.getConnectedSocket(sessionName);
+    return socket.newsletterMetadata(type, key);
+  }
+
+  async newsletterFollow(sessionName: string, jid: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    return socket.newsletterFollow(jid);
+  }
+
+  async newsletterUnfollow(sessionName: string, jid: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    return socket.newsletterUnfollow(jid);
+  }
+
+  async newsletterMute(sessionName: string, jid: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    return socket.newsletterMute(jid);
+  }
+
+  async newsletterUnmute(sessionName: string, jid: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    return socket.newsletterUnmute(jid);
+  }
+
+  async newsletterUpdateName(sessionName: string, jid: string, name: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    return socket.newsletterUpdateName(jid, name);
+  }
+
+  async newsletterUpdateDescription(
+    sessionName: string,
+    jid: string,
+    description: string,
+  ) {
+    const socket = this.getConnectedSocket(sessionName);
+    return socket.newsletterUpdateDescription(jid, description);
+  }
+
+  async newsletterDelete(sessionName: string, jid: string) {
+    const socket = this.getConnectedSocket(sessionName);
+    return socket.newsletterDelete(jid);
+  }
+
+  async newsletterReactMessage(
+    sessionName: string,
+    jid: string,
+    messageId: string,
+    reaction: string,
+  ) {
+    const socket = this.getConnectedSocket(sessionName);
+    return socket.newsletterReactMessage(jid, messageId, reaction);
   }
 }
