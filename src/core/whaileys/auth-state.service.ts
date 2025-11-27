@@ -4,7 +4,7 @@ import {
   AuthenticationCreds,
   SignalDataTypeMap,
   initAuthCreds,
-} from '@fadzzzslebew/baileys';
+} from '@whiskeysockets/baileys';
 import { Logger } from '@nestjs/common';
 
 const logger = new Logger('AuthState');

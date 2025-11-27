@@ -1,4 +1,4 @@
-import { WAMessageKey } from '@fadzzzslebew/baileys';
+import { WAMessageKey } from '@whiskeysockets/baileys';
 
 /**
  * Common response types for API operations

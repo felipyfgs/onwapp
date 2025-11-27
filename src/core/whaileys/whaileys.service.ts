@@ -14,8 +14,9 @@ import makeWASocket, {
   ProductCreate,
   ProductUpdate,
   WAMessageKey,
-  WAProto as proto,
-} from '@fadzzzslebew/baileys';
+  proto,
+  jidNormalizedUser,
+} from '@whiskeysockets/baileys';
 import { Boom } from '@hapi/boom';
 import { PrismaService } from '../../database/prisma.service';
 import { SessionStatus } from '@prisma/client';
@@ -733,7 +734,8 @@ export class WhaileysService
   // Contact management
   async fetchBlocklist(sessionName: string): Promise<string[]> {
     const socket = this.getConnectedSocket(sessionName);
-    return socket.fetchBlocklist();
+    const result = await socket.fetchBlocklist();
+    return result.filter((jid): jid is string => jid !== undefined);
   }
 
   // Note: addOrEditContact and removeContact not available in @fadzzzslebew/baileys
@@ -776,16 +778,17 @@ export class WhaileysService
   ): Promise<{ status?: string; setAt?: Date }> {
     const socket = this.getConnectedSocket(sessionName);
     const result = await socket.fetchStatus(socket.user?.id || '');
+    const firstResult = Array.isArray(result) ? result[0] : result;
     return {
-      status: result?.status,
-      setAt: result?.setAt,
+      status: firstResult?.status as string | undefined,
+      setAt: firstResult?.setAt as Date | undefined,
     };
   }
 
   // Chat additional operations
   async clearChatMessages(sessionName: string, jid: string) {
     const socket = this.getConnectedSocket(sessionName);
-    await socket.chatModify({ clear: { messages: [] } }, jid);
+    await socket.chatModify({ clear: true, lastMessages: [] } as unknown as Parameters<typeof socket.chatModify>[0], jid);
   }
 
   // Behavior settings
@@ -887,7 +890,8 @@ export class WhaileysService
     message: proto.IWebMessageInfo,
   ) {
     const socket = this.getConnectedSocket(sessionName);
-    return socket.updateMediaMessage(message);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return socket.updateMediaMessage(message as any);
   }
 
   // Note: fetchMessageHistory and requestPlaceholderResend not available in @fadzzzslebew/baileys

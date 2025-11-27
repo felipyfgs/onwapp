@@ -6,7 +6,7 @@ import {
   ApiResponse,
   ApiParam,
 } from '@nestjs/swagger';
-import { WAProto as proto } from '@fadzzzslebew/baileys';
+import { WAMessage } from '@whiskeysockets/baileys';
 import { MessagesService } from './messages.service';
 import {
   SendTextDto,
@@ -59,7 +59,7 @@ export class MessagesController {
   async sendText(
     @Param('name') name: string,
     @Body() dto: SendTextDto,
-  ): Promise<proto.WebMessageInfo | undefined> {
+  ): Promise<WAMessage | undefined> {
     return this.messagesService.sendText(name, dto);
   }
 
@@ -76,7 +76,7 @@ export class MessagesController {
   async sendImage(
     @Param('name') name: string,
     @Body() dto: SendImageDto,
-  ): Promise<proto.WebMessageInfo | undefined> {
+  ): Promise<WAMessage | undefined> {
     return this.messagesService.sendImage(name, dto);
   }
 
@@ -93,7 +93,7 @@ export class MessagesController {
   async sendVideo(
     @Param('name') name: string,
     @Body() dto: SendVideoDto,
-  ): Promise<proto.WebMessageInfo | undefined> {
+  ): Promise<WAMessage | undefined> {
     return this.messagesService.sendVideo(name, dto);
   }
 
@@ -110,7 +110,7 @@ export class MessagesController {
   async sendAudio(
     @Param('name') name: string,
     @Body() dto: SendAudioDto,
-  ): Promise<proto.WebMessageInfo | undefined> {
+  ): Promise<WAMessage | undefined> {
     return this.messagesService.sendAudio(name, dto);
   }
 
@@ -127,7 +127,7 @@ export class MessagesController {
   async sendDocument(
     @Param('name') name: string,
     @Body() dto: SendDocumentDto,
-  ): Promise<proto.WebMessageInfo | undefined> {
+  ): Promise<WAMessage | undefined> {
     return this.messagesService.sendDocument(name, dto);
   }
 
@@ -144,7 +144,7 @@ export class MessagesController {
   async sendLocation(
     @Param('name') name: string,
     @Body() dto: SendLocationDto,
-  ): Promise<proto.WebMessageInfo | undefined> {
+  ): Promise<WAMessage | undefined> {
     return this.messagesService.sendLocation(name, dto);
   }
 
@@ -161,7 +161,7 @@ export class MessagesController {
   async sendContact(
     @Param('name') name: string,
     @Body() dto: SendContactDto,
-  ): Promise<proto.WebMessageInfo | undefined> {
+  ): Promise<WAMessage | undefined> {
     return this.messagesService.sendContact(name, dto);
   }
 
@@ -178,7 +178,7 @@ export class MessagesController {
   async sendSticker(
     @Param('name') name: string,
     @Body() dto: SendStickerDto,
-  ): Promise<proto.WebMessageInfo | undefined> {
+  ): Promise<WAMessage | undefined> {
     return this.messagesService.sendSticker(name, dto);
   }
 
@@ -195,7 +195,7 @@ export class MessagesController {
   async sendReaction(
     @Param('name') name: string,
     @Body() dto: SendReactionDto,
-  ): Promise<proto.WebMessageInfo | undefined> {
+  ): Promise<WAMessage | undefined> {
     return this.messagesService.sendReaction(name, dto);
   }
 
@@ -212,7 +212,7 @@ export class MessagesController {
   async sendButtons(
     @Param('name') name: string,
     @Body() dto: SendButtonsDto,
-  ): Promise<proto.WebMessageInfo | undefined> {
+  ): Promise<WAMessage | undefined> {
     return this.messagesService.sendButtons(name, dto);
   }
 
@@ -229,7 +229,7 @@ export class MessagesController {
   async sendList(
     @Param('name') name: string,
     @Body() dto: SendListDto,
-  ): Promise<proto.WebMessageInfo | undefined> {
+  ): Promise<WAMessage | undefined> {
     return this.messagesService.sendList(name, dto);
   }
 
@@ -246,7 +246,7 @@ export class MessagesController {
   async sendTemplate(
     @Param('name') name: string,
     @Body() dto: SendTemplateDto,
-  ): Promise<proto.WebMessageInfo | undefined> {
+  ): Promise<WAMessage | undefined> {
     return this.messagesService.sendTemplate(name, dto);
   }
 
@@ -263,7 +263,7 @@ export class MessagesController {
   async sendCarousel(
     @Param('name') name: string,
     @Body() dto: SendCarouselDto,
-  ): Promise<proto.WebMessageInfo | undefined> {
+  ): Promise<WAMessage | undefined> {
     return this.messagesService.sendCarousel(name, dto);
   }
 
@@ -280,7 +280,7 @@ export class MessagesController {
   async forwardMessage(
     @Param('name') name: string,
     @Body() dto: ForwardMessageDto,
-  ): Promise<proto.WebMessageInfo | undefined> {
+  ): Promise<WAMessage | undefined> {
     return this.messagesService.forwardMessage(name, dto);
   }
 
@@ -297,7 +297,7 @@ export class MessagesController {
   async deleteMessage(
     @Param('name') name: string,
     @Body() dto: DeleteMessageDto,
-  ): Promise<proto.WebMessageInfo | undefined> {
+  ): Promise<WAMessage | undefined> {
     return this.messagesService.deleteMessage(name, dto);
   }
 
@@ -342,7 +342,7 @@ export class MessagesController {
   async sendPoll(
     @Param('name') name: string,
     @Body() dto: SendPollDto,
-  ): Promise<proto.WebMessageInfo | undefined> {
+  ): Promise<WAMessage | undefined> {
     return this.messagesService.sendPoll(name, dto);
   }
 
@@ -359,7 +359,7 @@ export class MessagesController {
   async editMessage(
     @Param('name') name: string,
     @Body() dto: EditMessageDto,
-  ): Promise<proto.WebMessageInfo | undefined> {
+  ): Promise<WAMessage | undefined> {
     return this.messagesService.editMessage(name, dto);
   }
 

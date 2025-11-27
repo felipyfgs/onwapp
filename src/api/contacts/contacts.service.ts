@@ -81,8 +81,8 @@ export class ContactsService {
       );
       const firstResult = Array.isArray(result) ? result[0] : result;
       return {
-        status: firstResult?.status,
-        setAt: firstResult?.setAt,
+        status: firstResult?.status as string | undefined,
+        setAt: firstResult?.setAt as number | Date | undefined,
       };
     } catch (error) {
       throw new BadRequestException(

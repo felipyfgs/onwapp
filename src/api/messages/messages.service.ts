@@ -3,7 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { AnyMessageContent } from '@fadzzzslebew/baileys';
+import { AnyMessageContent } from '@whiskeysockets/baileys';
 import { WhaileysService } from '../../core/whaileys/whaileys.service';
 import { SessionStatus } from '@prisma/client';
 import {
@@ -225,7 +225,7 @@ export class MessagesService {
       title: dto.title,
       buttonText: dto.buttonText,
       sections: dto.sections,
-    });
+    } as AnyMessageContent);
   }
 
   async sendTemplate(sessionName: string, dto: SendTemplateDto) {
@@ -337,7 +337,7 @@ export class MessagesService {
             },
           ],
         },
-      } as Parameters<typeof session.socket.chatModify>[0],
+      } as unknown as Parameters<typeof session.socket.chatModify>[0],
       jid,
     );
   }

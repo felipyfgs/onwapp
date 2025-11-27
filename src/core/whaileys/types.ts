@@ -1,4 +1,4 @@
-import { WASocket } from '@fadzzzslebew/baileys';
+import { WASocket } from '@whiskeysockets/baileys';
 import { SessionStatus } from '@prisma/client';
 
 /**
