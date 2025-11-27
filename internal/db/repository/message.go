@@ -97,7 +97,7 @@ func (r *MessageRepository) UpdateStatus(ctx context.Context, sessionID string, 
 	return err
 }
 
-func (r *MessageRepository) GetByMessageID(ctx context.Context, sessionID int, messageID string) (*model.Message, error) {
+func (r *MessageRepository) GetByMessageID(ctx context.Context, sessionID string, messageID string) (*model.Message, error) {
 	row := r.pool.QueryRow(ctx, `
 		SELECT "id", "sessionId", "messageId", "chatJid", COALESCE("senderJid", ''), "timestamp",
 		       COALESCE("pushName", ''), COALESCE("senderAlt", ''), COALESCE("type", ''), COALESCE("mediaType", ''), COALESCE("category", ''), COALESCE("content", ''),

@@ -525,7 +525,7 @@ func (s *EventService) handleNewsletterLiveUpdate(ctx context.Context, session *
 
 // Helper
 
-func (s *EventService) sendWebhook(ctx context.Context, sessionID int, event string, data interface{}) {
+func (s *EventService) sendWebhook(ctx context.Context, sessionID string, event string, data interface{}) {
 	if s.webhookService != nil {
 		s.webhookService.Send(ctx, sessionID, event, data)
 	}

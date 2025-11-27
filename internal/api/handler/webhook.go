@@ -3,7 +3,6 @@ package handler
 import (
 	"net/http"
 	"net/url"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -121,7 +120,7 @@ func (h *WebhookHandler) ListWebhooks(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param name path string true "Session name"
-// @Param id path int true "Webhook ID"
+// @Param id path string true "Webhook ID (UUID)"
 // @Param request body dto.UpdateWebhookRequest true "Webhook data"
 // @Success 200 {object} dto.MessageResponse
 // @Failure 400 {object} dto.ErrorResponse
@@ -141,8 +140,8 @@ func (h *WebhookHandler) UpdateWebhook(c *gin.Context) {
 		return
 	}
 
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
+	id := c.Param("id")
+	if id == "" {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid webhook id"})
 		return
 	}
@@ -161,14 +160,14 @@ func (h *WebhookHandler) UpdateWebhook(c *gin.Context) {
 // @Tags webhook
 // @Produce json
 // @Param name path string true "Session name"
-// @Param id path int true "Webhook ID"
+// @Param id path string true "Webhook ID (UUID)"
 // @Success 200 {object} dto.MessageResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Security ApiKeyAuth
 // @Router /sessions/{name}/webhook/{id} [delete]
 func (h *WebhookHandler) DeleteWebhook(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
+	id := c.Param("id")
+	if id == "" {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid webhook id"})
 		return
 	}

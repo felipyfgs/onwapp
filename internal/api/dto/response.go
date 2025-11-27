@@ -40,8 +40,8 @@ type SendResponse struct {
 // Webhook responses
 
 type WebhookResponse struct {
-	ID        int      `json:"id"`
-	SessionID int      `json:"sessionId"`
+	ID        string   `json:"id"`
+	SessionID string   `json:"sessionId"`
 	URL       string   `json:"url"`
 	Events    []string `json:"events"`
 	Enabled   bool     `json:"enabled"`
