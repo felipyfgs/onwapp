@@ -347,19 +347,19 @@ func (s *SessionService) handleIncomingMessage(ctx context.Context, session *mod
 	}
 
 	timestamp := evt.Info.Timestamp
-	msg := &db.MessageRecord{
+	msg := &model.Message{
 		SessionID: session.ID,
 		MessageID: evt.Info.ID,
 		ChatJID:   evt.Info.Chat.String(),
 		SenderJID: evt.Info.Sender.String(),
-		Type:      msgType,
+		Type:      model.MessageType(msgType),
 		Content:   content,
 		Timestamp: &timestamp,
-		Direction: "incoming",
-		Status:    "received",
+		Direction: model.MessageDirectionIncoming,
+		Status:    model.MessageStatusReceived,
 	}
 
-	if _, err := s.database.SaveMessage(ctx, msg); err != nil {
+	if _, err := s.database.Messages.Save(ctx, msg); err != nil {
 		logger.Warn().Err(err).Str("session", session.Name).Str("messageId", evt.Info.ID).Msg("Failed to save incoming message")
 	}
 

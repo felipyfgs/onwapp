@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"net/url"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -12,13 +13,13 @@ import (
 
 type WebhookHandler struct {
 	webhookService *service.WebhookService
-	database       *db.Database
+	sessions       *db.Database
 }
 
 func NewWebhookHandler(webhookService *service.WebhookService, database *db.Database) *WebhookHandler {
 	return &WebhookHandler{
 		webhookService: webhookService,
-		database:       database,
+		sessions:       database,
 	}
 }
 
@@ -71,8 +72,15 @@ func (h *WebhookHandler) CreateWebhook(c *gin.Context) {
 		return
 	}
 
+	// Validate URL format
+	parsedURL, err := url.ParseRequestURI(req.URL)
+	if err != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid webhook URL: must be a valid http or https URL"})
+		return
+	}
+
 	// Get session to find ID
-	session, err := h.database.GetSessionByName(c.Request.Context(), name)
+	session, err := h.sessions.Sessions.GetByName(c.Request.Context(), name)
 	if err != nil {
 		c.JSON(http.StatusNotFound, ErrorResponse{Error: "session not found"})
 		return
@@ -106,7 +114,7 @@ func (h *WebhookHandler) CreateWebhook(c *gin.Context) {
 func (h *WebhookHandler) ListWebhooks(c *gin.Context) {
 	name := c.Param("name")
 
-	session, err := h.database.GetSessionByName(c.Request.Context(), name)
+	session, err := h.sessions.Sessions.GetByName(c.Request.Context(), name)
 	if err != nil {
 		c.JSON(http.StatusNotFound, ErrorResponse{Error: "session not found"})
 		return
@@ -118,7 +126,7 @@ func (h *WebhookHandler) ListWebhooks(c *gin.Context) {
 		return
 	}
 
-	var response []WebhookResponse
+	response := make([]WebhookResponse, 0, len(webhooks))
 	for _, wh := range webhooks {
 		response = append(response, WebhookResponse{
 			ID:        wh.ID,
@@ -149,6 +157,13 @@ func (h *WebhookHandler) UpdateWebhook(c *gin.Context) {
 	var req UpdateWebhookRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	// Validate URL format
+	parsedURL, err := url.ParseRequestURI(req.URL)
+	if err != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid webhook URL: must be a valid http or https URL"})
 		return
 	}
 

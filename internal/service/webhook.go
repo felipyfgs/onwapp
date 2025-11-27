@@ -12,6 +12,7 @@ import (
 
 	"zpwoot/internal/db"
 	"zpwoot/internal/logger"
+	"zpwoot/internal/model"
 )
 
 type WebhookService struct {
@@ -29,7 +30,7 @@ func NewWebhookService(database *db.Database) *WebhookService {
 }
 
 func (w *WebhookService) Send(ctx context.Context, sessionID int, event string, data interface{}) {
-	webhooks, err := w.database.GetEnabledWebhooksBySession(ctx, sessionID)
+	webhooks, err := w.database.Webhooks.GetEnabledBySession(ctx, sessionID)
 	if err != nil {
 		logger.Error().Err(err).Int("sessionId", sessionID).Msg("Failed to get webhooks")
 		return
@@ -72,7 +73,7 @@ func (w *WebhookService) shouldSendEvent(events []string, event string) bool {
 	return false
 }
 
-func (w *WebhookService) sendWebhook(wh db.WebhookRecord, payload []byte) {
+func (w *WebhookService) sendWebhook(wh model.Webhook, payload []byte) {
 	req, err := http.NewRequest("POST", wh.URL, bytes.NewReader(payload))
 	if err != nil {
 		logger.Error().Err(err).Str("url", wh.URL).Msg("Failed to create webhook request")
@@ -110,24 +111,24 @@ func (w *WebhookService) generateSignature(payload []byte, secret string) string
 // CRUD operations
 
 func (w *WebhookService) Create(ctx context.Context, sessionID int, url string, events []string, secret string) (int, error) {
-	wh := &db.WebhookRecord{
+	wh := &model.Webhook{
 		SessionID: sessionID,
 		URL:       url,
 		Events:    events,
 		Enabled:   true,
 		Secret:    secret,
 	}
-	return w.database.CreateWebhook(ctx, wh)
+	return w.database.Webhooks.Create(ctx, wh)
 }
 
-func (w *WebhookService) GetBySession(ctx context.Context, sessionID int) ([]db.WebhookRecord, error) {
-	return w.database.GetWebhooksBySession(ctx, sessionID)
+func (w *WebhookService) GetBySession(ctx context.Context, sessionID int) ([]model.Webhook, error) {
+	return w.database.Webhooks.GetBySession(ctx, sessionID)
 }
 
 func (w *WebhookService) Update(ctx context.Context, id int, url string, events []string, enabled bool, secret string) error {
-	return w.database.UpdateWebhook(ctx, id, url, events, enabled, secret)
+	return w.database.Webhooks.Update(ctx, id, url, events, enabled, secret)
 }
 
 func (w *WebhookService) Delete(ctx context.Context, id int) error {
-	return w.database.DeleteWebhook(ctx, id)
+	return w.database.Webhooks.Delete(ctx, id)
 }
