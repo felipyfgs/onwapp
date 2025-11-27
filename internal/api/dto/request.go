@@ -172,3 +172,133 @@ type SetPrivacyRequest struct {
 	Status       string `json:"status" example:"contacts"`
 	ReadReceipts bool   `json:"readReceipts" example:"true"`
 }
+
+// Poll requests
+
+type SendPollRequest struct {
+	Phone          string   `json:"phone" binding:"required" example:"5511999999999"`
+	Name           string   `json:"name" binding:"required" example:"What's your favorite color?"`
+	Options        []string `json:"options" binding:"required" example:"Red,Blue,Green"`
+	SelectableCount int      `json:"selectableCount" example:"1"`
+}
+
+type SendPollVoteRequest struct {
+	Phone          string   `json:"phone" binding:"required" example:"5511999999999"`
+	PollMessageID  string   `json:"pollMessageId" binding:"required" example:"ABCD1234"`
+	SelectedOptions []string `json:"selectedOptions" binding:"required" example:"Red"`
+}
+
+// Blocklist requests
+
+type BlocklistRequest struct {
+	Phone  string `json:"phone" binding:"required" example:"5511999999999"`
+	Action string `json:"action" binding:"required" example:"block"` // block or unblock
+}
+
+// Disappearing messages requests
+
+type DisappearingRequest struct {
+	Phone   string `json:"phone" binding:"required" example:"5511999999999"`
+	Timer   string `json:"timer" binding:"required" example:"24h"` // 24h, 7d, 90d, or off
+}
+
+type DefaultDisappearingRequest struct {
+	Timer string `json:"timer" binding:"required" example:"24h"` // 24h, 7d, 90d, or off
+}
+
+// Group settings requests
+
+type GroupAnnounceRequest struct {
+	GroupID  string `json:"groupId" binding:"required" example:"123456789@g.us"`
+	Announce bool   `json:"announce" example:"true"`
+}
+
+type GroupLockedRequest struct {
+	GroupID string `json:"groupId" binding:"required" example:"123456789@g.us"`
+	Locked  bool   `json:"locked" example:"true"`
+}
+
+type GroupPictureRequest struct {
+	GroupID string `json:"groupId" binding:"required" example:"123456789@g.us"`
+	Image   string `json:"image" binding:"required" example:"base64_encoded_image"`
+}
+
+type GroupApprovalRequest struct {
+	GroupID      string `json:"groupId" binding:"required" example:"123456789@g.us"`
+	ApprovalMode bool   `json:"approvalMode" example:"true"`
+}
+
+type GroupMemberAddModeRequest struct {
+	GroupID string `json:"groupId" binding:"required" example:"123456789@g.us"`
+	Mode    string `json:"mode" binding:"required" example:"admin_add"` // admin_add or all_member_add
+}
+
+type GroupRequestActionRequest struct {
+	GroupID      string   `json:"groupId" binding:"required" example:"123456789@g.us"`
+	Participants []string `json:"participants" binding:"required"`
+	Action       string   `json:"action" binding:"required" example:"approve"` // approve or reject
+}
+
+type GroupInfoFromLinkRequest struct {
+	InviteLink string `json:"inviteLink" binding:"required" example:"https://chat.whatsapp.com/ABC123"`
+}
+
+// Newsletter requests
+
+type CreateNewsletterRequest struct {
+	Name        string `json:"name" binding:"required" example:"My Channel"`
+	Description string `json:"description" example:"Channel description"`
+	Picture     string `json:"picture" example:"base64_encoded_image"`
+}
+
+type NewsletterActionRequest struct {
+	NewsletterJID string `json:"newsletterJid" binding:"required" example:"123456789@newsletter"`
+}
+
+type NewsletterReactionRequest struct {
+	NewsletterJID string `json:"newsletterJid" binding:"required" example:"123456789@newsletter"`
+	ServerID      int    `json:"serverId" binding:"required" example:"123"`
+	Reaction      string `json:"reaction" binding:"required" example:"👍"`
+	MessageID     string `json:"messageId" example:"ABCD1234"`
+}
+
+type NewsletterMuteRequest struct {
+	NewsletterJID string `json:"newsletterJid" binding:"required" example:"123456789@newsletter"`
+	Mute          bool   `json:"mute" example:"true"`
+}
+
+// Contact subscribe request
+
+type SubscribePresenceRequest struct {
+	Phone string `json:"phone" binding:"required" example:"5511999999999"`
+}
+
+// Call request
+
+type RejectCallRequest struct {
+	CallFrom string `json:"callFrom" binding:"required" example:"5511999999999"`
+	CallID   string `json:"callId" binding:"required" example:"CALL123"`
+}
+
+// Pair phone request
+
+type PairPhoneRequest struct {
+	Phone string `json:"phone" binding:"required" example:"5511999999999"`
+}
+
+// Status/Story request
+
+type SendStatusRequest struct {
+	Text       string `json:"text" example:"My status update"`
+	Image      string `json:"image" example:"base64_encoded_image"`
+	Video      string `json:"video" example:"base64_encoded_video"`
+	Caption    string `json:"caption" example:"Status caption"`
+	MimeType   string `json:"mimetype" example:"image/jpeg"`
+}
+
+// Community requests
+
+type LinkGroupRequest struct {
+	ParentGroupID string `json:"parentGroupId" binding:"required" example:"123456789@g.us"`
+	ChildGroupID  string `json:"childGroupId" binding:"required" example:"987654321@g.us"`
+}

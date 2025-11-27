@@ -172,3 +172,71 @@ type PrivacySettingsResponse struct {
 	Success  bool        `json:"success"`
 	Settings interface{} `json:"settings"`
 }
+
+// Blocklist responses
+
+type BlocklistResponse struct {
+	Success bool     `json:"success"`
+	JIDs    []string `json:"jids"`
+}
+
+type BlocklistActionResponse struct {
+	Success bool   `json:"success"`
+	Action  string `json:"action"`
+	Phone   string `json:"phone"`
+}
+
+// Newsletter responses
+
+type NewsletterResponse struct {
+	Success bool        `json:"success"`
+	Data    interface{} `json:"data"`
+}
+
+type NewsletterListResponse struct {
+	Success     bool        `json:"success"`
+	Newsletters interface{} `json:"newsletters"`
+}
+
+// Status responses
+
+type StatusPrivacyResponse struct {
+	Success bool        `json:"success"`
+	Privacy interface{} `json:"privacy"`
+}
+
+// Group request participants response
+
+type GroupRequestParticipantsResponse struct {
+	Success      bool        `json:"success"`
+	GroupID      string      `json:"groupId"`
+	Participants interface{} `json:"participants"`
+}
+
+// QR Link response
+
+type QRLinkResponse struct {
+	Success bool   `json:"success"`
+	Link    string `json:"link"`
+}
+
+// Business profile response
+
+type BusinessProfileResponse struct {
+	Success bool        `json:"success"`
+	Profile interface{} `json:"profile"`
+}
+
+// Pair phone response
+
+type PairPhoneResponse struct {
+	Success bool   `json:"success"`
+	Code    string `json:"code"`
+}
+
+// Community response
+
+type CommunityResponse struct {
+	Success bool        `json:"success"`
+	Groups  interface{} `json:"groups,omitempty"`
+}
