@@ -20,25 +20,29 @@ import (
 )
 
 type SessionService struct {
-	container *sqlstore.Container
-	database  *db.Database
-	sessions  map[string]*model.Session
-	mu        sync.RWMutex
+	container      *sqlstore.Container
+	database       *db.Database
+	webhookService *WebhookService
+	sessions       map[string]*model.Session
+	mu             sync.RWMutex
 }
 
-func NewSessionService(container *sqlstore.Container, database *db.Database) *SessionService {
+func NewSessionService(container *sqlstore.Container, database *db.Database, webhookService *WebhookService) *SessionService {
 	return &SessionService{
-		container: container,
-		database:  database,
-		sessions:  make(map[string]*model.Session),
+		container:      container,
+		database:       database,
+		webhookService: webhookService,
+		sessions:       make(map[string]*model.Session),
 	}
 }
 
 func (s *SessionService) LoadFromDatabase(ctx context.Context) error {
-	records, err := s.database.GetAllSessions(ctx)
+	records, err := s.database.Sessions.GetAll(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load sessions from database: %w", err)
 	}
+
+	var sessionsToReconnect []*model.Session
 
 	for _, rec := range records {
 		var device *store.Device
@@ -62,6 +66,7 @@ func (s *SessionService) LoadFromDatabase(ctx context.Context) error {
 		client := whatsmeow.NewClient(device, clientLog)
 
 		session := &model.Session{
+			ID:     rec.ID,
 			Name:   rec.Name,
 			Client: client,
 			Device: device,
@@ -72,10 +77,38 @@ func (s *SessionService) LoadFromDatabase(ctx context.Context) error {
 		s.sessions[rec.Name] = session
 		s.mu.Unlock()
 
-		logger.Info().Str("session", rec.Name).Str("jid", rec.DeviceJID).Msg("Session loaded from database")
+		logger.Info().Str("session", rec.Name).Str("jid", rec.DeviceJID).Str("phone", rec.Phone).Str("status", rec.Status).Msg("Session loaded from database")
+
+		// Se a sessão tem credenciais válidas (deviceJID preenchido), reconecta automaticamente
+		// O device.ID será preenchido pelo whatsmeow se houver credenciais no sqlstore
+		if device.ID != nil {
+			sessionsToReconnect = append(sessionsToReconnect, session)
+			logger.Info().Str("session", rec.Name).Msg("Session has valid credentials, will auto-reconnect")
+		}
+	}
+
+	// Reconectar sessões que estavam conectadas
+	for _, session := range sessionsToReconnect {
+		go s.reconnectSession(session)
 	}
 
 	return nil
+}
+
+func (s *SessionService) reconnectSession(session *model.Session) {
+	logger.Info().Str("session", session.Name).Msg("Auto-reconnecting session...")
+
+	s.setupEventHandler(session)
+
+	if err := session.Client.Connect(); err != nil {
+		logger.Error().Err(err).Str("session", session.Name).Msg("Failed to auto-reconnect session")
+		session.SetStatus(model.StatusDisconnected)
+		s.database.Sessions.UpdateStatus(context.Background(), session.Name, "disconnected")
+		return
+	}
+
+	session.SetStatus(model.StatusConnected)
+	logger.Info().Str("session", session.Name).Msg("Session auto-reconnected successfully")
 }
 
 func (s *SessionService) Create(ctx context.Context, name string) (*model.Session, error) {
@@ -86,8 +119,9 @@ func (s *SessionService) Create(ctx context.Context, name string) (*model.Sessio
 		return nil, fmt.Errorf("session %s already exists", name)
 	}
 
-	// Save to database
-	if err := s.database.CreateSession(ctx, name); err != nil {
+	// Save to database and get ID
+	id, err := s.database.Sessions.Create(ctx, name)
+	if err != nil {
 		return nil, fmt.Errorf("failed to save session to database: %w", err)
 	}
 
@@ -96,6 +130,7 @@ func (s *SessionService) Create(ctx context.Context, name string) (*model.Sessio
 	client := whatsmeow.NewClient(device, clientLog)
 
 	session := &model.Session{
+		ID:     id,
 		Name:   name,
 		Client: client,
 		Device: device,
@@ -137,7 +172,7 @@ func (s *SessionService) Delete(ctx context.Context, name string) error {
 	}
 
 	// Delete from database
-	if err := s.database.DeleteSession(ctx, name); err != nil {
+	if err := s.database.Sessions.Delete(ctx, name); err != nil {
 		logger.Warn().Err(err).Str("session", name).Msg("Failed to delete session from database")
 	}
 
@@ -209,11 +244,15 @@ func (s *SessionService) startClientWithQR(session *model.Session) {
 		case "success":
 			session.SetStatus(model.StatusConnected)
 			session.SetQR("")
-			// Save JID to database
+			// Save JID and phone to database
 			if session.Client.Store.ID != nil {
 				jid := session.Client.Store.ID.String()
-				if err := s.database.UpdateSessionJID(context.Background(), session.Name, jid); err != nil {
+				phone := session.Client.Store.ID.User // Extrai o número do JID
+				if err := s.database.Sessions.UpdateJID(context.Background(), session.Name, jid, phone); err != nil {
 					logger.Warn().Err(err).Str("session", session.Name).Msg("Failed to update session JID")
+				}
+				if err := s.database.Sessions.UpdateStatus(context.Background(), session.Name, "connected"); err != nil {
+					logger.Warn().Err(err).Str("session", session.Name).Msg("Failed to update session status")
 				}
 			}
 			logger.Info().Str("session", session.Name).Msg("QR code scanned successfully")
@@ -229,14 +268,114 @@ func (s *SessionService) startClientWithQR(session *model.Session) {
 
 func (s *SessionService) setupEventHandler(session *model.Session) {
 	session.Client.AddEventHandler(func(evt interface{}) {
-		switch evt.(type) {
+		ctx := context.Background()
+		switch e := evt.(type) {
 		case *events.Connected:
 			session.SetStatus(model.StatusConnected)
 			session.SetQR("")
+			// Salvar status e phone no banco
+			if session.Client.Store.ID != nil {
+				jid := session.Client.Store.ID.String()
+				phone := session.Client.Store.ID.User
+				logger.Debug().Str("session", session.Name).Str("jid", jid).Str("phone", phone).Msg("Updating session with JID/phone")
+				if err := s.database.Sessions.UpdateJID(ctx, session.Name, jid, phone); err != nil {
+					logger.Error().Err(err).Str("session", session.Name).Msg("Failed to update session JID/phone")
+				} else {
+					logger.Info().Str("session", session.Name).Str("phone", phone).Msg("Session JID/phone updated successfully")
+				}
+			} else {
+				logger.Warn().Str("session", session.Name).Msg("Store.ID is nil on Connected event")
+			}
+			if err := s.database.Sessions.UpdateStatus(ctx, session.Name, "connected"); err != nil {
+				logger.Warn().Err(err).Str("session", session.Name).Msg("Failed to update session status to connected")
+			}
+			logger.Info().Str("session", session.Name).Msg("Session connected")
+			// Send webhook
+			if s.webhookService != nil {
+				s.webhookService.Send(ctx, session.ID, "session.connected", map[string]string{"session": session.Name})
+			}
 		case *events.Disconnected:
 			session.SetStatus(model.StatusDisconnected)
+			if err := s.database.Sessions.UpdateStatus(ctx, session.Name, "disconnected"); err != nil {
+				logger.Warn().Err(err).Str("session", session.Name).Msg("Failed to update session status to disconnected")
+			}
+			logger.Info().Str("session", session.Name).Msg("Session disconnected")
+			if s.webhookService != nil {
+				s.webhookService.Send(ctx, session.ID, "session.disconnected", map[string]string{"session": session.Name})
+			}
+		case *events.LoggedOut:
+			session.SetStatus(model.StatusDisconnected)
+			if err := s.database.Sessions.UpdateStatus(ctx, session.Name, "disconnected"); err != nil {
+				logger.Warn().Err(err).Str("session", session.Name).Msg("Failed to update session status")
+			}
+			logger.Info().Str("session", session.Name).Msg("Session logged out")
+			if s.webhookService != nil {
+				s.webhookService.Send(ctx, session.ID, "session.logged_out", map[string]string{"session": session.Name})
+			}
+		case *events.Message:
+			s.handleIncomingMessage(ctx, session, e)
 		}
 	})
+}
+
+func (s *SessionService) handleIncomingMessage(ctx context.Context, session *model.Session, evt *events.Message) {
+	msgType := "text"
+	content := ""
+	
+	if evt.Message.GetConversation() != "" {
+		content = evt.Message.GetConversation()
+	} else if evt.Message.GetExtendedTextMessage() != nil {
+		content = evt.Message.GetExtendedTextMessage().GetText()
+	} else if evt.Message.GetImageMessage() != nil {
+		msgType = "image"
+		content = evt.Message.GetImageMessage().GetCaption()
+	} else if evt.Message.GetVideoMessage() != nil {
+		msgType = "video"
+		content = evt.Message.GetVideoMessage().GetCaption()
+	} else if evt.Message.GetAudioMessage() != nil {
+		msgType = "audio"
+	} else if evt.Message.GetDocumentMessage() != nil {
+		msgType = "document"
+		content = evt.Message.GetDocumentMessage().GetFileName()
+	} else if evt.Message.GetStickerMessage() != nil {
+		msgType = "sticker"
+	} else if evt.Message.GetLocationMessage() != nil {
+		msgType = "location"
+	} else if evt.Message.GetContactMessage() != nil {
+		msgType = "contact"
+		content = evt.Message.GetContactMessage().GetDisplayName()
+	}
+
+	timestamp := evt.Info.Timestamp
+	msg := &db.MessageRecord{
+		SessionID: session.ID,
+		MessageID: evt.Info.ID,
+		ChatJID:   evt.Info.Chat.String(),
+		SenderJID: evt.Info.Sender.String(),
+		Type:      msgType,
+		Content:   content,
+		Timestamp: &timestamp,
+		Direction: "incoming",
+		Status:    "received",
+	}
+
+	if _, err := s.database.SaveMessage(ctx, msg); err != nil {
+		logger.Warn().Err(err).Str("session", session.Name).Str("messageId", evt.Info.ID).Msg("Failed to save incoming message")
+	}
+
+	// Send webhook
+	if s.webhookService != nil {
+		s.webhookService.Send(ctx, session.ID, "message.received", map[string]interface{}{
+			"messageId": evt.Info.ID,
+			"chatJid":   evt.Info.Chat.String(),
+			"senderJid": evt.Info.Sender.String(),
+			"type":      msgType,
+			"content":   content,
+			"timestamp": timestamp,
+		})
+	}
+
+	logger.Debug().Str("session", session.Name).Str("from", evt.Info.Sender.String()).Str("type", msgType).Msg("Message received")
 }
 
 func (s *SessionService) Logout(ctx context.Context, name string) error {

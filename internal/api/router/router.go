@@ -13,6 +13,10 @@ type Handlers struct {
 	Session *handler.SessionHandler
 	Message *handler.MessageHandler
 	Group   *handler.GroupHandler
+	Contact *handler.ContactHandler
+	Chat    *handler.ChatHandler
+	Profile *handler.ProfileHandler
+	Webhook *handler.WebhookHandler
 }
 
 func Setup(handlers *Handlers, apiKey string) *gin.Engine {
@@ -60,6 +64,35 @@ func Setup(handlers *Handlers, apiKey string) *gin.Engine {
 		sessions.POST("/:name/group/participants/demote", handlers.Group.DemoteParticipants)
 		sessions.POST("/:name/group/join", handlers.Group.JoinGroup)
 		sessions.POST("/:name/group/send/text", handlers.Group.SendGroupMessage)
+
+		// Contact management
+		sessions.POST("/:name/contact/check", handlers.Contact.CheckPhone)
+		sessions.POST("/:name/contact/info", handlers.Contact.GetContactInfo)
+		sessions.GET("/:name/contact/list", handlers.Contact.GetContacts)
+		sessions.GET("/:name/contact/:phone/avatar", handlers.Contact.GetAvatar)
+		sessions.POST("/:name/contact/presence", handlers.Contact.SetPresence)
+		sessions.POST("/:name/contact/typing", handlers.Contact.SetChatPresence)
+		sessions.POST("/:name/contact/markread", handlers.Contact.MarkRead)
+
+		// Chat management
+		sessions.POST("/:name/chat/archive", handlers.Chat.ArchiveChat)
+		sessions.POST("/:name/chat/delete", handlers.Chat.DeleteMessage)
+		sessions.POST("/:name/chat/edit", handlers.Chat.EditMessage)
+
+		// Profile management
+		sessions.GET("/:name/profile", handlers.Profile.GetProfile)
+		sessions.PUT("/:name/profile/status", handlers.Profile.SetStatus)
+		sessions.PUT("/:name/profile/name", handlers.Profile.SetPushName)
+		sessions.PUT("/:name/profile/picture", handlers.Profile.SetProfilePicture)
+		sessions.DELETE("/:name/profile/picture", handlers.Profile.DeleteProfilePicture)
+		sessions.GET("/:name/profile/privacy", handlers.Profile.GetPrivacySettings)
+		sessions.PUT("/:name/profile/privacy", handlers.Profile.SetPrivacySettings)
+
+		// Webhook management
+		sessions.GET("/:name/webhook", handlers.Webhook.ListWebhooks)
+		sessions.POST("/:name/webhook", handlers.Webhook.CreateWebhook)
+		sessions.PUT("/:name/webhook/:id", handlers.Webhook.UpdateWebhook)
+		sessions.DELETE("/:name/webhook/:id", handlers.Webhook.DeleteWebhook)
 	}
 
 	return r

@@ -1,5 +1,43 @@
 basePath: /
 definitions:
+  handler.ArchiveChatRequest:
+    properties:
+      archive:
+        example: true
+        type: boolean
+      phone:
+        example: "5511999999999"
+        type: string
+    required:
+    - phone
+    type: object
+  handler.ChatPresenceRequest:
+    properties:
+      media:
+        example: ""
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+      state:
+        example: composing
+        type: string
+    required:
+    - phone
+    - state
+    type: object
+  handler.CheckPhoneRequest:
+    properties:
+      phones:
+        example:
+        - "5511999999999"
+        - "5511888888888"
+        items:
+          type: string
+        type: array
+    required:
+    - phones
+    type: object
   handler.CreateGroupRequest:
     properties:
       name:
@@ -16,11 +54,53 @@ definitions:
     - name
     - participants
     type: object
+  handler.DeleteMessageRequest:
+    properties:
+      forMe:
+        example: false
+        type: boolean
+      messageId:
+        example: ABCD1234
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+    required:
+    - messageId
+    - phone
+    type: object
+  handler.EditMessageRequest:
+    properties:
+      messageId:
+        example: ABCD1234
+        type: string
+      newText:
+        example: Edited message
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+    required:
+    - messageId
+    - newText
+    - phone
+    type: object
   handler.ErrorResponse:
     properties:
       error:
         example: session not found
         type: string
+    type: object
+  handler.GetContactInfoRequest:
+    properties:
+      phones:
+        example:
+        - "5511999999999"
+        items:
+          type: string
+        type: array
+    required:
+    - phones
     type: object
   handler.GroupMessageRequest:
     properties:
@@ -79,6 +159,21 @@ definitions:
     required:
     - link
     type: object
+  handler.MarkReadRequest:
+    properties:
+      messageIds:
+        example:
+        - ABCD1234
+        items:
+          type: string
+        type: array
+      phone:
+        example: "5511999999999"
+        type: string
+    required:
+    - messageIds
+    - phone
+    type: object
   handler.MessageResponse:
     properties:
       message:
@@ -86,6 +181,34 @@ definitions:
         type: string
       status:
         example: disconnected
+        type: string
+    type: object
+  handler.PresenceRequest:
+    properties:
+      available:
+        example: true
+        type: boolean
+    type: object
+  handler.PrivacySettingsRequest:
+    properties:
+      groupsAdd:
+        description: all, contacts, none
+        example: all
+        type: string
+      lastSeen:
+        description: all, contacts, none
+        example: all
+        type: string
+      profilePicture:
+        description: all, contacts, none
+        example: all
+        type: string
+      readReceipts:
+        example: true
+        type: boolean
+      status:
+        description: all, contacts, none
+        example: all
         type: string
     type: object
   handler.QRResponse:
@@ -275,12 +398,159 @@ definitions:
         example: connected
         type: string
     type: object
+  handler.SetProfilePictureRequest:
+    properties:
+      image:
+        example: base64_encoded_image
+        type: string
+    required:
+    - image
+    type: object
+  handler.SetPushNameRequest:
+    properties:
+      name:
+        example: John Doe
+        type: string
+    required:
+    - name
+    type: object
+  handler.SetStatusRequest:
+    properties:
+      status:
+        example: Hello, I'm using WhatsApp
+        type: string
+    required:
+    - status
+    type: object
 info:
   contact: {}
   description: WhatsApp API using whatsmeow library
   title: ZPWoot WhatsApp API
   version: "1.0"
 paths:
+  /sessions/{name}/chat/archive:
+    post:
+      consumes:
+      - application/json
+      description: Archive or unarchive a WhatsApp chat
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Archive data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.ArchiveChatRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.GroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Archive or unarchive a chat
+      tags:
+      - chat
+  /sessions/{name}/chat/delete:
+    post:
+      consumes:
+      - application/json
+      description: Delete a message from a chat
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Delete data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.DeleteMessageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.GroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a message
+      tags:
+      - chat
+  /sessions/{name}/chat/edit:
+    post:
+      consumes:
+      - application/json
+      description: Edit a previously sent message
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Edit data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.EditMessageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.GroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Edit a message
+      tags:
+      - chat
   /sessions/{name}/connect:
     post:
       consumes:
@@ -313,6 +583,278 @@ paths:
       summary: Connect session
       tags:
       - sessions
+  /sessions/{name}/contact/{phone}/avatar:
+    get:
+      consumes:
+      - application/json
+      description: Get profile picture URL for a contact
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Phone number
+        in: path
+        name: phone
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.GroupResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get contact avatar
+      tags:
+      - contact
+  /sessions/{name}/contact/check:
+    post:
+      consumes:
+      - application/json
+      description: Check if phone numbers are registered on WhatsApp
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Phone numbers
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CheckPhoneRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.GroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Check if phones are registered on WhatsApp
+      tags:
+      - contact
+  /sessions/{name}/contact/info:
+    post:
+      consumes:
+      - application/json
+      description: Get information about WhatsApp contacts
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Phone numbers
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.GetContactInfoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.GroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get contact information
+      tags:
+      - contact
+  /sessions/{name}/contact/list:
+    get:
+      consumes:
+      - application/json
+      description: Get all contacts from WhatsApp
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.GroupResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get all contacts
+      tags:
+      - contact
+  /sessions/{name}/contact/markread:
+    post:
+      consumes:
+      - application/json
+      description: Mark messages as read in a chat
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Messages to mark
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.MarkReadRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.GroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Mark messages as read
+      tags:
+      - contact
+  /sessions/{name}/contact/presence:
+    post:
+      consumes:
+      - application/json
+      description: Set online/offline presence status
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Presence data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.PresenceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.GroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set online presence
+      tags:
+      - contact
+  /sessions/{name}/contact/typing:
+    post:
+      consumes:
+      - application/json
+      description: Set typing or recording presence in a chat
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Chat presence data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.ChatPresenceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.GroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set chat presence (typing/recording)
+      tags:
+      - contact
   /sessions/{name}/create:
     post:
       consumes:
@@ -953,6 +1495,261 @@ paths:
       summary: Logout session
       tags:
       - sessions
+  /sessions/{name}/profile:
+    get:
+      consumes:
+      - application/json
+      description: Get own WhatsApp profile information
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.GroupResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get own profile info
+      tags:
+      - profile
+  /sessions/{name}/profile/name:
+    put:
+      consumes:
+      - application/json
+      description: Set WhatsApp display name (push name)
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Name data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.SetPushNameRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.GroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set display name
+      tags:
+      - profile
+  /sessions/{name}/profile/picture:
+    delete:
+      consumes:
+      - application/json
+      description: Remove WhatsApp profile picture
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.GroupResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete profile picture
+      tags:
+      - profile
+    put:
+      consumes:
+      - application/json
+      description: Set WhatsApp profile picture
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Image data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.SetProfilePictureRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.GroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set profile picture
+      tags:
+      - profile
+  /sessions/{name}/profile/privacy:
+    get:
+      consumes:
+      - application/json
+      description: Get WhatsApp privacy settings
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.GroupResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get privacy settings
+      tags:
+      - profile
+    put:
+      consumes:
+      - application/json
+      description: Set WhatsApp privacy settings
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Privacy settings
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.PrivacySettingsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.GroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set privacy settings
+      tags:
+      - profile
+  /sessions/{name}/profile/status:
+    put:
+      consumes:
+      - application/json
+      description: Set WhatsApp status/about message
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Status data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.SetStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.GroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set status message
+      tags:
+      - profile
   /sessions/{name}/qr:
     get:
       consumes:

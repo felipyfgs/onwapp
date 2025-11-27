@@ -18,29 +18,6 @@ func NewChatHandler(whatsappService *service.WhatsAppService) *ChatHandler {
 
 // Request types
 
-type CheckPhoneRequest struct {
-	Phones []string `json:"phones" binding:"required" example:"5511999999999,5511888888888"`
-}
-
-type GetContactInfoRequest struct {
-	Phones []string `json:"phones" binding:"required" example:"5511999999999"`
-}
-
-type PresenceRequest struct {
-	Available bool `json:"available" example:"true"`
-}
-
-type ChatPresenceRequest struct {
-	Phone string `json:"phone" binding:"required" example:"5511999999999"`
-	State string `json:"state" binding:"required" example:"composing"`
-	Media string `json:"media" example:""`
-}
-
-type MarkReadRequest struct {
-	Phone      string   `json:"phone" binding:"required" example:"5511999999999"`
-	MessageIDs []string `json:"messageIds" binding:"required" example:"ABCD1234"`
-}
-
 type ArchiveChatRequest struct {
 	Phone   string `json:"phone" binding:"required" example:"5511999999999"`
 	Archive bool   `json:"archive" example:"true"`
@@ -56,14 +33,6 @@ type EditMessageRequest struct {
 	Phone     string `json:"phone" binding:"required" example:"5511999999999"`
 	MessageID string `json:"messageId" binding:"required" example:"ABCD1234"`
 	NewText   string `json:"newText" binding:"required" example:"Edited message"`
-}
-
-// Response types
-
-type CheckPhoneResult struct {
-	Phone        string `json:"phone"`
-	IsRegistered bool   `json:"isRegistered"`
-	JID          string `json:"jid,omitempty"`
 }
 
 // Handlers

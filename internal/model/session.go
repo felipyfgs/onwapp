@@ -2,6 +2,7 @@ package model
 
 import (
 	"sync"
+	"time"
 
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/store"
@@ -29,7 +30,18 @@ const (
 	ChatPresenceMediaAudio ChatPresenceMedia = "audio"
 )
 
+type SessionRecord struct {
+	ID        int
+	Name      string
+	DeviceJID string
+	Phone     string
+	Status    string
+	CreatedAt *time.Time
+	UpdatedAt *time.Time
+}
+
 type Session struct {
+	ID     int
 	Name   string
 	Client *whatsmeow.Client
 	Device *store.Device

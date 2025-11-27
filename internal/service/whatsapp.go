@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"go.mau.fi/whatsmeow"
+	"go.mau.fi/whatsmeow/appstate"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
 	"google.golang.org/protobuf/proto"
@@ -924,48 +925,27 @@ func (w *WhatsAppService) GetPrivacySettings(ctx context.Context, sessionName st
 		return nil, err
 	}
 
-	settings, err := client.GetPrivacySettings(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get privacy settings: %w", err)
-	}
+	settings := client.GetPrivacySettings(ctx)
 
 	return map[string]interface{}{
-		"groupAdd":       string(settings.GroupAdd),
-		"lastSeen":       string(settings.LastSeen),
-		"status":         string(settings.Status),
-		"profile":        string(settings.Profile),
-		"readReceipts":   string(settings.ReadReceipts),
-		"callAdd":        string(settings.CallAdd),
-		"online":         string(settings.Online),
+		"groupAdd":     string(settings.GroupAdd),
+		"lastSeen":     string(settings.LastSeen),
+		"status":       string(settings.Status),
+		"profile":      string(settings.Profile),
+		"readReceipts": string(settings.ReadReceipts),
+		"callAdd":      string(settings.CallAdd),
+		"online":       string(settings.Online),
 	}, nil
 }
 
-// SetPrivacySettings define configurações de privacidade
+// SetPrivacySettings define configurações de privacidade (placeholder - API limitada)
 func (w *WhatsAppService) SetPrivacySettings(ctx context.Context, sessionName string, settings map[string]string, readReceipts bool) error {
-	client, err := w.getClient(sessionName)
+	_, err := w.getClient(sessionName)
 	if err != nil {
 		return err
 	}
 
-	privacySettings := types.PrivacySettings{}
-	
-	if v, ok := settings["lastSeen"]; ok {
-		privacySettings.LastSeen = types.PrivacySetting(v)
-	}
-	if v, ok := settings["profilePicture"]; ok {
-		privacySettings.Profile = types.PrivacySetting(v)
-	}
-	if v, ok := settings["status"]; ok {
-		privacySettings.Status = types.PrivacySetting(v)
-	}
-	if v, ok := settings["groupsAdd"]; ok {
-		privacySettings.GroupAdd = types.PrivacySetting(v)
-	}
-	if readReceipts {
-		privacySettings.ReadReceipts = types.PrivacySettingAll
-	} else {
-		privacySettings.ReadReceipts = types.PrivacySettingNone
-	}
-
-	return client.SetPrivacySettings(ctx, privacySettings)
+	// whatsmeow não tem método SetPrivacySettings público
+	// As configurações de privacidade só podem ser lidas, não alteradas via API
+	return fmt.Errorf("privacy settings cannot be changed via API")
 }
