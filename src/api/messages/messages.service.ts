@@ -25,6 +25,10 @@ import {
   DeleteMessageDto,
   DeleteMessageForMeDto,
   ReadMessagesDto,
+  UpdateMediaMessageDto,
+  FetchMessageHistoryDto,
+  SendReceiptDto,
+  SendReceiptsDto,
 } from './dto';
 
 @Injectable()

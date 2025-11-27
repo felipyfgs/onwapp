@@ -846,4 +846,43 @@ export class WhaileysService
     const socket = this.getConnectedSocket(sessionName);
     await socket.rejectCall(callId, callFrom);
   }
+
+  // Business
+  async getCatalog(sessionName: string, jid?: string, limit?: number) {
+    const socket = this.getConnectedSocket(sessionName);
+    return socket.getCatalog({ jid, limit });
+  }
+
+  async getCollections(sessionName: string, jid?: string, limit?: number) {
+    const socket = this.getConnectedSocket(sessionName);
+    return socket.getCollections(jid, limit);
+  }
+
+  async getOrderDetails(
+    sessionName: string,
+    orderId: string,
+    tokenBase64: string,
+  ) {
+    const socket = this.getConnectedSocket(sessionName);
+    return socket.getOrderDetails(orderId, tokenBase64);
+  }
+
+  async productCreate(sessionName: string, create: Record<string, unknown>) {
+    const socket = this.getConnectedSocket(sessionName);
+    return socket.productCreate(create);
+  }
+
+  async productUpdate(
+    sessionName: string,
+    productId: string,
+    update: Record<string, unknown>,
+  ) {
+    const socket = this.getConnectedSocket(sessionName);
+    return socket.productUpdate(productId, update);
+  }
+
+  async productDelete(sessionName: string, productIds: string[]) {
+    const socket = this.getConnectedSocket(sessionName);
+    return socket.productDelete(productIds);
+  }
 }
