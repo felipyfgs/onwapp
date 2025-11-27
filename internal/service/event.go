@@ -323,14 +323,15 @@ func (s *EventService) handleReaction(ctx context.Context, session *model.Sessio
 		Str("from", senderJid).
 		Msg("Reaction received")
 
-	// Determine update type
-	updateType := model.UpdateTypeReactionAdd
+	// Determine action (add or remove)
+	action := "add"
 	if emoji == "" {
-		updateType = model.UpdateTypeReactionRemove
+		action = "remove"
 	}
 
 	// Save to MessageUpdate
 	data, _ := json.Marshal(map[string]interface{}{
+		"action":    action,
 		"emoji":     emoji,
 		"timestamp": reaction.GetSenderTimestampMS(),
 	})
@@ -338,7 +339,7 @@ func (s *EventService) handleReaction(ctx context.Context, session *model.Sessio
 	update := &model.MessageUpdate{
 		SessionID: session.ID,
 		MsgID:     targetMsgID,
-		Type:      updateType,
+		Type:      model.UpdateTypeReaction,
 		Actor:     senderJid,
 		Data:      data,
 		EventAt:   timestamp,
@@ -601,7 +602,7 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 
 			// Save reactions to MessageUpdates for history tracking
 			if len(webMsg.GetReactions()) > 0 {
-				s.saveHistoryReactions(ctx, key.GetID(), webMsg.GetReactions())
+				s.saveHistoryReactions(ctx, session.ID, key.GetID(), webMsg.GetReactions())
 			}
 		}
 	}
@@ -657,7 +658,7 @@ func (s *EventService) buildReactionsJSON(reactions []*waWeb.Reaction) []byte {
 	return data
 }
 
-func (s *EventService) saveHistoryReactions(ctx context.Context, msgID string, reactions []*waWeb.Reaction) {
+func (s *EventService) saveHistoryReactions(ctx context.Context, sessionID, msgID string, reactions []*waWeb.Reaction) {
 	for _, r := range reactions {
 		if r.GetKey() == nil || r.GetText() == "" {
 			continue
@@ -667,17 +668,19 @@ func (s *EventService) saveHistoryReactions(ctx context.Context, msgID string, r
 		timestamp := time.UnixMilli(r.GetSenderTimestampMS())
 
 		data, _ := json.Marshal(map[string]interface{}{
+			"action":    "add",
 			"emoji":     r.GetText(),
 			"timestamp": r.GetSenderTimestampMS(),
 			"source":    "history_sync",
 		})
 
 		update := &model.MessageUpdate{
-			MsgID:   msgID,
-			Type:    model.UpdateTypeReactionAdd,
-			Actor:   senderJid,
-			Data:    data,
-			EventAt: timestamp,
+			SessionID: sessionID,
+			MsgID:     msgID,
+			Type:      model.UpdateTypeReaction,
+			Actor:     senderJid,
+			Data:      data,
+			EventAt:   timestamp,
 		}
 
 		if _, err := s.database.MessageUpdates.Save(ctx, update); err != nil {

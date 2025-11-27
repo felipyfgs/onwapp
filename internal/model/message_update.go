@@ -8,11 +8,10 @@ import (
 type UpdateType string
 
 const (
-	UpdateTypeEdit           UpdateType = "edit"
-	UpdateTypeDelete         UpdateType = "delete"
-	UpdateTypeReactionAdd    UpdateType = "reaction_add"
-	UpdateTypeReactionRemove UpdateType = "reaction_remove"
-	UpdateTypeStatusChange   UpdateType = "status_change"
+	UpdateTypeEdit         UpdateType = "edit"
+	UpdateTypeDelete       UpdateType = "delete"
+	UpdateTypeReaction     UpdateType = "reaction"
+	UpdateTypeStatusChange UpdateType = "status"
 )
 
 type MessageUpdate struct {
