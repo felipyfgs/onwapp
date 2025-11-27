@@ -1,0 +1,234 @@
+basePath: /
+definitions:
+  api.ErrorResponse:
+    properties:
+      error:
+        example: session not found
+        type: string
+    type: object
+  api.MessageResponse:
+    properties:
+      message:
+        example: session deleted
+        type: string
+    type: object
+  api.QRResponse:
+    properties:
+      qr:
+        example: 2@ABC123...
+        type: string
+      qr_base64:
+        example: data:image/png;base64,...
+        type: string
+      status:
+        example: qr
+        type: string
+    type: object
+  api.SessionResponse:
+    properties:
+      jid:
+        example: 5511999999999@s.whatsapp.net
+        type: string
+      name:
+        example: my-session
+        type: string
+      status:
+        example: connected
+        type: string
+    type: object
+host: localhost:3000
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: WhatsApp API using whatsmeow library
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: ZPWoot WhatsApp API
+  version: "1.0"
+paths:
+  /sessions/{name}/connect:
+    post:
+      consumes:
+      - application/json
+      description: Connect a WhatsApp session. If not authenticated, returns QR code
+        endpoint
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Connect session
+      tags:
+      - sessions
+  /sessions/{name}/create:
+    post:
+      consumes:
+      - application/json
+      description: Create a new WhatsApp session with the given name
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.SessionResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Create a new session
+      tags:
+      - sessions
+  /sessions/{name}/delete:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing WhatsApp session
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Delete a session
+      tags:
+      - sessions
+  /sessions/{name}/info:
+    get:
+      consumes:
+      - application/json
+      description: Get information about a WhatsApp session
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.SessionResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get session info
+      tags:
+      - sessions
+  /sessions/{name}/logout:
+    post:
+      consumes:
+      - application/json
+      description: Logout from WhatsApp and clear session credentials
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Logout session
+      tags:
+      - sessions
+  /sessions/{name}/qr:
+    get:
+      consumes:
+      - application/json
+      description: Get QR code for WhatsApp authentication
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - default: json
+        description: Response format (json or image)
+        in: query
+        name: format
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.QRResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get QR code
+      tags:
+      - sessions
+  /sessions/{name}/restart:
+    post:
+      consumes:
+      - application/json
+      description: Disconnect and reconnect a WhatsApp session
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.MessageResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Restart session
+      tags:
+      - sessions
+swagger: "2.0"

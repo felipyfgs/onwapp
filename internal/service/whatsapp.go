@@ -493,7 +493,7 @@ func (w *WhatsAppService) GetGroupInfo(ctx context.Context, sessionName, groupID
 		return nil, fmt.Errorf("invalid group ID: %w", err)
 	}
 
-	return client.GetGroupInfo(jid)
+	return client.GetGroupInfo(ctx, jid)
 }
 
 // GetJoinedGroups lista grupos que participa
@@ -503,7 +503,7 @@ func (w *WhatsAppService) GetJoinedGroups(ctx context.Context, sessionName strin
 		return nil, err
 	}
 
-	return client.GetJoinedGroups()
+	return client.GetJoinedGroups(ctx)
 }
 
 // LeaveGroup sai de um grupo
@@ -518,7 +518,7 @@ func (w *WhatsAppService) LeaveGroup(ctx context.Context, sessionName, groupID s
 		return fmt.Errorf("invalid group ID: %w", err)
 	}
 
-	return client.LeaveGroup(jid)
+	return client.LeaveGroup(ctx, jid)
 }
 
 // UpdateGroupName atualiza nome do grupo
@@ -533,7 +533,7 @@ func (w *WhatsAppService) UpdateGroupName(ctx context.Context, sessionName, grou
 		return fmt.Errorf("invalid group ID: %w", err)
 	}
 
-	return client.SetGroupName(jid, name)
+	return client.SetGroupName(ctx, jid, name)
 }
 
 // UpdateGroupTopic atualiza descrição do grupo
@@ -548,7 +548,7 @@ func (w *WhatsAppService) UpdateGroupTopic(ctx context.Context, sessionName, gro
 		return fmt.Errorf("invalid group ID: %w", err)
 	}
 
-	return client.SetGroupTopic(jid, "", "", topic)
+	return client.SetGroupTopic(ctx, jid, "", "", topic)
 }
 
 // AddGroupParticipants adiciona participantes ao grupo
@@ -572,7 +572,7 @@ func (w *WhatsAppService) AddGroupParticipants(ctx context.Context, sessionName,
 		jids[i] = jid
 	}
 
-	changes, err := client.UpdateGroupParticipants(groupJID, jids, whatsmeow.ParticipantChangeAdd)
+	changes, err := client.UpdateGroupParticipants(ctx, groupJID, jids, whatsmeow.ParticipantChangeAdd)
 	if err != nil {
 		return nil, err
 	}
@@ -605,7 +605,7 @@ func (w *WhatsAppService) RemoveGroupParticipants(ctx context.Context, sessionNa
 		jids[i] = jid
 	}
 
-	changes, err := client.UpdateGroupParticipants(groupJID, jids, whatsmeow.ParticipantChangeRemove)
+	changes, err := client.UpdateGroupParticipants(ctx, groupJID, jids, whatsmeow.ParticipantChangeRemove)
 	if err != nil {
 		return nil, err
 	}
@@ -638,7 +638,7 @@ func (w *WhatsAppService) PromoteGroupParticipants(ctx context.Context, sessionN
 		jids[i] = jid
 	}
 
-	changes, err := client.UpdateGroupParticipants(groupJID, jids, whatsmeow.ParticipantChangePromote)
+	changes, err := client.UpdateGroupParticipants(ctx, groupJID, jids, whatsmeow.ParticipantChangePromote)
 	if err != nil {
 		return nil, err
 	}
@@ -671,7 +671,7 @@ func (w *WhatsAppService) DemoteGroupParticipants(ctx context.Context, sessionNa
 		jids[i] = jid
 	}
 
-	changes, err := client.UpdateGroupParticipants(groupJID, jids, whatsmeow.ParticipantChangeDemote)
+	changes, err := client.UpdateGroupParticipants(ctx, groupJID, jids, whatsmeow.ParticipantChangeDemote)
 	if err != nil {
 		return nil, err
 	}
@@ -695,7 +695,7 @@ func (w *WhatsAppService) GetGroupInviteLink(ctx context.Context, sessionName, g
 		return "", fmt.Errorf("invalid group ID: %w", err)
 	}
 
-	return client.GetGroupInviteLink(jid, reset)
+	return client.GetGroupInviteLink(ctx, jid, reset)
 }
 
 // JoinGroupWithLink entra em grupo pelo link
@@ -705,7 +705,7 @@ func (w *WhatsAppService) JoinGroupWithLink(ctx context.Context, sessionName, li
 		return types.JID{}, err
 	}
 
-	return client.JoinGroupWithLink(link)
+	return client.JoinGroupWithLink(ctx, link)
 }
 
 // SendGroupMessage envia mensagem para grupo

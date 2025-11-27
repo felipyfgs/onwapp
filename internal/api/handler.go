@@ -19,12 +19,40 @@ func NewHandler(sessionService *service.SessionService) *Handler {
 	return &Handler{sessionService: sessionService}
 }
 
+// SessionResponse represents session info response
 type SessionResponse struct {
-	Name   string `json:"name"`
-	Status string `json:"status"`
-	JID    string `json:"jid,omitempty"`
+	Name   string `json:"name" example:"my-session"`
+	Status string `json:"status" example:"connected"`
+	JID    string `json:"jid,omitempty" example:"5511999999999@s.whatsapp.net"`
 }
 
+// ErrorResponse represents error response
+type ErrorResponse struct {
+	Error string `json:"error" example:"session not found"`
+}
+
+// MessageResponse represents message response
+type MessageResponse struct {
+	Message string `json:"message" example:"session deleted"`
+}
+
+// QRResponse represents QR code response
+type QRResponse struct {
+	QR       string `json:"qr" example:"2@ABC123..."`
+	QRBase64 string `json:"qr_base64" example:"data:image/png;base64,..."`
+	Status   string `json:"status" example:"qr"`
+}
+
+// Create godoc
+// @Summary      Create a new session
+// @Description  Create a new WhatsApp session with the given name
+// @Tags         sessions
+// @Accept       json
+// @Produce      json
+// @Param        name   path      string  true  "Session name"
+// @Success      201    {object}  SessionResponse
+// @Failure      409    {object}  ErrorResponse
+// @Router       /sessions/{name}/create [post]
 func (h *Handler) Create(c *gin.Context) {
 	name := c.Param("name")
 
@@ -40,6 +68,16 @@ func (h *Handler) Create(c *gin.Context) {
 	})
 }
 
+// Delete godoc
+// @Summary      Delete a session
+// @Description  Delete an existing WhatsApp session
+// @Tags         sessions
+// @Accept       json
+// @Produce      json
+// @Param        name   path      string  true  "Session name"
+// @Success      200    {object}  MessageResponse
+// @Failure      404    {object}  ErrorResponse
+// @Router       /sessions/{name}/delete [delete]
 func (h *Handler) Delete(c *gin.Context) {
 	name := c.Param("name")
 
@@ -51,6 +89,16 @@ func (h *Handler) Delete(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "session deleted"})
 }
 
+// Info godoc
+// @Summary      Get session info
+// @Description  Get information about a WhatsApp session
+// @Tags         sessions
+// @Accept       json
+// @Produce      json
+// @Param        name   path      string  true  "Session name"
+// @Success      200    {object}  SessionResponse
+// @Failure      404    {object}  ErrorResponse
+// @Router       /sessions/{name}/info [get]
 func (h *Handler) Info(c *gin.Context) {
 	name := c.Param("name")
 
@@ -72,6 +120,16 @@ func (h *Handler) Info(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+// Connect godoc
+// @Summary      Connect session
+// @Description  Connect a WhatsApp session. If not authenticated, returns QR code endpoint
+// @Tags         sessions
+// @Accept       json
+// @Produce      json
+// @Param        name   path      string  true  "Session name"
+// @Success      200    {object}  MessageResponse
+// @Failure      500    {object}  ErrorResponse
+// @Router       /sessions/{name}/connect [post]
 func (h *Handler) Connect(c *gin.Context) {
 	name := c.Param("name")
 
@@ -104,6 +162,16 @@ func (h *Handler) Connect(c *gin.Context) {
 	})
 }
 
+// Logout godoc
+// @Summary      Logout session
+// @Description  Logout from WhatsApp and clear session credentials
+// @Tags         sessions
+// @Accept       json
+// @Produce      json
+// @Param        name   path      string  true  "Session name"
+// @Success      200    {object}  MessageResponse
+// @Failure      500    {object}  ErrorResponse
+// @Router       /sessions/{name}/logout [post]
 func (h *Handler) Logout(c *gin.Context) {
 	name := c.Param("name")
 
@@ -115,6 +183,16 @@ func (h *Handler) Logout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "logged out"})
 }
 
+// Restart godoc
+// @Summary      Restart session
+// @Description  Disconnect and reconnect a WhatsApp session
+// @Tags         sessions
+// @Accept       json
+// @Produce      json
+// @Param        name   path      string  true  "Session name"
+// @Success      200    {object}  MessageResponse
+// @Failure      500    {object}  ErrorResponse
+// @Router       /sessions/{name}/restart [post]
 func (h *Handler) Restart(c *gin.Context) {
 	name := c.Param("name")
 
@@ -130,6 +208,17 @@ func (h *Handler) Restart(c *gin.Context) {
 	})
 }
 
+// QR godoc
+// @Summary      Get QR code
+// @Description  Get QR code for WhatsApp authentication
+// @Tags         sessions
+// @Accept       json
+// @Produce      json
+// @Param        name    path      string  true   "Session name"
+// @Param        format  query     string  false  "Response format (json or image)"  default(json)
+// @Success      200     {object}  QRResponse
+// @Failure      404     {object}  ErrorResponse
+// @Router       /sessions/{name}/qr [get]
 func (h *Handler) QR(c *gin.Context) {
 	name := c.Param("name")
 

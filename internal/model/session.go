@@ -13,7 +13,6 @@ const (
 	StatusDisconnected SessionStatus = "disconnected"
 	StatusConnecting   SessionStatus = "connecting"
 	StatusConnected    SessionStatus = "connected"
-	StatusQR           SessionStatus = "qr"
 )
 
 type ChatPresence string

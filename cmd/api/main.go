@@ -8,7 +8,24 @@ import (
 	"zpwoot/internal/config"
 	"zpwoot/internal/db"
 	"zpwoot/internal/service"
+
+	_ "zpwoot/docs"
 )
+
+// @title           ZPWoot WhatsApp API
+// @version         1.0
+// @description     WhatsApp API using whatsmeow library
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   API Support
+// @contact.url    http://www.swagger.io/support
+// @contact.email  support@swagger.io
+
+// @license.name  MIT
+// @license.url   https://opensource.org/licenses/MIT
+
+// @host      localhost:3000
+// @BasePath  /
 
 func main() {
 	ctx := context.Background()

@@ -143,7 +143,7 @@ func (s *SessionService) HandleQRChannel(session *model.Session, qrChan <-chan w
 		switch evt.Event {
 		case "code":
 			session.SetQR(evt.Code)
-			session.SetStatus(model.StatusQR)
+			session.SetStatus(model.StatusConnecting)
 		case "success":
 			session.SetStatus(model.StatusConnected)
 			session.SetQR("")
