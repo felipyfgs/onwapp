@@ -101,7 +101,10 @@ func (r *SessionRepository) Count(ctx context.Context) (int, error) {
 	return count, err
 }
 
-func scanSessions(rows interface{ Next() bool; Scan(...interface{}) error }) ([]model.SessionRecord, error) {
+func scanSessions(rows interface {
+	Next() bool
+	Scan(...interface{}) error
+}) ([]model.SessionRecord, error) {
 	var sessions []model.SessionRecord
 	for rows.Next() {
 		var s model.SessionRecord

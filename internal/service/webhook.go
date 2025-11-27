@@ -16,9 +16,9 @@ import (
 )
 
 const (
-	webhookMaxRetries   = 3
-	webhookBaseDelay    = 1 * time.Second
-	webhookTimeout      = 10 * time.Second
+	webhookMaxRetries = 3
+	webhookBaseDelay  = 1 * time.Second
+	webhookTimeout    = 10 * time.Second
 )
 
 type WebhookService struct {

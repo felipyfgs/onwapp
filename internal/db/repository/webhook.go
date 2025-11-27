@@ -55,7 +55,10 @@ func (r *WebhookRepository) GetBySessionPaginated(ctx context.Context, sessionID
 	return scanWebhooks(rows)
 }
 
-func scanWebhooks(rows interface{ Next() bool; Scan(...interface{}) error }) ([]model.Webhook, error) {
+func scanWebhooks(rows interface {
+	Next() bool
+	Scan(...interface{}) error
+}) ([]model.Webhook, error) {
 	var webhooks []model.Webhook
 	for rows.Next() {
 		var w model.Webhook

@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"zpwoot/internal/api/dto"
 	"zpwoot/internal/service"
 )
 
@@ -17,30 +18,6 @@ func NewProfileHandler(whatsappService *service.WhatsAppService) *ProfileHandler
 	return &ProfileHandler{whatsappService: whatsappService}
 }
 
-// Request types
-
-type SetStatusRequest struct {
-	Status string `json:"status" binding:"required" example:"Hello, I'm using WhatsApp"`
-}
-
-type SetPushNameRequest struct {
-	Name string `json:"name" binding:"required" example:"John Doe"`
-}
-
-type SetProfilePictureRequest struct {
-	Image string `json:"image" binding:"required" example:"base64_encoded_image"`
-}
-
-type PrivacySettingsRequest struct {
-	LastSeen       string `json:"lastSeen" example:"all"`       // all, contacts, none
-	ProfilePicture string `json:"profilePicture" example:"all"` // all, contacts, none
-	Status         string `json:"status" example:"all"`         // all, contacts, none
-	ReadReceipts   bool   `json:"readReceipts" example:"true"`
-	GroupsAdd      string `json:"groupsAdd" example:"all"`      // all, contacts, none
-}
-
-// Handlers
-
 // GetProfile godoc
 // @Summary      Get own profile info
 // @Description  Get own WhatsApp profile information
@@ -48,9 +25,9 @@ type PrivacySettingsRequest struct {
 // @Accept       json
 // @Produce      json
 // @Param        name   path      string  true  "Session name"
-// @Success      200    {object}  GroupResponse
-// @Failure      401    {object}  ErrorResponse
-// @Failure      500    {object}  ErrorResponse
+// @Success      200    {object}  dto.ProfileInfoResponse
+// @Failure      401    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/profile [get]
 func (h *ProfileHandler) GetProfile(c *gin.Context) {
@@ -58,13 +35,13 @@ func (h *ProfileHandler) GetProfile(c *gin.Context) {
 
 	profile, err := h.whatsappService.GetOwnProfile(c.Request.Context(), name)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"profile": profile,
+	c.JSON(http.StatusOK, dto.ProfileInfoResponse{
+		Success: true,
+		Profile: profile,
 	})
 }
 
@@ -74,31 +51,31 @@ func (h *ProfileHandler) GetProfile(c *gin.Context) {
 // @Tags         profile
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string           true  "Session name"
-// @Param        body   body      SetStatusRequest true  "Status data"
-// @Success      200    {object}  GroupResponse
-// @Failure      400    {object}  ErrorResponse
-// @Failure      401    {object}  ErrorResponse
-// @Failure      500    {object}  ErrorResponse
+// @Param        name   path      string                 true  "Session name"
+// @Param        body   body      dto.SetStatusRequest   true  "Status data"
+// @Success      200    {object}  dto.SetStatusResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/profile/status [put]
 func (h *ProfileHandler) SetStatus(c *gin.Context) {
 	name := c.Param("name")
 
-	var req SetStatusRequest
+	var req dto.SetStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	if err := h.whatsappService.SetStatusMessage(c.Request.Context(), name, req.Status); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"status":  req.Status,
+	c.JSON(http.StatusOK, dto.SetStatusResponse{
+		Success: true,
+		Status:  req.Status,
 	})
 }
 
@@ -108,31 +85,31 @@ func (h *ProfileHandler) SetStatus(c *gin.Context) {
 // @Tags         profile
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string             true  "Session name"
-// @Param        body   body      SetPushNameRequest true  "Name data"
-// @Success      200    {object}  GroupResponse
-// @Failure      400    {object}  ErrorResponse
-// @Failure      401    {object}  ErrorResponse
-// @Failure      500    {object}  ErrorResponse
+// @Param        name   path      string                   true  "Session name"
+// @Param        body   body      dto.SetPushNameRequest   true  "Name data"
+// @Success      200    {object}  dto.SetNameResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/profile/name [put]
 func (h *ProfileHandler) SetPushName(c *gin.Context) {
 	name := c.Param("name")
 
-	var req SetPushNameRequest
+	var req dto.SetPushNameRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	if err := h.whatsappService.SetPushName(c.Request.Context(), name, req.Name); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"name":    req.Name,
+	c.JSON(http.StatusOK, dto.SetNameResponse{
+		Success: true,
+		Name:    req.Name,
 	})
 }
 
@@ -142,38 +119,38 @@ func (h *ProfileHandler) SetPushName(c *gin.Context) {
 // @Tags         profile
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                   true  "Session name"
-// @Param        body   body      SetProfilePictureRequest true  "Image data"
-// @Success      200    {object}  GroupResponse
-// @Failure      400    {object}  ErrorResponse
-// @Failure      401    {object}  ErrorResponse
-// @Failure      500    {object}  ErrorResponse
+// @Param        name   path      string                        true  "Session name"
+// @Param        body   body      dto.SetProfilePictureRequest  true  "Image data"
+// @Success      200    {object}  dto.SetPictureResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/profile/picture [put]
 func (h *ProfileHandler) SetProfilePicture(c *gin.Context) {
 	name := c.Param("name")
 
-	var req SetProfilePictureRequest
+	var req dto.SetProfilePictureRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	imageData, err := base64.StdEncoding.DecodeString(req.Image)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid base64 image"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 image"})
 		return
 	}
 
 	pictureID, err := h.whatsappService.SetProfilePicture(c.Request.Context(), name, imageData)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"success":   true,
-		"pictureId": pictureID,
+	c.JSON(http.StatusOK, dto.SetPictureResponse{
+		Success:   true,
+		PictureID: pictureID,
 	})
 }
 
@@ -184,21 +161,21 @@ func (h *ProfileHandler) SetProfilePicture(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        name   path      string  true  "Session name"
-// @Success      200    {object}  GroupResponse
-// @Failure      401    {object}  ErrorResponse
-// @Failure      500    {object}  ErrorResponse
+// @Success      200    {object}  dto.SuccessResponse
+// @Failure      401    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/profile/picture [delete]
 func (h *ProfileHandler) DeleteProfilePicture(c *gin.Context) {
 	name := c.Param("name")
 
 	if err := h.whatsappService.DeleteProfilePicture(c.Request.Context(), name); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
+	c.JSON(http.StatusOK, dto.SuccessResponse{
+		Success: true,
 	})
 }
 
@@ -209,9 +186,9 @@ func (h *ProfileHandler) DeleteProfilePicture(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        name   path      string  true  "Session name"
-// @Success      200    {object}  GroupResponse
-// @Failure      401    {object}  ErrorResponse
-// @Failure      500    {object}  ErrorResponse
+// @Success      200    {object}  dto.PrivacySettingsResponse
+// @Failure      401    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/profile/privacy [get]
 func (h *ProfileHandler) GetPrivacySettings(c *gin.Context) {
@@ -219,13 +196,13 @@ func (h *ProfileHandler) GetPrivacySettings(c *gin.Context) {
 
 	settings, err := h.whatsappService.GetPrivacySettings(c.Request.Context(), name)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"success":  true,
-		"settings": settings,
+	c.JSON(http.StatusOK, dto.PrivacySettingsResponse{
+		Success:  true,
+		Settings: settings,
 	})
 }
 
@@ -236,35 +213,34 @@ func (h *ProfileHandler) GetPrivacySettings(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        name   path      string                  true  "Session name"
-// @Param        body   body      PrivacySettingsRequest  true  "Privacy settings"
-// @Success      200    {object}  GroupResponse
-// @Failure      400    {object}  ErrorResponse
-// @Failure      401    {object}  ErrorResponse
-// @Failure      500    {object}  ErrorResponse
+// @Param        body   body      dto.SetPrivacyRequest   true  "Privacy settings"
+// @Success      200    {object}  dto.SuccessResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/profile/privacy [put]
 func (h *ProfileHandler) SetPrivacySettings(c *gin.Context) {
 	name := c.Param("name")
 
-	var req PrivacySettingsRequest
+	var req dto.SetPrivacyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	settings := map[string]string{
-		"lastSeen":       req.LastSeen,
-		"profilePicture": req.ProfilePicture,
-		"status":         req.Status,
-		"groupsAdd":      req.GroupsAdd,
+		"lastSeen": req.LastSeen,
+		"profile":  req.Profile,
+		"status":   req.Status,
 	}
 
 	if err := h.whatsappService.SetPrivacySettings(c.Request.Context(), name, settings, req.ReadReceipts); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
+	c.JSON(http.StatusOK, dto.SuccessResponse{
+		Success: true,
 	})
 }

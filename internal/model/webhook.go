@@ -16,10 +16,10 @@ type Webhook struct {
 type WebhookEvent string
 
 const (
-	WebhookEventMessageReceived    WebhookEvent = "message.received"
-	WebhookEventMessageSent        WebhookEvent = "message.sent"
-	WebhookEventSessionConnected   WebhookEvent = "session.connected"
+	WebhookEventMessageReceived     WebhookEvent = "message.received"
+	WebhookEventMessageSent         WebhookEvent = "message.sent"
+	WebhookEventSessionConnected    WebhookEvent = "session.connected"
 	WebhookEventSessionDisconnected WebhookEvent = "session.disconnected"
-	WebhookEventSessionLoggedOut   WebhookEvent = "session.logged_out"
-	WebhookEventAll                WebhookEvent = "*"
+	WebhookEventSessionLoggedOut    WebhookEvent = "session.logged_out"
+	WebhookEventAll                 WebhookEvent = "*"
 )

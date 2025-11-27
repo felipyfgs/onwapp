@@ -46,7 +46,7 @@ func (s *SessionService) LoadFromDatabase(ctx context.Context) error {
 
 	for _, rec := range records {
 		var device *store.Device
-		
+
 		if rec.DeviceJID != "" {
 			jid, err := types.ParseJID(rec.DeviceJID)
 			if err == nil {
@@ -321,7 +321,7 @@ func (s *SessionService) setupEventHandler(session *model.Session) {
 func (s *SessionService) handleIncomingMessage(ctx context.Context, session *model.Session, evt *events.Message) {
 	msgType := "text"
 	content := ""
-	
+
 	if evt.Message.GetConversation() != "" {
 		content = evt.Message.GetConversation()
 	} else if evt.Message.GetExtendedTextMessage() != nil {
