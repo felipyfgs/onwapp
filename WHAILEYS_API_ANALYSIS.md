@@ -94,11 +94,10 @@ Nenhum metodo essencial faltando.
 - [x] `delete` - Deletar chat
 - [x] `setDisappearingMessages` - Mensagens temporarias
 - [x] `starMessage` - Favoritar mensagem
+- [x] `clearMessages` - Limpar mensagens do chat
 
 ### Faltando
-- [ ] `clearMessages` - Limpar mensagens do chat
-- [ ] `fetchMessages` - Buscar historico de mensagens
-- [ ] `getBlocklist` - Listar contatos bloqueados (pode ir em contacts)
+- [ ] `fetchMessages` - Buscar historico de mensagens (requer store)
 
 ---
 
@@ -112,11 +111,12 @@ Nenhum metodo essencial faltando.
 - [x] `getStatus` - Status do contato
 - [x] `getBusinessProfile` - Perfil comercial
 - [x] `getBroadcastListInfo` - Info de lista de transmissao
+- [x] `getBlocklist` - Listar contatos bloqueados
+- [x] `addContact` - Adicionar contato ao catalogo
+- [x] `removeContact` - Remover contato do catalogo
 
 ### Faltando
-- [ ] `getBlocklist` - Listar contatos bloqueados (`fetchBlocklist`)
-- [ ] `addContact` - Adicionar contato ao catalogo (`addOrEditContact`)
-- [ ] `removeContact` - Remover contato do catalogo (`removeContact`)
+Nenhum metodo essencial faltando.
 
 ---
 
@@ -128,28 +128,30 @@ Nenhum metodo essencial faltando.
 - [x] `updatePicture` - Atualizar foto do perfil
 - [x] `updatePresence` - Atualizar presenca (online/typing)
 - [x] `subscribePresence` - Assinar presenca de contato
+- [x] `getProfilePicture` - Obter propria foto de perfil
+- [x] `removeProfilePicture` - Remover foto de perfil
+- [x] `getMyStatus` - Obter proprio status
 
 ### Faltando
-- [ ] `getProfilePicture` - Obter propria foto de perfil
-- [ ] `removeProfilePicture` - Remover foto de perfil
-- [ ] `getMyStatus` - Obter proprio status
+Nenhum metodo essencial faltando.
 
 ---
 
-## Privacy (NAO IMPLEMENTADO)
+## Privacy (`src/api/privacy/`)
 
-O whaileys oferece varios metodos para configuracoes de privacidade que nao estao implementados:
+### Implementados
+- [x] `getPrivacySettings` - Obter configuracoes de privacidade
+- [x] `updateLastSeenPrivacy` - Privacidade do "visto por ultimo"
+- [x] `updateOnlinePrivacy` - Privacidade do status online
+- [x] `updateProfilePicturePrivacy` - Privacidade da foto de perfil
+- [x] `updateStatusPrivacy` - Privacidade do status
+- [x] `updateReadReceiptsPrivacy` - Privacidade de confirmacao de leitura
+- [x] `updateGroupsAddPrivacy` - Quem pode adicionar em grupos
+- [x] `updateCallPrivacy` - Quem pode ligar
+- [x] `updateMessagesPrivacy` - Privacidade de mensagens
 
-### Faltando (Novo modulo sugerido: `src/api/privacy/`)
-- [ ] `fetchPrivacySettings` - Obter configuracoes de privacidade
-- [ ] `updateLastSeenPrivacy` - Privacidade do "visto por ultimo"
-- [ ] `updateOnlinePrivacy` - Privacidade do status online
-- [ ] `updateProfilePicturePrivacy` - Privacidade da foto de perfil
-- [ ] `updateStatusPrivacy` - Privacidade do status
-- [ ] `updateReadReceiptsPrivacy` - Privacidade de confirmacao de leitura
-- [ ] `updateGroupsAddPrivacy` - Quem pode adicionar em grupos
-- [ ] `updateCallPrivacy` - Quem pode ligar
-- [ ] `updateMessagesPrivacy` - Privacidade de mensagens
+### Faltando
+Nenhum metodo essencial faltando.
 
 ---
 
@@ -238,20 +240,12 @@ O whaileys oferece varios metodos para configuracoes de privacidade que nao esta
 
 ## Recomendacoes de Implementacao
 
-### Prioridade Alta
-1. **Privacy Module** - Criar novo modulo `src/api/privacy/` com todas as configuracoes de privacidade
-2. **groupFetchAllParticipating** - Util para listar todos os grupos
-3. **fetchBlocklist** - Listar contatos bloqueados
+Todos os metodos de alta prioridade foram implementados!
 
-### Prioridade Media
-4. **groupToggleEphemeral** - Mensagens temporarias em grupo
-5. **addOrEditContact / removeContact** - Gestao de contatos
-6. **updateMediaMessage** - Re-upload de media
-
-### Prioridade Baixa
-7. **sendLinkPreview** - Preview customizado de links
-8. **clearMessages** - Limpar chat
-9. **fetchMessages** - Historico de mensagens (requer store)
+### Ainda Faltando (Prioridade Baixa)
+1. **sendLinkPreview** - Preview customizado de links (Messages)
+2. **updateMediaMessage** - Re-upload de media (Messages)
+3. **fetchMessages** - Historico de mensagens (requer store) (Chats)
 
 ---
 

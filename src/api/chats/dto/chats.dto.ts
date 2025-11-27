@@ -51,10 +51,7 @@ export class MarkReadDto extends ChatJidDto {
   read: boolean;
 }
 
-export class SuccessResponseDto {
-  @ApiProperty({ example: true })
-  success: boolean;
-}
+export { SuccessResponseDto } from '../../../common/dto';
 
 export class DisappearingMessagesDto extends ChatJidDto {
   @ApiProperty({

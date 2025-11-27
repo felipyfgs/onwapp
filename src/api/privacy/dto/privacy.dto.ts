@@ -114,7 +114,4 @@ export class PrivacySettingsResponseDto {
   messages?: string;
 }
 
-export class SuccessResponseDto {
-  @ApiProperty({ description: 'Operation success status' })
-  success: boolean;
-}
+export { SuccessResponseDto } from '../../../common/dto';

@@ -114,7 +114,4 @@ export class WebhookResponseDto {
   updatedAt: Date;
 }
 
-export class SuccessResponseDto {
-  @ApiProperty({ example: true })
-  success: boolean;
-}
+export { SuccessResponseDto } from '../../../common/dto';

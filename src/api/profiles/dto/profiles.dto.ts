@@ -48,10 +48,10 @@ export class UpdatePresenceDto {
   jid?: string;
 }
 
-export class SuccessResponseDto {
-  @ApiProperty({ example: true })
-  success: boolean;
-}
+export {
+  SuccessResponseDto,
+  ProfilePictureResponseDto,
+} from '../../../common/dto';
 
 export class SubscribePresenceDto {
   @ApiProperty({
@@ -61,15 +61,6 @@ export class SubscribePresenceDto {
   @IsString()
   @IsNotEmpty()
   jid: string;
-}
-
-export class ProfilePictureResponseDto {
-  @ApiProperty({
-    example: 'https://...',
-    description: 'Profile picture URL',
-    required: false,
-  })
-  url: string | null;
 }
 
 export class MyStatusResponseDto {

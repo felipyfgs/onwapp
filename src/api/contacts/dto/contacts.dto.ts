@@ -21,10 +21,10 @@ export class CheckNumberDto {
   phone: string;
 }
 
-export class SuccessResponseDto {
-  @ApiProperty({ example: true })
-  success: boolean;
-}
+export {
+  SuccessResponseDto,
+  ProfilePictureResponseDto,
+} from '../../../common/dto';
 
 export class CheckNumberResponseDto {
   @ApiProperty({
@@ -38,14 +38,6 @@ export class CheckNumberResponseDto {
     description: 'JID if exists',
   })
   jid?: string;
-}
-
-export class ProfilePictureResponseDto {
-  @ApiPropertyOptional({
-    example: 'https://...',
-    description: 'Profile picture URL',
-  })
-  url: string | null | undefined;
 }
 
 export class ContactStatusResponseDto {

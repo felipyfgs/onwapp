@@ -58,10 +58,7 @@ export class GroupInfoByCodeResponseDto {
   size?: number;
 }
 
-export class SuccessResponseDto {
-  @ApiProperty({ example: true })
-  success: boolean;
-}
+export { SuccessResponseDto } from '../../../common/dto';
 
 export class JoinGroupResponseDto {
   @ApiProperty({ example: '123456789@g.us' })
