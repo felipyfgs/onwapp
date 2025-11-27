@@ -119,13 +119,13 @@ func runMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 
 			_, err = tx.Exec(ctx, string(content))
 			if err != nil {
-				tx.Rollback(ctx)
+				_ = tx.Rollback(ctx)
 				return fmt.Errorf("failed to apply migration %d: %w", version, err)
 			}
 
 			_, err = tx.Exec(ctx, `INSERT INTO "schemaMigrations" ("version") VALUES ($1)`, version)
 			if err != nil {
-				tx.Rollback(ctx)
+				_ = tx.Rollback(ctx)
 				return fmt.Errorf("failed to record migration %d: %w", version, err)
 			}
 

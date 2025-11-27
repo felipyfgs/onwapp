@@ -105,7 +105,7 @@ func (s *SessionService) reconnectSession(session *model.Session) {
 	if err := session.Client.Connect(); err != nil {
 		logger.Error().Err(err).Str("session", session.Name).Msg("Failed to auto-reconnect session")
 		session.SetStatus(model.StatusDisconnected)
-		s.database.Sessions.UpdateStatus(context.Background(), session.Name, "disconnected")
+		_ = s.database.Sessions.UpdateStatus(context.Background(), session.Name, "disconnected")
 		return
 	}
 

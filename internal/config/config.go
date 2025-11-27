@@ -17,7 +17,7 @@ type Config struct {
 }
 
 func Load() *Config {
-	godotenv.Load()
+	_ = godotenv.Load() // ignore error, .env file is optional
 
 	return &Config{
 		DatabaseURL: getEnv("DATABASE_URL", "postgres://zpwoot:zpwoot123@localhost:5432/zpwoot?sslmode=disable"),

@@ -83,7 +83,7 @@ func (r *MessageRepository) SaveBatch(ctx context.Context, msgs []*model.Message
 	}
 
 	results := r.pool.SendBatch(ctx, batch)
-	defer results.Close()
+	defer func() { _ = results.Close() }()
 
 	for range msgs {
 		tag, err := results.Exec()
