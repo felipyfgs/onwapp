@@ -5,10 +5,9 @@ import {
   IsOptional,
   IsNumber,
   IsArray,
-  ValidateNested,
+  IsBoolean,
   Min,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 
 export class GetCatalogDto {
   @ApiPropertyOptional({
@@ -66,29 +65,19 @@ export class GetOrderDetailsDto {
   tokenBase64: string;
 }
 
-export class ProductImageDto {
-  @ApiProperty({
-    example: 'https://example.com/image.jpg',
-    description: 'Image URL',
-  })
-  @IsString()
-  @IsNotEmpty()
-  url: string;
-}
-
 export class ProductCreateDto {
   @ApiProperty({ example: 'Product Name', description: 'Product name' })
   @IsString()
   @IsNotEmpty()
   name: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     example: 'Product description',
     description: 'Product description',
   })
   @IsString()
-  @IsOptional()
-  description?: string;
+  @IsNotEmpty()
+  description: string;
 
   @ApiProperty({ example: 'BRL', description: 'Currency code (ISO 4217)' })
   @IsString()
@@ -120,14 +109,27 @@ export class ProductCreateDto {
   retailerId?: string;
 
   @ApiPropertyOptional({
-    type: [ProductImageDto],
-    description: 'Product images',
+    example: 'BR',
+    description: 'ISO country code for product origin (or undefined for no country)',
+  })
+  @IsString()
+  @IsOptional()
+  originCountryCode?: string;
+
+  @ApiProperty({
+    example: [{ url: 'https://example.com/image.jpg' }],
+    description: 'Product images as WAMediaUpload array',
   })
   @IsArray()
+  images: { url: string }[];
+
+  @ApiPropertyOptional({
+    example: false,
+    description: 'Whether product is hidden',
+  })
+  @IsBoolean()
   @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => ProductImageDto)
-  images?: ProductImageDto[];
+  isHidden?: boolean;
 }
 
 export class ProductUpdateDto {
@@ -136,43 +138,65 @@ export class ProductUpdateDto {
   @IsNotEmpty()
   productId: string;
 
-  @ApiPropertyOptional({ example: 'Updated Name', description: 'New name' })
+  @ApiProperty({ example: 'Updated Name', description: 'Product name' })
   @IsString()
-  @IsOptional()
-  name?: string;
+  @IsNotEmpty()
+  name: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     example: 'Updated description',
-    description: 'New description',
+    description: 'Product description',
   })
   @IsString()
-  @IsOptional()
-  description?: string;
+  @IsNotEmpty()
+  description: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     example: 2499,
-    description: 'New price in cents',
+    description: 'Price in cents',
   })
   @IsNumber()
-  @IsOptional()
   @Min(0)
-  price?: number;
+  price: number;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     example: 'BRL',
     description: 'Currency code',
   })
   @IsString()
-  @IsOptional()
-  currency?: string;
+  @IsNotEmpty()
+  currency: string;
+
+  @ApiProperty({
+    example: [{ url: 'https://example.com/image.jpg' }],
+    description: 'Product images',
+  })
+  @IsArray()
+  images: { url: string }[];
 
   @ApiPropertyOptional({
     example: 'https://example.com/product',
-    description: 'New product URL',
+    description: 'Product URL',
   })
   @IsString()
   @IsOptional()
   url?: string;
+
+  @ApiPropertyOptional({
+    example: 'SKU123',
+    description: 'Retailer ID',
+  })
+  @IsString()
+  @IsOptional()
+  retailerId?: string;
+
+  @ApiPropertyOptional({
+    example: false,
+    description: 'Whether product is hidden',
+  })
+  @IsBoolean()
+  @IsOptional()
+  isHidden?: boolean;
 }
 
 export class ProductDeleteDto {

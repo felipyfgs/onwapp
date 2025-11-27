@@ -28,6 +28,10 @@ import {
   DeleteMessageForMeDto,
   ReadMessagesDto,
   MessageResponseDto,
+  UpdateMediaMessageDto,
+  FetchMessageHistoryDto,
+  SendReceiptDto,
+  SendReceiptsDto,
 } from './dto';
 
 @ApiTags('Messages')
@@ -334,5 +338,77 @@ export class MessagesController {
     @Body() dto: EditMessageDto,
   ): Promise<proto.WebMessageInfo | undefined> {
     return this.messagesService.editMessage(name, dto);
+  }
+
+  @Post('update-media')
+  @ApiOperation({
+    summary: 'Re-upload expired media',
+    description:
+      'Re-upload media that has expired. Returns a new message with fresh media URL.',
+  })
+  @ApiParam({ name: 'name', description: 'Session name' })
+  @ApiResponse({
+    status: 200,
+    description: 'Media updated',
+    type: MessageResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Session not found' })
+  @ApiResponse({ status: 400, description: 'Session not connected' })
+  async updateMediaMessage(
+    @Param('name') name: string,
+    @Body() dto: UpdateMediaMessageDto,
+  ) {
+    return this.messagesService.updateMediaMessage(name, dto);
+  }
+
+  @Post('fetch-history')
+  @ApiOperation({
+    summary: 'Fetch message history',
+    description:
+      'Retrieve message history from a chat. Can be paginated using oldestMsgKey.',
+  })
+  @ApiParam({ name: 'name', description: 'Session name' })
+  @ApiResponse({ status: 200, description: 'Message history retrieved' })
+  @ApiResponse({ status: 404, description: 'Session not found' })
+  @ApiResponse({ status: 400, description: 'Session not connected' })
+  async fetchMessageHistory(
+    @Param('name') name: string,
+    @Body() dto: FetchMessageHistoryDto,
+  ) {
+    return this.messagesService.fetchMessageHistory(name, dto);
+  }
+
+  @Post('receipt')
+  @ApiOperation({
+    summary: 'Send a custom receipt',
+    description: 'Send read/played receipts for specific messages',
+  })
+  @ApiParam({ name: 'name', description: 'Session name' })
+  @ApiResponse({ status: 200, description: 'Receipt sent' })
+  @ApiResponse({ status: 404, description: 'Session not found' })
+  @ApiResponse({ status: 400, description: 'Session not connected' })
+  async sendReceipt(
+    @Param('name') name: string,
+    @Body() dto: SendReceiptDto,
+  ): Promise<{ success: boolean }> {
+    await this.messagesService.sendReceipt(name, dto);
+    return { success: true };
+  }
+
+  @Post('receipts')
+  @ApiOperation({
+    summary: 'Send receipts in batch',
+    description: 'Send receipts for multiple messages at once using message keys',
+  })
+  @ApiParam({ name: 'name', description: 'Session name' })
+  @ApiResponse({ status: 200, description: 'Receipts sent' })
+  @ApiResponse({ status: 404, description: 'Session not found' })
+  @ApiResponse({ status: 400, description: 'Session not connected' })
+  async sendReceipts(
+    @Param('name') name: string,
+    @Body() dto: SendReceiptsDto,
+  ): Promise<{ success: boolean }> {
+    await this.messagesService.sendReceipts(name, dto);
+    return { success: true };
   }
 }

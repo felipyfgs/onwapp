@@ -60,7 +60,9 @@ export class BusinessService {
         price: dto.price,
         url: dto.url,
         retailerId: dto.retailerId,
+        originCountryCode: dto.originCountryCode,
         images: dto.images,
+        isHidden: dto.isHidden,
       });
     } catch (error) {
       throw new BadRequestException(
@@ -71,18 +73,16 @@ export class BusinessService {
 
   async updateProduct(sessionName: string, dto: ProductUpdateDto) {
     try {
-      const update: Record<string, unknown> = {};
-      if (dto.name !== undefined) update.name = dto.name;
-      if (dto.description !== undefined) update.description = dto.description;
-      if (dto.price !== undefined) update.price = dto.price;
-      if (dto.currency !== undefined) update.currency = dto.currency;
-      if (dto.url !== undefined) update.url = dto.url;
-
-      return await this.whaileysService.productUpdate(
-        sessionName,
-        dto.productId,
-        update,
-      );
+      return await this.whaileysService.productUpdate(sessionName, dto.productId, {
+        name: dto.name,
+        description: dto.description,
+        price: dto.price,
+        currency: dto.currency,
+        images: dto.images,
+        url: dto.url,
+        retailerId: dto.retailerId,
+        isHidden: dto.isHidden,
+      });
     } catch (error) {
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Failed to update product',

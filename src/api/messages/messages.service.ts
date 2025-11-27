@@ -277,13 +277,16 @@ export class MessagesService {
     const session = this.getSessionOrThrow(sessionName);
     const jid = this.formatJid(dto.to);
 
-    return session.socket.sendMessage(jid, {
-      poll: {
+    // Poll messages use a special structure
+    const pollContent = {
+      pollCreationMessage: {
         name: dto.name,
-        values: dto.options,
-        selectableCount: dto.selectableCount || 1,
+        options: dto.options.map((opt) => ({ optionName: opt })),
+        selectableOptionsCount: dto.selectableCount || 1,
       },
-    } as AnyMessageContent);
+    };
+
+    return session.socket.sendMessage(jid, pollContent as unknown as AnyMessageContent);
   }
 
   async editMessage(sessionName: string, dto: EditMessageDto) {
@@ -294,5 +297,34 @@ export class MessagesService {
       text: dto.newText,
       edit: dto.messageKey,
     });
+  }
+
+  async updateMediaMessage(sessionName: string, dto: UpdateMediaMessageDto) {
+    const session = this.getSessionOrThrow(sessionName);
+    return session.socket.updateMediaMessage({ key: dto.key });
+  }
+
+  async fetchMessageHistory(sessionName: string, dto: FetchMessageHistoryDto) {
+    const session = this.getSessionOrThrow(sessionName);
+    return session.socket.fetchMessageHistory(
+      dto.count,
+      dto.oldestMsgKey,
+      dto.oldestMsgTimestamp,
+    );
+  }
+
+  async sendReceipt(sessionName: string, dto: SendReceiptDto) {
+    const session = this.getSessionOrThrow(sessionName);
+    await session.socket.sendReceipt(
+      dto.jid,
+      dto.participant,
+      dto.messageIds,
+      dto.type,
+    );
+  }
+
+  async sendReceipts(sessionName: string, dto: SendReceiptsDto) {
+    const session = this.getSessionOrThrow(sessionName);
+    await session.socket.sendReceipts(dto.keys, dto.type);
   }
 }

@@ -11,6 +11,10 @@ import makeWASocket, {
   WASocket,
   ConnectionState,
   SocketConfig,
+  ProductCreate,
+  ProductUpdate,
+  WAMessageKey,
+  proto,
 } from 'whaileys';
 import { Boom } from '@hapi/boom';
 import { PrismaService } from '../../database/prisma.service';
@@ -850,7 +854,7 @@ export class WhaileysService
   // Business
   async getCatalog(sessionName: string, jid?: string, limit?: number) {
     const socket = this.getConnectedSocket(sessionName);
-    return socket.getCatalog({ jid, limit });
+    return socket.getCatalog(jid, limit);
   }
 
   async getCollections(sessionName: string, jid?: string, limit?: number) {
@@ -867,7 +871,7 @@ export class WhaileysService
     return socket.getOrderDetails(orderId, tokenBase64);
   }
 
-  async productCreate(sessionName: string, create: Record<string, unknown>) {
+  async productCreate(sessionName: string, create: ProductCreate) {
     const socket = this.getConnectedSocket(sessionName);
     return socket.productCreate(create);
   }
@@ -875,7 +879,7 @@ export class WhaileysService
   async productUpdate(
     sessionName: string,
     productId: string,
-    update: Record<string, unknown>,
+    update: ProductUpdate,
   ) {
     const socket = this.getConnectedSocket(sessionName);
     return socket.productUpdate(productId, update);
@@ -884,5 +888,24 @@ export class WhaileysService
   async productDelete(sessionName: string, productIds: string[]) {
     const socket = this.getConnectedSocket(sessionName);
     return socket.productDelete(productIds);
+  }
+
+  // Messages advanced
+  async updateMediaMessage(
+    sessionName: string,
+    message: proto.IWebMessageInfo,
+  ) {
+    const socket = this.getConnectedSocket(sessionName);
+    return socket.updateMediaMessage(message);
+  }
+
+  async fetchMessageHistory(
+    sessionName: string,
+    count: number,
+    oldestMsgKey: WAMessageKey,
+    oldestMsgTimestamp: number,
+  ) {
+    const socket = this.getConnectedSocket(sessionName);
+    return socket.fetchMessageHistory(count, oldestMsgKey, oldestMsgTimestamp);
   }
 }

@@ -1,25 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsBoolean, ValidateNested } from 'class-validator';
+import { IsString, IsNotEmpty, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
-
-export class MessageKeyDto {
-  @ApiProperty({ example: 'ABCD1234', description: 'Message ID' })
-  @IsString()
-  @IsNotEmpty()
-  id: string;
-
-  @ApiProperty({ example: true, description: 'Whether the message is from you' })
-  @IsBoolean()
-  fromMe: boolean;
-
-  @ApiProperty({
-    example: '5511999999999@s.whatsapp.net',
-    description: 'Remote JID (chat ID)',
-  })
-  @IsString()
-  @IsNotEmpty()
-  remoteJid: string;
-}
+import { MessageKeyDto } from './send-reaction.dto';
 
 export class EditMessageDto {
   @ApiProperty({

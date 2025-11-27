@@ -9,8 +9,9 @@ import {
   IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { MessageKeyDto } from './send-reaction.dto';
 
-export class MessageKeyDto {
+export class UpdateMediaMessageKeyDto {
   @ApiProperty({ example: 'ABCD1234', description: 'Message ID' })
   @IsString()
   @IsNotEmpty()
@@ -39,23 +40,15 @@ export class MessageKeyDto {
 
 export class UpdateMediaMessageDto {
   @ApiProperty({
-    type: MessageKeyDto,
-    description: 'Key of the media message to update',
+    type: UpdateMediaMessageKeyDto,
+    description: 'Message key object containing the message identifier',
   })
   @ValidateNested()
-  @Type(() => MessageKeyDto)
-  messageKey: MessageKeyDto;
+  @Type(() => UpdateMediaMessageKeyDto)
+  key: UpdateMediaMessageKeyDto;
 }
 
 export class FetchMessageHistoryDto {
-  @ApiProperty({
-    example: '5511999999999',
-    description: 'Chat JID to fetch history from',
-  })
-  @IsString()
-  @IsNotEmpty()
-  jid: string;
-
   @ApiProperty({
     example: 50,
     description: 'Number of messages to fetch',
@@ -63,14 +56,20 @@ export class FetchMessageHistoryDto {
   @IsNumber()
   count: number;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: MessageKeyDto,
-    description: 'Oldest message key to start from (for pagination)',
+    description: 'Oldest message key to start from',
   })
   @ValidateNested()
-  @IsOptional()
   @Type(() => MessageKeyDto)
-  oldestMsgKey?: MessageKeyDto;
+  oldestMsgKey: MessageKeyDto;
+
+  @ApiProperty({
+    example: 1700000000,
+    description: 'Timestamp of the oldest message (Unix timestamp)',
+  })
+  @IsNumber()
+  oldestMsgTimestamp: number;
 }
 
 export class SendReceiptDto {
