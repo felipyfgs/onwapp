@@ -1258,57 +1258,6 @@ export class WhaileysService
     return to.includes('@') ? to : `${to}@s.whatsapp.net`;
   }
 
-  // List messages (using native flow single_select)
-  async sendListMessage(
-    sessionName: string,
-    to: string,
-    content: {
-      text: string;
-      footer?: string;
-      title?: string;
-      buttonText: string;
-      sections: Array<{
-        title: string;
-        rows: Array<{
-          title: string;
-          rowId: string;
-          description?: string;
-        }>;
-      }>;
-    },
-  ) {
-    const socket = this.getConnectedSocket(sessionName);
-    const jid = to.includes('@') ? to : `${to}@s.whatsapp.net`;
-
-    // @fadzzzslebew/baileys uses native flow for list messages
-    const listMessage = {
-      text: content.text,
-      footer: content.footer || '',
-      title: content.title || '',
-      interactive: [
-        {
-          name: 'single_select',
-          buttonParamsJson: JSON.stringify({
-            title: content.buttonText,
-            sections: content.sections.map((s) => ({
-              title: s.title,
-              rows: s.rows.map((r) => ({
-                title: r.title,
-                id: r.rowId,
-                description: r.description || '',
-              })),
-            })),
-          }),
-        },
-      ],
-    };
-
-    return socket.sendMessage(
-      jid,
-      listMessage as Parameters<typeof socket.sendMessage>[1],
-    );
-  }
-
   // Newsletter operations
   // Newsletter functions not available in whaileys 6.4.3
   async newsletterCreate(
