@@ -1,5 +1,7 @@
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
 CREATE TABLE IF NOT EXISTS "zpSessions" (
-    "id" SERIAL PRIMARY KEY,
+    "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "name" VARCHAR(255) UNIQUE NOT NULL,
     "deviceJid" VARCHAR(255),
     "phone" VARCHAR(50),

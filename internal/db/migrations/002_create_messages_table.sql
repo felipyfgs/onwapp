@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS "zpMessages" (
-    "id" BIGSERIAL PRIMARY KEY,
-    "sessionId" INTEGER NOT NULL REFERENCES "zpSessions"("id") ON DELETE CASCADE,
+    "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "sessionId" UUID NOT NULL REFERENCES "zpSessions"("id") ON DELETE CASCADE,
     
     -- Core identifiers (from whatsmeow MessageInfo)
     "messageId" VARCHAR(255) NOT NULL,

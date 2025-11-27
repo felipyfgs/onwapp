@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS "zpWebhooks" (
-    "id" SERIAL PRIMARY KEY,
-    "sessionId" INTEGER NOT NULL REFERENCES "zpSessions"("id") ON DELETE CASCADE,
+    "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "sessionId" UUID NOT NULL REFERENCES "zpSessions"("id") ON DELETE CASCADE,
     "url" VARCHAR(500) NOT NULL,
     "events" TEXT[] DEFAULT '{}',
     "enabled" BOOLEAN DEFAULT true,

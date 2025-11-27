@@ -3,8 +3,8 @@ package model
 import "time"
 
 type Webhook struct {
-	ID        int
-	SessionID int
+	ID        string
+	SessionID string
 	URL       string
 	Events    []string
 	Enabled   bool

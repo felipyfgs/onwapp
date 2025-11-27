@@ -31,7 +31,7 @@ const (
 )
 
 type SessionRecord struct {
-	ID        int
+	ID        string
 	Name      string
 	DeviceJID string
 	Phone     string
@@ -41,7 +41,7 @@ type SessionRecord struct {
 }
 
 type Session struct {
-	ID     int
+	ID     string
 	Name   string
 	Client *whatsmeow.Client
 	Device *store.Device

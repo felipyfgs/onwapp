@@ -16,8 +16,8 @@ func NewSessionRepository(pool *pgxpool.Pool) *SessionRepository {
 	return &SessionRepository{pool: pool}
 }
 
-func (r *SessionRepository) Create(ctx context.Context, name string) (int, error) {
-	var id int
+func (r *SessionRepository) Create(ctx context.Context, name string) (string, error) {
+	var id string
 	err := r.pool.QueryRow(ctx, `
 		INSERT INTO "zpSessions" ("name") 
 		VALUES ($1) 
@@ -26,7 +26,7 @@ func (r *SessionRepository) Create(ctx context.Context, name string) (int, error
 	return id, err
 }
 
-func (r *SessionRepository) GetByID(ctx context.Context, id int) (*model.SessionRecord, error) {
+func (r *SessionRepository) GetByID(ctx context.Context, id string) (*model.SessionRecord, error) {
 	var s model.SessionRecord
 	err := r.pool.QueryRow(ctx, `
 		SELECT "id", "name", COALESCE("deviceJid", '') as "deviceJid", COALESCE("phone", '') as "phone", COALESCE("status", 'disconnected') as "status" 

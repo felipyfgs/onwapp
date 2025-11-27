@@ -17,8 +17,8 @@ func NewMessageRepository(pool *pgxpool.Pool) *MessageRepository {
 	return &MessageRepository{pool: pool}
 }
 
-func (r *MessageRepository) Save(ctx context.Context, msg *model.Message) (int, error) {
-	var id int
+func (r *MessageRepository) Save(ctx context.Context, msg *model.Message) (string, error) {
+	var id string
 	now := time.Now()
 	err := r.pool.QueryRow(ctx, `
 		INSERT INTO "zpMessages" (
@@ -39,7 +39,7 @@ func (r *MessageRepository) Save(ctx context.Context, msg *model.Message) (int, 
 	return id, err
 }
 
-func (r *MessageRepository) GetBySession(ctx context.Context, sessionID int, limit, offset int) ([]model.Message, error) {
+func (r *MessageRepository) GetBySession(ctx context.Context, sessionID string, limit, offset int) ([]model.Message, error) {
 	rows, err := r.pool.Query(ctx, `
 		SELECT "id", "sessionId", "messageId", "chatJid", COALESCE("senderJid", ''), "timestamp",
 		       COALESCE("pushName", ''), COALESCE("senderAlt", ''), COALESCE("type", ''), COALESCE("mediaType", ''), COALESCE("category", ''), COALESCE("content", ''),
@@ -56,7 +56,7 @@ func (r *MessageRepository) GetBySession(ctx context.Context, sessionID int, lim
 	return r.scanMessages(rows)
 }
 
-func (r *MessageRepository) GetByChat(ctx context.Context, sessionID int, chatJID string, limit, offset int) ([]model.Message, error) {
+func (r *MessageRepository) GetByChat(ctx context.Context, sessionID string, chatJID string, limit, offset int) ([]model.Message, error) {
 	rows, err := r.pool.Query(ctx, `
 		SELECT "id", "sessionId", "messageId", "chatJid", COALESCE("senderJid", ''), "timestamp",
 		       COALESCE("pushName", ''), COALESCE("senderAlt", ''), COALESCE("type", ''), COALESCE("mediaType", ''), COALESCE("category", ''), COALESCE("content", ''),
@@ -73,7 +73,7 @@ func (r *MessageRepository) GetByChat(ctx context.Context, sessionID int, chatJI
 	return r.scanMessages(rows)
 }
 
-func (r *MessageRepository) UpdateStatus(ctx context.Context, sessionID int, messageID string, status model.MessageStatus) error {
+func (r *MessageRepository) UpdateStatus(ctx context.Context, sessionID string, messageID string, status model.MessageStatus) error {
 	now := time.Now()
 	var updateQuery string
 	var args []interface{}
