@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS "sessions" (
+CREATE TABLE IF NOT EXISTS "zpSessions" (
     "id" SERIAL PRIMARY KEY,
     "name" VARCHAR(255) UNIQUE NOT NULL,
     "deviceJid" VARCHAR(255),
@@ -7,5 +7,5 @@ CREATE TABLE IF NOT EXISTS "sessions" (
     "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS "idx_sessions_name" ON "sessions"("name");
-CREATE INDEX IF NOT EXISTS "idx_sessions_status" ON "sessions"("status");
+CREATE INDEX IF NOT EXISTS "idx_zpSessions_name" ON "zpSessions"("name");
+CREATE INDEX IF NOT EXISTS "idx_zpSessions_status" ON "zpSessions"("status");

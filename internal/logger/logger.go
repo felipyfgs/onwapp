@@ -1,9 +1,11 @@
 package logger
 
 import (
+	"io"
 	"os"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -19,16 +21,52 @@ func Init(level, format string) {
 	}
 	zerolog.SetGlobalLevel(lvl)
 
+	var output io.Writer = os.Stdout
 	if format == "console" {
-		Log = zerolog.New(zerolog.ConsoleWriter{
+		output = zerolog.ConsoleWriter{
 			Out:        os.Stdout,
 			TimeFormat: "15:04:05",
-		}).With().Timestamp().Caller().Logger()
-	} else {
-		Log = zerolog.New(os.Stdout).With().Timestamp().Caller().Logger()
+		}
 	}
 
+	Log = zerolog.New(output).With().Timestamp().Logger()
 	log.Logger = Log
+
+	gin.SetMode(gin.ReleaseMode)
+	gin.DefaultWriter = io.Discard
+	gin.DefaultErrorWriter = io.Discard
+}
+
+func GinMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+		path := c.Request.URL.Path
+		query := c.Request.URL.RawQuery
+
+		c.Next()
+
+		latency := time.Since(start)
+		status := c.Writer.Status()
+
+		event := Log.Info()
+		if status >= 400 && status < 500 {
+			event = Log.Warn()
+		} else if status >= 500 {
+			event = Log.Error()
+		}
+
+		if query != "" {
+			path = path + "?" + query
+		}
+
+		event.
+			Str("method", c.Request.Method).
+			Str("path", path).
+			Int("status", status).
+			Dur("latency", latency).
+			Str("ip", c.ClientIP()).
+			Msg("request")
+	}
 }
 
 func Debug() *zerolog.Event {
