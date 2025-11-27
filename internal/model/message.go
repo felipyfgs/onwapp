@@ -19,8 +19,8 @@ const (
 
 // Message represents a WhatsApp message, closely following whatsmeow structure
 type Message struct {
-	ID        int64 `json:"id"`
-	SessionID int   `json:"sessionId"`
+	ID        int `json:"id"`
+	SessionID int `json:"sessionId"`
 	
 	// Core identifiers (from whatsmeow MessageInfo)
 	MessageID string    `json:"messageId"` // Info.ID
