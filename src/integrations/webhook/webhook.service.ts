@@ -164,7 +164,7 @@ export class WebhookService {
           this.logger.debug(`Webhook sent to ${url}: ${payload.event}`);
         }
       })
-      .catch((error) => {
+      .catch((error: Error) => {
         this.logger.error(`Webhook error for ${url}: ${error.message}`);
       });
   }

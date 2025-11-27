@@ -663,8 +663,10 @@ export class WhaileysService
       inviteExpiration: number;
       groupName?: string;
     },
-  ) {
+  ): Promise<string | undefined> {
     const socket = this.getConnectedSocket(sessionName);
-    return socket.groupAcceptInviteV4(senderId, inviteMessage);
+    return socket.groupAcceptInviteV4(senderId, inviteMessage) as Promise<
+      string | undefined
+    >;
   }
 }
