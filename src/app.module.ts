@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { WhaileysModule } from './core/whaileys/whaileys.module';
-import { SessionModule } from './api/session/session.module';
-import { MessageModule } from './api/message/message.module';
-import { GroupModule } from './api/group/group.module';
-import { ChatModule } from './api/chat/chat.module';
-import { ContactModule } from './api/contact/contact.module';
-import { ProfileModule } from './api/profile/profile.module';
+import { SessionsModule } from './api/sessions/sessions.module';
+import { MessagesModule } from './api/messages/messages.module';
+import { GroupsModule } from './api/groups/groups.module';
+import { ChatsModule } from './api/chats/chats.module';
+import { ContactsModule } from './api/contacts/contacts.module';
+import { ProfilesModule } from './api/profiles/profiles.module';
 import { WebhookModule } from './integrations/webhook/webhook.module';
 import { DatabaseModule } from './database/database.module';
 import { LoggerModule } from './logger/logger.module';
@@ -16,12 +16,12 @@ import { LoggerModule } from './logger/logger.module';
     LoggerModule,
     WebhookModule,
     WhaileysModule,
-    SessionModule,
-    MessageModule,
-    GroupModule,
-    ChatModule,
-    ContactModule,
-    ProfileModule,
+    SessionsModule,
+    MessagesModule,
+    GroupsModule,
+    ChatsModule,
+    ContactsModule,
+    ProfilesModule,
   ],
   controllers: [],
   providers: [],

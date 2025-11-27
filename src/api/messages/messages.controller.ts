@@ -7,7 +7,7 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { proto } from 'whaileys';
-import { MessageService } from './message.service';
+import { MessagesService } from './messages.service';
 import {
   SendTextDto,
   SendImageDto,
@@ -31,8 +31,8 @@ import {
 @ApiTags('Messages')
 @ApiSecurity('apikey')
 @Controller('sessions/:name/send')
-export class MessageController {
-  constructor(private readonly messageService: MessageService) {}
+export class MessagesController {
+  constructor(private readonly messagesService: MessagesService) {}
 
   @Post('text')
   @ApiOperation({ summary: 'Send a text message' })
@@ -48,7 +48,7 @@ export class MessageController {
     @Param('name') name: string,
     @Body() dto: SendTextDto,
   ): Promise<proto.WebMessageInfo | undefined> {
-    return this.messageService.sendText(name, dto);
+    return this.messagesService.sendText(name, dto);
   }
 
   @Post('image')
@@ -65,7 +65,7 @@ export class MessageController {
     @Param('name') name: string,
     @Body() dto: SendImageDto,
   ): Promise<proto.WebMessageInfo | undefined> {
-    return this.messageService.sendImage(name, dto);
+    return this.messagesService.sendImage(name, dto);
   }
 
   @Post('video')
@@ -82,7 +82,7 @@ export class MessageController {
     @Param('name') name: string,
     @Body() dto: SendVideoDto,
   ): Promise<proto.WebMessageInfo | undefined> {
-    return this.messageService.sendVideo(name, dto);
+    return this.messagesService.sendVideo(name, dto);
   }
 
   @Post('audio')
@@ -99,7 +99,7 @@ export class MessageController {
     @Param('name') name: string,
     @Body() dto: SendAudioDto,
   ): Promise<proto.WebMessageInfo | undefined> {
-    return this.messageService.sendAudio(name, dto);
+    return this.messagesService.sendAudio(name, dto);
   }
 
   @Post('document')
@@ -116,7 +116,7 @@ export class MessageController {
     @Param('name') name: string,
     @Body() dto: SendDocumentDto,
   ): Promise<proto.WebMessageInfo | undefined> {
-    return this.messageService.sendDocument(name, dto);
+    return this.messagesService.sendDocument(name, dto);
   }
 
   @Post('location')
@@ -133,7 +133,7 @@ export class MessageController {
     @Param('name') name: string,
     @Body() dto: SendLocationDto,
   ): Promise<proto.WebMessageInfo | undefined> {
-    return this.messageService.sendLocation(name, dto);
+    return this.messagesService.sendLocation(name, dto);
   }
 
   @Post('contact')
@@ -150,7 +150,7 @@ export class MessageController {
     @Param('name') name: string,
     @Body() dto: SendContactDto,
   ): Promise<proto.WebMessageInfo | undefined> {
-    return this.messageService.sendContact(name, dto);
+    return this.messagesService.sendContact(name, dto);
   }
 
   @Post('sticker')
@@ -167,7 +167,7 @@ export class MessageController {
     @Param('name') name: string,
     @Body() dto: SendStickerDto,
   ): Promise<proto.WebMessageInfo | undefined> {
-    return this.messageService.sendSticker(name, dto);
+    return this.messagesService.sendSticker(name, dto);
   }
 
   @Post('reaction')
@@ -184,7 +184,7 @@ export class MessageController {
     @Param('name') name: string,
     @Body() dto: SendReactionDto,
   ): Promise<proto.WebMessageInfo | undefined> {
-    return this.messageService.sendReaction(name, dto);
+    return this.messagesService.sendReaction(name, dto);
   }
 
   @Post('buttons')
@@ -201,7 +201,7 @@ export class MessageController {
     @Param('name') name: string,
     @Body() dto: SendButtonsDto,
   ): Promise<proto.WebMessageInfo | undefined> {
-    return this.messageService.sendButtons(name, dto);
+    return this.messagesService.sendButtons(name, dto);
   }
 
   @Post('list')
@@ -218,7 +218,7 @@ export class MessageController {
     @Param('name') name: string,
     @Body() dto: SendListDto,
   ): Promise<proto.WebMessageInfo | undefined> {
-    return this.messageService.sendList(name, dto);
+    return this.messagesService.sendList(name, dto);
   }
 
   @Post('template')
@@ -235,7 +235,7 @@ export class MessageController {
     @Param('name') name: string,
     @Body() dto: SendTemplateDto,
   ): Promise<proto.WebMessageInfo | undefined> {
-    return this.messageService.sendTemplate(name, dto);
+    return this.messagesService.sendTemplate(name, dto);
   }
 
   @Post('forward')
@@ -252,7 +252,7 @@ export class MessageController {
     @Param('name') name: string,
     @Body() dto: ForwardMessageDto,
   ): Promise<proto.WebMessageInfo | undefined> {
-    return this.messageService.forwardMessage(name, dto);
+    return this.messagesService.forwardMessage(name, dto);
   }
 
   @Post('delete')
@@ -269,7 +269,7 @@ export class MessageController {
     @Param('name') name: string,
     @Body() dto: DeleteMessageDto,
   ): Promise<proto.WebMessageInfo | undefined> {
-    return this.messageService.deleteMessage(name, dto);
+    return this.messagesService.deleteMessage(name, dto);
   }
 
   @Post('delete-for-me')
@@ -282,7 +282,7 @@ export class MessageController {
     @Param('name') name: string,
     @Body() dto: DeleteMessageForMeDto,
   ): Promise<{ success: boolean }> {
-    await this.messageService.deleteMessageForMe(name, dto);
+    await this.messagesService.deleteMessageForMe(name, dto);
     return { success: true };
   }
 
@@ -296,7 +296,7 @@ export class MessageController {
     @Param('name') name: string,
     @Body() dto: ReadMessagesDto,
   ): Promise<{ success: boolean }> {
-    await this.messageService.readMessages(name, dto);
+    await this.messagesService.readMessages(name, dto);
     return { success: true };
   }
 }

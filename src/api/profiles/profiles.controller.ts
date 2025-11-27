@@ -6,7 +6,7 @@ import {
   ApiResponse,
   ApiParam,
 } from '@nestjs/swagger';
-import { ProfileService } from './profile.service';
+import { ProfilesService } from './profiles.service';
 import {
   UpdateStatusDto,
   UpdateNameDto,
@@ -19,8 +19,8 @@ import {
 @ApiTags('Profile')
 @ApiSecurity('apikey')
 @Controller('sessions/:session/profile')
-export class ProfileController {
-  constructor(private readonly profileService: ProfileService) {}
+export class ProfilesController {
+  constructor(private readonly profilesService: ProfilesService) {}
 
   @Post('status')
   @ApiOperation({ summary: 'Update profile status message' })

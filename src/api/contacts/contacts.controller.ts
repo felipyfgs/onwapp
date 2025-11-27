@@ -6,7 +6,7 @@ import {
   ApiResponse,
   ApiParam,
 } from '@nestjs/swagger';
-import { ContactService } from './contact.service';
+import { ContactsService } from './contacts.service';
 import {
   ContactJidDto,
   CheckNumberDto,
@@ -20,8 +20,8 @@ import {
 @ApiTags('Contacts')
 @ApiSecurity('apikey')
 @Controller('sessions/:session/contacts')
-export class ContactController {
-  constructor(private readonly contactService: ContactService) {}
+export class ContactsController {
+  constructor(private readonly contactsService: ContactsService) {}
 
   @Post('block')
   @ApiOperation({ summary: 'Block a contact' })
@@ -35,7 +35,7 @@ export class ContactController {
     @Param('session') session: string,
     @Body() dto: ContactJidDto,
   ): Promise<SuccessResponseDto> {
-    await this.contactService.block(session, dto.jid);
+    await this.contactsService.block(session, dto.jid);
     return { success: true };
   }
 
@@ -51,7 +51,7 @@ export class ContactController {
     @Param('session') session: string,
     @Body() dto: ContactJidDto,
   ): Promise<SuccessResponseDto> {
-    await this.contactService.unblock(session, dto.jid);
+    await this.contactsService.unblock(session, dto.jid);
     return { success: true };
   }
 
@@ -67,7 +67,7 @@ export class ContactController {
     @Param('session') session: string,
     @Body() dto: CheckNumberDto,
   ): Promise<CheckNumberResponseDto> {
-    return this.contactService.checkNumber(session, dto.phone);
+    return this.contactsService.checkNumber(session, dto.phone);
   }
 
   @Get(':jid/picture')
@@ -83,7 +83,7 @@ export class ContactController {
     @Param('session') session: string,
     @Param('jid') jid: string,
   ): Promise<ProfilePictureResponseDto> {
-    return this.contactService.getProfilePicture(session, jid);
+    return this.contactsService.getProfilePicture(session, jid);
   }
 
   @Get(':jid/status')
@@ -99,7 +99,7 @@ export class ContactController {
     @Param('session') session: string,
     @Param('jid') jid: string,
   ): Promise<ContactStatusResponseDto> {
-    return this.contactService.getStatus(session, jid);
+    return this.contactsService.getStatus(session, jid);
   }
 
   @Get(':jid/business')
@@ -115,7 +115,7 @@ export class ContactController {
     @Param('session') session: string,
     @Param('jid') jid: string,
   ): Promise<BusinessProfileResponseDto> {
-    return this.contactService.getBusinessProfile(session, jid);
+    return this.contactsService.getBusinessProfile(session, jid);
   }
 
   @Get('broadcast/:broadcastId')
@@ -133,6 +133,6 @@ export class ContactController {
     @Param('session') session: string,
     @Param('broadcastId') broadcastId: string,
   ) {
-    return this.contactService.getBroadcastListInfo(session, broadcastId);
+    return this.contactsService.getBroadcastListInfo(session, broadcastId);
   }
 }

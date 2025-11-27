@@ -14,7 +14,7 @@ import {
   ApiResponse,
   ApiParam,
 } from '@nestjs/swagger';
-import { GroupService } from './group.service';
+import { GroupsService } from './groups.service';
 import {
   CreateGroupDto,
   UpdateGroupSubjectDto,
@@ -36,8 +36,8 @@ import {
 @ApiTags('Groups')
 @ApiSecurity('apikey')
 @Controller('sessions/:name/groups')
-export class GroupController {
-  constructor(private readonly groupService: GroupService) {}
+export class GroupsController {
+  constructor(private readonly groupsService: GroupsService) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new group' })
@@ -53,7 +53,7 @@ export class GroupController {
     @Param('name') name: string,
     @Body() dto: CreateGroupDto,
   ): Promise<CreateGroupResponseDto> {
-    return this.groupService.createGroup(name, dto);
+    return this.groupsService.createGroup(name, dto);
   }
 
   @Get(':groupId')
@@ -70,7 +70,7 @@ export class GroupController {
     @Param('name') name: string,
     @Param('groupId') groupId: string,
   ): Promise<GroupMetadataResponseDto> {
-    return this.groupService.getGroupMetadata(name, groupId);
+    return this.groupsService.getGroupMetadata(name, groupId);
   }
 
   @Put(':groupId/subject')
@@ -88,7 +88,7 @@ export class GroupController {
     @Param('groupId') groupId: string,
     @Body() dto: UpdateGroupSubjectDto,
   ): Promise<SuccessResponseDto> {
-    await this.groupService.updateGroupSubject(name, groupId, dto.subject);
+    await this.groupsService.updateGroupSubject(name, groupId, dto.subject);
     return { success: true };
   }
 
@@ -107,7 +107,7 @@ export class GroupController {
     @Param('groupId') groupId: string,
     @Body() dto: UpdateGroupDescriptionDto,
   ): Promise<SuccessResponseDto> {
-    await this.groupService.updateGroupDescription(
+    await this.groupsService.updateGroupDescription(
       name,
       groupId,
       dto.description,
@@ -132,7 +132,7 @@ export class GroupController {
     @Param('groupId') groupId: string,
     @Body() dto: GroupParticipantsDto,
   ): Promise<ParticipantsUpdateResponseDto> {
-    const response = await this.groupService.updateParticipants(
+    const response = await this.groupsService.updateParticipants(
       name,
       groupId,
       dto.participants,
@@ -156,7 +156,7 @@ export class GroupController {
     @Param('groupId') groupId: string,
     @Body() dto: GroupSettingsDto,
   ): Promise<SuccessResponseDto> {
-    await this.groupService.updateGroupSettings(name, groupId, dto.setting);
+    await this.groupsService.updateGroupSettings(name, groupId, dto.setting);
     return { success: true };
   }
 
@@ -174,7 +174,7 @@ export class GroupController {
     @Param('name') name: string,
     @Param('groupId') groupId: string,
   ): Promise<InviteCodeResponseDto> {
-    return this.groupService.getInviteCode(name, groupId);
+    return this.groupsService.getInviteCode(name, groupId);
   }
 
   @Post(':groupId/revoke-invite')
@@ -191,7 +191,7 @@ export class GroupController {
     @Param('name') name: string,
     @Param('groupId') groupId: string,
   ): Promise<InviteCodeResponseDto> {
-    return this.groupService.revokeInviteCode(name, groupId);
+    return this.groupsService.revokeInviteCode(name, groupId);
   }
 
   @Get('invite/:inviteCode/info')
@@ -208,7 +208,7 @@ export class GroupController {
     @Param('name') name: string,
     @Param('inviteCode') inviteCode: string,
   ): Promise<GroupInfoByCodeResponseDto> {
-    return this.groupService.getGroupInfoByCode(name, inviteCode);
+    return this.groupsService.getGroupInfoByCode(name, inviteCode);
   }
 
   @Post('join')
@@ -224,7 +224,7 @@ export class GroupController {
     @Param('name') name: string,
     @Body() dto: JoinGroupDto,
   ): Promise<JoinGroupResponseDto> {
-    const groupId = await this.groupService.joinGroup(name, dto.inviteCode);
+    const groupId = await this.groupsService.joinGroup(name, dto.inviteCode);
     return { groupId };
   }
 
@@ -242,7 +242,7 @@ export class GroupController {
     @Param('name') name: string,
     @Param('groupId') groupId: string,
   ): Promise<SuccessResponseDto> {
-    await this.groupService.leaveGroup(name, groupId);
+    await this.groupsService.leaveGroup(name, groupId);
     return { success: true };
   }
 
@@ -261,7 +261,7 @@ export class GroupController {
     @Param('groupId') groupId: string,
     @Body() dto: UpdateGroupPictureDto,
   ): Promise<SuccessResponseDto> {
-    await this.groupService.updateGroupPicture(name, groupId, dto.imageUrl);
+    await this.groupsService.updateGroupPicture(name, groupId, dto.imageUrl);
     return { success: true };
   }
 
@@ -278,7 +278,7 @@ export class GroupController {
     @Param('name') name: string,
     @Body() dto: AcceptInviteV4Dto,
   ): Promise<JoinGroupResponseDto> {
-    const groupId = await this.groupService.acceptInviteV4(
+    const groupId = await this.groupsService.acceptInviteV4(
       name,
       dto.senderId,
       dto.inviteMessage,

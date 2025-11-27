@@ -6,7 +6,7 @@ import {
   ApiResponse,
   ApiParam,
 } from '@nestjs/swagger';
-import { ChatService } from './chat.service';
+import { ChatsService } from './chats.service';
 import {
   ArchiveChatDto,
   MuteChatDto,
@@ -21,8 +21,8 @@ import {
 @ApiTags('Chats')
 @ApiSecurity('apikey')
 @Controller('sessions/:session/chats')
-export class ChatController {
-  constructor(private readonly chatService: ChatService) {}
+export class ChatsController {
+  constructor(private readonly chatsService: ChatsService) {}
 
   @Post('archive')
   @ApiOperation({ summary: 'Archive or unarchive a chat' })
@@ -36,7 +36,7 @@ export class ChatController {
     @Param('session') session: string,
     @Body() dto: ArchiveChatDto,
   ): Promise<SuccessResponseDto> {
-    await this.chatService.archive(session, dto.jid, dto.archive);
+    await this.chatsService.archive(session, dto.jid, dto.archive);
     return { success: true };
   }
 
@@ -52,7 +52,7 @@ export class ChatController {
     @Param('session') session: string,
     @Body() dto: MuteChatDto,
   ): Promise<SuccessResponseDto> {
-    await this.chatService.mute(session, dto.jid, dto.mute ?? null);
+    await this.chatsService.mute(session, dto.jid, dto.mute ?? null);
     return { success: true };
   }
 
@@ -68,7 +68,7 @@ export class ChatController {
     @Param('session') session: string,
     @Body() dto: PinChatDto,
   ): Promise<SuccessResponseDto> {
-    await this.chatService.pin(session, dto.jid, dto.pin);
+    await this.chatsService.pin(session, dto.jid, dto.pin);
     return { success: true };
   }
 
@@ -84,7 +84,7 @@ export class ChatController {
     @Param('session') session: string,
     @Body() dto: MarkReadDto,
   ): Promise<SuccessResponseDto> {
-    await this.chatService.markRead(session, dto.jid, dto.read);
+    await this.chatsService.markRead(session, dto.jid, dto.read);
     return { success: true };
   }
 
@@ -100,7 +100,7 @@ export class ChatController {
     @Param('session') session: string,
     @Body() dto: ChatJidDto,
   ): Promise<SuccessResponseDto> {
-    await this.chatService.delete(session, dto.jid);
+    await this.chatsService.delete(session, dto.jid);
     return { success: true };
   }
 
@@ -116,7 +116,7 @@ export class ChatController {
     @Param('session') session: string,
     @Body() dto: DisappearingMessagesDto,
   ): Promise<SuccessResponseDto> {
-    await this.chatService.setDisappearingMessages(
+    await this.chatsService.setDisappearingMessages(
       session,
       dto.jid,
       dto.expiration,
@@ -136,7 +136,7 @@ export class ChatController {
     @Param('session') session: string,
     @Body() dto: StarMessageDto,
   ): Promise<SuccessResponseDto> {
-    await this.chatService.starMessage(
+    await this.chatsService.starMessage(
       session,
       dto.jid,
       dto.messageId,
