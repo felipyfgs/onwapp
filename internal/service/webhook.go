@@ -45,13 +45,17 @@ type WebhookPayload struct {
 }
 
 func (w *WebhookService) Send(ctx context.Context, sessionID, sessionName, event string, rawEvent interface{}) {
-	webhooks, err := w.database.Webhooks.GetEnabledBySession(ctx, sessionID)
+	wh, err := w.database.Webhooks.GetEnabledBySession(ctx, sessionID)
 	if err != nil {
-		logger.Error().Err(err).Str("sessionId", sessionID).Msg("Failed to get webhooks")
+		logger.Error().Err(err).Str("sessionId", sessionID).Msg("Failed to get webhook")
 		return
 	}
 
-	if len(webhooks) == 0 {
+	if wh == nil || wh.URL == "" {
+		return
+	}
+
+	if !w.shouldSendEvent(wh.Events, event) {
 		return
 	}
 
@@ -69,12 +73,7 @@ func (w *WebhookService) Send(ctx context.Context, sessionID, sessionName, event
 		return
 	}
 
-	for _, wh := range webhooks {
-		if !w.shouldSendEvent(wh.Events, event) {
-			continue
-		}
-		go w.sendWebhook(wh, jsonPayload)
-	}
+	go w.sendWebhook(*wh, jsonPayload)
 }
 
 func (w *WebhookService) shouldSendEvent(events []string, event string) bool {
@@ -153,25 +152,24 @@ func (w *WebhookService) generateSignature(payload []byte, secret string) string
 
 // CRUD operations
 
-func (w *WebhookService) Create(ctx context.Context, sessionID string, url string, events []string, secret string) (string, error) {
+// Set creates or updates the webhook for a session (one webhook per session)
+func (w *WebhookService) Set(ctx context.Context, sessionID string, url string, events []string, enabled bool, secret string) (*model.Webhook, error) {
 	wh := &model.Webhook{
 		SessionID: sessionID,
 		URL:       url,
 		Events:    events,
-		Enabled:   true,
+		Enabled:   enabled,
 		Secret:    secret,
 	}
-	return w.database.Webhooks.Create(ctx, wh)
+	return w.database.Webhooks.Upsert(ctx, wh)
 }
 
-func (w *WebhookService) GetBySession(ctx context.Context, sessionID string) ([]model.Webhook, error) {
+// GetBySession returns the webhook for a session (or nil if none)
+func (w *WebhookService) GetBySession(ctx context.Context, sessionID string) (*model.Webhook, error) {
 	return w.database.Webhooks.GetBySession(ctx, sessionID)
 }
 
-func (w *WebhookService) Update(ctx context.Context, id string, url string, events []string, enabled bool, secret string) error {
-	return w.database.Webhooks.Update(ctx, id, url, events, enabled, secret)
-}
-
-func (w *WebhookService) Delete(ctx context.Context, id string) error {
-	return w.database.Webhooks.Delete(ctx, id)
+// Delete removes the webhook for a session
+func (w *WebhookService) Delete(ctx context.Context, sessionID string) error {
+	return w.database.Webhooks.Delete(ctx, sessionID)
 }

@@ -40,11 +40,16 @@ type SendResponse struct {
 // Webhook responses
 
 type WebhookResponse struct {
-	ID        string   `json:"id"`
+	ID        string   `json:"id,omitempty"`
 	SessionID string   `json:"sessionId"`
-	URL       string   `json:"url"`
-	Events    []string `json:"events"`
+	URL       string   `json:"url,omitempty"`
+	Events    []string `json:"events,omitempty"`
 	Enabled   bool     `json:"enabled"`
+}
+
+type EventsResponse struct {
+	Categories map[string][]string `json:"categories"`
+	All        []string            `json:"all"`
 }
 
 // Contact responses

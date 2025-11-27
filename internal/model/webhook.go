@@ -12,14 +12,3 @@ type Webhook struct {
 	CreatedAt *time.Time
 	UpdatedAt *time.Time
 }
-
-type WebhookEvent string
-
-const (
-	WebhookEventMessageReceived     WebhookEvent = "message.received"
-	WebhookEventMessageSent         WebhookEvent = "message.sent"
-	WebhookEventSessionConnected    WebhookEvent = "session.connected"
-	WebhookEventSessionDisconnected WebhookEvent = "session.disconnected"
-	WebhookEventSessionLoggedOut    WebhookEvent = "session.logged_out"
-	WebhookEventAll                 WebhookEvent = "*"
-)

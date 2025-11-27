@@ -34,46 +34,103 @@ func (s *EventService) HandleEvent(session *model.Session, evt interface{}) {
 
 	// Log and handle based on event type
 	switch e := evt.(type) {
+	// Connection events
 	case *events.Connected:
 		s.handleConnected(ctx, session)
 	case *events.Disconnected:
 		s.handleDisconnected(ctx, session)
 	case *events.LoggedOut:
 		s.handleLoggedOut(ctx, session, e)
+	case *events.ConnectFailure:
+		s.handleConnectFailure(ctx, session, e)
+	case *events.StreamReplaced:
+		s.handleStreamReplaced(ctx, session, e)
+	case *events.StreamError:
+		s.handleStreamError(ctx, session, e)
+	case *events.TemporaryBan:
+		s.handleTemporaryBan(ctx, session, e)
+	case *events.ClientOutdated:
+		s.handleClientOutdated(ctx, session, e)
+	case *events.KeepAliveTimeout:
+		s.handleKeepAliveTimeout(ctx, session, e)
+	case *events.KeepAliveRestored:
+		s.handleKeepAliveRestored(ctx, session, e)
+	case *events.PairSuccess:
+		s.handlePairSuccess(ctx, session, e)
+	case *events.PairError:
+		s.handlePairError(ctx, session, e)
+
+	// Message events
 	case *events.Message:
 		s.handleMessage(ctx, session, e)
 	case *events.Receipt:
 		s.handleReceipt(ctx, session, e)
+	case *events.UndecryptableMessage:
+		s.handleUndecryptableMessage(ctx, session, e)
+	case *events.MediaRetry:
+		s.handleMediaRetry(ctx, session, e)
+
+	// Presence events
 	case *events.Presence:
 		s.handlePresence(ctx, session, e)
 	case *events.ChatPresence:
 		s.handleChatPresence(ctx, session, e)
+
+	// Sync events
 	case *events.HistorySync:
 		s.handleHistorySync(ctx, session, e)
-	case *events.PushName:
-		s.handlePushName(ctx, session, e)
-	case *events.CallOffer:
-		s.handleCallOffer(ctx, session, e)
-	case *events.CallAccept:
-		s.handleCallAccept(ctx, session, e)
-	case *events.CallTerminate:
-		s.handleCallTerminate(ctx, session, e)
-	case *events.GroupInfo:
-		s.handleGroupInfo(ctx, session, e)
-	case *events.JoinedGroup:
-		s.handleJoinedGroup(ctx, session, e)
-	case *events.Picture:
-		s.handlePicture(ctx, session, e)
-	case *events.IdentityChange:
-		s.handleIdentityChange(ctx, session, e)
-	case *events.PrivacySettings:
-		s.handlePrivacySettings(ctx, session, e)
 	case *events.OfflineSyncPreview:
 		s.handleOfflineSyncPreview(ctx, session, e)
 	case *events.OfflineSyncCompleted:
 		s.handleOfflineSyncCompleted(ctx, session, e)
+	case *events.AppState:
+		s.handleAppState(ctx, session, e)
+	case *events.AppStateSyncComplete:
+		s.handleAppStateSyncComplete(ctx, session, e)
+
+	// Contact events
+	case *events.PushName:
+		s.handlePushName(ctx, session, e)
+	case *events.Picture:
+		s.handlePicture(ctx, session, e)
+	case *events.Contact:
+		s.handleContact(ctx, session, e)
+	case *events.BusinessName:
+		s.handleBusinessName(ctx, session, e)
+
+	// Call events
+	case *events.CallOffer:
+		s.handleCallOffer(ctx, session, e)
+	case *events.CallOfferNotice:
+		s.handleCallOfferNotice(ctx, session, e)
+	case *events.CallAccept:
+		s.handleCallAccept(ctx, session, e)
+	case *events.CallPreAccept:
+		s.handleCallPreAccept(ctx, session, e)
+	case *events.CallReject:
+		s.handleCallReject(ctx, session, e)
+	case *events.CallTerminate:
+		s.handleCallTerminate(ctx, session, e)
+	case *events.CallTransport:
+		s.handleCallTransport(ctx, session, e)
+	case *events.CallRelayLatency:
+		s.handleCallRelayLatency(ctx, session, e)
+
+	// Group events
+	case *events.GroupInfo:
+		s.handleGroupInfo(ctx, session, e)
+	case *events.JoinedGroup:
+		s.handleJoinedGroup(ctx, session, e)
+
+	// Privacy events
+	case *events.IdentityChange:
+		s.handleIdentityChange(ctx, session, e)
+	case *events.PrivacySettings:
+		s.handlePrivacySettings(ctx, session, e)
 	case *events.Blocklist:
 		s.handleBlocklist(ctx, session, e)
+
+	// Newsletter events
 	case *events.NewsletterJoin:
 		s.handleNewsletterJoin(ctx, session, e)
 	case *events.NewsletterLeave:
@@ -82,6 +139,29 @@ func (s *EventService) HandleEvent(session *model.Session, evt interface{}) {
 		s.handleNewsletterMuteChange(ctx, session, e)
 	case *events.NewsletterLiveUpdate:
 		s.handleNewsletterLiveUpdate(ctx, session, e)
+
+	// Chat management events (AppState)
+	case *events.Mute:
+		s.handleMute(ctx, session, e)
+	case *events.Archive:
+		s.handleArchive(ctx, session, e)
+	case *events.Pin:
+		s.handlePin(ctx, session, e)
+	case *events.Star:
+		s.handleStar(ctx, session, e)
+	case *events.DeleteForMe:
+		s.handleDeleteForMe(ctx, session, e)
+	case *events.DeleteChat:
+		s.handleDeleteChat(ctx, session, e)
+	case *events.ClearChat:
+		s.handleClearChat(ctx, session, e)
+	case *events.MarkChatAsRead:
+		s.handleMarkChatAsRead(ctx, session, e)
+	case *events.LabelEdit:
+		s.handleLabelEdit(ctx, session, e)
+	case *events.LabelAssociationChat:
+		s.handleLabelAssociationChat(ctx, session, e)
+
 	default:
 		logger.Debug().
 			Str("session", session.Name).
@@ -113,7 +193,7 @@ func (s *EventService) handleConnected(ctx context.Context, session *model.Sessi
 		logger.Warn().Err(err).Str("session", session.Name).Msg("Failed to update session status")
 	}
 
-	s.sendWebhook(ctx, session, "session.connected", nil)
+	s.sendWebhook(ctx, session, string(model.EventSessionConnected), nil)
 }
 
 func (s *EventService) handleDisconnected(ctx context.Context, session *model.Session) {
@@ -128,7 +208,7 @@ func (s *EventService) handleDisconnected(ctx context.Context, session *model.Se
 		logger.Warn().Err(err).Str("session", session.Name).Msg("Failed to update session status")
 	}
 
-	s.sendWebhook(ctx, session, "session.disconnected", nil)
+	s.sendWebhook(ctx, session, string(model.EventSessionDisconnected), nil)
 }
 
 func (s *EventService) handleLoggedOut(ctx context.Context, session *model.Session, e *events.LoggedOut) {
@@ -144,7 +224,7 @@ func (s *EventService) handleLoggedOut(ctx context.Context, session *model.Sessi
 		logger.Warn().Err(err).Str("session", session.Name).Msg("Failed to update session status")
 	}
 
-	s.sendWebhook(ctx, session, "session.logged_out", e)
+	s.sendWebhook(ctx, session, string(model.EventSessionLoggedOut), e)
 }
 
 // Message events
@@ -226,7 +306,7 @@ func (s *EventService) handleMessage(ctx context.Context, session *model.Session
 		logger.Warn().Err(err).Str("session", session.Name).Str("messageId", e.Info.ID).Msg("Failed to save message")
 	}
 
-	s.sendWebhook(ctx, session, "message.received", e)
+	s.sendWebhook(ctx, session, string(model.EventMessageReceived), e)
 }
 
 func (s *EventService) handleReaction(ctx context.Context, session *model.Session, e *events.Message, reaction *waE2E.ReactionMessage) {
@@ -278,7 +358,7 @@ func (s *EventService) handleReaction(ctx context.Context, session *model.Sessio
 		}
 	}
 
-	s.sendWebhook(ctx, session, "message.reaction", e)
+	s.sendWebhook(ctx, session, string(model.EventMessageReaction), e)
 }
 
 func (s *EventService) handleProtocolMessage(ctx context.Context, session *model.Session, e *events.Message, proto *waE2E.ProtocolMessage) {
@@ -313,7 +393,7 @@ func (s *EventService) handleProtocolMessage(ctx context.Context, session *model
 			logger.Warn().Err(err).Str("msgId", targetMsgID).Msg("Failed to save delete update")
 		}
 
-		s.sendWebhook(ctx, session, "message.deleted", e)
+		s.sendWebhook(ctx, session, string(model.EventMessageDeleted), e)
 		return
 	}
 
@@ -360,7 +440,7 @@ func (s *EventService) handleMessageEdit(ctx context.Context, session *model.Ses
 		logger.Warn().Err(err).Str("msgId", targetMsgID).Msg("Failed to save edit update")
 	}
 
-	s.sendWebhook(ctx, session, "message.edited", e)
+	s.sendWebhook(ctx, session, string(model.EventMessageEdited), e)
 }
 
 func (s *EventService) handleReceipt(ctx context.Context, session *model.Session, e *events.Receipt) {
@@ -373,7 +453,7 @@ func (s *EventService) handleReceipt(ctx context.Context, session *model.Session
 		Interface("raw", e).
 		Msg("Receipt received")
 
-	s.sendWebhook(ctx, session, "message.receipt", e)
+	s.sendWebhook(ctx, session, string(model.EventMessageReceipt), e)
 }
 
 // Presence events
@@ -387,7 +467,7 @@ func (s *EventService) handlePresence(ctx context.Context, session *model.Sessio
 		Time("lastSeen", e.LastSeen).
 		Msg("Presence update")
 
-	s.sendWebhook(ctx, session, "presence.update", e)
+	s.sendWebhook(ctx, session, string(model.EventPresenceUpdate), e)
 }
 
 func (s *EventService) handleChatPresence(ctx context.Context, session *model.Session, e *events.ChatPresence) {
@@ -400,7 +480,7 @@ func (s *EventService) handleChatPresence(ctx context.Context, session *model.Se
 		Str("media", string(e.Media)).
 		Msg("Chat presence")
 
-	s.sendWebhook(ctx, session, "chat.presence", e)
+	s.sendWebhook(ctx, session, string(model.EventChatPresence), e)
 }
 
 // Sync events
@@ -546,7 +626,7 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 	}
 
 	// Send webhook
-	s.sendWebhook(ctx, session, "history.sync", e)
+	s.sendWebhook(ctx, session, string(model.EventHistorySync), e)
 }
 
 func (s *EventService) buildReactionsJSON(reactions []*waWeb.Reaction) []byte {
@@ -787,7 +867,7 @@ func (s *EventService) handlePushName(ctx context.Context, session *model.Sessio
 		Str("newName", e.NewPushName).
 		Msg("Push name changed")
 
-	s.sendWebhook(ctx, session, "contact.push_name", e)
+	s.sendWebhook(ctx, session, string(model.EventContactPushName), e)
 }
 
 func (s *EventService) handlePicture(ctx context.Context, session *model.Session, e *events.Picture) {
@@ -798,7 +878,7 @@ func (s *EventService) handlePicture(ctx context.Context, session *model.Session
 		Bool("removed", e.Remove).
 		Msg("Picture changed")
 
-	s.sendWebhook(ctx, session, "contact.picture", e)
+	s.sendWebhook(ctx, session, string(model.EventContactPicture), e)
 }
 
 func (s *EventService) handleIdentityChange(ctx context.Context, session *model.Session, e *events.IdentityChange) {
@@ -829,7 +909,7 @@ func (s *EventService) handleCallOffer(ctx context.Context, session *model.Sessi
 		Str("callId", e.CallID).
 		Msg("Event: Call offer received")
 
-	s.sendWebhook(ctx, session, "call.offer", e)
+	s.sendWebhook(ctx, session, string(model.EventCallOffer), e)
 }
 
 func (s *EventService) handleCallAccept(ctx context.Context, session *model.Session, e *events.CallAccept) {
@@ -840,7 +920,7 @@ func (s *EventService) handleCallAccept(ctx context.Context, session *model.Sess
 		Str("callId", e.CallID).
 		Msg("Event: Call accepted")
 
-	s.sendWebhook(ctx, session, "call.accept", e)
+	s.sendWebhook(ctx, session, string(model.EventCallAccept), e)
 }
 
 func (s *EventService) handleCallTerminate(ctx context.Context, session *model.Session, e *events.CallTerminate) {
@@ -852,7 +932,7 @@ func (s *EventService) handleCallTerminate(ctx context.Context, session *model.S
 		Str("reason", e.Reason).
 		Msg("Event: Call terminated")
 
-	s.sendWebhook(ctx, session, "call.terminate", e)
+	s.sendWebhook(ctx, session, string(model.EventCallTerminate), e)
 }
 
 // Group events
@@ -865,7 +945,7 @@ func (s *EventService) handleGroupInfo(ctx context.Context, session *model.Sessi
 		Str("notify", e.Notify).
 		Msg("Event: Group info changed")
 
-	s.sendWebhook(ctx, session, "group.update", e)
+	s.sendWebhook(ctx, session, string(model.EventGroupUpdate), e)
 }
 
 func (s *EventService) handleJoinedGroup(ctx context.Context, session *model.Session, e *events.JoinedGroup) {
@@ -876,7 +956,7 @@ func (s *EventService) handleJoinedGroup(ctx context.Context, session *model.Ses
 		Str("name", e.GroupInfo.GroupName.Name).
 		Msg("Event: Joined group")
 
-	s.sendWebhook(ctx, session, "group.joined", e)
+	s.sendWebhook(ctx, session, string(model.EventGroupJoined), e)
 }
 
 // Privacy events
@@ -920,6 +1000,369 @@ func (s *EventService) handleNewsletterLiveUpdate(ctx context.Context, session *
 		Str("event", "newsletter_live_update").
 		Str("id", e.JID.String()).
 		Msg("Event: Newsletter live update")
+}
+
+// New connection event handlers
+
+func (s *EventService) handleConnectFailure(ctx context.Context, session *model.Session, e *events.ConnectFailure) {
+	session.SetStatus(model.StatusDisconnected)
+
+	logger.Error().
+		Str("session", session.Name).
+		Str("event", "connect_failure").
+		Int("reason", int(e.Reason)).
+		Str("message", e.Message).
+		Msg("Connection failed")
+
+	if err := s.database.Sessions.UpdateStatus(ctx, session.Name, "disconnected"); err != nil {
+		logger.Warn().Err(err).Str("session", session.Name).Msg("Failed to update session status")
+	}
+
+	s.sendWebhook(ctx, session, string(model.EventConnectFailure), e)
+}
+
+func (s *EventService) handleStreamReplaced(ctx context.Context, session *model.Session, e *events.StreamReplaced) {
+	session.SetStatus(model.StatusDisconnected)
+
+	logger.Warn().
+		Str("session", session.Name).
+		Str("event", "stream_replaced").
+		Msg("Stream replaced by another connection")
+
+	if err := s.database.Sessions.UpdateStatus(ctx, session.Name, "disconnected"); err != nil {
+		logger.Warn().Err(err).Str("session", session.Name).Msg("Failed to update session status")
+	}
+
+	s.sendWebhook(ctx, session, string(model.EventStreamReplaced), e)
+}
+
+func (s *EventService) handleStreamError(ctx context.Context, session *model.Session, e *events.StreamError) {
+	logger.Error().
+		Str("session", session.Name).
+		Str("event", "stream_error").
+		Str("code", e.Code).
+		Msg("Stream error")
+
+	s.sendWebhook(ctx, session, string(model.EventStreamError), e)
+}
+
+func (s *EventService) handleTemporaryBan(ctx context.Context, session *model.Session, e *events.TemporaryBan) {
+	session.SetStatus(model.StatusDisconnected)
+
+	logger.Error().
+		Str("session", session.Name).
+		Str("event", "temporary_ban").
+		Int("code", int(e.Code)).
+		Dur("expire", e.Expire).
+		Msg("Temporarily banned")
+
+	if err := s.database.Sessions.UpdateStatus(ctx, session.Name, "banned"); err != nil {
+		logger.Warn().Err(err).Str("session", session.Name).Msg("Failed to update session status")
+	}
+
+	s.sendWebhook(ctx, session, string(model.EventTemporaryBan), e)
+}
+
+func (s *EventService) handleClientOutdated(ctx context.Context, session *model.Session, e *events.ClientOutdated) {
+	session.SetStatus(model.StatusDisconnected)
+
+	logger.Error().
+		Str("session", session.Name).
+		Str("event", "client_outdated").
+		Msg("Client version outdated")
+
+	if err := s.database.Sessions.UpdateStatus(ctx, session.Name, "outdated"); err != nil {
+		logger.Warn().Err(err).Str("session", session.Name).Msg("Failed to update session status")
+	}
+
+	s.sendWebhook(ctx, session, string(model.EventClientOutdated), e)
+}
+
+func (s *EventService) handleKeepAliveTimeout(ctx context.Context, session *model.Session, e *events.KeepAliveTimeout) {
+	logger.Warn().
+		Str("session", session.Name).
+		Str("event", "keepalive_timeout").
+		Int("errorCount", e.ErrorCount).
+		Time("lastSuccess", e.LastSuccess).
+		Msg("Keep alive timeout")
+
+	s.sendWebhook(ctx, session, string(model.EventKeepAliveTimeout), e)
+}
+
+func (s *EventService) handleKeepAliveRestored(ctx context.Context, session *model.Session, e *events.KeepAliveRestored) {
+	logger.Info().
+		Str("session", session.Name).
+		Str("event", "keepalive_restored").
+		Msg("Keep alive restored")
+
+	s.sendWebhook(ctx, session, string(model.EventKeepAliveRestored), e)
+}
+
+func (s *EventService) handlePairSuccess(ctx context.Context, session *model.Session, e *events.PairSuccess) {
+	logger.Info().
+		Str("session", session.Name).
+		Str("event", "pair_success").
+		Str("jid", e.ID.String()).
+		Str("platform", e.Platform).
+		Str("businessName", e.BusinessName).
+		Msg("Pairing successful")
+
+	s.sendWebhook(ctx, session, string(model.EventPairSuccess), e)
+}
+
+func (s *EventService) handlePairError(ctx context.Context, session *model.Session, e *events.PairError) {
+	logger.Error().
+		Str("session", session.Name).
+		Str("event", "pair_error").
+		Str("id", e.ID.String()).
+		Str("businessName", e.BusinessName).
+		Msg("Pairing error")
+
+	s.sendWebhook(ctx, session, string(model.EventPairError), e)
+}
+
+// New message event handlers
+
+func (s *EventService) handleUndecryptableMessage(ctx context.Context, session *model.Session, e *events.UndecryptableMessage) {
+	logger.Warn().
+		Str("session", session.Name).
+		Str("event", "undecryptable_message").
+		Str("from", e.Info.Sender.String()).
+		Str("chat", e.Info.Chat.String()).
+		Bool("isUnavailable", e.IsUnavailable).
+		Msg("Undecryptable message received")
+
+	s.sendWebhook(ctx, session, string(model.EventMessageUndecryptable), e)
+}
+
+func (s *EventService) handleMediaRetry(ctx context.Context, session *model.Session, e *events.MediaRetry) {
+	logger.Debug().
+		Str("session", session.Name).
+		Str("event", "media_retry").
+		Str("messageId", e.MessageID).
+		Str("chat", e.ChatID.String()).
+		Msg("Media retry request")
+
+	s.sendWebhook(ctx, session, string(model.EventMediaRetry), e)
+}
+
+// New sync event handlers
+
+func (s *EventService) handleAppState(ctx context.Context, session *model.Session, e *events.AppState) {
+	logger.Debug().
+		Str("session", session.Name).
+		Str("event", "app_state").
+		Strs("index", e.Index).
+		Msg("App state received")
+
+	s.sendWebhook(ctx, session, string(model.EventAppStateSync), e)
+}
+
+func (s *EventService) handleAppStateSyncComplete(ctx context.Context, session *model.Session, e *events.AppStateSyncComplete) {
+	logger.Info().
+		Str("session", session.Name).
+		Str("event", "app_state_sync_complete").
+		Str("name", string(e.Name)).
+		Msg("App state sync complete")
+
+	s.sendWebhook(ctx, session, string(model.EventAppStateSyncComplete), e)
+}
+
+// New contact event handlers
+
+func (s *EventService) handleContact(ctx context.Context, session *model.Session, e *events.Contact) {
+	logger.Info().
+		Str("session", session.Name).
+		Str("event", "contact").
+		Str("jid", e.JID.String()).
+		Time("timestamp", e.Timestamp).
+		Msg("Contact updated")
+
+	s.sendWebhook(ctx, session, string(model.EventContactUpdate), e)
+}
+
+func (s *EventService) handleBusinessName(ctx context.Context, session *model.Session, e *events.BusinessName) {
+	logger.Info().
+		Str("session", session.Name).
+		Str("event", "business_name").
+		Str("jid", e.JID.String()).
+		Str("oldName", e.OldBusinessName).
+		Str("newName", e.NewBusinessName).
+		Msg("Business name changed")
+
+	s.sendWebhook(ctx, session, string(model.EventContactBusinessName), e)
+}
+
+// New call event handlers
+
+func (s *EventService) handleCallOfferNotice(ctx context.Context, session *model.Session, e *events.CallOfferNotice) {
+	logger.Info().
+		Str("session", session.Name).
+		Str("event", "call_offer_notice").
+		Str("from", e.CallCreator.String()).
+		Str("callId", e.CallID).
+		Str("media", e.Media).
+		Str("type", e.Type).
+		Msg("Call offer notice received")
+
+	s.sendWebhook(ctx, session, string(model.EventCallOfferNotice), e)
+}
+
+func (s *EventService) handleCallPreAccept(ctx context.Context, session *model.Session, e *events.CallPreAccept) {
+	logger.Info().
+		Str("session", session.Name).
+		Str("event", "call_pre_accept").
+		Str("from", e.CallCreator.String()).
+		Str("callId", e.CallID).
+		Msg("Call pre-accepted")
+
+	s.sendWebhook(ctx, session, string(model.EventCallPreAccept), e)
+}
+
+func (s *EventService) handleCallReject(ctx context.Context, session *model.Session, e *events.CallReject) {
+	logger.Info().
+		Str("session", session.Name).
+		Str("event", "call_reject").
+		Str("from", e.CallCreator.String()).
+		Str("callId", e.CallID).
+		Msg("Call rejected")
+
+	s.sendWebhook(ctx, session, string(model.EventCallReject), e)
+}
+
+func (s *EventService) handleCallTransport(ctx context.Context, session *model.Session, e *events.CallTransport) {
+	logger.Debug().
+		Str("session", session.Name).
+		Str("event", "call_transport").
+		Str("from", e.CallCreator.String()).
+		Str("callId", e.CallID).
+		Msg("Call transport")
+
+	s.sendWebhook(ctx, session, string(model.EventCallTransport), e)
+}
+
+func (s *EventService) handleCallRelayLatency(ctx context.Context, session *model.Session, e *events.CallRelayLatency) {
+	logger.Debug().
+		Str("session", session.Name).
+		Str("event", "call_relay_latency").
+		Str("callId", e.CallID).
+		Msg("Call relay latency")
+
+	s.sendWebhook(ctx, session, string(model.EventCallRelayLatency), e)
+}
+
+// Chat management event handlers (AppState)
+
+func (s *EventService) handleMute(ctx context.Context, session *model.Session, e *events.Mute) {
+	logger.Info().
+		Str("session", session.Name).
+		Str("event", "mute").
+		Str("jid", e.JID.String()).
+		Time("timestamp", e.Timestamp).
+		Msg("Chat mute changed")
+
+	s.sendWebhook(ctx, session, string(model.EventChatMute), e)
+}
+
+func (s *EventService) handleArchive(ctx context.Context, session *model.Session, e *events.Archive) {
+	logger.Info().
+		Str("session", session.Name).
+		Str("event", "archive").
+		Str("jid", e.JID.String()).
+		Time("timestamp", e.Timestamp).
+		Msg("Chat archive changed")
+
+	s.sendWebhook(ctx, session, string(model.EventChatArchive), e)
+}
+
+func (s *EventService) handlePin(ctx context.Context, session *model.Session, e *events.Pin) {
+	logger.Info().
+		Str("session", session.Name).
+		Str("event", "pin").
+		Str("jid", e.JID.String()).
+		Time("timestamp", e.Timestamp).
+		Msg("Chat pin changed")
+
+	s.sendWebhook(ctx, session, string(model.EventChatPin), e)
+}
+
+func (s *EventService) handleStar(ctx context.Context, session *model.Session, e *events.Star) {
+	logger.Info().
+		Str("session", session.Name).
+		Str("event", "star").
+		Str("chat", e.ChatJID.String()).
+		Str("message", e.MessageID).
+		Time("timestamp", e.Timestamp).
+		Msg("Message star changed")
+
+	s.sendWebhook(ctx, session, string(model.EventChatStar), e)
+}
+
+func (s *EventService) handleDeleteForMe(ctx context.Context, session *model.Session, e *events.DeleteForMe) {
+	logger.Info().
+		Str("session", session.Name).
+		Str("event", "delete_for_me").
+		Str("chat", e.ChatJID.String()).
+		Str("message", e.MessageID).
+		Time("timestamp", e.Timestamp).
+		Msg("Message deleted for me")
+
+	s.sendWebhook(ctx, session, string(model.EventChatDeleteForMe), e)
+}
+
+func (s *EventService) handleDeleteChat(ctx context.Context, session *model.Session, e *events.DeleteChat) {
+	logger.Info().
+		Str("session", session.Name).
+		Str("event", "delete_chat").
+		Str("jid", e.JID.String()).
+		Time("timestamp", e.Timestamp).
+		Msg("Chat deleted")
+
+	s.sendWebhook(ctx, session, string(model.EventChatDelete), e)
+}
+
+func (s *EventService) handleClearChat(ctx context.Context, session *model.Session, e *events.ClearChat) {
+	logger.Info().
+		Str("session", session.Name).
+		Str("event", "clear_chat").
+		Str("jid", e.JID.String()).
+		Time("timestamp", e.Timestamp).
+		Msg("Chat cleared")
+
+	s.sendWebhook(ctx, session, string(model.EventChatClear), e)
+}
+
+func (s *EventService) handleMarkChatAsRead(ctx context.Context, session *model.Session, e *events.MarkChatAsRead) {
+	logger.Debug().
+		Str("session", session.Name).
+		Str("event", "mark_chat_as_read").
+		Str("jid", e.JID.String()).
+		Time("timestamp", e.Timestamp).
+		Msg("Chat marked as read")
+
+	s.sendWebhook(ctx, session, string(model.EventChatMarkAsRead), e)
+}
+
+func (s *EventService) handleLabelEdit(ctx context.Context, session *model.Session, e *events.LabelEdit) {
+	logger.Info().
+		Str("session", session.Name).
+		Str("event", "label_edit").
+		Time("timestamp", e.Timestamp).
+		Msg("Label edited")
+
+	s.sendWebhook(ctx, session, string(model.EventLabelEdit), e)
+}
+
+func (s *EventService) handleLabelAssociationChat(ctx context.Context, session *model.Session, e *events.LabelAssociationChat) {
+	logger.Info().
+		Str("session", session.Name).
+		Str("event", "label_association_chat").
+		Str("jid", e.JID.String()).
+		Str("labelID", e.LabelID).
+		Time("timestamp", e.Timestamp).
+		Msg("Label association changed")
+
+	s.sendWebhook(ctx, session, string(model.EventLabelAssociation), e)
 }
 
 // Helper

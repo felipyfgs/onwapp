@@ -65,14 +65,8 @@ type SendReactionRequest struct {
 
 // Webhook requests
 
-type CreateWebhookRequest struct {
-	URL    string   `json:"url" binding:"required" example:"https://example.com/webhook"`
-	Events []string `json:"events" example:"message.received,session.connected"`
-	Secret string   `json:"secret" example:"my-secret-key"`
-}
-
-type UpdateWebhookRequest struct {
-	URL     string   `json:"url" binding:"required" example:"https://example.com/webhook"`
+type SetWebhookRequest struct {
+	URL     string   `json:"url" example:"https://example.com/webhook"`
 	Events  []string `json:"events" example:"message.received,session.connected"`
 	Enabled bool     `json:"enabled" example:"true"`
 	Secret  string   `json:"secret" example:"my-secret-key"`
