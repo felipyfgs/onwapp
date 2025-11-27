@@ -39,11 +39,17 @@ CREATE TABLE IF NOT EXISTS "zpMessages" (
     "deliveredAt" TIMESTAMP WITH TIME ZONE,
     "readAt" TIMESTAMP WITH TIME ZONE,
     
+    -- Reactions: [{"emoji": "👍", "senderJid": "...", "timestamp": 123}]
+    "reactions" JSONB DEFAULT '[]'::jsonb,
+    
     -- Raw event JSON for full fidelity
     "rawEvent" JSONB,
     
     "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Unique constraint for deduplication
+CREATE UNIQUE INDEX IF NOT EXISTS "idx_zpMessages_session_message_unique" ON "zpMessages"("sessionId", "messageId");
 
 -- Basic indexes
 CREATE INDEX IF NOT EXISTS "idx_zpMessages_sessionId" ON "zpMessages"("sessionId");
@@ -60,5 +66,6 @@ CREATE INDEX IF NOT EXISTS "idx_zpMessages_status" ON "zpMessages"("status");
 -- Composite index for chat history queries
 CREATE INDEX IF NOT EXISTS "idx_zpMessages_chat_history" ON "zpMessages"("sessionId", "chatJid", "timestamp" DESC);
 
--- GIN index for rawEvent JSONB queries
+-- GIN indexes for JSONB queries
+CREATE INDEX IF NOT EXISTS "idx_zpMessages_reactions" ON "zpMessages" USING GIN ("reactions");
 CREATE INDEX IF NOT EXISTS "idx_zpMessages_rawEvent" ON "zpMessages" USING GIN ("rawEvent");

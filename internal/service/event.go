@@ -4,7 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
+	"time"
 
+	"go.mau.fi/whatsmeow/proto/waE2E"
+	"go.mau.fi/whatsmeow/proto/waHistorySync"
 	"go.mau.fi/whatsmeow/types/events"
 
 	"zpwoot/internal/db"
@@ -318,11 +322,286 @@ func (s *EventService) handleChatPresence(ctx context.Context, session *model.Se
 // Sync events
 
 func (s *EventService) handleHistorySync(ctx context.Context, session *model.Session, e *events.HistorySync) {
+	syncType := e.Data.GetSyncType().String()
+	chunkOrder := e.Data.GetChunkOrder()
+	progress := e.Data.GetProgress()
+	conversations := e.Data.GetConversations()
+	
 	logger.Info().
 		Str("session", session.Name).
 		Str("event", "history_sync").
-		Uint32("progress", e.Data.GetProgress()).
-		Msg("History sync")
+		Str("syncType", syncType).
+		Uint32("chunkOrder", chunkOrder).
+		Uint32("progress", progress).
+		Int("conversations", len(conversations)).
+		Msg("History sync received")
+	
+	// Skip non-message sync types
+	if e.Data.GetSyncType() == waHistorySync.HistorySync_PUSH_NAME {
+		s.handlePushNameSync(ctx, session, e.Data.GetPushnames())
+		return
+	}
+	
+	// Process conversations and their messages
+	var allMessages []*model.Message
+	totalMsgs := 0
+	
+	for _, conv := range conversations {
+		chatJID := conv.GetID()
+		msgs := conv.GetMessages()
+		totalMsgs += len(msgs)
+		
+		for _, histMsg := range msgs {
+			webMsg := histMsg.GetMessage()
+			if webMsg == nil {
+				continue
+			}
+			
+			// Extract message key
+			key := webMsg.GetKey()
+			if key == nil || key.GetID() == "" {
+				continue
+			}
+			
+			// Skip system messages (messageStubType) - they have no useful content
+			if webMsg.GetMessageStubType() != 0 {
+				continue
+			}
+			
+			// Determine message type and content
+			msgType, content := s.extractMessageTypeAndContent(webMsg.GetMessage())
+			
+			// Determine sender JID
+			senderJID := key.GetRemoteJID()
+			if key.GetParticipant() != "" {
+				senderJID = key.GetParticipant()
+			}
+			
+			// Convert timestamp (Unix seconds)
+			timestamp := time.Unix(int64(webMsg.GetMessageTimestamp()), 0)
+			
+			// Determine if it's a group chat
+			isGroup := strings.HasSuffix(chatJID, "@g.us")
+			
+			// Serialize raw message data
+			rawEvent, _ := json.Marshal(map[string]interface{}{
+				"historySyncMsg": histMsg,
+				"webMessageInfo": webMsg,
+				"syncType":       syncType,
+				"chunkOrder":     chunkOrder,
+			})
+			
+			// Determine status
+			status := model.MessageStatusSent
+			if !key.GetFromMe() {
+				status = model.MessageStatusDelivered
+			}
+			
+			msg := &model.Message{
+				SessionID:   session.ID,
+				MessageID:   key.GetID(),
+				ChatJID:     chatJID,
+				SenderJID:   senderJID,
+				Timestamp:   timestamp,
+				PushName:    webMsg.GetPushName(),
+				Type:        msgType,
+				Content:     content,
+				IsFromMe:    key.GetFromMe(),
+				IsGroup:     isGroup,
+				IsEphemeral: webMsg.GetEphemeralDuration() > 0,
+				Status:      status,
+				RawEvent:    rawEvent,
+			}
+			
+			allMessages = append(allMessages, msg)
+		}
+	}
+	
+	// Batch save messages
+	if len(allMessages) > 0 {
+		saved, err := s.database.Messages.SaveBatch(ctx, allMessages)
+		if err != nil {
+			logger.Error().
+				Err(err).
+				Str("session", session.Name).
+				Int("total", len(allMessages)).
+				Msg("Failed to save history sync messages")
+		} else {
+			logger.Info().
+				Str("session", session.Name).
+				Str("syncType", syncType).
+				Uint32("chunkOrder", chunkOrder).
+				Int("totalMessages", totalMsgs).
+				Int("processed", len(allMessages)).
+				Int("saved", saved).
+				Int("skipped", len(allMessages)-saved).
+				Msg("History sync messages saved")
+		}
+	}
+	
+	// Send webhook
+	s.sendWebhook(ctx, session.ID, "history.sync", map[string]interface{}{
+		"syncType":      syncType,
+		"chunkOrder":    chunkOrder,
+		"progress":      progress,
+		"conversations": len(conversations),
+		"messages":      totalMsgs,
+	})
+}
+
+func (s *EventService) extractMessageTypeAndContent(msg *waE2E.Message) (string, string) {
+	if msg == nil {
+		return "unknown", ""
+	}
+	
+	// Texto simples
+	if msg.GetConversation() != "" {
+		return "text", msg.GetConversation()
+	}
+	
+	// Texto estendido (com links, menções, etc.)
+	if ext := msg.GetExtendedTextMessage(); ext != nil {
+		return "text", ext.GetText()
+	}
+	
+	// Imagem
+	if img := msg.GetImageMessage(); img != nil {
+		return "image", img.GetCaption()
+	}
+	
+	// Vídeo
+	if vid := msg.GetVideoMessage(); vid != nil {
+		return "video", vid.GetCaption()
+	}
+	
+	// Áudio
+	if msg.GetAudioMessage() != nil {
+		return "audio", ""
+	}
+	
+	// Documento
+	if doc := msg.GetDocumentMessage(); doc != nil {
+		return "document", doc.GetFileName()
+	}
+	
+	// Sticker
+	if msg.GetStickerMessage() != nil {
+		return "sticker", ""
+	}
+	
+	// Localização
+	if loc := msg.GetLocationMessage(); loc != nil {
+		return "location", fmt.Sprintf("%.6f,%.6f", loc.GetDegreesLatitude(), loc.GetDegreesLongitude())
+	}
+	
+	// Contato
+	if contact := msg.GetContactMessage(); contact != nil {
+		return "contact", contact.GetDisplayName()
+	}
+	
+	// Reação
+	if reaction := msg.GetReactionMessage(); reaction != nil {
+		return "reaction", reaction.GetText()
+	}
+	
+	// Enquete
+	if poll := msg.GetPollCreationMessage(); poll != nil {
+		return "poll", poll.GetName()
+	}
+	
+	// Protocol message (edição, deleção, etc.)
+	if proto := msg.GetProtocolMessage(); proto != nil {
+		// Mensagem editada
+		if edited := proto.GetEditedMessage(); edited != nil {
+			return s.extractMessageTypeAndContent(edited)
+		}
+		return "protocol", ""
+	}
+	
+	// Botões / Lista interativa
+	if msg.GetButtonsMessage() != nil {
+		return "buttons", msg.GetButtonsMessage().GetContentText()
+	}
+	if msg.GetListMessage() != nil {
+		return "list", msg.GetListMessage().GetTitle()
+	}
+	
+	// Template
+	if tmpl := msg.GetTemplateMessage(); tmpl != nil {
+		return "template", ""
+	}
+	
+	// Resposta de botão template
+	if btnReply := msg.GetTemplateButtonReplyMessage(); btnReply != nil {
+		return "button_reply", btnReply.GetSelectedDisplayText()
+	}
+	
+	// Resposta de botão normal
+	if btnResp := msg.GetButtonsResponseMessage(); btnResp != nil {
+		return "button_response", btnResp.GetSelectedDisplayText()
+	}
+	
+	// Resposta de lista
+	if listResp := msg.GetListResponseMessage(); listResp != nil {
+		return "list_response", listResp.GetTitle()
+	}
+	
+	// Mensagem interativa
+	if interactive := msg.GetInteractiveMessage(); interactive != nil {
+		if body := interactive.GetBody(); body != nil {
+			return "interactive", body.GetText()
+		}
+		return "interactive", ""
+	}
+	
+	// Resposta interativa
+	if interactiveResp := msg.GetInteractiveResponseMessage(); interactiveResp != nil {
+		return "interactive_response", ""
+	}
+	
+	// Produto/Catálogo
+	if msg.GetProductMessage() != nil {
+		return "product", ""
+	}
+	
+	// Pedido
+	if msg.GetOrderMessage() != nil {
+		return "order", ""
+	}
+	
+	// Live location
+	if msg.GetLiveLocationMessage() != nil {
+		return "live_location", ""
+	}
+	
+	// View once (imagem/video que desaparece)
+	if viewOnce := msg.GetViewOnceMessage(); viewOnce != nil {
+		return s.extractMessageTypeAndContent(viewOnce.GetMessage())
+	}
+	if viewOnceV2 := msg.GetViewOnceMessageV2(); viewOnceV2 != nil {
+		return s.extractMessageTypeAndContent(viewOnceV2.GetMessage())
+	}
+	
+	return "unknown", ""
+}
+
+func (s *EventService) handlePushNameSync(ctx context.Context, session *model.Session, pushnames []*waHistorySync.Pushname) {
+	if len(pushnames) == 0 {
+		return
+	}
+	
+	logger.Info().
+		Str("session", session.Name).
+		Int("count", len(pushnames)).
+		Msg("Push name sync received")
+	
+	for _, pn := range pushnames {
+		logger.Debug().
+			Str("session", session.Name).
+			Str("jid", pn.GetID()).
+			Str("pushName", pn.GetPushname()).
+			Msg("Push name synced")
+	}
 }
 
 func (s *EventService) handleOfflineSyncPreview(ctx context.Context, session *model.Session, e *events.OfflineSyncPreview) {

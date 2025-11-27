@@ -21,11 +21,12 @@ import (
 var migrationsFS embed.FS
 
 type Database struct {
-	Pool      *pgxpool.Pool
-	Container *sqlstore.Container
-	Sessions  *repository.SessionRepository
-	Messages  *repository.MessageRepository
-	Webhooks  *repository.WebhookRepository
+	Pool           *pgxpool.Pool
+	Container      *sqlstore.Container
+	Sessions       *repository.SessionRepository
+	Messages       *repository.MessageRepository
+	MessageUpdates *repository.MessageUpdateRepository
+	Webhooks       *repository.WebhookRepository
 }
 
 func New(ctx context.Context, databaseURL string) (*Database, error) {
@@ -52,11 +53,12 @@ func New(ctx context.Context, databaseURL string) (*Database, error) {
 	}
 
 	return &Database{
-		Pool:      pool,
-		Container: container,
-		Sessions:  repository.NewSessionRepository(pool),
-		Messages:  repository.NewMessageRepository(pool),
-		Webhooks:  repository.NewWebhookRepository(pool),
+		Pool:           pool,
+		Container:      container,
+		Sessions:       repository.NewSessionRepository(pool),
+		Messages:       repository.NewMessageRepository(pool),
+		MessageUpdates: repository.NewMessageUpdateRepository(pool),
+		Webhooks:       repository.NewWebhookRepository(pool),
 	}, nil
 }
 

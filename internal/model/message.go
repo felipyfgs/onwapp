@@ -59,8 +59,18 @@ type Message struct {
 	DeliveredAt *time.Time    `json:"deliveredAt,omitempty"`
 	ReadAt      *time.Time    `json:"readAt,omitempty"`
 	
+	// Reactions - stored as JSONB array
+	Reactions json.RawMessage `json:"reactions,omitempty"`
+	
 	// Raw event JSON for full fidelity
 	RawEvent json.RawMessage `json:"rawEvent,omitempty"`
 	
 	CreatedAt time.Time `json:"createdAt"`
+}
+
+// Reaction represents a single reaction on a message
+type Reaction struct {
+	Emoji     string `json:"emoji"`
+	SenderJid string `json:"senderJid"`
+	Timestamp int64  `json:"timestamp"`
 }
