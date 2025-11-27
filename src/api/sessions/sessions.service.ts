@@ -111,7 +111,9 @@ export class SessionsService {
         );
       }
       throw new BadRequestException(
-        error instanceof Error ? error.message : 'Failed to request pairing code',
+        error instanceof Error
+          ? error.message
+          : 'Failed to request pairing code',
       );
     }
   }

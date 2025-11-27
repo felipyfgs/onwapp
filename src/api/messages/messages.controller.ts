@@ -398,7 +398,8 @@ export class MessagesController {
   @Post('receipts')
   @ApiOperation({
     summary: 'Send receipts in batch',
-    description: 'Send receipts for multiple messages at once using message keys',
+    description:
+      'Send receipts for multiple messages at once using message keys',
   })
   @ApiParam({ name: 'name', description: 'Session name' })
   @ApiResponse({ status: 200, description: 'Receipts sent' })

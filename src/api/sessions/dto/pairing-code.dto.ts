@@ -21,6 +21,9 @@ export class PairingCodeRequestDto {
 }
 
 export class PairingCodeResponseDto {
-  @ApiProperty({ example: 'ABC12345', description: 'Pairing code to enter on phone' })
+  @ApiProperty({
+    example: 'ABC12345',
+    description: 'Pairing code to enter on phone',
+  })
   code: string;
 }

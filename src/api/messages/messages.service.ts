@@ -286,7 +286,10 @@ export class MessagesService {
       },
     };
 
-    return session.socket.sendMessage(jid, pollContent as unknown as AnyMessageContent);
+    return session.socket.sendMessage(
+      jid,
+      pollContent as unknown as AnyMessageContent,
+    );
   }
 
   async editMessage(sessionName: string, dto: EditMessageDto) {

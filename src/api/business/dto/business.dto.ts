@@ -110,7 +110,8 @@ export class ProductCreateDto {
 
   @ApiPropertyOptional({
     example: 'BR',
-    description: 'ISO country code for product origin (or undefined for no country)',
+    description:
+      'ISO country code for product origin (or undefined for no country)',
   })
   @IsString()
   @IsOptional()

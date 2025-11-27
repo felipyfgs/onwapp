@@ -15,7 +15,11 @@ export class BusinessService {
 
   async getCatalog(sessionName: string, dto: GetCatalogDto) {
     try {
-      return await this.whaileysService.getCatalog(sessionName, dto.jid, dto.limit);
+      return await this.whaileysService.getCatalog(
+        sessionName,
+        dto.jid,
+        dto.limit,
+      );
     } catch (error) {
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Failed to get catalog',
@@ -73,16 +77,20 @@ export class BusinessService {
 
   async updateProduct(sessionName: string, dto: ProductUpdateDto) {
     try {
-      return await this.whaileysService.productUpdate(sessionName, dto.productId, {
-        name: dto.name,
-        description: dto.description,
-        price: dto.price,
-        currency: dto.currency,
-        images: dto.images,
-        url: dto.url,
-        retailerId: dto.retailerId,
-        isHidden: dto.isHidden,
-      });
+      return await this.whaileysService.productUpdate(
+        sessionName,
+        dto.productId,
+        {
+          name: dto.name,
+          description: dto.description,
+          price: dto.price,
+          currency: dto.currency,
+          images: dto.images,
+          url: dto.url,
+          retailerId: dto.retailerId,
+          isHidden: dto.isHidden,
+        },
+      );
     } catch (error) {
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Failed to update product',

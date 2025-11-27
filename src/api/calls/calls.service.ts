@@ -8,7 +8,11 @@ export class CallsService {
 
   async rejectCall(sessionName: string, dto: RejectCallDto): Promise<void> {
     try {
-      await this.whaileysService.rejectCall(sessionName, dto.callId, dto.callFrom);
+      await this.whaileysService.rejectCall(
+        sessionName,
+        dto.callId,
+        dto.callFrom,
+      );
     } catch (error) {
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Failed to reject call',

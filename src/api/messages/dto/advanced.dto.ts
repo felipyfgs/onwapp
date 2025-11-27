@@ -17,7 +17,10 @@ export class UpdateMediaMessageKeyDto {
   @IsNotEmpty()
   id: string;
 
-  @ApiProperty({ example: true, description: 'Whether the message is from you' })
+  @ApiProperty({
+    example: true,
+    description: 'Whether the message is from you',
+  })
   @IsBoolean()
   fromMe: boolean;
 
