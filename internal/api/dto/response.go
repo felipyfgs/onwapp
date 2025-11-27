@@ -80,3 +80,90 @@ type PrivacyResponse struct {
 	CallAdd      string `json:"callAdd"`
 	Online       string `json:"online"`
 }
+
+// Chat responses
+
+type ChatActionResponse struct {
+	Success bool   `json:"success" example:"true"`
+	Status  string `json:"status,omitempty" example:"archived"`
+}
+
+// Contact responses (extended)
+
+type CheckPhoneResult struct {
+	Phone        string `json:"phone"`
+	IsRegistered bool   `json:"isRegistered"`
+	JID          string `json:"jid,omitempty"`
+}
+
+type CheckPhoneResultsResponse struct {
+	Success bool               `json:"success"`
+	Results []CheckPhoneResult `json:"results"`
+}
+
+type ContactInfoResponse struct {
+	Success bool                   `json:"success"`
+	Users   map[string]interface{} `json:"users"`
+}
+
+type AvatarResponse struct {
+	Success bool   `json:"success"`
+	URL     string `json:"url"`
+	ID      string `json:"id,omitempty"`
+}
+
+type ContactsListResponse struct {
+	Success  bool        `json:"success"`
+	Contacts interface{} `json:"contacts"`
+}
+
+type PresenceResponse struct {
+	Success bool   `json:"success"`
+	Status  string `json:"status"`
+}
+
+type ChatPresenceResponse struct {
+	Success bool   `json:"success"`
+	State   string `json:"state"`
+}
+
+// Group responses (extended)
+
+type GroupActionResponse struct {
+	Success bool        `json:"success" example:"true"`
+	GroupID string      `json:"groupId,omitempty" example:"123456789@g.us"`
+	Data    interface{} `json:"data,omitempty"`
+}
+
+type GroupInviteLinkResponse struct {
+	Success bool   `json:"success"`
+	GroupID string `json:"groupId"`
+	Link    string `json:"link"`
+}
+
+// Profile responses (extended)
+
+type ProfileInfoResponse struct {
+	Success bool        `json:"success"`
+	Profile interface{} `json:"profile"`
+}
+
+type SetStatusResponse struct {
+	Success bool   `json:"success"`
+	Status  string `json:"status"`
+}
+
+type SetNameResponse struct {
+	Success bool   `json:"success"`
+	Name    string `json:"name"`
+}
+
+type SetPictureResponse struct {
+	Success   bool   `json:"success"`
+	PictureID string `json:"pictureId"`
+}
+
+type PrivacySettingsResponse struct {
+	Success  bool        `json:"success"`
+	Settings interface{} `json:"settings"`
+}

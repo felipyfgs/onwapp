@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/skip2/go-qrcode"
 
+	"zpwoot/internal/api/dto"
 	"zpwoot/internal/model"
 	"zpwoot/internal/service"
 )
@@ -26,20 +27,20 @@ func NewSessionHandler(sessionService *service.SessionService) *SessionHandler {
 // @Tags         sessions
 // @Accept       json
 // @Produce      json
-// @Success      200    {array}   SessionResponse
-// @Failure      401    {object}  ErrorResponse
+// @Success      200    {array}   dto.SessionResponse
+// @Failure      401    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/fetch [get]
 func (h *SessionHandler) Fetch(c *gin.Context) {
 	sessions := h.sessionService.List()
 
-	response := make([]SessionResponse, 0, len(sessions))
+	response := make([]dto.SessionResponse, 0, len(sessions))
 	for _, name := range sessions {
 		sess, err := h.sessionService.Get(name)
 		if err != nil {
 			continue
 		}
-		resp := SessionResponse{
+		resp := dto.SessionResponse{
 			Name:   sess.Name,
 			Status: string(sess.GetStatus()),
 		}
@@ -59,9 +60,9 @@ func (h *SessionHandler) Fetch(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        name   path      string  true  "Session name"
-// @Success      201    {object}  SessionResponse
-// @Failure      409    {object}  ErrorResponse
-// @Failure      401    {object}  ErrorResponse
+// @Success      201    {object}  dto.SessionResponse
+// @Failure      409    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/create [post]
 func (h *SessionHandler) Create(c *gin.Context) {
@@ -69,11 +70,11 @@ func (h *SessionHandler) Create(c *gin.Context) {
 
 	session, err := h.sessionService.Create(c.Request.Context(), name)
 	if err != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		c.JSON(http.StatusConflict, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, SessionResponse{
+	c.JSON(http.StatusCreated, dto.SessionResponse{
 		Name:   session.Name,
 		Status: string(session.GetStatus()),
 	})
@@ -86,20 +87,20 @@ func (h *SessionHandler) Create(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        name   path      string  true  "Session name"
-// @Success      200    {object}  MessageResponse
-// @Failure      404    {object}  ErrorResponse
-// @Failure      401    {object}  ErrorResponse
+// @Success      200    {object}  dto.MessageResponse
+// @Failure      404    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/delete [delete]
 func (h *SessionHandler) Delete(c *gin.Context) {
 	name := c.Param("name")
 
 	if err := h.sessionService.Delete(c.Request.Context(), name); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "session deleted"})
+	c.JSON(http.StatusOK, dto.MessageResponse{Message: "session deleted"})
 }
 
 // Info godoc
@@ -109,9 +110,9 @@ func (h *SessionHandler) Delete(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        name   path      string  true  "Session name"
-// @Success      200    {object}  SessionResponse
-// @Failure      404    {object}  ErrorResponse
-// @Failure      401    {object}  ErrorResponse
+// @Success      200    {object}  dto.SessionResponse
+// @Failure      404    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/info [get]
 func (h *SessionHandler) Info(c *gin.Context) {
@@ -119,11 +120,11 @@ func (h *SessionHandler) Info(c *gin.Context) {
 
 	session, err := h.sessionService.Get(name)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	resp := SessionResponse{
+	resp := dto.SessionResponse{
 		Name:   session.Name,
 		Status: string(session.GetStatus()),
 	}
@@ -142,9 +143,9 @@ func (h *SessionHandler) Info(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        name   path      string  true  "Session name"
-// @Success      200    {object}  MessageResponse
-// @Failure      500    {object}  ErrorResponse
-// @Failure      401    {object}  ErrorResponse
+// @Success      200    {object}  dto.MessageResponse
+// @Failure      500    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/connect [post]
 func (h *SessionHandler) Connect(c *gin.Context) {
@@ -153,24 +154,24 @@ func (h *SessionHandler) Connect(c *gin.Context) {
 	session, err := h.sessionService.Connect(c.Request.Context(), name)
 	if err != nil {
 		if err.Error() == fmt.Sprintf("session %s not found", name) {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	if session.Client.Store.ID == nil {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "connecting, check terminal for QR code or use /sessions/" + name + "/qr",
-			"status":  string(model.StatusConnecting),
+		c.JSON(http.StatusOK, dto.MessageResponse{
+			Message: "connecting, check terminal for QR code or use /sessions/" + name + "/qr",
+			Status:  string(model.StatusConnecting),
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "connected",
-		"status":  string(session.GetStatus()),
+	c.JSON(http.StatusOK, dto.MessageResponse{
+		Message: "connected",
+		Status:  string(session.GetStatus()),
 	})
 }
 
@@ -181,20 +182,20 @@ func (h *SessionHandler) Connect(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        name   path      string  true  "Session name"
-// @Success      200    {object}  MessageResponse
-// @Failure      500    {object}  ErrorResponse
-// @Failure      401    {object}  ErrorResponse
+// @Success      200    {object}  dto.MessageResponse
+// @Failure      500    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/logout [post]
 func (h *SessionHandler) Logout(c *gin.Context) {
 	name := c.Param("name")
 
 	if err := h.sessionService.Logout(c.Request.Context(), name); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "logged out"})
+	c.JSON(http.StatusOK, dto.MessageResponse{Message: "logged out"})
 }
 
 // Restart godoc
@@ -204,9 +205,9 @@ func (h *SessionHandler) Logout(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        name   path      string  true  "Session name"
-// @Success      200    {object}  MessageResponse
-// @Failure      500    {object}  ErrorResponse
-// @Failure      401    {object}  ErrorResponse
+// @Success      200    {object}  dto.MessageResponse
+// @Failure      500    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/restart [post]
 func (h *SessionHandler) Restart(c *gin.Context) {
@@ -214,13 +215,13 @@ func (h *SessionHandler) Restart(c *gin.Context) {
 
 	session, err := h.sessionService.Restart(c.Request.Context(), name)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "restarted",
-		"status":  string(session.GetStatus()),
+	c.JSON(http.StatusOK, dto.MessageResponse{
+		Message: "restarted",
+		Status:  string(session.GetStatus()),
 	})
 }
 
@@ -232,9 +233,9 @@ func (h *SessionHandler) Restart(c *gin.Context) {
 // @Produce      json
 // @Param        name    path      string  true   "Session name"
 // @Param        format  query     string  false  "Response format (json or image)"  default(json)
-// @Success      200     {object}  QRResponse
-// @Failure      404     {object}  ErrorResponse
-// @Failure      401     {object}  ErrorResponse
+// @Success      200     {object}  dto.QRResponse
+// @Failure      404     {object}  dto.ErrorResponse
+// @Failure      401     {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/qr [get]
 func (h *SessionHandler) QR(c *gin.Context) {
@@ -243,13 +244,13 @@ func (h *SessionHandler) QR(c *gin.Context) {
 
 	session, err := h.sessionService.Get(name)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	qr := session.GetQR()
 	if qr == "" {
-		c.JSON(http.StatusOK, QRResponse{
+		c.JSON(http.StatusOK, dto.QRResponse{
 			Status: string(session.GetStatus()),
 		})
 		return
@@ -258,7 +259,7 @@ func (h *SessionHandler) QR(c *gin.Context) {
 	if format == "image" {
 		png, err := qrcode.Encode(qr, qrcode.Medium, 256)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate QR image"})
+			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to generate QR image"})
 			return
 		}
 		c.Data(http.StatusOK, "image/png", png)
@@ -268,7 +269,7 @@ func (h *SessionHandler) QR(c *gin.Context) {
 	image, _ := qrcode.Encode(qr, qrcode.Medium, 256)
 	base64QR := "data:image/png;base64," + base64.StdEncoding.EncodeToString(image)
 
-	c.JSON(http.StatusOK, QRResponse{
+	c.JSON(http.StatusOK, dto.QRResponse{
 		QR:     base64QR,
 		Status: string(session.GetStatus()),
 	})

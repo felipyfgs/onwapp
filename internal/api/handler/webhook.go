@@ -81,8 +81,8 @@ func (h *WebhookHandler) CreateWebhook(c *gin.Context) {
 // @Tags webhook
 // @Produce json
 // @Param name path string true "Session name"
-// @Success 200 {array} WebhookResponse
-// @Failure 404 {object} ErrorResponse
+// @Success 200 {array} dto.WebhookResponse
+// @Failure 404 {object} dto.ErrorResponse
 // @Security ApiKeyAuth
 // @Router /sessions/{name}/webhook [get]
 func (h *WebhookHandler) ListWebhooks(c *gin.Context) {
@@ -90,19 +90,19 @@ func (h *WebhookHandler) ListWebhooks(c *gin.Context) {
 
 	session, err := h.sessions.Sessions.GetByName(c.Request.Context(), name)
 	if err != nil {
-		c.JSON(http.StatusNotFound, ErrorResponse{Error: "session not found"})
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "session not found"})
 		return
 	}
 
 	webhooks, err := h.webhookService.GetBySession(c.Request.Context(), session.ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	response := make([]WebhookResponse, 0, len(webhooks))
+	response := make([]dto.WebhookResponse, 0, len(webhooks))
 	for _, wh := range webhooks {
-		response = append(response, WebhookResponse{
+		response = append(response, dto.WebhookResponse{
 			ID:        wh.ID,
 			SessionID: wh.SessionID,
 			URL:       wh.URL,
@@ -122,37 +122,37 @@ func (h *WebhookHandler) ListWebhooks(c *gin.Context) {
 // @Produce json
 // @Param name path string true "Session name"
 // @Param id path int true "Webhook ID"
-// @Param request body UpdateWebhookRequest true "Webhook data"
-// @Success 200 {object} MessageResponse
-// @Failure 400 {object} ErrorResponse
+// @Param request body dto.UpdateWebhookRequest true "Webhook data"
+// @Success 200 {object} dto.MessageResponse
+// @Failure 400 {object} dto.ErrorResponse
 // @Security ApiKeyAuth
 // @Router /sessions/{name}/webhook/{id} [put]
 func (h *WebhookHandler) UpdateWebhook(c *gin.Context) {
-	var req UpdateWebhookRequest
+	var req dto.UpdateWebhookRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	// Validate URL format
 	parsedURL, err := url.ParseRequestURI(req.URL)
 	if err != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid webhook URL: must be a valid http or https URL"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid webhook URL: must be a valid http or https URL"})
 		return
 	}
 
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid webhook id"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid webhook id"})
 		return
 	}
 
 	if err := h.webhookService.Update(c.Request.Context(), id, req.URL, req.Events, req.Enabled, req.Secret); err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, MessageResponse{Message: "webhook updated"})
+	c.JSON(http.StatusOK, dto.MessageResponse{Message: "webhook updated"})
 }
 
 // DeleteWebhook godoc
@@ -162,21 +162,21 @@ func (h *WebhookHandler) UpdateWebhook(c *gin.Context) {
 // @Produce json
 // @Param name path string true "Session name"
 // @Param id path int true "Webhook ID"
-// @Success 200 {object} MessageResponse
-// @Failure 400 {object} ErrorResponse
+// @Success 200 {object} dto.MessageResponse
+// @Failure 400 {object} dto.ErrorResponse
 // @Security ApiKeyAuth
 // @Router /sessions/{name}/webhook/{id} [delete]
 func (h *WebhookHandler) DeleteWebhook(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid webhook id"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid webhook id"})
 		return
 	}
 
 	if err := h.webhookService.Delete(c.Request.Context(), id); err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, MessageResponse{Message: "webhook deleted"})
+	c.JSON(http.StatusOK, dto.MessageResponse{Message: "webhook deleted"})
 }

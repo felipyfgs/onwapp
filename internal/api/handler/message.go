@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"zpwoot/internal/api/dto"
 	"zpwoot/internal/service"
 )
 
@@ -24,7 +25,7 @@ func NewMessageHandler(whatsappService *service.WhatsAppService) *MessageHandler
 // @Accept       json
 // @Produce      json
 // @Param        name   path      string          true  "Session name"
-// @Param        body   body      SendTextRequest true  "Message data"
+// @Param        body   body      dto.SendTextRequest true  "Message data"
 // @Success      200    {object}  SendResponse
 // @Failure      400    {object}  ErrorResponse
 // @Failure      401    {object}  ErrorResponse
@@ -34,19 +35,19 @@ func NewMessageHandler(whatsappService *service.WhatsAppService) *MessageHandler
 func (h *MessageHandler) SendText(c *gin.Context) {
 	name := c.Param("name")
 
-	var req SendTextRequest
+	var req dto.SendTextRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	resp, err := h.whatsappService.SendText(c.Request.Context(), name, req.Phone, req.Text)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, SendResponse{
+	c.JSON(http.StatusOK, dto.SendResponse{
 		Success:   true,
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
@@ -60,7 +61,7 @@ func (h *MessageHandler) SendText(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        name   path      string           true  "Session name"
-// @Param        body   body      SendImageRequest true  "Image data"
+// @Param        body   body      dto.SendImageRequest true  "Image data"
 // @Success      200    {object}  SendResponse
 // @Failure      400    {object}  ErrorResponse
 // @Failure      401    {object}  ErrorResponse
@@ -70,15 +71,15 @@ func (h *MessageHandler) SendText(c *gin.Context) {
 func (h *MessageHandler) SendImage(c *gin.Context) {
 	name := c.Param("name")
 
-	var req SendImageRequest
+	var req dto.SendImageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	imageData, err := base64.StdEncoding.DecodeString(req.Image)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid base64 image"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 image"})
 		return
 	}
 
@@ -89,11 +90,11 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 
 	resp, err := h.whatsappService.SendImage(c.Request.Context(), name, req.Phone, imageData, req.Caption, mimeType)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, SendResponse{
+	c.JSON(http.StatusOK, dto.SendResponse{
 		Success:   true,
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
@@ -107,7 +108,7 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        name   path      string           true  "Session name"
-// @Param        body   body      SendAudioRequest true  "Audio data"
+// @Param        body   body      dto.SendAudioRequest true  "Audio data"
 // @Success      200    {object}  SendResponse
 // @Failure      400    {object}  ErrorResponse
 // @Failure      401    {object}  ErrorResponse
@@ -117,15 +118,15 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 func (h *MessageHandler) SendAudio(c *gin.Context) {
 	name := c.Param("name")
 
-	var req SendAudioRequest
+	var req dto.SendAudioRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	audioData, err := base64.StdEncoding.DecodeString(req.Audio)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid base64 audio"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 audio"})
 		return
 	}
 
@@ -136,11 +137,11 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 
 	resp, err := h.whatsappService.SendAudio(c.Request.Context(), name, req.Phone, audioData, mimeType, req.PTT)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, SendResponse{
+	c.JSON(http.StatusOK, dto.SendResponse{
 		Success:   true,
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
@@ -154,7 +155,7 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        name   path      string           true  "Session name"
-// @Param        body   body      SendVideoRequest true  "Video data"
+// @Param        body   body      dto.SendVideoRequest true  "Video data"
 // @Success      200    {object}  SendResponse
 // @Failure      400    {object}  ErrorResponse
 // @Failure      401    {object}  ErrorResponse
@@ -164,15 +165,15 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 func (h *MessageHandler) SendVideo(c *gin.Context) {
 	name := c.Param("name")
 
-	var req SendVideoRequest
+	var req dto.SendVideoRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	videoData, err := base64.StdEncoding.DecodeString(req.Video)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid base64 video"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 video"})
 		return
 	}
 
@@ -183,11 +184,11 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 
 	resp, err := h.whatsappService.SendVideo(c.Request.Context(), name, req.Phone, videoData, req.Caption, mimeType)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, SendResponse{
+	c.JSON(http.StatusOK, dto.SendResponse{
 		Success:   true,
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
@@ -201,7 +202,7 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        name   path      string              true  "Session name"
-// @Param        body   body      SendDocumentRequest true  "Document data"
+// @Param        body   body      dto.SendDocumentRequest true  "Document data"
 // @Success      200    {object}  SendResponse
 // @Failure      400    {object}  ErrorResponse
 // @Failure      401    {object}  ErrorResponse
@@ -211,15 +212,15 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 func (h *MessageHandler) SendDocument(c *gin.Context) {
 	name := c.Param("name")
 
-	var req SendDocumentRequest
+	var req dto.SendDocumentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	docData, err := base64.StdEncoding.DecodeString(req.Document)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid base64 document"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 document"})
 		return
 	}
 
@@ -230,11 +231,11 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 
 	resp, err := h.whatsappService.SendDocument(c.Request.Context(), name, req.Phone, docData, req.Filename, mimeType)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, SendResponse{
+	c.JSON(http.StatusOK, dto.SendResponse{
 		Success:   true,
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
@@ -248,7 +249,7 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        name   path      string             true  "Session name"
-// @Param        body   body      SendStickerRequest true  "Sticker data"
+// @Param        body   body      dto.SendStickerRequest true  "Sticker data"
 // @Success      200    {object}  SendResponse
 // @Failure      400    {object}  ErrorResponse
 // @Failure      401    {object}  ErrorResponse
@@ -258,15 +259,15 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 func (h *MessageHandler) SendSticker(c *gin.Context) {
 	name := c.Param("name")
 
-	var req SendStickerRequest
+	var req dto.SendStickerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	stickerData, err := base64.StdEncoding.DecodeString(req.Sticker)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid base64 sticker"})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 sticker"})
 		return
 	}
 
@@ -277,11 +278,11 @@ func (h *MessageHandler) SendSticker(c *gin.Context) {
 
 	resp, err := h.whatsappService.SendSticker(c.Request.Context(), name, req.Phone, stickerData, mimeType)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, SendResponse{
+	c.JSON(http.StatusOK, dto.SendResponse{
 		Success:   true,
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
@@ -295,7 +296,7 @@ func (h *MessageHandler) SendSticker(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        name   path      string              true  "Session name"
-// @Param        body   body      SendLocationRequest true  "Location data"
+// @Param        body   body      dto.SendLocationRequest true  "Location data"
 // @Success      200    {object}  SendResponse
 // @Failure      400    {object}  ErrorResponse
 // @Failure      401    {object}  ErrorResponse
@@ -305,19 +306,19 @@ func (h *MessageHandler) SendSticker(c *gin.Context) {
 func (h *MessageHandler) SendLocation(c *gin.Context) {
 	name := c.Param("name")
 
-	var req SendLocationRequest
+	var req dto.SendLocationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	resp, err := h.whatsappService.SendLocation(c.Request.Context(), name, req.Phone, req.Latitude, req.Longitude, req.Name, req.Address)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, SendResponse{
+	c.JSON(http.StatusOK, dto.SendResponse{
 		Success:   true,
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
@@ -331,7 +332,7 @@ func (h *MessageHandler) SendLocation(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        name   path      string             true  "Session name"
-// @Param        body   body      SendContactRequest true  "Contact data"
+// @Param        body   body      dto.SendContactRequest true  "Contact data"
 // @Success      200    {object}  SendResponse
 // @Failure      400    {object}  ErrorResponse
 // @Failure      401    {object}  ErrorResponse
@@ -341,19 +342,19 @@ func (h *MessageHandler) SendLocation(c *gin.Context) {
 func (h *MessageHandler) SendContact(c *gin.Context) {
 	name := c.Param("name")
 
-	var req SendContactRequest
+	var req dto.SendContactRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	resp, err := h.whatsappService.SendContact(c.Request.Context(), name, req.Phone, req.ContactName, req.ContactPhone)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, SendResponse{
+	c.JSON(http.StatusOK, dto.SendResponse{
 		Success:   true,
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
@@ -367,7 +368,7 @@ func (h *MessageHandler) SendContact(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        name   path      string              true  "Session name"
-// @Param        body   body      SendReactionRequest true  "Reaction data"
+// @Param        body   body      dto.SendReactionRequest true  "Reaction data"
 // @Success      200    {object}  SendResponse
 // @Failure      400    {object}  ErrorResponse
 // @Failure      401    {object}  ErrorResponse
@@ -377,19 +378,19 @@ func (h *MessageHandler) SendContact(c *gin.Context) {
 func (h *MessageHandler) SendReaction(c *gin.Context) {
 	name := c.Param("name")
 
-	var req SendReactionRequest
+	var req dto.SendReactionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	resp, err := h.whatsappService.SendReaction(c.Request.Context(), name, req.Phone, req.MessageID, req.Emoji)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, SendResponse{
+	c.JSON(http.StatusOK, dto.SendResponse{
 		Success:   true,
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),

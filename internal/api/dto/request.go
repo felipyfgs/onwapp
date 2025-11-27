@@ -92,10 +92,10 @@ type SetPresenceRequest struct {
 	Available bool `json:"available" example:"true"`
 }
 
-type SetTypingRequest struct {
+type ChatPresenceRequest struct {
 	Phone string `json:"phone" binding:"required" example:"5511999999999"`
-	State string `json:"state" example:"composing"`
-	Media string `json:"media" example:"text"`
+	State string `json:"state" binding:"required" example:"composing"`
+	Media string `json:"media" example:""`
 }
 
 type MarkReadRequest struct {
@@ -130,7 +130,13 @@ type JoinGroupRequest struct {
 }
 
 type SendGroupMessageRequest struct {
-	Text string `json:"text" binding:"required"`
+	GroupID string `json:"groupId" binding:"required" example:"123456789@g.us"`
+	Text    string `json:"text" binding:"required" example:"Hello Group!"`
+}
+
+type GroupUpdateRequest struct {
+	GroupID string `json:"groupId" binding:"required" example:"123456789@g.us"`
+	Value   string `json:"value" binding:"required" example:"New Name"`
 }
 
 // Chat requests
@@ -149,7 +155,7 @@ type DeleteMessageRequest struct {
 type EditMessageRequest struct {
 	Phone     string `json:"phone" binding:"required" example:"5511999999999"`
 	MessageID string `json:"messageId" binding:"required" example:"ABCD1234"`
-	Text      string `json:"text" binding:"required" example:"Edited message"`
+	NewText   string `json:"newText" binding:"required" example:"Edited message"`
 }
 
 // Profile requests
