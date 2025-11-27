@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -18,20 +19,33 @@ func NewMessageRepository(pool *pgxpool.Pool) *MessageRepository {
 
 func (r *MessageRepository) Save(ctx context.Context, msg *model.Message) (int, error) {
 	var id int
+	now := time.Now()
 	err := r.pool.QueryRow(ctx, `
-		INSERT INTO "zpMessages" ("sessionId", "messageId", "chatJid", "senderJid", "type", "content", "mediaUrl", "mediaMimetype", "mediaSize", "timestamp", "direction", "status")
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		INSERT INTO "zpMessages" (
+			"sessionId", "messageId", "chatJid", "senderJid", "timestamp",
+			"pushName", "senderAlt", "type", "mediaType", "category", "content",
+			"isFromMe", "isGroup", "isEphemeral", "isViewOnce", "isEdit",
+			"editTargetId", "quotedId", "quotedSender",
+			"status", "deliveredAt", "readAt", "rawEvent", "createdAt"
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
 		RETURNING "id"`,
-		msg.SessionID, msg.MessageID, msg.ChatJID, msg.SenderJID, msg.Type, msg.Content, msg.MediaURL, msg.MediaMimetype, msg.MediaSize, msg.Timestamp, msg.Direction, msg.Status,
+		msg.SessionID, msg.MessageID, msg.ChatJID, msg.SenderJID, msg.Timestamp,
+		msg.PushName, msg.SenderAlt, msg.Type, msg.MediaType, msg.Category, msg.Content,
+		msg.IsFromMe, msg.IsGroup, msg.IsEphemeral, msg.IsViewOnce, msg.IsEdit,
+		msg.EditTargetID, msg.QuotedID, msg.QuotedSender,
+		msg.Status, msg.DeliveredAt, msg.ReadAt, msg.RawEvent, now,
 	).Scan(&id)
 	return id, err
 }
 
 func (r *MessageRepository) GetBySession(ctx context.Context, sessionID int, limit, offset int) ([]model.Message, error) {
 	rows, err := r.pool.Query(ctx, `
-		SELECT "id", "sessionId", "messageId", "chatJid", COALESCE("senderJid", '') as "senderJid", "type", COALESCE("content", '') as "content", 
-		       COALESCE("mediaUrl", '') as "mediaUrl", COALESCE("mediaMimetype", '') as "mediaMimetype", COALESCE("mediaSize", 0) as "mediaSize",
-		       "timestamp", "direction", "status"
+		SELECT "id", "sessionId", "messageId", "chatJid", COALESCE("senderJid", ''), "timestamp",
+		       COALESCE("pushName", ''), COALESCE("senderAlt", ''), COALESCE("type", ''), COALESCE("mediaType", ''), COALESCE("category", ''), COALESCE("content", ''),
+		       COALESCE("isFromMe", false), COALESCE("isGroup", false), COALESCE("isEphemeral", false), COALESCE("isViewOnce", false), COALESCE("isEdit", false),
+		       COALESCE("editTargetId", ''), COALESCE("quotedId", ''), COALESCE("quotedSender", ''),
+		       COALESCE("status", ''), "deliveredAt", "readAt", "rawEvent", "createdAt"
 		FROM "zpMessages" WHERE "sessionId" = $1 ORDER BY "timestamp" DESC LIMIT $2 OFFSET $3`,
 		sessionID, limit, offset)
 	if err != nil {
@@ -39,22 +53,16 @@ func (r *MessageRepository) GetBySession(ctx context.Context, sessionID int, lim
 	}
 	defer rows.Close()
 
-	var messages []model.Message
-	for rows.Next() {
-		var m model.Message
-		if err := rows.Scan(&m.ID, &m.SessionID, &m.MessageID, &m.ChatJID, &m.SenderJID, &m.Type, &m.Content, &m.MediaURL, &m.MediaMimetype, &m.MediaSize, &m.Timestamp, &m.Direction, &m.Status); err != nil {
-			return nil, err
-		}
-		messages = append(messages, m)
-	}
-	return messages, rows.Err()
+	return r.scanMessages(rows)
 }
 
 func (r *MessageRepository) GetByChat(ctx context.Context, sessionID int, chatJID string, limit, offset int) ([]model.Message, error) {
 	rows, err := r.pool.Query(ctx, `
-		SELECT "id", "sessionId", "messageId", "chatJid", COALESCE("senderJid", '') as "senderJid", "type", COALESCE("content", '') as "content", 
-		       COALESCE("mediaUrl", '') as "mediaUrl", COALESCE("mediaMimetype", '') as "mediaMimetype", COALESCE("mediaSize", 0) as "mediaSize",
-		       "timestamp", "direction", "status"
+		SELECT "id", "sessionId", "messageId", "chatJid", COALESCE("senderJid", ''), "timestamp",
+		       COALESCE("pushName", ''), COALESCE("senderAlt", ''), COALESCE("type", ''), COALESCE("mediaType", ''), COALESCE("category", ''), COALESCE("content", ''),
+		       COALESCE("isFromMe", false), COALESCE("isGroup", false), COALESCE("isEphemeral", false), COALESCE("isViewOnce", false), COALESCE("isEdit", false),
+		       COALESCE("editTargetId", ''), COALESCE("quotedId", ''), COALESCE("quotedSender", ''),
+		       COALESCE("status", ''), "deliveredAt", "readAt", "rawEvent", "createdAt"
 		FROM "zpMessages" WHERE "sessionId" = $1 AND "chatJid" = $2 ORDER BY "timestamp" DESC LIMIT $3 OFFSET $4`,
 		sessionID, chatJID, limit, offset)
 	if err != nil {
@@ -62,20 +70,72 @@ func (r *MessageRepository) GetByChat(ctx context.Context, sessionID int, chatJI
 	}
 	defer rows.Close()
 
+	return r.scanMessages(rows)
+}
+
+func (r *MessageRepository) UpdateStatus(ctx context.Context, sessionID int, messageID string, status model.MessageStatus) error {
+	now := time.Now()
+	var updateQuery string
+	var args []interface{}
+	
+	switch status {
+	case model.MessageStatusDelivered:
+		updateQuery = `UPDATE "zpMessages" SET "status" = $1, "deliveredAt" = $2 WHERE "sessionId" = $3 AND "messageId" = $4`
+		args = []interface{}{status, now, sessionID, messageID}
+	case model.MessageStatusRead:
+		updateQuery = `UPDATE "zpMessages" SET "status" = $1, "readAt" = $2 WHERE "sessionId" = $3 AND "messageId" = $4`
+		args = []interface{}{status, now, sessionID, messageID}
+	case model.MessageStatusPlayed:
+		updateQuery = `UPDATE "zpMessages" SET "status" = $1, "readAt" = $2 WHERE "sessionId" = $3 AND "messageId" = $4`
+		args = []interface{}{status, now, sessionID, messageID}
+	default:
+		updateQuery = `UPDATE "zpMessages" SET "status" = $1 WHERE "sessionId" = $2 AND "messageId" = $3`
+		args = []interface{}{status, sessionID, messageID}
+	}
+	
+	_, err := r.pool.Exec(ctx, updateQuery, args...)
+	return err
+}
+
+func (r *MessageRepository) GetByMessageID(ctx context.Context, sessionID int, messageID string) (*model.Message, error) {
+	row := r.pool.QueryRow(ctx, `
+		SELECT "id", "sessionId", "messageId", "chatJid", COALESCE("senderJid", ''), "timestamp",
+		       COALESCE("pushName", ''), COALESCE("senderAlt", ''), COALESCE("type", ''), COALESCE("mediaType", ''), COALESCE("category", ''), COALESCE("content", ''),
+		       COALESCE("isFromMe", false), COALESCE("isGroup", false), COALESCE("isEphemeral", false), COALESCE("isViewOnce", false), COALESCE("isEdit", false),
+		       COALESCE("editTargetId", ''), COALESCE("quotedId", ''), COALESCE("quotedSender", ''),
+		       COALESCE("status", ''), "deliveredAt", "readAt", "rawEvent", "createdAt"
+		FROM "zpMessages" WHERE "sessionId" = $1 AND "messageId" = $2`,
+		sessionID, messageID)
+
+	var m model.Message
+	err := row.Scan(
+		&m.ID, &m.SessionID, &m.MessageID, &m.ChatJID, &m.SenderJID, &m.Timestamp,
+		&m.PushName, &m.SenderAlt, &m.Type, &m.MediaType, &m.Category, &m.Content,
+		&m.IsFromMe, &m.IsGroup, &m.IsEphemeral, &m.IsViewOnce, &m.IsEdit,
+		&m.EditTargetID, &m.QuotedID, &m.QuotedSender,
+		&m.Status, &m.DeliveredAt, &m.ReadAt, &m.RawEvent, &m.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &m, nil
+}
+
+func (r *MessageRepository) scanMessages(rows interface{ Next() bool; Scan(...interface{}) error; Err() error }) ([]model.Message, error) {
 	var messages []model.Message
 	for rows.Next() {
 		var m model.Message
-		if err := rows.Scan(&m.ID, &m.SessionID, &m.MessageID, &m.ChatJID, &m.SenderJID, &m.Type, &m.Content, &m.MediaURL, &m.MediaMimetype, &m.MediaSize, &m.Timestamp, &m.Direction, &m.Status); err != nil {
+		err := rows.Scan(
+			&m.ID, &m.SessionID, &m.MessageID, &m.ChatJID, &m.SenderJID, &m.Timestamp,
+			&m.PushName, &m.SenderAlt, &m.Type, &m.MediaType, &m.Category, &m.Content,
+			&m.IsFromMe, &m.IsGroup, &m.IsEphemeral, &m.IsViewOnce, &m.IsEdit,
+			&m.EditTargetID, &m.QuotedID, &m.QuotedSender,
+			&m.Status, &m.DeliveredAt, &m.ReadAt, &m.RawEvent, &m.CreatedAt,
+		)
+		if err != nil {
 			return nil, err
 		}
 		messages = append(messages, m)
 	}
 	return messages, rows.Err()
-}
-
-func (r *MessageRepository) UpdateStatus(ctx context.Context, sessionID int, messageID string, status model.MessageStatus) error {
-	_, err := r.pool.Exec(ctx, `
-		UPDATE "zpMessages" SET "status" = $1 
-		WHERE "sessionId" = $2 AND "messageId" = $3`, status, sessionID, messageID)
-	return err
 }

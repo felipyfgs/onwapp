@@ -11,7 +11,6 @@ import (
 	"go.mau.fi/whatsmeow/store"
 	"go.mau.fi/whatsmeow/store/sqlstore"
 	"go.mau.fi/whatsmeow/types"
-	"go.mau.fi/whatsmeow/types/events"
 	waLog "go.mau.fi/whatsmeow/util/log"
 
 	"zpwoot/internal/db"
@@ -23,15 +22,18 @@ type SessionService struct {
 	container      *sqlstore.Container
 	database       *db.Database
 	webhookService *WebhookService
+	eventService   *EventService
 	sessions       map[string]*model.Session
 	mu             sync.RWMutex
 }
 
 func NewSessionService(container *sqlstore.Container, database *db.Database, webhookService *WebhookService) *SessionService {
+	eventService := NewEventService(database, webhookService)
 	return &SessionService{
 		container:      container,
 		database:       database,
 		webhookService: webhookService,
+		eventService:   eventService,
 		sessions:       make(map[string]*model.Session),
 	}
 }
@@ -268,114 +270,8 @@ func (s *SessionService) startClientWithQR(session *model.Session) {
 
 func (s *SessionService) setupEventHandler(session *model.Session) {
 	session.Client.AddEventHandler(func(evt interface{}) {
-		ctx := context.Background()
-		switch e := evt.(type) {
-		case *events.Connected:
-			session.SetStatus(model.StatusConnected)
-			session.SetQR("")
-			// Salvar status e phone no banco
-			if session.Client.Store.ID != nil {
-				jid := session.Client.Store.ID.String()
-				phone := session.Client.Store.ID.User
-				logger.Debug().Str("session", session.Name).Str("jid", jid).Str("phone", phone).Msg("Updating session with JID/phone")
-				if err := s.database.Sessions.UpdateJID(ctx, session.Name, jid, phone); err != nil {
-					logger.Error().Err(err).Str("session", session.Name).Msg("Failed to update session JID/phone")
-				} else {
-					logger.Info().Str("session", session.Name).Str("phone", phone).Msg("Session JID/phone updated successfully")
-				}
-			} else {
-				logger.Warn().Str("session", session.Name).Msg("Store.ID is nil on Connected event")
-			}
-			if err := s.database.Sessions.UpdateStatus(ctx, session.Name, "connected"); err != nil {
-				logger.Warn().Err(err).Str("session", session.Name).Msg("Failed to update session status to connected")
-			}
-			logger.Info().Str("session", session.Name).Msg("Session connected")
-			// Send webhook
-			if s.webhookService != nil {
-				s.webhookService.Send(ctx, session.ID, "session.connected", map[string]string{"session": session.Name})
-			}
-		case *events.Disconnected:
-			session.SetStatus(model.StatusDisconnected)
-			if err := s.database.Sessions.UpdateStatus(ctx, session.Name, "disconnected"); err != nil {
-				logger.Warn().Err(err).Str("session", session.Name).Msg("Failed to update session status to disconnected")
-			}
-			logger.Info().Str("session", session.Name).Msg("Session disconnected")
-			if s.webhookService != nil {
-				s.webhookService.Send(ctx, session.ID, "session.disconnected", map[string]string{"session": session.Name})
-			}
-		case *events.LoggedOut:
-			session.SetStatus(model.StatusDisconnected)
-			if err := s.database.Sessions.UpdateStatus(ctx, session.Name, "disconnected"); err != nil {
-				logger.Warn().Err(err).Str("session", session.Name).Msg("Failed to update session status")
-			}
-			logger.Info().Str("session", session.Name).Msg("Session logged out")
-			if s.webhookService != nil {
-				s.webhookService.Send(ctx, session.ID, "session.logged_out", map[string]string{"session": session.Name})
-			}
-		case *events.Message:
-			s.handleIncomingMessage(ctx, session, e)
-		}
+		s.eventService.HandleEvent(session, evt)
 	})
-}
-
-func (s *SessionService) handleIncomingMessage(ctx context.Context, session *model.Session, evt *events.Message) {
-	msgType := "text"
-	content := ""
-
-	if evt.Message.GetConversation() != "" {
-		content = evt.Message.GetConversation()
-	} else if evt.Message.GetExtendedTextMessage() != nil {
-		content = evt.Message.GetExtendedTextMessage().GetText()
-	} else if evt.Message.GetImageMessage() != nil {
-		msgType = "image"
-		content = evt.Message.GetImageMessage().GetCaption()
-	} else if evt.Message.GetVideoMessage() != nil {
-		msgType = "video"
-		content = evt.Message.GetVideoMessage().GetCaption()
-	} else if evt.Message.GetAudioMessage() != nil {
-		msgType = "audio"
-	} else if evt.Message.GetDocumentMessage() != nil {
-		msgType = "document"
-		content = evt.Message.GetDocumentMessage().GetFileName()
-	} else if evt.Message.GetStickerMessage() != nil {
-		msgType = "sticker"
-	} else if evt.Message.GetLocationMessage() != nil {
-		msgType = "location"
-	} else if evt.Message.GetContactMessage() != nil {
-		msgType = "contact"
-		content = evt.Message.GetContactMessage().GetDisplayName()
-	}
-
-	timestamp := evt.Info.Timestamp
-	msg := &model.Message{
-		SessionID: session.ID,
-		MessageID: evt.Info.ID,
-		ChatJID:   evt.Info.Chat.String(),
-		SenderJID: evt.Info.Sender.String(),
-		Type:      model.MessageType(msgType),
-		Content:   content,
-		Timestamp: &timestamp,
-		Direction: model.MessageDirectionIncoming,
-		Status:    model.MessageStatusReceived,
-	}
-
-	if _, err := s.database.Messages.Save(ctx, msg); err != nil {
-		logger.Warn().Err(err).Str("session", session.Name).Str("messageId", evt.Info.ID).Msg("Failed to save incoming message")
-	}
-
-	// Send webhook
-	if s.webhookService != nil {
-		s.webhookService.Send(ctx, session.ID, "message.received", map[string]interface{}{
-			"messageId": evt.Info.ID,
-			"chatJid":   evt.Info.Chat.String(),
-			"senderJid": evt.Info.Sender.String(),
-			"type":      msgType,
-			"content":   content,
-			"timestamp": timestamp,
-		})
-	}
-
-	logger.Debug().Str("session", session.Name).Str("from", evt.Info.Sender.String()).Str("type", msgType).Msg("Message received")
 }
 
 func (s *SessionService) Logout(ctx context.Context, name string) error {

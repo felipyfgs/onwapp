@@ -26,10 +26,10 @@ func NewMessageHandler(whatsappService *service.WhatsAppService) *MessageHandler
 // @Produce      json
 // @Param        name   path      string          true  "Session name"
 // @Param        body   body      dto.SendTextRequest true  "Message data"
-// @Success      200    {object}  SendResponse
-// @Failure      400    {object}  ErrorResponse
-// @Failure      401    {object}  ErrorResponse
-// @Failure      500    {object}  ErrorResponse
+// @Success      200    {object}  dto.SendResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/send/text [post]
 func (h *MessageHandler) SendText(c *gin.Context) {
@@ -62,10 +62,10 @@ func (h *MessageHandler) SendText(c *gin.Context) {
 // @Produce      json
 // @Param        name   path      string           true  "Session name"
 // @Param        body   body      dto.SendImageRequest true  "Image data"
-// @Success      200    {object}  SendResponse
-// @Failure      400    {object}  ErrorResponse
-// @Failure      401    {object}  ErrorResponse
-// @Failure      500    {object}  ErrorResponse
+// @Success      200    {object}  dto.SendResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/send/image [post]
 func (h *MessageHandler) SendImage(c *gin.Context) {
@@ -109,10 +109,10 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 // @Produce      json
 // @Param        name   path      string           true  "Session name"
 // @Param        body   body      dto.SendAudioRequest true  "Audio data"
-// @Success      200    {object}  SendResponse
-// @Failure      400    {object}  ErrorResponse
-// @Failure      401    {object}  ErrorResponse
-// @Failure      500    {object}  ErrorResponse
+// @Success      200    {object}  dto.SendResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/send/audio [post]
 func (h *MessageHandler) SendAudio(c *gin.Context) {
@@ -156,10 +156,10 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 // @Produce      json
 // @Param        name   path      string           true  "Session name"
 // @Param        body   body      dto.SendVideoRequest true  "Video data"
-// @Success      200    {object}  SendResponse
-// @Failure      400    {object}  ErrorResponse
-// @Failure      401    {object}  ErrorResponse
-// @Failure      500    {object}  ErrorResponse
+// @Success      200    {object}  dto.SendResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/send/video [post]
 func (h *MessageHandler) SendVideo(c *gin.Context) {
@@ -203,10 +203,10 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 // @Produce      json
 // @Param        name   path      string              true  "Session name"
 // @Param        body   body      dto.SendDocumentRequest true  "Document data"
-// @Success      200    {object}  SendResponse
-// @Failure      400    {object}  ErrorResponse
-// @Failure      401    {object}  ErrorResponse
-// @Failure      500    {object}  ErrorResponse
+// @Success      200    {object}  dto.SendResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/send/document [post]
 func (h *MessageHandler) SendDocument(c *gin.Context) {
@@ -250,10 +250,10 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 // @Produce      json
 // @Param        name   path      string             true  "Session name"
 // @Param        body   body      dto.SendStickerRequest true  "Sticker data"
-// @Success      200    {object}  SendResponse
-// @Failure      400    {object}  ErrorResponse
-// @Failure      401    {object}  ErrorResponse
-// @Failure      500    {object}  ErrorResponse
+// @Success      200    {object}  dto.SendResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/send/sticker [post]
 func (h *MessageHandler) SendSticker(c *gin.Context) {
@@ -297,10 +297,10 @@ func (h *MessageHandler) SendSticker(c *gin.Context) {
 // @Produce      json
 // @Param        name   path      string              true  "Session name"
 // @Param        body   body      dto.SendLocationRequest true  "Location data"
-// @Success      200    {object}  SendResponse
-// @Failure      400    {object}  ErrorResponse
-// @Failure      401    {object}  ErrorResponse
-// @Failure      500    {object}  ErrorResponse
+// @Success      200    {object}  dto.SendResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/send/location [post]
 func (h *MessageHandler) SendLocation(c *gin.Context) {
@@ -333,10 +333,10 @@ func (h *MessageHandler) SendLocation(c *gin.Context) {
 // @Produce      json
 // @Param        name   path      string             true  "Session name"
 // @Param        body   body      dto.SendContactRequest true  "Contact data"
-// @Success      200    {object}  SendResponse
-// @Failure      400    {object}  ErrorResponse
-// @Failure      401    {object}  ErrorResponse
-// @Failure      500    {object}  ErrorResponse
+// @Success      200    {object}  dto.SendResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/send/contact [post]
 func (h *MessageHandler) SendContact(c *gin.Context) {
@@ -369,10 +369,10 @@ func (h *MessageHandler) SendContact(c *gin.Context) {
 // @Produce      json
 // @Param        name   path      string              true  "Session name"
 // @Param        body   body      dto.SendReactionRequest true  "Reaction data"
-// @Success      200    {object}  SendResponse
-// @Failure      400    {object}  ErrorResponse
-// @Failure      401    {object}  ErrorResponse
-// @Failure      500    {object}  ErrorResponse
+// @Success      200    {object}  dto.SendResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/send/reaction [post]
 func (h *MessageHandler) SendReaction(c *gin.Context) {

@@ -1,6 +1,8 @@
 package logger
 
 import (
+	"bytes"
+	"encoding/json"
 	"io"
 	"os"
 	"time"
@@ -26,10 +28,23 @@ func Init(level, format string) {
 
 	var output io.Writer = os.Stdout
 	if format == "console" {
-		output = zerolog.ConsoleWriter{
-			Out:        os.Stdout,
-			TimeFormat: "15:04:05",
+		writer := zerolog.ConsoleWriter{
+			Out:           os.Stdout,
+			TimeFormat:    "15:04:05",
+			FieldsExclude: []string{"raw"},
 		}
+		writer.FormatExtra = func(evt map[string]interface{}, buf *bytes.Buffer) error {
+			if raw, ok := evt["raw"]; ok {
+				b, err := json.MarshalIndent(raw, "", "  ")
+				if err == nil {
+					buf.WriteString("\n\033[90m")
+					buf.Write(b)
+					buf.WriteString("\033[0m")
+				}
+			}
+			return nil
+		}
+		output = writer
 	}
 
 	Log = zerolog.New(output).With().Timestamp().Logger()

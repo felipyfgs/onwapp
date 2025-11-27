@@ -1,51 +1,66 @@
 package model
 
-import "time"
-
-type MessageDirection string
-
-const (
-	MessageDirectionIncoming MessageDirection = "incoming"
-	MessageDirectionOutgoing MessageDirection = "outgoing"
+import (
+	"encoding/json"
+	"time"
 )
 
+// MessageStatus maps to whatsmeow receipt types
 type MessageStatus string
 
 const (
-	MessageStatusSent      MessageStatus = "sent"
-	MessageStatusDelivered MessageStatus = "delivered"
-	MessageStatusRead      MessageStatus = "read"
-	MessageStatusFailed    MessageStatus = "failed"
-	MessageStatusReceived  MessageStatus = "received"
+	MessageStatusPending   MessageStatus = "pending"   // Message sent, waiting for server
+	MessageStatusSent      MessageStatus = "sent"      // Server received (single check)
+	MessageStatusDelivered MessageStatus = "delivered" // Delivered to recipient (double check)
+	MessageStatusRead      MessageStatus = "read"      // Read by recipient (blue checks)
+	MessageStatusPlayed    MessageStatus = "played"    // Audio/video played
+	MessageStatusFailed    MessageStatus = "failed"    // Failed to send
 )
 
-type MessageType string
-
-const (
-	MessageTypeText     MessageType = "text"
-	MessageTypeImage    MessageType = "image"
-	MessageTypeVideo    MessageType = "video"
-	MessageTypeAudio    MessageType = "audio"
-	MessageTypeDocument MessageType = "document"
-	MessageTypeSticker  MessageType = "sticker"
-	MessageTypeLocation MessageType = "location"
-	MessageTypeContact  MessageType = "contact"
-	MessageTypeReaction MessageType = "reaction"
-)
-
+// Message represents a WhatsApp message, closely following whatsmeow structure
 type Message struct {
-	ID            int
-	SessionID     int
-	MessageID     string
-	ChatJID       string
-	SenderJID     string
-	Type          MessageType
-	Content       string
-	MediaURL      string
-	MediaMimetype string
-	MediaSize     int
-	Timestamp     *time.Time
-	Direction     MessageDirection
-	Status        MessageStatus
-	CreatedAt     *time.Time
+	ID        int64 `json:"id"`
+	SessionID int   `json:"sessionId"`
+	
+	// Core identifiers (from whatsmeow MessageInfo)
+	MessageID string    `json:"messageId"` // Info.ID
+	ChatJID   string    `json:"chat"`      // Info.Chat
+	SenderJID string    `json:"sender"`    // Info.Sender
+	Timestamp time.Time `json:"timestamp"` // Info.Timestamp
+	
+	// Sender info
+	PushName   string `json:"pushName"`   // Info.PushName
+	SenderAlt  string `json:"senderAlt"`  // Info.SenderAlt (LID)
+	
+	// Message type (from Info.Type)
+	Type      string `json:"type"`      // text, image, video, audio, document, sticker, etc.
+	MediaType string `json:"mediaType"` // Info.MediaType
+	Category  string `json:"category"`  // Info.Category
+	
+	// Content
+	Content string `json:"content"` // Text content or caption
+	
+	// Flags from whatsmeow
+	IsFromMe    bool `json:"isFromMe"`    // Info.IsFromMe
+	IsGroup     bool `json:"isGroup"`     // Info.IsGroup
+	IsEphemeral bool `json:"isEphemeral"` // IsEphemeral
+	IsViewOnce  bool `json:"isViewOnce"`  // IsViewOnce || IsViewOnceV2
+	IsEdit      bool `json:"isEdit"`      // IsEdit
+	
+	// Edit info (from MsgBotInfo)
+	EditTargetID string `json:"editTargetId,omitempty"` // MsgBotInfo.EditTargetID
+	
+	// Reply/Quote info (from MsgMetaInfo)
+	QuotedID     string `json:"quotedId,omitempty"`     // MsgMetaInfo.TargetID
+	QuotedSender string `json:"quotedSender,omitempty"` // MsgMetaInfo.TargetSender
+	
+	// Status tracking (updated via receipts)
+	Status      MessageStatus `json:"status"`
+	DeliveredAt *time.Time    `json:"deliveredAt,omitempty"`
+	ReadAt      *time.Time    `json:"readAt,omitempty"`
+	
+	// Raw event JSON for full fidelity
+	RawEvent json.RawMessage `json:"rawEvent,omitempty"`
+	
+	CreatedAt time.Time `json:"createdAt"`
 }
