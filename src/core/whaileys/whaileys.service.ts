@@ -1,14 +1,21 @@
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnApplicationBootstrap,
+} from '@nestjs/common';
 import makeWASocket, {
   DisconnectReason,
   WASocket,
   ConnectionState,
+  SocketConfig,
 } from 'whaileys';
 import { Boom } from '@hapi/boom';
 import { PrismaService } from '../../database/prisma.service';
 import { SessionStatus } from '@prisma/client';
 import { useDbAuthState } from './auth-state.service';
 import * as qrcodeTerminal from 'qrcode-terminal';
+import { LoggerService } from '../../logger/logger.service';
 
 export interface SessionInstance {
   socket: WASocket;
@@ -17,11 +24,21 @@ export interface SessionInstance {
 }
 
 @Injectable()
-export class WhaileysService implements OnModuleDestroy {
+export class WhaileysService
+  implements OnModuleDestroy, OnApplicationBootstrap
+{
   private readonly logger = new Logger(WhaileysService.name);
   private sessions: Map<string, SessionInstance> = new Map();
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private loggerService: LoggerService,
+  ) {}
+
+  async onApplicationBootstrap() {
+    this.logger.log('Restoring WhatsApp sessions...');
+    await this.restoreSessions();
+  }
 
   onModuleDestroy() {
     for (const [name, session] of this.sessions) {
@@ -121,9 +138,12 @@ export class WhaileysService implements OnModuleDestroy {
       dbSession.id,
     );
 
+    const baileysLogger = this.loggerService.child({ class: 'baileys' });
+
     const socket = makeWASocket({
       auth: state,
       printQRInTerminal: false,
+      logger: baileysLogger as unknown as SocketConfig['logger'],
     });
 
     const sessionInstance: SessionInstance = {
@@ -146,13 +166,133 @@ export class WhaileysService implements OnModuleDestroy {
       void this.handleConnectionUpdate(name, sessionInstance, socket, update);
     });
 
-    socket.ev.on('messages.upsert', (m) => {
-      this.logger.debug(
-        `Messages received on session ${name}: ${m.messages.length}`,
+    this.registerEventListeners(name, socket);
+
+    return { status: SessionStatus.connecting };
+  }
+
+  private registerEventListeners(name: string, socket: WASocket) {
+    const pinoLogger = this.loggerService.child({ session: name });
+
+    socket.ev.on('messages.upsert', (payload) => {
+      pinoLogger.info(
+        { event: 'messages.upsert', payload },
+        `messages.upsert (${payload.type}): ${payload.messages.length} messages`,
       );
     });
 
-    return { status: SessionStatus.connecting };
+    socket.ev.on('messages.update', (payload) => {
+      pinoLogger.info(
+        { event: 'messages.update', payload },
+        `messages.update: ${payload.length} updates`,
+      );
+    });
+
+    socket.ev.on('messages.reaction', (payload) => {
+      pinoLogger.info(
+        { event: 'messages.reaction', payload },
+        `messages.reaction: ${payload.length} reactions`,
+      );
+    });
+
+    socket.ev.on('message-receipt.update', (payload) => {
+      pinoLogger.info(
+        { event: 'message-receipt.update', payload },
+        `message-receipt.update: ${payload.length} receipts`,
+      );
+    });
+
+    socket.ev.on('chats.upsert', (payload) => {
+      pinoLogger.info(
+        { event: 'chats.upsert', payload },
+        `chats.upsert: ${payload.length} chats`,
+      );
+    });
+
+    socket.ev.on('chats.update', (payload) => {
+      pinoLogger.info(
+        { event: 'chats.update', payload },
+        `chats.update: ${payload.length} chats`,
+      );
+    });
+
+    socket.ev.on('chats.delete', (payload) => {
+      pinoLogger.info(
+        { event: 'chats.delete', payload },
+        `chats.delete: ${payload.length} chats`,
+      );
+    });
+
+    socket.ev.on('contacts.upsert', (payload) => {
+      pinoLogger.info(
+        { event: 'contacts.upsert', payload },
+        `contacts.upsert: ${payload.length} contacts`,
+      );
+    });
+
+    socket.ev.on('contacts.update', (payload) => {
+      pinoLogger.info(
+        { event: 'contacts.update', payload },
+        `contacts.update: ${payload.length} contacts`,
+      );
+    });
+
+    socket.ev.on('groups.upsert', (payload) => {
+      pinoLogger.info(
+        { event: 'groups.upsert', payload },
+        `groups.upsert: ${payload.length} groups`,
+      );
+    });
+
+    socket.ev.on('groups.update', (payload) => {
+      pinoLogger.info(
+        { event: 'groups.update', payload },
+        `groups.update: ${payload.length} groups`,
+      );
+    });
+
+    socket.ev.on('group-participants.update', (payload) => {
+      pinoLogger.info(
+        { event: 'group-participants.update', payload },
+        `group-participants.update: ${payload.action} ${payload.participants.length} in ${payload.id}`,
+      );
+    });
+
+    socket.ev.on('presence.update', (payload) => {
+      const entries = Object.entries(payload.presences);
+      pinoLogger.info(
+        { event: 'presence.update', payload },
+        `presence.update: ${entries.length} presences in ${payload.id}`,
+      );
+    });
+
+    socket.ev.on('messaging-history.set', (payload) => {
+      pinoLogger.info(
+        { event: 'messaging-history.set', payload },
+        `messaging-history.set: ${payload.chats.length} chats, ${payload.contacts.length} contacts, ${payload.messages.length} messages (latest: ${payload.isLatest})`,
+      );
+    });
+
+    socket.ev.on('blocklist.set', (payload) => {
+      pinoLogger.info(
+        { event: 'blocklist.set', payload },
+        `blocklist.set: ${payload.blocklist.length} blocked`,
+      );
+    });
+
+    socket.ev.on('blocklist.update', (payload) => {
+      pinoLogger.info(
+        { event: 'blocklist.update', payload },
+        `blocklist.update (${payload.type}): ${payload.blocklist.length}`,
+      );
+    });
+
+    socket.ev.on('call', (payload) => {
+      pinoLogger.info(
+        { event: 'call', payload },
+        `call: ${payload.length} calls`,
+      );
+    });
   }
 
   private async handleConnectionUpdate(

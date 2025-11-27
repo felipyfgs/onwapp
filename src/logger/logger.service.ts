@@ -13,11 +13,18 @@ export class LoggerService implements NestLoggerService {
           colorize: true,
           translateTime: 'SYS:yyyy-mm-dd HH:MM:ss',
           ignore: 'pid,hostname',
-          singleLine: true,
-          messageFormat: '{msg}',
+          singleLine: false,
         },
       },
     });
+  }
+
+  getPinoInstance(): Logger {
+    return this.logger;
+  }
+
+  child(bindings: Record<string, unknown>): Logger {
+    return this.logger.child(bindings);
   }
 
   log(message: string, context?: string) {

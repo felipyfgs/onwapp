@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { WhaileysService } from '../../core/whaileys/whaileys.service';
+import { MessageSentResponseDto } from './dto';
 
 @Injectable()
 export class SessionService {
@@ -41,7 +42,21 @@ export class SessionService {
     return this.whaileysService.getSessionInfo(name);
   }
 
-  sendMessage(sessionName: string, to: string, message: string) {
-    return this.whaileysService.sendMessage(sessionName, to, message);
+  async sendMessage(
+    sessionName: string,
+    to: string,
+    message: string,
+  ): Promise<MessageSentResponseDto> {
+    const result = await this.whaileysService.sendMessage(
+      sessionName,
+      to,
+      message,
+    );
+    const jid = to.includes('@') ? to : `${to}@s.whatsapp.net`;
+    return {
+      success: true,
+      messageId: result?.key?.id || '',
+      to: jid,
+    };
   }
 }
