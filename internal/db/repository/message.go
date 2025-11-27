@@ -38,7 +38,7 @@ func (r *MessageRepository) Save(ctx context.Context, msg *model.Message) (strin
 		msg.EditTargetID, msg.QuotedID, msg.QuotedSender,
 		msg.Status, msg.DeliveredAt, msg.ReadAt, msg.RawEvent, now,
 	).Scan(&id)
-	
+
 	// Handle ON CONFLICT DO NOTHING - no row returned
 	if err != nil && err.Error() == "no rows in result set" {
 		return "", nil
@@ -137,7 +137,7 @@ func (r *MessageRepository) UpdateStatus(ctx context.Context, sessionID string, 
 	now := time.Now()
 	var updateQuery string
 	var args []interface{}
-	
+
 	switch status {
 	case model.MessageStatusDelivered:
 		updateQuery = `UPDATE "zpMessages" SET "status" = $1, "deliveredAt" = $2 WHERE "sessionId" = $3 AND "messageId" = $4`
@@ -152,7 +152,7 @@ func (r *MessageRepository) UpdateStatus(ctx context.Context, sessionID string, 
 		updateQuery = `UPDATE "zpMessages" SET "status" = $1 WHERE "sessionId" = $2 AND "messageId" = $3`
 		args = []interface{}{status, sessionID, messageID}
 	}
-	
+
 	_, err := r.pool.Exec(ctx, updateQuery, args...)
 	return err
 }
@@ -181,7 +181,11 @@ func (r *MessageRepository) GetByMessageID(ctx context.Context, sessionID string
 	return &m, nil
 }
 
-func (r *MessageRepository) scanMessages(rows interface{ Next() bool; Scan(...interface{}) error; Err() error }) ([]model.Message, error) {
+func (r *MessageRepository) scanMessages(rows interface {
+	Next() bool
+	Scan(...interface{}) error
+	Err() error
+}) ([]model.Message, error) {
 	var messages []model.Message
 	for rows.Next() {
 		var m model.Message

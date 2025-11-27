@@ -217,7 +217,7 @@ func (s *EventService) handleMessage(ctx context.Context, session *model.Session
 
 	// Serialize raw event to JSON
 	rawEvent, _ := json.Marshal(e)
-	
+
 	// Determine initial status
 	status := model.MessageStatusSent
 	if !e.Info.IsFromMe {
@@ -225,27 +225,27 @@ func (s *EventService) handleMessage(ctx context.Context, session *model.Session
 	}
 
 	msg := &model.Message{
-		SessionID: session.ID,
-		MessageID: e.Info.ID,
-		ChatJID:   e.Info.Chat.String(),
-		SenderJID: e.Info.Sender.String(),
-		Timestamp: e.Info.Timestamp,
-		PushName:  e.Info.PushName,
-		SenderAlt: e.Info.SenderAlt.String(),
-		Type:      msgType,
-		MediaType: e.Info.MediaType,
-		Category:  e.Info.Category,
-		Content:   content,
-		IsFromMe:  e.Info.IsFromMe,
-		IsGroup:   e.Info.IsGroup,
-		IsEphemeral: e.IsEphemeral,
-		IsViewOnce:  e.IsViewOnce || e.IsViewOnceV2,
-		IsEdit:      e.IsEdit,
+		SessionID:    session.ID,
+		MessageID:    e.Info.ID,
+		ChatJID:      e.Info.Chat.String(),
+		SenderJID:    e.Info.Sender.String(),
+		Timestamp:    e.Info.Timestamp,
+		PushName:     e.Info.PushName,
+		SenderAlt:    e.Info.SenderAlt.String(),
+		Type:         msgType,
+		MediaType:    e.Info.MediaType,
+		Category:     e.Info.Category,
+		Content:      content,
+		IsFromMe:     e.Info.IsFromMe,
+		IsGroup:      e.Info.IsGroup,
+		IsEphemeral:  e.IsEphemeral,
+		IsViewOnce:   e.IsViewOnce || e.IsViewOnceV2,
+		IsEdit:       e.IsEdit,
 		EditTargetID: e.Info.MsgBotInfo.EditTargetID,
 		QuotedID:     e.Info.MsgMetaInfo.TargetID,
 		QuotedSender: e.Info.MsgMetaInfo.TargetSender.String(),
-		Status:    status,
-		RawEvent:  rawEvent,
+		Status:       status,
+		RawEvent:     rawEvent,
 	}
 
 	if _, err := s.database.Messages.Save(ctx, msg); err != nil {
@@ -326,7 +326,7 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 	chunkOrder := e.Data.GetChunkOrder()
 	progress := e.Data.GetProgress()
 	conversations := e.Data.GetConversations()
-	
+
 	logger.Info().
 		Str("session", session.Name).
 		Str("event", "history_sync").
@@ -335,54 +335,54 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 		Uint32("progress", progress).
 		Int("conversations", len(conversations)).
 		Msg("History sync received")
-	
+
 	// Skip non-message sync types
 	if e.Data.GetSyncType() == waHistorySync.HistorySync_PUSH_NAME {
 		s.handlePushNameSync(ctx, session, e.Data.GetPushnames())
 		return
 	}
-	
+
 	// Process conversations and their messages
 	var allMessages []*model.Message
 	totalMsgs := 0
-	
+
 	for _, conv := range conversations {
 		chatJID := conv.GetID()
 		msgs := conv.GetMessages()
 		totalMsgs += len(msgs)
-		
+
 		for _, histMsg := range msgs {
 			webMsg := histMsg.GetMessage()
 			if webMsg == nil {
 				continue
 			}
-			
+
 			// Extract message key
 			key := webMsg.GetKey()
 			if key == nil || key.GetID() == "" {
 				continue
 			}
-			
+
 			// Skip system messages (messageStubType) - they have no useful content
 			if webMsg.GetMessageStubType() != 0 {
 				continue
 			}
-			
+
 			// Determine message type and content
 			msgType, content := s.extractMessageTypeAndContent(webMsg.GetMessage())
-			
+
 			// Determine sender JID
 			senderJID := key.GetRemoteJID()
 			if key.GetParticipant() != "" {
 				senderJID = key.GetParticipant()
 			}
-			
+
 			// Convert timestamp (Unix seconds)
 			timestamp := time.Unix(int64(webMsg.GetMessageTimestamp()), 0)
-			
+
 			// Determine if it's a group chat
 			isGroup := strings.HasSuffix(chatJID, "@g.us")
-			
+
 			// Serialize raw message data
 			rawEvent, _ := json.Marshal(map[string]interface{}{
 				"historySyncMsg": histMsg,
@@ -390,13 +390,13 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 				"syncType":       syncType,
 				"chunkOrder":     chunkOrder,
 			})
-			
+
 			// Determine status
 			status := model.MessageStatusSent
 			if !key.GetFromMe() {
 				status = model.MessageStatusDelivered
 			}
-			
+
 			msg := &model.Message{
 				SessionID:   session.ID,
 				MessageID:   key.GetID(),
@@ -412,11 +412,11 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 				Status:      status,
 				RawEvent:    rawEvent,
 			}
-			
+
 			allMessages = append(allMessages, msg)
 		}
 	}
-	
+
 	// Batch save messages
 	if len(allMessages) > 0 {
 		saved, err := s.database.Messages.SaveBatch(ctx, allMessages)
@@ -438,7 +438,7 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 				Msg("History sync messages saved")
 		}
 	}
-	
+
 	// Send webhook
 	s.sendWebhook(ctx, session.ID, "history.sync", map[string]interface{}{
 		"syncType":      syncType,
@@ -453,62 +453,62 @@ func (s *EventService) extractMessageTypeAndContent(msg *waE2E.Message) (string,
 	if msg == nil {
 		return "unknown", ""
 	}
-	
+
 	// Texto simples
 	if msg.GetConversation() != "" {
 		return "text", msg.GetConversation()
 	}
-	
+
 	// Texto estendido (com links, menções, etc.)
 	if ext := msg.GetExtendedTextMessage(); ext != nil {
 		return "text", ext.GetText()
 	}
-	
+
 	// Imagem
 	if img := msg.GetImageMessage(); img != nil {
 		return "image", img.GetCaption()
 	}
-	
+
 	// Vídeo
 	if vid := msg.GetVideoMessage(); vid != nil {
 		return "video", vid.GetCaption()
 	}
-	
+
 	// Áudio
 	if msg.GetAudioMessage() != nil {
 		return "audio", ""
 	}
-	
+
 	// Documento
 	if doc := msg.GetDocumentMessage(); doc != nil {
 		return "document", doc.GetFileName()
 	}
-	
+
 	// Sticker
 	if msg.GetStickerMessage() != nil {
 		return "sticker", ""
 	}
-	
+
 	// Localização
 	if loc := msg.GetLocationMessage(); loc != nil {
 		return "location", fmt.Sprintf("%.6f,%.6f", loc.GetDegreesLatitude(), loc.GetDegreesLongitude())
 	}
-	
+
 	// Contato
 	if contact := msg.GetContactMessage(); contact != nil {
 		return "contact", contact.GetDisplayName()
 	}
-	
+
 	// Reação
 	if reaction := msg.GetReactionMessage(); reaction != nil {
 		return "reaction", reaction.GetText()
 	}
-	
+
 	// Enquete
 	if poll := msg.GetPollCreationMessage(); poll != nil {
 		return "poll", poll.GetName()
 	}
-	
+
 	// Protocol message (edição, deleção, etc.)
 	if proto := msg.GetProtocolMessage(); proto != nil {
 		// Mensagem editada
@@ -517,7 +517,7 @@ func (s *EventService) extractMessageTypeAndContent(msg *waE2E.Message) (string,
 		}
 		return "protocol", ""
 	}
-	
+
 	// Botões / Lista interativa
 	if msg.GetButtonsMessage() != nil {
 		return "buttons", msg.GetButtonsMessage().GetContentText()
@@ -525,27 +525,27 @@ func (s *EventService) extractMessageTypeAndContent(msg *waE2E.Message) (string,
 	if msg.GetListMessage() != nil {
 		return "list", msg.GetListMessage().GetTitle()
 	}
-	
+
 	// Template
 	if tmpl := msg.GetTemplateMessage(); tmpl != nil {
 		return "template", ""
 	}
-	
+
 	// Resposta de botão template
 	if btnReply := msg.GetTemplateButtonReplyMessage(); btnReply != nil {
 		return "button_reply", btnReply.GetSelectedDisplayText()
 	}
-	
+
 	// Resposta de botão normal
 	if btnResp := msg.GetButtonsResponseMessage(); btnResp != nil {
 		return "button_response", btnResp.GetSelectedDisplayText()
 	}
-	
+
 	// Resposta de lista
 	if listResp := msg.GetListResponseMessage(); listResp != nil {
 		return "list_response", listResp.GetTitle()
 	}
-	
+
 	// Mensagem interativa
 	if interactive := msg.GetInteractiveMessage(); interactive != nil {
 		if body := interactive.GetBody(); body != nil {
@@ -553,27 +553,27 @@ func (s *EventService) extractMessageTypeAndContent(msg *waE2E.Message) (string,
 		}
 		return "interactive", ""
 	}
-	
+
 	// Resposta interativa
 	if interactiveResp := msg.GetInteractiveResponseMessage(); interactiveResp != nil {
 		return "interactive_response", ""
 	}
-	
+
 	// Produto/Catálogo
 	if msg.GetProductMessage() != nil {
 		return "product", ""
 	}
-	
+
 	// Pedido
 	if msg.GetOrderMessage() != nil {
 		return "order", ""
 	}
-	
+
 	// Live location
 	if msg.GetLiveLocationMessage() != nil {
 		return "live_location", ""
 	}
-	
+
 	// View once (imagem/video que desaparece)
 	if viewOnce := msg.GetViewOnceMessage(); viewOnce != nil {
 		return s.extractMessageTypeAndContent(viewOnce.GetMessage())
@@ -581,7 +581,7 @@ func (s *EventService) extractMessageTypeAndContent(msg *waE2E.Message) (string,
 	if viewOnceV2 := msg.GetViewOnceMessageV2(); viewOnceV2 != nil {
 		return s.extractMessageTypeAndContent(viewOnceV2.GetMessage())
 	}
-	
+
 	return "unknown", ""
 }
 
@@ -589,12 +589,12 @@ func (s *EventService) handlePushNameSync(ctx context.Context, session *model.Se
 	if len(pushnames) == 0 {
 		return
 	}
-	
+
 	logger.Info().
 		Str("session", session.Name).
 		Int("count", len(pushnames)).
 		Msg("Push name sync received")
-	
+
 	for _, pn := range pushnames {
 		logger.Debug().
 			Str("session", session.Name).
