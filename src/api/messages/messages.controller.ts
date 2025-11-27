@@ -263,7 +263,7 @@ export class MessagesController {
   async sendCarousel(
     @Param('name') name: string,
     @Body() dto: SendCarouselDto,
-  ): Promise<WAMessage | undefined> {
+  ): Promise<WAMessage | string | undefined> {
     return this.messagesService.sendCarousel(name, dto);
   }
 
