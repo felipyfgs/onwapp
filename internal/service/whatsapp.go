@@ -1503,3 +1503,48 @@ func (w *WhatsAppService) SendNativeFlowMessage(ctx context.Context, sessionName
 
 	return client.SendNativeFlowMessage(ctx, jid, params)
 }
+
+// SendTemplateMessage envia mensagem com template (botões URL, Call, QuickReply)
+func (w *WhatsAppService) SendTemplateMessage(ctx context.Context, sessionName, phone string, params whatsmeow.TemplateMessageParams) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return whatsmeow.SendResponse{}, err
+	}
+
+	jid, err := parseJID(phone)
+	if err != nil {
+		return whatsmeow.SendResponse{}, fmt.Errorf("invalid phone number: %w", err)
+	}
+
+	return client.SendTemplateMessage(ctx, jid, params)
+}
+
+// SendCarouselMessage envia mensagem de carousel com múltiplos cards
+func (w *WhatsAppService) SendCarouselMessage(ctx context.Context, sessionName, phone string, params whatsmeow.CarouselMessageParams) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return whatsmeow.SendResponse{}, err
+	}
+
+	jid, err := parseJID(phone)
+	if err != nil {
+		return whatsmeow.SendResponse{}, fmt.Errorf("invalid phone number: %w", err)
+	}
+
+	return client.SendCarouselMessage(ctx, jid, params)
+}
+
+// UploadMedia faz upload de mídia e retorna os dados necessários para mensagens interativas
+func (w *WhatsAppService) UploadMedia(ctx context.Context, sessionName string, data []byte, mediaType whatsmeow.MediaType) (*whatsmeow.UploadResponse, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return nil, err
+	}
+
+	uploaded, err := client.Upload(ctx, data, mediaType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to upload media: %w", err)
+	}
+
+	return &uploaded, nil
+}

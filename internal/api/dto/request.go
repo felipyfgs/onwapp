@@ -353,3 +353,64 @@ type SendInteractiveRequest struct {
 	Footer  string                `json:"footer" example:"Footer text"`
 	Buttons []NativeFlowButtonDTO `json:"buttons" binding:"required,min=1"`
 }
+
+// Template message requests
+
+type TemplateButtonDTO struct {
+	Index       uint32                  `json:"index" example:"0"`
+	QuickReply  *TemplateQuickReplyDTO  `json:"quickReply,omitempty"`
+	URLButton   *TemplateURLButtonDTO   `json:"urlButton,omitempty"`
+	CallButton  *TemplateCallButtonDTO  `json:"callButton,omitempty"`
+}
+
+type TemplateQuickReplyDTO struct {
+	DisplayText string `json:"displayText" binding:"required" example:"Option 1"`
+	ID          string `json:"id" binding:"required" example:"opt1"`
+}
+
+type TemplateURLButtonDTO struct {
+	DisplayText string `json:"displayText" binding:"required" example:"Visit Site"`
+	URL         string `json:"url" binding:"required" example:"https://example.com"`
+}
+
+type TemplateCallButtonDTO struct {
+	DisplayText string `json:"displayText" binding:"required" example:"Call Us"`
+	PhoneNumber string `json:"phoneNumber" binding:"required" example:"+1234567890"`
+}
+
+type SendTemplateRequest struct {
+	Phone    string              `json:"phone" binding:"required" example:"5511999999999"`
+	Title    string              `json:"title" example:"Welcome!"`
+	Content  string              `json:"content" binding:"required" example:"Please choose an option below"`
+	Footer   string              `json:"footer" example:"Powered by ZPWoot"`
+	Buttons  []TemplateButtonDTO `json:"buttons" binding:"required,min=1"`
+	Image    string              `json:"image,omitempty" example:"base64_encoded_image"`
+	Video    string              `json:"video,omitempty" example:"base64_encoded_video"`
+	Document string              `json:"document,omitempty" example:"base64_encoded_document"`
+	MimeType string              `json:"mimetype,omitempty" example:"image/jpeg"`
+	Filename string              `json:"filename,omitempty" example:"document.pdf"`
+}
+
+// Carousel message requests
+
+type CarouselCardHeaderDTO struct {
+	Title    string `json:"title" example:"Product 1"`
+	Image    string `json:"image,omitempty" example:"base64_encoded_image"`
+	Video    string `json:"video,omitempty" example:"base64_encoded_video"`
+	MimeType string `json:"mimetype,omitempty" example:"image/jpeg"`
+}
+
+type CarouselCardDTO struct {
+	Header  CarouselCardHeaderDTO `json:"header" binding:"required"`
+	Body    string                `json:"body" binding:"required" example:"Amazing product"`
+	Footer  string                `json:"footer" example:"Only $9.99"`
+	Buttons []NativeFlowButtonDTO `json:"buttons" binding:"required,min=1"`
+}
+
+type SendCarouselRequest struct {
+	Phone  string            `json:"phone" binding:"required" example:"5511999999999"`
+	Title  string            `json:"title" example:"Check out our products!"`
+	Body   string            `json:"body" example:"Browse our catalog"`
+	Footer string            `json:"footer" example:"Powered by ZPWoot"`
+	Cards  []CarouselCardDTO `json:"cards" binding:"required,min=1"`
+}

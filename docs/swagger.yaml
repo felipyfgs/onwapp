@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  ArchiveChatRequest:
+  dto.ArchiveChatRequest:
     properties:
       archive:
         example: true
@@ -11,7 +11,7 @@ definitions:
     required:
     - phone
     type: object
-  AvatarResponse:
+  dto.AvatarResponse:
     properties:
       id:
         type: string
@@ -20,7 +20,7 @@ definitions:
       url:
         type: string
     type: object
-  BlocklistActionResponse:
+  dto.BlocklistActionResponse:
     properties:
       action:
         type: string
@@ -29,7 +29,7 @@ definitions:
       success:
         type: boolean
     type: object
-  BlocklistRequest:
+  dto.BlocklistRequest:
     properties:
       action:
         description: block or unblock
@@ -42,7 +42,7 @@ definitions:
     - action
     - phone
     type: object
-  BlocklistResponse:
+  dto.BlocklistResponse:
     properties:
       jids:
         items:
@@ -51,13 +51,13 @@ definitions:
       success:
         type: boolean
     type: object
-  BusinessProfileResponse:
+  dto.BusinessProfileResponse:
     properties:
       profile: {}
       success:
         type: boolean
     type: object
-  ButtonDTO:
+  dto.ButtonDTO:
     properties:
       buttonId:
         example: btn1
@@ -69,7 +69,42 @@ definitions:
     - buttonId
     - displayText
     type: object
-  ChatActionResponse:
+  dto.CarouselCardDTO:
+    properties:
+      body:
+        example: Amazing product
+        type: string
+      buttons:
+        items:
+          $ref: '#/definitions/dto.NativeFlowButtonDTO'
+        minItems: 1
+        type: array
+      footer:
+        example: Only $9.99
+        type: string
+      header:
+        $ref: '#/definitions/dto.CarouselCardHeaderDTO'
+    required:
+    - body
+    - buttons
+    - header
+    type: object
+  dto.CarouselCardHeaderDTO:
+    properties:
+      image:
+        example: base64_encoded_image
+        type: string
+      mimetype:
+        example: image/jpeg
+        type: string
+      title:
+        example: Product 1
+        type: string
+      video:
+        example: base64_encoded_video
+        type: string
+    type: object
+  dto.ChatActionResponse:
     properties:
       status:
         example: archived
@@ -78,7 +113,7 @@ definitions:
         example: true
         type: boolean
     type: object
-  ChatPresenceRequest:
+  dto.ChatPresenceRequest:
     properties:
       media:
         example: ""
@@ -93,14 +128,14 @@ definitions:
     - phone
     - state
     type: object
-  ChatPresenceResponse:
+  dto.ChatPresenceResponse:
     properties:
       state:
         type: string
       success:
         type: boolean
     type: object
-  CheckPhoneRequest:
+  dto.CheckPhoneRequest:
     properties:
       phones:
         example:
@@ -112,7 +147,7 @@ definitions:
     required:
     - phones
     type: object
-  CheckPhoneResult:
+  dto.CheckPhoneResult:
     properties:
       isRegistered:
         type: boolean
@@ -121,22 +156,22 @@ definitions:
       phone:
         type: string
     type: object
-  CheckPhoneResultsResponse:
+  dto.CheckPhoneResultsResponse:
     properties:
       results:
         items:
-          $ref: '#/definitions/CheckPhoneResult'
+          $ref: '#/definitions/dto.CheckPhoneResult'
         type: array
       success:
         type: boolean
     type: object
-  CommunityResponse:
+  dto.CommunityResponse:
     properties:
       groups: {}
       success:
         type: boolean
     type: object
-  ContactInfoRequest:
+  dto.ContactInfoRequest:
     properties:
       phones:
         items:
@@ -145,7 +180,7 @@ definitions:
     required:
     - phones
     type: object
-  ContactInfoResponse:
+  dto.ContactInfoResponse:
     properties:
       success:
         type: boolean
@@ -153,13 +188,13 @@ definitions:
         additionalProperties: true
         type: object
     type: object
-  ContactsListResponse:
+  dto.ContactsListResponse:
     properties:
       contacts: {}
       success:
         type: boolean
     type: object
-  CreateGroupRequest:
+  dto.CreateGroupRequest:
     properties:
       name:
         example: My Group
@@ -172,7 +207,7 @@ definitions:
     - name
     - participants
     type: object
-  CreateNewsletterRequest:
+  dto.CreateNewsletterRequest:
     properties:
       description:
         example: Channel description
@@ -186,7 +221,7 @@ definitions:
     required:
     - name
     type: object
-  DefaultDisappearingRequest:
+  dto.DefaultDisappearingRequest:
     properties:
       timer:
         description: 24h, 7d, 90d, or off
@@ -195,7 +230,7 @@ definitions:
     required:
     - timer
     type: object
-  DeleteMessageRequest:
+  dto.DeleteMessageRequest:
     properties:
       forMe:
         example: false
@@ -210,7 +245,7 @@ definitions:
     - messageId
     - phone
     type: object
-  DisappearingRequest:
+  dto.DisappearingRequest:
     properties:
       phone:
         example: "5511999999999"
@@ -223,7 +258,7 @@ definitions:
     - phone
     - timer
     type: object
-  EditMessageRequest:
+  dto.EditMessageRequest:
     properties:
       messageId:
         example: ABCD1234
@@ -239,13 +274,13 @@ definitions:
     - newText
     - phone
     type: object
-  ErrorResponse:
+  dto.ErrorResponse:
     properties:
       error:
         example: session not found
         type: string
     type: object
-  EventsResponse:
+  dto.EventsResponse:
     properties:
       all:
         items:
@@ -258,7 +293,7 @@ definitions:
           type: array
         type: object
     type: object
-  GroupActionResponse:
+  dto.GroupActionResponse:
     properties:
       data: {}
       groupId:
@@ -268,7 +303,7 @@ definitions:
         example: true
         type: boolean
     type: object
-  GroupAnnounceRequest:
+  dto.GroupAnnounceRequest:
     properties:
       announce:
         example: true
@@ -279,7 +314,7 @@ definitions:
     required:
     - groupId
     type: object
-  GroupApprovalRequest:
+  dto.GroupApprovalRequest:
     properties:
       approvalMode:
         example: true
@@ -290,7 +325,7 @@ definitions:
     required:
     - groupId
     type: object
-  GroupInviteLinkResponse:
+  dto.GroupInviteLinkResponse:
     properties:
       groupId:
         type: string
@@ -299,7 +334,7 @@ definitions:
       success:
         type: boolean
     type: object
-  GroupLockedRequest:
+  dto.GroupLockedRequest:
     properties:
       groupId:
         example: 123456789@g.us
@@ -310,7 +345,7 @@ definitions:
     required:
     - groupId
     type: object
-  GroupMemberAddModeRequest:
+  dto.GroupMemberAddModeRequest:
     properties:
       groupId:
         example: 123456789@g.us
@@ -323,7 +358,7 @@ definitions:
     - groupId
     - mode
     type: object
-  GroupParticipantsRequest:
+  dto.GroupParticipantsRequest:
     properties:
       groupId:
         type: string
@@ -335,7 +370,7 @@ definitions:
     - groupId
     - participants
     type: object
-  GroupPictureRequest:
+  dto.GroupPictureRequest:
     properties:
       groupId:
         example: 123456789@g.us
@@ -347,7 +382,7 @@ definitions:
     - groupId
     - image
     type: object
-  GroupRequestActionBodyRequest:
+  dto.GroupRequestActionBodyRequest:
     properties:
       action:
         description: approve or reject
@@ -361,7 +396,7 @@ definitions:
     - action
     - participants
     type: object
-  GroupRequestParticipantsResponse:
+  dto.GroupRequestParticipantsResponse:
     properties:
       groupId:
         type: string
@@ -369,7 +404,7 @@ definitions:
       success:
         type: boolean
     type: object
-  GroupUpdateRequest:
+  dto.GroupUpdateRequest:
     properties:
       groupId:
         example: 123456789@g.us
@@ -381,14 +416,14 @@ definitions:
     - groupId
     - value
     type: object
-  JoinGroupRequest:
+  dto.JoinGroupRequest:
     properties:
       inviteLink:
         type: string
     required:
     - inviteLink
     type: object
-  LinkGroupRequest:
+  dto.LinkGroupRequest:
     properties:
       childGroupId:
         example: 987654321@g.us
@@ -400,7 +435,7 @@ definitions:
     - childGroupId
     - parentGroupId
     type: object
-  ListRowDTO:
+  dto.ListRowDTO:
     properties:
       description:
         example: Description of option 1
@@ -415,11 +450,11 @@ definitions:
     - rowId
     - title
     type: object
-  ListSectionDTO:
+  dto.ListSectionDTO:
     properties:
       rows:
         items:
-          $ref: '#/definitions/ListRowDTO'
+          $ref: '#/definitions/dto.ListRowDTO'
         minItems: 1
         type: array
       title:
@@ -429,7 +464,7 @@ definitions:
     - rows
     - title
     type: object
-  MarkReadRequest:
+  dto.MarkReadRequest:
     properties:
       messageIds:
         items:
@@ -442,7 +477,7 @@ definitions:
     - messageIds
     - phone
     type: object
-  MessageResponse:
+  dto.MessageResponse:
     properties:
       message:
         example: operation completed
@@ -451,7 +486,7 @@ definitions:
         example: connected
         type: string
     type: object
-  NativeFlowButtonDTO:
+  dto.NativeFlowButtonDTO:
     properties:
       name:
         example: quick_reply
@@ -463,7 +498,7 @@ definitions:
     - name
     - params
     type: object
-  NewsletterActionRequest:
+  dto.NewsletterActionRequest:
     properties:
       newsletterJid:
         example: 123456789@newsletter
@@ -471,13 +506,13 @@ definitions:
     required:
     - newsletterJid
     type: object
-  NewsletterListResponse:
+  dto.NewsletterListResponse:
     properties:
       newsletters: {}
       success:
         type: boolean
     type: object
-  NewsletterMuteRequest:
+  dto.NewsletterMuteRequest:
     properties:
       mute:
         example: true
@@ -488,7 +523,7 @@ definitions:
     required:
     - newsletterJid
     type: object
-  NewsletterReactionRequest:
+  dto.NewsletterReactionRequest:
     properties:
       messageId:
         example: ABCD1234
@@ -507,13 +542,13 @@ definitions:
     - reaction
     - serverId
     type: object
-  NewsletterResponse:
+  dto.NewsletterResponse:
     properties:
       data: {}
       success:
         type: boolean
     type: object
-  PairPhoneRequest:
+  dto.PairPhoneRequest:
     properties:
       phone:
         example: "5511999999999"
@@ -521,40 +556,40 @@ definitions:
     required:
     - phone
     type: object
-  PairPhoneResponse:
+  dto.PairPhoneResponse:
     properties:
       code:
         type: string
       success:
         type: boolean
     type: object
-  PresenceResponse:
+  dto.PresenceResponse:
     properties:
       status:
         type: string
       success:
         type: boolean
     type: object
-  PrivacySettingsResponse:
+  dto.PrivacySettingsResponse:
     properties:
       settings: {}
       success:
         type: boolean
     type: object
-  ProfileInfoResponse:
+  dto.ProfileInfoResponse:
     properties:
       profile: {}
       success:
         type: boolean
     type: object
-  QRLinkResponse:
+  dto.QRLinkResponse:
     properties:
       link:
         type: string
       success:
         type: boolean
     type: object
-  QRResponse:
+  dto.QRResponse:
     properties:
       qr:
         example: 2@ABC123...
@@ -563,7 +598,7 @@ definitions:
         example: connecting
         type: string
     type: object
-  RejectCallRequest:
+  dto.RejectCallRequest:
     properties:
       callFrom:
         example: "5511999999999"
@@ -575,7 +610,7 @@ definitions:
     - callFrom
     - callId
     type: object
-  SendAudioRequest:
+  dto.SendAudioRequest:
     properties:
       audio:
         example: base64_encoded_audio
@@ -593,11 +628,11 @@ definitions:
     - audio
     - phone
     type: object
-  SendButtonsRequest:
+  dto.SendButtonsRequest:
     properties:
       buttons:
         items:
-          $ref: '#/definitions/ButtonDTO'
+          $ref: '#/definitions/dto.ButtonDTO'
         maxItems: 3
         minItems: 1
         type: array
@@ -618,7 +653,30 @@ definitions:
     - contentText
     - phone
     type: object
-  SendContactRequest:
+  dto.SendCarouselRequest:
+    properties:
+      body:
+        example: Browse our catalog
+        type: string
+      cards:
+        items:
+          $ref: '#/definitions/dto.CarouselCardDTO'
+        minItems: 1
+        type: array
+      footer:
+        example: Powered by ZPWoot
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+      title:
+        example: Check out our products!
+        type: string
+    required:
+    - cards
+    - phone
+    type: object
+  dto.SendContactRequest:
     properties:
       contactName:
         example: John Doe
@@ -634,7 +692,7 @@ definitions:
     - contactPhone
     - phone
     type: object
-  SendDocumentRequest:
+  dto.SendDocumentRequest:
     properties:
       document:
         example: base64_encoded_document
@@ -653,7 +711,7 @@ definitions:
     - filename
     - phone
     type: object
-  SendGroupMessageRequest:
+  dto.SendGroupMessageRequest:
     properties:
       groupId:
         example: 123456789@g.us
@@ -665,7 +723,7 @@ definitions:
     - groupId
     - text
     type: object
-  SendImageRequest:
+  dto.SendImageRequest:
     properties:
       caption:
         example: Image caption
@@ -683,14 +741,14 @@ definitions:
     - image
     - phone
     type: object
-  SendInteractiveRequest:
+  dto.SendInteractiveRequest:
     properties:
       body:
         example: Message body text
         type: string
       buttons:
         items:
-          $ref: '#/definitions/NativeFlowButtonDTO'
+          $ref: '#/definitions/dto.NativeFlowButtonDTO'
         minItems: 1
         type: array
       footer:
@@ -707,7 +765,7 @@ definitions:
     - buttons
     - phone
     type: object
-  SendListRequest:
+  dto.SendListRequest:
     properties:
       buttonText:
         example: Open Menu
@@ -723,7 +781,7 @@ definitions:
         type: string
       sections:
         items:
-          $ref: '#/definitions/ListSectionDTO'
+          $ref: '#/definitions/dto.ListSectionDTO'
         minItems: 1
         type: array
       title:
@@ -736,7 +794,7 @@ definitions:
     - sections
     - title
     type: object
-  SendLocationRequest:
+  dto.SendLocationRequest:
     properties:
       address:
         example: Street Address
@@ -758,7 +816,7 @@ definitions:
     - longitude
     - phone
     type: object
-  SendPollRequest:
+  dto.SendPollRequest:
     properties:
       name:
         example: What's your favorite color?
@@ -782,7 +840,7 @@ definitions:
     - options
     - phone
     type: object
-  SendPollVoteRequest:
+  dto.SendPollVoteRequest:
     properties:
       phone:
         example: "5511999999999"
@@ -801,7 +859,7 @@ definitions:
     - pollMessageId
     - selectedOptions
     type: object
-  SendReactionRequest:
+  dto.SendReactionRequest:
     properties:
       emoji:
         example: "\U0001F44D"
@@ -817,7 +875,7 @@ definitions:
     - messageId
     - phone
     type: object
-  SendResponse:
+  dto.SendResponse:
     properties:
       messageId:
         example: ABCD1234
@@ -829,7 +887,7 @@ definitions:
         example: 1699999999
         type: integer
     type: object
-  SendStatusRequest:
+  dto.SendStatusRequest:
     properties:
       caption:
         example: Status caption
@@ -847,7 +905,7 @@ definitions:
         example: base64_encoded_video
         type: string
     type: object
-  SendStickerRequest:
+  dto.SendStickerRequest:
     properties:
       mimetype:
         example: image/webp
@@ -862,7 +920,46 @@ definitions:
     - phone
     - sticker
     type: object
-  SendTextRequest:
+  dto.SendTemplateRequest:
+    properties:
+      buttons:
+        items:
+          $ref: '#/definitions/dto.TemplateButtonDTO'
+        minItems: 1
+        type: array
+      content:
+        example: Please choose an option below
+        type: string
+      document:
+        example: base64_encoded_document
+        type: string
+      filename:
+        example: document.pdf
+        type: string
+      footer:
+        example: Powered by ZPWoot
+        type: string
+      image:
+        example: base64_encoded_image
+        type: string
+      mimetype:
+        example: image/jpeg
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+      title:
+        example: Welcome!
+        type: string
+      video:
+        example: base64_encoded_video
+        type: string
+    required:
+    - buttons
+    - content
+    - phone
+    type: object
+  dto.SendTextRequest:
     properties:
       phone:
         example: "5511999999999"
@@ -874,7 +971,7 @@ definitions:
     - phone
     - text
     type: object
-  SendVideoRequest:
+  dto.SendVideoRequest:
     properties:
       caption:
         example: Video caption
@@ -892,7 +989,7 @@ definitions:
     - phone
     - video
     type: object
-  SessionResponse:
+  dto.SessionResponse:
     properties:
       jid:
         example: 5511999999999@s.whatsapp.net
@@ -904,27 +1001,27 @@ definitions:
         example: connected
         type: string
     type: object
-  SetNameResponse:
+  dto.SetNameResponse:
     properties:
       name:
         type: string
       success:
         type: boolean
     type: object
-  SetPictureResponse:
+  dto.SetPictureResponse:
     properties:
       pictureId:
         type: string
       success:
         type: boolean
     type: object
-  SetPresenceRequest:
+  dto.SetPresenceRequest:
     properties:
       available:
         example: true
         type: boolean
     type: object
-  SetPrivacyRequest:
+  dto.SetPrivacyRequest:
     properties:
       setting:
         description: last_seen, online, profile, status, read_receipts, group_add,
@@ -939,7 +1036,7 @@ definitions:
     - setting
     - value
     type: object
-  SetProfilePictureRequest:
+  dto.SetProfilePictureRequest:
     properties:
       image:
         example: base64_encoded_image
@@ -947,7 +1044,7 @@ definitions:
     required:
     - image
     type: object
-  SetPushNameRequest:
+  dto.SetPushNameRequest:
     properties:
       name:
         example: John Doe
@@ -955,7 +1052,7 @@ definitions:
     required:
     - name
     type: object
-  SetStatusRequest:
+  dto.SetStatusRequest:
     properties:
       status:
         example: Hey there! I'm using ZPWoot
@@ -963,14 +1060,14 @@ definitions:
     required:
     - status
     type: object
-  SetStatusResponse:
+  dto.SetStatusResponse:
     properties:
       status:
         type: string
       success:
         type: boolean
     type: object
-  SetWebhookRequest:
+  dto.SetWebhookRequest:
     properties:
       enabled:
         example: true
@@ -989,13 +1086,13 @@ definitions:
         example: https://example.com/webhook
         type: string
     type: object
-  StatusPrivacyResponse:
+  dto.StatusPrivacyResponse:
     properties:
       privacy: {}
       success:
         type: boolean
     type: object
-  SubscribePresenceRequest:
+  dto.SubscribePresenceRequest:
     properties:
       phone:
         example: "5511999999999"
@@ -1003,7 +1100,7 @@ definitions:
     required:
     - phone
     type: object
-  SuccessResponse:
+  dto.SuccessResponse:
     properties:
       message:
         example: operation completed
@@ -1012,7 +1109,55 @@ definitions:
         example: true
         type: boolean
     type: object
-  WebhookResponse:
+  dto.TemplateButtonDTO:
+    properties:
+      callButton:
+        $ref: '#/definitions/dto.TemplateCallButtonDTO'
+      index:
+        example: 0
+        type: integer
+      quickReply:
+        $ref: '#/definitions/dto.TemplateQuickReplyDTO'
+      urlButton:
+        $ref: '#/definitions/dto.TemplateURLButtonDTO'
+    type: object
+  dto.TemplateCallButtonDTO:
+    properties:
+      displayText:
+        example: Call Us
+        type: string
+      phoneNumber:
+        example: "+1234567890"
+        type: string
+    required:
+    - displayText
+    - phoneNumber
+    type: object
+  dto.TemplateQuickReplyDTO:
+    properties:
+      displayText:
+        example: Option 1
+        type: string
+      id:
+        example: opt1
+        type: string
+    required:
+    - displayText
+    - id
+    type: object
+  dto.TemplateURLButtonDTO:
+    properties:
+      displayText:
+        example: Visit Site
+        type: string
+      url:
+        example: https://example.com
+        type: string
+    required:
+    - displayText
+    - url
+    type: object
+  dto.WebhookResponse:
     properties:
       enabled:
         type: boolean
@@ -1042,7 +1187,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/EventsResponse'
+            $ref: '#/definitions/dto.EventsResponse'
       security:
       - ApiKeyAuth: []
       summary: List available webhook events
@@ -1064,22 +1209,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/RejectCallRequest'
+          $ref: '#/definitions/dto.RejectCallRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            $ref: '#/definitions/dto.SuccessResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Reject incoming call
@@ -1101,26 +1246,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/ArchiveChatRequest'
+          $ref: '#/definitions/dto.ArchiveChatRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ChatActionResponse'
+            $ref: '#/definitions/dto.ChatActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Archive or unarchive a chat
@@ -1142,26 +1287,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/DeleteMessageRequest'
+          $ref: '#/definitions/dto.DeleteMessageRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete a message
@@ -1183,22 +1328,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/DisappearingRequest'
+          $ref: '#/definitions/dto.DisappearingRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            $ref: '#/definitions/dto.SuccessResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Set disappearing messages timer
@@ -1220,26 +1365,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/EditMessageRequest'
+          $ref: '#/definitions/dto.EditMessageRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Edit a message
@@ -1265,11 +1410,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/CommunityResponse'
+            $ref: '#/definitions/dto.CommunityResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get community subgroups
@@ -1291,22 +1436,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/LinkGroupRequest'
+          $ref: '#/definitions/dto.LinkGroupRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            $ref: '#/definitions/dto.SuccessResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Link group to community
@@ -1328,22 +1473,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/LinkGroupRequest'
+          $ref: '#/definitions/dto.LinkGroupRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            $ref: '#/definitions/dto.SuccessResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Unlink group from community
@@ -1367,15 +1512,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MessageResponse'
+            $ref: '#/definitions/dto.MessageResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Connect session
@@ -1403,15 +1548,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/AvatarResponse'
+            $ref: '#/definitions/dto.AvatarResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get contact avatar
@@ -1437,11 +1582,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/BusinessProfileResponse'
+            $ref: '#/definitions/dto.BusinessProfileResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get business profile
@@ -1462,11 +1607,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/BlocklistResponse'
+            $ref: '#/definitions/dto.BlocklistResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get blocked contacts
@@ -1487,22 +1632,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/BlocklistRequest'
+          $ref: '#/definitions/dto.BlocklistRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/BlocklistActionResponse'
+            $ref: '#/definitions/dto.BlocklistActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Block or unblock contact
@@ -1524,26 +1669,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/CheckPhoneRequest'
+          $ref: '#/definitions/dto.CheckPhoneRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/CheckPhoneResultsResponse'
+            $ref: '#/definitions/dto.CheckPhoneResultsResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Check if phones are registered on WhatsApp
@@ -1565,26 +1710,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/ContactInfoRequest'
+          $ref: '#/definitions/dto.ContactInfoRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ContactInfoResponse'
+            $ref: '#/definitions/dto.ContactInfoResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get contact information
@@ -1607,15 +1752,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ContactsListResponse'
+            $ref: '#/definitions/dto.ContactsListResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get all contacts
@@ -1637,26 +1782,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/MarkReadRequest'
+          $ref: '#/definitions/dto.MarkReadRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            $ref: '#/definitions/dto.SuccessResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Mark messages as read
@@ -1678,26 +1823,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SetPresenceRequest'
+          $ref: '#/definitions/dto.SetPresenceRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/PresenceResponse'
+            $ref: '#/definitions/dto.PresenceResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Set online presence
@@ -1722,11 +1867,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/QRLinkResponse'
+            $ref: '#/definitions/dto.QRLinkResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get contact QR link
@@ -1748,22 +1893,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SubscribePresenceRequest'
+          $ref: '#/definitions/dto.SubscribePresenceRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            $ref: '#/definitions/dto.SuccessResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Subscribe to presence updates
@@ -1785,26 +1930,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/ChatPresenceRequest'
+          $ref: '#/definitions/dto.ChatPresenceRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ChatPresenceResponse'
+            $ref: '#/definitions/dto.ChatPresenceResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Set chat presence (typing/recording)
@@ -1827,15 +1972,15 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/SessionResponse'
+            $ref: '#/definitions/dto.SessionResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create a new session
@@ -1858,15 +2003,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MessageResponse'
+            $ref: '#/definitions/dto.MessageResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete a session
@@ -1894,19 +2039,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get group info
@@ -1938,15 +2083,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupInviteLinkResponse'
+            $ref: '#/definitions/dto.GroupInviteLinkResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get group invite link
@@ -1974,15 +2119,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/dto.GroupActionResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Leave group
@@ -2008,11 +2153,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupRequestParticipantsResponse'
+            $ref: '#/definitions/dto.GroupRequestParticipantsResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get pending join requests
@@ -2038,22 +2183,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupRequestActionBodyRequest'
+          $ref: '#/definitions/dto.GroupRequestActionBodyRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Approve or reject join requests
@@ -2075,22 +2220,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupAnnounceRequest'
+          $ref: '#/definitions/dto.GroupAnnounceRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            $ref: '#/definitions/dto.SuccessResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Set group announce mode
@@ -2112,22 +2257,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupApprovalRequest'
+          $ref: '#/definitions/dto.GroupApprovalRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            $ref: '#/definitions/dto.SuccessResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Set group join approval mode
@@ -2149,26 +2294,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/CreateGroupRequest'
+          $ref: '#/definitions/dto.CreateGroupRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create a new group
@@ -2190,26 +2335,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupUpdateRequest'
+          $ref: '#/definitions/dto.GroupUpdateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update group description
@@ -2235,15 +2380,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get group info from invite link
@@ -2265,26 +2410,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/JoinGroupRequest'
+          $ref: '#/definitions/dto.JoinGroupRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Join group via link
@@ -2307,15 +2452,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/dto.GroupActionResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get joined groups
@@ -2337,22 +2482,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupLockedRequest'
+          $ref: '#/definitions/dto.GroupLockedRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            $ref: '#/definitions/dto.SuccessResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Set group locked mode
@@ -2374,22 +2519,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupMemberAddModeRequest'
+          $ref: '#/definitions/dto.GroupMemberAddModeRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            $ref: '#/definitions/dto.SuccessResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Set who can add members
@@ -2411,26 +2556,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupUpdateRequest'
+          $ref: '#/definitions/dto.GroupUpdateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update group name
@@ -2452,26 +2597,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupParticipantsRequest'
+          $ref: '#/definitions/dto.GroupParticipantsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Add participants to group
@@ -2493,26 +2638,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupParticipantsRequest'
+          $ref: '#/definitions/dto.GroupParticipantsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Demote participants from admin
@@ -2534,26 +2679,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupParticipantsRequest'
+          $ref: '#/definitions/dto.GroupParticipantsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Promote participants to admin
@@ -2575,26 +2720,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupParticipantsRequest'
+          $ref: '#/definitions/dto.GroupParticipantsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Remove participants from group
@@ -2616,22 +2761,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupPictureRequest'
+          $ref: '#/definitions/dto.GroupPictureRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SetPictureResponse'
+            $ref: '#/definitions/dto.SetPictureResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Set group picture
@@ -2653,26 +2798,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendGroupMessageRequest'
+          $ref: '#/definitions/dto.SendGroupMessageRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send message to group
@@ -2695,15 +2840,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SessionResponse'
+            $ref: '#/definitions/dto.SessionResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get session info
@@ -2726,15 +2871,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MessageResponse'
+            $ref: '#/definitions/dto.MessageResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Logout session
@@ -2760,11 +2905,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/NewsletterResponse'
+            $ref: '#/definitions/dto.NewsletterResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get newsletter info
@@ -2799,11 +2944,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/NewsletterResponse'
+            $ref: '#/definitions/dto.NewsletterResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get newsletter messages
@@ -2825,22 +2970,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/CreateNewsletterRequest'
+          $ref: '#/definitions/dto.CreateNewsletterRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/NewsletterResponse'
+            $ref: '#/definitions/dto.NewsletterResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create a newsletter/channel
@@ -2862,22 +3007,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/NewsletterActionRequest'
+          $ref: '#/definitions/dto.NewsletterActionRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            $ref: '#/definitions/dto.SuccessResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Follow a newsletter
@@ -2898,11 +3043,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/NewsletterListResponse'
+            $ref: '#/definitions/dto.NewsletterListResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: List subscribed newsletters
@@ -2924,22 +3069,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/NewsletterMuteRequest'
+          $ref: '#/definitions/dto.NewsletterMuteRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            $ref: '#/definitions/dto.SuccessResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Mute/unmute newsletter
@@ -2961,22 +3106,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/NewsletterReactionRequest'
+          $ref: '#/definitions/dto.NewsletterReactionRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            $ref: '#/definitions/dto.SuccessResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: React to newsletter message
@@ -2998,22 +3143,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/NewsletterActionRequest'
+          $ref: '#/definitions/dto.NewsletterActionRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            $ref: '#/definitions/dto.SuccessResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Unfollow a newsletter
@@ -3035,22 +3180,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/PairPhoneRequest'
+          $ref: '#/definitions/dto.PairPhoneRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/PairPhoneResponse'
+            $ref: '#/definitions/dto.PairPhoneResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Pair using phone number
@@ -3073,15 +3218,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ProfileInfoResponse'
+            $ref: '#/definitions/dto.ProfileInfoResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get own profile info
@@ -3103,22 +3248,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/DefaultDisappearingRequest'
+          $ref: '#/definitions/dto.DefaultDisappearingRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            $ref: '#/definitions/dto.SuccessResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Set default disappearing timer
@@ -3140,26 +3285,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SetPushNameRequest'
+          $ref: '#/definitions/dto.SetPushNameRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SetNameResponse'
+            $ref: '#/definitions/dto.SetNameResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Set display name
@@ -3182,15 +3327,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            $ref: '#/definitions/dto.SuccessResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete profile picture
@@ -3211,26 +3356,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SetProfilePictureRequest'
+          $ref: '#/definitions/dto.SetProfilePictureRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SetPictureResponse'
+            $ref: '#/definitions/dto.SetPictureResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Set profile picture
@@ -3253,15 +3398,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/PrivacySettingsResponse'
+            $ref: '#/definitions/dto.PrivacySettingsResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get privacy settings
@@ -3282,26 +3427,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SetPrivacyRequest'
+          $ref: '#/definitions/dto.SetPrivacyRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            $ref: '#/definitions/dto.SuccessResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Set privacy settings
@@ -3323,26 +3468,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SetStatusRequest'
+          $ref: '#/definitions/dto.SetStatusRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SetStatusResponse'
+            $ref: '#/definitions/dto.SetStatusResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Set status message
@@ -3370,15 +3515,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/QRResponse'
+            $ref: '#/definitions/dto.QRResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get QR code
@@ -3401,15 +3546,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MessageResponse'
+            $ref: '#/definitions/dto.MessageResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Restart session
@@ -3431,26 +3576,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendAudioRequest'
+          $ref: '#/definitions/dto.SendAudioRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send audio message
@@ -3472,29 +3617,71 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendButtonsRequest'
+          $ref: '#/definitions/dto.SendButtonsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send buttons message
+      tags:
+      - messages
+  /sessions/{name}/send/carousel:
+    post:
+      consumes:
+      - application/json
+      description: Send an interactive carousel message with multiple cards, each
+        with image/video and buttons
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Carousel data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SendCarouselRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send carousel message
       tags:
       - messages
   /sessions/{name}/send/contact:
@@ -3513,26 +3700,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendContactRequest'
+          $ref: '#/definitions/dto.SendContactRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send contact message
@@ -3554,26 +3741,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendDocumentRequest'
+          $ref: '#/definitions/dto.SendDocumentRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send document message
@@ -3595,26 +3782,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendImageRequest'
+          $ref: '#/definitions/dto.SendImageRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send image message
@@ -3637,26 +3824,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendInteractiveRequest'
+          $ref: '#/definitions/dto.SendInteractiveRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send interactive message with native flow buttons
@@ -3678,26 +3865,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendListRequest'
+          $ref: '#/definitions/dto.SendListRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send list message
@@ -3719,26 +3906,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendLocationRequest'
+          $ref: '#/definitions/dto.SendLocationRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send location message
@@ -3760,26 +3947,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendPollRequest'
+          $ref: '#/definitions/dto.SendPollRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send poll message
@@ -3801,26 +3988,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendPollVoteRequest'
+          $ref: '#/definitions/dto.SendPollVoteRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Vote in a poll
@@ -3842,26 +4029,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendReactionRequest'
+          $ref: '#/definitions/dto.SendReactionRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send reaction to message
@@ -3883,29 +4070,71 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendStickerRequest'
+          $ref: '#/definitions/dto.SendStickerRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send sticker message
+      tags:
+      - messages
+  /sessions/{name}/send/template:
+    post:
+      consumes:
+      - application/json
+      description: Send a message with template buttons (URL, Call, QuickReply). Works
+        on Web and Mobile.
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Template data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SendTemplateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send template message
       tags:
       - messages
   /sessions/{name}/send/text:
@@ -3924,26 +4153,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendTextRequest'
+          $ref: '#/definitions/dto.SendTextRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send text message
@@ -3965,26 +4194,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendVideoRequest'
+          $ref: '#/definitions/dto.SendVideoRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send video message
@@ -4005,11 +4234,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/StatusPrivacyResponse'
+            $ref: '#/definitions/dto.StatusPrivacyResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get status privacy settings
@@ -4031,22 +4260,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendStatusRequest'
+          $ref: '#/definitions/dto.SendStatusRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Post a story
@@ -4067,11 +4296,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/WebhookResponse'
+            $ref: '#/definitions/dto.WebhookResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get webhook
@@ -4093,22 +4322,22 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/SetWebhookRequest'
+          $ref: '#/definitions/dto.SetWebhookRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/WebhookResponse'
+            $ref: '#/definitions/dto.WebhookResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Set webhook
@@ -4126,12 +4355,12 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/SessionResponse'
+              $ref: '#/definitions/dto.SessionResponse'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Fetch all sessions

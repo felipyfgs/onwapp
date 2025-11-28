@@ -122,6 +122,8 @@ func registerMessageRoutes(rg *gin.RouterGroup, h *handler.MessageHandler) {
 	rg.POST("/:name/send/buttons", h.SendButtons)
 	rg.POST("/:name/send/list", h.SendList)
 	rg.POST("/:name/send/interactive", h.SendInteractive)
+	rg.POST("/:name/send/template", h.SendTemplate)
+	rg.POST("/:name/send/carousel", h.SendCarousel)
 }
 
 func registerGroupRoutes(rg *gin.RouterGroup, h *handler.GroupHandler) {

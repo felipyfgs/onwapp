@@ -5,7 +5,9 @@ import (
 	"net/http"
 
 	"go.mau.fi/whatsmeow"
+	"go.mau.fi/whatsmeow/proto/waE2E"
 	"github.com/gin-gonic/gin"
+	"google.golang.org/protobuf/proto"
 
 	"zpwoot/internal/api/dto"
 	"zpwoot/internal/service"
@@ -620,6 +622,274 @@ func (h *MessageHandler) SendInteractive(c *gin.Context) {
 	}
 
 	resp, err := h.whatsappService.SendNativeFlowMessage(c.Request.Context(), name, req.Phone, params)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.SendResponse{
+		Success:   true,
+		MessageID: resp.ID,
+		Timestamp: resp.Timestamp.Unix(),
+	})
+}
+
+// SendTemplate godoc
+// @Summary      Send template message
+// @Description  Send a message with template buttons (URL, Call, QuickReply). Works on Web and Mobile.
+// @Tags         messages
+// @Accept       json
+// @Produce      json
+// @Param        name   path      string                   true  "Session name"
+// @Param        body   body      dto.SendTemplateRequest  true  "Template data"
+// @Success      200    {object}  dto.SendResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /sessions/{name}/send/template [post]
+func (h *MessageHandler) SendTemplate(c *gin.Context) {
+	name := c.Param("name")
+
+	var req dto.SendTemplateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	buttons := make([]whatsmeow.TemplateButton, len(req.Buttons))
+	for i, btn := range req.Buttons {
+		tb := whatsmeow.TemplateButton{Index: btn.Index}
+		if btn.QuickReply != nil {
+			tb.QuickReply = &whatsmeow.TemplateQuickReplyButton{
+				DisplayText: btn.QuickReply.DisplayText,
+				ID:          btn.QuickReply.ID,
+			}
+		}
+		if btn.URLButton != nil {
+			tb.URLButton = &whatsmeow.TemplateURLButton{
+				DisplayText: btn.URLButton.DisplayText,
+				URL:         btn.URLButton.URL,
+			}
+		}
+		if btn.CallButton != nil {
+			tb.CallButton = &whatsmeow.TemplateCallButton{
+				DisplayText: btn.CallButton.DisplayText,
+				PhoneNumber: btn.CallButton.PhoneNumber,
+			}
+		}
+		buttons[i] = tb
+	}
+
+	params := whatsmeow.TemplateMessageParams{
+		Title:   req.Title,
+		Content: req.Content,
+		Footer:  req.Footer,
+		Buttons: buttons,
+	}
+
+	// Handle optional image
+	if req.Image != "" {
+		imageData, err := base64.StdEncoding.DecodeString(req.Image)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 image"})
+			return
+		}
+		uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), name, imageData, whatsmeow.MediaImage)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to upload image: " + err.Error()})
+			return
+		}
+		mimeType := req.MimeType
+		if mimeType == "" {
+			mimeType = "image/jpeg"
+		}
+		params.ImageMessage = &waE2E.ImageMessage{
+			URL:           proto.String(uploaded.URL),
+			DirectPath:    proto.String(uploaded.DirectPath),
+			MediaKey:      uploaded.MediaKey,
+			FileEncSHA256: uploaded.FileEncSHA256,
+			FileSHA256:    uploaded.FileSHA256,
+			FileLength:    proto.Uint64(uint64(len(imageData))),
+			Mimetype:      proto.String(mimeType),
+		}
+	}
+
+	// Handle optional video
+	if req.Video != "" {
+		videoData, err := base64.StdEncoding.DecodeString(req.Video)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 video"})
+			return
+		}
+		uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), name, videoData, whatsmeow.MediaVideo)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to upload video: " + err.Error()})
+			return
+		}
+		mimeType := req.MimeType
+		if mimeType == "" {
+			mimeType = "video/mp4"
+		}
+		params.VideoMessage = &waE2E.VideoMessage{
+			URL:           proto.String(uploaded.URL),
+			DirectPath:    proto.String(uploaded.DirectPath),
+			MediaKey:      uploaded.MediaKey,
+			FileEncSHA256: uploaded.FileEncSHA256,
+			FileSHA256:    uploaded.FileSHA256,
+			FileLength:    proto.Uint64(uint64(len(videoData))),
+			Mimetype:      proto.String(mimeType),
+		}
+	}
+
+	// Handle optional document
+	if req.Document != "" {
+		docData, err := base64.StdEncoding.DecodeString(req.Document)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 document"})
+			return
+		}
+		uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), name, docData, whatsmeow.MediaDocument)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to upload document: " + err.Error()})
+			return
+		}
+		mimeType := req.MimeType
+		if mimeType == "" {
+			mimeType = "application/pdf"
+		}
+		params.DocumentMessage = &waE2E.DocumentMessage{
+			URL:           proto.String(uploaded.URL),
+			DirectPath:    proto.String(uploaded.DirectPath),
+			MediaKey:      uploaded.MediaKey,
+			FileEncSHA256: uploaded.FileEncSHA256,
+			FileSHA256:    uploaded.FileSHA256,
+			FileLength:    proto.Uint64(uint64(len(docData))),
+			Mimetype:      proto.String(mimeType),
+			FileName:      proto.String(req.Filename),
+		}
+	}
+
+	resp, err := h.whatsappService.SendTemplateMessage(c.Request.Context(), name, req.Phone, params)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.SendResponse{
+		Success:   true,
+		MessageID: resp.ID,
+		Timestamp: resp.Timestamp.Unix(),
+	})
+}
+
+// SendCarousel godoc
+// @Summary      Send carousel message
+// @Description  Send an interactive carousel message with multiple cards, each with image/video and buttons
+// @Tags         messages
+// @Accept       json
+// @Produce      json
+// @Param        name   path      string                   true  "Session name"
+// @Param        body   body      dto.SendCarouselRequest  true  "Carousel data"
+// @Success      200    {object}  dto.SendResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /sessions/{name}/send/carousel [post]
+func (h *MessageHandler) SendCarousel(c *gin.Context) {
+	name := c.Param("name")
+
+	var req dto.SendCarouselRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	cards := make([]whatsmeow.CarouselCard, len(req.Cards))
+	for i, card := range req.Cards {
+		buttons := make([]whatsmeow.NativeFlowButton, len(card.Buttons))
+		for j, btn := range card.Buttons {
+			buttons[j] = whatsmeow.NativeFlowButton{
+				Name:   btn.Name,
+				Params: btn.Params,
+			}
+		}
+
+		cardHeader := whatsmeow.CarouselCardHeader{
+			Title: card.Header.Title,
+		}
+
+		// Handle card image
+		if card.Header.Image != "" {
+			imageData, err := base64.StdEncoding.DecodeString(card.Header.Image)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 image in card"})
+				return
+			}
+			uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), name, imageData, whatsmeow.MediaImage)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to upload card image: " + err.Error()})
+				return
+			}
+			mimeType := card.Header.MimeType
+			if mimeType == "" {
+				mimeType = "image/jpeg"
+			}
+			cardHeader.ImageMessage = &waE2E.ImageMessage{
+				URL:           proto.String(uploaded.URL),
+				DirectPath:    proto.String(uploaded.DirectPath),
+				MediaKey:      uploaded.MediaKey,
+				FileEncSHA256: uploaded.FileEncSHA256,
+				FileSHA256:    uploaded.FileSHA256,
+				FileLength:    proto.Uint64(uint64(len(imageData))),
+				Mimetype:      proto.String(mimeType),
+			}
+		}
+
+		// Handle card video
+		if card.Header.Video != "" {
+			videoData, err := base64.StdEncoding.DecodeString(card.Header.Video)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 video in card"})
+				return
+			}
+			uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), name, videoData, whatsmeow.MediaVideo)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to upload card video: " + err.Error()})
+				return
+			}
+			mimeType := card.Header.MimeType
+			if mimeType == "" {
+				mimeType = "video/mp4"
+			}
+			cardHeader.VideoMessage = &waE2E.VideoMessage{
+				URL:           proto.String(uploaded.URL),
+				DirectPath:    proto.String(uploaded.DirectPath),
+				MediaKey:      uploaded.MediaKey,
+				FileEncSHA256: uploaded.FileEncSHA256,
+				FileSHA256:    uploaded.FileSHA256,
+				FileLength:    proto.Uint64(uint64(len(videoData))),
+				Mimetype:      proto.String(mimeType),
+			}
+		}
+
+		cards[i] = whatsmeow.CarouselCard{
+			Header:  cardHeader,
+			Body:    card.Body,
+			Footer:  card.Footer,
+			Buttons: buttons,
+		}
+	}
+
+	params := whatsmeow.CarouselMessageParams{
+		Title:  req.Title,
+		Body:   req.Body,
+		Footer: req.Footer,
+		Cards:  cards,
+	}
+
+	resp, err := h.whatsappService.SendCarouselMessage(c.Request.Context(), name, req.Phone, params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return

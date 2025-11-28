@@ -27,7 +27,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/EventsResponse"
+                            "$ref": "#/definitions/dto.EventsResponse"
                         }
                     }
                 }
@@ -57,14 +57,14 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/SessionResponse"
+                                "$ref": "#/definitions/dto.SessionResponse"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -102,7 +102,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/RejectCallRequest"
+                            "$ref": "#/definitions/dto.RejectCallRequest"
                         }
                     }
                 ],
@@ -110,19 +110,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -160,7 +160,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ArchiveChatRequest"
+                            "$ref": "#/definitions/dto.ArchiveChatRequest"
                         }
                     }
                 ],
@@ -168,25 +168,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ChatActionResponse"
+                            "$ref": "#/definitions/dto.ChatActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -224,7 +224,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/DeleteMessageRequest"
+                            "$ref": "#/definitions/dto.DeleteMessageRequest"
                         }
                     }
                 ],
@@ -232,25 +232,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -288,7 +288,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/DisappearingRequest"
+                            "$ref": "#/definitions/dto.DisappearingRequest"
                         }
                     }
                 ],
@@ -296,19 +296,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -346,7 +346,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/EditMessageRequest"
+                            "$ref": "#/definitions/dto.EditMessageRequest"
                         }
                     }
                 ],
@@ -354,25 +354,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -410,7 +410,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/LinkGroupRequest"
+                            "$ref": "#/definitions/dto.LinkGroupRequest"
                         }
                     }
                 ],
@@ -418,19 +418,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -468,7 +468,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/LinkGroupRequest"
+                            "$ref": "#/definitions/dto.LinkGroupRequest"
                         }
                     }
                 ],
@@ -476,19 +476,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -529,13 +529,13 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/CommunityResponse"
+                            "$ref": "#/definitions/dto.CommunityResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -572,19 +572,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MessageResponse"
+                            "$ref": "#/definitions/dto.MessageResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -618,13 +618,13 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/BlocklistResponse"
+                            "$ref": "#/definitions/dto.BlocklistResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -660,7 +660,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/BlocklistRequest"
+                            "$ref": "#/definitions/dto.BlocklistRequest"
                         }
                     }
                 ],
@@ -668,19 +668,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/BlocklistActionResponse"
+                            "$ref": "#/definitions/dto.BlocklistActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -718,7 +718,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CheckPhoneRequest"
+                            "$ref": "#/definitions/dto.CheckPhoneRequest"
                         }
                     }
                 ],
@@ -726,25 +726,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/CheckPhoneResultsResponse"
+                            "$ref": "#/definitions/dto.CheckPhoneResultsResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -782,7 +782,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ContactInfoRequest"
+                            "$ref": "#/definitions/dto.ContactInfoRequest"
                         }
                     }
                 ],
@@ -790,25 +790,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ContactInfoResponse"
+                            "$ref": "#/definitions/dto.ContactInfoResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -845,19 +845,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ContactsListResponse"
+                            "$ref": "#/definitions/dto.ContactsListResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -895,7 +895,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/MarkReadRequest"
+                            "$ref": "#/definitions/dto.MarkReadRequest"
                         }
                     }
                 ],
@@ -903,25 +903,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -959,7 +959,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SetPresenceRequest"
+                            "$ref": "#/definitions/dto.SetPresenceRequest"
                         }
                     }
                 ],
@@ -967,25 +967,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/PresenceResponse"
+                            "$ref": "#/definitions/dto.PresenceResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1025,13 +1025,13 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/QRLinkResponse"
+                            "$ref": "#/definitions/dto.QRLinkResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1069,7 +1069,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SubscribePresenceRequest"
+                            "$ref": "#/definitions/dto.SubscribePresenceRequest"
                         }
                     }
                 ],
@@ -1077,19 +1077,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1127,7 +1127,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ChatPresenceRequest"
+                            "$ref": "#/definitions/dto.ChatPresenceRequest"
                         }
                     }
                 ],
@@ -1135,25 +1135,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ChatPresenceResponse"
+                            "$ref": "#/definitions/dto.ChatPresenceResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1197,19 +1197,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/AvatarResponse"
+                            "$ref": "#/definitions/dto.AvatarResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1250,13 +1250,13 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/BusinessProfileResponse"
+                            "$ref": "#/definitions/dto.BusinessProfileResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1293,19 +1293,19 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/SessionResponse"
+                            "$ref": "#/definitions/dto.SessionResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1342,19 +1342,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MessageResponse"
+                            "$ref": "#/definitions/dto.MessageResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1392,7 +1392,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupAnnounceRequest"
+                            "$ref": "#/definitions/dto.GroupAnnounceRequest"
                         }
                     }
                 ],
@@ -1400,19 +1400,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1450,7 +1450,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupApprovalRequest"
+                            "$ref": "#/definitions/dto.GroupApprovalRequest"
                         }
                     }
                 ],
@@ -1458,19 +1458,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1508,7 +1508,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateGroupRequest"
+                            "$ref": "#/definitions/dto.CreateGroupRequest"
                         }
                     }
                 ],
@@ -1516,25 +1516,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1572,7 +1572,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupUpdateRequest"
+                            "$ref": "#/definitions/dto.GroupUpdateRequest"
                         }
                     }
                 ],
@@ -1580,25 +1580,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1639,19 +1639,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1689,7 +1689,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/JoinGroupRequest"
+                            "$ref": "#/definitions/dto.JoinGroupRequest"
                         }
                     }
                 ],
@@ -1697,25 +1697,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1752,19 +1752,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/dto.GroupActionResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1802,7 +1802,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupLockedRequest"
+                            "$ref": "#/definitions/dto.GroupLockedRequest"
                         }
                     }
                 ],
@@ -1810,19 +1810,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1860,7 +1860,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupMemberAddModeRequest"
+                            "$ref": "#/definitions/dto.GroupMemberAddModeRequest"
                         }
                     }
                 ],
@@ -1868,19 +1868,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1918,7 +1918,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupUpdateRequest"
+                            "$ref": "#/definitions/dto.GroupUpdateRequest"
                         }
                     }
                 ],
@@ -1926,25 +1926,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1982,7 +1982,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupParticipantsRequest"
+                            "$ref": "#/definitions/dto.GroupParticipantsRequest"
                         }
                     }
                 ],
@@ -1990,25 +1990,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2046,7 +2046,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupParticipantsRequest"
+                            "$ref": "#/definitions/dto.GroupParticipantsRequest"
                         }
                     }
                 ],
@@ -2054,25 +2054,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2110,7 +2110,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupParticipantsRequest"
+                            "$ref": "#/definitions/dto.GroupParticipantsRequest"
                         }
                     }
                 ],
@@ -2118,25 +2118,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2174,7 +2174,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupParticipantsRequest"
+                            "$ref": "#/definitions/dto.GroupParticipantsRequest"
                         }
                     }
                 ],
@@ -2182,25 +2182,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2238,7 +2238,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupPictureRequest"
+                            "$ref": "#/definitions/dto.GroupPictureRequest"
                         }
                     }
                 ],
@@ -2246,19 +2246,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SetPictureResponse"
+                            "$ref": "#/definitions/dto.SetPictureResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2296,7 +2296,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendGroupMessageRequest"
+                            "$ref": "#/definitions/dto.SendGroupMessageRequest"
                         }
                     }
                 ],
@@ -2304,25 +2304,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2366,25 +2366,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2434,19 +2434,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupInviteLinkResponse"
+                            "$ref": "#/definitions/dto.GroupInviteLinkResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2490,19 +2490,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/dto.GroupActionResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2543,13 +2543,13 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupRequestParticipantsResponse"
+                            "$ref": "#/definitions/dto.GroupRequestParticipantsResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2592,7 +2592,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupRequestActionBodyRequest"
+                            "$ref": "#/definitions/dto.GroupRequestActionBodyRequest"
                         }
                     }
                 ],
@@ -2600,19 +2600,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2649,19 +2649,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SessionResponse"
+                            "$ref": "#/definitions/dto.SessionResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2698,19 +2698,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MessageResponse"
+                            "$ref": "#/definitions/dto.MessageResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2748,7 +2748,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateNewsletterRequest"
+                            "$ref": "#/definitions/dto.CreateNewsletterRequest"
                         }
                     }
                 ],
@@ -2756,19 +2756,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/NewsletterResponse"
+                            "$ref": "#/definitions/dto.NewsletterResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2806,7 +2806,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/NewsletterActionRequest"
+                            "$ref": "#/definitions/dto.NewsletterActionRequest"
                         }
                     }
                 ],
@@ -2814,19 +2814,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2860,13 +2860,13 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/NewsletterListResponse"
+                            "$ref": "#/definitions/dto.NewsletterListResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2904,7 +2904,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/NewsletterMuteRequest"
+                            "$ref": "#/definitions/dto.NewsletterMuteRequest"
                         }
                     }
                 ],
@@ -2912,19 +2912,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2962,7 +2962,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/NewsletterReactionRequest"
+                            "$ref": "#/definitions/dto.NewsletterReactionRequest"
                         }
                     }
                 ],
@@ -2970,19 +2970,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3020,7 +3020,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/NewsletterActionRequest"
+                            "$ref": "#/definitions/dto.NewsletterActionRequest"
                         }
                     }
                 ],
@@ -3028,19 +3028,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3081,13 +3081,13 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/NewsletterResponse"
+                            "$ref": "#/definitions/dto.NewsletterResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3141,13 +3141,13 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/NewsletterResponse"
+                            "$ref": "#/definitions/dto.NewsletterResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3185,7 +3185,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/PairPhoneRequest"
+                            "$ref": "#/definitions/dto.PairPhoneRequest"
                         }
                     }
                 ],
@@ -3193,19 +3193,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/PairPhoneResponse"
+                            "$ref": "#/definitions/dto.PairPhoneResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3242,19 +3242,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ProfileInfoResponse"
+                            "$ref": "#/definitions/dto.ProfileInfoResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3292,7 +3292,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/DefaultDisappearingRequest"
+                            "$ref": "#/definitions/dto.DefaultDisappearingRequest"
                         }
                     }
                 ],
@@ -3300,19 +3300,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3350,7 +3350,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SetPushNameRequest"
+                            "$ref": "#/definitions/dto.SetPushNameRequest"
                         }
                     }
                 ],
@@ -3358,25 +3358,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SetNameResponse"
+                            "$ref": "#/definitions/dto.SetNameResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3414,7 +3414,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SetProfilePictureRequest"
+                            "$ref": "#/definitions/dto.SetProfilePictureRequest"
                         }
                     }
                 ],
@@ -3422,25 +3422,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SetPictureResponse"
+                            "$ref": "#/definitions/dto.SetPictureResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3475,19 +3475,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3524,19 +3524,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/PrivacySettingsResponse"
+                            "$ref": "#/definitions/dto.PrivacySettingsResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3572,7 +3572,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SetPrivacyRequest"
+                            "$ref": "#/definitions/dto.SetPrivacyRequest"
                         }
                     }
                 ],
@@ -3580,25 +3580,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "$ref": "#/definitions/dto.SuccessResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3636,7 +3636,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SetStatusRequest"
+                            "$ref": "#/definitions/dto.SetStatusRequest"
                         }
                     }
                 ],
@@ -3644,25 +3644,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SetStatusResponse"
+                            "$ref": "#/definitions/dto.SetStatusResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3706,19 +3706,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/QRResponse"
+                            "$ref": "#/definitions/dto.QRResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3755,19 +3755,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MessageResponse"
+                            "$ref": "#/definitions/dto.MessageResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3805,7 +3805,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendAudioRequest"
+                            "$ref": "#/definitions/dto.SendAudioRequest"
                         }
                     }
                 ],
@@ -3813,25 +3813,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3869,7 +3869,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendButtonsRequest"
+                            "$ref": "#/definitions/dto.SendButtonsRequest"
                         }
                     }
                 ],
@@ -3877,25 +3877,89 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{name}/send/carousel": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Send an interactive carousel message with multiple cards, each with image/video and buttons",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "messages"
+                ],
+                "summary": "Send carousel message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Carousel data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SendCarouselRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SendResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3933,7 +3997,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendContactRequest"
+                            "$ref": "#/definitions/dto.SendContactRequest"
                         }
                     }
                 ],
@@ -3941,25 +4005,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3997,7 +4061,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendDocumentRequest"
+                            "$ref": "#/definitions/dto.SendDocumentRequest"
                         }
                     }
                 ],
@@ -4005,25 +4069,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4061,7 +4125,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendImageRequest"
+                            "$ref": "#/definitions/dto.SendImageRequest"
                         }
                     }
                 ],
@@ -4069,25 +4133,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4125,7 +4189,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendInteractiveRequest"
+                            "$ref": "#/definitions/dto.SendInteractiveRequest"
                         }
                     }
                 ],
@@ -4133,25 +4197,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4189,7 +4253,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendListRequest"
+                            "$ref": "#/definitions/dto.SendListRequest"
                         }
                     }
                 ],
@@ -4197,25 +4261,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4253,7 +4317,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendLocationRequest"
+                            "$ref": "#/definitions/dto.SendLocationRequest"
                         }
                     }
                 ],
@@ -4261,25 +4325,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4317,7 +4381,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendPollRequest"
+                            "$ref": "#/definitions/dto.SendPollRequest"
                         }
                     }
                 ],
@@ -4325,25 +4389,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4381,7 +4445,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendPollVoteRequest"
+                            "$ref": "#/definitions/dto.SendPollVoteRequest"
                         }
                     }
                 ],
@@ -4389,25 +4453,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4445,7 +4509,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendReactionRequest"
+                            "$ref": "#/definitions/dto.SendReactionRequest"
                         }
                     }
                 ],
@@ -4453,25 +4517,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4509,7 +4573,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendStickerRequest"
+                            "$ref": "#/definitions/dto.SendStickerRequest"
                         }
                     }
                 ],
@@ -4517,25 +4581,89 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{name}/send/template": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Send a message with template buttons (URL, Call, QuickReply). Works on Web and Mobile.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "messages"
+                ],
+                "summary": "Send template message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Template data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SendTemplateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SendResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4573,7 +4701,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendTextRequest"
+                            "$ref": "#/definitions/dto.SendTextRequest"
                         }
                     }
                 ],
@@ -4581,25 +4709,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4637,7 +4765,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendVideoRequest"
+                            "$ref": "#/definitions/dto.SendVideoRequest"
                         }
                     }
                 ],
@@ -4645,25 +4773,25 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4697,13 +4825,13 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/StatusPrivacyResponse"
+                            "$ref": "#/definitions/dto.StatusPrivacyResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4741,7 +4869,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendStatusRequest"
+                            "$ref": "#/definitions/dto.SendStatusRequest"
                         }
                     }
                 ],
@@ -4749,19 +4877,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4795,13 +4923,13 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/WebhookResponse"
+                            "$ref": "#/definitions/dto.WebhookResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4837,7 +4965,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SetWebhookRequest"
+                            "$ref": "#/definitions/dto.SetWebhookRequest"
                         }
                     }
                 ],
@@ -4845,19 +4973,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/WebhookResponse"
+                            "$ref": "#/definitions/dto.WebhookResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4865,7 +4993,7 @@
         }
     },
     "definitions": {
-        "ArchiveChatRequest": {
+        "dto.ArchiveChatRequest": {
             "type": "object",
             "required": [
                 "phone"
@@ -4881,7 +5009,7 @@
                 }
             }
         },
-        "AvatarResponse": {
+        "dto.AvatarResponse": {
             "type": "object",
             "properties": {
                 "id": {
@@ -4895,7 +5023,7 @@
                 }
             }
         },
-        "BlocklistActionResponse": {
+        "dto.BlocklistActionResponse": {
             "type": "object",
             "properties": {
                 "action": {
@@ -4909,7 +5037,7 @@
                 }
             }
         },
-        "BlocklistRequest": {
+        "dto.BlocklistRequest": {
             "type": "object",
             "required": [
                 "action",
@@ -4927,7 +5055,7 @@
                 }
             }
         },
-        "BlocklistResponse": {
+        "dto.BlocklistResponse": {
             "type": "object",
             "properties": {
                 "jids": {
@@ -4941,7 +5069,7 @@
                 }
             }
         },
-        "BusinessProfileResponse": {
+        "dto.BusinessProfileResponse": {
             "type": "object",
             "properties": {
                 "profile": {},
@@ -4950,7 +5078,7 @@
                 }
             }
         },
-        "ButtonDTO": {
+        "dto.ButtonDTO": {
             "type": "object",
             "required": [
                 "buttonId",
@@ -4967,7 +5095,56 @@
                 }
             }
         },
-        "ChatActionResponse": {
+        "dto.CarouselCardDTO": {
+            "type": "object",
+            "required": [
+                "body",
+                "buttons",
+                "header"
+            ],
+            "properties": {
+                "body": {
+                    "type": "string",
+                    "example": "Amazing product"
+                },
+                "buttons": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/dto.NativeFlowButtonDTO"
+                    }
+                },
+                "footer": {
+                    "type": "string",
+                    "example": "Only $9.99"
+                },
+                "header": {
+                    "$ref": "#/definitions/dto.CarouselCardHeaderDTO"
+                }
+            }
+        },
+        "dto.CarouselCardHeaderDTO": {
+            "type": "object",
+            "properties": {
+                "image": {
+                    "type": "string",
+                    "example": "base64_encoded_image"
+                },
+                "mimetype": {
+                    "type": "string",
+                    "example": "image/jpeg"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Product 1"
+                },
+                "video": {
+                    "type": "string",
+                    "example": "base64_encoded_video"
+                }
+            }
+        },
+        "dto.ChatActionResponse": {
             "type": "object",
             "properties": {
                 "status": {
@@ -4980,7 +5157,7 @@
                 }
             }
         },
-        "ChatPresenceRequest": {
+        "dto.ChatPresenceRequest": {
             "type": "object",
             "required": [
                 "phone",
@@ -5001,7 +5178,7 @@
                 }
             }
         },
-        "ChatPresenceResponse": {
+        "dto.ChatPresenceResponse": {
             "type": "object",
             "properties": {
                 "state": {
@@ -5012,7 +5189,7 @@
                 }
             }
         },
-        "CheckPhoneRequest": {
+        "dto.CheckPhoneRequest": {
             "type": "object",
             "required": [
                 "phones"
@@ -5030,7 +5207,7 @@
                 }
             }
         },
-        "CheckPhoneResult": {
+        "dto.CheckPhoneResult": {
             "type": "object",
             "properties": {
                 "isRegistered": {
@@ -5044,13 +5221,13 @@
                 }
             }
         },
-        "CheckPhoneResultsResponse": {
+        "dto.CheckPhoneResultsResponse": {
             "type": "object",
             "properties": {
                 "results": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/CheckPhoneResult"
+                        "$ref": "#/definitions/dto.CheckPhoneResult"
                     }
                 },
                 "success": {
@@ -5058,7 +5235,7 @@
                 }
             }
         },
-        "CommunityResponse": {
+        "dto.CommunityResponse": {
             "type": "object",
             "properties": {
                 "groups": {},
@@ -5067,7 +5244,7 @@
                 }
             }
         },
-        "ContactInfoRequest": {
+        "dto.ContactInfoRequest": {
             "type": "object",
             "required": [
                 "phones"
@@ -5081,7 +5258,7 @@
                 }
             }
         },
-        "ContactInfoResponse": {
+        "dto.ContactInfoResponse": {
             "type": "object",
             "properties": {
                 "success": {
@@ -5093,7 +5270,7 @@
                 }
             }
         },
-        "ContactsListResponse": {
+        "dto.ContactsListResponse": {
             "type": "object",
             "properties": {
                 "contacts": {},
@@ -5102,7 +5279,7 @@
                 }
             }
         },
-        "CreateGroupRequest": {
+        "dto.CreateGroupRequest": {
             "type": "object",
             "required": [
                 "name",
@@ -5121,7 +5298,7 @@
                 }
             }
         },
-        "CreateNewsletterRequest": {
+        "dto.CreateNewsletterRequest": {
             "type": "object",
             "required": [
                 "name"
@@ -5141,7 +5318,7 @@
                 }
             }
         },
-        "DefaultDisappearingRequest": {
+        "dto.DefaultDisappearingRequest": {
             "type": "object",
             "required": [
                 "timer"
@@ -5154,7 +5331,7 @@
                 }
             }
         },
-        "DeleteMessageRequest": {
+        "dto.DeleteMessageRequest": {
             "type": "object",
             "required": [
                 "messageId",
@@ -5175,7 +5352,7 @@
                 }
             }
         },
-        "DisappearingRequest": {
+        "dto.DisappearingRequest": {
             "type": "object",
             "required": [
                 "phone",
@@ -5193,7 +5370,7 @@
                 }
             }
         },
-        "EditMessageRequest": {
+        "dto.EditMessageRequest": {
             "type": "object",
             "required": [
                 "messageId",
@@ -5215,7 +5392,7 @@
                 }
             }
         },
-        "ErrorResponse": {
+        "dto.ErrorResponse": {
             "type": "object",
             "properties": {
                 "error": {
@@ -5224,7 +5401,7 @@
                 }
             }
         },
-        "EventsResponse": {
+        "dto.EventsResponse": {
             "type": "object",
             "properties": {
                 "all": {
@@ -5244,7 +5421,7 @@
                 }
             }
         },
-        "GroupActionResponse": {
+        "dto.GroupActionResponse": {
             "type": "object",
             "properties": {
                 "data": {},
@@ -5258,7 +5435,7 @@
                 }
             }
         },
-        "GroupAnnounceRequest": {
+        "dto.GroupAnnounceRequest": {
             "type": "object",
             "required": [
                 "groupId"
@@ -5274,7 +5451,7 @@
                 }
             }
         },
-        "GroupApprovalRequest": {
+        "dto.GroupApprovalRequest": {
             "type": "object",
             "required": [
                 "groupId"
@@ -5290,7 +5467,7 @@
                 }
             }
         },
-        "GroupInviteLinkResponse": {
+        "dto.GroupInviteLinkResponse": {
             "type": "object",
             "properties": {
                 "groupId": {
@@ -5304,7 +5481,7 @@
                 }
             }
         },
-        "GroupLockedRequest": {
+        "dto.GroupLockedRequest": {
             "type": "object",
             "required": [
                 "groupId"
@@ -5320,7 +5497,7 @@
                 }
             }
         },
-        "GroupMemberAddModeRequest": {
+        "dto.GroupMemberAddModeRequest": {
             "type": "object",
             "required": [
                 "groupId",
@@ -5338,7 +5515,7 @@
                 }
             }
         },
-        "GroupParticipantsRequest": {
+        "dto.GroupParticipantsRequest": {
             "type": "object",
             "required": [
                 "groupId",
@@ -5356,7 +5533,7 @@
                 }
             }
         },
-        "GroupPictureRequest": {
+        "dto.GroupPictureRequest": {
             "type": "object",
             "required": [
                 "groupId",
@@ -5373,7 +5550,7 @@
                 }
             }
         },
-        "GroupRequestActionBodyRequest": {
+        "dto.GroupRequestActionBodyRequest": {
             "type": "object",
             "required": [
                 "action",
@@ -5393,7 +5570,7 @@
                 }
             }
         },
-        "GroupRequestParticipantsResponse": {
+        "dto.GroupRequestParticipantsResponse": {
             "type": "object",
             "properties": {
                 "groupId": {
@@ -5405,7 +5582,7 @@
                 }
             }
         },
-        "GroupUpdateRequest": {
+        "dto.GroupUpdateRequest": {
             "type": "object",
             "required": [
                 "groupId",
@@ -5422,7 +5599,7 @@
                 }
             }
         },
-        "JoinGroupRequest": {
+        "dto.JoinGroupRequest": {
             "type": "object",
             "required": [
                 "inviteLink"
@@ -5433,7 +5610,7 @@
                 }
             }
         },
-        "LinkGroupRequest": {
+        "dto.LinkGroupRequest": {
             "type": "object",
             "required": [
                 "childGroupId",
@@ -5450,7 +5627,7 @@
                 }
             }
         },
-        "ListRowDTO": {
+        "dto.ListRowDTO": {
             "type": "object",
             "required": [
                 "rowId",
@@ -5471,7 +5648,7 @@
                 }
             }
         },
-        "ListSectionDTO": {
+        "dto.ListSectionDTO": {
             "type": "object",
             "required": [
                 "rows",
@@ -5482,7 +5659,7 @@
                     "type": "array",
                     "minItems": 1,
                     "items": {
-                        "$ref": "#/definitions/ListRowDTO"
+                        "$ref": "#/definitions/dto.ListRowDTO"
                     }
                 },
                 "title": {
@@ -5491,7 +5668,7 @@
                 }
             }
         },
-        "MarkReadRequest": {
+        "dto.MarkReadRequest": {
             "type": "object",
             "required": [
                 "messageIds",
@@ -5510,7 +5687,7 @@
                 }
             }
         },
-        "MessageResponse": {
+        "dto.MessageResponse": {
             "type": "object",
             "properties": {
                 "message": {
@@ -5523,7 +5700,7 @@
                 }
             }
         },
-        "NativeFlowButtonDTO": {
+        "dto.NativeFlowButtonDTO": {
             "type": "object",
             "required": [
                 "name",
@@ -5540,7 +5717,7 @@
                 }
             }
         },
-        "NewsletterActionRequest": {
+        "dto.NewsletterActionRequest": {
             "type": "object",
             "required": [
                 "newsletterJid"
@@ -5552,7 +5729,7 @@
                 }
             }
         },
-        "NewsletterListResponse": {
+        "dto.NewsletterListResponse": {
             "type": "object",
             "properties": {
                 "newsletters": {},
@@ -5561,7 +5738,7 @@
                 }
             }
         },
-        "NewsletterMuteRequest": {
+        "dto.NewsletterMuteRequest": {
             "type": "object",
             "required": [
                 "newsletterJid"
@@ -5577,7 +5754,7 @@
                 }
             }
         },
-        "NewsletterReactionRequest": {
+        "dto.NewsletterReactionRequest": {
             "type": "object",
             "required": [
                 "newsletterJid",
@@ -5603,7 +5780,7 @@
                 }
             }
         },
-        "NewsletterResponse": {
+        "dto.NewsletterResponse": {
             "type": "object",
             "properties": {
                 "data": {},
@@ -5612,7 +5789,7 @@
                 }
             }
         },
-        "PairPhoneRequest": {
+        "dto.PairPhoneRequest": {
             "type": "object",
             "required": [
                 "phone"
@@ -5624,7 +5801,7 @@
                 }
             }
         },
-        "PairPhoneResponse": {
+        "dto.PairPhoneResponse": {
             "type": "object",
             "properties": {
                 "code": {
@@ -5635,7 +5812,7 @@
                 }
             }
         },
-        "PresenceResponse": {
+        "dto.PresenceResponse": {
             "type": "object",
             "properties": {
                 "status": {
@@ -5646,7 +5823,7 @@
                 }
             }
         },
-        "PrivacySettingsResponse": {
+        "dto.PrivacySettingsResponse": {
             "type": "object",
             "properties": {
                 "settings": {},
@@ -5655,7 +5832,7 @@
                 }
             }
         },
-        "ProfileInfoResponse": {
+        "dto.ProfileInfoResponse": {
             "type": "object",
             "properties": {
                 "profile": {},
@@ -5664,7 +5841,7 @@
                 }
             }
         },
-        "QRLinkResponse": {
+        "dto.QRLinkResponse": {
             "type": "object",
             "properties": {
                 "link": {
@@ -5675,7 +5852,7 @@
                 }
             }
         },
-        "QRResponse": {
+        "dto.QRResponse": {
             "type": "object",
             "properties": {
                 "qr": {
@@ -5688,7 +5865,7 @@
                 }
             }
         },
-        "RejectCallRequest": {
+        "dto.RejectCallRequest": {
             "type": "object",
             "required": [
                 "callFrom",
@@ -5705,7 +5882,7 @@
                 }
             }
         },
-        "SendAudioRequest": {
+        "dto.SendAudioRequest": {
             "type": "object",
             "required": [
                 "audio",
@@ -5730,7 +5907,7 @@
                 }
             }
         },
-        "SendButtonsRequest": {
+        "dto.SendButtonsRequest": {
             "type": "object",
             "required": [
                 "buttons",
@@ -5743,7 +5920,7 @@
                     "maxItems": 3,
                     "minItems": 1,
                     "items": {
-                        "$ref": "#/definitions/ButtonDTO"
+                        "$ref": "#/definitions/dto.ButtonDTO"
                     }
                 },
                 "contentText": {
@@ -5764,7 +5941,39 @@
                 }
             }
         },
-        "SendContactRequest": {
+        "dto.SendCarouselRequest": {
+            "type": "object",
+            "required": [
+                "cards",
+                "phone"
+            ],
+            "properties": {
+                "body": {
+                    "type": "string",
+                    "example": "Browse our catalog"
+                },
+                "cards": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/dto.CarouselCardDTO"
+                    }
+                },
+                "footer": {
+                    "type": "string",
+                    "example": "Powered by ZPWoot"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Check out our products!"
+                }
+            }
+        },
+        "dto.SendContactRequest": {
             "type": "object",
             "required": [
                 "contactName",
@@ -5786,7 +5995,7 @@
                 }
             }
         },
-        "SendDocumentRequest": {
+        "dto.SendDocumentRequest": {
             "type": "object",
             "required": [
                 "document",
@@ -5812,7 +6021,7 @@
                 }
             }
         },
-        "SendGroupMessageRequest": {
+        "dto.SendGroupMessageRequest": {
             "type": "object",
             "required": [
                 "groupId",
@@ -5829,7 +6038,7 @@
                 }
             }
         },
-        "SendImageRequest": {
+        "dto.SendImageRequest": {
             "type": "object",
             "required": [
                 "image",
@@ -5854,7 +6063,7 @@
                 }
             }
         },
-        "SendInteractiveRequest": {
+        "dto.SendInteractiveRequest": {
             "type": "object",
             "required": [
                 "body",
@@ -5870,7 +6079,7 @@
                     "type": "array",
                     "minItems": 1,
                     "items": {
-                        "$ref": "#/definitions/NativeFlowButtonDTO"
+                        "$ref": "#/definitions/dto.NativeFlowButtonDTO"
                     }
                 },
                 "footer": {
@@ -5887,7 +6096,7 @@
                 }
             }
         },
-        "SendListRequest": {
+        "dto.SendListRequest": {
             "type": "object",
             "required": [
                 "buttonText",
@@ -5917,7 +6126,7 @@
                     "type": "array",
                     "minItems": 1,
                     "items": {
-                        "$ref": "#/definitions/ListSectionDTO"
+                        "$ref": "#/definitions/dto.ListSectionDTO"
                     }
                 },
                 "title": {
@@ -5926,7 +6135,7 @@
                 }
             }
         },
-        "SendLocationRequest": {
+        "dto.SendLocationRequest": {
             "type": "object",
             "required": [
                 "latitude",
@@ -5956,7 +6165,7 @@
                 }
             }
         },
-        "SendPollRequest": {
+        "dto.SendPollRequest": {
             "type": "object",
             "required": [
                 "name",
@@ -5989,7 +6198,7 @@
                 }
             }
         },
-        "SendPollVoteRequest": {
+        "dto.SendPollVoteRequest": {
             "type": "object",
             "required": [
                 "phone",
@@ -6016,7 +6225,7 @@
                 }
             }
         },
-        "SendReactionRequest": {
+        "dto.SendReactionRequest": {
             "type": "object",
             "required": [
                 "emoji",
@@ -6038,7 +6247,7 @@
                 }
             }
         },
-        "SendResponse": {
+        "dto.SendResponse": {
             "type": "object",
             "properties": {
                 "messageId": {
@@ -6055,7 +6264,7 @@
                 }
             }
         },
-        "SendStatusRequest": {
+        "dto.SendStatusRequest": {
             "type": "object",
             "properties": {
                 "caption": {
@@ -6080,7 +6289,7 @@
                 }
             }
         },
-        "SendStickerRequest": {
+        "dto.SendStickerRequest": {
             "type": "object",
             "required": [
                 "phone",
@@ -6101,7 +6310,60 @@
                 }
             }
         },
-        "SendTextRequest": {
+        "dto.SendTemplateRequest": {
+            "type": "object",
+            "required": [
+                "buttons",
+                "content",
+                "phone"
+            ],
+            "properties": {
+                "buttons": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/dto.TemplateButtonDTO"
+                    }
+                },
+                "content": {
+                    "type": "string",
+                    "example": "Please choose an option below"
+                },
+                "document": {
+                    "type": "string",
+                    "example": "base64_encoded_document"
+                },
+                "filename": {
+                    "type": "string",
+                    "example": "document.pdf"
+                },
+                "footer": {
+                    "type": "string",
+                    "example": "Powered by ZPWoot"
+                },
+                "image": {
+                    "type": "string",
+                    "example": "base64_encoded_image"
+                },
+                "mimetype": {
+                    "type": "string",
+                    "example": "image/jpeg"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Welcome!"
+                },
+                "video": {
+                    "type": "string",
+                    "example": "base64_encoded_video"
+                }
+            }
+        },
+        "dto.SendTextRequest": {
             "type": "object",
             "required": [
                 "phone",
@@ -6118,7 +6380,7 @@
                 }
             }
         },
-        "SendVideoRequest": {
+        "dto.SendVideoRequest": {
             "type": "object",
             "required": [
                 "phone",
@@ -6143,7 +6405,7 @@
                 }
             }
         },
-        "SessionResponse": {
+        "dto.SessionResponse": {
             "type": "object",
             "properties": {
                 "jid": {
@@ -6160,7 +6422,7 @@
                 }
             }
         },
-        "SetNameResponse": {
+        "dto.SetNameResponse": {
             "type": "object",
             "properties": {
                 "name": {
@@ -6171,7 +6433,7 @@
                 }
             }
         },
-        "SetPictureResponse": {
+        "dto.SetPictureResponse": {
             "type": "object",
             "properties": {
                 "pictureId": {
@@ -6182,7 +6444,7 @@
                 }
             }
         },
-        "SetPresenceRequest": {
+        "dto.SetPresenceRequest": {
             "type": "object",
             "properties": {
                 "available": {
@@ -6191,7 +6453,7 @@
                 }
             }
         },
-        "SetPrivacyRequest": {
+        "dto.SetPrivacyRequest": {
             "type": "object",
             "required": [
                 "setting",
@@ -6210,7 +6472,7 @@
                 }
             }
         },
-        "SetProfilePictureRequest": {
+        "dto.SetProfilePictureRequest": {
             "type": "object",
             "required": [
                 "image"
@@ -6222,7 +6484,7 @@
                 }
             }
         },
-        "SetPushNameRequest": {
+        "dto.SetPushNameRequest": {
             "type": "object",
             "required": [
                 "name"
@@ -6234,7 +6496,7 @@
                 }
             }
         },
-        "SetStatusRequest": {
+        "dto.SetStatusRequest": {
             "type": "object",
             "required": [
                 "status"
@@ -6246,7 +6508,7 @@
                 }
             }
         },
-        "SetStatusResponse": {
+        "dto.SetStatusResponse": {
             "type": "object",
             "properties": {
                 "status": {
@@ -6257,7 +6519,7 @@
                 }
             }
         },
-        "SetWebhookRequest": {
+        "dto.SetWebhookRequest": {
             "type": "object",
             "properties": {
                 "enabled": {
@@ -6284,7 +6546,7 @@
                 }
             }
         },
-        "StatusPrivacyResponse": {
+        "dto.StatusPrivacyResponse": {
             "type": "object",
             "properties": {
                 "privacy": {},
@@ -6293,7 +6555,7 @@
                 }
             }
         },
-        "SubscribePresenceRequest": {
+        "dto.SubscribePresenceRequest": {
             "type": "object",
             "required": [
                 "phone"
@@ -6305,7 +6567,7 @@
                 }
             }
         },
-        "SuccessResponse": {
+        "dto.SuccessResponse": {
             "type": "object",
             "properties": {
                 "message": {
@@ -6318,7 +6580,76 @@
                 }
             }
         },
-        "WebhookResponse": {
+        "dto.TemplateButtonDTO": {
+            "type": "object",
+            "properties": {
+                "callButton": {
+                    "$ref": "#/definitions/dto.TemplateCallButtonDTO"
+                },
+                "index": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "quickReply": {
+                    "$ref": "#/definitions/dto.TemplateQuickReplyDTO"
+                },
+                "urlButton": {
+                    "$ref": "#/definitions/dto.TemplateURLButtonDTO"
+                }
+            }
+        },
+        "dto.TemplateCallButtonDTO": {
+            "type": "object",
+            "required": [
+                "displayText",
+                "phoneNumber"
+            ],
+            "properties": {
+                "displayText": {
+                    "type": "string",
+                    "example": "Call Us"
+                },
+                "phoneNumber": {
+                    "type": "string",
+                    "example": "+1234567890"
+                }
+            }
+        },
+        "dto.TemplateQuickReplyDTO": {
+            "type": "object",
+            "required": [
+                "displayText",
+                "id"
+            ],
+            "properties": {
+                "displayText": {
+                    "type": "string",
+                    "example": "Option 1"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "opt1"
+                }
+            }
+        },
+        "dto.TemplateURLButtonDTO": {
+            "type": "object",
+            "required": [
+                "displayText",
+                "url"
+            ],
+            "properties": {
+                "displayText": {
+                    "type": "string",
+                    "example": "Visit Site"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://example.com"
+                }
+            }
+        },
+        "dto.WebhookResponse": {
             "type": "object",
             "properties": {
                 "enabled": {
