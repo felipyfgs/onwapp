@@ -20,20 +20,20 @@ func NewStatusHandler(whatsappService *service.WhatsAppService) *StatusHandler {
 	return &StatusHandler{whatsappService: whatsappService}
 }
 
-// SendStatus godoc
-// @Summary      Post a status/story
-// @Description  Post a text or media status/story
+// SendStory godoc
+// @Summary      Post a story
+// @Description  Post a text or media story (status update visible to contacts)
 // @Tags         status
 // @Accept       json
 // @Produce      json
 // @Param        name   path      string               true  "Session name"
-// @Param        body   body      dto.SendStatusRequest true  "Status data"
+// @Param        body   body      dto.SendStatusRequest true  "Story data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/status [post]
-func (h *StatusHandler) SendStatus(c *gin.Context) {
+// @Router       /sessions/{name}/story [post]
+func (h *StatusHandler) SendStory(c *gin.Context) {
 	name := c.Param("name")
 
 	var req dto.SendStatusRequest

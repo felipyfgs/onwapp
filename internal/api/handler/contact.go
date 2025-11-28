@@ -285,7 +285,7 @@ func (h *ContactHandler) MarkRead(c *gin.Context) {
 // @Success      200    {object}  dto.BlocklistResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/blocklist [get]
+// @Router       /sessions/{name}/contact/blocklist [get]
 func (h *ContactHandler) GetBlocklist(c *gin.Context) {
 	name := c.Param("name")
 
@@ -318,7 +318,7 @@ func (h *ContactHandler) GetBlocklist(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/blocklist [post]
+// @Router       /sessions/{name}/contact/blocklist [post]
 func (h *ContactHandler) UpdateBlocklist(c *gin.Context) {
 	name := c.Param("name")
 

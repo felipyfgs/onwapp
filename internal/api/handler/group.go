@@ -666,16 +666,18 @@ func (h *GroupHandler) GetGroupRequestParticipants(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        name path string true "Session name"
-// @Param        body body dto.GroupRequestActionRequest true "Action data"
+// @Param        groupId path string true "Group ID"
+// @Param        body body dto.GroupRequestActionBodyRequest true "Action data"
 // @Success      200 {object} dto.GroupActionResponse
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/group/requests [post]
+// @Router       /sessions/{name}/group/{groupId}/requests [post]
 func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
 	name := c.Param("name")
+	groupID := strings.TrimSuffix(c.Param("groupId"), "@g.us")
 
-	var req dto.GroupRequestActionRequest
+	var req dto.GroupRequestActionBodyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -692,7 +694,6 @@ func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
 		return
 	}
 
-	groupID := strings.TrimSuffix(req.GroupID, "@g.us")
 	result, err := h.whatsappService.UpdateGroupRequestParticipants(c.Request.Context(), name, groupID, req.Participants, action)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})

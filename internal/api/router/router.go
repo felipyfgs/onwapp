@@ -141,8 +141,8 @@ func registerGroupRoutes(rg *gin.RouterGroup, h *handler.GroupHandler) {
 	rg.PUT("/:name/group/approval", h.SetGroupApprovalMode)
 	rg.PUT("/:name/group/memberadd", h.SetGroupMemberAddMode)
 	rg.GET("/:name/group/:groupId/requests", h.GetGroupRequestParticipants)
-	rg.POST("/:name/group/requests", h.UpdateGroupRequestParticipants)
-	rg.POST("/:name/group/info/link", h.GetGroupInfoFromLink)
+	rg.POST("/:name/group/:groupId/requests", h.UpdateGroupRequestParticipants)
+	rg.GET("/:name/group/info/link", h.GetGroupInfoFromLink)
 }
 
 func registerContactRoutes(rg *gin.RouterGroup, h *handler.ContactHandler) {
@@ -153,8 +153,8 @@ func registerContactRoutes(rg *gin.RouterGroup, h *handler.ContactHandler) {
 	rg.POST("/:name/contact/presence", h.SetPresence)
 	rg.POST("/:name/contact/typing", h.SetChatPresence)
 	rg.POST("/:name/contact/markread", h.MarkRead)
-	rg.GET("/:name/blocklist", h.GetBlocklist)
-	rg.POST("/:name/blocklist", h.UpdateBlocklist)
+	rg.GET("/:name/contact/blocklist", h.GetBlocklist)
+	rg.POST("/:name/contact/blocklist", h.UpdateBlocklist)
 	rg.POST("/:name/contact/subscribe", h.SubscribePresence)
 	rg.GET("/:name/contact/qrlink", h.GetContactQRLink)
 	rg.GET("/:name/contact/:phone/business", h.GetBusinessProfile)
@@ -205,7 +205,7 @@ func registerStatusRoutes(rg *gin.RouterGroup, h *handler.StatusHandler) {
 	if h == nil {
 		return
 	}
-	rg.POST("/:name/status", h.SendStatus)
+	rg.POST("/:name/story", h.SendStory)
 	rg.GET("/:name/status/privacy", h.GetStatusPrivacy)
 }
 

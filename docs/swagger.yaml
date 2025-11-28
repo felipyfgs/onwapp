@@ -278,14 +278,6 @@ definitions:
     required:
     - groupId
     type: object
-  dto.GroupInfoFromLinkRequest:
-    properties:
-      inviteLink:
-        example: https://chat.whatsapp.com/ABC123
-        type: string
-    required:
-    - inviteLink
-    type: object
   dto.GroupInviteLinkResponse:
     properties:
       groupId:
@@ -343,14 +335,11 @@ definitions:
     - groupId
     - image
     type: object
-  dto.GroupRequestActionRequest:
+  dto.GroupRequestActionBodyRequest:
     properties:
       action:
         description: approve or reject
         example: approve
-        type: string
-      groupId:
-        example: 123456789@g.us
         type: string
       participants:
         items:
@@ -358,7 +347,6 @@ definitions:
         type: array
     required:
     - action
-    - groupId
     - participants
     type: object
   dto.GroupRequestParticipantsResponse:
@@ -929,67 +917,6 @@ paths:
       summary: List available webhook events
       tags:
       - webhook
-  /sessions/{name}/blocklist:
-    get:
-      description: Get list of blocked contacts
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.BlocklistResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Get blocked contacts
-      tags:
-      - contact
-    post:
-      consumes:
-      - application/json
-      description: Block or unblock a contact
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Block action
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/dto.BlocklistRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.BlocklistActionResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Block or unblock contact
-      tags:
-      - contact
   /sessions/{name}/call/reject:
     post:
       consumes:
@@ -1387,6 +1314,67 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Get business profile
+      tags:
+      - contact
+  /sessions/{name}/contact/blocklist:
+    get:
+      description: Get list of blocked contacts
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BlocklistResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get blocked contacts
+      tags:
+      - contact
+    post:
+      consumes:
+      - application/json
+      description: Block or unblock a contact
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Block action
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.BlocklistRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BlocklistActionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Block or unblock contact
       tags:
       - contact
   /sessions/{name}/contact/check:
@@ -1899,6 +1887,47 @@ paths:
       summary: Get pending join requests
       tags:
       - groups
+    post:
+      consumes:
+      - application/json
+      description: Approve or reject pending join requests
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: groupId
+        required: true
+        type: string
+      - description: Action data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GroupRequestActionBodyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GroupActionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Approve or reject join requests
+      tags:
+      - groups
   /sessions/{name}/group/announce:
     put:
       consumes:
@@ -2056,9 +2085,7 @@ paths:
       tags:
       - groups
   /sessions/{name}/group/info/link:
-    post:
-      consumes:
-      - application/json
+    get:
       description: Get group information using an invite link
       parameters:
       - description: Session name
@@ -2066,12 +2093,11 @@ paths:
         name: name
         required: true
         type: string
-      - description: Invite link
-        in: body
-        name: body
+      - description: Invite link or code
+        in: query
+        name: link
         required: true
-        schema:
-          $ref: '#/definitions/dto.GroupInfoFromLinkRequest'
+        type: string
       produces:
       - application/json
       responses:
@@ -2478,43 +2504,6 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Set group picture
-      tags:
-      - groups
-  /sessions/{name}/group/requests:
-    post:
-      consumes:
-      - application/json
-      description: Approve or reject pending join requests
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Action data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/dto.GroupRequestActionRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.GroupActionResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Approve or reject join requests
       tags:
       - groups
   /sessions/{name}/group/send/text:
@@ -3513,7 +3502,7 @@ paths:
         type: string
       - description: Poll data
         in: body
-        name: request
+        name: body
         required: true
         schema:
           $ref: '#/definitions/dto.SendPollRequest'
@@ -3528,20 +3517,24 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
-      summary: Send poll
+      summary: Send poll message
       tags:
-      - Message
+      - messages
   /sessions/{name}/send/poll/vote:
     post:
       consumes:
       - application/json
-      description: Vote in an existing poll
+      description: Vote for options in an existing poll
       parameters:
       - description: Session name
         in: path
@@ -3550,7 +3543,7 @@ paths:
         type: string
       - description: Vote data
         in: body
-        name: request
+        name: body
         required: true
         schema:
           $ref: '#/definitions/dto.SendPollVoteRequest'
@@ -3565,15 +3558,19 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
-      summary: Vote in poll
+      summary: Vote in a poll
       tags:
-      - Message
+      - messages
   /sessions/{name}/send/reaction:
     post:
       consumes:
@@ -3738,43 +3735,6 @@ paths:
       summary: Send video message
       tags:
       - messages
-  /sessions/{name}/status:
-    post:
-      consumes:
-      - application/json
-      description: Post a text or media status/story
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Status data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/dto.SendStatusRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.SendResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Post a status/story
-      tags:
-      - status
   /sessions/{name}/status/privacy:
     get:
       description: Get who can see your status updates
@@ -3798,6 +3758,43 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Get status privacy settings
+      tags:
+      - status
+  /sessions/{name}/story:
+    post:
+      consumes:
+      - application/json
+      description: Post a text or media story (status update visible to contacts)
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Story data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SendStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Post a story
       tags:
       - status
   /sessions/{name}/webhook:

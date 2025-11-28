@@ -77,102 +77,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/sessions/{name}/blocklist": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Get list of blocked contacts",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "contact"
-                ],
-                "summary": "Get blocked contacts",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session name",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.BlocklistResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Block or unblock a contact",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "contact"
-                ],
-                "summary": "Block or unblock contact",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session name",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Block action",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.BlocklistRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.BlocklistActionResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/sessions/{name}/call/reject": {
             "post": {
                 "security": [
@@ -680,6 +584,102 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{name}/contact/blocklist": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get list of blocked contacts",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "contact"
+                ],
+                "summary": "Get blocked contacts",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BlocklistResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Block or unblock a contact",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "contact"
+                ],
+                "summary": "Block or unblock contact",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Block action",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.BlocklistRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BlocklistActionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorResponse"
                         }
@@ -1612,16 +1612,13 @@ const docTemplate = `{
             }
         },
         "/sessions/{name}/group/info/link": {
-            "post": {
+            "get": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
                 "description": "Get group information using an invite link",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1638,13 +1635,11 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Invite link",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.GroupInfoFromLinkRequest"
-                        }
+                        "type": "string",
+                        "description": "Invite link or code",
+                        "name": "link",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -2276,64 +2271,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/sessions/{name}/group/requests": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Approve or reject pending join requests",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "groups"
-                ],
-                "summary": "Approve or reject join requests",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session name",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Action data",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.GroupRequestActionRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.GroupActionResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/sessions/{name}/group/send/text": {
             "post": {
                 "security": [
@@ -2614,6 +2551,69 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dto.GroupRequestParticipantsResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Approve or reject pending join requests",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "groups"
+                ],
+                "summary": "Approve or reject join requests",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Action data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupRequestActionBodyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupActionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
@@ -4115,9 +4115,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Message"
+                    "messages"
                 ],
-                "summary": "Send poll",
+                "summary": "Send poll message",
                 "parameters": [
                     {
                         "type": "string",
@@ -4128,7 +4128,7 @@ const docTemplate = `{
                     },
                     {
                         "description": "Poll data",
-                        "name": "request",
+                        "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -4149,6 +4149,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -4165,7 +4171,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Vote in an existing poll",
+                "description": "Vote for options in an existing poll",
                 "consumes": [
                     "application/json"
                 ],
@@ -4173,9 +4179,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Message"
+                    "messages"
                 ],
-                "summary": "Vote in poll",
+                "summary": "Vote in a poll",
                 "parameters": [
                     {
                         "type": "string",
@@ -4186,7 +4192,7 @@ const docTemplate = `{
                     },
                     {
                         "description": "Vote data",
-                        "name": "request",
+                        "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -4203,6 +4209,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorResponse"
                         }
@@ -4472,64 +4484,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/sessions/{name}/status": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Post a text or media status/story",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "status"
-                ],
-                "summary": "Post a status/story",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session name",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Status data",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.SendStatusRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.SendResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/sessions/{name}/status/privacy": {
             "get": {
                 "security": [
@@ -4559,6 +4513,64 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/dto.StatusPrivacyResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{name}/story": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Post a text or media story (status update visible to contacts)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "status"
+                ],
+                "summary": "Post a story",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Story data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SendStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SendResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
@@ -5076,18 +5088,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.GroupInfoFromLinkRequest": {
-            "type": "object",
-            "required": [
-                "inviteLink"
-            ],
-            "properties": {
-                "inviteLink": {
-                    "type": "string",
-                    "example": "https://chat.whatsapp.com/ABC123"
-                }
-            }
-        },
         "dto.GroupInviteLinkResponse": {
             "type": "object",
             "properties": {
@@ -5171,11 +5171,10 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.GroupRequestActionRequest": {
+        "dto.GroupRequestActionBodyRequest": {
             "type": "object",
             "required": [
                 "action",
-                "groupId",
                 "participants"
             ],
             "properties": {
@@ -5183,10 +5182,6 @@ const docTemplate = `{
                     "description": "approve or reject",
                     "type": "string",
                     "example": "approve"
-                },
-                "groupId": {
-                    "type": "string",
-                    "example": "123456789@g.us"
                 },
                 "participants": {
                     "type": "array",

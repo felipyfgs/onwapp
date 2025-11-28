@@ -237,6 +237,11 @@ type GroupRequestActionRequest struct {
 	Action       string   `json:"action" binding:"required" example:"approve"` // approve or reject
 }
 
+type GroupRequestActionBodyRequest struct {
+	Participants []string `json:"participants" binding:"required"`
+	Action       string   `json:"action" binding:"required" example:"approve"` // approve or reject
+}
+
 type GroupInfoFromLinkRequest struct {
 	InviteLink string `json:"inviteLink" binding:"required" example:"https://chat.whatsapp.com/ABC123"`
 }
