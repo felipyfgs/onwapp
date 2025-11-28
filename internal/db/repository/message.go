@@ -16,7 +16,8 @@ type MessageRepository struct {
 
 const messageSelectFields = `
 	"id", "sessionId", "messageId", "chatJid", COALESCE("senderJid", ''), "timestamp",
-	COALESCE("pushName", ''), COALESCE("senderAlt", ''), COALESCE("type", ''), COALESCE("mediaType", ''), COALESCE("category", ''), COALESCE("content", ''),
+	COALESCE("pushName", ''), COALESCE("senderAlt", ''), "serverID", "verifiedName",
+	COALESCE("type", ''), COALESCE("mediaType", ''), COALESCE("category", ''), COALESCE("content", ''),
 	COALESCE("isFromMe", false), COALESCE("isGroup", false), COALESCE("isEphemeral", false), COALESCE("isViewOnce", false), COALESCE("isEdit", false),
 	COALESCE("editTargetId", ''), COALESCE("quotedId", ''), COALESCE("quotedSender", ''),
 	COALESCE("status", ''), "deliveredAt", "readAt", COALESCE("reactions", '[]'::jsonb), "rawEvent", "createdAt"`
@@ -31,16 +32,18 @@ func (r *MessageRepository) Save(ctx context.Context, msg *model.Message) (strin
 	err := r.pool.QueryRow(ctx, `
 		INSERT INTO "zpMessages" (
 			"sessionId", "messageId", "chatJid", "senderJid", "timestamp",
-			"pushName", "senderAlt", "type", "mediaType", "category", "content",
+			"pushName", "senderAlt", "serverID", "verifiedName",
+			"type", "mediaType", "category", "content",
 			"isFromMe", "isGroup", "isEphemeral", "isViewOnce", "isEdit",
 			"editTargetId", "quotedId", "quotedSender",
 			"status", "deliveredAt", "readAt", "rawEvent", "createdAt"
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26)
 		ON CONFLICT ("sessionId", "messageId") DO NOTHING
 		RETURNING "id"`,
 		msg.SessionID, msg.MessageID, msg.ChatJID, msg.SenderJID, msg.Timestamp,
-		msg.PushName, msg.SenderAlt, msg.Type, msg.MediaType, msg.Category, msg.Content,
+		msg.PushName, msg.SenderAlt, msg.ServerID, msg.VerifiedName,
+		msg.Type, msg.MediaType, msg.Category, msg.Content,
 		msg.IsFromMe, msg.IsGroup, msg.IsEphemeral, msg.IsViewOnce, msg.IsEdit,
 		msg.EditTargetID, msg.QuotedID, msg.QuotedSender,
 		msg.Status, msg.DeliveredAt, msg.ReadAt, msg.RawEvent, now,
@@ -162,7 +165,8 @@ func (r *MessageRepository) GetByMessageID(ctx context.Context, sessionID string
 	var m model.Message
 	err := row.Scan(
 		&m.ID, &m.SessionID, &m.MessageID, &m.ChatJID, &m.SenderJID, &m.Timestamp,
-		&m.PushName, &m.SenderAlt, &m.Type, &m.MediaType, &m.Category, &m.Content,
+		&m.PushName, &m.SenderAlt, &m.ServerID, &m.VerifiedName,
+		&m.Type, &m.MediaType, &m.Category, &m.Content,
 		&m.IsFromMe, &m.IsGroup, &m.IsEphemeral, &m.IsViewOnce, &m.IsEdit,
 		&m.EditTargetID, &m.QuotedID, &m.QuotedSender,
 		&m.Status, &m.DeliveredAt, &m.ReadAt, &m.Reactions, &m.RawEvent, &m.CreatedAt,
@@ -183,7 +187,8 @@ func (r *MessageRepository) scanMessages(rows interface {
 		var m model.Message
 		err := rows.Scan(
 			&m.ID, &m.SessionID, &m.MessageID, &m.ChatJID, &m.SenderJID, &m.Timestamp,
-			&m.PushName, &m.SenderAlt, &m.Type, &m.MediaType, &m.Category, &m.Content,
+			&m.PushName, &m.SenderAlt, &m.ServerID, &m.VerifiedName,
+			&m.Type, &m.MediaType, &m.Category, &m.Content,
 			&m.IsFromMe, &m.IsGroup, &m.IsEphemeral, &m.IsViewOnce, &m.IsEdit,
 			&m.EditTargetID, &m.QuotedID, &m.QuotedSender,
 			&m.Status, &m.DeliveredAt, &m.ReadAt, &m.Reactions, &m.RawEvent, &m.CreatedAt,
