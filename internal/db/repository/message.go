@@ -137,16 +137,16 @@ func (r *MessageRepository) UpdateStatus(ctx context.Context, sessionID string, 
 
 	switch status {
 	case model.MessageStatusDelivered:
-		updateQuery = `UPDATE "zpMessages" SET "status" = $1, "deliveredAt" = $2 WHERE "sessionId" = $3 AND "messageId" = $4`
+		updateQuery = `UPDATE "zpMessages" SET "status" = $1, "deliveredAt" = $2 WHERE "sessionId" = $3::uuid AND "messageId" = $4`
 		args = []interface{}{status, now, sessionID, messageID}
 	case model.MessageStatusRead:
-		updateQuery = `UPDATE "zpMessages" SET "status" = $1, "readAt" = $2 WHERE "sessionId" = $3 AND "messageId" = $4`
+		updateQuery = `UPDATE "zpMessages" SET "status" = $1, "readAt" = $2 WHERE "sessionId" = $3::uuid AND "messageId" = $4`
 		args = []interface{}{status, now, sessionID, messageID}
 	case model.MessageStatusPlayed:
-		updateQuery = `UPDATE "zpMessages" SET "status" = $1, "readAt" = $2 WHERE "sessionId" = $3 AND "messageId" = $4`
+		updateQuery = `UPDATE "zpMessages" SET "status" = $1, "readAt" = $2 WHERE "sessionId" = $3::uuid AND "messageId" = $4`
 		args = []interface{}{status, now, sessionID, messageID}
 	default:
-		updateQuery = `UPDATE "zpMessages" SET "status" = $1 WHERE "sessionId" = $2 AND "messageId" = $3`
+		updateQuery = `UPDATE "zpMessages" SET "status" = $1 WHERE "sessionId" = $2::uuid AND "messageId" = $3`
 		args = []interface{}{status, sessionID, messageID}
 	}
 
@@ -202,13 +202,13 @@ func (r *MessageRepository) AddReaction(ctx context.Context, sessionID, messageI
 		UPDATE "zpMessages" 
 		SET "reactions" = (
 			SELECT jsonb_agg(r) FROM (
-				SELECT * FROM jsonb_array_elements(COALESCE("reactions", '[]'::jsonb)) r
-				WHERE r->>'senderJid' != $4
+				SELECT elem FROM jsonb_array_elements(COALESCE("reactions", '[]'::jsonb)) elem
+				WHERE elem->>'senderJid' != $4::text
 				UNION ALL
-				SELECT jsonb_build_object('emoji', $3, 'senderJid', $4, 'timestamp', $5)
-			) sub
+				SELECT jsonb_build_object('emoji', $3::text, 'senderJid', $4::text, 'timestamp', $5::bigint)
+			) sub(r)
 		)
-		WHERE "sessionId" = $1 AND "messageId" = $2`,
+		WHERE "sessionId" = $1::uuid AND "messageId" = $2`,
 		sessionID, messageID, emoji, senderJid, timestamp)
 	return err
 }
@@ -221,7 +221,7 @@ func (r *MessageRepository) RemoveReaction(ctx context.Context, sessionID, messa
 			SELECT COALESCE(jsonb_agg(r), '[]'::jsonb) FROM jsonb_array_elements(COALESCE("reactions", '[]'::jsonb)) r
 			WHERE r->>'senderJid' != $3
 		)
-		WHERE "sessionId" = $1 AND "messageId" = $2`,
+		WHERE "sessionId" = $1::uuid AND "messageId" = $2`,
 		sessionID, messageID, senderJid)
 	return err
 }

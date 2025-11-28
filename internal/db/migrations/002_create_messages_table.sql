@@ -1,18 +1,24 @@
+-- =============================================================================
+-- zpMessages: WhatsApp messages with full metadata
+-- =============================================================================
+
 CREATE TABLE IF NOT EXISTS "zpMessages" (
     "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "sessionId" UUID NOT NULL REFERENCES "zpSessions"("id") ON DELETE CASCADE,
     
-    -- Core identifiers (from whatsmeow MessageInfo)
+    -- WhatsApp Identifiers
     "messageId" VARCHAR(255) NOT NULL,
     "chatJid" VARCHAR(255) NOT NULL,
     "senderJid" VARCHAR(255),
     "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL,
     
-    -- Sender info
+    -- Sender Info
     "pushName" VARCHAR(255),
     "senderAlt" VARCHAR(255),
+    "serverID" BIGINT,
+    "verifiedName" VARCHAR(255),
     
-    -- Message type (from Info.Type)
+    -- Message Classification
     "type" VARCHAR(50) NOT NULL,
     "mediaType" VARCHAR(50),
     "category" VARCHAR(50),
@@ -20,52 +26,79 @@ CREATE TABLE IF NOT EXISTS "zpMessages" (
     -- Content
     "content" TEXT,
     
-    -- Flags from whatsmeow
+    -- Direction & Context Flags
     "isFromMe" BOOLEAN DEFAULT FALSE,
     "isGroup" BOOLEAN DEFAULT FALSE,
     "isEphemeral" BOOLEAN DEFAULT FALSE,
     "isViewOnce" BOOLEAN DEFAULT FALSE,
     "isEdit" BOOLEAN DEFAULT FALSE,
     
-    -- Edit info (from MsgBotInfo)
+    -- Edit Context
     "editTargetId" VARCHAR(255),
     
-    -- Reply/Quote info (from MsgMetaInfo)
+    -- Reply/Quote Context
     "quotedId" VARCHAR(255),
     "quotedSender" VARCHAR(255),
     
-    -- Status tracking (updated via receipts)
+    -- Delivery Status
     "status" VARCHAR(20) DEFAULT 'sent',
     "deliveredAt" TIMESTAMP WITH TIME ZONE,
     "readAt" TIMESTAMP WITH TIME ZONE,
     
-    -- Reactions: [{"emoji": "👍", "senderJid": "...", "timestamp": 123}]
+    -- Reactions Array
     "reactions" JSONB DEFAULT '[]'::jsonb,
     
-    -- Raw event JSON for full fidelity
+    -- Full Event Data
     "rawEvent" JSONB,
     
+    -- Metadata
     "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Unique constraint for deduplication (per session)
-CREATE UNIQUE INDEX IF NOT EXISTS "idx_zpMessages_session_message_unique" ON "zpMessages"("sessionId", "messageId");
+-- =============================================================================
+-- INDEXES
+-- =============================================================================
 
--- Basic indexes
-CREATE INDEX IF NOT EXISTS "idx_zpMessages_sessionId" ON "zpMessages"("sessionId");
-CREATE INDEX IF NOT EXISTS "idx_zpMessages_messageId" ON "zpMessages"("messageId");
-CREATE INDEX IF NOT EXISTS "idx_zpMessages_chatJid" ON "zpMessages"("chatJid");
-CREATE INDEX IF NOT EXISTS "idx_zpMessages_timestamp" ON "zpMessages"("timestamp" DESC);
+-- Unique constraint (deduplication)
+CREATE UNIQUE INDEX IF NOT EXISTS "idx_zpMessages_unique" 
+    ON "zpMessages"("sessionId", "messageId");
 
--- Query optimization indexes
-CREATE INDEX IF NOT EXISTS "idx_zpMessages_isFromMe" ON "zpMessages"("isFromMe");
-CREATE INDEX IF NOT EXISTS "idx_zpMessages_isGroup" ON "zpMessages"("isGroup");
-CREATE INDEX IF NOT EXISTS "idx_zpMessages_type" ON "zpMessages"("type");
-CREATE INDEX IF NOT EXISTS "idx_zpMessages_status" ON "zpMessages"("status");
+-- Primary lookups
+CREATE INDEX IF NOT EXISTS "idx_zpMessages_sessionId" 
+    ON "zpMessages"("sessionId");
+CREATE INDEX IF NOT EXISTS "idx_zpMessages_messageId" 
+    ON "zpMessages"("messageId");
 
--- Composite index for chat history queries
-CREATE INDEX IF NOT EXISTS "idx_zpMessages_chat_history" ON "zpMessages"("sessionId", "chatJid", "timestamp" DESC);
+-- Chat timeline (most common query)
+CREATE INDEX IF NOT EXISTS "idx_zpMessages_chat_timeline" 
+    ON "zpMessages"("sessionId", "chatJid", "timestamp" DESC);
 
--- GIN indexes for JSONB queries
-CREATE INDEX IF NOT EXISTS "idx_zpMessages_reactions" ON "zpMessages" USING GIN ("reactions");
-CREATE INDEX IF NOT EXISTS "idx_zpMessages_rawEvent" ON "zpMessages" USING GIN ("rawEvent");
+-- Server ordering
+CREATE INDEX IF NOT EXISTS "idx_zpMessages_serverID" 
+    ON "zpMessages"("serverID") 
+    WHERE "serverID" IS NOT NULL;
+
+-- Status and type filters
+CREATE INDEX IF NOT EXISTS "idx_zpMessages_status" 
+    ON "zpMessages"("status");
+CREATE INDEX IF NOT EXISTS "idx_zpMessages_type" 
+    ON "zpMessages"("type");
+
+-- Unread messages (partial index)
+CREATE INDEX IF NOT EXISTS "idx_zpMessages_unread" 
+    ON "zpMessages"("sessionId", "chatJid") 
+    WHERE "status" IN ('sent', 'delivered');
+
+-- JSONB indexes
+CREATE INDEX IF NOT EXISTS "idx_zpMessages_reactions" 
+    ON "zpMessages" USING GIN ("reactions") 
+    WHERE jsonb_array_length("reactions") > 0;
+
+-- =============================================================================
+-- COMMENTS
+-- =============================================================================
+
+COMMENT ON TABLE "zpMessages" IS 'WhatsApp messages with full metadata and delivery tracking';
+COMMENT ON COLUMN "zpMessages"."serverID" IS 'WhatsApp server sequence ID for precise ordering';
+COMMENT ON COLUMN "zpMessages"."verifiedName" IS 'Business verified name (if sender is verified)';
+COMMENT ON COLUMN "zpMessages"."status" IS 'Delivery: pending, sent, delivered, read, played, failed';

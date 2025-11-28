@@ -5,11 +5,14 @@ import (
 	"time"
 )
 
-// MessageStatus maps to whatsmeow receipt types
+// =============================================================================
+// MESSAGE STATUS
+// =============================================================================
+
 type MessageStatus string
 
 const (
-	MessageStatusPending   MessageStatus = "pending"   // Message sent, waiting for server
+	MessageStatusPending   MessageStatus = "pending"   // Waiting for server
 	MessageStatusSent      MessageStatus = "sent"      // Server received (single check)
 	MessageStatusDelivered MessageStatus = "delivered" // Delivered to recipient (double check)
 	MessageStatusRead      MessageStatus = "read"      // Read by recipient (blue checks)
@@ -17,60 +20,123 @@ const (
 	MessageStatusFailed    MessageStatus = "failed"    // Failed to send
 )
 
-// Message represents a WhatsApp message, closely following whatsmeow structure
+// =============================================================================
+// MESSAGE TYPE
+// =============================================================================
+
+type MessageType string
+
+const (
+	MessageTypeText        MessageType = "text"
+	MessageTypeImage       MessageType = "image"
+	MessageTypeVideo       MessageType = "video"
+	MessageTypeAudio       MessageType = "audio"
+	MessageTypeDocument    MessageType = "document"
+	MessageTypeSticker     MessageType = "sticker"
+	MessageTypeLocation    MessageType = "location"
+	MessageTypeLiveLocation MessageType = "live_location"
+	MessageTypeContact     MessageType = "contact"
+	MessageTypePoll        MessageType = "poll"
+	MessageTypeReaction    MessageType = "reaction"
+	MessageTypeInteractive MessageType = "interactive"
+	MessageTypeProtocol    MessageType = "protocol"
+	MessageTypeUnknown     MessageType = "unknown"
+)
+
+// =============================================================================
+// MESSAGE DIRECTION
+// =============================================================================
+
+type MessageDirection string
+
+const (
+	DirectionIncoming MessageDirection = "incoming" // Received from others
+	DirectionOutgoing MessageDirection = "outgoing" // Sent by us
+)
+
+// =============================================================================
+// MESSAGE
+// =============================================================================
+
 type Message struct {
+	// Primary Key
 	ID        string `json:"id"`
 	SessionID string `json:"sessionId"`
 
-	// Core identifiers (from whatsmeow MessageInfo)
-	MessageID string    `json:"messageId"` // Info.ID
-	ChatJID   string    `json:"chat"`      // Info.Chat
-	SenderJID string    `json:"sender"`    // Info.Sender
-	Timestamp time.Time `json:"timestamp"` // Info.Timestamp
+	// WhatsApp Identifiers
+	MessageID string    `json:"messageId"` // WhatsApp message ID
+	ChatJID   string    `json:"chatJid"`   // Chat JID
+	SenderJID string    `json:"senderJid"` // Sender JID
+	Timestamp time.Time `json:"timestamp"` // Message timestamp
 
-	// Sender info
-	PushName  string `json:"pushName"`  // Info.PushName
-	SenderAlt string `json:"senderAlt"` // Info.SenderAlt (LID)
+	// Sender Info
+	PushName     string  `json:"pushName,omitempty"`     // Display name
+	SenderAlt    string  `json:"senderAlt,omitempty"`    // LID (alternative ID)
+	ServerID     *int64  `json:"serverID,omitempty"`     // WhatsApp server ID
+	VerifiedName *string `json:"verifiedName,omitempty"` // Business verified name
 
-	// Message type (from Info.Type)
-	Type      string `json:"type"`      // text, image, video, audio, document, sticker, etc.
-	MediaType string `json:"mediaType"` // Info.MediaType
-	Category  string `json:"category"`  // Info.Category
+	// Message Classification
+	Type      string `json:"type"`               // text, image, video, audio, etc.
+	MediaType string `json:"mediaType,omitempty"` // ptt, image, video, document, etc.
+	Category  string `json:"category,omitempty"` // Message category
 
 	// Content
-	Content string `json:"content"` // Text content or caption
+	Content string `json:"content,omitempty"` // Text or caption
 
-	// Flags from whatsmeow
-	IsFromMe    bool `json:"isFromMe"`    // Info.IsFromMe
-	IsGroup     bool `json:"isGroup"`     // Info.IsGroup
-	IsEphemeral bool `json:"isEphemeral"` // IsEphemeral
-	IsViewOnce  bool `json:"isViewOnce"`  // IsViewOnce || IsViewOnceV2
-	IsEdit      bool `json:"isEdit"`      // IsEdit
+	// Direction & Context Flags
+	IsFromMe    bool `json:"isFromMe"`    // true = outgoing
+	IsGroup     bool `json:"isGroup"`     // true = group message
+	IsEphemeral bool `json:"isEphemeral"` // Disappearing message
+	IsViewOnce  bool `json:"isViewOnce"`  // View once media
+	IsEdit      bool `json:"isEdit"`      // Edited message
 
-	// Edit info (from MsgBotInfo)
-	EditTargetID string `json:"editTargetId,omitempty"` // MsgBotInfo.EditTargetID
+	// Edit Context
+	EditTargetID string `json:"editTargetId,omitempty"` // Original message ID if edit
 
-	// Reply/Quote info (from MsgMetaInfo)
-	QuotedID     string `json:"quotedId,omitempty"`     // MsgMetaInfo.TargetID
-	QuotedSender string `json:"quotedSender,omitempty"` // MsgMetaInfo.TargetSender
+	// Reply/Quote Context
+	QuotedID     string `json:"quotedId,omitempty"`     // Replied message ID
+	QuotedSender string `json:"quotedSender,omitempty"` // Replied message sender
 
-	// Status tracking (updated via receipts)
+	// Delivery Status (for outgoing messages)
 	Status      MessageStatus `json:"status"`
 	DeliveredAt *time.Time    `json:"deliveredAt,omitempty"`
 	ReadAt      *time.Time    `json:"readAt,omitempty"`
 
-	// Reactions - stored as JSONB array
+	// Reactions Array
 	Reactions json.RawMessage `json:"reactions,omitempty"`
 
-	// Raw event JSON for full fidelity
+	// Full Event Data
 	RawEvent json.RawMessage `json:"rawEvent,omitempty"`
 
+	// Metadata
 	CreatedAt time.Time `json:"createdAt"`
 }
 
-// Reaction represents a single reaction on a message
+// =============================================================================
+// REACTION
+// =============================================================================
+
 type Reaction struct {
 	Emoji     string `json:"emoji"`
-	SenderJid string `json:"senderJid"`
+	SenderJID string `json:"senderJid"`
 	Timestamp int64  `json:"timestamp"`
+}
+
+// =============================================================================
+// HELPER METHODS
+// =============================================================================
+
+func (m *Message) Direction() MessageDirection {
+	if m.IsFromMe {
+		return DirectionOutgoing
+	}
+	return DirectionIncoming
+}
+
+func (m *Message) IsMedia() bool {
+	switch m.Type {
+	case "image", "video", "audio", "document", "sticker":
+		return true
+	}
+	return false
 }

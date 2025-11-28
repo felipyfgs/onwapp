@@ -10,6 +10,7 @@ import (
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/proto/waHistorySync"
 	"go.mau.fi/whatsmeow/proto/waWeb"
+	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 
 	"zpwoot/internal/db"
@@ -273,9 +274,12 @@ func (s *EventService) handleMessage(ctx context.Context, session *model.Session
 
 	rawEvent, _ := json.Marshal(e)
 
+	var deliveredAt *time.Time
 	status := model.MessageStatusSent
 	if !e.Info.IsFromMe {
 		status = model.MessageStatusDelivered
+		ts := e.Info.Timestamp
+		deliveredAt = &ts
 	}
 
 	msg := &model.Message{
@@ -299,6 +303,7 @@ func (s *EventService) handleMessage(ctx context.Context, session *model.Session
 		QuotedID:     e.Info.MsgMetaInfo.TargetID,
 		QuotedSender: e.Info.MsgMetaInfo.TargetSender.String(),
 		Status:       status,
+		DeliveredAt:  deliveredAt,
 		RawEvent:     rawEvent,
 	}
 
@@ -454,8 +459,58 @@ func (s *EventService) handleReceipt(ctx context.Context, session *model.Session
 		Str("type", string(e.Type)).
 		Str("from", e.Sender.String()).
 		Str("chat", e.Chat.String()).
-		Interface("raw", e).
+		Int("messageCount", len(e.MessageIDs)).
 		Msg("Receipt received")
+
+	// Map receipt type to message status and update type
+	var status model.MessageStatus
+	var updateType model.UpdateType
+	switch e.Type {
+	case types.ReceiptTypeDelivered:
+		status = model.MessageStatusDelivered
+		updateType = model.UpdateTypeDelivered
+	case types.ReceiptTypeRead:
+		status = model.MessageStatusRead
+		updateType = model.UpdateTypeRead
+	case types.ReceiptTypePlayed:
+		status = model.MessageStatusPlayed
+		updateType = model.UpdateTypePlayed
+	default:
+		// Unknown receipt type, just send webhook
+		s.sendWebhook(ctx, session, string(model.EventMessageReceipt), e)
+		return
+	}
+
+	// Update status and save event for each message
+	for _, msgID := range e.MessageIDs {
+		// Update message status
+		if err := s.database.Messages.UpdateStatus(ctx, session.ID, msgID, status); err != nil {
+			logger.Warn().Err(err).
+				Str("session", session.Name).
+				Str("messageId", msgID).
+				Str("status", string(status)).
+				Msg("Failed to update message status from receipt")
+		}
+
+		// Save to MessageUpdates for history tracking
+		data, _ := json.Marshal(map[string]interface{}{
+			"chat":      e.Chat.String(),
+			"timestamp": e.Timestamp.UnixMilli(),
+		})
+
+		update := &model.MessageUpdate{
+			SessionID: session.ID,
+			MsgID:     msgID,
+			Type:      updateType,
+			Actor:     e.Sender.String(),
+			Data:      data,
+			EventAt:   e.Timestamp,
+		}
+
+		if _, err := s.database.MessageUpdates.Save(ctx, update); err != nil {
+			logger.Warn().Err(err).Str("msgId", msgID).Msg("Failed to save receipt update")
+		}
+	}
 
 	s.sendWebhook(ctx, session, string(model.EventMessageReceipt), e)
 }
