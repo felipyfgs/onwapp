@@ -710,26 +710,25 @@ func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
 // @Summary      Get group info from invite link
 // @Description  Get group information using an invite link
 // @Tags         groups
-// @Accept       json
 // @Produce      json
 // @Param        name path string true "Session name"
-// @Param        body body dto.GroupInfoFromLinkRequest true "Invite link"
+// @Param        link query string true "Invite link or code"
 // @Success      200 {object} dto.GroupActionResponse
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/group/info/link [post]
+// @Router       /sessions/{name}/group/info/link [get]
 func (h *GroupHandler) GetGroupInfoFromLink(c *gin.Context) {
 	name := c.Param("name")
 
-	var req dto.GroupInfoFromLinkRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+	link := c.Query("link")
+	if link == "" {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "link query parameter is required"})
 		return
 	}
 
 	// Extract code from link
-	code := req.InviteLink
+	code := link
 	if strings.Contains(code, "chat.whatsapp.com/") {
 		parts := strings.Split(code, "chat.whatsapp.com/")
 		if len(parts) > 1 {
