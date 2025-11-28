@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"net/http"
 
+	"go.mau.fi/whatsmeow"
 	"github.com/gin-gonic/gin"
 
 	"zpwoot/internal/api/dto"
@@ -457,6 +458,168 @@ func (h *MessageHandler) SendPollVote(c *gin.Context) {
 	}
 
 	resp, err := h.whatsappService.SendPollVote(c.Request.Context(), name, req.Phone, req.PollMessageID, req.SelectedOptions)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.SendResponse{
+		Success:   true,
+		MessageID: resp.ID,
+		Timestamp: resp.Timestamp.Unix(),
+	})
+}
+
+// SendButtons godoc
+// @Summary      Send buttons message
+// @Description  Send a message with buttons (max 3 buttons)
+// @Tags         messages
+// @Accept       json
+// @Produce      json
+// @Param        name   path      string                 true  "Session name"
+// @Param        body   body      dto.SendButtonsRequest true  "Buttons data"
+// @Success      200    {object}  dto.SendResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /sessions/{name}/send/buttons [post]
+func (h *MessageHandler) SendButtons(c *gin.Context) {
+	name := c.Param("name")
+
+	var req dto.SendButtonsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	buttons := make([]whatsmeow.Button, len(req.Buttons))
+	for i, btn := range req.Buttons {
+		buttons[i] = whatsmeow.Button{
+			ButtonID:    btn.ButtonID,
+			DisplayText: btn.DisplayText,
+		}
+	}
+
+	params := whatsmeow.ButtonsMessageParams{
+		ContentText: req.ContentText,
+		FooterText:  req.FooterText,
+		HeaderText:  req.HeaderText,
+		Buttons:     buttons,
+	}
+
+	resp, err := h.whatsappService.SendButtonsMessage(c.Request.Context(), name, req.Phone, params)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.SendResponse{
+		Success:   true,
+		MessageID: resp.ID,
+		Timestamp: resp.Timestamp.Unix(),
+	})
+}
+
+// SendList godoc
+// @Summary      Send list message
+// @Description  Send a message with a selectable list
+// @Tags         messages
+// @Accept       json
+// @Produce      json
+// @Param        name   path      string              true  "Session name"
+// @Param        body   body      dto.SendListRequest true  "List data"
+// @Success      200    {object}  dto.SendResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /sessions/{name}/send/list [post]
+func (h *MessageHandler) SendList(c *gin.Context) {
+	name := c.Param("name")
+
+	var req dto.SendListRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	sections := make([]whatsmeow.ListSection, len(req.Sections))
+	for i, sec := range req.Sections {
+		rows := make([]whatsmeow.ListRow, len(sec.Rows))
+		for j, row := range sec.Rows {
+			rows[j] = whatsmeow.ListRow{
+				Title:       row.Title,
+				Description: row.Description,
+				RowID:       row.RowID,
+			}
+		}
+		sections[i] = whatsmeow.ListSection{
+			Title: sec.Title,
+			Rows:  rows,
+		}
+	}
+
+	params := whatsmeow.ListMessageParams{
+		Title:       req.Title,
+		Description: req.Description,
+		ButtonText:  req.ButtonText,
+		FooterText:  req.FooterText,
+		Sections:    sections,
+	}
+
+	resp, err := h.whatsappService.SendListMessage(c.Request.Context(), name, req.Phone, params)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.SendResponse{
+		Success:   true,
+		MessageID: resp.ID,
+		Timestamp: resp.Timestamp.Unix(),
+	})
+}
+
+// SendInteractive godoc
+// @Summary      Send interactive message with native flow buttons
+// @Description  Send an interactive message with buttons (quick_reply, cta_url, cta_call, cta_copy)
+// @Tags         messages
+// @Accept       json
+// @Produce      json
+// @Param        name   path      string                     true  "Session name"
+// @Param        body   body      dto.SendInteractiveRequest true  "Interactive data"
+// @Success      200    {object}  dto.SendResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /sessions/{name}/send/interactive [post]
+func (h *MessageHandler) SendInteractive(c *gin.Context) {
+	name := c.Param("name")
+
+	var req dto.SendInteractiveRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	buttons := make([]whatsmeow.NativeFlowButton, len(req.Buttons))
+	for i, btn := range req.Buttons {
+		buttons[i] = whatsmeow.NativeFlowButton{
+			Name:   btn.Name,
+			Params: btn.Params,
+		}
+	}
+
+	params := whatsmeow.NativeFlowMessageParams{
+		Title:   req.Title,
+		Body:    req.Body,
+		Footer:  req.Footer,
+		Buttons: buttons,
+	}
+
+	resp, err := h.whatsappService.SendNativeFlowMessage(c.Request.Context(), name, req.Phone, params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return

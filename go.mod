@@ -15,9 +15,11 @@ require (
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.1
 	github.com/swaggo/swag v1.16.6
-	go.mau.fi/whatsmeow v0.0.0-20251120135021-071293c6b9f0
+	go.mau.fi/whatsmeow v0.0.0-20251128154510-199b59200393
 	google.golang.org/protobuf v1.36.10
 )
+
+replace go.mau.fi/whatsmeow => github.com/felipyfgs/whatsmeow v0.0.0-20251128154510-199b59200393
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect

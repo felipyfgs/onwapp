@@ -1456,3 +1456,50 @@ func (w *WhatsAppService) GetSubGroups(ctx context.Context, sessionName, communi
 
 	return client.GetSubGroups(ctx, jid)
 }
+
+// INTERACTIVE MESSAGES METHODS
+
+// SendButtonsMessage envia mensagem com botões (max 3 botões)
+func (w *WhatsAppService) SendButtonsMessage(ctx context.Context, sessionName, phone string, params whatsmeow.ButtonsMessageParams) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return whatsmeow.SendResponse{}, err
+	}
+
+	jid, err := parseJID(phone)
+	if err != nil {
+		return whatsmeow.SendResponse{}, fmt.Errorf("invalid phone number: %w", err)
+	}
+
+	return client.SendButtonsMessage(ctx, jid, params)
+}
+
+// SendListMessage envia mensagem com lista
+func (w *WhatsAppService) SendListMessage(ctx context.Context, sessionName, phone string, params whatsmeow.ListMessageParams) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return whatsmeow.SendResponse{}, err
+	}
+
+	jid, err := parseJID(phone)
+	if err != nil {
+		return whatsmeow.SendResponse{}, fmt.Errorf("invalid phone number: %w", err)
+	}
+
+	return client.SendListMessage(ctx, jid, params)
+}
+
+// SendNativeFlowMessage envia mensagem interativa com native flow buttons
+func (w *WhatsAppService) SendNativeFlowMessage(ctx context.Context, sessionName, phone string, params whatsmeow.NativeFlowMessageParams) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return whatsmeow.SendResponse{}, err
+	}
+
+	jid, err := parseJID(phone)
+	if err != nil {
+		return whatsmeow.SendResponse{}, fmt.Errorf("invalid phone number: %w", err)
+	}
+
+	return client.SendNativeFlowMessage(ctx, jid, params)
+}

@@ -119,6 +119,9 @@ func registerMessageRoutes(rg *gin.RouterGroup, h *handler.MessageHandler) {
 	rg.POST("/:name/send/reaction", h.SendReaction)
 	rg.POST("/:name/send/poll", h.SendPoll)
 	rg.POST("/:name/send/poll/vote", h.SendPollVote)
+	rg.POST("/:name/send/buttons", h.SendButtons)
+	rg.POST("/:name/send/list", h.SendList)
+	rg.POST("/:name/send/interactive", h.SendInteractive)
 }
 
 func registerGroupRoutes(rg *gin.RouterGroup, h *handler.GroupHandler) {

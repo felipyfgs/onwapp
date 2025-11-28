@@ -57,6 +57,18 @@ definitions:
       success:
         type: boolean
     type: object
+  ButtonDTO:
+    properties:
+      buttonId:
+        example: btn1
+        type: string
+      displayText:
+        example: Click me
+        type: string
+    required:
+    - buttonId
+    - displayText
+    type: object
   ChatActionResponse:
     properties:
       status:
@@ -388,6 +400,35 @@ definitions:
     - childGroupId
     - parentGroupId
     type: object
+  ListRowDTO:
+    properties:
+      description:
+        example: Description of option 1
+        type: string
+      rowId:
+        example: row1
+        type: string
+      title:
+        example: Option 1
+        type: string
+    required:
+    - rowId
+    - title
+    type: object
+  ListSectionDTO:
+    properties:
+      rows:
+        items:
+          $ref: '#/definitions/ListRowDTO'
+        minItems: 1
+        type: array
+      title:
+        example: Section 1
+        type: string
+    required:
+    - rows
+    - title
+    type: object
   MarkReadRequest:
     properties:
       messageIds:
@@ -409,6 +450,18 @@ definitions:
       status:
         example: connected
         type: string
+    type: object
+  NativeFlowButtonDTO:
+    properties:
+      name:
+        example: quick_reply
+        type: string
+      params:
+        additionalProperties: true
+        type: object
+    required:
+    - name
+    - params
     type: object
   NewsletterActionRequest:
     properties:
@@ -540,6 +593,31 @@ definitions:
     - audio
     - phone
     type: object
+  SendButtonsRequest:
+    properties:
+      buttons:
+        items:
+          $ref: '#/definitions/ButtonDTO'
+        maxItems: 3
+        minItems: 1
+        type: array
+      contentText:
+        example: Choose an option
+        type: string
+      footerText:
+        example: Footer text
+        type: string
+      headerText:
+        example: Header text
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+    required:
+    - buttons
+    - contentText
+    - phone
+    type: object
   SendContactRequest:
     properties:
       contactName:
@@ -604,6 +682,59 @@ definitions:
     required:
     - image
     - phone
+    type: object
+  SendInteractiveRequest:
+    properties:
+      body:
+        example: Message body text
+        type: string
+      buttons:
+        items:
+          $ref: '#/definitions/NativeFlowButtonDTO'
+        minItems: 1
+        type: array
+      footer:
+        example: Footer text
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+      title:
+        example: Interactive Title
+        type: string
+    required:
+    - body
+    - buttons
+    - phone
+    type: object
+  SendListRequest:
+    properties:
+      buttonText:
+        example: Open Menu
+        type: string
+      description:
+        example: Please select an option
+        type: string
+      footerText:
+        example: Footer text
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+      sections:
+        items:
+          $ref: '#/definitions/ListSectionDTO'
+        minItems: 1
+        type: array
+      title:
+        example: Menu Title
+        type: string
+    required:
+    - buttonText
+    - description
+    - phone
+    - sections
+    - title
     type: object
   SendLocationRequest:
     properties:
@@ -3325,6 +3456,47 @@ paths:
       summary: Send audio message
       tags:
       - messages
+  /sessions/{name}/send/buttons:
+    post:
+      consumes:
+      - application/json
+      description: Send a message with buttons (max 3 buttons)
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Buttons data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SendButtonsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send buttons message
+      tags:
+      - messages
   /sessions/{name}/send/contact:
     post:
       consumes:
@@ -3446,6 +3618,89 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Send image message
+      tags:
+      - messages
+  /sessions/{name}/send/interactive:
+    post:
+      consumes:
+      - application/json
+      description: Send an interactive message with buttons (quick_reply, cta_url,
+        cta_call, cta_copy)
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Interactive data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SendInteractiveRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send interactive message with native flow buttons
+      tags:
+      - messages
+  /sessions/{name}/send/list:
+    post:
+      consumes:
+      - application/json
+      description: Send a message with a selectable list
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: List data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SendListRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send list message
       tags:
       - messages
   /sessions/{name}/send/location:

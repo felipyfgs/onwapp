@@ -305,3 +305,51 @@ type LinkGroupRequest struct {
 	ParentGroupID string `json:"parentGroupId" binding:"required" example:"123456789@g.us"`
 	ChildGroupID  string `json:"childGroupId" binding:"required" example:"987654321@g.us"`
 }
+
+// Interactive message requests
+
+type ButtonDTO struct {
+	ButtonID    string `json:"buttonId" binding:"required" example:"btn1"`
+	DisplayText string `json:"displayText" binding:"required" example:"Click me"`
+}
+
+type SendButtonsRequest struct {
+	Phone       string      `json:"phone" binding:"required" example:"5511999999999"`
+	ContentText string      `json:"contentText" binding:"required" example:"Choose an option"`
+	FooterText  string      `json:"footerText" example:"Footer text"`
+	HeaderText  string      `json:"headerText" example:"Header text"`
+	Buttons     []ButtonDTO `json:"buttons" binding:"required,min=1,max=3"`
+}
+
+type ListRowDTO struct {
+	Title       string `json:"title" binding:"required" example:"Option 1"`
+	Description string `json:"description" example:"Description of option 1"`
+	RowID       string `json:"rowId" binding:"required" example:"row1"`
+}
+
+type ListSectionDTO struct {
+	Title string       `json:"title" binding:"required" example:"Section 1"`
+	Rows  []ListRowDTO `json:"rows" binding:"required,min=1"`
+}
+
+type SendListRequest struct {
+	Phone       string           `json:"phone" binding:"required" example:"5511999999999"`
+	Title       string           `json:"title" binding:"required" example:"Menu Title"`
+	Description string           `json:"description" binding:"required" example:"Please select an option"`
+	ButtonText  string           `json:"buttonText" binding:"required" example:"Open Menu"`
+	FooterText  string           `json:"footerText" example:"Footer text"`
+	Sections    []ListSectionDTO `json:"sections" binding:"required,min=1"`
+}
+
+type NativeFlowButtonDTO struct {
+	Name   string                 `json:"name" binding:"required" example:"quick_reply"`
+	Params map[string]interface{} `json:"params" binding:"required"`
+}
+
+type SendInteractiveRequest struct {
+	Phone   string                `json:"phone" binding:"required" example:"5511999999999"`
+	Title   string                `json:"title" example:"Interactive Title"`
+	Body    string                `json:"body" binding:"required" example:"Message body text"`
+	Footer  string                `json:"footer" example:"Footer text"`
+	Buttons []NativeFlowButtonDTO `json:"buttons" binding:"required,min=1"`
+}

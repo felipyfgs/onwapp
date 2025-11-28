@@ -3844,6 +3844,70 @@ const docTemplate = `{
                 }
             }
         },
+        "/sessions/{name}/send/buttons": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Send a message with buttons (max 3 buttons)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "messages"
+                ],
+                "summary": "Send buttons message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Buttons data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/SendButtonsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/SendResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/sessions/{name}/send/contact": {
             "post": {
                 "security": [
@@ -4005,6 +4069,134 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/SendImageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/SendResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{name}/send/interactive": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Send an interactive message with buttons (quick_reply, cta_url, cta_call, cta_copy)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "messages"
+                ],
+                "summary": "Send interactive message with native flow buttons",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Interactive data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/SendInteractiveRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/SendResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{name}/send/list": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Send a message with a selectable list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "messages"
+                ],
+                "summary": "Send list message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "List data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/SendListRequest"
                         }
                     }
                 ],
@@ -4765,6 +4957,23 @@ const docTemplate = `{
                 }
             }
         },
+        "ButtonDTO": {
+            "type": "object",
+            "required": [
+                "buttonId",
+                "displayText"
+            ],
+            "properties": {
+                "buttonId": {
+                    "type": "string",
+                    "example": "btn1"
+                },
+                "displayText": {
+                    "type": "string",
+                    "example": "Click me"
+                }
+            }
+        },
         "ChatActionResponse": {
             "type": "object",
             "properties": {
@@ -5248,6 +5457,47 @@ const docTemplate = `{
                 }
             }
         },
+        "ListRowDTO": {
+            "type": "object",
+            "required": [
+                "rowId",
+                "title"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Description of option 1"
+                },
+                "rowId": {
+                    "type": "string",
+                    "example": "row1"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Option 1"
+                }
+            }
+        },
+        "ListSectionDTO": {
+            "type": "object",
+            "required": [
+                "rows",
+                "title"
+            ],
+            "properties": {
+                "rows": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/ListRowDTO"
+                    }
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Section 1"
+                }
+            }
+        },
         "MarkReadRequest": {
             "type": "object",
             "required": [
@@ -5277,6 +5527,23 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "connected"
+                }
+            }
+        },
+        "NativeFlowButtonDTO": {
+            "type": "object",
+            "required": [
+                "name",
+                "params"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "quick_reply"
+                },
+                "params": {
+                    "type": "object",
+                    "additionalProperties": true
                 }
             }
         },
@@ -5470,6 +5737,40 @@ const docTemplate = `{
                 }
             }
         },
+        "SendButtonsRequest": {
+            "type": "object",
+            "required": [
+                "buttons",
+                "contentText",
+                "phone"
+            ],
+            "properties": {
+                "buttons": {
+                    "type": "array",
+                    "maxItems": 3,
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/ButtonDTO"
+                    }
+                },
+                "contentText": {
+                    "type": "string",
+                    "example": "Choose an option"
+                },
+                "footerText": {
+                    "type": "string",
+                    "example": "Footer text"
+                },
+                "headerText": {
+                    "type": "string",
+                    "example": "Header text"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
         "SendContactRequest": {
             "type": "object",
             "required": [
@@ -5557,6 +5858,78 @@ const docTemplate = `{
                 "phone": {
                     "type": "string",
                     "example": "5511999999999"
+                }
+            }
+        },
+        "SendInteractiveRequest": {
+            "type": "object",
+            "required": [
+                "body",
+                "buttons",
+                "phone"
+            ],
+            "properties": {
+                "body": {
+                    "type": "string",
+                    "example": "Message body text"
+                },
+                "buttons": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/NativeFlowButtonDTO"
+                    }
+                },
+                "footer": {
+                    "type": "string",
+                    "example": "Footer text"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Interactive Title"
+                }
+            }
+        },
+        "SendListRequest": {
+            "type": "object",
+            "required": [
+                "buttonText",
+                "description",
+                "phone",
+                "sections",
+                "title"
+            ],
+            "properties": {
+                "buttonText": {
+                    "type": "string",
+                    "example": "Open Menu"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Please select an option"
+                },
+                "footerText": {
+                    "type": "string",
+                    "example": "Footer text"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "sections": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/ListSectionDTO"
+                    }
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Menu Title"
                 }
             }
         },
