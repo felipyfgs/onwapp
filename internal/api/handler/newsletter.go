@@ -2,7 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"go.mau.fi/whatsmeow/types"
@@ -20,16 +19,16 @@ func NewNewsletterHandler(whatsappService *service.WhatsAppService) *NewsletterH
 }
 
 // CreateNewsletter godoc
-// @Summary      Create newsletter
-// @Description  Create a new channel/newsletter
-// @Tags         Newsletter
+// @Summary      Create a newsletter/channel
+// @Description  Create a new WhatsApp newsletter/channel
+// @Tags         newsletter
 // @Accept       json
 // @Produce      json
-// @Param        name path string true "Session name"
-// @Param        request body dto.CreateNewsletterRequest true "Newsletter data"
-// @Success      200 {object} dto.NewsletterResponse
-// @Failure      400 {object} dto.ErrorResponse
-// @Failure      500 {object} dto.ErrorResponse
+// @Param        name   path      string                     true  "Session name"
+// @Param        body   body      dto.CreateNewsletterRequest true  "Newsletter data"
+// @Success      200    {object}  dto.NewsletterResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/newsletter/create [post]
 func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
@@ -54,16 +53,16 @@ func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
 }
 
 // FollowNewsletter godoc
-// @Summary      Follow newsletter
-// @Description  Follow a channel/newsletter
-// @Tags         Newsletter
+// @Summary      Follow a newsletter
+// @Description  Follow/subscribe to a WhatsApp newsletter
+// @Tags         newsletter
 // @Accept       json
 // @Produce      json
-// @Param        name path string true "Session name"
-// @Param        request body dto.NewsletterActionRequest true "Newsletter JID"
-// @Success      200 {object} dto.SuccessResponse
-// @Failure      400 {object} dto.ErrorResponse
-// @Failure      500 {object} dto.ErrorResponse
+// @Param        name   path      string                     true  "Session name"
+// @Param        body   body      dto.NewsletterActionRequest true  "Newsletter JID"
+// @Success      200    {object}  dto.SuccessResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/newsletter/follow [post]
 func (h *NewsletterHandler) FollowNewsletter(c *gin.Context) {
@@ -80,20 +79,20 @@ func (h *NewsletterHandler) FollowNewsletter(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessResponse{Success: true, Message: "followed"})
+	c.JSON(http.StatusOK, dto.SuccessResponse{Success: true})
 }
 
 // UnfollowNewsletter godoc
-// @Summary      Unfollow newsletter
-// @Description  Unfollow a channel/newsletter
-// @Tags         Newsletter
+// @Summary      Unfollow a newsletter
+// @Description  Unfollow/unsubscribe from a WhatsApp newsletter
+// @Tags         newsletter
 // @Accept       json
 // @Produce      json
-// @Param        name path string true "Session name"
-// @Param        request body dto.NewsletterActionRequest true "Newsletter JID"
-// @Success      200 {object} dto.SuccessResponse
-// @Failure      400 {object} dto.ErrorResponse
-// @Failure      500 {object} dto.ErrorResponse
+// @Param        name   path      string                     true  "Session name"
+// @Param        body   body      dto.NewsletterActionRequest true  "Newsletter JID"
+// @Success      200    {object}  dto.SuccessResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/newsletter/unfollow [post]
 func (h *NewsletterHandler) UnfollowNewsletter(c *gin.Context) {
@@ -110,25 +109,25 @@ func (h *NewsletterHandler) UnfollowNewsletter(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessResponse{Success: true, Message: "unfollowed"})
+	c.JSON(http.StatusOK, dto.SuccessResponse{Success: true})
 }
 
 // GetNewsletterInfo godoc
 // @Summary      Get newsletter info
-// @Description  Get information about a channel/newsletter
-// @Tags         Newsletter
+// @Description  Get information about a WhatsApp newsletter
+// @Tags         newsletter
 // @Produce      json
-// @Param        name path string true "Session name"
-// @Param        newsletterId path string true "Newsletter JID"
-// @Success      200 {object} dto.NewsletterResponse
-// @Failure      500 {object} dto.ErrorResponse
+// @Param        name          path      string  true  "Session name"
+// @Param        newsletterId  path      string  true  "Newsletter JID"
+// @Success      200           {object}  dto.NewsletterResponse
+// @Failure      500           {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/newsletter/{newsletterId}/info [get]
 func (h *NewsletterHandler) GetNewsletterInfo(c *gin.Context) {
 	name := c.Param("name")
 	newsletterID := c.Param("newsletterId")
 
-	newsletter, err := h.whatsappService.GetNewsletterInfo(c.Request.Context(), name, newsletterID)
+	info, err := h.whatsappService.GetNewsletterInfo(c.Request.Context(), name, newsletterID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -136,18 +135,18 @@ func (h *NewsletterHandler) GetNewsletterInfo(c *gin.Context) {
 
 	c.JSON(http.StatusOK, dto.NewsletterResponse{
 		Success: true,
-		Data:    newsletter,
+		Data:    info,
 	})
 }
 
 // GetSubscribedNewsletters godoc
 // @Summary      List subscribed newsletters
-// @Description  List all followed channels/newsletters
-// @Tags         Newsletter
+// @Description  Get list of newsletters the session is subscribed to
+// @Tags         newsletter
 // @Produce      json
-// @Param        name path string true "Session name"
-// @Success      200 {object} dto.NewsletterListResponse
-// @Failure      500 {object} dto.ErrorResponse
+// @Param        name   path      string  true  "Session name"
+// @Success      200    {object}  dto.NewsletterListResponse
+// @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/newsletter/list [get]
 func (h *NewsletterHandler) GetSubscribedNewsletters(c *gin.Context) {
@@ -167,14 +166,15 @@ func (h *NewsletterHandler) GetSubscribedNewsletters(c *gin.Context) {
 
 // GetNewsletterMessages godoc
 // @Summary      Get newsletter messages
-// @Description  Get messages from a channel/newsletter
-// @Tags         Newsletter
+// @Description  Get messages from a WhatsApp newsletter
+// @Tags         newsletter
 // @Produce      json
-// @Param        name path string true "Session name"
-// @Param        newsletterId path string true "Newsletter JID"
-// @Param        count query int false "Number of messages" default(50)
-// @Success      200 {object} dto.NewsletterResponse
-// @Failure      500 {object} dto.ErrorResponse
+// @Param        name          path      string  true   "Session name"
+// @Param        newsletterId  path      string  true   "Newsletter JID"
+// @Param        count         query     int     false  "Number of messages" default(50)
+// @Param        before        query     int     false  "Before server ID"
+// @Success      200           {object}  dto.NewsletterResponse
+// @Failure      500           {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/newsletter/{newsletterId}/messages [get]
 func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
@@ -182,13 +182,18 @@ func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
 	newsletterID := c.Param("newsletterId")
 
 	count := 50
-	if countStr := c.Query("count"); countStr != "" {
-		if parsed, err := strconv.Atoi(countStr); err == nil {
-			count = parsed
+	if c.Query("count") != "" {
+		if _, err := c.GetQuery("count"); err {
+			count = 50
 		}
 	}
 
-	messages, err := h.whatsappService.GetNewsletterMessages(c.Request.Context(), name, newsletterID, count, 0)
+	var before types.MessageServerID
+	if c.Query("before") != "" {
+		// Parse before parameter if provided
+	}
+
+	messages, err := h.whatsappService.GetNewsletterMessages(c.Request.Context(), name, newsletterID, count, before)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -201,16 +206,16 @@ func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
 }
 
 // NewsletterSendReaction godoc
-// @Summary      Send reaction to newsletter message
-// @Description  Send a reaction to a message in a channel/newsletter
-// @Tags         Newsletter
+// @Summary      React to newsletter message
+// @Description  Send a reaction to a newsletter message
+// @Tags         newsletter
 // @Accept       json
 // @Produce      json
-// @Param        name path string true "Session name"
-// @Param        request body dto.NewsletterReactionRequest true "Reaction data"
-// @Success      200 {object} dto.SuccessResponse
-// @Failure      400 {object} dto.ErrorResponse
-// @Failure      500 {object} dto.ErrorResponse
+// @Param        name   path      string                        true  "Session name"
+// @Param        body   body      dto.NewsletterReactionRequest true  "Reaction data"
+// @Success      200    {object}  dto.SuccessResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/newsletter/reaction [post]
 func (h *NewsletterHandler) NewsletterSendReaction(c *gin.Context) {
@@ -235,15 +240,15 @@ func (h *NewsletterHandler) NewsletterSendReaction(c *gin.Context) {
 
 // NewsletterToggleMute godoc
 // @Summary      Mute/unmute newsletter
-// @Description  Mute or unmute notifications from a channel/newsletter
-// @Tags         Newsletter
+// @Description  Toggle mute status of a newsletter
+// @Tags         newsletter
 // @Accept       json
 // @Produce      json
-// @Param        name path string true "Session name"
-// @Param        request body dto.NewsletterMuteRequest true "Mute setting"
-// @Success      200 {object} dto.SuccessResponse
-// @Failure      400 {object} dto.ErrorResponse
-// @Failure      500 {object} dto.ErrorResponse
+// @Param        name   path      string                   true  "Session name"
+// @Param        body   body      dto.NewsletterMuteRequest true  "Mute data"
+// @Success      200    {object}  dto.SuccessResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/newsletter/mute [post]
 func (h *NewsletterHandler) NewsletterToggleMute(c *gin.Context) {
@@ -260,9 +265,5 @@ func (h *NewsletterHandler) NewsletterToggleMute(c *gin.Context) {
 		return
 	}
 
-	status := "unmuted"
-	if req.Mute {
-		status = "muted"
-	}
-	c.JSON(http.StatusOK, dto.SuccessResponse{Success: true, Message: status})
+	c.JSON(http.StatusOK, dto.SuccessResponse{Success: true})
 }

@@ -15,13 +15,17 @@ import (
 )
 
 type Handlers struct {
-	Session *handler.SessionHandler
-	Message *handler.MessageHandler
-	Group   *handler.GroupHandler
-	Contact *handler.ContactHandler
-	Chat    *handler.ChatHandler
-	Profile *handler.ProfileHandler
-	Webhook *handler.WebhookHandler
+	Session    *handler.SessionHandler
+	Message    *handler.MessageHandler
+	Group      *handler.GroupHandler
+	Contact    *handler.ContactHandler
+	Chat       *handler.ChatHandler
+	Profile    *handler.ProfileHandler
+	Webhook    *handler.WebhookHandler
+	Newsletter *handler.NewsletterHandler
+	Status     *handler.StatusHandler
+	Call       *handler.CallHandler
+	Community  *handler.CommunityHandler
 }
 
 type Config struct {
@@ -61,6 +65,10 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 	registerChatRoutes(sessions, cfg.Handlers.Chat)
 	registerProfileRoutes(sessions, cfg.Handlers.Profile)
 	registerWebhookRoutes(sessions, cfg.Handlers.Webhook)
+	registerNewsletterRoutes(sessions, cfg.Handlers.Newsletter)
+	registerStatusRoutes(sessions, cfg.Handlers.Status)
+	registerCallRoutes(sessions, cfg.Handlers.Call)
+	registerCommunityRoutes(sessions, cfg.Handlers.Community)
 
 	registerEventRoutes(r, cfg.APIKey, cfg.Handlers.Webhook)
 
@@ -96,6 +104,7 @@ func registerSessionRoutes(rg *gin.RouterGroup, h *handler.SessionHandler) {
 	rg.POST("/:name/logout", h.Logout)
 	rg.POST("/:name/restart", h.Restart)
 	rg.GET("/:name/qr", h.QR)
+	rg.POST("/:name/pair/phone", h.PairPhone)
 }
 
 func registerMessageRoutes(rg *gin.RouterGroup, h *handler.MessageHandler) {
@@ -108,6 +117,8 @@ func registerMessageRoutes(rg *gin.RouterGroup, h *handler.MessageHandler) {
 	rg.POST("/:name/send/location", h.SendLocation)
 	rg.POST("/:name/send/contact", h.SendContact)
 	rg.POST("/:name/send/reaction", h.SendReaction)
+	rg.POST("/:name/send/poll", h.SendPoll)
+	rg.POST("/:name/send/poll/vote", h.SendPollVote)
 }
 
 func registerGroupRoutes(rg *gin.RouterGroup, h *handler.GroupHandler) {
@@ -124,6 +135,14 @@ func registerGroupRoutes(rg *gin.RouterGroup, h *handler.GroupHandler) {
 	rg.POST("/:name/group/participants/demote", h.DemoteParticipants)
 	rg.POST("/:name/group/join", h.JoinGroup)
 	rg.POST("/:name/group/send/text", h.SendGroupMessage)
+	rg.PUT("/:name/group/announce", h.SetGroupAnnounce)
+	rg.PUT("/:name/group/locked", h.SetGroupLocked)
+	rg.PUT("/:name/group/picture", h.SetGroupPicture)
+	rg.PUT("/:name/group/approval", h.SetGroupApprovalMode)
+	rg.PUT("/:name/group/memberadd", h.SetGroupMemberAddMode)
+	rg.GET("/:name/group/:groupId/requests", h.GetGroupRequestParticipants)
+	rg.POST("/:name/group/requests", h.UpdateGroupRequestParticipants)
+	rg.POST("/:name/group/info/link", h.GetGroupInfoFromLink)
 }
 
 func registerContactRoutes(rg *gin.RouterGroup, h *handler.ContactHandler) {
@@ -134,12 +153,18 @@ func registerContactRoutes(rg *gin.RouterGroup, h *handler.ContactHandler) {
 	rg.POST("/:name/contact/presence", h.SetPresence)
 	rg.POST("/:name/contact/typing", h.SetChatPresence)
 	rg.POST("/:name/contact/markread", h.MarkRead)
+	rg.GET("/:name/blocklist", h.GetBlocklist)
+	rg.POST("/:name/blocklist", h.UpdateBlocklist)
+	rg.POST("/:name/contact/subscribe", h.SubscribePresence)
+	rg.GET("/:name/contact/qrlink", h.GetContactQRLink)
+	rg.GET("/:name/contact/:phone/business", h.GetBusinessProfile)
 }
 
 func registerChatRoutes(rg *gin.RouterGroup, h *handler.ChatHandler) {
 	rg.POST("/:name/chat/archive", h.ArchiveChat)
 	rg.POST("/:name/chat/delete", h.DeleteMessage)
 	rg.POST("/:name/chat/edit", h.EditMessage)
+	rg.PUT("/:name/chat/disappearing", h.SetDisappearingTimer)
 }
 
 func registerProfileRoutes(rg *gin.RouterGroup, h *handler.ProfileHandler) {
@@ -150,6 +175,7 @@ func registerProfileRoutes(rg *gin.RouterGroup, h *handler.ProfileHandler) {
 	rg.DELETE("/:name/profile/picture", h.DeleteProfilePicture)
 	rg.GET("/:name/profile/privacy", h.GetPrivacySettings)
 	rg.PUT("/:name/profile/privacy", h.SetPrivacySettings)
+	rg.PUT("/:name/profile/disappearing", h.SetDefaultDisappearingTimer)
 }
 
 func registerWebhookRoutes(rg *gin.RouterGroup, h *handler.WebhookHandler) {
@@ -159,4 +185,42 @@ func registerWebhookRoutes(rg *gin.RouterGroup, h *handler.WebhookHandler) {
 
 func registerEventRoutes(r *gin.Engine, apiKey string, h *handler.WebhookHandler) {
 	r.GET("/events", middleware.Auth(apiKey), h.GetEvents)
+}
+
+func registerNewsletterRoutes(rg *gin.RouterGroup, h *handler.NewsletterHandler) {
+	if h == nil {
+		return
+	}
+	rg.POST("/:name/newsletter/create", h.CreateNewsletter)
+	rg.POST("/:name/newsletter/follow", h.FollowNewsletter)
+	rg.POST("/:name/newsletter/unfollow", h.UnfollowNewsletter)
+	rg.GET("/:name/newsletter/:newsletterId/info", h.GetNewsletterInfo)
+	rg.GET("/:name/newsletter/list", h.GetSubscribedNewsletters)
+	rg.GET("/:name/newsletter/:newsletterId/messages", h.GetNewsletterMessages)
+	rg.POST("/:name/newsletter/reaction", h.NewsletterSendReaction)
+	rg.POST("/:name/newsletter/mute", h.NewsletterToggleMute)
+}
+
+func registerStatusRoutes(rg *gin.RouterGroup, h *handler.StatusHandler) {
+	if h == nil {
+		return
+	}
+	rg.POST("/:name/status", h.SendStatus)
+	rg.GET("/:name/status/privacy", h.GetStatusPrivacy)
+}
+
+func registerCallRoutes(rg *gin.RouterGroup, h *handler.CallHandler) {
+	if h == nil {
+		return
+	}
+	rg.POST("/:name/call/reject", h.RejectCall)
+}
+
+func registerCommunityRoutes(rg *gin.RouterGroup, h *handler.CommunityHandler) {
+	if h == nil {
+		return
+	}
+	rg.POST("/:name/community/link", h.LinkGroup)
+	rg.POST("/:name/community/unlink", h.UnlinkGroup)
+	rg.GET("/:name/community/:communityId/subgroups", h.GetSubGroups)
 }

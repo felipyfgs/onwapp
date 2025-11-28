@@ -275,3 +275,153 @@ func (h *ContactHandler) MarkRead(c *gin.Context) {
 		Success: true,
 	})
 }
+
+// GetBlocklist godoc
+// @Summary      Get blocked contacts
+// @Description  Get list of blocked contacts
+// @Tags         contact
+// @Produce      json
+// @Param        name   path      string  true  "Session name"
+// @Success      200    {object}  dto.BlocklistResponse
+// @Failure      500    {object}  dto.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /sessions/{name}/blocklist [get]
+func (h *ContactHandler) GetBlocklist(c *gin.Context) {
+	name := c.Param("name")
+
+	blocklist, err := h.whatsappService.GetBlocklist(c.Request.Context(), name)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	jids := make([]string, len(blocklist.JIDs))
+	for i, jid := range blocklist.JIDs {
+		jids[i] = jid.String()
+	}
+
+	c.JSON(http.StatusOK, dto.BlocklistResponse{
+		Success: true,
+		JIDs:    jids,
+	})
+}
+
+// UpdateBlocklist godoc
+// @Summary      Block or unblock contact
+// @Description  Block or unblock a contact
+// @Tags         contact
+// @Accept       json
+// @Produce      json
+// @Param        name   path      string              true  "Session name"
+// @Param        body   body      dto.BlocklistRequest true  "Block action"
+// @Success      200    {object}  dto.BlocklistActionResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /sessions/{name}/blocklist [post]
+func (h *ContactHandler) UpdateBlocklist(c *gin.Context) {
+	name := c.Param("name")
+
+	var req dto.BlocklistRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	block := req.Action == "block"
+	_, err := h.whatsappService.UpdateBlocklist(c.Request.Context(), name, req.Phone, block)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.BlocklistActionResponse{
+		Success: true,
+		Action:  req.Action,
+		Phone:   req.Phone,
+	})
+}
+
+// SubscribePresence godoc
+// @Summary      Subscribe to presence updates
+// @Description  Subscribe to receive presence updates from a contact
+// @Tags         contact
+// @Accept       json
+// @Produce      json
+// @Param        name   path      string                      true  "Session name"
+// @Param        body   body      dto.SubscribePresenceRequest true  "Subscribe data"
+// @Success      200    {object}  dto.SuccessResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /sessions/{name}/contact/subscribe [post]
+func (h *ContactHandler) SubscribePresence(c *gin.Context) {
+	name := c.Param("name")
+
+	var req dto.SubscribePresenceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	if err := h.whatsappService.SubscribePresence(c.Request.Context(), name, req.Phone); err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.SuccessResponse{Success: true})
+}
+
+// GetContactQRLink godoc
+// @Summary      Get contact QR link
+// @Description  Get QR link for adding contact
+// @Tags         contact
+// @Produce      json
+// @Param        name   path      string  true   "Session name"
+// @Param        revoke query     bool    false  "Revoke existing link"
+// @Success      200    {object}  dto.QRLinkResponse
+// @Failure      500    {object}  dto.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /sessions/{name}/contact/qrlink [get]
+func (h *ContactHandler) GetContactQRLink(c *gin.Context) {
+	name := c.Param("name")
+	revoke := c.Query("revoke") == "true"
+
+	link, err := h.whatsappService.GetContactQRLink(c.Request.Context(), name, revoke)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.QRLinkResponse{
+		Success: true,
+		Link:    link,
+	})
+}
+
+// GetBusinessProfile godoc
+// @Summary      Get business profile
+// @Description  Get business profile of a contact
+// @Tags         contact
+// @Produce      json
+// @Param        name   path      string  true  "Session name"
+// @Param        phone  path      string  true  "Phone number"
+// @Success      200    {object}  dto.BusinessProfileResponse
+// @Failure      500    {object}  dto.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /sessions/{name}/contact/{phone}/business [get]
+func (h *ContactHandler) GetBusinessProfile(c *gin.Context) {
+	name := c.Param("name")
+	phone := c.Param("phone")
+
+	profile, err := h.whatsappService.GetBusinessProfile(c.Request.Context(), name, phone)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.BusinessProfileResponse{
+		Success: true,
+		Profile: profile,
+	})
+}

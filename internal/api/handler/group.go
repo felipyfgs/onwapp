@@ -457,3 +457,295 @@ func (h *GroupHandler) SendGroupMessage(c *gin.Context) {
 		Timestamp: resp.Timestamp.Unix(),
 	})
 }
+
+// SetGroupAnnounce godoc
+// @Summary      Set group announce mode
+// @Description  Set whether only admins can send messages
+// @Tags         groups
+// @Accept       json
+// @Produce      json
+// @Param        name path string true "Session name"
+// @Param        body body dto.GroupAnnounceRequest true "Announce setting"
+// @Success      200 {object} dto.SuccessResponse
+// @Failure      400 {object} dto.ErrorResponse
+// @Failure      500 {object} dto.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /sessions/{name}/group/announce [put]
+func (h *GroupHandler) SetGroupAnnounce(c *gin.Context) {
+	name := c.Param("name")
+
+	var req dto.GroupAnnounceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	groupID := strings.TrimSuffix(req.GroupID, "@g.us")
+	if err := h.whatsappService.SetGroupAnnounce(c.Request.Context(), name, groupID, req.Announce); err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.SuccessResponse{Success: true})
+}
+
+// SetGroupLocked godoc
+// @Summary      Set group locked mode
+// @Description  Set whether only admins can edit group info
+// @Tags         groups
+// @Accept       json
+// @Produce      json
+// @Param        name path string true "Session name"
+// @Param        body body dto.GroupLockedRequest true "Locked setting"
+// @Success      200 {object} dto.SuccessResponse
+// @Failure      400 {object} dto.ErrorResponse
+// @Failure      500 {object} dto.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /sessions/{name}/group/locked [put]
+func (h *GroupHandler) SetGroupLocked(c *gin.Context) {
+	name := c.Param("name")
+
+	var req dto.GroupLockedRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	groupID := strings.TrimSuffix(req.GroupID, "@g.us")
+	if err := h.whatsappService.SetGroupLocked(c.Request.Context(), name, groupID, req.Locked); err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.SuccessResponse{Success: true})
+}
+
+// SetGroupPicture godoc
+// @Summary      Set group picture
+// @Description  Set the group profile picture
+// @Tags         groups
+// @Accept       json
+// @Produce      json
+// @Param        name path string true "Session name"
+// @Param        body body dto.GroupPictureRequest true "Picture data"
+// @Success      200 {object} dto.SetPictureResponse
+// @Failure      400 {object} dto.ErrorResponse
+// @Failure      500 {object} dto.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /sessions/{name}/group/picture [put]
+func (h *GroupHandler) SetGroupPicture(c *gin.Context) {
+	name := c.Param("name")
+
+	var req dto.GroupPictureRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	imageData, err := base64.StdEncoding.DecodeString(req.Image)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 image"})
+		return
+	}
+
+	groupID := strings.TrimSuffix(req.GroupID, "@g.us")
+	pictureID, err := h.whatsappService.SetGroupPhoto(c.Request.Context(), name, groupID, imageData)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.SetPictureResponse{Success: true, PictureID: pictureID})
+}
+
+// SetGroupApprovalMode godoc
+// @Summary      Set group join approval mode
+// @Description  Set whether join requests need admin approval
+// @Tags         groups
+// @Accept       json
+// @Produce      json
+// @Param        name path string true "Session name"
+// @Param        body body dto.GroupApprovalRequest true "Approval setting"
+// @Success      200 {object} dto.SuccessResponse
+// @Failure      400 {object} dto.ErrorResponse
+// @Failure      500 {object} dto.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /sessions/{name}/group/approval [put]
+func (h *GroupHandler) SetGroupApprovalMode(c *gin.Context) {
+	name := c.Param("name")
+
+	var req dto.GroupApprovalRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	groupID := strings.TrimSuffix(req.GroupID, "@g.us")
+	if err := h.whatsappService.SetGroupJoinApprovalMode(c.Request.Context(), name, groupID, req.ApprovalMode); err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.SuccessResponse{Success: true})
+}
+
+// SetGroupMemberAddMode godoc
+// @Summary      Set who can add members
+// @Description  Set whether only admins or all members can add participants
+// @Tags         groups
+// @Accept       json
+// @Produce      json
+// @Param        name path string true "Session name"
+// @Param        body body dto.GroupMemberAddModeRequest true "Member add mode"
+// @Success      200 {object} dto.SuccessResponse
+// @Failure      400 {object} dto.ErrorResponse
+// @Failure      500 {object} dto.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /sessions/{name}/group/memberadd [put]
+func (h *GroupHandler) SetGroupMemberAddMode(c *gin.Context) {
+	name := c.Param("name")
+
+	var req dto.GroupMemberAddModeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	var mode types.GroupMemberAddMode
+	switch req.Mode {
+	case "admin_add":
+		mode = types.GroupMemberAddModeAdmin
+	case "all_member_add":
+		mode = types.GroupMemberAddModeAllMember
+	default:
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "mode must be 'admin_add' or 'all_member_add'"})
+		return
+	}
+
+	groupID := strings.TrimSuffix(req.GroupID, "@g.us")
+	if err := h.whatsappService.SetGroupMemberAddMode(c.Request.Context(), name, groupID, mode); err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.SuccessResponse{Success: true})
+}
+
+// GetGroupRequestParticipants godoc
+// @Summary      Get pending join requests
+// @Description  Get list of pending join requests for a group
+// @Tags         groups
+// @Produce      json
+// @Param        name path string true "Session name"
+// @Param        groupId path string true "Group ID"
+// @Success      200 {object} dto.GroupRequestParticipantsResponse
+// @Failure      500 {object} dto.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /sessions/{name}/group/{groupId}/requests [get]
+func (h *GroupHandler) GetGroupRequestParticipants(c *gin.Context) {
+	name := c.Param("name")
+	groupID := strings.TrimSuffix(c.Param("groupId"), "@g.us")
+
+	requests, err := h.whatsappService.GetGroupRequestParticipants(c.Request.Context(), name, groupID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.GroupRequestParticipantsResponse{
+		Success:      true,
+		GroupID:      groupID,
+		Participants: requests,
+	})
+}
+
+// UpdateGroupRequestParticipants godoc
+// @Summary      Approve or reject join requests
+// @Description  Approve or reject pending join requests
+// @Tags         groups
+// @Accept       json
+// @Produce      json
+// @Param        name path string true "Session name"
+// @Param        body body dto.GroupRequestActionRequest true "Action data"
+// @Success      200 {object} dto.GroupActionResponse
+// @Failure      400 {object} dto.ErrorResponse
+// @Failure      500 {object} dto.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /sessions/{name}/group/requests [post]
+func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
+	name := c.Param("name")
+
+	var req dto.GroupRequestActionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	var action whatsmeow.ParticipantRequestChange
+	switch req.Action {
+	case "approve":
+		action = whatsmeow.ParticipantChangeApprove
+	case "reject":
+		action = whatsmeow.ParticipantChangeReject
+	default:
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "action must be 'approve' or 'reject'"})
+		return
+	}
+
+	groupID := strings.TrimSuffix(req.GroupID, "@g.us")
+	result, err := h.whatsappService.UpdateGroupRequestParticipants(c.Request.Context(), name, groupID, req.Participants, action)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.GroupActionResponse{
+		Success: true,
+		GroupID: groupID,
+		Data:    result,
+	})
+}
+
+// GetGroupInfoFromLink godoc
+// @Summary      Get group info from invite link
+// @Description  Get group information using an invite link
+// @Tags         groups
+// @Accept       json
+// @Produce      json
+// @Param        name path string true "Session name"
+// @Param        body body dto.GroupInfoFromLinkRequest true "Invite link"
+// @Success      200 {object} dto.GroupActionResponse
+// @Failure      400 {object} dto.ErrorResponse
+// @Failure      500 {object} dto.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /sessions/{name}/group/info/link [post]
+func (h *GroupHandler) GetGroupInfoFromLink(c *gin.Context) {
+	name := c.Param("name")
+
+	var req dto.GroupInfoFromLinkRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	// Extract code from link
+	code := req.InviteLink
+	if strings.Contains(code, "chat.whatsapp.com/") {
+		parts := strings.Split(code, "chat.whatsapp.com/")
+		if len(parts) > 1 {
+			code = parts[1]
+		}
+	}
+
+	info, err := h.whatsappService.GetGroupInfoFromLink(c.Request.Context(), name, code)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.GroupActionResponse{
+		Success: true,
+		GroupID: info.JID.String(),
+		Data:    info,
+	})
+}

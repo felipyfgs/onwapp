@@ -14,11 +14,12 @@ import (
 )
 
 type SessionHandler struct {
-	sessionService *service.SessionService
+	sessionService  *service.SessionService
+	whatsappService *service.WhatsAppService
 }
 
-func NewSessionHandler(sessionService *service.SessionService) *SessionHandler {
-	return &SessionHandler{sessionService: sessionService}
+func NewSessionHandler(sessionService *service.SessionService, whatsappService *service.WhatsAppService) *SessionHandler {
+	return &SessionHandler{sessionService: sessionService, whatsappService: whatsappService}
 }
 
 // Fetch godoc
@@ -272,5 +273,39 @@ func (h *SessionHandler) QR(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.QRResponse{
 		QR:     base64QR,
 		Status: string(session.GetStatus()),
+	})
+}
+
+// PairPhone godoc
+// @Summary      Pair using phone number
+// @Description  Pair WhatsApp session using phone number instead of QR code
+// @Tags         sessions
+// @Accept       json
+// @Produce      json
+// @Param        name   path      string               true  "Session name"
+// @Param        body   body      dto.PairPhoneRequest true  "Phone data"
+// @Success      200    {object}  dto.PairPhoneResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /sessions/{name}/pair/phone [post]
+func (h *SessionHandler) PairPhone(c *gin.Context) {
+	name := c.Param("name")
+
+	var req dto.PairPhoneRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	code, err := h.whatsappService.PairPhone(c.Request.Context(), name, req.Phone)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.PairPhoneResponse{
+		Success: true,
+		Code:    code,
 	})
 }
