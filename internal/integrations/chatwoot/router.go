@@ -9,26 +9,26 @@ import (
 // RegisterRoutes registers Chatwoot routes
 func RegisterRoutes(r *gin.Engine, handler *Handler, apiKey string) {
 	// Chatwoot webhook endpoint (no auth - Chatwoot sends webhooks)
-	r.POST("/chatwoot/webhook/:name", handler.ReceiveWebhook)
+	r.POST("/chatwoot/webhook/:id", handler.ReceiveWebhook)
 
-	// Protected routes under /sessions/:name/chatwoot
+	// Protected routes under /sessions/:id/chatwoot
 	sessions := r.Group("/sessions")
 	sessions.Use(middleware.Auth(apiKey))
 	{
-		sessions.POST("/:name/chatwoot/set", handler.SetConfig)
-		sessions.GET("/:name/chatwoot/find", handler.GetConfig)
-		sessions.DELETE("/:name/chatwoot", handler.DeleteConfig)
+		sessions.POST("/:id/chatwoot/set", handler.SetConfig)
+		sessions.GET("/:id/chatwoot/find", handler.GetConfig)
+		sessions.DELETE("/:id/chatwoot", handler.DeleteConfig)
 	}
 }
 
 // RegisterRoutesOnGroup registers Chatwoot routes on an existing sessions group
 func RegisterRoutesOnGroup(sessionsGroup *gin.RouterGroup, handler *Handler) {
-	sessionsGroup.POST("/:name/chatwoot/set", handler.SetConfig)
-	sessionsGroup.GET("/:name/chatwoot/find", handler.GetConfig)
-	sessionsGroup.DELETE("/:name/chatwoot", handler.DeleteConfig)
+	sessionsGroup.POST("/:id/chatwoot/set", handler.SetConfig)
+	sessionsGroup.GET("/:id/chatwoot/find", handler.GetConfig)
+	sessionsGroup.DELETE("/:id/chatwoot", handler.DeleteConfig)
 }
 
 // RegisterWebhookRoute registers the webhook route on the root engine
 func RegisterWebhookRoute(r *gin.Engine, handler *Handler) {
-	r.POST("/chatwoot/webhook/:name", handler.ReceiveWebhook)
+	r.POST("/chatwoot/webhook/:id", handler.ReceiveWebhook)
 }
