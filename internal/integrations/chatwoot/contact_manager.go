@@ -31,12 +31,10 @@ type contactCacheEntry struct {
 }
 
 // ProfilePictureGetter is a function type for getting profile pictures from WhatsApp
-// Note: This must match ProfilePictureFetcher in service.go
-type ProfilePictureGetter = func(ctx context.Context, sessionName string, jid string) (string, error)
+type ProfilePictureGetter = ProfilePictureFetcher
 
 // GroupInfoGetter is a function type for getting group metadata from WhatsApp
-// Returns group name (subject) or error
-type GroupInfoGetter = func(ctx context.Context, sessionName string, groupJid string) (string, error)
+type GroupInfoGetter = GroupInfoFetcher
 
 // GetOrCreateContactAndConversation handles contact and conversation creation with proper caching
 // This follows the Evolution API pattern to avoid duplicate conversations
@@ -155,7 +153,7 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 		status = "pending"
 	}
 
-	conv, err := client.GetOrCreateConversation(ctx, contact.ID, cfg.InboxID, status)
+	conv, err := client.GetOrCreateConversation(ctx, contact.ID, cfg.InboxID, status, cfg.AutoReopen)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get/create conversation: %w", err)
 	}
@@ -179,8 +177,8 @@ func (cm *ContactManager) getOrCreateIndividualContact(
 	name string,
 	avatarURL string,
 ) (*Contact, error) {
-	// Try to find existing contact
-	contact, err := client.GetOrCreateContact(ctx, cfg.InboxID, phoneNumber, remoteJid, name, avatarURL, false)
+	// Try to find existing contact with Brazilian number merge support
+	contact, err := client.GetOrCreateContactWithMerge(ctx, cfg.InboxID, phoneNumber, remoteJid, name, avatarURL, false, cfg.MergeBrPhones)
 	if err != nil {
 		return nil, err
 	}

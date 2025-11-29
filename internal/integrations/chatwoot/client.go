@@ -123,8 +123,14 @@ func (c *Client) GetInbox(ctx context.Context, inboxID int) (*Inbox, error) {
 
 // CreateInbox creates a new API inbox
 func (c *Client) CreateInbox(ctx context.Context, name, webhookURL string) (*Inbox, error) {
+	return c.CreateInboxWithOptions(ctx, name, webhookURL, false)
+}
+
+// CreateInboxWithOptions creates a new API inbox with lock_to_single_conversation option
+func (c *Client) CreateInboxWithOptions(ctx context.Context, name, webhookURL string, lockToSingleConversation bool) (*Inbox, error) {
 	body := map[string]interface{}{
-		"name": name,
+		"name":                        name,
+		"lock_to_single_conversation": lockToSingleConversation,
 		"channel": map[string]interface{}{
 			"type":        "api",
 			"webhook_url": webhookURL,
@@ -139,6 +145,25 @@ func (c *Client) CreateInbox(ctx context.Context, name, webhookURL string) (*Inb
 	var inbox Inbox
 	if err := json.Unmarshal(data, &inbox); err != nil {
 		return nil, fmt.Errorf("failed to parse create inbox response: %w", err)
+	}
+
+	return &inbox, nil
+}
+
+// UpdateInboxLockSetting updates the lock_to_single_conversation setting of an inbox
+func (c *Client) UpdateInboxLockSetting(ctx context.Context, inboxID int, lockToSingleConversation bool) (*Inbox, error) {
+	body := map[string]interface{}{
+		"lock_to_single_conversation": lockToSingleConversation,
+	}
+
+	data, err := c.doRequest(ctx, http.MethodPatch, fmt.Sprintf("/inboxes/%d", inboxID), body)
+	if err != nil {
+		return nil, err
+	}
+
+	var inbox Inbox
+	if err := json.Unmarshal(data, &inbox); err != nil {
+		return nil, fmt.Errorf("failed to parse update inbox response: %w", err)
 	}
 
 	return &inbox, nil
@@ -169,7 +194,6 @@ func (c *Client) UpdateInboxWebhook(ctx context.Context, inboxID int, webhookURL
 
 // FindContactByPhone searches for a contact by phone number
 func (c *Client) FindContactByPhone(ctx context.Context, phone string) (*Contact, error) {
-	// Use contact filter API for exact match
 	filterPayload := map[string]interface{}{
 		"payload": []map[string]interface{}{
 			{
@@ -197,6 +221,86 @@ func (c *Client) FindContactByPhone(ctx context.Context, phone string) (*Contact
 	}
 
 	return &result.Payload[0], nil
+}
+
+// FindContactByPhoneWithMerge searches for a contact with Brazilian phone number merge support
+// Brazilian numbers can have 8 or 9 digits after area code, this handles both cases
+func (c *Client) FindContactByPhoneWithMerge(ctx context.Context, phone string, mergeBrPhones bool) (*Contact, error) {
+	// First try exact match
+	contact, err := c.FindContactByPhone(ctx, phone)
+	if err != nil {
+		return nil, err
+	}
+	if contact != nil {
+		return contact, nil
+	}
+
+	// If not Brazilian number or merge disabled, return nil
+	if !mergeBrPhones || !strings.HasPrefix(phone, "+55") {
+		return nil, nil
+	}
+
+	// Try alternate Brazilian number format (8 vs 9 digits)
+	altPhone := c.getAlternateBrazilianNumber(phone)
+	if altPhone == "" {
+		return nil, nil
+	}
+
+	// Search for alternate number
+	altContact, err := c.FindContactByPhone(ctx, altPhone)
+	if err != nil {
+		return nil, err
+	}
+
+	return altContact, nil
+}
+
+// getAlternateBrazilianNumber returns the alternate format for Brazilian numbers
+// +55XX9XXXXXXXX (13 digits) <-> +55XXXXXXXXXX (12 digits)
+func (c *Client) getAlternateBrazilianNumber(phone string) string {
+	phone = strings.TrimPrefix(phone, "+")
+	
+	// 13 digits with 9 -> remove 9 to get 12 digits
+	if len(phone) == 13 && strings.HasPrefix(phone, "55") {
+		// +55 XX 9XXXX XXXX -> +55 XX XXXX XXXX
+		return "+" + phone[:4] + phone[5:]
+	}
+	
+	// 12 digits without 9 -> add 9 to get 13 digits
+	if len(phone) == 12 && strings.HasPrefix(phone, "55") {
+		// +55 XX XXXX XXXX -> +55 XX 9XXXX XXXX
+		return "+" + phone[:4] + "9" + phone[4:]
+	}
+	
+	return ""
+}
+
+// SearchContactsForBrazilianMerge searches for both Brazilian number formats and merges if needed
+func (c *Client) SearchContactsForBrazilianMerge(ctx context.Context, phone string) ([]*Contact, error) {
+	var contacts []*Contact
+	
+	// Search primary number
+	contact1, err := c.FindContactByPhone(ctx, phone)
+	if err != nil {
+		return nil, err
+	}
+	if contact1 != nil {
+		contacts = append(contacts, contact1)
+	}
+	
+	// Search alternate number
+	altPhone := c.getAlternateBrazilianNumber(phone)
+	if altPhone != "" {
+		contact2, err := c.FindContactByPhone(ctx, altPhone)
+		if err != nil {
+			return nil, err
+		}
+		if contact2 != nil && (contact1 == nil || contact2.ID != contact1.ID) {
+			contacts = append(contacts, contact2)
+		}
+	}
+	
+	return contacts, nil
 }
 
 // FindContactByIdentifier searches for a contact by identifier
@@ -478,28 +582,69 @@ func (c *Client) GetInboxByName(ctx context.Context, name string) (*Inbox, error
 
 // GetOrCreateInbox gets an existing inbox by name or creates a new one
 func (c *Client) GetOrCreateInbox(ctx context.Context, name, webhookURL string) (*Inbox, error) {
+	return c.GetOrCreateInboxWithOptions(ctx, name, webhookURL, false)
+}
+
+// GetOrCreateInboxWithOptions gets an existing inbox or creates one with lock_to_single_conversation option
+func (c *Client) GetOrCreateInboxWithOptions(ctx context.Context, name, webhookURL string, lockToSingleConversation bool) (*Inbox, error) {
 	inbox, err := c.GetInboxByName(ctx, name)
 	if err != nil {
 		return nil, err
 	}
 
 	if inbox != nil {
+		// Update lock setting if needed
+		if lockToSingleConversation {
+			_, err := c.UpdateInboxLockSetting(ctx, inbox.ID, lockToSingleConversation)
+			if err != nil {
+				logger.Warn().Err(err).Int("inboxId", inbox.ID).Msg("Chatwoot: failed to update inbox lock_to_single_conversation")
+			}
+		}
 		return inbox, nil
 	}
 
-	return c.CreateInbox(ctx, name, webhookURL)
+	return c.CreateInboxWithOptions(ctx, name, webhookURL, lockToSingleConversation)
 }
 
 // GetOrCreateContact gets or creates a contact
 func (c *Client) GetOrCreateContact(ctx context.Context, inboxID int, phoneNumber, identifier, name, avatarURL string, isGroup bool) (*Contact, error) {
-	// Search for existing contact
+	return c.GetOrCreateContactWithMerge(ctx, inboxID, phoneNumber, identifier, name, avatarURL, isGroup, false)
+}
+
+// GetOrCreateContactWithMerge gets or creates a contact with optional Brazilian number merge
+func (c *Client) GetOrCreateContactWithMerge(ctx context.Context, inboxID int, phoneNumber, identifier, name, avatarURL string, isGroup bool, mergeBrPhones bool) (*Contact, error) {
 	var contact *Contact
 	var err error
 
 	if isGroup {
 		contact, err = c.FindContactByIdentifier(ctx, identifier)
 	} else {
-		contact, err = c.FindContactByPhone(ctx, "+"+phoneNumber)
+		phone := "+" + phoneNumber
+		
+		// If merge enabled for Brazilian numbers, search both formats and merge if needed
+		if mergeBrPhones && strings.HasPrefix(phone, "+55") {
+			contacts, err := c.SearchContactsForBrazilianMerge(ctx, phone)
+			if err != nil {
+				return nil, err
+			}
+			
+			// If found 2 different contacts, merge them
+			if len(contacts) == 2 {
+				if err := c.MergeContacts(ctx, contacts[0].ID, contacts[1].ID); err != nil {
+					logger.Warn().Err(err).Msg("Chatwoot: failed to merge Brazilian contacts")
+				} else {
+					logger.Info().
+						Int("baseContactId", contacts[0].ID).
+						Int("mergeContactId", contacts[1].ID).
+						Msg("Chatwoot: merged Brazilian contacts")
+				}
+				contact = contacts[0]
+			} else if len(contacts) == 1 {
+				contact = contacts[0]
+			}
+		} else {
+			contact, err = c.FindContactByPhone(ctx, phone)
+		}
 	}
 
 	if err != nil {
@@ -529,15 +674,34 @@ func (c *Client) GetOrCreateContact(ctx context.Context, inboxID int, phoneNumbe
 }
 
 // GetOrCreateConversation gets an open conversation or creates a new one
-func (c *Client) GetOrCreateConversation(ctx context.Context, contactID, inboxID int, status string) (*Conversation, error) {
+// If autoReopen is true, it will reopen resolved conversations instead of creating new ones
+func (c *Client) GetOrCreateConversation(ctx context.Context, contactID, inboxID int, status string, autoReopen bool) (*Conversation, error) {
 	conversations, err := c.ListContactConversations(ctx, contactID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Find an open conversation in the same inbox
+	// Find conversation in the same inbox
 	for _, conv := range conversations {
-		if conv.InboxID == inboxID && conv.Status != "resolved" {
+		if conv.InboxID != inboxID {
+			continue
+		}
+
+		// If autoReopen is enabled, return any conversation (even resolved)
+		if autoReopen {
+			// If conversation is resolved and we want to reopen, toggle status
+			if conv.Status == "resolved" {
+				reopened, err := c.ToggleConversationStatus(ctx, conv.ID, status)
+				if err != nil {
+					return &conv, nil // Return original if toggle fails
+				}
+				return reopened, nil
+			}
+			return &conv, nil
+		}
+
+		// If autoReopen is disabled, only return non-resolved conversations
+		if conv.Status != "resolved" {
 			return &conv, nil
 		}
 	}

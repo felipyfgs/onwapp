@@ -205,7 +205,7 @@ func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Ses
 		return fmt.Errorf("failed to get/create contact: %w", err)
 	}
 
-	conv, err := client.GetOrCreateConversation(ctx, contact.ID, cfg.InboxID, "open")
+	conv, err := client.GetOrCreateConversation(ctx, contact.ID, cfg.InboxID, "open", cfg.AutoReopen)
 	if err != nil {
 		return fmt.Errorf("failed to get/create conversation: %w", err)
 	}
@@ -265,7 +265,7 @@ func (s *Service) ProcessReactionMessage(ctx context.Context, session *model.Ses
 		status = "pending"
 	}
 
-	conv, err := client.GetOrCreateConversation(ctx, contact.ID, cfg.InboxID, status)
+	conv, err := client.GetOrCreateConversation(ctx, contact.ID, cfg.InboxID, status, cfg.AutoReopen)
 	if err != nil {
 		return fmt.Errorf("failed to get/create conversation for reaction: %w", err)
 	}

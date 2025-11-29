@@ -130,7 +130,8 @@ func (s *Service) DeleteConfig(ctx context.Context, sessionID string) error {
 func (s *Service) initInbox(ctx context.Context, cfg *Config) error {
 	client := NewClient(cfg.URL, cfg.Token, cfg.Account)
 
-	inbox, err := client.GetOrCreateInbox(ctx, cfg.Inbox, cfg.WebhookURL)
+	// AutoReopen also sets lock_to_single_conversation on the inbox
+	inbox, err := client.GetOrCreateInboxWithOptions(ctx, cfg.Inbox, cfg.WebhookURL, cfg.AutoReopen)
 	if err != nil {
 		return err
 	}

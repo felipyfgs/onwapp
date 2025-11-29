@@ -6,7 +6,7 @@
   "inbox": "mysession",
   "signAgent": true,
   "signSeparator": "\n",
-  "autoReopen": false,
+  "autoReopen": true,
   "startPending": false,
   "mergeBrPhones": true,
   "syncContacts": false,

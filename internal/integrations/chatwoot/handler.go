@@ -343,6 +343,137 @@ func downloadMedia(url string) ([]byte, string, error) {
 	return data, mimeType, nil
 }
 
+// SyncContacts handles POST /sessions/:name/chatwoot/sync/contacts
+// @Summary Sync contacts to Chatwoot
+// @Description Synchronize contacts from message history to Chatwoot
+// @Tags Chatwoot
+// @Produce json
+// @Param name path string true "Session name"
+// @Success 200 {object} SyncStats
+// @Failure 404 {object} map[string]interface{}
+// @Router /sessions/{name}/chatwoot/sync/contacts [post]
+func (h *Handler) SyncContacts(c *gin.Context) {
+	sessionName := c.Param("name")
+	session, err := h.sessionService.Get(sessionName)
+	if err != nil || session == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
+		return
+	}
+
+	// Get Chatwoot config
+	cfg, err := h.service.GetEnabledConfig(c.Request.Context(), session.ID)
+	if err != nil || cfg == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "chatwoot not configured or disabled"})
+		return
+	}
+
+	// Create sync service
+	syncSvc := NewSyncService(cfg, h.database.Messages, session.ID)
+
+	// Get days limit from query param or config
+	daysLimit := cfg.SyncDays
+	if days := c.Query("days"); days != "" {
+		fmt.Sscanf(days, "%d", &daysLimit)
+	}
+
+	// Run sync
+	stats, err := syncSvc.SyncContacts(c.Request.Context(), daysLimit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, stats)
+}
+
+// SyncMessages handles POST /sessions/:name/chatwoot/sync/messages
+// @Summary Sync messages to Chatwoot
+// @Description Synchronize message history to Chatwoot
+// @Tags Chatwoot
+// @Produce json
+// @Param name path string true "Session name"
+// @Param days query int false "Limit to last N days"
+// @Success 200 {object} SyncStats
+// @Failure 404 {object} map[string]interface{}
+// @Router /sessions/{name}/chatwoot/sync/messages [post]
+func (h *Handler) SyncMessages(c *gin.Context) {
+	sessionName := c.Param("name")
+	session, err := h.sessionService.Get(sessionName)
+	if err != nil || session == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
+		return
+	}
+
+	// Get Chatwoot config
+	cfg, err := h.service.GetEnabledConfig(c.Request.Context(), session.ID)
+	if err != nil || cfg == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "chatwoot not configured or disabled"})
+		return
+	}
+
+	// Create sync service
+	syncSvc := NewSyncService(cfg, h.database.Messages, session.ID)
+
+	// Get days limit from query param or config
+	daysLimit := cfg.SyncDays
+	if days := c.Query("days"); days != "" {
+		fmt.Sscanf(days, "%d", &daysLimit)
+	}
+
+	// Run sync
+	stats, err := syncSvc.SyncMessages(c.Request.Context(), daysLimit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, stats)
+}
+
+// SyncAll handles POST /sessions/:name/chatwoot/sync
+// @Summary Full sync to Chatwoot
+// @Description Synchronize all contacts and messages to Chatwoot
+// @Tags Chatwoot
+// @Produce json
+// @Param name path string true "Session name"
+// @Param days query int false "Limit to last N days"
+// @Success 200 {object} SyncStats
+// @Failure 404 {object} map[string]interface{}
+// @Router /sessions/{name}/chatwoot/sync [post]
+func (h *Handler) SyncAll(c *gin.Context) {
+	sessionName := c.Param("name")
+	session, err := h.sessionService.Get(sessionName)
+	if err != nil || session == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
+		return
+	}
+
+	// Get Chatwoot config
+	cfg, err := h.service.GetEnabledConfig(c.Request.Context(), session.ID)
+	if err != nil || cfg == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "chatwoot not configured or disabled"})
+		return
+	}
+
+	// Create sync service
+	syncSvc := NewSyncService(cfg, h.database.Messages, session.ID)
+
+	// Get days limit from query param or config
+	daysLimit := cfg.SyncDays
+	if days := c.Query("days"); days != "" {
+		fmt.Sscanf(days, "%d", &daysLimit)
+	}
+
+	// Run full sync
+	stats, err := syncSvc.SyncAll(c.Request.Context(), daysLimit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, stats)
+}
+
 // handleMessageDeleted handles message deletion from Chatwoot
 // Note: A single Chatwoot message with multiple attachments creates multiple WhatsApp messages
 func (h *Handler) handleMessageDeleted(ctx context.Context, session *model.Session, payload *WebhookPayload) error {
