@@ -32,7 +32,7 @@ func NewContactHandler(whatsappService *service.WhatsAppService) *ContactHandler
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/contact/check [post]
 func (h *ContactHandler) CheckPhone(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.CheckPhoneRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -76,7 +76,7 @@ func (h *ContactHandler) CheckPhone(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/contact/info [post]
 func (h *ContactHandler) GetContactInfo(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.ContactInfoRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -119,7 +119,7 @@ func (h *ContactHandler) GetContactInfo(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/contact/{phone}/avatar [get]
 func (h *ContactHandler) GetAvatar(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 	phone := c.Param("phone")
 
 	pic, err := h.whatsappService.GetProfilePicture(c.Request.Context(), name, phone)
@@ -156,7 +156,7 @@ func (h *ContactHandler) GetAvatar(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/contact/list [get]
 func (h *ContactHandler) GetContacts(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	contacts, err := h.whatsappService.GetContacts(c.Request.Context(), name)
 	if err != nil {
@@ -185,7 +185,7 @@ func (h *ContactHandler) GetContacts(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/contact/presence [post]
 func (h *ContactHandler) SetPresence(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.SetPresenceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -224,7 +224,7 @@ func (h *ContactHandler) SetPresence(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/contact/typing [post]
 func (h *ContactHandler) SetChatPresence(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.ChatPresenceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -258,7 +258,7 @@ func (h *ContactHandler) SetChatPresence(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/contact/markread [post]
 func (h *ContactHandler) MarkRead(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.MarkReadRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -287,7 +287,7 @@ func (h *ContactHandler) MarkRead(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/contact/blocklist [get]
 func (h *ContactHandler) GetBlocklist(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	blocklist, err := h.whatsappService.GetBlocklist(c.Request.Context(), name)
 	if err != nil {
@@ -320,7 +320,7 @@ func (h *ContactHandler) GetBlocklist(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/contact/blocklist [post]
 func (h *ContactHandler) UpdateBlocklist(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.BlocklistRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -356,7 +356,7 @@ func (h *ContactHandler) UpdateBlocklist(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/contact/subscribe [post]
 func (h *ContactHandler) SubscribePresence(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.SubscribePresenceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -384,7 +384,7 @@ func (h *ContactHandler) SubscribePresence(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/contact/qrlink [get]
 func (h *ContactHandler) GetContactQRLink(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 	revoke := c.Query("revoke") == "true"
 
 	link, err := h.whatsappService.GetContactQRLink(c.Request.Context(), name, revoke)
@@ -411,7 +411,7 @@ func (h *ContactHandler) GetContactQRLink(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/contact/{phone}/business [get]
 func (h *ContactHandler) GetBusinessProfile(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 	phone := c.Param("phone")
 
 	profile, err := h.whatsappService.GetBusinessProfile(c.Request.Context(), name, phone)

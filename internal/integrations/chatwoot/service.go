@@ -779,13 +779,23 @@ func (s *Service) GetWebhookDataForSending(ctx context.Context, sessionID string
 
 	// Format content
 	content = payload.Content
-	if cfg.SignMsg && payload.Sender != nil && payload.Sender.AvailableName != "" {
-		delimiter := cfg.SignDelimiter
-		if delimiter == "" {
-			delimiter = "\n"
+
+	// Sign message with agent name if enabled
+	if cfg.SignMsg && payload.Sender != nil {
+		// Use AvailableName first, fallback to Name
+		senderName := payload.Sender.AvailableName
+		if senderName == "" {
+			senderName = payload.Sender.Name
 		}
-		delimiter = strings.ReplaceAll(delimiter, "\\n", "\n")
-		content = fmt.Sprintf("*%s:*%s%s", payload.Sender.AvailableName, delimiter, content)
+
+		if senderName != "" {
+			delimiter := cfg.SignDelimiter
+			if delimiter == "" {
+				delimiter = "\n"
+			}
+			delimiter = strings.ReplaceAll(delimiter, "\\n", "\n")
+			content = fmt.Sprintf("*%s:*%s%s", senderName, delimiter, content)
+		}
 	}
 
 	content = s.convertMarkdown(content)

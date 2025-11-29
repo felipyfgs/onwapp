@@ -33,7 +33,7 @@ func NewProfileHandler(whatsappService *service.WhatsAppService) *ProfileHandler
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/profile [get]
 func (h *ProfileHandler) GetProfile(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	profile, err := h.whatsappService.GetOwnProfile(c.Request.Context(), name)
 	if err != nil {
@@ -62,7 +62,7 @@ func (h *ProfileHandler) GetProfile(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/profile/status [put]
 func (h *ProfileHandler) SetStatus(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.SetStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -96,7 +96,7 @@ func (h *ProfileHandler) SetStatus(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/profile/name [put]
 func (h *ProfileHandler) SetPushName(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.SetPushNameRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -130,7 +130,7 @@ func (h *ProfileHandler) SetPushName(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/profile/picture [put]
 func (h *ProfileHandler) SetProfilePicture(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.SetProfilePictureRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -169,7 +169,7 @@ func (h *ProfileHandler) SetProfilePicture(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/profile/picture [delete]
 func (h *ProfileHandler) DeleteProfilePicture(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	if err := h.whatsappService.DeleteProfilePicture(c.Request.Context(), name); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
@@ -194,7 +194,7 @@ func (h *ProfileHandler) DeleteProfilePicture(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/profile/privacy [get]
 func (h *ProfileHandler) GetPrivacySettings(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	settings, err := h.whatsappService.GetPrivacySettings(c.Request.Context(), name)
 	if err != nil {
@@ -223,7 +223,7 @@ func (h *ProfileHandler) GetPrivacySettings(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/profile/privacy [put]
 func (h *ProfileHandler) SetPrivacySettings(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.SetPrivacyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -260,7 +260,7 @@ func (h *ProfileHandler) SetPrivacySettings(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/profile/disappearing [put]
 func (h *ProfileHandler) SetDefaultDisappearingTimer(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.DefaultDisappearingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

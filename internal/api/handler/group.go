@@ -36,7 +36,7 @@ func NewGroupHandler(whatsappService *service.WhatsAppService) *GroupHandler {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/group/create [post]
 func (h *GroupHandler) CreateGroup(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.CreateGroupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -72,7 +72,7 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/group/{groupId}/info [get]
 func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 	groupID := c.Param("groupId")
 
 	info, err := h.whatsappService.GetGroupInfo(c.Request.Context(), name, groupID)
@@ -101,7 +101,7 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/group/list [get]
 func (h *GroupHandler) GetJoinedGroups(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	groups, err := h.whatsappService.GetJoinedGroups(c.Request.Context(), name)
 	if err != nil {
@@ -129,7 +129,7 @@ func (h *GroupHandler) GetJoinedGroups(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/group/{groupId}/leave [post]
 func (h *GroupHandler) LeaveGroup(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 	groupID := c.Param("groupId")
 
 	if err := h.whatsappService.LeaveGroup(c.Request.Context(), name, groupID); err != nil {
@@ -158,7 +158,7 @@ func (h *GroupHandler) LeaveGroup(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/group/name [put]
 func (h *GroupHandler) UpdateGroupName(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.GroupUpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -192,7 +192,7 @@ func (h *GroupHandler) UpdateGroupName(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/group/description [put]
 func (h *GroupHandler) UpdateGroupTopic(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.GroupUpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -226,7 +226,7 @@ func (h *GroupHandler) UpdateGroupTopic(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/group/participants/add [post]
 func (h *GroupHandler) AddParticipants(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.GroupParticipantsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -262,7 +262,7 @@ func (h *GroupHandler) AddParticipants(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/group/participants/remove [post]
 func (h *GroupHandler) RemoveParticipants(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.GroupParticipantsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -298,7 +298,7 @@ func (h *GroupHandler) RemoveParticipants(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/group/participants/promote [post]
 func (h *GroupHandler) PromoteParticipants(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.GroupParticipantsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -334,7 +334,7 @@ func (h *GroupHandler) PromoteParticipants(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/group/participants/demote [post]
 func (h *GroupHandler) DemoteParticipants(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.GroupParticipantsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -370,7 +370,7 @@ func (h *GroupHandler) DemoteParticipants(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/group/{groupId}/invite [get]
 func (h *GroupHandler) GetInviteLink(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 	groupID := c.Param("groupId")
 	reset := c.Query("reset") == "true"
 
@@ -402,7 +402,7 @@ func (h *GroupHandler) GetInviteLink(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/group/join [post]
 func (h *GroupHandler) JoinGroup(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.JoinGroupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -437,7 +437,7 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/group/send/text [post]
 func (h *GroupHandler) SendGroupMessage(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.SendGroupMessageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -472,7 +472,7 @@ func (h *GroupHandler) SendGroupMessage(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/group/announce [put]
 func (h *GroupHandler) SetGroupAnnounce(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.GroupAnnounceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -503,7 +503,7 @@ func (h *GroupHandler) SetGroupAnnounce(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/group/locked [put]
 func (h *GroupHandler) SetGroupLocked(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.GroupLockedRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -534,7 +534,7 @@ func (h *GroupHandler) SetGroupLocked(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/group/picture [put]
 func (h *GroupHandler) SetGroupPicture(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.GroupPictureRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -572,7 +572,7 @@ func (h *GroupHandler) SetGroupPicture(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/group/approval [put]
 func (h *GroupHandler) SetGroupApprovalMode(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.GroupApprovalRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -603,7 +603,7 @@ func (h *GroupHandler) SetGroupApprovalMode(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/group/memberadd [put]
 func (h *GroupHandler) SetGroupMemberAddMode(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.GroupMemberAddModeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -643,7 +643,7 @@ func (h *GroupHandler) SetGroupMemberAddMode(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/group/{groupId}/requests [get]
 func (h *GroupHandler) GetGroupRequestParticipants(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 	groupID := strings.TrimSuffix(c.Param("groupId"), "@g.us")
 
 	requests, err := h.whatsappService.GetGroupRequestParticipants(c.Request.Context(), name, groupID)
@@ -674,7 +674,7 @@ func (h *GroupHandler) GetGroupRequestParticipants(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/group/{groupId}/requests [post]
 func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 	groupID := strings.TrimSuffix(c.Param("groupId"), "@g.us")
 
 	var req dto.GroupRequestActionBodyRequest
@@ -720,7 +720,7 @@ func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/group/info/link [get]
 func (h *GroupHandler) GetGroupInfoFromLink(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	link := c.Query("link")
 	if link == "" {

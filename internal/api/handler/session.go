@@ -67,7 +67,7 @@ func (h *SessionHandler) Fetch(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/create [post]
 func (h *SessionHandler) Create(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	session, err := h.sessionService.Create(c.Request.Context(), name)
 	if err != nil {
@@ -94,7 +94,7 @@ func (h *SessionHandler) Create(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/delete [delete]
 func (h *SessionHandler) Delete(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	if err := h.sessionService.Delete(c.Request.Context(), name); err != nil {
 		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: err.Error()})
@@ -117,7 +117,7 @@ func (h *SessionHandler) Delete(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/info [get]
 func (h *SessionHandler) Info(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	session, err := h.sessionService.Get(name)
 	if err != nil {
@@ -150,7 +150,7 @@ func (h *SessionHandler) Info(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/connect [post]
 func (h *SessionHandler) Connect(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	session, err := h.sessionService.Connect(c.Request.Context(), name)
 	if err != nil {
@@ -189,7 +189,7 @@ func (h *SessionHandler) Connect(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/logout [post]
 func (h *SessionHandler) Logout(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	if err := h.sessionService.Logout(c.Request.Context(), name); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
@@ -212,7 +212,7 @@ func (h *SessionHandler) Logout(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/restart [post]
 func (h *SessionHandler) Restart(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	session, err := h.sessionService.Restart(c.Request.Context(), name)
 	if err != nil {
@@ -240,7 +240,7 @@ func (h *SessionHandler) Restart(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/qr [get]
 func (h *SessionHandler) QR(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 	format := c.DefaultQuery("format", "json")
 
 	session, err := h.sessionService.Get(name)
@@ -290,7 +290,7 @@ func (h *SessionHandler) QR(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/pair/phone [post]
 func (h *SessionHandler) PairPhone(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.PairPhoneRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

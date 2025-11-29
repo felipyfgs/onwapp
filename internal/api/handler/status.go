@@ -34,7 +34,7 @@ func NewStatusHandler(whatsappService *service.WhatsAppService) *StatusHandler {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/story [post]
 func (h *StatusHandler) SendStory(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.SendStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -86,7 +86,7 @@ func (h *StatusHandler) SendStory(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/status/privacy [get]
 func (h *StatusHandler) GetStatusPrivacy(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	privacy, err := h.whatsappService.GetStatusPrivacy(c.Request.Context(), name)
 	if err != nil {

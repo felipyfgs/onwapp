@@ -33,7 +33,7 @@ func NewChatHandler(whatsappService *service.WhatsAppService) *ChatHandler {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/chat/archive [post]
 func (h *ChatHandler) ArchiveChat(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.ArchiveChatRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -72,7 +72,7 @@ func (h *ChatHandler) ArchiveChat(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/chat/delete [post]
 func (h *ChatHandler) DeleteMessage(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.DeleteMessageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -108,7 +108,7 @@ func (h *ChatHandler) DeleteMessage(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/chat/edit [post]
 func (h *ChatHandler) EditMessage(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.EditMessageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -143,7 +143,7 @@ func (h *ChatHandler) EditMessage(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/chat/disappearing [put]
 func (h *ChatHandler) SetDisappearingTimer(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.DisappearingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

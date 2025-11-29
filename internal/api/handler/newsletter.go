@@ -32,7 +32,7 @@ func NewNewsletterHandler(whatsappService *service.WhatsAppService) *NewsletterH
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/newsletter/create [post]
 func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.CreateNewsletterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -66,7 +66,7 @@ func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/newsletter/follow [post]
 func (h *NewsletterHandler) FollowNewsletter(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.NewsletterActionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -96,7 +96,7 @@ func (h *NewsletterHandler) FollowNewsletter(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/newsletter/unfollow [post]
 func (h *NewsletterHandler) UnfollowNewsletter(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.NewsletterActionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -124,7 +124,7 @@ func (h *NewsletterHandler) UnfollowNewsletter(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/newsletter/{newsletterId}/info [get]
 func (h *NewsletterHandler) GetNewsletterInfo(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 	newsletterID := c.Param("newsletterId")
 
 	info, err := h.whatsappService.GetNewsletterInfo(c.Request.Context(), name, newsletterID)
@@ -150,7 +150,7 @@ func (h *NewsletterHandler) GetNewsletterInfo(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/newsletter/list [get]
 func (h *NewsletterHandler) GetSubscribedNewsletters(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	newsletters, err := h.whatsappService.GetSubscribedNewsletters(c.Request.Context(), name)
 	if err != nil {
@@ -178,7 +178,7 @@ func (h *NewsletterHandler) GetSubscribedNewsletters(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/newsletter/{newsletterId}/messages [get]
 func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 	newsletterID := c.Param("newsletterId")
 
 	count := 50
@@ -217,7 +217,7 @@ func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/newsletter/reaction [post]
 func (h *NewsletterHandler) NewsletterSendReaction(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.NewsletterReactionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -250,7 +250,7 @@ func (h *NewsletterHandler) NewsletterSendReaction(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/newsletter/mute [post]
 func (h *NewsletterHandler) NewsletterToggleMute(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.NewsletterMuteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

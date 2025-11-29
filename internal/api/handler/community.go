@@ -32,7 +32,7 @@ func NewCommunityHandler(whatsappService *service.WhatsAppService) *CommunityHan
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/community/link [post]
 func (h *CommunityHandler) LinkGroup(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.LinkGroupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -65,7 +65,7 @@ func (h *CommunityHandler) LinkGroup(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/community/unlink [post]
 func (h *CommunityHandler) UnlinkGroup(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.LinkGroupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -96,7 +96,7 @@ func (h *CommunityHandler) UnlinkGroup(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/community/{communityId}/subgroups [get]
 func (h *CommunityHandler) GetSubGroups(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 	communityID := strings.TrimSuffix(c.Param("communityId"), "@g.us")
 
 	groups, err := h.whatsappService.GetSubGroups(c.Request.Context(), name, communityID)

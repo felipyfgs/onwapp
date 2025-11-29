@@ -52,180 +52,170 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 	r.Use(middleware.CORS(cfg.AllowedOrigins))
 	r.Use(middleware.RateLimit(cfg.RateLimitPerMin))
 
-	registerHealthRoutes(r, cfg.Database)
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	h := cfg.Handlers
 
-	sessions := r.Group("/sessions")
-	sessions.Use(middleware.Auth(cfg.APIKey))
-
-	registerSessionRoutes(sessions, cfg.Handlers.Session)
-	registerMessageRoutes(sessions, cfg.Handlers.Message)
-	registerGroupRoutes(sessions, cfg.Handlers.Group)
-	registerContactRoutes(sessions, cfg.Handlers.Contact)
-	registerChatRoutes(sessions, cfg.Handlers.Chat)
-	registerProfileRoutes(sessions, cfg.Handlers.Profile)
-	registerWebhookRoutes(sessions, cfg.Handlers.Webhook)
-	registerNewsletterRoutes(sessions, cfg.Handlers.Newsletter)
-	registerStatusRoutes(sessions, cfg.Handlers.Status)
-	registerCallRoutes(sessions, cfg.Handlers.Call)
-	registerCommunityRoutes(sessions, cfg.Handlers.Community)
-
-	registerEventRoutes(r, cfg.APIKey, cfg.Handlers.Webhook)
-
-	return r
-}
-
-func registerHealthRoutes(r *gin.Engine, database *db.Database) {
+	// ─────────────────────────────────────────────────────────────────────────────
+	// Health & Docs
+	// ─────────────────────────────────────────────────────────────────────────────
 	r.GET("/health", func(c *gin.Context) {
 		status := "healthy"
 		dbStatus := "connected"
-
-		if database != nil {
-			if err := database.Pool.Ping(c.Request.Context()); err != nil {
+		if cfg.Database != nil {
+			if err := cfg.Database.Pool.Ping(c.Request.Context()); err != nil {
 				dbStatus = "disconnected"
 				status = "degraded"
 			}
 		}
-
 		c.JSON(http.StatusOK, gin.H{
 			"status":   status,
 			"database": dbStatus,
 			"time":     time.Now().UTC().Format(time.RFC3339),
 		})
 	})
-}
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	r.GET("/events", middleware.Auth(cfg.APIKey), h.Webhook.GetEvents)
 
-func registerSessionRoutes(rg *gin.RouterGroup, h *handler.SessionHandler) {
-	rg.GET("/fetch", h.Fetch)
-	rg.POST("/:name/create", h.Create)
-	rg.DELETE("/:name/delete", h.Delete)
-	rg.GET("/:name/info", h.Info)
-	rg.POST("/:name/connect", h.Connect)
-	rg.POST("/:name/logout", h.Logout)
-	rg.POST("/:name/restart", h.Restart)
-	rg.GET("/:name/qr", h.QR)
-	rg.POST("/:name/pair/phone", h.PairPhone)
-}
+	// ─────────────────────────────────────────────────────────────────────────────
+	// Sessions
+	// ─────────────────────────────────────────────────────────────────────────────
+	sessions := r.Group("/sessions")
+	sessions.Use(middleware.Auth(cfg.APIKey))
+	{
+		sessions.GET("", h.Session.Fetch)
+		sessions.POST("", h.Session.Create)
+		sessions.GET("/:id", h.Session.Info)
+		sessions.DELETE("/:id", h.Session.Delete)
+		sessions.POST("/:id/connect", h.Session.Connect)
+		sessions.POST("/:id/logout", h.Session.Logout)
+		sessions.POST("/:id/restart", h.Session.Restart)
+		sessions.GET("/:id/qr", h.Session.QR)
+		sessions.POST("/:id/pair/phone", h.Session.PairPhone)
+		sessions.GET("/:id/qrlink", h.Contact.GetContactQRLink)
 
-func registerMessageRoutes(rg *gin.RouterGroup, h *handler.MessageHandler) {
-	rg.POST("/:name/send/text", h.SendText)
-	rg.POST("/:name/send/image", h.SendImage)
-	rg.POST("/:name/send/audio", h.SendAudio)
-	rg.POST("/:name/send/video", h.SendVideo)
-	rg.POST("/:name/send/document", h.SendDocument)
-	rg.POST("/:name/send/sticker", h.SendSticker)
-	rg.POST("/:name/send/location", h.SendLocation)
-	rg.POST("/:name/send/contact", h.SendContact)
-	rg.POST("/:name/send/reaction", h.SendReaction)
-	rg.POST("/:name/send/poll", h.SendPoll)
-	rg.POST("/:name/send/poll/vote", h.SendPollVote)
-	rg.POST("/:name/send/buttons", h.SendButtons)
-	rg.POST("/:name/send/list", h.SendList)
-	rg.POST("/:name/send/interactive", h.SendInteractive)
-	rg.POST("/:name/send/template", h.SendTemplate)
-	rg.POST("/:name/send/carousel", h.SendCarousel)
-}
+		// ─────────────────────────────────────────────────────────────────────────
+		// Messages
+		// ─────────────────────────────────────────────────────────────────────────
+		sessions.POST("/:id/messages/text", h.Message.SendText)
+		sessions.POST("/:id/messages/image", h.Message.SendImage)
+		sessions.POST("/:id/messages/audio", h.Message.SendAudio)
+		sessions.POST("/:id/messages/video", h.Message.SendVideo)
+		sessions.POST("/:id/messages/document", h.Message.SendDocument)
+		sessions.POST("/:id/messages/sticker", h.Message.SendSticker)
+		sessions.POST("/:id/messages/location", h.Message.SendLocation)
+		sessions.POST("/:id/messages/contact", h.Message.SendContact)
+		sessions.POST("/:id/messages/reaction", h.Message.SendReaction)
+		sessions.POST("/:id/messages/poll", h.Message.SendPoll)
+		sessions.POST("/:id/messages/poll/vote", h.Message.SendPollVote)
+		sessions.POST("/:id/messages/buttons", h.Message.SendButtons)
+		sessions.POST("/:id/messages/list", h.Message.SendList)
+		sessions.POST("/:id/messages/interactive", h.Message.SendInteractive)
+		sessions.POST("/:id/messages/template", h.Message.SendTemplate)
+		sessions.POST("/:id/messages/carousel", h.Message.SendCarousel)
 
-func registerGroupRoutes(rg *gin.RouterGroup, h *handler.GroupHandler) {
-	rg.POST("/:name/group/create", h.CreateGroup)
-	rg.GET("/:name/group/list", h.GetJoinedGroups)
-	rg.GET("/:name/group/:groupId/info", h.GetGroupInfo)
-	rg.POST("/:name/group/:groupId/leave", h.LeaveGroup)
-	rg.GET("/:name/group/:groupId/invite", h.GetInviteLink)
-	rg.PUT("/:name/group/name", h.UpdateGroupName)
-	rg.PUT("/:name/group/description", h.UpdateGroupTopic)
-	rg.POST("/:name/group/participants/add", h.AddParticipants)
-	rg.POST("/:name/group/participants/remove", h.RemoveParticipants)
-	rg.POST("/:name/group/participants/promote", h.PromoteParticipants)
-	rg.POST("/:name/group/participants/demote", h.DemoteParticipants)
-	rg.POST("/:name/group/join", h.JoinGroup)
-	rg.POST("/:name/group/send/text", h.SendGroupMessage)
-	rg.PUT("/:name/group/announce", h.SetGroupAnnounce)
-	rg.PUT("/:name/group/locked", h.SetGroupLocked)
-	rg.PUT("/:name/group/picture", h.SetGroupPicture)
-	rg.PUT("/:name/group/approval", h.SetGroupApprovalMode)
-	rg.PUT("/:name/group/memberadd", h.SetGroupMemberAddMode)
-	rg.GET("/:name/group/:groupId/requests", h.GetGroupRequestParticipants)
-	rg.POST("/:name/group/:groupId/requests", h.UpdateGroupRequestParticipants)
-	rg.GET("/:name/group/info/link", h.GetGroupInfoFromLink)
-}
+		// ─────────────────────────────────────────────────────────────────────────
+		// Groups
+		// ─────────────────────────────────────────────────────────────────────────
+		sessions.POST("/:id/groups", h.Group.CreateGroup)
+		sessions.GET("/:id/groups", h.Group.GetJoinedGroups)
+		sessions.GET("/:id/groups/:groupId", h.Group.GetGroupInfo)
+		sessions.DELETE("/:id/groups/:groupId/membership", h.Group.LeaveGroup)
+		sessions.GET("/:id/groups/:groupId/invite", h.Group.GetInviteLink)
+		sessions.PATCH("/:id/groups/:groupId/name", h.Group.UpdateGroupName)
+		sessions.PATCH("/:id/groups/:groupId/description", h.Group.UpdateGroupTopic)
+		sessions.POST("/:id/groups/:groupId/participants", h.Group.AddParticipants)
+		sessions.DELETE("/:id/groups/:groupId/participants", h.Group.RemoveParticipants)
+		sessions.PATCH("/:id/groups/:groupId/participants/promote", h.Group.PromoteParticipants)
+		sessions.PATCH("/:id/groups/:groupId/participants/demote", h.Group.DemoteParticipants)
+		sessions.POST("/:id/groups/join", h.Group.JoinGroup)
+		sessions.POST("/:id/groups/:groupId/messages", h.Group.SendGroupMessage)
+		sessions.PATCH("/:id/groups/:groupId/settings/announce", h.Group.SetGroupAnnounce)
+		sessions.PATCH("/:id/groups/:groupId/settings/locked", h.Group.SetGroupLocked)
+		sessions.PUT("/:id/groups/:groupId/picture", h.Group.SetGroupPicture)
+		sessions.PATCH("/:id/groups/:groupId/settings/approval", h.Group.SetGroupApprovalMode)
+		sessions.PATCH("/:id/groups/:groupId/settings/memberadd", h.Group.SetGroupMemberAddMode)
+		sessions.GET("/:id/groups/:groupId/requests", h.Group.GetGroupRequestParticipants)
+		sessions.POST("/:id/groups/:groupId/requests", h.Group.UpdateGroupRequestParticipants)
+		sessions.GET("/:id/groups/info/link", h.Group.GetGroupInfoFromLink)
 
-func registerContactRoutes(rg *gin.RouterGroup, h *handler.ContactHandler) {
-	rg.POST("/:name/contact/check", h.CheckPhone)
-	rg.POST("/:name/contact/info", h.GetContactInfo)
-	rg.GET("/:name/contact/list", h.GetContacts)
-	rg.GET("/:name/contact/:phone/avatar", h.GetAvatar)
-	rg.POST("/:name/contact/presence", h.SetPresence)
-	rg.POST("/:name/contact/typing", h.SetChatPresence)
-	rg.POST("/:name/contact/markread", h.MarkRead)
-	rg.GET("/:name/contact/blocklist", h.GetBlocklist)
-	rg.POST("/:name/contact/blocklist", h.UpdateBlocklist)
-	rg.POST("/:name/contact/subscribe", h.SubscribePresence)
-	rg.GET("/:name/contact/qrlink", h.GetContactQRLink)
-	rg.GET("/:name/contact/:phone/business", h.GetBusinessProfile)
-}
+		// ─────────────────────────────────────────────────────────────────────────
+		// Contacts
+		// ─────────────────────────────────────────────────────────────────────────
+		sessions.GET("/:id/contacts", h.Contact.GetContacts)
+		sessions.POST("/:id/contacts/check", h.Contact.CheckPhone)
+		sessions.GET("/:id/contacts/:phone", h.Contact.GetContactInfo)
+		sessions.GET("/:id/contacts/:phone/avatar", h.Contact.GetAvatar)
+		sessions.GET("/:id/contacts/:phone/business", h.Contact.GetBusinessProfile)
+		sessions.GET("/:id/contacts/blocklist", h.Contact.GetBlocklist)
+		sessions.PUT("/:id/contacts/blocklist", h.Contact.UpdateBlocklist)
+		sessions.POST("/:id/contacts/:phone/presence/subscribe", h.Contact.SubscribePresence)
 
-func registerChatRoutes(rg *gin.RouterGroup, h *handler.ChatHandler) {
-	rg.POST("/:name/chat/archive", h.ArchiveChat)
-	rg.POST("/:name/chat/delete", h.DeleteMessage)
-	rg.POST("/:name/chat/edit", h.EditMessage)
-	rg.PUT("/:name/chat/disappearing", h.SetDisappearingTimer)
-}
+		// ─────────────────────────────────────────────────────────────────────────
+		// Chats
+		// ─────────────────────────────────────────────────────────────────────────
+		sessions.PUT("/:id/presence", h.Contact.SetPresence)
+		sessions.POST("/:id/chats/:chatId/typing", h.Contact.SetChatPresence)
+		sessions.POST("/:id/chats/:chatId/read", h.Contact.MarkRead)
+		sessions.PATCH("/:id/chats/:chatId/archive", h.Chat.ArchiveChat)
+		sessions.DELETE("/:id/chats/:chatId/messages/:messageId", h.Chat.DeleteMessage)
+		sessions.PATCH("/:id/chats/:chatId/messages/:messageId", h.Chat.EditMessage)
+		sessions.PATCH("/:id/chats/:chatId/settings/disappearing", h.Chat.SetDisappearingTimer)
 
-func registerProfileRoutes(rg *gin.RouterGroup, h *handler.ProfileHandler) {
-	rg.GET("/:name/profile", h.GetProfile)
-	rg.PUT("/:name/profile/status", h.SetStatus)
-	rg.PUT("/:name/profile/name", h.SetPushName)
-	rg.PUT("/:name/profile/picture", h.SetProfilePicture)
-	rg.DELETE("/:name/profile/picture", h.DeleteProfilePicture)
-	rg.GET("/:name/profile/privacy", h.GetPrivacySettings)
-	rg.PUT("/:name/profile/privacy", h.SetPrivacySettings)
-	rg.PUT("/:name/profile/disappearing", h.SetDefaultDisappearingTimer)
-}
+		// ─────────────────────────────────────────────────────────────────────────
+		// Profile
+		// ─────────────────────────────────────────────────────────────────────────
+		sessions.GET("/:id/profile", h.Profile.GetProfile)
+		sessions.PATCH("/:id/profile/status", h.Profile.SetStatus)
+		sessions.PATCH("/:id/profile/name", h.Profile.SetPushName)
+		sessions.PUT("/:id/profile/picture", h.Profile.SetProfilePicture)
+		sessions.DELETE("/:id/profile/picture", h.Profile.DeleteProfilePicture)
+		sessions.GET("/:id/profile/privacy", h.Profile.GetPrivacySettings)
+		sessions.PUT("/:id/profile/privacy", h.Profile.SetPrivacySettings)
+		sessions.PATCH("/:id/profile/disappearing", h.Profile.SetDefaultDisappearingTimer)
 
-func registerWebhookRoutes(rg *gin.RouterGroup, h *handler.WebhookHandler) {
-	rg.GET("/:name/webhook", h.GetWebhook)
-	rg.POST("/:name/webhook", h.SetWebhook)
-}
+		// ─────────────────────────────────────────────────────────────────────────
+		// Webhooks
+		// ─────────────────────────────────────────────────────────────────────────
+		sessions.GET("/:id/webhooks", h.Webhook.GetWebhook)
+		sessions.POST("/:id/webhooks", h.Webhook.SetWebhook)
 
-func registerEventRoutes(r *gin.Engine, apiKey string, h *handler.WebhookHandler) {
-	r.GET("/events", middleware.Auth(apiKey), h.GetEvents)
-}
+		// ─────────────────────────────────────────────────────────────────────────
+		// Newsletters
+		// ─────────────────────────────────────────────────────────────────────────
+		if h.Newsletter != nil {
+			sessions.POST("/:id/newsletters", h.Newsletter.CreateNewsletter)
+			sessions.GET("/:id/newsletters", h.Newsletter.GetSubscribedNewsletters)
+			sessions.GET("/:id/newsletters/:newsletterId", h.Newsletter.GetNewsletterInfo)
+			sessions.POST("/:id/newsletters/:newsletterId/follow", h.Newsletter.FollowNewsletter)
+			sessions.DELETE("/:id/newsletters/:newsletterId/follow", h.Newsletter.UnfollowNewsletter)
+			sessions.GET("/:id/newsletters/:newsletterId/messages", h.Newsletter.GetNewsletterMessages)
+			sessions.POST("/:id/newsletters/:newsletterId/reactions", h.Newsletter.NewsletterSendReaction)
+			sessions.PATCH("/:id/newsletters/:newsletterId/mute", h.Newsletter.NewsletterToggleMute)
+		}
 
-func registerNewsletterRoutes(rg *gin.RouterGroup, h *handler.NewsletterHandler) {
-	if h == nil {
-		return
+		// ─────────────────────────────────────────────────────────────────────────
+		// Stories
+		// ─────────────────────────────────────────────────────────────────────────
+		if h.Status != nil {
+			sessions.POST("/:id/stories", h.Status.SendStory)
+			sessions.GET("/:id/stories/privacy", h.Status.GetStatusPrivacy)
+		}
+
+		// ─────────────────────────────────────────────────────────────────────────
+		// Calls
+		// ─────────────────────────────────────────────────────────────────────────
+		if h.Call != nil {
+			sessions.POST("/:id/calls/reject", h.Call.RejectCall)
+		}
+
+		// ─────────────────────────────────────────────────────────────────────────
+		// Communities
+		// ─────────────────────────────────────────────────────────────────────────
+		if h.Community != nil {
+			sessions.POST("/:id/communities/:communityId/groups", h.Community.LinkGroup)
+			sessions.DELETE("/:id/communities/:communityId/groups/:groupId", h.Community.UnlinkGroup)
+			sessions.GET("/:id/communities/:communityId/groups", h.Community.GetSubGroups)
+		}
 	}
-	rg.POST("/:name/newsletter/create", h.CreateNewsletter)
-	rg.POST("/:name/newsletter/follow", h.FollowNewsletter)
-	rg.POST("/:name/newsletter/unfollow", h.UnfollowNewsletter)
-	rg.GET("/:name/newsletter/:newsletterId/info", h.GetNewsletterInfo)
-	rg.GET("/:name/newsletter/list", h.GetSubscribedNewsletters)
-	rg.GET("/:name/newsletter/:newsletterId/messages", h.GetNewsletterMessages)
-	rg.POST("/:name/newsletter/reaction", h.NewsletterSendReaction)
-	rg.POST("/:name/newsletter/mute", h.NewsletterToggleMute)
-}
 
-func registerStatusRoutes(rg *gin.RouterGroup, h *handler.StatusHandler) {
-	if h == nil {
-		return
-	}
-	rg.POST("/:name/story", h.SendStory)
-	rg.GET("/:name/status/privacy", h.GetStatusPrivacy)
-}
-
-func registerCallRoutes(rg *gin.RouterGroup, h *handler.CallHandler) {
-	if h == nil {
-		return
-	}
-	rg.POST("/:name/call/reject", h.RejectCall)
-}
-
-func registerCommunityRoutes(rg *gin.RouterGroup, h *handler.CommunityHandler) {
-	if h == nil {
-		return
-	}
-	rg.POST("/:name/community/link", h.LinkGroup)
-	rg.POST("/:name/community/unlink", h.UnlinkGroup)
-	rg.GET("/:name/community/:communityId/subgroups", h.GetSubGroups)
+	return r
 }

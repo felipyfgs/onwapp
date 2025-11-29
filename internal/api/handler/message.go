@@ -36,7 +36,7 @@ func NewMessageHandler(whatsappService *service.WhatsAppService) *MessageHandler
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/send/text [post]
 func (h *MessageHandler) SendText(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.SendTextRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -72,7 +72,7 @@ func (h *MessageHandler) SendText(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/send/image [post]
 func (h *MessageHandler) SendImage(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.SendImageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -119,7 +119,7 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/send/audio [post]
 func (h *MessageHandler) SendAudio(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.SendAudioRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -166,7 +166,7 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/send/video [post]
 func (h *MessageHandler) SendVideo(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.SendVideoRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -213,7 +213,7 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/send/document [post]
 func (h *MessageHandler) SendDocument(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.SendDocumentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -260,7 +260,7 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/send/sticker [post]
 func (h *MessageHandler) SendSticker(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.SendStickerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -307,7 +307,7 @@ func (h *MessageHandler) SendSticker(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/send/location [post]
 func (h *MessageHandler) SendLocation(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.SendLocationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -343,7 +343,7 @@ func (h *MessageHandler) SendLocation(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/send/contact [post]
 func (h *MessageHandler) SendContact(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.SendContactRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -379,7 +379,7 @@ func (h *MessageHandler) SendContact(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/send/reaction [post]
 func (h *MessageHandler) SendReaction(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.SendReactionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -415,7 +415,7 @@ func (h *MessageHandler) SendReaction(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/send/poll [post]
 func (h *MessageHandler) SendPoll(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.SendPollRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -451,7 +451,7 @@ func (h *MessageHandler) SendPoll(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/send/poll/vote [post]
 func (h *MessageHandler) SendPollVote(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.SendPollVoteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -487,7 +487,7 @@ func (h *MessageHandler) SendPollVote(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/send/buttons [post]
 func (h *MessageHandler) SendButtons(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.SendButtonsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -538,7 +538,7 @@ func (h *MessageHandler) SendButtons(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/send/list [post]
 func (h *MessageHandler) SendList(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.SendListRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -598,7 +598,7 @@ func (h *MessageHandler) SendList(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/send/interactive [post]
 func (h *MessageHandler) SendInteractive(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.SendInteractiveRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -649,7 +649,7 @@ func (h *MessageHandler) SendInteractive(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/send/template [post]
 func (h *MessageHandler) SendTemplate(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.SendTemplateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -798,7 +798,7 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/send/carousel [post]
 func (h *MessageHandler) SendCarousel(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.SendCarouselRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

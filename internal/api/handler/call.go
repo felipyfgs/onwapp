@@ -31,7 +31,7 @@ func NewCallHandler(whatsappService *service.WhatsAppService) *CallHandler {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/call/reject [post]
 func (h *CallHandler) RejectCall(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.RejectCallRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

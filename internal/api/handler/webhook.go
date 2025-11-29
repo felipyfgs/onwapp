@@ -35,7 +35,7 @@ func NewWebhookHandler(webhookService *service.WebhookService, database *db.Data
 // @Security ApiKeyAuth
 // @Router /sessions/{name}/webhook [get]
 func (h *WebhookHandler) GetWebhook(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	session, err := h.database.Sessions.GetByName(c.Request.Context(), name)
 	if err != nil {
@@ -80,7 +80,7 @@ func (h *WebhookHandler) GetWebhook(c *gin.Context) {
 // @Security ApiKeyAuth
 // @Router /sessions/{name}/webhook [post]
 func (h *WebhookHandler) SetWebhook(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("id")
 
 	var req dto.SetWebhookRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
