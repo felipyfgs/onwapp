@@ -86,6 +86,10 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 
 	// Extract phone/identifier
 	phoneNumber := strings.Split(remoteJid, "@")[0]
+	// Remove device suffix (e.g., "559984059035:2" -> "559984059035")
+	if colonIdx := strings.Index(phoneNumber, ":"); colonIdx > 0 {
+		phoneNumber = phoneNumber[:colonIdx]
+	}
 	contactName := pushName
 	if contactName == "" {
 		contactName = phoneNumber

@@ -560,3 +560,61 @@ func GetMediaType(filename string) string {
 		return "file"
 	}
 }
+
+// UpdateLastSeen marks a conversation as read/seen in Chatwoot using the public API
+// This updates the read receipts/ticks in the Chatwoot interface
+func (c *Client) UpdateLastSeen(ctx context.Context, inboxIdentifier, contactSourceID string, conversationID int) error {
+	if inboxIdentifier == "" || contactSourceID == "" {
+		return fmt.Errorf("inbox_identifier and contact_source_id are required")
+	}
+
+	// Public API endpoint - doesn't use account ID
+	url := fmt.Sprintf("%s/public/api/v1/inboxes/%s/contacts/%s/conversations/%d/update_last_seen",
+		c.baseURL, inboxIdentifier, contactSourceID, conversationID)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("chatwoot public API error: status %d, body: %s", resp.StatusCode, string(body))
+	}
+
+	return nil
+}
+
+// GetConversationWithContactInbox gets a conversation with contact inbox details
+func (c *Client) GetConversationWithContactInbox(ctx context.Context, conversationID int) (*Conversation, string, error) {
+	data, err := c.doRequest(ctx, http.MethodGet, fmt.Sprintf("/conversations/%d", conversationID), nil)
+	if err != nil {
+		return nil, "", err
+	}
+
+	// Parse the full response to get contact_inbox.source_id
+	var result struct {
+		Conversation
+		ContactInbox *struct {
+			SourceID string `json:"source_id"`
+		} `json:"contact_inbox"`
+	}
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, "", fmt.Errorf("failed to parse conversation response: %w", err)
+	}
+
+	sourceID := ""
+	if result.ContactInbox != nil {
+		sourceID = result.ContactInbox.SourceID
+	}
+
+	return &result.Conversation, sourceID, nil
+}

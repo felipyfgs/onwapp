@@ -344,6 +344,10 @@ func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Ses
 	// Get contact and conversation
 	isGroup := strings.HasSuffix(remoteJid, "@g.us")
 	phoneNumber := strings.Split(remoteJid, "@")[0]
+	// Remove device suffix (e.g., "559984059035:2" -> "559984059035")
+	if colonIdx := strings.Index(phoneNumber, ":"); colonIdx > 0 {
+		phoneNumber = phoneNumber[:colonIdx]
+	}
 
 	contact, err := client.GetOrCreateContact(ctx, cfg.InboxID, phoneNumber, remoteJid, phoneNumber, "", isGroup)
 	if err != nil {
@@ -851,6 +855,10 @@ func (s *Service) ProcessReactionMessage(ctx context.Context, session *model.Ses
 	// Get or create contact
 	isGroup := strings.HasSuffix(remoteJid, "@g.us")
 	phoneNumber := strings.Split(remoteJid, "@")[0]
+	// Remove device suffix (e.g., "559984059035:2" -> "559984059035")
+	if colonIdx := strings.Index(phoneNumber, ":"); colonIdx > 0 {
+		phoneNumber = phoneNumber[:colonIdx]
+	}
 
 	// Get contact name from sender JID
 	senderPhone := strings.Split(senderJid, "@")[0]
@@ -946,4 +954,77 @@ func ParseWebhookPayload(data []byte) (*WebhookPayload, error) {
 		return nil, err
 	}
 	return &payload, nil
+}
+
+// HandleMessageRead processes read receipts and updates Chatwoot last_seen
+// This is called when a message we sent is read by the recipient
+func (s *Service) HandleMessageRead(ctx context.Context, session *model.Session, messageID string) error {
+	cfg, err := s.repo.GetEnabledBySessionID(ctx, session.ID)
+	if err != nil {
+		return nil
+	}
+	if cfg == nil {
+		return nil // Chatwoot not enabled
+	}
+
+	// Get the message from database to find chatwoot conversation ID
+	msg, err := s.database.Messages.GetByMessageID(ctx, session.ID, messageID)
+	if err != nil || msg == nil {
+		logger.Debug().Str("messageId", messageID).Msg("Chatwoot: message not found for read receipt")
+		return nil
+	}
+
+	// Check if message has Chatwoot conversation ID
+	if msg.ChatwootConversationID == nil || *msg.ChatwootConversationID == 0 {
+		logger.Debug().Str("messageId", messageID).Msg("Chatwoot: message has no conversation ID")
+		return nil
+	}
+
+	client := NewClient(cfg.URL, cfg.APIAccessToken, cfg.AccountID)
+
+	// Get inbox to get inbox_identifier
+	if cfg.InboxID == 0 {
+		logger.Debug().Msg("Chatwoot: inbox ID not set")
+		return nil
+	}
+
+	inbox, err := client.GetInbox(ctx, cfg.InboxID)
+	if err != nil {
+		logger.Warn().Err(err).Msg("Chatwoot: failed to get inbox")
+		return nil
+	}
+
+	if inbox.InboxIdentifier == "" {
+		logger.Debug().Msg("Chatwoot: inbox_identifier not available")
+		return nil
+	}
+
+	// Get conversation to get contact_inbox source_id
+	_, contactSourceID, err := client.GetConversationWithContactInbox(ctx, *msg.ChatwootConversationID)
+	if err != nil {
+		logger.Warn().Err(err).Int("conversationId", *msg.ChatwootConversationID).Msg("Chatwoot: failed to get conversation")
+		return nil
+	}
+
+	if contactSourceID == "" {
+		logger.Debug().Int("conversationId", *msg.ChatwootConversationID).Msg("Chatwoot: contact_source_id not found")
+		return nil
+	}
+
+	// Call public API to update last_seen
+	if err := client.UpdateLastSeen(ctx, inbox.InboxIdentifier, contactSourceID, *msg.ChatwootConversationID); err != nil {
+		logger.Warn().Err(err).
+			Int("conversationId", *msg.ChatwootConversationID).
+			Str("inboxIdentifier", inbox.InboxIdentifier).
+			Msg("Chatwoot: failed to update last_seen")
+		return err
+	}
+
+	logger.Info().
+		Str("session", session.Name).
+		Str("messageId", messageID).
+		Int("conversationId", *msg.ChatwootConversationID).
+		Msg("Chatwoot: updated last_seen (read receipt)")
+
+	return nil
 }

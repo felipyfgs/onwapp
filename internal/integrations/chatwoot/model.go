@@ -57,6 +57,7 @@ type Inbox struct {
 	WebhookURL      string `json:"webhook_url,omitempty"`
 	GreetingEnabled bool   `json:"greeting_enabled,omitempty"`
 	GreetingMessage string `json:"greeting_message,omitempty"`
+	InboxIdentifier string `json:"inbox_identifier,omitempty"` // For public API calls
 }
 
 // Conversation represents a Chatwoot conversation
