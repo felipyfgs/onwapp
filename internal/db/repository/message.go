@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -20,7 +21,8 @@ const messageSelectFields = `
 	COALESCE("type", ''), COALESCE("mediaType", ''), COALESCE("category", ''), COALESCE("content", ''),
 	COALESCE("isFromMe", false), COALESCE("isGroup", false), COALESCE("isEphemeral", false), COALESCE("isViewOnce", false), COALESCE("isEdit", false),
 	COALESCE("editTargetId", ''), COALESCE("quotedId", ''), COALESCE("quotedSender", ''),
-	COALESCE("status", ''), "deliveredAt", "readAt", COALESCE("reactions", '[]'::jsonb), "rawEvent", "createdAt"`
+	COALESCE("status", ''), "deliveredAt", "readAt", COALESCE("reactions", '[]'::jsonb), "rawEvent", "createdAt",
+	"chatwootMessageId", "chatwootConversationId", COALESCE("chatwootSourceId", '')`
 
 func NewMessageRepository(pool *pgxpool.Pool) *MessageRepository {
 	return &MessageRepository{pool: pool}
@@ -36,10 +38,14 @@ func (r *MessageRepository) Save(ctx context.Context, msg *model.Message) (strin
 			"type", "mediaType", "category", "content",
 			"isFromMe", "isGroup", "isEphemeral", "isViewOnce", "isEdit",
 			"editTargetId", "quotedId", "quotedSender",
-			"status", "deliveredAt", "readAt", "rawEvent", "createdAt"
+			"status", "deliveredAt", "readAt", "rawEvent", "createdAt",
+			"chatwootMessageId", "chatwootConversationId", "chatwootSourceId"
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26)
-		ON CONFLICT ("sessionId", "messageId") DO NOTHING
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29)
+		ON CONFLICT ("sessionId", "messageId") DO UPDATE SET
+			"chatwootMessageId" = COALESCE(EXCLUDED."chatwootMessageId", "zpMessages"."chatwootMessageId"),
+			"chatwootConversationId" = COALESCE(EXCLUDED."chatwootConversationId", "zpMessages"."chatwootConversationId"),
+			"chatwootSourceId" = COALESCE(EXCLUDED."chatwootSourceId", "zpMessages"."chatwootSourceId")
 		RETURNING "id"`,
 		msg.SessionID, msg.MessageID, msg.ChatJID, msg.SenderJID, msg.Timestamp,
 		msg.PushName, msg.SenderAlt, msg.ServerID, msg.VerifiedName,
@@ -47,10 +53,11 @@ func (r *MessageRepository) Save(ctx context.Context, msg *model.Message) (strin
 		msg.IsFromMe, msg.IsGroup, msg.IsEphemeral, msg.IsViewOnce, msg.IsEdit,
 		msg.EditTargetID, msg.QuotedID, msg.QuotedSender,
 		msg.Status, msg.DeliveredAt, msg.ReadAt, msg.RawEvent, now,
+		msg.ChatwootMessageID, msg.ChatwootConversationID, msg.ChatwootSourceID,
 	).Scan(&id)
 
-	// Handle ON CONFLICT DO NOTHING - no row returned
-	if err != nil && err.Error() == "no rows in result set" {
+	// Handle case where ID already exists
+	if err == pgx.ErrNoRows {
 		return "", nil
 	}
 	return id, err
@@ -170,6 +177,7 @@ func (r *MessageRepository) GetByMessageID(ctx context.Context, sessionID string
 		&m.IsFromMe, &m.IsGroup, &m.IsEphemeral, &m.IsViewOnce, &m.IsEdit,
 		&m.EditTargetID, &m.QuotedID, &m.QuotedSender,
 		&m.Status, &m.DeliveredAt, &m.ReadAt, &m.Reactions, &m.RawEvent, &m.CreatedAt,
+		&m.ChatwootMessageID, &m.ChatwootConversationID, &m.ChatwootSourceID,
 	)
 	if err != nil {
 		return nil, err
@@ -192,6 +200,7 @@ func (r *MessageRepository) scanMessages(rows interface {
 			&m.IsFromMe, &m.IsGroup, &m.IsEphemeral, &m.IsViewOnce, &m.IsEdit,
 			&m.EditTargetID, &m.QuotedID, &m.QuotedSender,
 			&m.Status, &m.DeliveredAt, &m.ReadAt, &m.Reactions, &m.RawEvent, &m.CreatedAt,
+			&m.ChatwootMessageID, &m.ChatwootConversationID, &m.ChatwootSourceID,
 		)
 		if err != nil {
 			return nil, err
@@ -233,18 +242,27 @@ func (r *MessageRepository) RemoveReaction(ctx context.Context, sessionID, messa
 
 // UpdateChatwootFields updates Chatwoot-related fields for a message
 func (r *MessageRepository) UpdateChatwootFields(ctx context.Context, sessionID, messageID string, chatwootMessageID, chatwootConversationID int, chatwootSourceID string) error {
-	_, err := r.pool.Exec(ctx, `
+	result, err := r.pool.Exec(ctx, `
 		UPDATE "zpMessages" 
 		SET "chatwootMessageId" = $3, "chatwootConversationId" = $4, "chatwootSourceId" = $5
 		WHERE "sessionId" = $1::uuid AND "messageId" = $2`,
 		sessionID, messageID, chatwootMessageID, chatwootConversationID, chatwootSourceID)
-	return err
+	if err != nil {
+		return err
+	}
+	
+	// Log if no rows were affected (message not found in DB)
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("message not found in database: sessionID=%s, messageID=%s", sessionID, messageID)
+	}
+	
+	return nil
 }
 
 // GetByChatwootMessageID finds a message by its Chatwoot message ID
 func (r *MessageRepository) GetByChatwootMessageID(ctx context.Context, sessionID string, chatwootMessageID int) (*model.Message, error) {
 	row := r.pool.QueryRow(ctx,
-		`SELECT `+messageSelectFields+`, "chatwootMessageId", "chatwootConversationId", COALESCE("chatwootSourceId", '') FROM "zpMessages" WHERE "sessionId" = $1::uuid AND "chatwootMessageId" = $2`,
+		`SELECT `+messageSelectFields+` FROM "zpMessages" WHERE "sessionId" = $1::uuid AND "chatwootMessageId" = $2`,
 		sessionID, chatwootMessageID)
 
 	var m model.Message

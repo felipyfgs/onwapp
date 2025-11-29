@@ -152,6 +152,12 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 		return
 	}
 
+	// Log raw body for debugging
+	logger.Debug().
+		Str("session", sessionName).
+		Str("rawBody", string(body)).
+		Msg("Chatwoot webhook raw payload")
+
 	// Parse webhook payload
 	payload, err := ParseWebhookPayload(body)
 	if err != nil {
@@ -160,18 +166,46 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 		return
 	}
 
+	// Detailed logging for debugging
 	logger.Info().
 		Str("session", sessionName).
 		Str("event", payload.Event).
 		Str("messageType", payload.MessageType).
+		Int("messageId", payload.ID).
 		Str("content", payload.Content).
 		Bool("private", payload.Private).
+		Interface("sender", payload.Sender).
 		Msg("Received Chatwoot webhook")
+
+	// Extra debug for message_created
+	if payload.Event == "message_created" {
+		logger.Debug().
+			Str("session", sessionName).
+			Int("messageId", payload.ID).
+			Str("messageType", payload.MessageType).
+			Bool("private", payload.Private).
+			Interface("conversation", payload.Conversation).
+			Interface("contentAttrs", payload.ContentAttrs).
+			Msg("Chatwoot message_created details")
+	}
 
 	// Handle message_created event - send to WhatsApp
 	// message_type can be "outgoing" or 1 (int)
 	isOutgoing := payload.MessageType == "outgoing" || payload.MessageType == "1"
+	
+	logger.Debug().
+		Str("session", sessionName).
+		Str("event", payload.Event).
+		Bool("isOutgoing", isOutgoing).
+		Bool("private", payload.Private).
+		Msg("Chatwoot webhook processing check")
+
 	if payload.Event == "message_created" && isOutgoing && !payload.Private {
+		logger.Info().
+			Str("session", sessionName).
+			Int("messageId", payload.ID).
+			Msg("Chatwoot: processing outgoing message_created")
+
 		chatJid, content, attachments, err := h.service.GetWebhookDataForSending(c.Request.Context(), session.ID, payload)
 		if err != nil {
 			logger.Warn().Err(err).Str("session", sessionName).Msg("Failed to process Chatwoot webhook")
@@ -179,8 +213,21 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 			return
 		}
 
+		logger.Debug().
+			Str("session", sessionName).
+			Str("chatJid", chatJid).
+			Str("content", content).
+			Int("attachmentsCount", len(attachments)).
+			Msg("Chatwoot: GetWebhookDataForSending result")
+
 		// Check if this is a reply to another message
 		quotedMsg := h.service.GetQuotedMessage(c.Request.Context(), session.ID, payload)
+		if quotedMsg != nil {
+			logger.Debug().
+				Str("session", sessionName).
+				Str("quotedMessageId", quotedMsg.MessageID).
+				Msg("Chatwoot: found quoted message for reply")
+		}
 
 		// Get conversation ID for saving message
 		var conversationID int
@@ -189,13 +236,32 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 		}
 
 		if chatJid != "" && (content != "" || len(attachments) > 0) {
+			logger.Info().
+				Str("session", sessionName).
+				Str("chatJid", chatJid).
+				Str("content", content).
+				Int("conversationId", conversationID).
+				Msg("Chatwoot: sending message to WhatsApp")
+
 			// Send message to WhatsApp and save to database
 			if err := h.sendToWhatsApp(c, session, chatJid, content, attachments, quotedMsg, payload.ID, conversationID); err != nil {
 				logger.Error().Err(err).
 					Str("session", sessionName).
 					Str("chatJid", chatJid).
 					Msg("Failed to send message to WhatsApp from Chatwoot")
+			} else {
+				logger.Info().
+					Str("session", sessionName).
+					Str("chatJid", chatJid).
+					Msg("Chatwoot: message sent to WhatsApp successfully")
 			}
+		} else {
+			logger.Warn().
+				Str("session", sessionName).
+				Str("chatJid", chatJid).
+				Str("content", content).
+				Int("attachmentsCount", len(attachments)).
+				Msg("Chatwoot: skipping send - empty chatJid or content")
 		}
 	}
 
@@ -291,7 +357,15 @@ func (h *Handler) sendToWhatsApp(c *gin.Context, session *model.Session, chatJid
 
 // saveOutgoingMessage saves a message sent from Chatwoot to database for reply tracking
 func (h *Handler) saveOutgoingMessage(ctx context.Context, session *model.Session, chatJid, content, messageID string, chatwootMsgID, chatwootConvID int) {
+	logger.Info().
+		Str("messageId", messageID).
+		Int("chatwootMsgId", chatwootMsgID).
+		Int("chatwootConvId", chatwootConvID).
+		Str("chatJid", chatJid).
+		Msg("Chatwoot: saveOutgoingMessage called")
+
 	if h.database == nil {
+		logger.Warn().Msg("Chatwoot: database is nil, cannot save outgoing message")
 		return
 	}
 

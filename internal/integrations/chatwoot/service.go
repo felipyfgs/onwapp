@@ -240,24 +240,64 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 	return nil
 }
 
-// ProcessOutgoingMessage is called when a message is sent from WhatsApp
-func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Session, msgID, chatJid, content string) error {
+// ProcessOutgoingMessage processes outgoing messages sent directly from WhatsApp (not via Chatwoot)
+// This syncs messages sent by the agent using WhatsApp directly to Chatwoot
+func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Session, evt *events.Message) error {
 	cfg, err := s.repo.GetEnabledBySessionID(ctx, session.ID)
-	if err != nil || cfg == nil {
+	if err != nil {
+		return nil
+	}
+	if cfg == nil {
+		return nil // Chatwoot not enabled for this session
+	}
+
+	remoteJid := evt.Info.Chat.String()
+	if s.shouldIgnoreJid(cfg, remoteJid) {
 		return nil
 	}
 
-	if s.shouldIgnoreJid(cfg, chatJid) {
-		return nil
+	// Extract message content
+	content := s.extractMessageContent(evt)
+	if content == "" {
+		return nil // Skip empty messages
 	}
+
+	sourceID := fmt.Sprintf("WAID:%s", evt.Info.ID)
+
+	// Check if this message was already sent by Chatwoot (avoid duplicates)
+	// If the message has a sourceID that matches, it was sent from Chatwoot
+	if s.database != nil {
+		existingMsg, _ := s.database.Messages.GetByMessageID(ctx, session.ID, evt.Info.ID)
+		if existingMsg != nil && existingMsg.ChatwootMessageID != nil && *existingMsg.ChatwootMessageID > 0 {
+			// Message already synced from Chatwoot, skip
+			logger.Debug().
+				Str("messageId", evt.Info.ID).
+				Int("chatwootMessageId", *existingMsg.ChatwootMessageID).
+				Msg("Chatwoot: skipping outgoing message - already synced from Chatwoot")
+			return nil
+		}
+	}
+
+	logger.Debug().
+		Str("session", session.Name).
+		Str("chatJid", remoteJid).
+		Str("content", content).
+		Msg("Chatwoot: processing outgoing message from WhatsApp")
 
 	client := NewClient(cfg.URL, cfg.APIAccessToken, cfg.AccountID)
 
-	// Get contact and conversation
-	isGroup := strings.HasSuffix(chatJid, "@g.us")
-	phoneNumber := strings.Split(chatJid, "@")[0]
+	// Ensure inbox exists
+	if cfg.InboxID == 0 {
+		if err := s.initInbox(ctx, cfg); err != nil {
+			return fmt.Errorf("failed to init inbox: %w", err)
+		}
+	}
 
-	contact, err := client.GetOrCreateContact(ctx, cfg.InboxID, phoneNumber, chatJid, phoneNumber, "", isGroup)
+	// Get contact and conversation
+	isGroup := strings.HasSuffix(remoteJid, "@g.us")
+	phoneNumber := strings.Split(remoteJid, "@")[0]
+
+	contact, err := client.GetOrCreateContact(ctx, cfg.InboxID, phoneNumber, remoteJid, phoneNumber, "", isGroup)
 	if err != nil {
 		return fmt.Errorf("failed to get/create contact: %w", err)
 	}
@@ -267,15 +307,44 @@ func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Ses
 		return fmt.Errorf("failed to get/create conversation: %w", err)
 	}
 
-	// Create outgoing message
+	// Create outgoing message in Chatwoot
 	msgReq := &CreateMessageRequest{
 		Content:     content,
 		MessageType: "outgoing",
-		SourceID:    fmt.Sprintf("WAID:%s", msgID),
+		SourceID:    sourceID,
 	}
 
-	_, err = client.CreateMessage(ctx, conv.ID, msgReq)
-	return err
+	// Check if this is a reply/quote message and add in_reply_to
+	if replyInfo := s.extractReplyInfo(ctx, session.ID, evt); replyInfo != nil {
+		msgReq.ContentAttributes = map[string]interface{}{
+			"in_reply_to":             replyInfo.ChatwootMessageID,
+			"in_reply_to_external_id": replyInfo.WhatsAppMessageID,
+		}
+	}
+
+	cwMsg, err := client.CreateMessage(ctx, conv.ID, msgReq)
+	if err != nil {
+		return fmt.Errorf("failed to create outgoing message in chatwoot: %w", err)
+	}
+
+	// Save Chatwoot message ID for quote/reply support
+	if cwMsg != nil && s.database != nil {
+		if err := s.database.Messages.UpdateChatwootFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, conv.ID, sourceID); err != nil {
+			logger.Warn().Err(err).
+				Str("messageId", evt.Info.ID).
+				Int("chatwootMessageId", cwMsg.ID).
+				Msg("Chatwoot: failed to save chatwoot message ID for outgoing message")
+		}
+	}
+
+	logger.Info().
+		Str("session", session.Name).
+		Str("chatJid", remoteJid).
+		Int("conversationId", conv.ID).
+		Str("content", content).
+		Msg("Chatwoot: outgoing message synced successfully")
+
+	return nil
 }
 
 // HandleWebhook processes incoming webhooks from Chatwoot
@@ -598,18 +667,31 @@ type QuotedMessageInfo struct {
 func (s *Service) GetWebhookDataForSending(ctx context.Context, sessionID string, payload *WebhookPayload) (chatJid, content string, attachments []Attachment, err error) {
 	cfg, err := s.repo.GetEnabledBySessionID(ctx, sessionID)
 	if err != nil || cfg == nil {
+		logger.Debug().Str("sessionId", sessionID).Msg("Chatwoot: config not enabled, skipping")
 		return "", "", nil, fmt.Errorf("chatwoot not enabled")
 	}
 
 	// Skip non-outgoing or private messages
-	if payload.MessageType != "outgoing" || payload.Private {
+	// Accept both "outgoing" string and "1" (numeric representation)
+	isOutgoing := payload.MessageType == "outgoing" || payload.MessageType == "1"
+	if !isOutgoing || payload.Private {
+		logger.Debug().
+			Str("sessionId", sessionID).
+			Str("messageType", payload.MessageType).
+			Bool("private", payload.Private).
+			Msg("Chatwoot: skipping non-outgoing or private message")
 		return "", "", nil, nil
 	}
 
-	// Skip messages from WhatsApp
+	// Skip messages from WhatsApp (already sent via API)
 	if payload.Conversation != nil && len(payload.Conversation.Messages) > 0 {
 		for _, msg := range payload.Conversation.Messages {
 			if strings.HasPrefix(msg.SourceID, "WAID:") && msg.ID == payload.ID {
+				logger.Debug().
+					Str("sessionId", sessionID).
+					Int("messageId", msg.ID).
+					Str("sourceId", msg.SourceID).
+					Msg("Chatwoot: skipping message already from WhatsApp")
 				return "", "", nil, nil
 			}
 		}
@@ -617,6 +699,12 @@ func (s *Service) GetWebhookDataForSending(ctx context.Context, sessionID string
 
 	// Get chat JID
 	if payload.Conversation == nil || payload.Conversation.Meta == nil || payload.Conversation.Meta.Sender == nil {
+		logger.Debug().
+			Str("sessionId", sessionID).
+			Bool("hasConversation", payload.Conversation != nil).
+			Bool("hasMeta", payload.Conversation != nil && payload.Conversation.Meta != nil).
+			Bool("hasSender", payload.Conversation != nil && payload.Conversation.Meta != nil && payload.Conversation.Meta.Sender != nil).
+			Msg("Chatwoot: missing conversation metadata")
 		return "", "", nil, fmt.Errorf("missing conversation metadata")
 	}
 
@@ -702,6 +790,107 @@ func (s *Service) GetQuotedMessage(ctx context.Context, sessionID string, payloa
 		Content:   msg.Content,
 		IsFromMe:  msg.IsFromMe,
 	}
+}
+
+// ProcessReactionMessage handles reaction events from WhatsApp Message and sends them to Chatwoot
+func (s *Service) ProcessReactionMessage(ctx context.Context, session *model.Session, emoji, targetMsgID, remoteJid, senderJid string, isFromMe bool) error {
+	cfg, err := s.repo.GetEnabledBySessionID(ctx, session.ID)
+	if err != nil || cfg == nil {
+		return nil
+	}
+
+	if cfg.InboxID == 0 {
+		return nil
+	}
+
+	logger.Debug().
+		Str("emoji", emoji).
+		Str("targetMsgId", targetMsgID).
+		Str("remoteJid", remoteJid).
+		Bool("isFromMe", isFromMe).
+		Msg("Chatwoot: processing reaction")
+
+	client := NewClient(cfg.URL, cfg.APIAccessToken, cfg.AccountID)
+
+	// Get or create contact
+	isGroup := strings.HasSuffix(remoteJid, "@g.us")
+	phoneNumber := strings.Split(remoteJid, "@")[0]
+
+	// Get contact name from sender JID
+	senderPhone := strings.Split(senderJid, "@")[0]
+	if colonIdx := strings.Index(senderPhone, ":"); colonIdx > 0 {
+		senderPhone = senderPhone[:colonIdx]
+	}
+	contactName := senderPhone
+
+	contact, err := client.GetOrCreateContact(ctx, cfg.InboxID, phoneNumber, remoteJid, contactName, "", isGroup)
+	if err != nil {
+		return fmt.Errorf("failed to get/create contact for reaction: %w", err)
+	}
+
+	// Get or create conversation
+	status := "open"
+	if cfg.ConversationPending {
+		status = "pending"
+	}
+
+	conv, err := client.GetOrCreateConversation(ctx, contact.ID, cfg.InboxID, status)
+	if err != nil {
+		return fmt.Errorf("failed to get/create conversation for reaction: %w", err)
+	}
+
+	// Find the original message to get its Chatwoot message ID
+	var inReplyTo *int
+	var inReplyToExternalID string
+
+	if s.database != nil {
+		originalMsg, err := s.database.Messages.GetByMessageID(ctx, session.ID, targetMsgID)
+		if err == nil && originalMsg != nil && originalMsg.ChatwootMessageID != nil {
+			inReplyTo = originalMsg.ChatwootMessageID
+			inReplyToExternalID = targetMsgID
+		}
+	}
+
+	// Determine message type based on sender
+	messageType := "incoming"
+	if isFromMe {
+		messageType = "outgoing"
+	}
+
+	// Create message with reaction emoji
+	msgReq := &CreateMessageRequest{
+		Content:     emoji,
+		MessageType: messageType,
+	}
+
+	// Add reply reference if we found the original message
+	if inReplyTo != nil {
+		msgReq.ContentAttributes = map[string]interface{}{
+			"in_reply_to":             *inReplyTo,
+			"in_reply_to_external_id": inReplyToExternalID,
+		}
+		logger.Debug().
+			Int("in_reply_to", *inReplyTo).
+			Str("in_reply_to_external_id", inReplyToExternalID).
+			Str("emoji", emoji).
+			Str("messageType", messageType).
+			Msg("Chatwoot: sending reaction with reply reference")
+	}
+
+	_, err = client.CreateMessage(ctx, conv.ID, msgReq)
+	if err != nil {
+		return fmt.Errorf("failed to send reaction to chatwoot: %w", err)
+	}
+
+	logger.Info().
+		Str("session", session.Name).
+		Str("chatJid", remoteJid).
+		Str("emoji", emoji).
+		Str("targetMsgId", targetMsgID).
+		Str("messageType", messageType).
+		Msg("Chatwoot: reaction sent successfully")
+
+	return nil
 }
 
 // ProcessReceipt handles message receipt (delivered/read) events
