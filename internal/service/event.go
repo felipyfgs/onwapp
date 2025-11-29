@@ -256,7 +256,7 @@ func (s *EventService) handleMessage(ctx context.Context, session *model.Session
 
 	// Regular message
 	msgType, content := s.extractMessageTypeAndContent(e.Message)
-	
+
 	// Skip unknown messages with no content
 	if msgType == "unknown" && content == "" {
 		return
@@ -598,7 +598,7 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 
 			// Determine message type and content
 			msgType, content := s.extractMessageTypeAndContent(webMsg.GetMessage())
-			
+
 			// Skip unknown messages with no content
 			if msgType == "unknown" && content == "" {
 				continue

@@ -18,13 +18,17 @@ import (
 	"zpwoot/internal/model"
 )
 
+// EventHandler is a function that handles WhatsApp events
+type EventHandler func(session *model.Session, evt interface{})
+
 type SessionService struct {
-	container      *sqlstore.Container
-	database       *db.Database
-	webhookService *WebhookService
-	eventService   *EventService
-	sessions       map[string]*model.Session
-	mu             sync.RWMutex
+	container        *sqlstore.Container
+	database         *db.Database
+	webhookService   *WebhookService
+	eventService     *EventService
+	sessions         map[string]*model.Session
+	mu               sync.RWMutex
+	externalHandlers []EventHandler
 }
 
 func NewSessionService(container *sqlstore.Container, database *db.Database, webhookService *WebhookService) *SessionService {
@@ -271,7 +275,16 @@ func (s *SessionService) startClientWithQR(session *model.Session) {
 func (s *SessionService) setupEventHandler(session *model.Session) {
 	session.Client.AddEventHandler(func(evt interface{}) {
 		s.eventService.HandleEvent(session, evt)
+		// Call external handlers (like Chatwoot)
+		for _, handler := range s.externalHandlers {
+			handler(session, evt)
+		}
 	})
+}
+
+// AddEventHandler registers an external event handler
+func (s *SessionService) AddEventHandler(handler EventHandler) {
+	s.externalHandlers = append(s.externalHandlers, handler)
 }
 
 func (s *SessionService) Logout(ctx context.Context, name string) error {

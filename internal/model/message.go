@@ -27,20 +27,20 @@ const (
 type MessageType string
 
 const (
-	MessageTypeText        MessageType = "text"
-	MessageTypeImage       MessageType = "image"
-	MessageTypeVideo       MessageType = "video"
-	MessageTypeAudio       MessageType = "audio"
-	MessageTypeDocument    MessageType = "document"
-	MessageTypeSticker     MessageType = "sticker"
-	MessageTypeLocation    MessageType = "location"
+	MessageTypeText         MessageType = "text"
+	MessageTypeImage        MessageType = "image"
+	MessageTypeVideo        MessageType = "video"
+	MessageTypeAudio        MessageType = "audio"
+	MessageTypeDocument     MessageType = "document"
+	MessageTypeSticker      MessageType = "sticker"
+	MessageTypeLocation     MessageType = "location"
 	MessageTypeLiveLocation MessageType = "live_location"
-	MessageTypeContact     MessageType = "contact"
-	MessageTypePoll        MessageType = "poll"
-	MessageTypeReaction    MessageType = "reaction"
-	MessageTypeInteractive MessageType = "interactive"
-	MessageTypeProtocol    MessageType = "protocol"
-	MessageTypeUnknown     MessageType = "unknown"
+	MessageTypeContact      MessageType = "contact"
+	MessageTypePoll         MessageType = "poll"
+	MessageTypeReaction     MessageType = "reaction"
+	MessageTypeInteractive  MessageType = "interactive"
+	MessageTypeProtocol     MessageType = "protocol"
+	MessageTypeUnknown      MessageType = "unknown"
 )
 
 // =============================================================================
@@ -76,9 +76,9 @@ type Message struct {
 	VerifiedName *string `json:"verifiedName,omitempty"` // Business verified name
 
 	// Message Classification
-	Type      string `json:"type"`               // text, image, video, audio, etc.
+	Type      string `json:"type"`                // text, image, video, audio, etc.
 	MediaType string `json:"mediaType,omitempty"` // ptt, image, video, document, etc.
-	Category  string `json:"category,omitempty"` // Message category
+	Category  string `json:"category,omitempty"`  // Message category
 
 	// Content
 	Content string `json:"content,omitempty"` // Text or caption

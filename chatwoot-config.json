@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "url": "https://chat.yourdomain.com",
+  "apiAccessToken": "45ZxbvnhsdDwqeGGCdtZoNoh",
+  "accountId": 1,
+  "inboxName": "mysession",
+  "signMsg": true,
+  "signDelimiter": "\n",
+  "reopenConversation": false,
+  "conversationPending": false,
+  "mergeBrazilContacts": true,
+  "importContacts": false,
+  "importMessages": false,
+  "daysLimitImportMessages": 0,
+  "ignoreJids": [],
+  "autoCreate": true
+}

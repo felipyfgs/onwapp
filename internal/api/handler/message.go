@@ -4,9 +4,9 @@ import (
 	"encoding/base64"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
-	"github.com/gin-gonic/gin"
 	"google.golang.org/protobuf/proto"
 
 	"zpwoot/internal/api/dto"

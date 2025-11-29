@@ -14,17 +14,25 @@ type Config struct {
 	LogLevel    string
 	LogFormat   string
 	APIKey      string
+	ServerURL   string
 }
 
 func Load() *Config {
 	_ = godotenv.Load() // ignore error, .env file is optional
 
+	port := getEnv("PORT", "3000")
+	serverURL := getEnv("SERVER_URL", "")
+	if serverURL == "" {
+		serverURL = fmt.Sprintf("http://localhost:%s", port)
+	}
+
 	return &Config{
 		DatabaseURL: getEnv("DATABASE_URL", "postgres://zpwoot:zpwoot123@localhost:5432/zpwoot?sslmode=disable"),
-		Port:        getEnv("PORT", "3000"),
+		Port:        port,
 		LogLevel:    getEnv("LOG_LEVEL", "info"),
 		LogFormat:   getEnv("LOG_FORMAT", "console"),
 		APIKey:      getEnv("API_KEY", ""),
+		ServerURL:   serverURL,
 	}
 }
 

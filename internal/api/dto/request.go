@@ -174,15 +174,15 @@ type SetPrivacyRequest struct {
 // Poll requests
 
 type SendPollRequest struct {
-	Phone          string   `json:"phone" binding:"required" example:"5511999999999"`
-	Name           string   `json:"name" binding:"required" example:"What's your favorite color?"`
-	Options        []string `json:"options" binding:"required" example:"Red,Blue,Green"`
+	Phone           string   `json:"phone" binding:"required" example:"5511999999999"`
+	Name            string   `json:"name" binding:"required" example:"What's your favorite color?"`
+	Options         []string `json:"options" binding:"required" example:"Red,Blue,Green"`
 	SelectableCount int      `json:"selectableCount" example:"1"`
 }
 
 type SendPollVoteRequest struct {
-	Phone          string   `json:"phone" binding:"required" example:"5511999999999"`
-	PollMessageID  string   `json:"pollMessageId" binding:"required" example:"ABCD1234"`
+	Phone           string   `json:"phone" binding:"required" example:"5511999999999"`
+	PollMessageID   string   `json:"pollMessageId" binding:"required" example:"ABCD1234"`
 	SelectedOptions []string `json:"selectedOptions" binding:"required" example:"Red"`
 }
 
@@ -196,8 +196,8 @@ type BlocklistRequest struct {
 // Disappearing messages requests
 
 type DisappearingRequest struct {
-	Phone   string `json:"phone" binding:"required" example:"5511999999999"`
-	Timer   string `json:"timer" binding:"required" example:"24h"` // 24h, 7d, 90d, or off
+	Phone string `json:"phone" binding:"required" example:"5511999999999"`
+	Timer string `json:"timer" binding:"required" example:"24h"` // 24h, 7d, 90d, or off
 }
 
 type DefaultDisappearingRequest struct {
@@ -292,11 +292,11 @@ type PairPhoneRequest struct {
 // Status/Story request
 
 type SendStatusRequest struct {
-	Text       string `json:"text" example:"My status update"`
-	Image      string `json:"image" example:"base64_encoded_image"`
-	Video      string `json:"video" example:"base64_encoded_video"`
-	Caption    string `json:"caption" example:"Status caption"`
-	MimeType   string `json:"mimetype" example:"image/jpeg"`
+	Text     string `json:"text" example:"My status update"`
+	Image    string `json:"image" example:"base64_encoded_image"`
+	Video    string `json:"video" example:"base64_encoded_video"`
+	Caption  string `json:"caption" example:"Status caption"`
+	MimeType string `json:"mimetype" example:"image/jpeg"`
 }
 
 // Community requests
@@ -357,10 +357,10 @@ type SendInteractiveRequest struct {
 // Template message requests
 
 type TemplateButtonDTO struct {
-	Index       uint32                  `json:"index" example:"0"`
-	QuickReply  *TemplateQuickReplyDTO  `json:"quickReply,omitempty"`
-	URLButton   *TemplateURLButtonDTO   `json:"urlButton,omitempty"`
-	CallButton  *TemplateCallButtonDTO  `json:"callButton,omitempty"`
+	Index      uint32                 `json:"index" example:"0"`
+	QuickReply *TemplateQuickReplyDTO `json:"quickReply,omitempty"`
+	URLButton  *TemplateURLButtonDTO  `json:"urlButton,omitempty"`
+	CallButton *TemplateCallButtonDTO `json:"callButton,omitempty"`
 }
 
 type TemplateQuickReplyDTO struct {

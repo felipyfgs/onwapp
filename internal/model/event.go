@@ -58,13 +58,13 @@ const (
 
 // Call events
 const (
-	EventCallOffer       EventType = "call.offer"
-	EventCallOfferNotice EventType = "call.offer_notice"
-	EventCallAccept      EventType = "call.accept"
-	EventCallPreAccept   EventType = "call.pre_accept"
-	EventCallReject      EventType = "call.reject"
-	EventCallTerminate   EventType = "call.terminate"
-	EventCallTransport   EventType = "call.transport"
+	EventCallOffer        EventType = "call.offer"
+	EventCallOfferNotice  EventType = "call.offer_notice"
+	EventCallAccept       EventType = "call.accept"
+	EventCallPreAccept    EventType = "call.pre_accept"
+	EventCallReject       EventType = "call.reject"
+	EventCallTerminate    EventType = "call.terminate"
+	EventCallTransport    EventType = "call.transport"
 	EventCallRelayLatency EventType = "call.relay_latency"
 )
 
