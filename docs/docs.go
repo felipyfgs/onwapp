@@ -845,14 +845,14 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Synchronize all contacts and messages to Chatwoot",
+                "description": "Start async synchronization of all contacts and messages to Chatwoot",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Chatwoot"
                 ],
-                "summary": "Full sync to Chatwoot",
+                "summary": "Full sync to Chatwoot (async)",
                 "parameters": [
                     {
                         "type": "string",
@@ -869,10 +869,10 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "202": {
+                        "description": "Accepted",
                         "schema": {
-                            "$ref": "#/definitions/chatwoot.SyncStats"
+                            "$ref": "#/definitions/chatwoot.SyncStatus"
                         }
                     },
                     "404": {
@@ -892,14 +892,14 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Synchronize contacts from message history to Chatwoot",
+                "description": "Start async synchronization of contacts from message history to Chatwoot",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Chatwoot"
                 ],
-                "summary": "Sync contacts to Chatwoot",
+                "summary": "Sync contacts to Chatwoot (async)",
                 "parameters": [
                     {
                         "type": "string",
@@ -910,10 +910,10 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "202": {
+                        "description": "Accepted",
                         "schema": {
-                            "$ref": "#/definitions/chatwoot.SyncStats"
+                            "$ref": "#/definitions/chatwoot.SyncStatus"
                         }
                     },
                     "404": {
@@ -933,14 +933,14 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Synchronize message history to Chatwoot",
+                "description": "Start async synchronization of message history to Chatwoot",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Chatwoot"
                 ],
-                "summary": "Sync messages to Chatwoot",
+                "summary": "Sync messages to Chatwoot (async)",
                 "parameters": [
                     {
                         "type": "string",
@@ -957,10 +957,51 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/chatwoot.SyncStatus"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{name}/chatwoot/sync/status": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get the current sync status for a session",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chatwoot"
+                ],
+                "summary": "Get sync status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/chatwoot.SyncStats"
+                            "$ref": "#/definitions/chatwoot.SyncStatus"
                         }
                     },
                     "404": {
@@ -5440,6 +5481,9 @@ const docTemplate = `{
         "chatwoot.SyncStats": {
             "type": "object",
             "properties": {
+                "completedAt": {
+                    "type": "string"
+                },
                 "contactsCreated": {
                     "type": "integer"
                 },
@@ -5460,6 +5504,36 @@ const docTemplate = `{
                 },
                 "messagesSkipped": {
                     "type": "integer"
+                },
+                "startedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "chatwoot.SyncStatus": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "inProgress": {
+                    "type": "boolean"
+                },
+                "sessionId": {
+                    "type": "string"
+                },
+                "startedAt": {
+                    "type": "string"
+                },
+                "stats": {
+                    "$ref": "#/definitions/chatwoot.SyncStats"
+                },
+                "type": {
+                    "description": "\"contacts\", \"messages\", \"all\"",
+                    "type": "string"
                 }
             }
         },

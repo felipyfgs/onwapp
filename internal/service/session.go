@@ -96,7 +96,7 @@ func (s *SessionService) LoadFromDatabase(ctx context.Context) error {
 
 		// Se a sessão tem credenciais válidas (deviceJID preenchido), reconecta automaticamente
 		// O device.ID será preenchido pelo whatsmeow se houver credenciais no sqlstore
-		if device.ID != nil {
+		if device != nil && device.ID != nil {
 			sessionsToReconnect = append(sessionsToReconnect, session)
 			logger.Info().Str("session", rec.Name).Msg("Session has valid credentials, will auto-reconnect")
 		}

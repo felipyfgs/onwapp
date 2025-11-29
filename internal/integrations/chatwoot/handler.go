@@ -148,6 +148,19 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 		return
 	}
 
+	// Check if session is connected - if not, silently ignore (don't cause Chatwoot retry loop)
+	isConnected := session.Status == model.StatusConnected
+	logger.Info().
+		Str("session", sessionName).
+		Str("status", string(session.Status)).
+		Bool("isConnected", isConnected).
+		Msg("Chatwoot webhook check")
+	
+	if !isConnected {
+		c.JSON(http.StatusOK, gin.H{"message": "session not connected, ignored"})
+		return
+	}
+
 	// Read raw body
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
@@ -347,12 +360,12 @@ func downloadMedia(url string) ([]byte, string, error) {
 }
 
 // SyncContacts handles POST /sessions/:name/chatwoot/sync/contacts
-// @Summary Sync contacts to Chatwoot
-// @Description Synchronize contacts from message history to Chatwoot
+// @Summary Sync contacts to Chatwoot (async)
+// @Description Start async synchronization of contacts from message history to Chatwoot
 // @Tags Chatwoot
 // @Produce json
 // @Param name path string true "Session name"
-// @Success 200 {object} SyncStats
+// @Success 202 {object} SyncStatus
 // @Failure 404 {object} map[string]interface{}
 // @Security ApiKeyAuth
 // @Router /sessions/{name}/chatwoot/sync/contacts [post]
@@ -380,24 +393,24 @@ func (h *Handler) SyncContacts(c *gin.Context) {
 		fmt.Sscanf(days, "%d", &daysLimit)
 	}
 
-	// Run sync
-	stats, err := syncSvc.SyncContacts(c.Request.Context(), daysLimit)
+	// Start async sync
+	status, err := syncSvc.StartSyncAsync("contacts", daysLimit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusConflict, gin.H{"error": err.Error(), "status": status})
 		return
 	}
 
-	c.JSON(http.StatusOK, stats)
+	c.JSON(http.StatusAccepted, status)
 }
 
 // SyncMessages handles POST /sessions/:name/chatwoot/sync/messages
-// @Summary Sync messages to Chatwoot
-// @Description Synchronize message history to Chatwoot
+// @Summary Sync messages to Chatwoot (async)
+// @Description Start async synchronization of message history to Chatwoot
 // @Tags Chatwoot
 // @Produce json
 // @Param name path string true "Session name"
 // @Param days query int false "Limit to last N days"
-// @Success 200 {object} SyncStats
+// @Success 202 {object} SyncStatus
 // @Failure 404 {object} map[string]interface{}
 // @Security ApiKeyAuth
 // @Router /sessions/{name}/chatwoot/sync/messages [post]
@@ -425,24 +438,24 @@ func (h *Handler) SyncMessages(c *gin.Context) {
 		fmt.Sscanf(days, "%d", &daysLimit)
 	}
 
-	// Run sync
-	stats, err := syncSvc.SyncMessages(c.Request.Context(), daysLimit)
+	// Start async sync
+	status, err := syncSvc.StartSyncAsync("messages", daysLimit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusConflict, gin.H{"error": err.Error(), "status": status})
 		return
 	}
 
-	c.JSON(http.StatusOK, stats)
+	c.JSON(http.StatusAccepted, status)
 }
 
 // SyncAll handles POST /sessions/:name/chatwoot/sync
-// @Summary Full sync to Chatwoot
-// @Description Synchronize all contacts and messages to Chatwoot
+// @Summary Full sync to Chatwoot (async)
+// @Description Start async synchronization of all contacts and messages to Chatwoot
 // @Tags Chatwoot
 // @Produce json
 // @Param name path string true "Session name"
 // @Param days query int false "Limit to last N days"
-// @Success 200 {object} SyncStats
+// @Success 202 {object} SyncStatus
 // @Failure 404 {object} map[string]interface{}
 // @Security ApiKeyAuth
 // @Router /sessions/{name}/chatwoot/sync [post]
@@ -470,14 +483,36 @@ func (h *Handler) SyncAll(c *gin.Context) {
 		fmt.Sscanf(days, "%d", &daysLimit)
 	}
 
-	// Run full sync
-	stats, err := syncSvc.SyncAll(c.Request.Context(), daysLimit)
+	// Start async sync
+	status, err := syncSvc.StartSyncAsync("all", daysLimit)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusConflict, gin.H{"error": err.Error(), "status": status})
 		return
 	}
 
-	c.JSON(http.StatusOK, stats)
+	c.JSON(http.StatusAccepted, status)
+}
+
+// GetSyncStatus handles GET /sessions/:name/chatwoot/sync/status
+// @Summary Get sync status
+// @Description Get the current sync status for a session
+// @Tags Chatwoot
+// @Produce json
+// @Param name path string true "Session name"
+// @Success 200 {object} SyncStatus
+// @Failure 404 {object} map[string]interface{}
+// @Security ApiKeyAuth
+// @Router /sessions/{name}/chatwoot/sync/status [get]
+func (h *Handler) GetSyncStatusHandler(c *gin.Context) {
+	sessionName := c.Param("name")
+	session, err := h.sessionService.Get(sessionName)
+	if err != nil || session == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
+		return
+	}
+
+	status := GetSyncStatus(session.ID)
+	c.JSON(http.StatusOK, status)
 }
 
 // handleMessageDeleted handles message deletion from Chatwoot

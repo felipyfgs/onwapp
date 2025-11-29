@@ -85,6 +85,8 @@ definitions:
     type: object
   chatwoot.SyncStats:
     properties:
+      completedAt:
+        type: string
       contactsCreated:
         type: integer
       contactsSkipped:
@@ -99,6 +101,26 @@ definitions:
         type: integer
       messagesSkipped:
         type: integer
+      startedAt:
+        type: string
+      status:
+        type: string
+    type: object
+  chatwoot.SyncStatus:
+    properties:
+      error:
+        type: string
+      inProgress:
+        type: boolean
+      sessionId:
+        type: string
+      startedAt:
+        type: string
+      stats:
+        $ref: '#/definitions/chatwoot.SyncStats'
+      type:
+        description: '"contacts", "messages", "all"'
+        type: string
     type: object
   dto.ArchiveChatRequest:
     properties:
@@ -1765,7 +1787,7 @@ paths:
       - Chatwoot
   /sessions/{name}/chatwoot/sync:
     post:
-      description: Synchronize all contacts and messages to Chatwoot
+      description: Start async synchronization of all contacts and messages to Chatwoot
       parameters:
       - description: Session name
         in: path
@@ -1779,10 +1801,10 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "202":
+          description: Accepted
           schema:
-            $ref: '#/definitions/chatwoot.SyncStats'
+            $ref: '#/definitions/chatwoot.SyncStatus'
         "404":
           description: Not Found
           schema:
@@ -1790,12 +1812,13 @@ paths:
             type: object
       security:
       - ApiKeyAuth: []
-      summary: Full sync to Chatwoot
+      summary: Full sync to Chatwoot (async)
       tags:
       - Chatwoot
   /sessions/{name}/chatwoot/sync/contacts:
     post:
-      description: Synchronize contacts from message history to Chatwoot
+      description: Start async synchronization of contacts from message history to
+        Chatwoot
       parameters:
       - description: Session name
         in: path
@@ -1805,10 +1828,10 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "202":
+          description: Accepted
           schema:
-            $ref: '#/definitions/chatwoot.SyncStats'
+            $ref: '#/definitions/chatwoot.SyncStatus'
         "404":
           description: Not Found
           schema:
@@ -1816,12 +1839,12 @@ paths:
             type: object
       security:
       - ApiKeyAuth: []
-      summary: Sync contacts to Chatwoot
+      summary: Sync contacts to Chatwoot (async)
       tags:
       - Chatwoot
   /sessions/{name}/chatwoot/sync/messages:
     post:
-      description: Synchronize message history to Chatwoot
+      description: Start async synchronization of message history to Chatwoot
       parameters:
       - description: Session name
         in: path
@@ -1835,10 +1858,10 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "202":
+          description: Accepted
           schema:
-            $ref: '#/definitions/chatwoot.SyncStats'
+            $ref: '#/definitions/chatwoot.SyncStatus'
         "404":
           description: Not Found
           schema:
@@ -1846,7 +1869,33 @@ paths:
             type: object
       security:
       - ApiKeyAuth: []
-      summary: Sync messages to Chatwoot
+      summary: Sync messages to Chatwoot (async)
+      tags:
+      - Chatwoot
+  /sessions/{name}/chatwoot/sync/status:
+    get:
+      description: Get the current sync status for a session
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/chatwoot.SyncStatus'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get sync status
       tags:
       - Chatwoot
   /sessions/{name}/communities/{communityId}/groups:

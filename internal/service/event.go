@@ -221,6 +221,22 @@ func (s *EventService) handleLoggedOut(ctx context.Context, session *model.Sessi
 		Str("reason", e.Reason.String()).
 		Msg("Session logged out")
 
+	// Clear device credentials so next connect will show QR code
+	if session.Client != nil {
+		session.Client.Disconnect()
+		if session.Client.Store != nil {
+			// Delete device from store to force new QR login
+			if err := session.Client.Store.Delete(ctx); err != nil {
+				logger.Warn().Err(err).Str("session", session.Name).Msg("Failed to delete device store")
+			}
+		}
+	}
+
+	// Clear device JID in database
+	if err := s.database.Sessions.UpdateJID(ctx, session.Name, "", ""); err != nil {
+		logger.Warn().Err(err).Str("session", session.Name).Msg("Failed to clear device JID")
+	}
+
 	if err := s.database.Sessions.UpdateStatus(ctx, session.Name, "disconnected"); err != nil {
 		logger.Warn().Err(err).Str("session", session.Name).Msg("Failed to update session status")
 	}

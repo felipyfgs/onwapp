@@ -57,6 +57,16 @@ func (s *Service) handleMessageCreated(ctx context.Context, sessionID string, cf
 		return nil
 	}
 
+	// Skip messages with WAID: source_id - these are imported from WhatsApp, not user-created
+	if payload.SourceID != "" && strings.HasPrefix(payload.SourceID, "WAID:") {
+		logger.Debug().
+			Str("sourceId", payload.SourceID).
+			Int("msgId", payload.ID).
+			Msg("Chatwoot: skipping imported message (has WAID source_id)")
+		return nil
+	}
+
+	// Also check in conversation messages list
 	if payload.Conversation != nil && len(payload.Conversation.Messages) > 0 {
 		for _, msg := range payload.Conversation.Messages {
 			if msg.SourceID != "" && strings.HasPrefix(msg.SourceID, "WAID:") && msg.ID == payload.ID {
@@ -113,6 +123,16 @@ func (s *Service) GetWebhookDataForSending(ctx context.Context, sessionID string
 		return "", "", nil, nil
 	}
 
+	// Skip messages with WAID: source_id - these are imported from WhatsApp
+	if payload.SourceID != "" && strings.HasPrefix(payload.SourceID, "WAID:") {
+		logger.Debug().
+			Str("sourceId", payload.SourceID).
+			Int("msgId", payload.ID).
+			Msg("Chatwoot: skipping imported message in GetWebhookDataForSending")
+		return "", "", nil, nil
+	}
+
+	// Also check in conversation messages list
 	if payload.Conversation != nil && len(payload.Conversation.Messages) > 0 {
 		for _, msg := range payload.Conversation.Messages {
 			if strings.HasPrefix(msg.SourceID, "WAID:") && msg.ID == payload.ID {

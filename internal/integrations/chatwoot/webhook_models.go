@@ -9,6 +9,7 @@ type WebhookPayload struct {
 	ContentType  string                 `json:"content_type,omitempty"`
 	ContentAttrs map[string]interface{} `json:"content_attributes,omitempty"`
 	Private      bool                   `json:"private,omitempty"`
+	SourceID     string                 `json:"source_id,omitempty"`
 	Conversation *WebhookConversation   `json:"conversation,omitempty"`
 	Sender       *Sender                `json:"sender,omitempty"`
 	Inbox        *Inbox                 `json:"inbox,omitempty"`

@@ -23,8 +23,14 @@ type Config struct {
 	IgnoreChats   []string   `json:"ignoreChats,omitempty"`
 	AutoInbox     bool       `json:"autoInbox"`
 	WebhookURL    string     `json:"webhookUrl,omitempty"`
-	CreatedAt     *time.Time `json:"createdAt,omitempty"`
-	UpdatedAt     *time.Time `json:"updatedAt,omitempty"`
+	// Chatwoot PostgreSQL connection for direct import (preserves timestamps)
+	ChatwootDBHost string     `json:"chatwootDbHost,omitempty"`
+	ChatwootDBPort int        `json:"chatwootDbPort,omitempty"`
+	ChatwootDBUser string     `json:"chatwootDbUser,omitempty"`
+	ChatwootDBPass string     `json:"chatwootDbPass,omitempty"`
+	ChatwootDBName string     `json:"chatwootDbName,omitempty"`
+	CreatedAt      *time.Time `json:"createdAt,omitempty"`
+	UpdatedAt      *time.Time `json:"updatedAt,omitempty"`
 }
 
 // Contact represents a Chatwoot contact

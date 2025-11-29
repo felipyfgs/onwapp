@@ -3,6 +3,7 @@ package chatwoot
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"zpwoot/internal/logger"
@@ -26,13 +27,60 @@ type MessageRepository interface {
 
 // SyncStats holds statistics from a sync operation
 type SyncStats struct {
-	ContactsCreated   int `json:"contactsCreated"`
-	ContactsUpdated   int `json:"contactsUpdated"`
-	ContactsSkipped   int `json:"contactsSkipped"`
-	MessagesImported  int `json:"messagesImported"`
-	MessagesSkipped   int `json:"messagesSkipped"`
-	ConversationsUsed int `json:"conversationsUsed"`
-	Errors            int `json:"errors"`
+	ContactsCreated   int    `json:"contactsCreated"`
+	ContactsUpdated   int    `json:"contactsUpdated"`
+	ContactsSkipped   int    `json:"contactsSkipped"`
+	MessagesImported  int    `json:"messagesImported"`
+	MessagesSkipped   int    `json:"messagesSkipped"`
+	ConversationsUsed int    `json:"conversationsUsed"`
+	Errors            int    `json:"errors"`
+	Status            string `json:"status,omitempty"`
+	StartedAt         string `json:"startedAt,omitempty"`
+	CompletedAt       string `json:"completedAt,omitempty"`
+}
+
+// SyncStatus represents the current sync status for a session
+type SyncStatus struct {
+	SessionID  string     `json:"sessionId"`
+	InProgress bool       `json:"inProgress"`
+	Type       string     `json:"type,omitempty"` // "contacts", "messages", "all"
+	Stats      *SyncStats `json:"stats,omitempty"`
+	StartedAt  string     `json:"startedAt,omitempty"`
+	Error      string     `json:"error,omitempty"`
+}
+
+// Global sync status map (in production, use Redis or similar)
+var (
+	syncStatusMap   = make(map[string]*SyncStatus)
+	syncStatusMutex = &sync.Mutex{}
+)
+
+// GetSyncStatus returns the current sync status for a session
+func GetSyncStatus(sessionID string) *SyncStatus {
+	syncStatusMutex.Lock()
+	defer syncStatusMutex.Unlock()
+	
+	if status, ok := syncStatusMap[sessionID]; ok {
+		return status
+	}
+	return &SyncStatus{
+		SessionID:  sessionID,
+		InProgress: false,
+	}
+}
+
+// setSyncStatus updates the sync status for a session
+func setSyncStatus(sessionID string, status *SyncStatus) {
+	syncStatusMutex.Lock()
+	defer syncStatusMutex.Unlock()
+	syncStatusMap[sessionID] = status
+}
+
+// clearSyncStatus removes the sync status for a session
+func clearSyncStatus(sessionID string) {
+	syncStatusMutex.Lock()
+	defer syncStatusMutex.Unlock()
+	delete(syncStatusMap, sessionID)
 }
 
 // NewSyncService creates a new sync service
@@ -286,16 +334,10 @@ func (s *SyncService) SyncMessages(ctx context.Context, daysLimit int) (*SyncSta
 }
 
 // importMessage imports a single message to Chatwoot
-// IMPORTANT: Only imports INCOMING messages to avoid re-sending to WhatsApp
-// Outgoing messages are skipped because creating them in Chatwoot would trigger
-// the webhook and try to send them to WhatsApp again
+// Imports both incoming and outgoing messages to maintain conversation history
+// Note: Creating messages via API does NOT trigger Chatwoot webhooks back to us
+// The webhook is only triggered when a user sends a message from the Chatwoot UI
 func (s *SyncService) importMessage(ctx context.Context, conversationID int, msg *model.Message) error {
-	// SKIP outgoing messages - importing them would trigger Chatwoot webhook
-	// which would try to send them to WhatsApp again!
-	if msg.FromMe {
-		return nil
-	}
-
 	// Get content
 	content := msg.Content
 	if content == "" {
@@ -306,11 +348,21 @@ func (s *SyncService) importMessage(ctx context.Context, conversationID int, msg
 		}
 	}
 
-	// Create message in Chatwoot as INCOMING only
+	// Determine message type
+	messageType := "incoming"
+	if msg.FromMe {
+		messageType = "outgoing"
+	}
+
+	// Create source ID to identify imported messages (prevents webhook from re-sending to WhatsApp)
+	sourceID := fmt.Sprintf("WAID:%s", msg.MsgId)
+
+	// Create message in Chatwoot with source_id
 	req := &CreateMessageRequest{
 		Content:     content,
-		MessageType: "incoming",
+		MessageType: messageType,
 		Private:     false,
+		SourceID:    sourceID,
 	}
 	cwMsg, err := s.client.CreateMessage(ctx, conversationID, req)
 	if err != nil {
@@ -318,7 +370,6 @@ func (s *SyncService) importMessage(ctx context.Context, conversationID int, msg
 	}
 
 	// Update our database with Chatwoot IDs
-	sourceID := fmt.Sprintf("WAID:%s", msg.MsgId)
 	if err := s.msgRepo.UpdateCwFields(ctx, s.sessionID, msg.MsgId, cwMsg.ID, conversationID, sourceID); err != nil {
 		logger.Debug().Err(err).
 			Str("msgId", msg.MsgId).
@@ -405,4 +456,79 @@ func sortMessagesByTimestamp(messages []model.Message) {
 			}
 		}
 	}
+}
+
+// StartSyncAsync starts a sync operation in the background
+// Returns immediately with status "started"
+func (s *SyncService) StartSyncAsync(syncType string, daysLimit int) (*SyncStatus, error) {
+	// Check if sync is already in progress
+	currentStatus := GetSyncStatus(s.sessionID)
+	if currentStatus.InProgress {
+		return currentStatus, fmt.Errorf("sync already in progress")
+	}
+
+	// Set initial status
+	startTime := time.Now().Format(time.RFC3339)
+	status := &SyncStatus{
+		SessionID:  s.sessionID,
+		InProgress: true,
+		Type:       syncType,
+		StartedAt:  startTime,
+		Stats: &SyncStats{
+			Status:    "running",
+			StartedAt: startTime,
+		},
+	}
+	setSyncStatus(s.sessionID, status)
+
+	// Run sync in background
+	go func() {
+		ctx := context.Background()
+		var stats *SyncStats
+		var err error
+
+		switch syncType {
+		case "contacts":
+			stats, err = s.SyncContacts(ctx, daysLimit)
+		case "messages":
+			stats, err = s.SyncMessages(ctx, daysLimit)
+		default: // "all"
+			stats, err = s.SyncAll(ctx, daysLimit)
+		}
+
+		// Update final status
+		completedTime := time.Now().Format(time.RFC3339)
+		finalStatus := &SyncStatus{
+			SessionID:  s.sessionID,
+			InProgress: false,
+			Type:       syncType,
+			StartedAt:  startTime,
+		}
+
+		if err != nil {
+			finalStatus.Error = err.Error()
+			if stats != nil {
+				stats.Status = "failed"
+				stats.CompletedAt = completedTime
+				finalStatus.Stats = stats
+			}
+		} else {
+			stats.Status = "completed"
+			stats.CompletedAt = completedTime
+			stats.StartedAt = startTime
+			finalStatus.Stats = stats
+		}
+
+		setSyncStatus(s.sessionID, finalStatus)
+
+		logger.Info().
+			Str("sessionId", s.sessionID).
+			Str("type", syncType).
+			Str("status", stats.Status).
+			Int("messagesImported", stats.MessagesImported).
+			Int("contactsCreated", stats.ContactsCreated).
+			Msg("Chatwoot: async sync completed")
+	}()
+
+	return status, nil
 }
