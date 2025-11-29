@@ -46,12 +46,22 @@ func (c *Client) buildURL(endpoint string) string {
 
 func (c *Client) doRequest(ctx context.Context, method, endpoint string, body interface{}) ([]byte, error) {
 	var bodyReader io.Reader
+	var jsonData []byte
 	if body != nil {
-		jsonData, err := json.Marshal(body)
+		var err error
+		jsonData, err = json.Marshal(body)
 		if err != nil {
 			return nil, fmt.Errorf("failed to marshal request body: %w", err)
 		}
 		bodyReader = bytes.NewReader(jsonData)
+		
+		// Log request body for debugging
+		if method == http.MethodPost && len(jsonData) > 0 {
+			logger.Debug().
+				Str("endpoint", endpoint).
+				Str("body", string(jsonData)).
+				Msg("Chatwoot API request")
+		}
 	}
 
 	req, err := http.NewRequestWithContext(ctx, method, c.buildURL(endpoint), bodyReader)

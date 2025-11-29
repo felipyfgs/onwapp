@@ -197,6 +197,19 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 		SourceID:    sourceID,
 	}
 
+	// Check if this is a reply/quote message and add in_reply_to
+	if replyInfo := s.extractReplyInfo(ctx, session.ID, evt); replyInfo != nil {
+		msgReq.ContentAttributes = map[string]interface{}{
+			"in_reply_to":             replyInfo.ChatwootMessageID,
+			"in_reply_to_external_id": replyInfo.WhatsAppMessageID,
+		}
+		logger.Info().
+			Int("in_reply_to", replyInfo.ChatwootMessageID).
+			Str("in_reply_to_external_id", replyInfo.WhatsAppMessageID).
+			Interface("content_attributes", msgReq.ContentAttributes).
+			Msg("Chatwoot: sending message with reply reference (WA->CW)")
+	}
+
 	cwMsg, err := client.CreateMessage(ctx, conv.ID, msgReq)
 	if err != nil {
 		return fmt.Errorf("failed to create message in chatwoot: %w", err)
@@ -446,6 +459,115 @@ func (s *Service) extractMessageContent(evt *events.Message) string {
 	}
 
 	return ""
+}
+
+// ReplyInfo holds information about a reply reference for Chatwoot
+type ReplyInfo struct {
+	ChatwootMessageID  int    // Chatwoot message ID to reply to
+	WhatsAppMessageID  string // Original WhatsApp message ID (stanzaId)
+}
+
+// extractReplyInfo extracts reply/quote information from a WhatsApp message
+func (s *Service) extractReplyInfo(ctx context.Context, sessionID string, evt *events.Message) *ReplyInfo {
+	if s.database == nil {
+		return nil
+	}
+
+	msg := evt.Message
+	if msg == nil {
+		return nil
+	}
+
+	// Extract stanzaId from ContextInfo - check various message types
+	var stanzaID string
+
+	// Check ExtendedTextMessage (most common for text replies)
+	if ext := msg.GetExtendedTextMessage(); ext != nil {
+		if ctx := ext.GetContextInfo(); ctx != nil {
+			stanzaID = ctx.GetStanzaID()
+		}
+	}
+
+	// Check ImageMessage
+	if stanzaID == "" {
+		if img := msg.GetImageMessage(); img != nil {
+			if ctx := img.GetContextInfo(); ctx != nil {
+				stanzaID = ctx.GetStanzaID()
+			}
+		}
+	}
+
+	// Check VideoMessage
+	if stanzaID == "" {
+		if vid := msg.GetVideoMessage(); vid != nil {
+			if ctx := vid.GetContextInfo(); ctx != nil {
+				stanzaID = ctx.GetStanzaID()
+			}
+		}
+	}
+
+	// Check AudioMessage
+	if stanzaID == "" {
+		if aud := msg.GetAudioMessage(); aud != nil {
+			if ctx := aud.GetContextInfo(); ctx != nil {
+				stanzaID = ctx.GetStanzaID()
+			}
+		}
+	}
+
+	// Check DocumentMessage
+	if stanzaID == "" {
+		if doc := msg.GetDocumentMessage(); doc != nil {
+			if ctx := doc.GetContextInfo(); ctx != nil {
+				stanzaID = ctx.GetStanzaID()
+			}
+		}
+	}
+
+	// Check StickerMessage
+	if stanzaID == "" {
+		if stk := msg.GetStickerMessage(); stk != nil {
+			if ctx := stk.GetContextInfo(); ctx != nil {
+				stanzaID = ctx.GetStanzaID()
+			}
+		}
+	}
+
+	if stanzaID == "" {
+		return nil // Not a reply message
+	}
+
+	logger.Debug().
+		Str("stanzaId", stanzaID).
+		Str("sessionId", sessionID).
+		Msg("Chatwoot: found reply stanzaId, looking up original message")
+
+	// Find original message by WhatsApp message ID
+	originalMsg, err := s.database.Messages.GetByMessageID(ctx, sessionID, stanzaID)
+	if err != nil {
+		logger.Warn().Err(err).Str("stanzaId", stanzaID).Msg("Chatwoot: error looking up original message")
+		return nil
+	}
+	if originalMsg == nil {
+		logger.Debug().Str("stanzaId", stanzaID).Msg("Chatwoot: original message not found in database")
+		return nil
+	}
+
+	// Check if original message has Chatwoot message ID
+	if originalMsg.ChatwootMessageID == nil || *originalMsg.ChatwootMessageID == 0 {
+		logger.Debug().Str("stanzaId", stanzaID).Msg("Chatwoot: original message has no Chatwoot message ID")
+		return nil
+	}
+
+	logger.Info().
+		Str("stanzaId", stanzaID).
+		Int("chatwootMessageId", *originalMsg.ChatwootMessageID).
+		Msg("Chatwoot: found original message for reply")
+
+	return &ReplyInfo{
+		ChatwootMessageID:  *originalMsg.ChatwootMessageID,
+		WhatsAppMessageID:  stanzaID,
+	}
 }
 
 func (s *Service) convertMarkdown(content string) string {

@@ -1,11 +1,15 @@
 package chatwoot
 
 import (
+	"context"
+	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
+	"zpwoot/internal/db"
 	"zpwoot/internal/logger"
 	"zpwoot/internal/model"
 	"zpwoot/internal/service"
@@ -16,14 +20,16 @@ type Handler struct {
 	service        *Service
 	sessionService *service.SessionService
 	whatsappSvc    *service.WhatsAppService
+	database       *db.Database
 }
 
 // NewHandler creates a new Chatwoot handler
-func NewHandler(svc *Service, sessionSvc *service.SessionService, whatsappSvc *service.WhatsAppService) *Handler {
+func NewHandler(svc *Service, sessionSvc *service.SessionService, whatsappSvc *service.WhatsAppService, database *db.Database) *Handler {
 	return &Handler{
 		service:        svc,
 		sessionService: sessionSvc,
 		whatsappSvc:    whatsappSvc,
+		database:       database,
 	}
 }
 
@@ -176,9 +182,15 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 		// Check if this is a reply to another message
 		quotedMsg := h.service.GetQuotedMessage(c.Request.Context(), session.ID, payload)
 
+		// Get conversation ID for saving message
+		var conversationID int
+		if payload.Conversation != nil {
+			conversationID = payload.Conversation.ID
+		}
+
 		if chatJid != "" && (content != "" || len(attachments) > 0) {
-			// Send message to WhatsApp
-			if err := h.sendToWhatsApp(c, session, chatJid, content, attachments, quotedMsg); err != nil {
+			// Send message to WhatsApp and save to database
+			if err := h.sendToWhatsApp(c, session, chatJid, content, attachments, quotedMsg, payload.ID, conversationID); err != nil {
 				logger.Error().Err(err).
 					Str("session", sessionName).
 					Str("chatJid", chatJid).
@@ -190,7 +202,7 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "ok"})
 }
 
-func (h *Handler) sendToWhatsApp(c *gin.Context, session *model.Session, chatJid, content string, attachments []Attachment, quotedMsg *QuotedMessageInfo) error {
+func (h *Handler) sendToWhatsApp(c *gin.Context, session *model.Session, chatJid, content string, attachments []Attachment, quotedMsg *QuotedMessageInfo, chatwootMsgID, chatwootConvID int) error {
 	ctx := c.Request.Context()
 
 	// Extract phone number from JID
@@ -225,30 +237,38 @@ func (h *Handler) sendToWhatsApp(c *gin.Context, session *model.Session, chatJid
 			mediaType := GetMediaType(att.DataURL)
 			switch mediaType {
 			case "image":
-				_, err := h.whatsappSvc.SendImage(ctx, session.Name, phone, mediaData, content, mimeType)
+				resp, err := h.whatsappSvc.SendImage(ctx, session.Name, phone, mediaData, content, mimeType)
 				if err != nil {
 					logger.Warn().Err(err).Str("url", att.DataURL).Msg("Failed to send image")
+				} else {
+					h.saveOutgoingMessage(ctx, session, chatJid, content, resp.ID, chatwootMsgID, chatwootConvID)
 				}
 				content = "" // Don't send caption again
 			case "video":
-				_, err := h.whatsappSvc.SendVideo(ctx, session.Name, phone, mediaData, content, mimeType)
+				resp, err := h.whatsappSvc.SendVideo(ctx, session.Name, phone, mediaData, content, mimeType)
 				if err != nil {
 					logger.Warn().Err(err).Str("url", att.DataURL).Msg("Failed to send video")
+				} else {
+					h.saveOutgoingMessage(ctx, session, chatJid, content, resp.ID, chatwootMsgID, chatwootConvID)
 				}
 				content = ""
 			case "audio":
-				_, err := h.whatsappSvc.SendAudio(ctx, session.Name, phone, mediaData, mimeType, false)
+				resp, err := h.whatsappSvc.SendAudio(ctx, session.Name, phone, mediaData, mimeType, false)
 				if err != nil {
 					logger.Warn().Err(err).Str("url", att.DataURL).Msg("Failed to send audio")
+				} else {
+					h.saveOutgoingMessage(ctx, session, chatJid, "", resp.ID, chatwootMsgID, chatwootConvID)
 				}
 			default:
 				filename := att.Extension
 				if filename == "" {
 					filename = "document"
 				}
-				_, err := h.whatsappSvc.SendDocument(ctx, session.Name, phone, mediaData, filename, mimeType)
+				resp, err := h.whatsappSvc.SendDocument(ctx, session.Name, phone, mediaData, filename, mimeType)
 				if err != nil {
 					logger.Warn().Err(err).Str("url", att.DataURL).Msg("Failed to send document")
+				} else {
+					h.saveOutgoingMessage(ctx, session, chatJid, content, resp.ID, chatwootMsgID, chatwootConvID)
 				}
 				content = ""
 			}
@@ -258,13 +278,58 @@ func (h *Handler) sendToWhatsApp(c *gin.Context, session *model.Session, chatJid
 	// Send text message if there's content left
 	if content != "" {
 		// Use SendTextWithQuote if we have a quoted message
-		_, err := h.whatsappSvc.SendTextWithQuote(ctx, session.Name, phone, content, quoted)
+		resp, err := h.whatsappSvc.SendTextWithQuote(ctx, session.Name, phone, content, quoted)
 		if err != nil {
 			return err
 		}
+		// Save message to database for reply tracking
+		h.saveOutgoingMessage(ctx, session, chatJid, content, resp.ID, chatwootMsgID, chatwootConvID)
 	}
 
 	return nil
+}
+
+// saveOutgoingMessage saves a message sent from Chatwoot to database for reply tracking
+func (h *Handler) saveOutgoingMessage(ctx context.Context, session *model.Session, chatJid, content, messageID string, chatwootMsgID, chatwootConvID int) {
+	if h.database == nil {
+		return
+	}
+
+	sourceID := fmt.Sprintf("WAID:%s", messageID)
+	
+	// Get sender JID from device
+	var senderJID string
+	if session.Device != nil && session.Device.ID != nil {
+		senderJID = session.Device.ID.String()
+	}
+	
+	msg := &model.Message{
+		SessionID:              session.ID,
+		MessageID:              messageID,
+		ChatJID:                chatJid,
+		SenderJID:              senderJID, // From us
+		Timestamp:              time.Now(),
+		Type:                   "text",
+		Content:                content,
+		IsFromMe:               true,
+		IsGroup:                false,
+		Status:                 model.MessageStatusSent,
+		ChatwootMessageID:      &chatwootMsgID,
+		ChatwootConversationID: &chatwootConvID,
+		ChatwootSourceID:       sourceID,
+	}
+
+	if _, err := h.database.Messages.Save(ctx, msg); err != nil {
+		logger.Warn().Err(err).
+			Str("messageId", messageID).
+			Int("chatwootMsgId", chatwootMsgID).
+			Msg("Chatwoot: failed to save outgoing message")
+	} else {
+		logger.Debug().
+			Str("messageId", messageID).
+			Int("chatwootMsgId", chatwootMsgID).
+			Msg("Chatwoot: saved outgoing message for reply tracking")
+	}
 }
 
 func downloadMedia(url string) ([]byte, string, error) {
