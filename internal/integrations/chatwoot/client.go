@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/textproto"
 	"net/url"
-	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -554,18 +553,9 @@ func (c *Client) GetOrCreateConversation(ctx context.Context, contactID, inboxID
 }
 
 // GetMediaType returns the media type based on file extension
+// Deprecated: Use GetMediaTypeFromFilename instead
 func GetMediaType(filename string) string {
-	ext := strings.ToLower(path.Ext(filename))
-	switch ext {
-	case ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp":
-		return "image"
-	case ".mp4", ".mov", ".avi", ".mkv", ".webm":
-		return "video"
-	case ".mp3", ".wav", ".ogg", ".aac", ".m4a":
-		return "audio"
-	default:
-		return "file"
-	}
+	return GetMediaTypeFromFilename(filename)
 }
 
 // UpdateLastSeen marks a conversation as read/seen in Chatwoot using the public API

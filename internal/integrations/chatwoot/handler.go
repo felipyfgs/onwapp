@@ -206,8 +206,7 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 func (h *Handler) sendToWhatsApp(c *gin.Context, session *model.Session, chatJid, content string, attachments []Attachment, quotedMsg *QuotedMessageInfo, chatwootMsgID, chatwootConvID int) error {
 	ctx := c.Request.Context()
 
-	// Extract phone number from JID
-	phone := extractPhone(chatJid)
+	phone := ExtractPhoneFromJID(chatJid)
 
 	// Convert QuotedMessageInfo to service.QuotedMessage
 	var quoted *service.QuotedMessage
@@ -224,14 +223,13 @@ func (h *Handler) sendToWhatsApp(c *gin.Context, session *model.Session, chatJid
 	// Send attachments first (with quote support)
 	for _, att := range attachments {
 		if att.DataURL != "" {
-			// Download attachment from URL
 			mediaData, mimeType, err := downloadMedia(att.DataURL)
 			if err != nil {
 				logger.Warn().Err(err).Str("url", att.DataURL).Msg("Failed to download attachment")
 				continue
 			}
 
-			mediaType := GetMediaType(att.DataURL)
+			mediaType := GetMediaTypeFromURL(att.DataURL)
 			switch mediaType {
 			case "image":
 				resp, err := h.whatsappSvc.SendImageWithQuote(ctx, session.Name, phone, mediaData, content, mimeType, quoted)
@@ -343,17 +341,6 @@ func downloadMedia(url string) ([]byte, string, error) {
 	}
 
 	return data, mimeType, nil
-}
-
-func extractPhone(jid string) string {
-	// Remove @s.whatsapp.net or @g.us suffix
-	phone := jid
-	if idx := len(jid) - len("@s.whatsapp.net"); idx > 0 && jid[idx:] == "@s.whatsapp.net" {
-		phone = jid[:idx]
-	} else if idx := len(jid) - len("@g.us"); idx > 0 && jid[idx:] == "@g.us" {
-		phone = jid[:idx]
-	}
-	return phone
 }
 
 // handleMessageDeleted handles message deletion from Chatwoot

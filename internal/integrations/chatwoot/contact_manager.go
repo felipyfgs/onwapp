@@ -89,12 +89,7 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 		}
 	}
 
-	// Extract phone/identifier
-	phoneNumber := strings.Split(remoteJid, "@")[0]
-	// Remove device suffix (e.g., "559984059035:2" -> "559984059035")
-	if colonIdx := strings.Index(phoneNumber, ":"); colonIdx > 0 {
-		phoneNumber = phoneNumber[:colonIdx]
-	}
+	phoneNumber := ExtractPhoneFromJID(remoteJid)
 
 	// For groups, use the full JID as identifier
 	// For individuals, use pushName or phone number as contact name
@@ -258,14 +253,9 @@ func (cm *ContactManager) FormatGroupMessage(content string, participantJid stri
 		return content
 	}
 
-	// Extract phone number from participant JID
-	phone := strings.Split(participantJid, "@")[0]
-	phone = strings.Split(phone, ":")[0] // Remove device suffix
+	phone := ExtractPhoneFromJID(participantJid)
+	formattedPhone := FormatPhoneDisplay(phone)
 
-	// Format phone number for display
-	formattedPhone := formatPhoneNumber(phone)
-
-	// Build participant info
 	var participantInfo string
 	if pushName != "" && pushName != phone {
 		participantInfo = fmt.Sprintf("**%s - %s:**", formattedPhone, pushName)
@@ -283,26 +273,6 @@ func (cm *ContactManager) FormatGroupMessage(content string, participantJid stri
 func (cm *ContactManager) InvalidateCache(sessionID, remoteJid string) {
 	cacheKey := fmt.Sprintf("%s:%s", sessionID, remoteJid)
 	cm.conversationCache.Delete(cacheKey)
-}
-
-// formatPhoneNumber formats a phone number for display
-func formatPhoneNumber(phone string) string {
-	// Brazilian number format: +55 (XX) XXXXX-XXXX
-	if len(phone) == 13 && strings.HasPrefix(phone, "55") {
-		return fmt.Sprintf("+%s (%s) %s-%s",
-			phone[0:2],  // country code
-			phone[2:4],  // area code
-			phone[4:9],  // first part
-			phone[9:13]) // second part
-	}
-	if len(phone) == 12 && strings.HasPrefix(phone, "55") {
-		return fmt.Sprintf("+%s (%s) %s-%s",
-			phone[0:2],  // country code
-			phone[2:4],  // area code
-			phone[4:8],  // first part
-			phone[8:12]) // second part
-	}
-	return fmt.Sprintf("+%s", phone)
 }
 
 // MergeBrazilianContacts handles Brazilian phone number merging (8 vs 9 digits)
