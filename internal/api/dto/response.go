@@ -19,9 +19,15 @@ type SuccessResponse struct {
 // Session responses
 
 type SessionResponse struct {
-	Name   string `json:"name" example:"default"`
+	Name   string `json:"name" example:"my-session"`
 	JID    string `json:"jid,omitempty" example:"5511999999999@s.whatsapp.net"`
+	Phone  string `json:"phone,omitempty" example:"5511999999999"`
 	Status string `json:"status" example:"connected"`
+}
+
+type SessionListResponse struct {
+	Success  bool              `json:"success" example:"true"`
+	Sessions []SessionResponse `json:"sessions"`
 }
 
 type QRResponse struct {

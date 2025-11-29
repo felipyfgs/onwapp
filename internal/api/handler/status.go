@@ -26,7 +26,7 @@ func NewStatusHandler(whatsappService *service.WhatsAppService) *StatusHandler {
 // @Tags         status
 // @Accept       json
 // @Produce      json
-// @Param        id     path      string               true  "Session name"
+// @Param        name   path      string               true  "Session name"
 // @Param        body   body      dto.SendStatusRequest true  "Story data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
@@ -34,7 +34,7 @@ func NewStatusHandler(whatsappService *service.WhatsAppService) *StatusHandler {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{id}/stories [post]
 func (h *StatusHandler) SendStory(c *gin.Context) {
-	name := c.Param("id")
+	name := c.Param("name")
 
 	var req dto.SendStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -80,13 +80,13 @@ func (h *StatusHandler) SendStory(c *gin.Context) {
 // @Description  Get who can see your status updates
 // @Tags         status
 // @Produce      json
-// @Param        id     path      string  true  "Session name"
+// @Param        name   path      string  true  "Session name"
 // @Success      200    {object}  dto.StatusPrivacyResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{id}/stories/privacy [get]
 func (h *StatusHandler) GetStatusPrivacy(c *gin.Context) {
-	name := c.Param("id")
+	name := c.Param("name")
 
 	privacy, err := h.whatsappService.GetStatusPrivacy(c.Request.Context(), name)
 	if err != nil {

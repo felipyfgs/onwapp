@@ -130,7 +130,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     }
@@ -179,7 +179,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     }
@@ -226,7 +226,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     }
@@ -275,7 +275,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -333,7 +333,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -397,7 +397,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -459,7 +459,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -523,7 +523,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -645,7 +645,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -706,7 +706,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -754,7 +754,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -812,7 +812,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -870,7 +870,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     }
@@ -919,7 +919,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     }
@@ -965,7 +965,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     }
@@ -1006,7 +1006,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -1064,7 +1064,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -1128,7 +1128,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -1192,7 +1192,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -1245,7 +1245,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -1295,7 +1295,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -1353,7 +1353,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     }
@@ -1400,7 +1400,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -1517,7 +1517,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -1581,7 +1581,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -1643,7 +1643,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -1707,7 +1707,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -1769,7 +1769,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -1825,7 +1825,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -1889,7 +1889,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -1953,7 +1953,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -2015,7 +2015,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -2079,7 +2079,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -2143,7 +2143,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -2607,7 +2607,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     }
@@ -2656,7 +2656,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -2720,7 +2720,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -2784,7 +2784,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -2848,7 +2848,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -2912,7 +2912,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -2976,7 +2976,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -3040,7 +3040,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -3104,7 +3104,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -3168,7 +3168,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -3232,7 +3232,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -3296,7 +3296,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -3360,7 +3360,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -3424,7 +3424,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -3488,7 +3488,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -3552,7 +3552,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -3616,7 +3616,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -3677,7 +3677,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     }
@@ -3718,7 +3718,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -3773,7 +3773,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -3823,7 +3823,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -3879,7 +3879,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -3934,7 +3934,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -3997,7 +3997,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -4055,7 +4055,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -4113,7 +4113,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -4171,7 +4171,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -4235,7 +4235,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     }
@@ -4284,7 +4284,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -4342,7 +4342,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -4406,7 +4406,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -4468,7 +4468,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     }
@@ -4517,7 +4517,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     }
@@ -4564,7 +4564,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -4628,7 +4628,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -4692,7 +4692,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -4745,7 +4745,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -4794,7 +4794,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     }
@@ -4843,7 +4843,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -4898,7 +4898,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     }
@@ -4938,7 +4938,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     }
@@ -4979,7 +4979,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "id",
+                        "name": "name",
                         "in": "path",
                         "required": true
                     },
@@ -5399,23 +5399,17 @@ const docTemplate = `{
         "Config": {
             "type": "object",
             "properties": {
-                "accountId": {
+                "account": {
                     "type": "integer"
                 },
-                "apiAccessToken": {
-                    "type": "string"
-                },
-                "autoCreate": {
+                "autoInbox": {
                     "type": "boolean"
                 },
-                "conversationPending": {
+                "autoReopen": {
                     "type": "boolean"
                 },
                 "createdAt": {
                     "type": "string"
-                },
-                "daysLimitImportMessages": {
-                    "type": "integer"
                 },
                 "enabled": {
                     "type": "boolean"
@@ -5423,38 +5417,44 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "ignoreJids": {
+                "ignoreChats": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
-                "importContacts": {
-                    "type": "boolean"
-                },
-                "importMessages": {
-                    "type": "boolean"
+                "inbox": {
+                    "type": "string"
                 },
                 "inboxId": {
                     "type": "integer"
                 },
-                "inboxName": {
-                    "type": "string"
-                },
-                "mergeBrazilContacts": {
-                    "type": "boolean"
-                },
-                "reopenConversation": {
+                "mergeBrPhones": {
                     "type": "boolean"
                 },
                 "sessionId": {
                     "type": "string"
                 },
-                "signDelimiter": {
+                "signAgent": {
+                    "type": "boolean"
+                },
+                "signSeparator": {
                     "type": "string"
                 },
-                "signMsg": {
+                "startPending": {
                     "type": "boolean"
+                },
+                "syncContacts": {
+                    "type": "boolean"
+                },
+                "syncDays": {
+                    "type": "integer"
+                },
+                "syncMessages": {
+                    "type": "boolean"
+                },
+                "token": {
+                    "type": "string"
                 },
                 "updatedAt": {
                     "type": "string"
@@ -6648,50 +6648,50 @@ const docTemplate = `{
         "SetConfigRequest": {
             "type": "object",
             "properties": {
-                "accountId": {
+                "account": {
                     "type": "integer"
                 },
-                "apiAccessToken": {
-                    "type": "string"
-                },
-                "autoCreate": {
+                "autoInbox": {
                     "type": "boolean"
                 },
-                "conversationPending": {
+                "autoReopen": {
                     "type": "boolean"
-                },
-                "daysLimitImportMessages": {
-                    "type": "integer"
                 },
                 "enabled": {
                     "type": "boolean"
                 },
-                "ignoreJids": {
+                "ignoreChats": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
-                "importContacts": {
-                    "type": "boolean"
-                },
-                "importMessages": {
-                    "type": "boolean"
-                },
-                "inboxName": {
+                "inbox": {
                     "type": "string"
                 },
-                "mergeBrazilContacts": {
+                "mergeBrPhones": {
                     "type": "boolean"
                 },
-                "reopenConversation": {
+                "signAgent": {
                     "type": "boolean"
                 },
-                "signDelimiter": {
+                "signSeparator": {
                     "type": "string"
                 },
-                "signMsg": {
+                "startPending": {
                     "type": "boolean"
+                },
+                "syncContacts": {
+                    "type": "boolean"
+                },
+                "syncDays": {
+                    "type": "integer"
+                },
+                "syncMessages": {
+                    "type": "boolean"
+                },
+                "token": {
+                    "type": "string"
                 },
                 "url": {
                     "type": "string"

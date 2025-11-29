@@ -83,137 +83,137 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 	{
 		sessions.GET("", h.Session.Fetch)
 		sessions.POST("", h.Session.Create)
-		sessions.GET("/:id", h.Session.Info)
-		sessions.DELETE("/:id", h.Session.Delete)
-		sessions.POST("/:id/connect", h.Session.Connect)
-		sessions.POST("/:id/logout", h.Session.Logout)
-		sessions.POST("/:id/restart", h.Session.Restart)
-		sessions.GET("/:id/qr", h.Session.QR)
-		sessions.POST("/:id/pair/phone", h.Session.PairPhone)
-		sessions.GET("/:id/qrlink", h.Contact.GetContactQRLink)
+		sessions.GET("/:name", h.Session.Info)
+		sessions.DELETE("/:name", h.Session.Delete)
+		sessions.POST("/:name/connect", h.Session.Connect)
+		sessions.POST("/:name/logout", h.Session.Logout)
+		sessions.POST("/:name/restart", h.Session.Restart)
+		sessions.GET("/:name/qr", h.Session.QR)
+		sessions.POST("/:name/pair/phone", h.Session.PairPhone)
+		sessions.GET("/:name/qrlink", h.Contact.GetContactQRLink)
 
 		// ─────────────────────────────────────────────────────────────────────────
 		// Messages
 		// ─────────────────────────────────────────────────────────────────────────
-		sessions.POST("/:id/messages/text", h.Message.SendText)
-		sessions.POST("/:id/messages/image", h.Message.SendImage)
-		sessions.POST("/:id/messages/audio", h.Message.SendAudio)
-		sessions.POST("/:id/messages/video", h.Message.SendVideo)
-		sessions.POST("/:id/messages/document", h.Message.SendDocument)
-		sessions.POST("/:id/messages/sticker", h.Message.SendSticker)
-		sessions.POST("/:id/messages/location", h.Message.SendLocation)
-		sessions.POST("/:id/messages/contact", h.Message.SendContact)
-		sessions.POST("/:id/messages/reaction", h.Message.SendReaction)
-		sessions.POST("/:id/messages/poll", h.Message.SendPoll)
-		sessions.POST("/:id/messages/poll/vote", h.Message.SendPollVote)
-		sessions.POST("/:id/messages/buttons", h.Message.SendButtons)
-		sessions.POST("/:id/messages/list", h.Message.SendList)
-		sessions.POST("/:id/messages/interactive", h.Message.SendInteractive)
-		sessions.POST("/:id/messages/template", h.Message.SendTemplate)
-		sessions.POST("/:id/messages/carousel", h.Message.SendCarousel)
+		sessions.POST("/:name/messages/text", h.Message.SendText)
+		sessions.POST("/:name/messages/image", h.Message.SendImage)
+		sessions.POST("/:name/messages/audio", h.Message.SendAudio)
+		sessions.POST("/:name/messages/video", h.Message.SendVideo)
+		sessions.POST("/:name/messages/document", h.Message.SendDocument)
+		sessions.POST("/:name/messages/sticker", h.Message.SendSticker)
+		sessions.POST("/:name/messages/location", h.Message.SendLocation)
+		sessions.POST("/:name/messages/contact", h.Message.SendContact)
+		sessions.POST("/:name/messages/reaction", h.Message.SendReaction)
+		sessions.POST("/:name/messages/poll", h.Message.SendPoll)
+		sessions.POST("/:name/messages/poll/vote", h.Message.SendPollVote)
+		sessions.POST("/:name/messages/buttons", h.Message.SendButtons)
+		sessions.POST("/:name/messages/list", h.Message.SendList)
+		sessions.POST("/:name/messages/interactive", h.Message.SendInteractive)
+		sessions.POST("/:name/messages/template", h.Message.SendTemplate)
+		sessions.POST("/:name/messages/carousel", h.Message.SendCarousel)
 
 		// ─────────────────────────────────────────────────────────────────────────
 		// Groups
 		// ─────────────────────────────────────────────────────────────────────────
-		sessions.POST("/:id/groups", h.Group.CreateGroup)
-		sessions.GET("/:id/groups", h.Group.GetJoinedGroups)
-		sessions.GET("/:id/groups/:groupId", h.Group.GetGroupInfo)
-		sessions.DELETE("/:id/groups/:groupId/membership", h.Group.LeaveGroup)
-		sessions.GET("/:id/groups/:groupId/invite", h.Group.GetInviteLink)
-		sessions.PATCH("/:id/groups/:groupId/name", h.Group.UpdateGroupName)
-		sessions.PATCH("/:id/groups/:groupId/description", h.Group.UpdateGroupTopic)
-		sessions.POST("/:id/groups/:groupId/participants", h.Group.AddParticipants)
-		sessions.DELETE("/:id/groups/:groupId/participants", h.Group.RemoveParticipants)
-		sessions.PATCH("/:id/groups/:groupId/participants/promote", h.Group.PromoteParticipants)
-		sessions.PATCH("/:id/groups/:groupId/participants/demote", h.Group.DemoteParticipants)
-		sessions.POST("/:id/groups/join", h.Group.JoinGroup)
-		sessions.POST("/:id/groups/:groupId/messages", h.Group.SendGroupMessage)
-		sessions.PATCH("/:id/groups/:groupId/settings/announce", h.Group.SetGroupAnnounce)
-		sessions.PATCH("/:id/groups/:groupId/settings/locked", h.Group.SetGroupLocked)
-		sessions.PUT("/:id/groups/:groupId/picture", h.Group.SetGroupPicture)
-		sessions.PATCH("/:id/groups/:groupId/settings/approval", h.Group.SetGroupApprovalMode)
-		sessions.PATCH("/:id/groups/:groupId/settings/memberadd", h.Group.SetGroupMemberAddMode)
-		sessions.GET("/:id/groups/:groupId/requests", h.Group.GetGroupRequestParticipants)
-		sessions.POST("/:id/groups/:groupId/requests", h.Group.UpdateGroupRequestParticipants)
-		sessions.GET("/:id/groups/info/link", h.Group.GetGroupInfoFromLink)
+		sessions.POST("/:name/groups", h.Group.CreateGroup)
+		sessions.GET("/:name/groups", h.Group.GetJoinedGroups)
+		sessions.GET("/:name/groups/:groupId", h.Group.GetGroupInfo)
+		sessions.DELETE("/:name/groups/:groupId/membership", h.Group.LeaveGroup)
+		sessions.GET("/:name/groups/:groupId/invite", h.Group.GetInviteLink)
+		sessions.PATCH("/:name/groups/:groupId/name", h.Group.UpdateGroupName)
+		sessions.PATCH("/:name/groups/:groupId/description", h.Group.UpdateGroupTopic)
+		sessions.POST("/:name/groups/:groupId/participants", h.Group.AddParticipants)
+		sessions.DELETE("/:name/groups/:groupId/participants", h.Group.RemoveParticipants)
+		sessions.PATCH("/:name/groups/:groupId/participants/promote", h.Group.PromoteParticipants)
+		sessions.PATCH("/:name/groups/:groupId/participants/demote", h.Group.DemoteParticipants)
+		sessions.POST("/:name/groups/join", h.Group.JoinGroup)
+		sessions.POST("/:name/groups/:groupId/messages", h.Group.SendGroupMessage)
+		sessions.PATCH("/:name/groups/:groupId/settings/announce", h.Group.SetGroupAnnounce)
+		sessions.PATCH("/:name/groups/:groupId/settings/locked", h.Group.SetGroupLocked)
+		sessions.PUT("/:name/groups/:groupId/picture", h.Group.SetGroupPicture)
+		sessions.PATCH("/:name/groups/:groupId/settings/approval", h.Group.SetGroupApprovalMode)
+		sessions.PATCH("/:name/groups/:groupId/settings/memberadd", h.Group.SetGroupMemberAddMode)
+		sessions.GET("/:name/groups/:groupId/requests", h.Group.GetGroupRequestParticipants)
+		sessions.POST("/:name/groups/:groupId/requests", h.Group.UpdateGroupRequestParticipants)
+		sessions.GET("/:name/groups/info/link", h.Group.GetGroupInfoFromLink)
 
 		// ─────────────────────────────────────────────────────────────────────────
 		// Contacts
 		// ─────────────────────────────────────────────────────────────────────────
-		sessions.GET("/:id/contacts", h.Contact.GetContacts)
-		sessions.POST("/:id/contacts/check", h.Contact.CheckPhone)
-		sessions.GET("/:id/contacts/:phone", h.Contact.GetContactInfo)
-		sessions.GET("/:id/contacts/:phone/avatar", h.Contact.GetAvatar)
-		sessions.GET("/:id/contacts/:phone/business", h.Contact.GetBusinessProfile)
-		sessions.GET("/:id/contacts/blocklist", h.Contact.GetBlocklist)
-		sessions.PUT("/:id/contacts/blocklist", h.Contact.UpdateBlocklist)
-		sessions.POST("/:id/contacts/:phone/presence/subscribe", h.Contact.SubscribePresence)
+		sessions.GET("/:name/contacts", h.Contact.GetContacts)
+		sessions.POST("/:name/contacts/check", h.Contact.CheckPhone)
+		sessions.GET("/:name/contacts/:phone", h.Contact.GetContactInfo)
+		sessions.GET("/:name/contacts/:phone/avatar", h.Contact.GetAvatar)
+		sessions.GET("/:name/contacts/:phone/business", h.Contact.GetBusinessProfile)
+		sessions.GET("/:name/contacts/blocklist", h.Contact.GetBlocklist)
+		sessions.PUT("/:name/contacts/blocklist", h.Contact.UpdateBlocklist)
+		sessions.POST("/:name/contacts/:phone/presence/subscribe", h.Contact.SubscribePresence)
 
 		// ─────────────────────────────────────────────────────────────────────────
 		// Chats
 		// ─────────────────────────────────────────────────────────────────────────
-		sessions.PUT("/:id/presence", h.Contact.SetPresence)
-		sessions.POST("/:id/chats/:chatId/typing", h.Contact.SetChatPresence)
-		sessions.POST("/:id/chats/:chatId/read", h.Contact.MarkRead)
-		sessions.PATCH("/:id/chats/:chatId/archive", h.Chat.ArchiveChat)
-		sessions.DELETE("/:id/chats/:chatId/messages/:messageId", h.Chat.DeleteMessage)
-		sessions.PATCH("/:id/chats/:chatId/messages/:messageId", h.Chat.EditMessage)
-		sessions.PATCH("/:id/chats/:chatId/settings/disappearing", h.Chat.SetDisappearingTimer)
+		sessions.PUT("/:name/presence", h.Contact.SetPresence)
+		sessions.POST("/:name/chats/:chatId/typing", h.Contact.SetChatPresence)
+		sessions.POST("/:name/chats/:chatId/read", h.Contact.MarkRead)
+		sessions.PATCH("/:name/chats/:chatId/archive", h.Chat.ArchiveChat)
+		sessions.DELETE("/:name/chats/:chatId/messages/:messageId", h.Chat.DeleteMessage)
+		sessions.PATCH("/:name/chats/:chatId/messages/:messageId", h.Chat.EditMessage)
+		sessions.PATCH("/:name/chats/:chatId/settings/disappearing", h.Chat.SetDisappearingTimer)
 
 		// ─────────────────────────────────────────────────────────────────────────
 		// Profile
 		// ─────────────────────────────────────────────────────────────────────────
-		sessions.GET("/:id/profile", h.Profile.GetProfile)
-		sessions.PATCH("/:id/profile/status", h.Profile.SetStatus)
-		sessions.PATCH("/:id/profile/name", h.Profile.SetPushName)
-		sessions.PUT("/:id/profile/picture", h.Profile.SetProfilePicture)
-		sessions.DELETE("/:id/profile/picture", h.Profile.DeleteProfilePicture)
-		sessions.GET("/:id/profile/privacy", h.Profile.GetPrivacySettings)
-		sessions.PUT("/:id/profile/privacy", h.Profile.SetPrivacySettings)
-		sessions.PATCH("/:id/profile/disappearing", h.Profile.SetDefaultDisappearingTimer)
+		sessions.GET("/:name/profile", h.Profile.GetProfile)
+		sessions.PATCH("/:name/profile/status", h.Profile.SetStatus)
+		sessions.PATCH("/:name/profile/name", h.Profile.SetPushName)
+		sessions.PUT("/:name/profile/picture", h.Profile.SetProfilePicture)
+		sessions.DELETE("/:name/profile/picture", h.Profile.DeleteProfilePicture)
+		sessions.GET("/:name/profile/privacy", h.Profile.GetPrivacySettings)
+		sessions.PUT("/:name/profile/privacy", h.Profile.SetPrivacySettings)
+		sessions.PATCH("/:name/profile/disappearing", h.Profile.SetDefaultDisappearingTimer)
 
 		// ─────────────────────────────────────────────────────────────────────────
 		// Webhooks
 		// ─────────────────────────────────────────────────────────────────────────
-		sessions.GET("/:id/webhooks", h.Webhook.GetWebhook)
-		sessions.POST("/:id/webhooks", h.Webhook.SetWebhook)
+		sessions.GET("/:name/webhooks", h.Webhook.GetWebhook)
+		sessions.POST("/:name/webhooks", h.Webhook.SetWebhook)
 
 		// ─────────────────────────────────────────────────────────────────────────
 		// Newsletters
 		// ─────────────────────────────────────────────────────────────────────────
 		if h.Newsletter != nil {
-			sessions.POST("/:id/newsletters", h.Newsletter.CreateNewsletter)
-			sessions.GET("/:id/newsletters", h.Newsletter.GetSubscribedNewsletters)
-			sessions.GET("/:id/newsletters/:newsletterId", h.Newsletter.GetNewsletterInfo)
-			sessions.POST("/:id/newsletters/:newsletterId/follow", h.Newsletter.FollowNewsletter)
-			sessions.DELETE("/:id/newsletters/:newsletterId/follow", h.Newsletter.UnfollowNewsletter)
-			sessions.GET("/:id/newsletters/:newsletterId/messages", h.Newsletter.GetNewsletterMessages)
-			sessions.POST("/:id/newsletters/:newsletterId/reactions", h.Newsletter.NewsletterSendReaction)
-			sessions.PATCH("/:id/newsletters/:newsletterId/mute", h.Newsletter.NewsletterToggleMute)
+			sessions.POST("/:name/newsletters", h.Newsletter.CreateNewsletter)
+			sessions.GET("/:name/newsletters", h.Newsletter.GetSubscribedNewsletters)
+			sessions.GET("/:name/newsletters/:newsletterId", h.Newsletter.GetNewsletterInfo)
+			sessions.POST("/:name/newsletters/:newsletterId/follow", h.Newsletter.FollowNewsletter)
+			sessions.DELETE("/:name/newsletters/:newsletterId/follow", h.Newsletter.UnfollowNewsletter)
+			sessions.GET("/:name/newsletters/:newsletterId/messages", h.Newsletter.GetNewsletterMessages)
+			sessions.POST("/:name/newsletters/:newsletterId/reactions", h.Newsletter.NewsletterSendReaction)
+			sessions.PATCH("/:name/newsletters/:newsletterId/mute", h.Newsletter.NewsletterToggleMute)
 		}
 
 		// ─────────────────────────────────────────────────────────────────────────
 		// Stories
 		// ─────────────────────────────────────────────────────────────────────────
 		if h.Status != nil {
-			sessions.POST("/:id/stories", h.Status.SendStory)
-			sessions.GET("/:id/stories/privacy", h.Status.GetStatusPrivacy)
+			sessions.POST("/:name/stories", h.Status.SendStory)
+			sessions.GET("/:name/stories/privacy", h.Status.GetStatusPrivacy)
 		}
 
 		// ─────────────────────────────────────────────────────────────────────────
 		// Calls
 		// ─────────────────────────────────────────────────────────────────────────
 		if h.Call != nil {
-			sessions.POST("/:id/calls/reject", h.Call.RejectCall)
+			sessions.POST("/:name/calls/reject", h.Call.RejectCall)
 		}
 
 		// ─────────────────────────────────────────────────────────────────────────
 		// Communities
 		// ─────────────────────────────────────────────────────────────────────────
 		if h.Community != nil {
-			sessions.POST("/:id/communities/:communityId/groups", h.Community.LinkGroup)
-			sessions.DELETE("/:id/communities/:communityId/groups/:groupId", h.Community.UnlinkGroup)
-			sessions.GET("/:id/communities/:communityId/groups", h.Community.GetSubGroups)
+			sessions.POST("/:name/communities/:communityId/groups", h.Community.LinkGroup)
+			sessions.DELETE("/:name/communities/:communityId/groups/:groupId", h.Community.UnlinkGroup)
+			sessions.GET("/:name/communities/:communityId/groups", h.Community.GetSubGroups)
 		}
 	}
 

@@ -46,7 +46,7 @@ func NewHandler(svc *Service, sessionSvc *service.SessionService, whatsappSvc *s
 // @Failure 404 {object} map[string]interface{}
 // @Router /sessions/{name}/chatwoot/set [post]
 func (h *Handler) SetConfig(c *gin.Context) {
-	sessionName := c.Param("id")
+	sessionName := c.Param("name")
 	session, err := h.sessionService.Get(sessionName)
 	if err != nil || session == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
@@ -85,7 +85,7 @@ func (h *Handler) SetConfig(c *gin.Context) {
 // @Failure 404 {object} map[string]interface{}
 // @Router /sessions/{name}/chatwoot/find [get]
 func (h *Handler) GetConfig(c *gin.Context) {
-	sessionName := c.Param("id")
+	sessionName := c.Param("name")
 	session, err := h.sessionService.Get(sessionName)
 	if err != nil || session == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
@@ -112,7 +112,7 @@ func (h *Handler) GetConfig(c *gin.Context) {
 // @Failure 404 {object} map[string]interface{}
 // @Router /sessions/{name}/chatwoot [delete]
 func (h *Handler) DeleteConfig(c *gin.Context) {
-	sessionName := c.Param("id")
+	sessionName := c.Param("name")
 	session, err := h.sessionService.Get(sessionName)
 	if err != nil || session == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
@@ -138,7 +138,7 @@ func (h *Handler) DeleteConfig(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /chatwoot/webhook/{name} [post]
 func (h *Handler) ReceiveWebhook(c *gin.Context) {
-	sessionName := c.Param("id")
+	sessionName := c.Param("name")
 	session, err := h.sessionService.Get(sessionName)
 	if err != nil || session == nil {
 		c.JSON(http.StatusOK, gin.H{"message": "session not found, ignoring"})

@@ -24,7 +24,7 @@ func NewChatHandler(whatsappService *service.WhatsAppService) *ChatHandler {
 // @Tags         chat
 // @Accept       json
 // @Produce      json
-// @Param        id     path      string                 true  "Session name"
+// @Param        name   path      string                 true  "Session name"
 // @Param        body   body      dto.ArchiveChatRequest true  "Archive data"
 // @Success      200    {object}  dto.ChatActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
@@ -33,7 +33,7 @@ func NewChatHandler(whatsappService *service.WhatsAppService) *ChatHandler {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{id}/chats/{chatId}/archive [patch]
 func (h *ChatHandler) ArchiveChat(c *gin.Context) {
-	name := c.Param("id")
+	name := c.Param("name")
 
 	var req dto.ArchiveChatRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -63,7 +63,7 @@ func (h *ChatHandler) ArchiveChat(c *gin.Context) {
 // @Tags         chat
 // @Accept       json
 // @Produce      json
-// @Param        id     path      string                   true  "Session name"
+// @Param        name   path      string                   true  "Session name"
 // @Param        body   body      dto.DeleteMessageRequest true  "Delete data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
@@ -72,7 +72,7 @@ func (h *ChatHandler) ArchiveChat(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{id}/chats/{chatId}/messages/{messageId} [delete]
 func (h *ChatHandler) DeleteMessage(c *gin.Context) {
-	name := c.Param("id")
+	name := c.Param("name")
 
 	var req dto.DeleteMessageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -99,7 +99,7 @@ func (h *ChatHandler) DeleteMessage(c *gin.Context) {
 // @Tags         chat
 // @Accept       json
 // @Produce      json
-// @Param        id     path      string                 true  "Session name"
+// @Param        name   path      string                 true  "Session name"
 // @Param        body   body      dto.EditMessageRequest true  "Edit data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
@@ -108,7 +108,7 @@ func (h *ChatHandler) DeleteMessage(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{id}/chats/{chatId}/messages/{messageId} [patch]
 func (h *ChatHandler) EditMessage(c *gin.Context) {
-	name := c.Param("id")
+	name := c.Param("name")
 
 	var req dto.EditMessageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -135,7 +135,7 @@ func (h *ChatHandler) EditMessage(c *gin.Context) {
 // @Tags         chat
 // @Accept       json
 // @Produce      json
-// @Param        id path string true "Session name"
+// @Param        name path string true "Session name"
 // @Param        body body dto.DisappearingRequest true "Timer data"
 // @Success      200 {object} dto.SuccessResponse
 // @Failure      400 {object} dto.ErrorResponse
@@ -143,7 +143,7 @@ func (h *ChatHandler) EditMessage(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{id}/chats/{chatId}/settings/disappearing [patch]
 func (h *ChatHandler) SetDisappearingTimer(c *gin.Context) {
-	name := c.Param("id")
+	name := c.Param("name")
 
 	var req dto.DisappearingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

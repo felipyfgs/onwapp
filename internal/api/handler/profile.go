@@ -26,14 +26,14 @@ func NewProfileHandler(whatsappService *service.WhatsAppService) *ProfileHandler
 // @Tags         profile
 // @Accept       json
 // @Produce      json
-// @Param        id     path      string  true  "Session name"
+// @Param        name   path      string  true  "Session name"
 // @Success      200    {object}  dto.ProfileInfoResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{id}/profile [get]
 func (h *ProfileHandler) GetProfile(c *gin.Context) {
-	name := c.Param("id")
+	name := c.Param("name")
 
 	profile, err := h.whatsappService.GetOwnProfile(c.Request.Context(), name)
 	if err != nil {
@@ -53,7 +53,7 @@ func (h *ProfileHandler) GetProfile(c *gin.Context) {
 // @Tags         profile
 // @Accept       json
 // @Produce      json
-// @Param        id     path      string                 true  "Session name"
+// @Param        name   path      string                 true  "Session name"
 // @Param        body   body      dto.SetStatusRequest   true  "Status data"
 // @Success      200    {object}  dto.SetStatusResponse
 // @Failure      400    {object}  dto.ErrorResponse
@@ -62,7 +62,7 @@ func (h *ProfileHandler) GetProfile(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{id}/profile/status [patch]
 func (h *ProfileHandler) SetStatus(c *gin.Context) {
-	name := c.Param("id")
+	name := c.Param("name")
 
 	var req dto.SetStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -87,7 +87,7 @@ func (h *ProfileHandler) SetStatus(c *gin.Context) {
 // @Tags         profile
 // @Accept       json
 // @Produce      json
-// @Param        id     path      string                   true  "Session name"
+// @Param        name   path      string                   true  "Session name"
 // @Param        body   body      dto.SetPushNameRequest   true  "Name data"
 // @Success      200    {object}  dto.SetNameResponse
 // @Failure      400    {object}  dto.ErrorResponse
@@ -96,7 +96,7 @@ func (h *ProfileHandler) SetStatus(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{id}/profile/name [patch]
 func (h *ProfileHandler) SetPushName(c *gin.Context) {
-	name := c.Param("id")
+	name := c.Param("name")
 
 	var req dto.SetPushNameRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -121,7 +121,7 @@ func (h *ProfileHandler) SetPushName(c *gin.Context) {
 // @Tags         profile
 // @Accept       json
 // @Produce      json
-// @Param        id     path      string                        true  "Session name"
+// @Param        name   path      string                        true  "Session name"
 // @Param        body   body      dto.SetProfilePictureRequest  true  "Image data"
 // @Success      200    {object}  dto.SetPictureResponse
 // @Failure      400    {object}  dto.ErrorResponse
@@ -130,7 +130,7 @@ func (h *ProfileHandler) SetPushName(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{id}/profile/picture [put]
 func (h *ProfileHandler) SetProfilePicture(c *gin.Context) {
-	name := c.Param("id")
+	name := c.Param("name")
 
 	var req dto.SetProfilePictureRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -162,14 +162,14 @@ func (h *ProfileHandler) SetProfilePicture(c *gin.Context) {
 // @Tags         profile
 // @Accept       json
 // @Produce      json
-// @Param        id     path      string  true  "Session name"
+// @Param        name   path      string  true  "Session name"
 // @Success      200    {object}  dto.SuccessResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{id}/profile/picture [delete]
 func (h *ProfileHandler) DeleteProfilePicture(c *gin.Context) {
-	name := c.Param("id")
+	name := c.Param("name")
 
 	if err := h.whatsappService.DeleteProfilePicture(c.Request.Context(), name); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
@@ -187,14 +187,14 @@ func (h *ProfileHandler) DeleteProfilePicture(c *gin.Context) {
 // @Tags         profile
 // @Accept       json
 // @Produce      json
-// @Param        id     path      string  true  "Session name"
+// @Param        name   path      string  true  "Session name"
 // @Success      200    {object}  dto.PrivacySettingsResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{id}/profile/privacy [get]
 func (h *ProfileHandler) GetPrivacySettings(c *gin.Context) {
-	name := c.Param("id")
+	name := c.Param("name")
 
 	settings, err := h.whatsappService.GetPrivacySettings(c.Request.Context(), name)
 	if err != nil {
@@ -214,7 +214,7 @@ func (h *ProfileHandler) GetPrivacySettings(c *gin.Context) {
 // @Tags         profile
 // @Accept       json
 // @Produce      json
-// @Param        id     path      string                  true  "Session name"
+// @Param        name   path      string                  true  "Session name"
 // @Param        body   body      dto.SetPrivacyRequest   true  "Privacy settings"
 // @Success      200    {object}  dto.SuccessResponse
 // @Failure      400    {object}  dto.ErrorResponse
@@ -223,7 +223,7 @@ func (h *ProfileHandler) GetPrivacySettings(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{id}/profile/privacy [put]
 func (h *ProfileHandler) SetPrivacySettings(c *gin.Context) {
-	name := c.Param("id")
+	name := c.Param("name")
 
 	var req dto.SetPrivacyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -252,7 +252,7 @@ func (h *ProfileHandler) SetPrivacySettings(c *gin.Context) {
 // @Tags         profile
 // @Accept       json
 // @Produce      json
-// @Param        id     path      string                        true  "Session name"
+// @Param        name   path      string                        true  "Session name"
 // @Param        body   body      dto.DefaultDisappearingRequest true  "Timer data"
 // @Success      200    {object}  dto.SuccessResponse
 // @Failure      400    {object}  dto.ErrorResponse
@@ -260,7 +260,7 @@ func (h *ProfileHandler) SetPrivacySettings(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{id}/profile/disappearing [patch]
 func (h *ProfileHandler) SetDefaultDisappearingTimer(c *gin.Context) {
-	name := c.Param("id")
+	name := c.Param("name")
 
 	var req dto.DefaultDisappearingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

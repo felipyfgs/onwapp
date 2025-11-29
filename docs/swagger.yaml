@@ -173,44 +173,44 @@ definitions:
     type: object
   Config:
     properties:
-      accountId:
+      account:
         type: integer
-      apiAccessToken:
-        type: string
-      autoCreate:
+      autoInbox:
         type: boolean
-      conversationPending:
+      autoReopen:
         type: boolean
       createdAt:
         type: string
-      daysLimitImportMessages:
-        type: integer
       enabled:
         type: boolean
       id:
         type: string
-      ignoreJids:
+      ignoreChats:
         items:
           type: string
         type: array
-      importContacts:
-        type: boolean
-      importMessages:
-        type: boolean
+      inbox:
+        type: string
       inboxId:
         type: integer
-      inboxName:
-        type: string
-      mergeBrazilContacts:
-        type: boolean
-      reopenConversation:
+      mergeBrPhones:
         type: boolean
       sessionId:
         type: string
-      signDelimiter:
-        type: string
-      signMsg:
+      signAgent:
         type: boolean
+      signSeparator:
+        type: string
+      startPending:
+        type: boolean
+      syncContacts:
+        type: boolean
+      syncDays:
+        type: integer
+      syncMessages:
+        type: boolean
+      token:
+        type: string
       updatedAt:
         type: string
       url:
@@ -1050,36 +1050,36 @@ definitions:
     type: object
   SetConfigRequest:
     properties:
-      accountId:
+      account:
         type: integer
-      apiAccessToken:
-        type: string
-      autoCreate:
+      autoInbox:
         type: boolean
-      conversationPending:
+      autoReopen:
         type: boolean
-      daysLimitImportMessages:
-        type: integer
       enabled:
         type: boolean
-      ignoreJids:
+      ignoreChats:
         items:
           type: string
         type: array
-      importContacts:
-        type: boolean
-      importMessages:
-        type: boolean
-      inboxName:
+      inbox:
         type: string
-      mergeBrazilContacts:
+      mergeBrPhones:
         type: boolean
-      reopenConversation:
+      signAgent:
         type: boolean
-      signDelimiter:
+      signSeparator:
         type: string
-      signMsg:
+      startPending:
         type: boolean
+      syncContacts:
+        type: boolean
+      syncDays:
+        type: integer
+      syncMessages:
+        type: boolean
+      token:
+        type: string
       url:
         type: string
     type: object
@@ -1327,7 +1327,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       produces:
@@ -1358,7 +1358,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       produces:
@@ -1388,7 +1388,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       produces:
@@ -1419,7 +1419,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Call data
@@ -1456,7 +1456,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Archive data
@@ -1497,7 +1497,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Delete data
@@ -1537,7 +1537,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Edit data
@@ -1578,7 +1578,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Messages to mark
@@ -1656,7 +1656,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Chat presence data
@@ -1695,7 +1695,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Community ID
@@ -1726,7 +1726,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Link data
@@ -1763,7 +1763,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Unlink data
@@ -1801,7 +1801,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       produces:
@@ -1832,7 +1832,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       produces:
@@ -1863,7 +1863,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Phone numbers
@@ -1904,7 +1904,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Phone number
@@ -1938,7 +1938,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Phone number
@@ -1970,7 +1970,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Subscribe data
@@ -2005,7 +2005,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       produces:
@@ -2031,7 +2031,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Block action
@@ -2068,7 +2068,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Phone numbers
@@ -2109,7 +2109,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       produces:
@@ -2139,7 +2139,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Group data
@@ -2180,7 +2180,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Group ID
@@ -2220,7 +2220,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: New description
@@ -2261,7 +2261,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Group ID
@@ -2301,7 +2301,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Group ID
@@ -2337,7 +2337,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Message data
@@ -2378,7 +2378,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: New name
@@ -2419,7 +2419,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Participants
@@ -2459,7 +2459,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Participants
@@ -2500,7 +2500,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Participants
@@ -2541,7 +2541,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Participants
@@ -2872,7 +2872,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Invite link
@@ -2913,7 +2913,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       produces:
@@ -2944,7 +2944,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Audio data
@@ -2985,7 +2985,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Buttons data
@@ -3027,7 +3027,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Carousel data
@@ -3068,7 +3068,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Contact data
@@ -3109,7 +3109,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Document data
@@ -3150,7 +3150,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Image data
@@ -3192,7 +3192,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Interactive data
@@ -3233,7 +3233,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: List data
@@ -3274,7 +3274,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Location data
@@ -3315,7 +3315,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Poll data
@@ -3356,7 +3356,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Vote data
@@ -3397,7 +3397,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Reaction data
@@ -3438,7 +3438,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Sticker data
@@ -3480,7 +3480,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Template data
@@ -3521,7 +3521,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Message data
@@ -3562,7 +3562,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Video data
@@ -3601,7 +3601,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       produces:
@@ -3627,7 +3627,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Newsletter data
@@ -3662,7 +3662,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Newsletter JID
@@ -3694,7 +3694,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Newsletter JID
@@ -3730,7 +3730,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Newsletter JID
@@ -3765,7 +3765,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Newsletter JID
@@ -3806,7 +3806,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Mute data
@@ -3843,7 +3843,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Reaction data
@@ -3880,7 +3880,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Phone data
@@ -3917,7 +3917,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Presence data
@@ -3958,7 +3958,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       produces:
@@ -3989,7 +3989,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Timer data
@@ -4026,7 +4026,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Name data
@@ -4067,7 +4067,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       produces:
@@ -4097,7 +4097,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Image data
@@ -4138,7 +4138,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       produces:
@@ -4168,7 +4168,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Privacy settings
@@ -4209,7 +4209,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Status data
@@ -4250,7 +4250,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - default: json
@@ -4284,7 +4284,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Revoke existing link
@@ -4315,7 +4315,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       produces:
@@ -4346,7 +4346,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Story data
@@ -4381,7 +4381,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       produces:
@@ -4406,7 +4406,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       produces:
@@ -4433,7 +4433,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Webhook configuration
