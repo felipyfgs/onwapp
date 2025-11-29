@@ -31,7 +31,7 @@ func NewChatHandler(whatsappService *service.WhatsAppService) *ChatHandler {
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/chats/{chatId}/archive [patch]
+// @Router       /sessions/{name}/chats/{chatId}/archive [patch]
 func (h *ChatHandler) ArchiveChat(c *gin.Context) {
 	name := c.Param("name")
 
@@ -70,7 +70,7 @@ func (h *ChatHandler) ArchiveChat(c *gin.Context) {
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/chats/{chatId}/messages/{messageId} [delete]
+// @Router       /sessions/{name}/chats/{chatId}/messages/{messageId} [delete]
 func (h *ChatHandler) DeleteMessage(c *gin.Context) {
 	name := c.Param("name")
 
@@ -106,7 +106,7 @@ func (h *ChatHandler) DeleteMessage(c *gin.Context) {
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/chats/{chatId}/messages/{messageId} [patch]
+// @Router       /sessions/{name}/chats/{chatId}/messages/{messageId} [patch]
 func (h *ChatHandler) EditMessage(c *gin.Context) {
 	name := c.Param("name")
 
@@ -141,7 +141,7 @@ func (h *ChatHandler) EditMessage(c *gin.Context) {
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/chats/{chatId}/settings/disappearing [patch]
+// @Router       /sessions/{name}/chats/{chatId}/settings/disappearing [patch]
 func (h *ChatHandler) SetDisappearingTimer(c *gin.Context) {
 	name := c.Param("name")
 

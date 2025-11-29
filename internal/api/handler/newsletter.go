@@ -30,7 +30,7 @@ func NewNewsletterHandler(whatsappService *service.WhatsAppService) *NewsletterH
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/newsletters [post]
+// @Router       /sessions/{name}/newsletters [post]
 func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
 	name := c.Param("name")
 
@@ -64,7 +64,7 @@ func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/newsletters/{newsletterId}/follow [post]
+// @Router       /sessions/{name}/newsletters/{newsletterId}/follow [post]
 func (h *NewsletterHandler) FollowNewsletter(c *gin.Context) {
 	name := c.Param("name")
 
@@ -94,7 +94,7 @@ func (h *NewsletterHandler) FollowNewsletter(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/newsletters/{newsletterId}/follow [delete]
+// @Router       /sessions/{name}/newsletters/{newsletterId}/follow [delete]
 func (h *NewsletterHandler) UnfollowNewsletter(c *gin.Context) {
 	name := c.Param("name")
 
@@ -122,7 +122,7 @@ func (h *NewsletterHandler) UnfollowNewsletter(c *gin.Context) {
 // @Success      200           {object}  dto.NewsletterResponse
 // @Failure      500           {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/newsletters/{newsletterId} [get]
+// @Router       /sessions/{name}/newsletters/{newsletterId} [get]
 func (h *NewsletterHandler) GetNewsletterInfo(c *gin.Context) {
 	name := c.Param("name")
 	newsletterID := c.Param("newsletterId")
@@ -148,7 +148,7 @@ func (h *NewsletterHandler) GetNewsletterInfo(c *gin.Context) {
 // @Success      200    {object}  dto.NewsletterListResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/newsletters [get]
+// @Router       /sessions/{name}/newsletters [get]
 func (h *NewsletterHandler) GetSubscribedNewsletters(c *gin.Context) {
 	name := c.Param("name")
 
@@ -176,7 +176,7 @@ func (h *NewsletterHandler) GetSubscribedNewsletters(c *gin.Context) {
 // @Success      200           {object}  dto.NewsletterResponse
 // @Failure      500           {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/newsletters/{newsletterId}/messages [get]
+// @Router       /sessions/{name}/newsletters/{newsletterId}/messages [get]
 func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
 	name := c.Param("name")
 	newsletterID := c.Param("newsletterId")
@@ -215,7 +215,7 @@ func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/newsletters/{newsletterId}/reactions [post]
+// @Router       /sessions/{name}/newsletters/{newsletterId}/reactions [post]
 func (h *NewsletterHandler) NewsletterSendReaction(c *gin.Context) {
 	name := c.Param("name")
 
@@ -248,7 +248,7 @@ func (h *NewsletterHandler) NewsletterSendReaction(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/newsletters/{newsletterId}/mute [patch]
+// @Router       /sessions/{name}/newsletters/{newsletterId}/mute [patch]
 func (h *NewsletterHandler) NewsletterToggleMute(c *gin.Context) {
 	name := c.Param("name")
 

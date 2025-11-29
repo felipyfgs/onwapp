@@ -30,7 +30,7 @@ func NewCommunityHandler(whatsappService *service.WhatsAppService) *CommunityHan
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/communities/{communityId}/groups [post]
+// @Router       /sessions/{name}/communities/{communityId}/groups [post]
 func (h *CommunityHandler) LinkGroup(c *gin.Context) {
 	name := c.Param("name")
 
@@ -63,7 +63,7 @@ func (h *CommunityHandler) LinkGroup(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/communities/{communityId}/groups/{groupId} [delete]
+// @Router       /sessions/{name}/communities/{communityId}/groups/{groupId} [delete]
 func (h *CommunityHandler) UnlinkGroup(c *gin.Context) {
 	name := c.Param("name")
 
@@ -94,7 +94,7 @@ func (h *CommunityHandler) UnlinkGroup(c *gin.Context) {
 // @Success      200          {object}  dto.CommunityResponse
 // @Failure      500          {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/communities/{communityId}/groups [get]
+// @Router       /sessions/{name}/communities/{communityId}/groups [get]
 func (h *CommunityHandler) GetSubGroups(c *gin.Context) {
 	name := c.Param("name")
 	communityID := strings.TrimSuffix(c.Param("communityId"), "@g.us")

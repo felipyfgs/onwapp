@@ -33,7 +33,7 @@ func NewWebhookHandler(webhookService *service.WebhookService, database *db.Data
 // @Success 200 {object} dto.WebhookResponse
 // @Failure 404 {object} dto.ErrorResponse
 // @Security ApiKeyAuth
-// @Router /sessions/{id}/webhooks [get]
+// @Router /sessions/{name}/webhooks [get]
 func (h *WebhookHandler) GetWebhook(c *gin.Context) {
 	name := c.Param("name")
 
@@ -78,7 +78,7 @@ func (h *WebhookHandler) GetWebhook(c *gin.Context) {
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 404 {object} dto.ErrorResponse
 // @Security ApiKeyAuth
-// @Router /sessions/{id}/webhooks [post]
+// @Router /sessions/{name}/webhooks [post]
 func (h *WebhookHandler) SetWebhook(c *gin.Context) {
 	name := c.Param("name")
 

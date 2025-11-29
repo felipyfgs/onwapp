@@ -1,5 +1,14 @@
 basePath: /
 definitions:
+  APIError:
+    properties:
+      code:
+        example: SESSION_NOT_FOUND
+        type: string
+      message:
+        example: Session 'my-session' not found
+        type: string
+    type: object
   ArchiveChatRequest:
     properties:
       archive:
@@ -268,6 +277,14 @@ definitions:
     required:
     - name
     type: object
+  CreateSessionRequest:
+    properties:
+      name:
+        example: my-session
+        type: string
+    required:
+    - name
+    type: object
   DefaultDisappearingRequest:
     properties:
       timer:
@@ -340,12 +357,21 @@ definitions:
           type: array
         type: object
     type: object
-  GroupActionResponse:
+  GroupActionData:
     properties:
-      data: {}
-      groupId:
+      jid:
         example: 123456789@g.us
         type: string
+      message:
+        example: Participants added successfully
+        type: string
+    type: object
+  GroupActionResponse:
+    properties:
+      data:
+        $ref: '#/definitions/GroupActionData'
+      error:
+        $ref: '#/definitions/APIError'
       success:
         example: true
         type: boolean
@@ -1042,7 +1068,10 @@ definitions:
         example: 5511999999999@s.whatsapp.net
         type: string
       name:
-        example: default
+        example: my-session
+        type: string
+      phone:
+        example: "5511999999999"
         type: string
       status:
         example: connected
@@ -1325,11 +1354,12 @@ paths:
       - application/json
       description: Create a new WhatsApp session with the given name
       parameters:
-      - description: Session name
-        in: path
-        name: name
+      - description: Session data
+        in: body
+        name: request
         required: true
-        type: string
+        schema:
+          $ref: '#/definitions/CreateSessionRequest'
       produces:
       - application/json
       responses:
@@ -1337,6 +1367,10 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/SessionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
         "401":
           description: Unauthorized
           schema:
@@ -1350,7 +1384,7 @@ paths:
       summary: Create a new session
       tags:
       - sessions
-  /sessions/{id}:
+  /sessions/{name}:
     delete:
       consumes:
       - application/json
@@ -1411,7 +1445,7 @@ paths:
       summary: Get session info
       tags:
       - sessions
-  /sessions/{id}/calls/reject:
+  /sessions/{name}/calls/reject:
     post:
       consumes:
       - application/json
@@ -1448,7 +1482,7 @@ paths:
       summary: Reject incoming call
       tags:
       - call
-  /sessions/{id}/chats/{chatId}/archive:
+  /sessions/{name}/chats/{chatId}/archive:
     patch:
       consumes:
       - application/json
@@ -1489,7 +1523,7 @@ paths:
       summary: Archive or unarchive a chat
       tags:
       - chat
-  /sessions/{id}/chats/{chatId}/messages/{messageId}:
+  /sessions/{name}/chats/{chatId}/messages/{messageId}:
     delete:
       consumes:
       - application/json
@@ -1570,7 +1604,7 @@ paths:
       summary: Edit a message
       tags:
       - chat
-  /sessions/{id}/chats/{chatId}/read:
+  /sessions/{name}/chats/{chatId}/read:
     post:
       consumes:
       - application/json
@@ -1611,7 +1645,7 @@ paths:
       summary: Mark messages as read
       tags:
       - contact
-  /sessions/{id}/chats/{chatId}/settings/disappearing:
+  /sessions/{name}/chats/{chatId}/settings/disappearing:
     patch:
       consumes:
       - application/json
@@ -1619,7 +1653,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: id
+        name: name
         required: true
         type: string
       - description: Timer data
@@ -1648,7 +1682,7 @@ paths:
       summary: Set disappearing messages timer
       tags:
       - chat
-  /sessions/{id}/chats/{chatId}/typing:
+  /sessions/{name}/chats/{chatId}/typing:
     post:
       consumes:
       - application/json
@@ -1689,2779 +1723,6 @@ paths:
       summary: Set chat presence (typing/recording)
       tags:
       - contact
-  /sessions/{id}/communities/{communityId}/groups:
-    get:
-      description: Get list of subgroups in a community
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Community ID
-        in: path
-        name: communityId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/CommunityResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Get community subgroups
-      tags:
-      - community
-    post:
-      consumes:
-      - application/json
-      description: Link a group to a community as a subgroup
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Link data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/LinkGroupRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Link group to community
-      tags:
-      - community
-  /sessions/{id}/communities/{communityId}/groups/{groupId}:
-    delete:
-      consumes:
-      - application/json
-      description: Unlink a group from a community
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Unlink data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/LinkGroupRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Unlink group from community
-      tags:
-      - community
-  /sessions/{id}/connect:
-    post:
-      consumes:
-      - application/json
-      description: Connect a WhatsApp session. If not authenticated, returns QR code
-        endpoint
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/MessageResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Connect session
-      tags:
-      - sessions
-  /sessions/{id}/contacts:
-    get:
-      consumes:
-      - application/json
-      description: Get all contacts from WhatsApp
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/ContactsListResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Get all contacts
-      tags:
-      - contact
-  /sessions/{id}/contacts/{phone}:
-    get:
-      consumes:
-      - application/json
-      description: Get information about WhatsApp contacts
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Phone numbers
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/ContactInfoRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/ContactInfoResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Get contact information
-      tags:
-      - contact
-  /sessions/{id}/contacts/{phone}/avatar:
-    get:
-      consumes:
-      - application/json
-      description: Get profile picture URL for a contact
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Phone number
-        in: path
-        name: phone
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/AvatarResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Get contact avatar
-      tags:
-      - contact
-  /sessions/{id}/contacts/{phone}/business:
-    get:
-      description: Get business profile of a contact
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Phone number
-        in: path
-        name: phone
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/BusinessProfileResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Get business profile
-      tags:
-      - contact
-  /sessions/{id}/contacts/{phone}/presence/subscribe:
-    post:
-      consumes:
-      - application/json
-      description: Subscribe to receive presence updates from a contact
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Subscribe data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/SubscribePresenceRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Subscribe to presence updates
-      tags:
-      - contact
-  /sessions/{id}/contacts/blocklist:
-    get:
-      description: Get list of blocked contacts
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/BlocklistResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Get blocked contacts
-      tags:
-      - contact
-    put:
-      consumes:
-      - application/json
-      description: Block or unblock a contact
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Block action
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/BlocklistRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/BlocklistActionResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Block or unblock contact
-      tags:
-      - contact
-  /sessions/{id}/contacts/check:
-    post:
-      consumes:
-      - application/json
-      description: Check if phone numbers are registered on WhatsApp
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Phone numbers
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/CheckPhoneRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/CheckPhoneResultsResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Check if phones are registered on WhatsApp
-      tags:
-      - contact
-  /sessions/{id}/groups:
-    get:
-      consumes:
-      - application/json
-      description: Get list of groups the session is part of
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/GroupActionResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Get joined groups
-      tags:
-      - groups
-    post:
-      consumes:
-      - application/json
-      description: Create a new WhatsApp group with participants
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Group data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/CreateGroupRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/GroupActionResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Create a new group
-      tags:
-      - groups
-  /sessions/{id}/groups/{groupId}:
-    get:
-      consumes:
-      - application/json
-      description: Get information about a WhatsApp group
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Group ID
-        in: path
-        name: groupId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/GroupActionResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Get group info
-      tags:
-      - groups
-  /sessions/{id}/groups/{groupId}/description:
-    patch:
-      consumes:
-      - application/json
-      description: Update the description/topic of a WhatsApp group
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: New description
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/GroupUpdateRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/GroupActionResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Update group description
-      tags:
-      - groups
-  /sessions/{id}/groups/{groupId}/invite:
-    get:
-      consumes:
-      - application/json
-      description: Get the invite link for a WhatsApp group
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Group ID
-        in: path
-        name: groupId
-        required: true
-        type: string
-      - description: Reset link
-        in: query
-        name: reset
-        type: boolean
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/GroupInviteLinkResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Get group invite link
-      tags:
-      - groups
-  /sessions/{id}/groups/{groupId}/membership:
-    delete:
-      consumes:
-      - application/json
-      description: Leave a WhatsApp group
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Group ID
-        in: path
-        name: groupId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/GroupActionResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Leave group
-      tags:
-      - groups
-  /sessions/{id}/groups/{groupId}/messages:
-    post:
-      consumes:
-      - application/json
-      description: Send a text message to a WhatsApp group
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Message data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/SendGroupMessageRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SendResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Send message to group
-      tags:
-      - groups
-  /sessions/{id}/groups/{groupId}/name:
-    patch:
-      consumes:
-      - application/json
-      description: Update the name of a WhatsApp group
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: New name
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/GroupUpdateRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/GroupActionResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Update group name
-      tags:
-      - groups
-  /sessions/{id}/groups/{groupId}/participants:
-    delete:
-      consumes:
-      - application/json
-      description: Remove participants from a WhatsApp group
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Participants
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/GroupParticipantsRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/GroupActionResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Remove participants from group
-      tags:
-      - groups
-    post:
-      consumes:
-      - application/json
-      description: Add participants to a WhatsApp group
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Participants
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/GroupParticipantsRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/GroupActionResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Add participants to group
-      tags:
-      - groups
-  /sessions/{id}/groups/{groupId}/participants/demote:
-    patch:
-      consumes:
-      - application/json
-      description: Demote participants from admin in a WhatsApp group
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Participants
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/GroupParticipantsRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/GroupActionResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Demote participants from admin
-      tags:
-      - groups
-  /sessions/{id}/groups/{groupId}/participants/promote:
-    patch:
-      consumes:
-      - application/json
-      description: Promote participants to admin in a WhatsApp group
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Participants
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/GroupParticipantsRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/GroupActionResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Promote participants to admin
-      tags:
-      - groups
-  /sessions/{id}/groups/{groupId}/picture:
-    put:
-      consumes:
-      - application/json
-      description: Set the group profile picture
-      parameters:
-      - description: Session name
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Picture data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/GroupPictureRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SetPictureResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Set group picture
-      tags:
-      - groups
-  /sessions/{id}/groups/{groupId}/requests:
-    get:
-      description: Get list of pending join requests for a group
-      parameters:
-      - description: Session name
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Group ID
-        in: path
-        name: groupId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/GroupRequestParticipantsResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Get pending join requests
-      tags:
-      - groups
-    post:
-      consumes:
-      - application/json
-      description: Approve or reject pending join requests
-      parameters:
-      - description: Session name
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Group ID
-        in: path
-        name: groupId
-        required: true
-        type: string
-      - description: Action data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/GroupRequestActionBodyRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/GroupActionResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Approve or reject join requests
-      tags:
-      - groups
-  /sessions/{id}/groups/{groupId}/settings/announce:
-    patch:
-      consumes:
-      - application/json
-      description: Set whether only admins can send messages
-      parameters:
-      - description: Session name
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Announce setting
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/GroupAnnounceRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Set group announce mode
-      tags:
-      - groups
-  /sessions/{id}/groups/{groupId}/settings/approval:
-    patch:
-      consumes:
-      - application/json
-      description: Set whether join requests need admin approval
-      parameters:
-      - description: Session name
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Approval setting
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/GroupApprovalRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Set group join approval mode
-      tags:
-      - groups
-  /sessions/{id}/groups/{groupId}/settings/locked:
-    patch:
-      consumes:
-      - application/json
-      description: Set whether only admins can edit group info
-      parameters:
-      - description: Session name
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Locked setting
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/GroupLockedRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Set group locked mode
-      tags:
-      - groups
-  /sessions/{id}/groups/{groupId}/settings/memberadd:
-    patch:
-      consumes:
-      - application/json
-      description: Set whether only admins or all members can add participants
-      parameters:
-      - description: Session name
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Member add mode
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/GroupMemberAddModeRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Set who can add members
-      tags:
-      - groups
-  /sessions/{id}/groups/info/link:
-    get:
-      description: Get group information using an invite link
-      parameters:
-      - description: Session name
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Invite link or code
-        in: query
-        name: link
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/GroupActionResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Get group info from invite link
-      tags:
-      - groups
-  /sessions/{id}/groups/join:
-    post:
-      consumes:
-      - application/json
-      description: Join a WhatsApp group using an invite link
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Invite link
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/JoinGroupRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/GroupActionResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Join group via link
-      tags:
-      - groups
-  /sessions/{id}/logout:
-    post:
-      consumes:
-      - application/json
-      description: Logout from WhatsApp and clear session credentials
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/MessageResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Logout session
-      tags:
-      - sessions
-  /sessions/{id}/messages/audio:
-    post:
-      consumes:
-      - application/json
-      description: Send an audio to a phone number (base64 encoded)
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Audio data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/SendAudioRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SendResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Send audio message
-      tags:
-      - messages
-  /sessions/{id}/messages/buttons:
-    post:
-      consumes:
-      - application/json
-      description: Send a message with buttons (max 3 buttons)
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Buttons data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/SendButtonsRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SendResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Send buttons message
-      tags:
-      - messages
-  /sessions/{id}/messages/carousel:
-    post:
-      consumes:
-      - application/json
-      description: Send an interactive carousel message with multiple cards, each
-        with image/video and buttons
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Carousel data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/SendCarouselRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SendResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Send carousel message
-      tags:
-      - messages
-  /sessions/{id}/messages/contact:
-    post:
-      consumes:
-      - application/json
-      description: Send a contact card to a phone number
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Contact data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/SendContactRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SendResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Send contact message
-      tags:
-      - messages
-  /sessions/{id}/messages/document:
-    post:
-      consumes:
-      - application/json
-      description: Send a document to a phone number (base64 encoded)
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Document data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/SendDocumentRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SendResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Send document message
-      tags:
-      - messages
-  /sessions/{id}/messages/image:
-    post:
-      consumes:
-      - application/json
-      description: Send an image to a phone number (base64 encoded)
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Image data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/SendImageRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SendResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Send image message
-      tags:
-      - messages
-  /sessions/{id}/messages/interactive:
-    post:
-      consumes:
-      - application/json
-      description: Send an interactive message with buttons (quick_reply, cta_url,
-        cta_call, cta_copy)
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Interactive data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/SendInteractiveRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SendResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Send interactive message with native flow buttons
-      tags:
-      - messages
-  /sessions/{id}/messages/list:
-    post:
-      consumes:
-      - application/json
-      description: Send a message with a selectable list
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: List data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/SendListRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SendResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Send list message
-      tags:
-      - messages
-  /sessions/{id}/messages/location:
-    post:
-      consumes:
-      - application/json
-      description: Send a location to a phone number
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Location data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/SendLocationRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SendResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Send location message
-      tags:
-      - messages
-  /sessions/{id}/messages/poll:
-    post:
-      consumes:
-      - application/json
-      description: Send a poll to a phone number
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Poll data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/SendPollRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SendResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Send poll message
-      tags:
-      - messages
-  /sessions/{id}/messages/poll/vote:
-    post:
-      consumes:
-      - application/json
-      description: Vote for options in an existing poll
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Vote data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/SendPollVoteRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SendResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Vote in a poll
-      tags:
-      - messages
-  /sessions/{id}/messages/reaction:
-    post:
-      consumes:
-      - application/json
-      description: Send a reaction emoji to a message
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Reaction data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/SendReactionRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SendResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Send reaction to message
-      tags:
-      - messages
-  /sessions/{id}/messages/sticker:
-    post:
-      consumes:
-      - application/json
-      description: Send a sticker to a phone number (base64 encoded webp)
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Sticker data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/SendStickerRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SendResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Send sticker message
-      tags:
-      - messages
-  /sessions/{id}/messages/template:
-    post:
-      consumes:
-      - application/json
-      description: Send a message with template buttons (URL, Call, QuickReply). Works
-        on Web and Mobile.
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Template data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/SendTemplateRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SendResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Send template message
-      tags:
-      - messages
-  /sessions/{id}/messages/text:
-    post:
-      consumes:
-      - application/json
-      description: Send a text message to a phone number
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Message data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/SendTextRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SendResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Send text message
-      tags:
-      - messages
-  /sessions/{id}/messages/video:
-    post:
-      consumes:
-      - application/json
-      description: Send a video to a phone number (base64 encoded)
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Video data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/SendVideoRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SendResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Send video message
-      tags:
-      - messages
-  /sessions/{id}/newsletters:
-    get:
-      description: Get list of newsletters the session is subscribed to
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/NewsletterListResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: List subscribed newsletters
-      tags:
-      - newsletter
-    post:
-      consumes:
-      - application/json
-      description: Create a new WhatsApp newsletter/channel
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Newsletter data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/CreateNewsletterRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/NewsletterResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Create a newsletter/channel
-      tags:
-      - newsletter
-  /sessions/{id}/newsletters/{newsletterId}:
-    get:
-      description: Get information about a WhatsApp newsletter
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Newsletter JID
-        in: path
-        name: newsletterId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/NewsletterResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Get newsletter info
-      tags:
-      - newsletter
-  /sessions/{id}/newsletters/{newsletterId}/follow:
-    delete:
-      consumes:
-      - application/json
-      description: Unfollow/unsubscribe from a WhatsApp newsletter
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Newsletter JID
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/NewsletterActionRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Unfollow a newsletter
-      tags:
-      - newsletter
-    post:
-      consumes:
-      - application/json
-      description: Follow/subscribe to a WhatsApp newsletter
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Newsletter JID
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/NewsletterActionRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Follow a newsletter
-      tags:
-      - newsletter
-  /sessions/{id}/newsletters/{newsletterId}/messages:
-    get:
-      description: Get messages from a WhatsApp newsletter
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Newsletter JID
-        in: path
-        name: newsletterId
-        required: true
-        type: string
-      - default: 50
-        description: Number of messages
-        in: query
-        name: count
-        type: integer
-      - description: Before server ID
-        in: query
-        name: before
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/NewsletterResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Get newsletter messages
-      tags:
-      - newsletter
-  /sessions/{id}/newsletters/{newsletterId}/mute:
-    patch:
-      consumes:
-      - application/json
-      description: Toggle mute status of a newsletter
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Mute data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/NewsletterMuteRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Mute/unmute newsletter
-      tags:
-      - newsletter
-  /sessions/{id}/newsletters/{newsletterId}/reactions:
-    post:
-      consumes:
-      - application/json
-      description: Send a reaction to a newsletter message
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Reaction data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/NewsletterReactionRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: React to newsletter message
-      tags:
-      - newsletter
-  /sessions/{id}/pair/phone:
-    post:
-      consumes:
-      - application/json
-      description: Pair WhatsApp session using phone number instead of QR code
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Phone data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/PairPhoneRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/PairPhoneResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Pair using phone number
-      tags:
-      - sessions
-  /sessions/{id}/presence:
-    put:
-      consumes:
-      - application/json
-      description: Set online/offline presence status
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Presence data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/SetPresenceRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/PresenceResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Set online presence
-      tags:
-      - contact
-  /sessions/{id}/profile:
-    get:
-      consumes:
-      - application/json
-      description: Get own WhatsApp profile information
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/ProfileInfoResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Get own profile info
-      tags:
-      - profile
-  /sessions/{id}/profile/disappearing:
-    patch:
-      consumes:
-      - application/json
-      description: Set the default disappearing messages timer for new chats
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Timer data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/DefaultDisappearingRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Set default disappearing timer
-      tags:
-      - profile
-  /sessions/{id}/profile/name:
-    patch:
-      consumes:
-      - application/json
-      description: Set WhatsApp display name (push name)
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Name data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/SetPushNameRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SetNameResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Set display name
-      tags:
-      - profile
-  /sessions/{id}/profile/picture:
-    delete:
-      consumes:
-      - application/json
-      description: Remove WhatsApp profile picture
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SuccessResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Delete profile picture
-      tags:
-      - profile
-    put:
-      consumes:
-      - application/json
-      description: Set WhatsApp profile picture
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Image data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/SetProfilePictureRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SetPictureResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Set profile picture
-      tags:
-      - profile
-  /sessions/{id}/profile/privacy:
-    get:
-      consumes:
-      - application/json
-      description: Get WhatsApp privacy settings
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/PrivacySettingsResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Get privacy settings
-      tags:
-      - profile
-    put:
-      consumes:
-      - application/json
-      description: Set WhatsApp privacy settings
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Privacy settings
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/SetPrivacyRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SuccessResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Set privacy settings
-      tags:
-      - profile
-  /sessions/{id}/profile/status:
-    patch:
-      consumes:
-      - application/json
-      description: Set WhatsApp status/about message
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Status data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/SetStatusRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SetStatusResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Set status message
-      tags:
-      - profile
-  /sessions/{id}/qr:
-    get:
-      consumes:
-      - application/json
-      description: Get QR code for WhatsApp authentication
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - default: json
-        description: Response format (json or image)
-        in: query
-        name: format
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/QRResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Get QR code
-      tags:
-      - sessions
-  /sessions/{id}/qrlink:
-    get:
-      description: Get QR link for adding contact
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Revoke existing link
-        in: query
-        name: revoke
-        type: boolean
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/QRLinkResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Get contact QR link
-      tags:
-      - contact
-  /sessions/{id}/restart:
-    post:
-      consumes:
-      - application/json
-      description: Disconnect and reconnect a WhatsApp session
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/MessageResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Restart session
-      tags:
-      - sessions
-  /sessions/{id}/stories:
-    post:
-      consumes:
-      - application/json
-      description: Post a text or media story (status update visible to contacts)
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Story data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/SendStatusRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SendResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Post a story
-      tags:
-      - status
-  /sessions/{id}/stories/privacy:
-    get:
-      description: Get who can see your status updates
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/StatusPrivacyResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Get status privacy settings
-      tags:
-      - status
-  /sessions/{id}/webhooks:
-    get:
-      description: Get the webhook configuration for a session
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/WebhookResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Get webhook
-      tags:
-      - webhook
-    post:
-      consumes:
-      - application/json
-      description: Set or update the webhook configuration for a session (one webhook
-        per session)
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Webhook configuration
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/SetWebhookRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/WebhookResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Set webhook
-      tags:
-      - webhook
   /sessions/{name}/chatwoot:
     delete:
       description: Remove Chatwoot integration configuration for a session
@@ -4548,6 +1809,2779 @@ paths:
       summary: Set Chatwoot configuration
       tags:
       - Chatwoot
+  /sessions/{name}/communities/{communityId}/groups:
+    get:
+      description: Get list of subgroups in a community
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Community ID
+        in: path
+        name: communityId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/CommunityResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get community subgroups
+      tags:
+      - community
+    post:
+      consumes:
+      - application/json
+      description: Link a group to a community as a subgroup
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Link data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/LinkGroupRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Link group to community
+      tags:
+      - community
+  /sessions/{name}/communities/{communityId}/groups/{groupId}:
+    delete:
+      consumes:
+      - application/json
+      description: Unlink a group from a community
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Unlink data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/LinkGroupRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Unlink group from community
+      tags:
+      - community
+  /sessions/{name}/connect:
+    post:
+      consumes:
+      - application/json
+      description: Connect a WhatsApp session. If not authenticated, returns QR code
+        endpoint
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Connect session
+      tags:
+      - sessions
+  /sessions/{name}/contacts:
+    get:
+      consumes:
+      - application/json
+      description: Get all contacts from WhatsApp
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ContactsListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get all contacts
+      tags:
+      - contact
+  /sessions/{name}/contacts/{phone}:
+    get:
+      consumes:
+      - application/json
+      description: Get information about WhatsApp contacts
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Phone numbers
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ContactInfoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ContactInfoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get contact information
+      tags:
+      - contact
+  /sessions/{name}/contacts/{phone}/avatar:
+    get:
+      consumes:
+      - application/json
+      description: Get profile picture URL for a contact
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Phone number
+        in: path
+        name: phone
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AvatarResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get contact avatar
+      tags:
+      - contact
+  /sessions/{name}/contacts/{phone}/business:
+    get:
+      description: Get business profile of a contact
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Phone number
+        in: path
+        name: phone
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/BusinessProfileResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get business profile
+      tags:
+      - contact
+  /sessions/{name}/contacts/{phone}/presence/subscribe:
+    post:
+      consumes:
+      - application/json
+      description: Subscribe to receive presence updates from a contact
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Subscribe data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SubscribePresenceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Subscribe to presence updates
+      tags:
+      - contact
+  /sessions/{name}/contacts/blocklist:
+    get:
+      description: Get list of blocked contacts
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/BlocklistResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get blocked contacts
+      tags:
+      - contact
+    put:
+      consumes:
+      - application/json
+      description: Block or unblock a contact
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Block action
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/BlocklistRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/BlocklistActionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Block or unblock contact
+      tags:
+      - contact
+  /sessions/{name}/contacts/check:
+    post:
+      consumes:
+      - application/json
+      description: Check if phone numbers are registered on WhatsApp
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Phone numbers
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/CheckPhoneRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/CheckPhoneResultsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Check if phones are registered on WhatsApp
+      tags:
+      - contact
+  /sessions/{name}/groups:
+    get:
+      consumes:
+      - application/json
+      description: Get list of groups the session is part of
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/GroupActionResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get joined groups
+      tags:
+      - groups
+    post:
+      consumes:
+      - application/json
+      description: Create a new WhatsApp group with participants
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Group data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/CreateGroupRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/GroupActionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new group
+      tags:
+      - groups
+  /sessions/{name}/groups/{groupId}:
+    get:
+      consumes:
+      - application/json
+      description: Get information about a WhatsApp group
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: groupId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/GroupActionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get group info
+      tags:
+      - groups
+  /sessions/{name}/groups/{groupId}/description:
+    patch:
+      consumes:
+      - application/json
+      description: Update the description/topic of a WhatsApp group
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: New description
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/GroupUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/GroupActionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update group description
+      tags:
+      - groups
+  /sessions/{name}/groups/{groupId}/invite:
+    get:
+      consumes:
+      - application/json
+      description: Get the invite link for a WhatsApp group
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: groupId
+        required: true
+        type: string
+      - description: Reset link
+        in: query
+        name: reset
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/GroupInviteLinkResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get group invite link
+      tags:
+      - groups
+  /sessions/{name}/groups/{groupId}/membership:
+    delete:
+      consumes:
+      - application/json
+      description: Leave a WhatsApp group
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: groupId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/GroupActionResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Leave group
+      tags:
+      - groups
+  /sessions/{name}/groups/{groupId}/messages:
+    post:
+      consumes:
+      - application/json
+      description: Send a text message to a WhatsApp group
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Message data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SendGroupMessageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send message to group
+      tags:
+      - groups
+  /sessions/{name}/groups/{groupId}/name:
+    patch:
+      consumes:
+      - application/json
+      description: Update the name of a WhatsApp group
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: New name
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/GroupUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/GroupActionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update group name
+      tags:
+      - groups
+  /sessions/{name}/groups/{groupId}/participants:
+    delete:
+      consumes:
+      - application/json
+      description: Remove participants from a WhatsApp group
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Participants
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/GroupParticipantsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/GroupActionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Remove participants from group
+      tags:
+      - groups
+    post:
+      consumes:
+      - application/json
+      description: Add participants to a WhatsApp group
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Participants
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/GroupParticipantsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/GroupActionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Add participants to group
+      tags:
+      - groups
+  /sessions/{name}/groups/{groupId}/participants/demote:
+    patch:
+      consumes:
+      - application/json
+      description: Demote participants from admin in a WhatsApp group
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Participants
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/GroupParticipantsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/GroupActionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Demote participants from admin
+      tags:
+      - groups
+  /sessions/{name}/groups/{groupId}/participants/promote:
+    patch:
+      consumes:
+      - application/json
+      description: Promote participants to admin in a WhatsApp group
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Participants
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/GroupParticipantsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/GroupActionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Promote participants to admin
+      tags:
+      - groups
+  /sessions/{name}/groups/{groupId}/picture:
+    put:
+      consumes:
+      - application/json
+      description: Set the group profile picture
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Picture data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/GroupPictureRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SetPictureResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set group picture
+      tags:
+      - groups
+  /sessions/{name}/groups/{groupId}/requests:
+    get:
+      description: Get list of pending join requests for a group
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: groupId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/GroupRequestParticipantsResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get pending join requests
+      tags:
+      - groups
+    post:
+      consumes:
+      - application/json
+      description: Approve or reject pending join requests
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: groupId
+        required: true
+        type: string
+      - description: Action data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/GroupRequestActionBodyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/GroupActionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Approve or reject join requests
+      tags:
+      - groups
+  /sessions/{name}/groups/{groupId}/settings/announce:
+    patch:
+      consumes:
+      - application/json
+      description: Set whether only admins can send messages
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Announce setting
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/GroupAnnounceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set group announce mode
+      tags:
+      - groups
+  /sessions/{name}/groups/{groupId}/settings/approval:
+    patch:
+      consumes:
+      - application/json
+      description: Set whether join requests need admin approval
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Approval setting
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/GroupApprovalRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set group join approval mode
+      tags:
+      - groups
+  /sessions/{name}/groups/{groupId}/settings/locked:
+    patch:
+      consumes:
+      - application/json
+      description: Set whether only admins can edit group info
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Locked setting
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/GroupLockedRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set group locked mode
+      tags:
+      - groups
+  /sessions/{name}/groups/{groupId}/settings/memberadd:
+    patch:
+      consumes:
+      - application/json
+      description: Set whether only admins or all members can add participants
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Member add mode
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/GroupMemberAddModeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set who can add members
+      tags:
+      - groups
+  /sessions/{name}/groups/info/link:
+    get:
+      description: Get group information using an invite link
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Invite link or code
+        in: query
+        name: link
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/GroupActionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get group info from invite link
+      tags:
+      - groups
+  /sessions/{name}/groups/join:
+    post:
+      consumes:
+      - application/json
+      description: Join a WhatsApp group using an invite link
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Invite link
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/JoinGroupRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/GroupActionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Join group via link
+      tags:
+      - groups
+  /sessions/{name}/logout:
+    post:
+      consumes:
+      - application/json
+      description: Logout from WhatsApp and clear session credentials
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Logout session
+      tags:
+      - sessions
+  /sessions/{name}/messages/audio:
+    post:
+      consumes:
+      - application/json
+      description: Send an audio to a phone number (base64 encoded)
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Audio data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SendAudioRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send audio message
+      tags:
+      - messages
+  /sessions/{name}/messages/buttons:
+    post:
+      consumes:
+      - application/json
+      description: Send a message with buttons (max 3 buttons)
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Buttons data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SendButtonsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send buttons message
+      tags:
+      - messages
+  /sessions/{name}/messages/carousel:
+    post:
+      consumes:
+      - application/json
+      description: Send an interactive carousel message with multiple cards, each
+        with image/video and buttons
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Carousel data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SendCarouselRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send carousel message
+      tags:
+      - messages
+  /sessions/{name}/messages/contact:
+    post:
+      consumes:
+      - application/json
+      description: Send a contact card to a phone number
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Contact data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SendContactRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send contact message
+      tags:
+      - messages
+  /sessions/{name}/messages/document:
+    post:
+      consumes:
+      - application/json
+      description: Send a document to a phone number (base64 encoded)
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Document data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SendDocumentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send document message
+      tags:
+      - messages
+  /sessions/{name}/messages/image:
+    post:
+      consumes:
+      - application/json
+      description: Send an image to a phone number (base64 encoded)
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Image data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SendImageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send image message
+      tags:
+      - messages
+  /sessions/{name}/messages/interactive:
+    post:
+      consumes:
+      - application/json
+      description: Send an interactive message with buttons (quick_reply, cta_url,
+        cta_call, cta_copy)
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Interactive data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SendInteractiveRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send interactive message with native flow buttons
+      tags:
+      - messages
+  /sessions/{name}/messages/list:
+    post:
+      consumes:
+      - application/json
+      description: Send a message with a selectable list
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: List data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SendListRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send list message
+      tags:
+      - messages
+  /sessions/{name}/messages/location:
+    post:
+      consumes:
+      - application/json
+      description: Send a location to a phone number
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Location data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SendLocationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send location message
+      tags:
+      - messages
+  /sessions/{name}/messages/poll:
+    post:
+      consumes:
+      - application/json
+      description: Send a poll to a phone number
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Poll data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SendPollRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send poll message
+      tags:
+      - messages
+  /sessions/{name}/messages/poll/vote:
+    post:
+      consumes:
+      - application/json
+      description: Vote for options in an existing poll
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Vote data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SendPollVoteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Vote in a poll
+      tags:
+      - messages
+  /sessions/{name}/messages/reaction:
+    post:
+      consumes:
+      - application/json
+      description: Send a reaction emoji to a message
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Reaction data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SendReactionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send reaction to message
+      tags:
+      - messages
+  /sessions/{name}/messages/sticker:
+    post:
+      consumes:
+      - application/json
+      description: Send a sticker to a phone number (base64 encoded webp)
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Sticker data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SendStickerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send sticker message
+      tags:
+      - messages
+  /sessions/{name}/messages/template:
+    post:
+      consumes:
+      - application/json
+      description: Send a message with template buttons (URL, Call, QuickReply). Works
+        on Web and Mobile.
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Template data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SendTemplateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send template message
+      tags:
+      - messages
+  /sessions/{name}/messages/text:
+    post:
+      consumes:
+      - application/json
+      description: Send a text message to a phone number
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Message data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SendTextRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send text message
+      tags:
+      - messages
+  /sessions/{name}/messages/video:
+    post:
+      consumes:
+      - application/json
+      description: Send a video to a phone number (base64 encoded)
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Video data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SendVideoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send video message
+      tags:
+      - messages
+  /sessions/{name}/newsletters:
+    get:
+      description: Get list of newsletters the session is subscribed to
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/NewsletterListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: List subscribed newsletters
+      tags:
+      - newsletter
+    post:
+      consumes:
+      - application/json
+      description: Create a new WhatsApp newsletter/channel
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Newsletter data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/CreateNewsletterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/NewsletterResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a newsletter/channel
+      tags:
+      - newsletter
+  /sessions/{name}/newsletters/{newsletterId}:
+    get:
+      description: Get information about a WhatsApp newsletter
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Newsletter JID
+        in: path
+        name: newsletterId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/NewsletterResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get newsletter info
+      tags:
+      - newsletter
+  /sessions/{name}/newsletters/{newsletterId}/follow:
+    delete:
+      consumes:
+      - application/json
+      description: Unfollow/unsubscribe from a WhatsApp newsletter
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Newsletter JID
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/NewsletterActionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Unfollow a newsletter
+      tags:
+      - newsletter
+    post:
+      consumes:
+      - application/json
+      description: Follow/subscribe to a WhatsApp newsletter
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Newsletter JID
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/NewsletterActionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Follow a newsletter
+      tags:
+      - newsletter
+  /sessions/{name}/newsletters/{newsletterId}/messages:
+    get:
+      description: Get messages from a WhatsApp newsletter
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Newsletter JID
+        in: path
+        name: newsletterId
+        required: true
+        type: string
+      - default: 50
+        description: Number of messages
+        in: query
+        name: count
+        type: integer
+      - description: Before server ID
+        in: query
+        name: before
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/NewsletterResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get newsletter messages
+      tags:
+      - newsletter
+  /sessions/{name}/newsletters/{newsletterId}/mute:
+    patch:
+      consumes:
+      - application/json
+      description: Toggle mute status of a newsletter
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Mute data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/NewsletterMuteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Mute/unmute newsletter
+      tags:
+      - newsletter
+  /sessions/{name}/newsletters/{newsletterId}/reactions:
+    post:
+      consumes:
+      - application/json
+      description: Send a reaction to a newsletter message
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Reaction data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/NewsletterReactionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: React to newsletter message
+      tags:
+      - newsletter
+  /sessions/{name}/pair/phone:
+    post:
+      consumes:
+      - application/json
+      description: Pair WhatsApp session using phone number instead of QR code
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Phone data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/PairPhoneRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/PairPhoneResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Pair using phone number
+      tags:
+      - sessions
+  /sessions/{name}/presence:
+    put:
+      consumes:
+      - application/json
+      description: Set online/offline presence status
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Presence data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SetPresenceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/PresenceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set online presence
+      tags:
+      - contact
+  /sessions/{name}/profile:
+    get:
+      consumes:
+      - application/json
+      description: Get own WhatsApp profile information
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ProfileInfoResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get own profile info
+      tags:
+      - profile
+  /sessions/{name}/profile/disappearing:
+    patch:
+      consumes:
+      - application/json
+      description: Set the default disappearing messages timer for new chats
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Timer data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/DefaultDisappearingRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set default disappearing timer
+      tags:
+      - profile
+  /sessions/{name}/profile/name:
+    patch:
+      consumes:
+      - application/json
+      description: Set WhatsApp display name (push name)
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Name data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SetPushNameRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SetNameResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set display name
+      tags:
+      - profile
+  /sessions/{name}/profile/picture:
+    delete:
+      consumes:
+      - application/json
+      description: Remove WhatsApp profile picture
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete profile picture
+      tags:
+      - profile
+    put:
+      consumes:
+      - application/json
+      description: Set WhatsApp profile picture
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Image data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SetProfilePictureRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SetPictureResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set profile picture
+      tags:
+      - profile
+  /sessions/{name}/profile/privacy:
+    get:
+      consumes:
+      - application/json
+      description: Get WhatsApp privacy settings
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/PrivacySettingsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get privacy settings
+      tags:
+      - profile
+    put:
+      consumes:
+      - application/json
+      description: Set WhatsApp privacy settings
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Privacy settings
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SetPrivacyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set privacy settings
+      tags:
+      - profile
+  /sessions/{name}/profile/status:
+    patch:
+      consumes:
+      - application/json
+      description: Set WhatsApp status/about message
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Status data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SetStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SetStatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set status message
+      tags:
+      - profile
+  /sessions/{name}/qr:
+    get:
+      consumes:
+      - application/json
+      description: Get QR code for WhatsApp authentication
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - default: json
+        description: Response format (json or image)
+        in: query
+        name: format
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/QRResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get QR code
+      tags:
+      - sessions
+  /sessions/{name}/qrlink:
+    get:
+      description: Get QR link for adding contact
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Revoke existing link
+        in: query
+        name: revoke
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/QRLinkResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get contact QR link
+      tags:
+      - contact
+  /sessions/{name}/restart:
+    post:
+      consumes:
+      - application/json
+      description: Disconnect and reconnect a WhatsApp session
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Restart session
+      tags:
+      - sessions
+  /sessions/{name}/stories:
+    post:
+      consumes:
+      - application/json
+      description: Post a text or media story (status update visible to contacts)
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Story data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SendStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Post a story
+      tags:
+      - status
+  /sessions/{name}/stories/privacy:
+    get:
+      description: Get who can see your status updates
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/StatusPrivacyResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get status privacy settings
+      tags:
+      - status
+  /sessions/{name}/webhooks:
+    get:
+      description: Get the webhook configuration for a session
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/WebhookResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get webhook
+      tags:
+      - webhook
+    post:
+      consumes:
+      - application/json
+      description: Set or update the webhook configuration for a session (one webhook
+        per session)
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Webhook configuration
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/SetWebhookRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/WebhookResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set webhook
+      tags:
+      - webhook
 securityDefinitions:
   ApiKeyAuth:
     in: header

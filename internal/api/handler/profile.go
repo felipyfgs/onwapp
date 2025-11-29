@@ -31,7 +31,7 @@ func NewProfileHandler(whatsappService *service.WhatsAppService) *ProfileHandler
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/profile [get]
+// @Router       /sessions/{name}/profile [get]
 func (h *ProfileHandler) GetProfile(c *gin.Context) {
 	name := c.Param("name")
 
@@ -60,7 +60,7 @@ func (h *ProfileHandler) GetProfile(c *gin.Context) {
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/profile/status [patch]
+// @Router       /sessions/{name}/profile/status [patch]
 func (h *ProfileHandler) SetStatus(c *gin.Context) {
 	name := c.Param("name")
 
@@ -94,7 +94,7 @@ func (h *ProfileHandler) SetStatus(c *gin.Context) {
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/profile/name [patch]
+// @Router       /sessions/{name}/profile/name [patch]
 func (h *ProfileHandler) SetPushName(c *gin.Context) {
 	name := c.Param("name")
 
@@ -128,7 +128,7 @@ func (h *ProfileHandler) SetPushName(c *gin.Context) {
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/profile/picture [put]
+// @Router       /sessions/{name}/profile/picture [put]
 func (h *ProfileHandler) SetProfilePicture(c *gin.Context) {
 	name := c.Param("name")
 
@@ -167,7 +167,7 @@ func (h *ProfileHandler) SetProfilePicture(c *gin.Context) {
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/profile/picture [delete]
+// @Router       /sessions/{name}/profile/picture [delete]
 func (h *ProfileHandler) DeleteProfilePicture(c *gin.Context) {
 	name := c.Param("name")
 
@@ -192,7 +192,7 @@ func (h *ProfileHandler) DeleteProfilePicture(c *gin.Context) {
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/profile/privacy [get]
+// @Router       /sessions/{name}/profile/privacy [get]
 func (h *ProfileHandler) GetPrivacySettings(c *gin.Context) {
 	name := c.Param("name")
 
@@ -221,7 +221,7 @@ func (h *ProfileHandler) GetPrivacySettings(c *gin.Context) {
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/profile/privacy [put]
+// @Router       /sessions/{name}/profile/privacy [put]
 func (h *ProfileHandler) SetPrivacySettings(c *gin.Context) {
 	name := c.Param("name")
 
@@ -258,7 +258,7 @@ func (h *ProfileHandler) SetPrivacySettings(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/profile/disappearing [patch]
+// @Router       /sessions/{name}/profile/disappearing [patch]
 func (h *ProfileHandler) SetDefaultDisappearingTimer(c *gin.Context) {
 	name := c.Param("name")
 

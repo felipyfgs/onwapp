@@ -29,7 +29,7 @@ func NewCallHandler(whatsappService *service.WhatsAppService) *CallHandler {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/calls/reject [post]
+// @Router       /sessions/{name}/calls/reject [post]
 func (h *CallHandler) RejectCall(c *gin.Context) {
 	name := c.Param("name")
 

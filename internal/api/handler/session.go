@@ -101,7 +101,7 @@ func (h *SessionHandler) Create(c *gin.Context) {
 // @Failure      404    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id} [delete]
+// @Router       /sessions/{name} [delete]
 func (h *SessionHandler) Delete(c *gin.Context) {
 	name := c.Param("name")
 
@@ -124,7 +124,7 @@ func (h *SessionHandler) Delete(c *gin.Context) {
 // @Failure      404    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id} [get]
+// @Router       /sessions/{name} [get]
 func (h *SessionHandler) Info(c *gin.Context) {
 	name := c.Param("name")
 
@@ -158,7 +158,7 @@ func (h *SessionHandler) Info(c *gin.Context) {
 // @Failure      500    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/connect [post]
+// @Router       /sessions/{name}/connect [post]
 func (h *SessionHandler) Connect(c *gin.Context) {
 	name := c.Param("name")
 
@@ -197,7 +197,7 @@ func (h *SessionHandler) Connect(c *gin.Context) {
 // @Failure      500    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/logout [post]
+// @Router       /sessions/{name}/logout [post]
 func (h *SessionHandler) Logout(c *gin.Context) {
 	name := c.Param("name")
 
@@ -220,7 +220,7 @@ func (h *SessionHandler) Logout(c *gin.Context) {
 // @Failure      500    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/restart [post]
+// @Router       /sessions/{name}/restart [post]
 func (h *SessionHandler) Restart(c *gin.Context) {
 	name := c.Param("name")
 
@@ -248,7 +248,7 @@ func (h *SessionHandler) Restart(c *gin.Context) {
 // @Failure      404     {object}  dto.ErrorResponse
 // @Failure      401     {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/qr [get]
+// @Router       /sessions/{name}/qr [get]
 func (h *SessionHandler) QR(c *gin.Context) {
 	name := c.Param("name")
 	format := c.DefaultQuery("format", "json")
@@ -298,7 +298,7 @@ func (h *SessionHandler) QR(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/pair/phone [post]
+// @Router       /sessions/{name}/pair/phone [post]
 func (h *SessionHandler) PairPhone(c *gin.Context) {
 	name := c.Param("name")
 

@@ -30,7 +30,7 @@ func NewContactHandler(whatsappService *service.WhatsAppService) *ContactHandler
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/contacts/check [post]
+// @Router       /sessions/{name}/contacts/check [post]
 func (h *ContactHandler) CheckPhone(c *gin.Context) {
 	name := c.Param("name")
 
@@ -74,7 +74,7 @@ func (h *ContactHandler) CheckPhone(c *gin.Context) {
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/contacts/{phone} [get]
+// @Router       /sessions/{name}/contacts/{phone} [get]
 func (h *ContactHandler) GetContactInfo(c *gin.Context) {
 	name := c.Param("name")
 
@@ -117,7 +117,7 @@ func (h *ContactHandler) GetContactInfo(c *gin.Context) {
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/contacts/{phone}/avatar [get]
+// @Router       /sessions/{name}/contacts/{phone}/avatar [get]
 func (h *ContactHandler) GetAvatar(c *gin.Context) {
 	name := c.Param("name")
 	phone := c.Param("phone")
@@ -154,7 +154,7 @@ func (h *ContactHandler) GetAvatar(c *gin.Context) {
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/contacts [get]
+// @Router       /sessions/{name}/contacts [get]
 func (h *ContactHandler) GetContacts(c *gin.Context) {
 	name := c.Param("name")
 
@@ -183,7 +183,7 @@ func (h *ContactHandler) GetContacts(c *gin.Context) {
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/presence [put]
+// @Router       /sessions/{name}/presence [put]
 func (h *ContactHandler) SetPresence(c *gin.Context) {
 	name := c.Param("name")
 
@@ -222,7 +222,7 @@ func (h *ContactHandler) SetPresence(c *gin.Context) {
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/chats/{chatId}/typing [post]
+// @Router       /sessions/{name}/chats/{chatId}/typing [post]
 func (h *ContactHandler) SetChatPresence(c *gin.Context) {
 	name := c.Param("name")
 
@@ -256,7 +256,7 @@ func (h *ContactHandler) SetChatPresence(c *gin.Context) {
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/chats/{chatId}/read [post]
+// @Router       /sessions/{name}/chats/{chatId}/read [post]
 func (h *ContactHandler) MarkRead(c *gin.Context) {
 	name := c.Param("name")
 
@@ -285,7 +285,7 @@ func (h *ContactHandler) MarkRead(c *gin.Context) {
 // @Success      200    {object}  dto.BlocklistResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/contacts/blocklist [get]
+// @Router       /sessions/{name}/contacts/blocklist [get]
 func (h *ContactHandler) GetBlocklist(c *gin.Context) {
 	name := c.Param("name")
 
@@ -318,7 +318,7 @@ func (h *ContactHandler) GetBlocklist(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/contacts/blocklist [put]
+// @Router       /sessions/{name}/contacts/blocklist [put]
 func (h *ContactHandler) UpdateBlocklist(c *gin.Context) {
 	name := c.Param("name")
 
@@ -354,7 +354,7 @@ func (h *ContactHandler) UpdateBlocklist(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/contacts/{phone}/presence/subscribe [post]
+// @Router       /sessions/{name}/contacts/{phone}/presence/subscribe [post]
 func (h *ContactHandler) SubscribePresence(c *gin.Context) {
 	name := c.Param("name")
 
@@ -382,7 +382,7 @@ func (h *ContactHandler) SubscribePresence(c *gin.Context) {
 // @Success      200    {object}  dto.QRLinkResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/qrlink [get]
+// @Router       /sessions/{name}/qrlink [get]
 func (h *ContactHandler) GetContactQRLink(c *gin.Context) {
 	name := c.Param("name")
 	revoke := c.Query("revoke") == "true"
@@ -409,7 +409,7 @@ func (h *ContactHandler) GetContactQRLink(c *gin.Context) {
 // @Success      200    {object}  dto.BusinessProfileResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/contacts/{phone}/business [get]
+// @Router       /sessions/{name}/contacts/{phone}/business [get]
 func (h *ContactHandler) GetBusinessProfile(c *gin.Context) {
 	name := c.Param("name")
 	phone := c.Param("phone")
