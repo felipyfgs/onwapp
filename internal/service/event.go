@@ -284,7 +284,7 @@ func (s *EventService) handleMessage(ctx context.Context, session *model.Session
 
 	msg := &model.Message{
 		SessionID:    session.ID,
-		MessageID:    e.Info.ID,
+		MsgId:        e.Info.ID,
 		ChatJID:      e.Info.Chat.String(),
 		SenderJID:    e.Info.Sender.String(),
 		Timestamp:    e.Info.Timestamp,
@@ -294,10 +294,10 @@ func (s *EventService) handleMessage(ctx context.Context, session *model.Session
 		MediaType:    e.Info.MediaType,
 		Category:     e.Info.Category,
 		Content:      content,
-		IsFromMe:     e.Info.IsFromMe,
+		FromMe:       e.Info.IsFromMe,
 		IsGroup:      e.Info.IsGroup,
-		IsEphemeral:  e.IsEphemeral,
-		IsViewOnce:   e.IsViewOnce || e.IsViewOnceV2,
+		Ephemeral:    e.IsEphemeral,
+		ViewOnce:     e.IsViewOnce || e.IsViewOnceV2,
 		IsEdit:       false,
 		EditTargetID: "",
 		QuotedID:     e.Info.MsgMetaInfo.TargetID,
@@ -637,20 +637,20 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 			}
 
 			msg := &model.Message{
-				SessionID:   session.ID,
-				MessageID:   key.GetID(),
-				ChatJID:     chatJID,
-				SenderJID:   senderJID,
-				Timestamp:   timestamp,
-				PushName:    webMsg.GetPushName(),
-				Type:        msgType,
-				Content:     content,
-				IsFromMe:    key.GetFromMe(),
-				IsGroup:     isGroup,
-				IsEphemeral: webMsg.GetEphemeralDuration() > 0,
-				Status:      status,
-				RawEvent:    rawEvent,
-				Reactions:   reactionsJSON,
+				SessionID: session.ID,
+				MsgId:     key.GetID(),
+				ChatJID:   chatJID,
+				SenderJID: senderJID,
+				Timestamp: timestamp,
+				PushName:  webMsg.GetPushName(),
+				Type:      msgType,
+				Content:   content,
+				FromMe:    key.GetFromMe(),
+				IsGroup:   isGroup,
+				Ephemeral: webMsg.GetEphemeralDuration() > 0,
+				Status:    status,
+				RawEvent:  rawEvent,
+				Reactions: reactionsJSON,
 			}
 
 			allMessages = append(allMessages, msg)

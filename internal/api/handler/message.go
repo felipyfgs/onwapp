@@ -27,14 +27,14 @@ func NewMessageHandler(whatsappService *service.WhatsAppService) *MessageHandler
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string          true  "Session name"
+// @Param        id     path      string          true  "Session name"
 // @Param        body   body      dto.SendTextRequest true  "Message data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/send/text [post]
+// @Router       /sessions/{id}/messages/text [post]
 func (h *MessageHandler) SendText(c *gin.Context) {
 	name := c.Param("id")
 
@@ -63,14 +63,14 @@ func (h *MessageHandler) SendText(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string           true  "Session name"
+// @Param        id     path      string           true  "Session name"
 // @Param        body   body      dto.SendImageRequest true  "Image data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/send/image [post]
+// @Router       /sessions/{id}/messages/image [post]
 func (h *MessageHandler) SendImage(c *gin.Context) {
 	name := c.Param("id")
 
@@ -110,14 +110,14 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string           true  "Session name"
+// @Param        id     path      string           true  "Session name"
 // @Param        body   body      dto.SendAudioRequest true  "Audio data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/send/audio [post]
+// @Router       /sessions/{id}/messages/audio [post]
 func (h *MessageHandler) SendAudio(c *gin.Context) {
 	name := c.Param("id")
 
@@ -157,14 +157,14 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string           true  "Session name"
+// @Param        id     path      string           true  "Session name"
 // @Param        body   body      dto.SendVideoRequest true  "Video data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/send/video [post]
+// @Router       /sessions/{id}/messages/video [post]
 func (h *MessageHandler) SendVideo(c *gin.Context) {
 	name := c.Param("id")
 
@@ -204,14 +204,14 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string              true  "Session name"
+// @Param        id     path      string              true  "Session name"
 // @Param        body   body      dto.SendDocumentRequest true  "Document data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/send/document [post]
+// @Router       /sessions/{id}/messages/document [post]
 func (h *MessageHandler) SendDocument(c *gin.Context) {
 	name := c.Param("id")
 
@@ -251,14 +251,14 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string             true  "Session name"
+// @Param        id     path      string             true  "Session name"
 // @Param        body   body      dto.SendStickerRequest true  "Sticker data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/send/sticker [post]
+// @Router       /sessions/{id}/messages/sticker [post]
 func (h *MessageHandler) SendSticker(c *gin.Context) {
 	name := c.Param("id")
 
@@ -298,14 +298,14 @@ func (h *MessageHandler) SendSticker(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string              true  "Session name"
+// @Param        id     path      string              true  "Session name"
 // @Param        body   body      dto.SendLocationRequest true  "Location data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/send/location [post]
+// @Router       /sessions/{id}/messages/location [post]
 func (h *MessageHandler) SendLocation(c *gin.Context) {
 	name := c.Param("id")
 
@@ -334,14 +334,14 @@ func (h *MessageHandler) SendLocation(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string             true  "Session name"
+// @Param        id     path      string             true  "Session name"
 // @Param        body   body      dto.SendContactRequest true  "Contact data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/send/contact [post]
+// @Router       /sessions/{id}/messages/contact [post]
 func (h *MessageHandler) SendContact(c *gin.Context) {
 	name := c.Param("id")
 
@@ -370,14 +370,14 @@ func (h *MessageHandler) SendContact(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string              true  "Session name"
+// @Param        id     path      string              true  "Session name"
 // @Param        body   body      dto.SendReactionRequest true  "Reaction data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/send/reaction [post]
+// @Router       /sessions/{id}/messages/reaction [post]
 func (h *MessageHandler) SendReaction(c *gin.Context) {
 	name := c.Param("id")
 
@@ -406,14 +406,14 @@ func (h *MessageHandler) SendReaction(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string              true  "Session name"
+// @Param        id     path      string              true  "Session name"
 // @Param        body   body      dto.SendPollRequest true  "Poll data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/send/poll [post]
+// @Router       /sessions/{id}/messages/poll [post]
 func (h *MessageHandler) SendPoll(c *gin.Context) {
 	name := c.Param("id")
 
@@ -442,14 +442,14 @@ func (h *MessageHandler) SendPoll(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                  true  "Session name"
+// @Param        id     path      string                  true  "Session name"
 // @Param        body   body      dto.SendPollVoteRequest true  "Vote data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/send/poll/vote [post]
+// @Router       /sessions/{id}/messages/poll/vote [post]
 func (h *MessageHandler) SendPollVote(c *gin.Context) {
 	name := c.Param("id")
 
@@ -478,14 +478,14 @@ func (h *MessageHandler) SendPollVote(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                 true  "Session name"
+// @Param        id     path      string                 true  "Session name"
 // @Param        body   body      dto.SendButtonsRequest true  "Buttons data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/send/buttons [post]
+// @Router       /sessions/{id}/messages/buttons [post]
 func (h *MessageHandler) SendButtons(c *gin.Context) {
 	name := c.Param("id")
 
@@ -529,14 +529,14 @@ func (h *MessageHandler) SendButtons(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string              true  "Session name"
+// @Param        id     path      string              true  "Session name"
 // @Param        body   body      dto.SendListRequest true  "List data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/send/list [post]
+// @Router       /sessions/{id}/messages/list [post]
 func (h *MessageHandler) SendList(c *gin.Context) {
 	name := c.Param("id")
 
@@ -589,14 +589,14 @@ func (h *MessageHandler) SendList(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                     true  "Session name"
+// @Param        id     path      string                     true  "Session name"
 // @Param        body   body      dto.SendInteractiveRequest true  "Interactive data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/send/interactive [post]
+// @Router       /sessions/{id}/messages/interactive [post]
 func (h *MessageHandler) SendInteractive(c *gin.Context) {
 	name := c.Param("id")
 
@@ -640,14 +640,14 @@ func (h *MessageHandler) SendInteractive(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                   true  "Session name"
+// @Param        id     path      string                   true  "Session name"
 // @Param        body   body      dto.SendTemplateRequest  true  "Template data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/send/template [post]
+// @Router       /sessions/{id}/messages/template [post]
 func (h *MessageHandler) SendTemplate(c *gin.Context) {
 	name := c.Param("id")
 
@@ -789,14 +789,14 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                   true  "Session name"
+// @Param        id     path      string                   true  "Session name"
 // @Param        body   body      dto.SendCarouselRequest  true  "Carousel data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/send/carousel [post]
+// @Router       /sessions/{id}/messages/carousel [post]
 func (h *MessageHandler) SendCarousel(c *gin.Context) {
 	name := c.Param("id")
 

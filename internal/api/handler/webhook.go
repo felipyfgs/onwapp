@@ -29,11 +29,11 @@ func NewWebhookHandler(webhookService *service.WebhookService, database *db.Data
 // @Description Get the webhook configuration for a session
 // @Tags webhook
 // @Produce json
-// @Param name path string true "Session name"
+// @Param id path string true "Session name"
 // @Success 200 {object} dto.WebhookResponse
 // @Failure 404 {object} dto.ErrorResponse
 // @Security ApiKeyAuth
-// @Router /sessions/{name}/webhook [get]
+// @Router /sessions/{id}/webhooks [get]
 func (h *WebhookHandler) GetWebhook(c *gin.Context) {
 	name := c.Param("id")
 
@@ -72,13 +72,13 @@ func (h *WebhookHandler) GetWebhook(c *gin.Context) {
 // @Tags webhook
 // @Accept json
 // @Produce json
-// @Param name path string true "Session name"
+// @Param id path string true "Session name"
 // @Param request body dto.SetWebhookRequest true "Webhook configuration"
 // @Success 200 {object} dto.WebhookResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 404 {object} dto.ErrorResponse
 // @Security ApiKeyAuth
-// @Router /sessions/{name}/webhook [post]
+// @Router /sessions/{id}/webhooks [post]
 func (h *WebhookHandler) SetWebhook(c *gin.Context) {
 	name := c.Param("id")
 

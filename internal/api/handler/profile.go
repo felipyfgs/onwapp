@@ -26,12 +26,12 @@ func NewProfileHandler(whatsappService *service.WhatsAppService) *ProfileHandler
 // @Tags         profile
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string  true  "Session name"
+// @Param        id     path      string  true  "Session name"
 // @Success      200    {object}  dto.ProfileInfoResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/profile [get]
+// @Router       /sessions/{id}/profile [get]
 func (h *ProfileHandler) GetProfile(c *gin.Context) {
 	name := c.Param("id")
 
@@ -53,14 +53,14 @@ func (h *ProfileHandler) GetProfile(c *gin.Context) {
 // @Tags         profile
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                 true  "Session name"
+// @Param        id     path      string                 true  "Session name"
 // @Param        body   body      dto.SetStatusRequest   true  "Status data"
 // @Success      200    {object}  dto.SetStatusResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/profile/status [put]
+// @Router       /sessions/{id}/profile/status [patch]
 func (h *ProfileHandler) SetStatus(c *gin.Context) {
 	name := c.Param("id")
 
@@ -87,14 +87,14 @@ func (h *ProfileHandler) SetStatus(c *gin.Context) {
 // @Tags         profile
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                   true  "Session name"
+// @Param        id     path      string                   true  "Session name"
 // @Param        body   body      dto.SetPushNameRequest   true  "Name data"
 // @Success      200    {object}  dto.SetNameResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/profile/name [put]
+// @Router       /sessions/{id}/profile/name [patch]
 func (h *ProfileHandler) SetPushName(c *gin.Context) {
 	name := c.Param("id")
 
@@ -121,14 +121,14 @@ func (h *ProfileHandler) SetPushName(c *gin.Context) {
 // @Tags         profile
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                        true  "Session name"
+// @Param        id     path      string                        true  "Session name"
 // @Param        body   body      dto.SetProfilePictureRequest  true  "Image data"
 // @Success      200    {object}  dto.SetPictureResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/profile/picture [put]
+// @Router       /sessions/{id}/profile/picture [put]
 func (h *ProfileHandler) SetProfilePicture(c *gin.Context) {
 	name := c.Param("id")
 
@@ -162,12 +162,12 @@ func (h *ProfileHandler) SetProfilePicture(c *gin.Context) {
 // @Tags         profile
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string  true  "Session name"
+// @Param        id     path      string  true  "Session name"
 // @Success      200    {object}  dto.SuccessResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/profile/picture [delete]
+// @Router       /sessions/{id}/profile/picture [delete]
 func (h *ProfileHandler) DeleteProfilePicture(c *gin.Context) {
 	name := c.Param("id")
 
@@ -187,12 +187,12 @@ func (h *ProfileHandler) DeleteProfilePicture(c *gin.Context) {
 // @Tags         profile
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string  true  "Session name"
+// @Param        id     path      string  true  "Session name"
 // @Success      200    {object}  dto.PrivacySettingsResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/profile/privacy [get]
+// @Router       /sessions/{id}/profile/privacy [get]
 func (h *ProfileHandler) GetPrivacySettings(c *gin.Context) {
 	name := c.Param("id")
 
@@ -214,14 +214,14 @@ func (h *ProfileHandler) GetPrivacySettings(c *gin.Context) {
 // @Tags         profile
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                  true  "Session name"
+// @Param        id     path      string                  true  "Session name"
 // @Param        body   body      dto.SetPrivacyRequest   true  "Privacy settings"
 // @Success      200    {object}  dto.SuccessResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/profile/privacy [put]
+// @Router       /sessions/{id}/profile/privacy [put]
 func (h *ProfileHandler) SetPrivacySettings(c *gin.Context) {
 	name := c.Param("id")
 
@@ -252,13 +252,13 @@ func (h *ProfileHandler) SetPrivacySettings(c *gin.Context) {
 // @Tags         profile
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                        true  "Session name"
+// @Param        id     path      string                        true  "Session name"
 // @Param        body   body      dto.DefaultDisappearingRequest true  "Timer data"
 // @Success      200    {object}  dto.SuccessResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/profile/disappearing [put]
+// @Router       /sessions/{id}/profile/disappearing [patch]
 func (h *ProfileHandler) SetDefaultDisappearingTimer(c *gin.Context) {
 	name := c.Param("id")
 

@@ -31,7 +31,7 @@ func NewSessionHandler(sessionService *service.SessionService, whatsappService *
 // @Success      200    {array}   dto.SessionResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/fetch [get]
+// @Router       /sessions [get]
 func (h *SessionHandler) Fetch(c *gin.Context) {
 	sessions := h.sessionService.List()
 
@@ -60,12 +60,12 @@ func (h *SessionHandler) Fetch(c *gin.Context) {
 // @Tags         sessions
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string  true  "Session name"
+// @Param        id   path      string  true  "Session name"
 // @Success      201    {object}  dto.SessionResponse
 // @Failure      409    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/create [post]
+// @Router       /sessions [post]
 func (h *SessionHandler) Create(c *gin.Context) {
 	name := c.Param("id")
 
@@ -87,12 +87,12 @@ func (h *SessionHandler) Create(c *gin.Context) {
 // @Tags         sessions
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string  true  "Session name"
+// @Param        id   path      string  true  "Session name"
 // @Success      200    {object}  dto.MessageResponse
 // @Failure      404    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/delete [delete]
+// @Router       /sessions/{id} [delete]
 func (h *SessionHandler) Delete(c *gin.Context) {
 	name := c.Param("id")
 
@@ -110,12 +110,12 @@ func (h *SessionHandler) Delete(c *gin.Context) {
 // @Tags         sessions
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string  true  "Session name"
+// @Param        id   path      string  true  "Session name"
 // @Success      200    {object}  dto.SessionResponse
 // @Failure      404    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/info [get]
+// @Router       /sessions/{id} [get]
 func (h *SessionHandler) Info(c *gin.Context) {
 	name := c.Param("id")
 
@@ -143,12 +143,12 @@ func (h *SessionHandler) Info(c *gin.Context) {
 // @Tags         sessions
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string  true  "Session name"
+// @Param        id   path      string  true  "Session name"
 // @Success      200    {object}  dto.MessageResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/connect [post]
+// @Router       /sessions/{id}/connect [post]
 func (h *SessionHandler) Connect(c *gin.Context) {
 	name := c.Param("id")
 
@@ -182,12 +182,12 @@ func (h *SessionHandler) Connect(c *gin.Context) {
 // @Tags         sessions
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string  true  "Session name"
+// @Param        id   path      string  true  "Session name"
 // @Success      200    {object}  dto.MessageResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/logout [post]
+// @Router       /sessions/{id}/logout [post]
 func (h *SessionHandler) Logout(c *gin.Context) {
 	name := c.Param("id")
 
@@ -205,12 +205,12 @@ func (h *SessionHandler) Logout(c *gin.Context) {
 // @Tags         sessions
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string  true  "Session name"
+// @Param        id   path      string  true  "Session name"
 // @Success      200    {object}  dto.MessageResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/restart [post]
+// @Router       /sessions/{id}/restart [post]
 func (h *SessionHandler) Restart(c *gin.Context) {
 	name := c.Param("id")
 
@@ -232,13 +232,13 @@ func (h *SessionHandler) Restart(c *gin.Context) {
 // @Tags         sessions
 // @Accept       json
 // @Produce      json
-// @Param        name    path      string  true   "Session name"
+// @Param        id      path      string  true   "Session name"
 // @Param        format  query     string  false  "Response format (json or image)"  default(json)
 // @Success      200     {object}  dto.QRResponse
 // @Failure      404     {object}  dto.ErrorResponse
 // @Failure      401     {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/qr [get]
+// @Router       /sessions/{id}/qr [get]
 func (h *SessionHandler) QR(c *gin.Context) {
 	name := c.Param("id")
 	format := c.DefaultQuery("format", "json")
@@ -282,13 +282,13 @@ func (h *SessionHandler) QR(c *gin.Context) {
 // @Tags         sessions
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string               true  "Session name"
+// @Param        id     path      string               true  "Session name"
 // @Param        body   body      dto.PairPhoneRequest true  "Phone data"
 // @Success      200    {object}  dto.PairPhoneResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/pair/phone [post]
+// @Router       /sessions/{id}/pair/phone [post]
 func (h *SessionHandler) PairPhone(c *gin.Context) {
 	name := c.Param("id")
 

@@ -23,13 +23,13 @@ func NewCallHandler(whatsappService *service.WhatsAppService) *CallHandler {
 // @Tags         call
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string               true  "Session name"
+// @Param        id     path      string               true  "Session name"
 // @Param        body   body      dto.RejectCallRequest true  "Call data"
 // @Success      200    {object}  dto.SuccessResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/call/reject [post]
+// @Router       /sessions/{id}/calls/reject [post]
 func (h *CallHandler) RejectCall(c *gin.Context) {
 	name := c.Param("id")
 

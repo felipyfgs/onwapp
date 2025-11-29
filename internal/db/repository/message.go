@@ -16,13 +16,13 @@ type MessageRepository struct {
 }
 
 const messageSelectFields = `
-	"id", "sessionId", "messageId", "chatJid", COALESCE("senderJid", ''), "timestamp",
-	COALESCE("pushName", ''), COALESCE("senderAlt", ''), "serverID", "verifiedName",
+	"id", "sessionId", "msgId", "chatJid", COALESCE("senderJid", ''), "timestamp",
+	COALESCE("pushName", ''), COALESCE("senderAlt", ''), "serverId", "verifiedName",
 	COALESCE("type", ''), COALESCE("mediaType", ''), COALESCE("category", ''), COALESCE("content", ''),
-	COALESCE("isFromMe", false), COALESCE("isGroup", false), COALESCE("isEphemeral", false), COALESCE("isViewOnce", false), COALESCE("isEdit", false),
+	COALESCE("fromMe", false), COALESCE("isGroup", false), COALESCE("ephemeral", false), COALESCE("viewOnce", false), COALESCE("isEdit", false),
 	COALESCE("editTargetId", ''), COALESCE("quotedId", ''), COALESCE("quotedSender", ''),
 	COALESCE("status", ''), "deliveredAt", "readAt", COALESCE("reactions", '[]'::jsonb), "rawEvent", "createdAt",
-	"chatwootMessageId", "chatwootConversationId", COALESCE("chatwootSourceId", '')`
+	"cwMsgId", "cwConvId", COALESCE("cwSourceId", '')`
 
 func NewMessageRepository(pool *pgxpool.Pool) *MessageRepository {
 	return &MessageRepository{pool: pool}
@@ -33,27 +33,27 @@ func (r *MessageRepository) Save(ctx context.Context, msg *model.Message) (strin
 	now := time.Now()
 	err := r.pool.QueryRow(ctx, `
 		INSERT INTO "zpMessages" (
-			"sessionId", "messageId", "chatJid", "senderJid", "timestamp",
-			"pushName", "senderAlt", "serverID", "verifiedName",
+			"sessionId", "msgId", "chatJid", "senderJid", "timestamp",
+			"pushName", "senderAlt", "serverId", "verifiedName",
 			"type", "mediaType", "category", "content",
-			"isFromMe", "isGroup", "isEphemeral", "isViewOnce", "isEdit",
+			"fromMe", "isGroup", "ephemeral", "viewOnce", "isEdit",
 			"editTargetId", "quotedId", "quotedSender",
 			"status", "deliveredAt", "readAt", "rawEvent", "createdAt",
-			"chatwootMessageId", "chatwootConversationId", "chatwootSourceId"
+			"cwMsgId", "cwConvId", "cwSourceId"
 		)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29)
-		ON CONFLICT ("sessionId", "messageId") DO UPDATE SET
-			"chatwootMessageId" = COALESCE(EXCLUDED."chatwootMessageId", "zpMessages"."chatwootMessageId"),
-			"chatwootConversationId" = COALESCE(EXCLUDED."chatwootConversationId", "zpMessages"."chatwootConversationId"),
-			"chatwootSourceId" = COALESCE(EXCLUDED."chatwootSourceId", "zpMessages"."chatwootSourceId")
+		ON CONFLICT ("sessionId", "msgId") DO UPDATE SET
+			"cwMsgId" = COALESCE(EXCLUDED."cwMsgId", "zpMessages"."cwMsgId"),
+			"cwConvId" = COALESCE(EXCLUDED."cwConvId", "zpMessages"."cwConvId"),
+			"cwSourceId" = COALESCE(EXCLUDED."cwSourceId", "zpMessages"."cwSourceId")
 		RETURNING "id"`,
-		msg.SessionID, msg.MessageID, msg.ChatJID, msg.SenderJID, msg.Timestamp,
-		msg.PushName, msg.SenderAlt, msg.ServerID, msg.VerifiedName,
+		msg.SessionID, msg.MsgId, msg.ChatJID, msg.SenderJID, msg.Timestamp,
+		msg.PushName, msg.SenderAlt, msg.ServerId, msg.VerifiedName,
 		msg.Type, msg.MediaType, msg.Category, msg.Content,
-		msg.IsFromMe, msg.IsGroup, msg.IsEphemeral, msg.IsViewOnce, msg.IsEdit,
+		msg.FromMe, msg.IsGroup, msg.Ephemeral, msg.ViewOnce, msg.IsEdit,
 		msg.EditTargetID, msg.QuotedID, msg.QuotedSender,
 		msg.Status, msg.DeliveredAt, msg.ReadAt, msg.RawEvent, now,
-		msg.ChatwootMessageID, msg.ChatwootConversationID, msg.ChatwootSourceID,
+		msg.CwMsgId, msg.CwConvId, msg.CwSourceId,
 	).Scan(&id)
 
 	// Handle case where ID already exists
@@ -76,17 +76,17 @@ func (r *MessageRepository) SaveBatch(ctx context.Context, msgs []*model.Message
 	for _, msg := range msgs {
 		batch.Queue(`
 			INSERT INTO "zpMessages" (
-				"sessionId", "messageId", "chatJid", "senderJid", "timestamp",
+				"sessionId", "msgId", "chatJid", "senderJid", "timestamp",
 				"pushName", "senderAlt", "type", "mediaType", "category", "content",
-				"isFromMe", "isGroup", "isEphemeral", "isViewOnce", "isEdit",
+				"fromMe", "isGroup", "ephemeral", "viewOnce", "isEdit",
 				"editTargetId", "quotedId", "quotedSender",
 				"status", "deliveredAt", "readAt", "reactions", "rawEvent", "createdAt"
 			)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, COALESCE($23, '[]'::jsonb), $24, $25)
-			ON CONFLICT ("sessionId", "messageId") DO NOTHING`,
-			msg.SessionID, msg.MessageID, msg.ChatJID, msg.SenderJID, msg.Timestamp,
+			ON CONFLICT ("sessionId", "msgId") DO NOTHING`,
+			msg.SessionID, msg.MsgId, msg.ChatJID, msg.SenderJID, msg.Timestamp,
 			msg.PushName, msg.SenderAlt, msg.Type, msg.MediaType, msg.Category, msg.Content,
-			msg.IsFromMe, msg.IsGroup, msg.IsEphemeral, msg.IsViewOnce, msg.IsEdit,
+			msg.FromMe, msg.IsGroup, msg.Ephemeral, msg.ViewOnce, msg.IsEdit,
 			msg.EditTargetID, msg.QuotedID, msg.QuotedSender,
 			msg.Status, msg.DeliveredAt, msg.ReadAt, msg.Reactions, msg.RawEvent, now,
 		)
@@ -108,11 +108,11 @@ func (r *MessageRepository) SaveBatch(ctx context.Context, msgs []*model.Message
 	return saved, nil
 }
 
-func (r *MessageRepository) ExistsByMessageID(ctx context.Context, sessionID, messageID string) (bool, error) {
+func (r *MessageRepository) ExistsByMsgId(ctx context.Context, sessionID, msgId string) (bool, error) {
 	var exists bool
 	err := r.pool.QueryRow(ctx, `
-		SELECT EXISTS(SELECT 1 FROM "zpMessages" WHERE "sessionId" = $1 AND "messageId" = $2)`,
-		sessionID, messageID).Scan(&exists)
+		SELECT EXISTS(SELECT 1 FROM "zpMessages" WHERE "sessionId" = $1 AND "msgId" = $2)`,
+		sessionID, msgId).Scan(&exists)
 	return exists, err
 }
 
@@ -140,44 +140,44 @@ func (r *MessageRepository) GetByChat(ctx context.Context, sessionID string, cha
 	return r.scanMessages(rows)
 }
 
-func (r *MessageRepository) UpdateStatus(ctx context.Context, sessionID string, messageID string, status model.MessageStatus) error {
+func (r *MessageRepository) UpdateStatus(ctx context.Context, sessionID string, msgId string, status model.MessageStatus) error {
 	now := time.Now()
 	var updateQuery string
 	var args []interface{}
 
 	switch status {
 	case model.MessageStatusDelivered:
-		updateQuery = `UPDATE "zpMessages" SET "status" = $1, "deliveredAt" = $2 WHERE "sessionId" = $3::uuid AND "messageId" = $4`
-		args = []interface{}{status, now, sessionID, messageID}
+		updateQuery = `UPDATE "zpMessages" SET "status" = $1, "deliveredAt" = $2 WHERE "sessionId" = $3::uuid AND "msgId" = $4`
+		args = []interface{}{status, now, sessionID, msgId}
 	case model.MessageStatusRead:
-		updateQuery = `UPDATE "zpMessages" SET "status" = $1, "readAt" = $2 WHERE "sessionId" = $3::uuid AND "messageId" = $4`
-		args = []interface{}{status, now, sessionID, messageID}
+		updateQuery = `UPDATE "zpMessages" SET "status" = $1, "readAt" = $2 WHERE "sessionId" = $3::uuid AND "msgId" = $4`
+		args = []interface{}{status, now, sessionID, msgId}
 	case model.MessageStatusPlayed:
-		updateQuery = `UPDATE "zpMessages" SET "status" = $1, "readAt" = $2 WHERE "sessionId" = $3::uuid AND "messageId" = $4`
-		args = []interface{}{status, now, sessionID, messageID}
+		updateQuery = `UPDATE "zpMessages" SET "status" = $1, "readAt" = $2 WHERE "sessionId" = $3::uuid AND "msgId" = $4`
+		args = []interface{}{status, now, sessionID, msgId}
 	default:
-		updateQuery = `UPDATE "zpMessages" SET "status" = $1 WHERE "sessionId" = $2::uuid AND "messageId" = $3`
-		args = []interface{}{status, sessionID, messageID}
+		updateQuery = `UPDATE "zpMessages" SET "status" = $1 WHERE "sessionId" = $2::uuid AND "msgId" = $3`
+		args = []interface{}{status, sessionID, msgId}
 	}
 
 	_, err := r.pool.Exec(ctx, updateQuery, args...)
 	return err
 }
 
-func (r *MessageRepository) GetByMessageID(ctx context.Context, sessionID string, messageID string) (*model.Message, error) {
+func (r *MessageRepository) GetByMsgId(ctx context.Context, sessionID string, msgId string) (*model.Message, error) {
 	row := r.pool.QueryRow(ctx,
-		`SELECT `+messageSelectFields+` FROM "zpMessages" WHERE "sessionId" = $1 AND "messageId" = $2`,
-		sessionID, messageID)
+		`SELECT `+messageSelectFields+` FROM "zpMessages" WHERE "sessionId" = $1 AND "msgId" = $2`,
+		sessionID, msgId)
 
 	var m model.Message
 	err := row.Scan(
-		&m.ID, &m.SessionID, &m.MessageID, &m.ChatJID, &m.SenderJID, &m.Timestamp,
-		&m.PushName, &m.SenderAlt, &m.ServerID, &m.VerifiedName,
+		&m.ID, &m.SessionID, &m.MsgId, &m.ChatJID, &m.SenderJID, &m.Timestamp,
+		&m.PushName, &m.SenderAlt, &m.ServerId, &m.VerifiedName,
 		&m.Type, &m.MediaType, &m.Category, &m.Content,
-		&m.IsFromMe, &m.IsGroup, &m.IsEphemeral, &m.IsViewOnce, &m.IsEdit,
+		&m.FromMe, &m.IsGroup, &m.Ephemeral, &m.ViewOnce, &m.IsEdit,
 		&m.EditTargetID, &m.QuotedID, &m.QuotedSender,
 		&m.Status, &m.DeliveredAt, &m.ReadAt, &m.Reactions, &m.RawEvent, &m.CreatedAt,
-		&m.ChatwootMessageID, &m.ChatwootConversationID, &m.ChatwootSourceID,
+		&m.CwMsgId, &m.CwConvId, &m.CwSourceId,
 	)
 	if err != nil {
 		return nil, err
@@ -194,13 +194,13 @@ func (r *MessageRepository) scanMessages(rows interface {
 	for rows.Next() {
 		var m model.Message
 		err := rows.Scan(
-			&m.ID, &m.SessionID, &m.MessageID, &m.ChatJID, &m.SenderJID, &m.Timestamp,
-			&m.PushName, &m.SenderAlt, &m.ServerID, &m.VerifiedName,
+			&m.ID, &m.SessionID, &m.MsgId, &m.ChatJID, &m.SenderJID, &m.Timestamp,
+			&m.PushName, &m.SenderAlt, &m.ServerId, &m.VerifiedName,
 			&m.Type, &m.MediaType, &m.Category, &m.Content,
-			&m.IsFromMe, &m.IsGroup, &m.IsEphemeral, &m.IsViewOnce, &m.IsEdit,
+			&m.FromMe, &m.IsGroup, &m.Ephemeral, &m.ViewOnce, &m.IsEdit,
 			&m.EditTargetID, &m.QuotedID, &m.QuotedSender,
 			&m.Status, &m.DeliveredAt, &m.ReadAt, &m.Reactions, &m.RawEvent, &m.CreatedAt,
-			&m.ChatwootMessageID, &m.ChatwootConversationID, &m.ChatwootSourceID,
+			&m.CwMsgId, &m.CwConvId, &m.CwSourceId,
 		)
 		if err != nil {
 			return nil, err
@@ -211,7 +211,7 @@ func (r *MessageRepository) scanMessages(rows interface {
 }
 
 // AddReaction adds a reaction to a message (upsert by senderJid)
-func (r *MessageRepository) AddReaction(ctx context.Context, sessionID, messageID, emoji, senderJid string, timestamp int64) error {
+func (r *MessageRepository) AddReaction(ctx context.Context, sessionID, msgId, emoji, senderJid string, timestamp int64) error {
 	_, err := r.pool.Exec(ctx, `
 		UPDATE "zpMessages" 
 		SET "reactions" = (
@@ -222,58 +222,58 @@ func (r *MessageRepository) AddReaction(ctx context.Context, sessionID, messageI
 				SELECT jsonb_build_object('emoji', $3::text, 'senderJid', $4::text, 'timestamp', $5::bigint)
 			) sub(r)
 		)
-		WHERE "sessionId" = $1::uuid AND "messageId" = $2`,
-		sessionID, messageID, emoji, senderJid, timestamp)
+		WHERE "sessionId" = $1::uuid AND "msgId" = $2`,
+		sessionID, msgId, emoji, senderJid, timestamp)
 	return err
 }
 
 // RemoveReaction removes a reaction from a message by senderJid
-func (r *MessageRepository) RemoveReaction(ctx context.Context, sessionID, messageID, senderJid string) error {
+func (r *MessageRepository) RemoveReaction(ctx context.Context, sessionID, msgId, senderJid string) error {
 	_, err := r.pool.Exec(ctx, `
 		UPDATE "zpMessages" 
 		SET "reactions" = (
 			SELECT COALESCE(jsonb_agg(r), '[]'::jsonb) FROM jsonb_array_elements(COALESCE("reactions", '[]'::jsonb)) r
 			WHERE r->>'senderJid' != $3
 		)
-		WHERE "sessionId" = $1::uuid AND "messageId" = $2`,
-		sessionID, messageID, senderJid)
+		WHERE "sessionId" = $1::uuid AND "msgId" = $2`,
+		sessionID, msgId, senderJid)
 	return err
 }
 
-// UpdateChatwootFields updates Chatwoot-related fields for a message
-func (r *MessageRepository) UpdateChatwootFields(ctx context.Context, sessionID, messageID string, chatwootMessageID, chatwootConversationID int, chatwootSourceID string) error {
+// UpdateCwFields updates Chatwoot-related fields for a message
+func (r *MessageRepository) UpdateCwFields(ctx context.Context, sessionID, msgId string, cwMsgId, cwConvId int, cwSourceId string) error {
 	result, err := r.pool.Exec(ctx, `
 		UPDATE "zpMessages" 
-		SET "chatwootMessageId" = $3, "chatwootConversationId" = $4, "chatwootSourceId" = $5
-		WHERE "sessionId" = $1::uuid AND "messageId" = $2`,
-		sessionID, messageID, chatwootMessageID, chatwootConversationID, chatwootSourceID)
+		SET "cwMsgId" = $3, "cwConvId" = $4, "cwSourceId" = $5
+		WHERE "sessionId" = $1::uuid AND "msgId" = $2`,
+		sessionID, msgId, cwMsgId, cwConvId, cwSourceId)
 	if err != nil {
 		return err
 	}
 	
 	// Log if no rows were affected (message not found in DB)
 	if result.RowsAffected() == 0 {
-		return fmt.Errorf("message not found in database: sessionID=%s, messageID=%s", sessionID, messageID)
+		return fmt.Errorf("message not found in database: sessionID=%s, msgId=%s", sessionID, msgId)
 	}
 	
 	return nil
 }
 
-// GetByChatwootMessageID finds a message by its Chatwoot message ID
-func (r *MessageRepository) GetByChatwootMessageID(ctx context.Context, sessionID string, chatwootMessageID int) (*model.Message, error) {
+// GetByCwMsgId finds a message by its Chatwoot message ID
+func (r *MessageRepository) GetByCwMsgId(ctx context.Context, sessionID string, cwMsgId int) (*model.Message, error) {
 	row := r.pool.QueryRow(ctx,
-		`SELECT `+messageSelectFields+` FROM "zpMessages" WHERE "sessionId" = $1::uuid AND "chatwootMessageId" = $2`,
-		sessionID, chatwootMessageID)
+		`SELECT `+messageSelectFields+` FROM "zpMessages" WHERE "sessionId" = $1::uuid AND "cwMsgId" = $2`,
+		sessionID, cwMsgId)
 
 	var m model.Message
 	err := row.Scan(
-		&m.ID, &m.SessionID, &m.MessageID, &m.ChatJID, &m.SenderJID, &m.Timestamp,
-		&m.PushName, &m.SenderAlt, &m.ServerID, &m.VerifiedName,
+		&m.ID, &m.SessionID, &m.MsgId, &m.ChatJID, &m.SenderJID, &m.Timestamp,
+		&m.PushName, &m.SenderAlt, &m.ServerId, &m.VerifiedName,
 		&m.Type, &m.MediaType, &m.Category, &m.Content,
-		&m.IsFromMe, &m.IsGroup, &m.IsEphemeral, &m.IsViewOnce, &m.IsEdit,
+		&m.FromMe, &m.IsGroup, &m.Ephemeral, &m.ViewOnce, &m.IsEdit,
 		&m.EditTargetID, &m.QuotedID, &m.QuotedSender,
 		&m.Status, &m.DeliveredAt, &m.ReadAt, &m.Reactions, &m.RawEvent, &m.CreatedAt,
-		&m.ChatwootMessageID, &m.ChatwootConversationID, &m.ChatwootSourceID,
+		&m.CwMsgId, &m.CwConvId, &m.CwSourceId,
 	)
 	if err == pgx.ErrNoRows {
 		return nil, nil
@@ -284,12 +284,12 @@ func (r *MessageRepository) GetByChatwootMessageID(ctx context.Context, sessionI
 	return &m, nil
 }
 
-// GetAllByChatwootMessageID finds ALL messages with the same Chatwoot message ID
+// GetAllByCwMsgId finds ALL messages with the same Chatwoot message ID
 // This is needed because multiple attachments in Chatwoot become multiple WhatsApp messages
-func (r *MessageRepository) GetAllByChatwootMessageID(ctx context.Context, sessionID string, chatwootMessageID int) ([]*model.Message, error) {
+func (r *MessageRepository) GetAllByCwMsgId(ctx context.Context, sessionID string, cwMsgId int) ([]*model.Message, error) {
 	rows, err := r.pool.Query(ctx,
-		`SELECT `+messageSelectFields+` FROM "zpMessages" WHERE "sessionId" = $1::uuid AND "chatwootMessageId" = $2`,
-		sessionID, chatwootMessageID)
+		`SELECT `+messageSelectFields+` FROM "zpMessages" WHERE "sessionId" = $1::uuid AND "cwMsgId" = $2`,
+		sessionID, cwMsgId)
 	if err != nil {
 		return nil, err
 	}
@@ -299,13 +299,13 @@ func (r *MessageRepository) GetAllByChatwootMessageID(ctx context.Context, sessi
 	for rows.Next() {
 		var m model.Message
 		err := rows.Scan(
-			&m.ID, &m.SessionID, &m.MessageID, &m.ChatJID, &m.SenderJID, &m.Timestamp,
-			&m.PushName, &m.SenderAlt, &m.ServerID, &m.VerifiedName,
+			&m.ID, &m.SessionID, &m.MsgId, &m.ChatJID, &m.SenderJID, &m.Timestamp,
+			&m.PushName, &m.SenderAlt, &m.ServerId, &m.VerifiedName,
 			&m.Type, &m.MediaType, &m.Category, &m.Content,
-			&m.IsFromMe, &m.IsGroup, &m.IsEphemeral, &m.IsViewOnce, &m.IsEdit,
+			&m.FromMe, &m.IsGroup, &m.Ephemeral, &m.ViewOnce, &m.IsEdit,
 			&m.EditTargetID, &m.QuotedID, &m.QuotedSender,
 			&m.Status, &m.DeliveredAt, &m.ReadAt, &m.Reactions, &m.RawEvent, &m.CreatedAt,
-			&m.ChatwootMessageID, &m.ChatwootConversationID, &m.ChatwootSourceID,
+			&m.CwMsgId, &m.CwConvId, &m.CwSourceId,
 		)
 		if err != nil {
 			return nil, err
@@ -316,10 +316,10 @@ func (r *MessageRepository) GetAllByChatwootMessageID(ctx context.Context, sessi
 }
 
 // Delete removes a message from the database
-func (r *MessageRepository) Delete(ctx context.Context, sessionID, messageID string) error {
+func (r *MessageRepository) Delete(ctx context.Context, sessionID, msgId string) error {
 	_, err := r.pool.Exec(ctx, `
 		DELETE FROM "zpMessages" 
-		WHERE "sessionId" = $1::uuid AND "messageId" = $2`,
-		sessionID, messageID)
+		WHERE "sessionId" = $1::uuid AND "msgId" = $2`,
+		sessionID, msgId)
 	return err
 }

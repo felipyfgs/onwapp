@@ -4,27 +4,27 @@ import "time"
 
 // Config represents the Chatwoot integration configuration for a session
 type Config struct {
-	ID                  string     `json:"id"`
-	SessionID           string     `json:"sessionId"`
-	Enabled             bool       `json:"enabled"`
-	URL                 string     `json:"url"`
-	APIAccessToken      string     `json:"apiAccessToken"`
-	AccountID           int        `json:"accountId"`
-	InboxID             int        `json:"inboxId,omitempty"`
-	InboxName           string     `json:"inboxName,omitempty"`
-	SignMsg             bool       `json:"signMsg"`
-	SignDelimiter       string     `json:"signDelimiter,omitempty"`
-	ReopenConversation  bool       `json:"reopenConversation"`
-	ConversationPending bool       `json:"conversationPending"`
-	MergeBrazilContacts bool       `json:"mergeBrazilContacts"`
-	ImportContacts      bool       `json:"importContacts"`
-	ImportMessages      bool       `json:"importMessages"`
-	DaysLimitImport     int        `json:"daysLimitImportMessages,omitempty"`
-	IgnoreJids          []string   `json:"ignoreJids,omitempty"`
-	AutoCreate          bool       `json:"autoCreate"`
-	WebhookURL          string     `json:"webhookUrl,omitempty"`
-	CreatedAt           *time.Time `json:"createdAt,omitempty"`
-	UpdatedAt           *time.Time `json:"updatedAt,omitempty"`
+	ID            string     `json:"id"`
+	SessionID     string     `json:"sessionId"`
+	Enabled       bool       `json:"enabled"`
+	URL           string     `json:"url"`
+	Token         string     `json:"token"`
+	Account       int        `json:"account"`
+	InboxID       int        `json:"inboxId,omitempty"`
+	Inbox         string     `json:"inbox,omitempty"`
+	SignAgent     bool       `json:"signAgent"`
+	SignSeparator string     `json:"signSeparator,omitempty"`
+	AutoReopen    bool       `json:"autoReopen"`
+	StartPending  bool       `json:"startPending"`
+	MergeBrPhones bool       `json:"mergeBrPhones"`
+	SyncContacts  bool       `json:"syncContacts"`
+	SyncMessages  bool       `json:"syncMessages"`
+	SyncDays      int        `json:"syncDays,omitempty"`
+	IgnoreChats   []string   `json:"ignoreChats,omitempty"`
+	AutoInbox     bool       `json:"autoInbox"`
+	WebhookURL    string     `json:"webhookUrl,omitempty"`
+	CreatedAt     *time.Time `json:"createdAt,omitempty"`
+	UpdatedAt     *time.Time `json:"updatedAt,omitempty"`
 }
 
 // Contact represents a Chatwoot contact
@@ -179,19 +179,19 @@ type CreateMessageRequest struct {
 
 // SetConfigRequest represents the request to set Chatwoot config
 type SetConfigRequest struct {
-	Enabled             bool     `json:"enabled"`
-	URL                 string   `json:"url" binding:"required_if=Enabled true"`
-	APIAccessToken      string   `json:"apiAccessToken" binding:"required_if=Enabled true"`
-	AccountID           int      `json:"accountId" binding:"required_if=Enabled true"`
-	InboxName           string   `json:"inboxName,omitempty"`
-	SignMsg             bool     `json:"signMsg"`
-	SignDelimiter       string   `json:"signDelimiter,omitempty"`
-	ReopenConversation  bool     `json:"reopenConversation"`
-	ConversationPending bool     `json:"conversationPending"`
-	MergeBrazilContacts bool     `json:"mergeBrazilContacts"`
-	ImportContacts      bool     `json:"importContacts"`
-	ImportMessages      bool     `json:"importMessages"`
-	DaysLimitImport     int      `json:"daysLimitImportMessages,omitempty"`
-	IgnoreJids          []string `json:"ignoreJids,omitempty"`
-	AutoCreate          bool     `json:"autoCreate"`
+	Enabled       bool     `json:"enabled"`
+	URL           string   `json:"url" binding:"required_if=Enabled true"`
+	Token         string   `json:"token" binding:"required_if=Enabled true"`
+	Account       int      `json:"account" binding:"required_if=Enabled true"`
+	Inbox         string   `json:"inbox,omitempty"`
+	SignAgent     bool     `json:"signAgent"`
+	SignSeparator string   `json:"signSeparator,omitempty"`
+	AutoReopen    bool     `json:"autoReopen"`
+	StartPending  bool     `json:"startPending"`
+	MergeBrPhones bool     `json:"mergeBrPhones"`
+	SyncContacts  bool     `json:"syncContacts"`
+	SyncMessages  bool     `json:"syncMessages"`
+	SyncDays      int      `json:"syncDays,omitempty"`
+	IgnoreChats   []string `json:"ignoreChats,omitempty"`
+	AutoInbox     bool     `json:"autoInbox"`
 }

@@ -127,7 +127,7 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 
 	// Get or create conversation
 	status := "open"
-	if cfg.ConversationPending {
+	if cfg.StartPending {
 		status = "pending"
 	}
 

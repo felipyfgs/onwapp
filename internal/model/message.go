@@ -64,7 +64,7 @@ type Message struct {
 	SessionID string `json:"sessionId"`
 
 	// WhatsApp Identifiers
-	MessageID string    `json:"messageId"` // WhatsApp message ID
+	MsgId     string    `json:"msgId"`     // WhatsApp message ID
 	ChatJID   string    `json:"chatJid"`   // Chat JID
 	SenderJID string    `json:"senderJid"` // Sender JID
 	Timestamp time.Time `json:"timestamp"` // Message timestamp
@@ -72,7 +72,7 @@ type Message struct {
 	// Sender Info
 	PushName     string  `json:"pushName,omitempty"`     // Display name
 	SenderAlt    string  `json:"senderAlt,omitempty"`    // LID (alternative ID)
-	ServerID     *int64  `json:"serverID,omitempty"`     // WhatsApp server ID
+	ServerId     *int64  `json:"serverId,omitempty"`     // WhatsApp server ID
 	VerifiedName *string `json:"verifiedName,omitempty"` // Business verified name
 
 	// Message Classification
@@ -84,11 +84,11 @@ type Message struct {
 	Content string `json:"content,omitempty"` // Text or caption
 
 	// Direction & Context Flags
-	IsFromMe    bool `json:"isFromMe"`    // true = outgoing
-	IsGroup     bool `json:"isGroup"`     // true = group message
-	IsEphemeral bool `json:"isEphemeral"` // Disappearing message
-	IsViewOnce  bool `json:"isViewOnce"`  // View once media
-	IsEdit      bool `json:"isEdit"`      // Edited message
+	FromMe    bool `json:"fromMe"`    // true = outgoing
+	IsGroup   bool `json:"isGroup"`   // true = group message
+	Ephemeral bool `json:"ephemeral"` // Disappearing message
+	ViewOnce  bool `json:"viewOnce"`  // View once media
+	IsEdit    bool `json:"isEdit"`    // Edited message
 
 	// Edit Context
 	EditTargetID string `json:"editTargetId,omitempty"` // Original message ID if edit
@@ -98,9 +98,9 @@ type Message struct {
 	QuotedSender string `json:"quotedSender,omitempty"` // Replied message sender
 
 	// Chatwoot Integration
-	ChatwootMessageID      *int   `json:"chatwootMessageId,omitempty"`      // Chatwoot message ID
-	ChatwootConversationID *int   `json:"chatwootConversationId,omitempty"` // Chatwoot conversation ID
-	ChatwootSourceID       string `json:"chatwootSourceId,omitempty"`       // Source ID (WAID:xxx)
+	CwMsgId    *int   `json:"cwMsgId,omitempty"`    // Chatwoot message ID
+	CwConvId   *int   `json:"cwConvId,omitempty"`   // Chatwoot conversation ID
+	CwSourceId string `json:"cwSourceId,omitempty"` // Source ID (WAID:xxx)
 
 	// Delivery Status (for outgoing messages)
 	Status      MessageStatus `json:"status"`
@@ -132,7 +132,7 @@ type Reaction struct {
 // =============================================================================
 
 func (m *Message) Direction() MessageDirection {
-	if m.IsFromMe {
+	if m.FromMe {
 		return DirectionOutgoing
 	}
 	return DirectionIncoming

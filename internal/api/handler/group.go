@@ -27,14 +27,14 @@ func NewGroupHandler(whatsappService *service.WhatsAppService) *GroupHandler {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                  true  "Session name"
+// @Param        id     path      string                  true  "Session name"
 // @Param        body   body      dto.CreateGroupRequest  true  "Group data"
 // @Success      200    {object}  dto.GroupActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/group/create [post]
+// @Router       /sessions/{id}/groups [post]
 func (h *GroupHandler) CreateGroup(c *gin.Context) {
 	name := c.Param("id")
 
@@ -63,14 +63,14 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name     path      string  true  "Session name"
+// @Param        id       path      string  true  "Session name"
 // @Param        groupId  path      string  true  "Group ID"
 // @Success      200      {object}  dto.GroupActionResponse
 // @Failure      400      {object}  dto.ErrorResponse
 // @Failure      401      {object}  dto.ErrorResponse
 // @Failure      500      {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/group/{groupId}/info [get]
+// @Router       /sessions/{id}/groups/{groupId} [get]
 func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 	name := c.Param("id")
 	groupID := c.Param("groupId")
@@ -94,12 +94,12 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string  true  "Session name"
+// @Param        id     path      string  true  "Session name"
 // @Success      200    {object}  dto.GroupActionResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/group/list [get]
+// @Router       /sessions/{id}/groups [get]
 func (h *GroupHandler) GetJoinedGroups(c *gin.Context) {
 	name := c.Param("id")
 
@@ -121,13 +121,13 @@ func (h *GroupHandler) GetJoinedGroups(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name     path      string  true  "Session name"
+// @Param        id       path      string  true  "Session name"
 // @Param        groupId  path      string  true  "Group ID"
 // @Success      200      {object}  dto.GroupActionResponse
 // @Failure      401      {object}  dto.ErrorResponse
 // @Failure      500      {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/group/{groupId}/leave [post]
+// @Router       /sessions/{id}/groups/{groupId}/membership [delete]
 func (h *GroupHandler) LeaveGroup(c *gin.Context) {
 	name := c.Param("id")
 	groupID := c.Param("groupId")
@@ -149,14 +149,14 @@ func (h *GroupHandler) LeaveGroup(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                  true  "Session name"
+// @Param        id     path      string                  true  "Session name"
 // @Param        body   body      dto.GroupUpdateRequest  true  "New name"
 // @Success      200    {object}  dto.GroupActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/group/name [put]
+// @Router       /sessions/{id}/groups/{groupId}/name [patch]
 func (h *GroupHandler) UpdateGroupName(c *gin.Context) {
 	name := c.Param("id")
 
@@ -183,14 +183,14 @@ func (h *GroupHandler) UpdateGroupName(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                  true  "Session name"
+// @Param        id     path      string                  true  "Session name"
 // @Param        body   body      dto.GroupUpdateRequest  true  "New description"
 // @Success      200    {object}  dto.GroupActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/group/description [put]
+// @Router       /sessions/{id}/groups/{groupId}/description [patch]
 func (h *GroupHandler) UpdateGroupTopic(c *gin.Context) {
 	name := c.Param("id")
 
@@ -217,14 +217,14 @@ func (h *GroupHandler) UpdateGroupTopic(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                        true  "Session name"
+// @Param        id     path      string                        true  "Session name"
 // @Param        body   body      dto.GroupParticipantsRequest  true  "Participants"
 // @Success      200    {object}  dto.GroupActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/group/participants/add [post]
+// @Router       /sessions/{id}/groups/{groupId}/participants [post]
 func (h *GroupHandler) AddParticipants(c *gin.Context) {
 	name := c.Param("id")
 
@@ -253,14 +253,14 @@ func (h *GroupHandler) AddParticipants(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                        true  "Session name"
+// @Param        id     path      string                        true  "Session name"
 // @Param        body   body      dto.GroupParticipantsRequest  true  "Participants"
 // @Success      200    {object}  dto.GroupActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/group/participants/remove [post]
+// @Router       /sessions/{id}/groups/{groupId}/participants [delete]
 func (h *GroupHandler) RemoveParticipants(c *gin.Context) {
 	name := c.Param("id")
 
@@ -289,14 +289,14 @@ func (h *GroupHandler) RemoveParticipants(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                        true  "Session name"
+// @Param        id     path      string                        true  "Session name"
 // @Param        body   body      dto.GroupParticipantsRequest  true  "Participants"
 // @Success      200    {object}  dto.GroupActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/group/participants/promote [post]
+// @Router       /sessions/{id}/groups/{groupId}/participants/promote [patch]
 func (h *GroupHandler) PromoteParticipants(c *gin.Context) {
 	name := c.Param("id")
 
@@ -325,14 +325,14 @@ func (h *GroupHandler) PromoteParticipants(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                        true  "Session name"
+// @Param        id     path      string                        true  "Session name"
 // @Param        body   body      dto.GroupParticipantsRequest  true  "Participants"
 // @Success      200    {object}  dto.GroupActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/group/participants/demote [post]
+// @Router       /sessions/{id}/groups/{groupId}/participants/demote [patch]
 func (h *GroupHandler) DemoteParticipants(c *gin.Context) {
 	name := c.Param("id")
 
@@ -361,14 +361,14 @@ func (h *GroupHandler) DemoteParticipants(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name     path      string  true   "Session name"
+// @Param        id       path      string  true   "Session name"
 // @Param        groupId  path      string  true   "Group ID"
 // @Param        reset    query     bool    false  "Reset link"
 // @Success      200      {object}  dto.GroupInviteLinkResponse
 // @Failure      401      {object}  dto.ErrorResponse
 // @Failure      500      {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/group/{groupId}/invite [get]
+// @Router       /sessions/{id}/groups/{groupId}/invite [get]
 func (h *GroupHandler) GetInviteLink(c *gin.Context) {
 	name := c.Param("id")
 	groupID := c.Param("groupId")
@@ -393,14 +393,14 @@ func (h *GroupHandler) GetInviteLink(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                true  "Session name"
+// @Param        id     path      string                true  "Session name"
 // @Param        body   body      dto.JoinGroupRequest  true  "Invite link"
 // @Success      200    {object}  dto.GroupActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/group/join [post]
+// @Router       /sessions/{id}/groups/join [post]
 func (h *GroupHandler) JoinGroup(c *gin.Context) {
 	name := c.Param("id")
 
@@ -428,14 +428,14 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                       true  "Session name"
+// @Param        id     path      string                       true  "Session name"
 // @Param        body   body      dto.SendGroupMessageRequest  true  "Message data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/group/send/text [post]
+// @Router       /sessions/{id}/groups/{groupId}/messages [post]
 func (h *GroupHandler) SendGroupMessage(c *gin.Context) {
 	name := c.Param("id")
 
@@ -464,13 +464,13 @@ func (h *GroupHandler) SendGroupMessage(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name path string true "Session name"
+// @Param        id path string true "Session name"
 // @Param        body body dto.GroupAnnounceRequest true "Announce setting"
 // @Success      200 {object} dto.SuccessResponse
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/group/announce [put]
+// @Router       /sessions/{id}/groups/{groupId}/settings/announce [patch]
 func (h *GroupHandler) SetGroupAnnounce(c *gin.Context) {
 	name := c.Param("id")
 
@@ -495,13 +495,13 @@ func (h *GroupHandler) SetGroupAnnounce(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name path string true "Session name"
+// @Param        id path string true "Session name"
 // @Param        body body dto.GroupLockedRequest true "Locked setting"
 // @Success      200 {object} dto.SuccessResponse
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/group/locked [put]
+// @Router       /sessions/{id}/groups/{groupId}/settings/locked [patch]
 func (h *GroupHandler) SetGroupLocked(c *gin.Context) {
 	name := c.Param("id")
 
@@ -526,13 +526,13 @@ func (h *GroupHandler) SetGroupLocked(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name path string true "Session name"
+// @Param        id path string true "Session name"
 // @Param        body body dto.GroupPictureRequest true "Picture data"
 // @Success      200 {object} dto.SetPictureResponse
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/group/picture [put]
+// @Router       /sessions/{id}/groups/{groupId}/picture [put]
 func (h *GroupHandler) SetGroupPicture(c *gin.Context) {
 	name := c.Param("id")
 
@@ -564,13 +564,13 @@ func (h *GroupHandler) SetGroupPicture(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name path string true "Session name"
+// @Param        id path string true "Session name"
 // @Param        body body dto.GroupApprovalRequest true "Approval setting"
 // @Success      200 {object} dto.SuccessResponse
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/group/approval [put]
+// @Router       /sessions/{id}/groups/{groupId}/settings/approval [patch]
 func (h *GroupHandler) SetGroupApprovalMode(c *gin.Context) {
 	name := c.Param("id")
 
@@ -595,13 +595,13 @@ func (h *GroupHandler) SetGroupApprovalMode(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name path string true "Session name"
+// @Param        id path string true "Session name"
 // @Param        body body dto.GroupMemberAddModeRequest true "Member add mode"
 // @Success      200 {object} dto.SuccessResponse
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/group/memberadd [put]
+// @Router       /sessions/{id}/groups/{groupId}/settings/memberadd [patch]
 func (h *GroupHandler) SetGroupMemberAddMode(c *gin.Context) {
 	name := c.Param("id")
 
@@ -636,12 +636,12 @@ func (h *GroupHandler) SetGroupMemberAddMode(c *gin.Context) {
 // @Description  Get list of pending join requests for a group
 // @Tags         groups
 // @Produce      json
-// @Param        name path string true "Session name"
+// @Param        id path string true "Session name"
 // @Param        groupId path string true "Group ID"
 // @Success      200 {object} dto.GroupRequestParticipantsResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/group/{groupId}/requests [get]
+// @Router       /sessions/{id}/groups/{groupId}/requests [get]
 func (h *GroupHandler) GetGroupRequestParticipants(c *gin.Context) {
 	name := c.Param("id")
 	groupID := strings.TrimSuffix(c.Param("groupId"), "@g.us")
@@ -665,14 +665,14 @@ func (h *GroupHandler) GetGroupRequestParticipants(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name path string true "Session name"
+// @Param        id path string true "Session name"
 // @Param        groupId path string true "Group ID"
 // @Param        body body dto.GroupRequestActionBodyRequest true "Action data"
 // @Success      200 {object} dto.GroupActionResponse
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/group/{groupId}/requests [post]
+// @Router       /sessions/{id}/groups/{groupId}/requests [post]
 func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
 	name := c.Param("id")
 	groupID := strings.TrimSuffix(c.Param("groupId"), "@g.us")
@@ -712,13 +712,13 @@ func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
 // @Description  Get group information using an invite link
 // @Tags         groups
 // @Produce      json
-// @Param        name path string true "Session name"
+// @Param        id path string true "Session name"
 // @Param        link query string true "Invite link or code"
 // @Success      200 {object} dto.GroupActionResponse
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/group/info/link [get]
+// @Router       /sessions/{id}/groups/info/link [get]
 func (h *GroupHandler) GetGroupInfoFromLink(c *gin.Context) {
 	name := c.Param("id")
 

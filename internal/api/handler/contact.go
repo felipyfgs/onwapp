@@ -23,14 +23,14 @@ func NewContactHandler(whatsappService *service.WhatsAppService) *ContactHandler
 // @Tags         contact
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                true  "Session name"
+// @Param        id     path      string                true  "Session name"
 // @Param        body   body      dto.CheckPhoneRequest true  "Phone numbers"
 // @Success      200    {object}  dto.CheckPhoneResultsResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/contact/check [post]
+// @Router       /sessions/{id}/contacts/check [post]
 func (h *ContactHandler) CheckPhone(c *gin.Context) {
 	name := c.Param("id")
 
@@ -67,14 +67,14 @@ func (h *ContactHandler) CheckPhone(c *gin.Context) {
 // @Tags         contact
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                  true  "Session name"
+// @Param        id     path      string                  true  "Session name"
 // @Param        body   body      dto.ContactInfoRequest  true  "Phone numbers"
 // @Success      200    {object}  dto.ContactInfoResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/contact/info [post]
+// @Router       /sessions/{id}/contacts/{phone} [get]
 func (h *ContactHandler) GetContactInfo(c *gin.Context) {
 	name := c.Param("id")
 
@@ -111,13 +111,13 @@ func (h *ContactHandler) GetContactInfo(c *gin.Context) {
 // @Tags         contact
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string  true  "Session name"
+// @Param        id     path      string  true  "Session name"
 // @Param        phone  path      string  true  "Phone number"
 // @Success      200    {object}  dto.AvatarResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/contact/{phone}/avatar [get]
+// @Router       /sessions/{id}/contacts/{phone}/avatar [get]
 func (h *ContactHandler) GetAvatar(c *gin.Context) {
 	name := c.Param("id")
 	phone := c.Param("phone")
@@ -149,12 +149,12 @@ func (h *ContactHandler) GetAvatar(c *gin.Context) {
 // @Tags         contact
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string  true  "Session name"
+// @Param        id     path      string  true  "Session name"
 // @Success      200    {object}  dto.ContactsListResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/contact/list [get]
+// @Router       /sessions/{id}/contacts [get]
 func (h *ContactHandler) GetContacts(c *gin.Context) {
 	name := c.Param("id")
 
@@ -176,14 +176,14 @@ func (h *ContactHandler) GetContacts(c *gin.Context) {
 // @Tags         contact
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                  true  "Session name"
+// @Param        id     path      string                  true  "Session name"
 // @Param        body   body      dto.SetPresenceRequest  true  "Presence data"
 // @Success      200    {object}  dto.PresenceResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/contact/presence [post]
+// @Router       /sessions/{id}/presence [put]
 func (h *ContactHandler) SetPresence(c *gin.Context) {
 	name := c.Param("id")
 
@@ -215,14 +215,14 @@ func (h *ContactHandler) SetPresence(c *gin.Context) {
 // @Tags         contact
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                   true  "Session name"
+// @Param        id     path      string                   true  "Session name"
 // @Param        body   body      dto.ChatPresenceRequest  true  "Chat presence data"
 // @Success      200    {object}  dto.ChatPresenceResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/contact/typing [post]
+// @Router       /sessions/{id}/chats/{chatId}/typing [post]
 func (h *ContactHandler) SetChatPresence(c *gin.Context) {
 	name := c.Param("id")
 
@@ -249,14 +249,14 @@ func (h *ContactHandler) SetChatPresence(c *gin.Context) {
 // @Tags         contact
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string              true  "Session name"
+// @Param        id     path      string              true  "Session name"
 // @Param        body   body      dto.MarkReadRequest true  "Messages to mark"
 // @Success      200    {object}  dto.SuccessResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/contact/markread [post]
+// @Router       /sessions/{id}/chats/{chatId}/read [post]
 func (h *ContactHandler) MarkRead(c *gin.Context) {
 	name := c.Param("id")
 
@@ -281,11 +281,11 @@ func (h *ContactHandler) MarkRead(c *gin.Context) {
 // @Description  Get list of blocked contacts
 // @Tags         contact
 // @Produce      json
-// @Param        name   path      string  true  "Session name"
+// @Param        id     path      string  true  "Session name"
 // @Success      200    {object}  dto.BlocklistResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/contact/blocklist [get]
+// @Router       /sessions/{id}/contacts/blocklist [get]
 func (h *ContactHandler) GetBlocklist(c *gin.Context) {
 	name := c.Param("id")
 
@@ -312,13 +312,13 @@ func (h *ContactHandler) GetBlocklist(c *gin.Context) {
 // @Tags         contact
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string              true  "Session name"
+// @Param        id     path      string              true  "Session name"
 // @Param        body   body      dto.BlocklistRequest true  "Block action"
 // @Success      200    {object}  dto.BlocklistActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/contact/blocklist [post]
+// @Router       /sessions/{id}/contacts/blocklist [put]
 func (h *ContactHandler) UpdateBlocklist(c *gin.Context) {
 	name := c.Param("id")
 
@@ -348,13 +348,13 @@ func (h *ContactHandler) UpdateBlocklist(c *gin.Context) {
 // @Tags         contact
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                      true  "Session name"
+// @Param        id     path      string                      true  "Session name"
 // @Param        body   body      dto.SubscribePresenceRequest true  "Subscribe data"
 // @Success      200    {object}  dto.SuccessResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/contact/subscribe [post]
+// @Router       /sessions/{id}/contacts/{phone}/presence/subscribe [post]
 func (h *ContactHandler) SubscribePresence(c *gin.Context) {
 	name := c.Param("id")
 
@@ -377,12 +377,12 @@ func (h *ContactHandler) SubscribePresence(c *gin.Context) {
 // @Description  Get QR link for adding contact
 // @Tags         contact
 // @Produce      json
-// @Param        name   path      string  true   "Session name"
+// @Param        id     path      string  true   "Session name"
 // @Param        revoke query     bool    false  "Revoke existing link"
 // @Success      200    {object}  dto.QRLinkResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/contact/qrlink [get]
+// @Router       /sessions/{id}/qrlink [get]
 func (h *ContactHandler) GetContactQRLink(c *gin.Context) {
 	name := c.Param("id")
 	revoke := c.Query("revoke") == "true"
@@ -404,12 +404,12 @@ func (h *ContactHandler) GetContactQRLink(c *gin.Context) {
 // @Description  Get business profile of a contact
 // @Tags         contact
 // @Produce      json
-// @Param        name   path      string  true  "Session name"
+// @Param        id     path      string  true  "Session name"
 // @Param        phone  path      string  true  "Phone number"
 // @Success      200    {object}  dto.BusinessProfileResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/contact/{phone}/business [get]
+// @Router       /sessions/{id}/contacts/{phone}/business [get]
 func (h *ContactHandler) GetBusinessProfile(c *gin.Context) {
 	name := c.Param("id")
 	phone := c.Param("phone")

@@ -213,11 +213,11 @@ func (h *Handler) sendToWhatsApp(c *gin.Context, session *model.Session, chatJid
 	var quoted *service.QuotedMessage
 	if quotedMsg != nil {
 		quoted = &service.QuotedMessage{
-			MessageID: quotedMsg.MessageID,
+			MessageID: quotedMsg.MsgId,
 			ChatJID:   quotedMsg.ChatJID,
 			SenderJID: quotedMsg.SenderJID,
 			Content:   quotedMsg.Content,
-			IsFromMe:  quotedMsg.IsFromMe,
+			IsFromMe:  quotedMsg.FromMe,
 		}
 	}
 
@@ -305,19 +305,19 @@ func (h *Handler) saveOutgoingMessage(ctx context.Context, session *model.Sessio
 	}
 	
 	msg := &model.Message{
-		SessionID:              session.ID,
-		MessageID:              messageID,
-		ChatJID:                chatJid,
-		SenderJID:              senderJID,
-		Timestamp:              time.Now(),
-		Type:                   "text",
-		Content:                content,
-		IsFromMe:               true,
-		IsGroup:                false,
-		Status:                 model.MessageStatusSent,
-		ChatwootMessageID:      &chatwootMsgID,
-		ChatwootConversationID: &chatwootConvID,
-		ChatwootSourceID:       sourceID,
+		SessionID:  session.ID,
+		MsgId:      messageID,
+		ChatJID:    chatJid,
+		SenderJID:  senderJID,
+		Timestamp:  time.Now(),
+		Type:       "text",
+		Content:    content,
+		FromMe:     true,
+		IsGroup:    false,
+		Status:     model.MessageStatusSent,
+		CwMsgId:    &chatwootMsgID,
+		CwConvId:   &chatwootConvID,
+		CwSourceId: sourceID,
 	}
 
 	if _, err := h.database.Messages.Save(ctx, msg); err != nil {
@@ -365,7 +365,7 @@ func (h *Handler) handleMessageDeleted(ctx context.Context, session *model.Sessi
 
 	// Find ALL messages with this Chatwoot message ID
 	// (multiple attachments = multiple WhatsApp messages with same chatwootMessageId)
-	messages, err := h.database.Messages.GetAllByChatwootMessageID(ctx, session.ID, payload.ID)
+	messages, err := h.database.Messages.GetAllByCwMsgId(ctx, session.ID, payload.ID)
 	if err != nil {
 		return fmt.Errorf("failed to query messages: %w", err)
 	}
@@ -379,20 +379,20 @@ func (h *Handler) handleMessageDeleted(ctx context.Context, session *model.Sessi
 	var deleteErrors []error
 	for _, msg := range messages {
 		// Delete from WhatsApp
-		if _, err := h.whatsappSvc.DeleteMessage(ctx, session.Name, msg.ChatJID, msg.MessageID, msg.IsFromMe); err != nil {
-			logger.Warn().Err(err).Str("messageId", msg.MessageID).Msg("Chatwoot: failed to delete message from WhatsApp")
+		if _, err := h.whatsappSvc.DeleteMessage(ctx, session.Name, msg.ChatJID, msg.MsgId, msg.FromMe); err != nil {
+			logger.Warn().Err(err).Str("messageId", msg.MsgId).Msg("Chatwoot: failed to delete message from WhatsApp")
 			deleteErrors = append(deleteErrors, err)
 			continue
 		}
 
 		// Delete from local database
-		if err := h.database.Messages.Delete(ctx, session.ID, msg.MessageID); err != nil {
-			logger.Warn().Err(err).Str("messageId", msg.MessageID).Msg("Chatwoot: failed to delete message from database")
+		if err := h.database.Messages.Delete(ctx, session.ID, msg.MsgId); err != nil {
+			logger.Warn().Err(err).Str("messageId", msg.MsgId).Msg("Chatwoot: failed to delete message from database")
 		}
 
 		logger.Info().
 			Str("session", session.Name).
-			Str("messageId", msg.MessageID).
+			Str("messageId", msg.MsgId).
 			Int("chatwootMsgId", payload.ID).
 			Msg("Chatwoot: message deleted from WhatsApp")
 	}
