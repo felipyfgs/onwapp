@@ -451,6 +451,10 @@ func (s *Service) handleMessageCreated(ctx context.Context, sessionID string, cf
 	// Convert Chatwoot markdown to WhatsApp format
 	content = s.convertMarkdown(content)
 
+	// TODO: implement sending message to WhatsApp using chatJid and content
+	_ = chatJid
+	_ = content
+
 	return nil
 }
 
@@ -460,8 +464,7 @@ func (s *Service) handleMessageUpdated(ctx context.Context, sessionID string, cf
 
 func (s *Service) handleConversationStatusChanged(ctx context.Context, sessionID string, cfg *Config, payload *WebhookPayload) error {
 	// Handle conversation resolved/reopened
-	if payload.Conversation != nil {
-		}
+	// TODO: implement conversation status change handling
 	return nil
 }
 

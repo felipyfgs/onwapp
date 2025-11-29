@@ -189,9 +189,7 @@ func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
 	}
 
 	var before types.MessageServerID
-	if c.Query("before") != "" {
-		// Parse before parameter if provided
-	}
+	// TODO: Parse before parameter if provided for pagination
 
 	messages, err := h.whatsappService.GetNewsletterMessages(c.Request.Context(), name, newsletterID, count, before)
 	if err != nil {

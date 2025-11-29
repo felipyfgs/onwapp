@@ -54,13 +54,8 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 	if entry, ok := cm.conversationCache.Load(cacheKey); ok {
 		cached := entry.(contactCacheEntry)
 		if time.Now().Before(cached.expiresAt) {
-			logger.Debug().
-				Str("remoteJid", remoteJid).
-				Int("conversationId", cached.conversationID).
-				Msg("Chatwoot: using cached conversation")
 			return cached.conversationID, nil
 		}
-		// Cache expired, remove it
 		cm.conversationCache.Delete(cacheKey)
 	}
 
@@ -142,13 +137,6 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 		conversationID: conv.ID,
 		expiresAt:      time.Now().Add(cm.cacheTTL),
 	})
-
-	logger.Debug().
-		Str("remoteJid", remoteJid).
-		Int("contactId", contact.ID).
-		Int("conversationId", conv.ID).
-		Bool("isGroup", isGroup).
-		Msg("Chatwoot: created/found contact and conversation")
 
 	return conv.ID, nil
 }
