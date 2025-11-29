@@ -80,16 +80,12 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 		return
 	}
 
-	imageData, err := base64.StdEncoding.DecodeString(req.Image)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 image"})
+	imageData, ok := DecodeBase64(c, req.Image, "image")
+	if !ok {
 		return
 	}
 
-	mimeType := req.MimeType
-	if mimeType == "" {
-		mimeType = "image/jpeg"
-	}
+	mimeType := GetMimeTypeOrDefault(req.MimeType, "image/jpeg")
 
 	resp, err := h.whatsappService.SendImage(c.Request.Context(), name, req.Phone, imageData, req.Caption, mimeType)
 	if err != nil {
@@ -127,16 +123,12 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 		return
 	}
 
-	audioData, err := base64.StdEncoding.DecodeString(req.Audio)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 audio"})
+	audioData, ok := DecodeBase64(c, req.Audio, "audio")
+	if !ok {
 		return
 	}
 
-	mimeType := req.MimeType
-	if mimeType == "" {
-		mimeType = "audio/ogg; codecs=opus"
-	}
+	mimeType := GetMimeTypeOrDefault(req.MimeType, "audio/ogg; codecs=opus")
 
 	resp, err := h.whatsappService.SendAudio(c.Request.Context(), name, req.Phone, audioData, mimeType, req.PTT)
 	if err != nil {
@@ -174,16 +166,12 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 		return
 	}
 
-	videoData, err := base64.StdEncoding.DecodeString(req.Video)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 video"})
+	videoData, ok := DecodeBase64(c, req.Video, "video")
+	if !ok {
 		return
 	}
 
-	mimeType := req.MimeType
-	if mimeType == "" {
-		mimeType = "video/mp4"
-	}
+	mimeType := GetMimeTypeOrDefault(req.MimeType, "video/mp4")
 
 	resp, err := h.whatsappService.SendVideo(c.Request.Context(), name, req.Phone, videoData, req.Caption, mimeType)
 	if err != nil {
@@ -221,16 +209,12 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 		return
 	}
 
-	docData, err := base64.StdEncoding.DecodeString(req.Document)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 document"})
+	docData, ok := DecodeBase64(c, req.Document, "document")
+	if !ok {
 		return
 	}
 
-	mimeType := req.MimeType
-	if mimeType == "" {
-		mimeType = "application/octet-stream"
-	}
+	mimeType := GetMimeTypeOrDefault(req.MimeType, "application/octet-stream")
 
 	resp, err := h.whatsappService.SendDocument(c.Request.Context(), name, req.Phone, docData, req.Filename, mimeType)
 	if err != nil {
@@ -268,16 +252,12 @@ func (h *MessageHandler) SendSticker(c *gin.Context) {
 		return
 	}
 
-	stickerData, err := base64.StdEncoding.DecodeString(req.Sticker)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 sticker"})
+	stickerData, ok := DecodeBase64(c, req.Sticker, "sticker")
+	if !ok {
 		return
 	}
 
-	mimeType := req.MimeType
-	if mimeType == "" {
-		mimeType = "image/webp"
-	}
+	mimeType := GetMimeTypeOrDefault(req.MimeType, "image/webp")
 
 	resp, err := h.whatsappService.SendSticker(c.Request.Context(), name, req.Phone, stickerData, mimeType)
 	if err != nil {

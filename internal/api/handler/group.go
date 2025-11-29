@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/base64"
 	"net/http"
 	"strings"
 
@@ -542,9 +541,8 @@ func (h *GroupHandler) SetGroupPicture(c *gin.Context) {
 		return
 	}
 
-	imageData, err := base64.StdEncoding.DecodeString(req.Image)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 image"})
+	imageData, ok := DecodeBase64(c, req.Image, "image")
+	if !ok {
 		return
 	}
 

@@ -14,6 +14,13 @@ import (
 	"zpwoot/internal/logger"
 )
 
+// WebhookHandlerInterface defines the methods required for webhook handling
+type WebhookHandlerInterface interface {
+	GetWebhook(c *gin.Context)
+	SetWebhook(c *gin.Context)
+	GetEvents(c *gin.Context)
+}
+
 type Handlers struct {
 	Session    *handler.SessionHandler
 	Message    *handler.MessageHandler
@@ -21,7 +28,7 @@ type Handlers struct {
 	Contact    *handler.ContactHandler
 	Chat       *handler.ChatHandler
 	Profile    *handler.ProfileHandler
-	Webhook    *handler.WebhookHandler
+	Webhook    WebhookHandlerInterface
 	Newsletter *handler.NewsletterHandler
 	Status     *handler.StatusHandler
 	Call       *handler.CallHandler

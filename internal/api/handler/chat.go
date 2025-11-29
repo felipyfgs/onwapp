@@ -2,7 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -151,23 +150,9 @@ func (h *ChatHandler) SetDisappearingTimer(c *gin.Context) {
 		return
 	}
 
-	var timer time.Duration
-	switch req.Timer {
-	case "24h":
-		timer = 24 * time.Hour
-	case "7d":
-		timer = 7 * 24 * time.Hour
-	case "90d":
-		timer = 90 * 24 * time.Hour
-	case "off", "0":
-		timer = 0
-	default:
-		parsed, err := time.ParseDuration(req.Timer)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid timer format. Use: 24h, 7d, 90d, off, or Go duration"})
-			return
-		}
-		timer = parsed
+	timer, ok := ParseDisappearingTimer(c, req.Timer)
+	if !ok {
+		return
 	}
 
 	if err := h.whatsappService.SetDisappearingTimer(c.Request.Context(), name, req.Phone, timer); err != nil {

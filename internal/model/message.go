@@ -145,3 +145,25 @@ func (m *Message) IsMedia() bool {
 	}
 	return false
 }
+
+// IsValid checks if the MessageStatus is a valid status
+func (s MessageStatus) IsValid() bool {
+	switch s {
+	case MessageStatusPending, MessageStatusSent, MessageStatusDelivered,
+		MessageStatusRead, MessageStatusPlayed, MessageStatusFailed:
+		return true
+	}
+	return false
+}
+
+// IsValid checks if the MessageType is a valid type
+func (t MessageType) IsValid() bool {
+	switch t {
+	case MessageTypeText, MessageTypeImage, MessageTypeVideo, MessageTypeAudio,
+		MessageTypeDocument, MessageTypeSticker, MessageTypeLocation,
+		MessageTypeLiveLocation, MessageTypeContact, MessageTypePoll,
+		MessageTypeReaction, MessageTypeInteractive, MessageTypeProtocol, MessageTypeUnknown:
+		return true
+	}
+	return false
+}

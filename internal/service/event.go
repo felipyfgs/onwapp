@@ -20,10 +20,10 @@ import (
 
 type EventService struct {
 	database       *db.Database
-	webhookService *WebhookService
+	webhookService WebhookSender
 }
 
-func NewEventService(database *db.Database, webhookService *WebhookService) *EventService {
+func NewEventService(database *db.Database, webhookService WebhookSender) *EventService {
 	return &EventService{
 		database:       database,
 		webhookService: webhookService,

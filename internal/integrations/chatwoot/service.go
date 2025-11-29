@@ -995,10 +995,7 @@ func (s *Service) ProcessMessageDelete(ctx context.Context, session *model.Sessi
 	return nil
 }
 
-// Migrate runs database migrations for Chatwoot integration
-func (s *Service) Migrate(ctx context.Context) error {
-	return s.repo.Migrate(ctx)
-}
+
 
 // SessionEventPayload represents data to send back to handler for WhatsApp sending
 type SessionEventPayload struct {

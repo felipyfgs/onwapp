@@ -8,11 +8,57 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// LogLevel represents valid logging levels
+type LogLevel string
+
+const (
+	LogLevelDebug LogLevel = "debug"
+	LogLevelInfo  LogLevel = "info"
+	LogLevelWarn  LogLevel = "warn"
+	LogLevelError LogLevel = "error"
+)
+
+// IsValid checks if the LogLevel is valid
+func (l LogLevel) IsValid() bool {
+	switch l {
+	case LogLevelDebug, LogLevelInfo, LogLevelWarn, LogLevelError:
+		return true
+	}
+	return false
+}
+
+// String returns the string representation
+func (l LogLevel) String() string {
+	return string(l)
+}
+
+// LogFormat represents valid log output formats
+type LogFormat string
+
+const (
+	LogFormatConsole LogFormat = "console"
+	LogFormatJSON    LogFormat = "json"
+)
+
+// IsValid checks if the LogFormat is valid
+func (f LogFormat) IsValid() bool {
+	switch f {
+	case LogFormatConsole, LogFormatJSON:
+		return true
+	}
+	return false
+}
+
+// String returns the string representation
+func (f LogFormat) String() string {
+	return string(f)
+}
+
 type Config struct {
 	DatabaseURL string
 	Port        string
-	LogLevel    string
-	LogFormat   string
+	LogLevel    LogLevel
+	LogFormat   LogFormat
 	APIKey      string
 	ServerURL   string
 }
@@ -29,8 +75,8 @@ func Load() *Config {
 	return &Config{
 		DatabaseURL: getEnv("DATABASE_URL", "postgres://zpwoot:zpwoot123@localhost:5432/zpwoot?sslmode=disable"),
 		Port:        port,
-		LogLevel:    getEnv("LOG_LEVEL", "info"),
-		LogFormat:   getEnv("LOG_FORMAT", "console"),
+		LogLevel:    LogLevel(getEnv("LOG_LEVEL", "info")),
+		LogFormat:   LogFormat(getEnv("LOG_FORMAT", "console")),
 		APIKey:      getEnv("API_KEY", ""),
 		ServerURL:   serverURL,
 	}
@@ -47,13 +93,11 @@ func (c *Config) Validate() error {
 		errs = append(errs, "PORT is required")
 	}
 
-	validLogLevels := map[string]bool{"debug": true, "info": true, "warn": true, "error": true}
-	if !validLogLevels[c.LogLevel] {
+	if !c.LogLevel.IsValid() {
 		errs = append(errs, "LOG_LEVEL must be one of: debug, info, warn, error")
 	}
 
-	validLogFormats := map[string]bool{"console": true, "json": true}
-	if !validLogFormats[c.LogFormat] {
+	if !c.LogFormat.IsValid() {
 		errs = append(errs, "LOG_FORMAT must be one of: console, json")
 	}
 

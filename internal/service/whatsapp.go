@@ -14,6 +14,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"zpwoot/internal/model"
+	"zpwoot/internal/util"
 )
 
 type WhatsAppService struct {
@@ -36,14 +37,11 @@ func (w *WhatsAppService) getClient(sessionName string) (*whatsmeow.Client, erro
 }
 
 func parseJID(phone string) (types.JID, error) {
-	if phone[0] == '+' {
-		phone = phone[1:]
-	}
-	return types.ParseJID(phone + "@s.whatsapp.net")
+	return util.ParsePhoneJID(phone)
 }
 
 func parseGroupJID(groupID string) (types.JID, error) {
-	return types.ParseJID(groupID + "@g.us")
+	return util.ParseGroupJID(groupID)
 }
 
 // SendText envia mensagem de texto

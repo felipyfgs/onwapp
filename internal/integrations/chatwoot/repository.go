@@ -6,8 +6,6 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-
-	"zpwoot/internal/logger"
 )
 
 // Repository handles database operations for Chatwoot integration
@@ -20,46 +18,7 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 	return &Repository{pool: pool}
 }
 
-// Migrate creates the necessary table if it doesn't exist
-func (r *Repository) Migrate(ctx context.Context) error {
-	query := `
-		CREATE TABLE IF NOT EXISTS "zpChatwoot" (
-			"id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-			"sessionId" UUID NOT NULL UNIQUE REFERENCES "zpSessions"("id") ON DELETE CASCADE,
-			"enabled" BOOLEAN NOT NULL DEFAULT false,
-			"url" TEXT NOT NULL DEFAULT '',
-			"token" TEXT NOT NULL DEFAULT '',
-			"account" INTEGER NOT NULL DEFAULT 0,
-			"inboxId" INTEGER,
-			"inbox" TEXT,
-			"signAgent" BOOLEAN NOT NULL DEFAULT false,
-			"signSeparator" TEXT,
-			"autoReopen" BOOLEAN NOT NULL DEFAULT false,
-			"startPending" BOOLEAN NOT NULL DEFAULT false,
-			"mergeBrPhones" BOOLEAN NOT NULL DEFAULT false,
-			"syncContacts" BOOLEAN NOT NULL DEFAULT false,
-			"syncMessages" BOOLEAN NOT NULL DEFAULT false,
-			"syncDays" INTEGER DEFAULT 0,
-			"ignoreChats" TEXT[],
-			"autoInbox" BOOLEAN NOT NULL DEFAULT false,
-			"webhookUrl" TEXT,
-			"createdAt" TIMESTAMPTZ DEFAULT NOW(),
-			"updatedAt" TIMESTAMPTZ DEFAULT NOW()
-		);
 
-		CREATE INDEX IF NOT EXISTS "idx_zpChatwoot_sessionId" ON "zpChatwoot"("sessionId");
-		CREATE INDEX IF NOT EXISTS "idx_zpChatwoot_enabled" ON "zpChatwoot"("enabled");
-	`
-
-	_, err := r.pool.Exec(ctx, query)
-	if err != nil {
-		logger.Error().Err(err).Msg("Failed to create zpChatwoot table")
-		return err
-	}
-
-	logger.Info().Msg("Chatwoot configs table migrated successfully")
-	return nil
-}
 
 // Upsert creates or updates a Chatwoot configuration
 func (r *Repository) Upsert(ctx context.Context, cfg *Config) (*Config, error) {

@@ -1,7 +1,8 @@
-package model
+package webhook
 
 import "time"
 
+// Webhook represents a webhook configuration for a session
 type Webhook struct {
 	ID        string
 	SessionID string

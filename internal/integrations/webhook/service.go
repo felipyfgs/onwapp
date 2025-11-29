@@ -1,4 +1,4 @@
-package service
+package webhook
 
 import (
 	"bytes"
@@ -10,33 +10,33 @@ import (
 	"net/http"
 	"time"
 
-	"zpwoot/internal/db"
 	"zpwoot/internal/logger"
-	"zpwoot/internal/model"
 )
 
 const (
-	webhookMaxRetries = 3
-	webhookBaseDelay  = 1 * time.Second
-	webhookTimeout    = 10 * time.Second
+	maxRetries = 3
+	baseDelay  = 1 * time.Second
+	timeout    = 10 * time.Second
 )
 
-type WebhookService struct {
-	database   *db.Database
+// Service handles webhook business logic
+type Service struct {
+	repo       *Repository
 	httpClient *http.Client
 }
 
-func NewWebhookService(database *db.Database) *WebhookService {
-	return &WebhookService{
-		database: database,
+// NewService creates a new Webhook service
+func NewService(repo *Repository) *Service {
+	return &Service{
+		repo: repo,
 		httpClient: &http.Client{
-			Timeout: 10 * time.Second,
+			Timeout: timeout,
 		},
 	}
 }
 
-// WebhookPayload represents the webhook payload sent to subscribers
-type WebhookPayload struct {
+// Payload represents the webhook payload sent to subscribers
+type Payload struct {
 	Event       string      `json:"event"`
 	SessionID   string      `json:"sessionId"`
 	SessionName string      `json:"sessionName"`
@@ -44,8 +44,9 @@ type WebhookPayload struct {
 	Raw         interface{} `json:"raw"`
 }
 
-func (w *WebhookService) Send(ctx context.Context, sessionID, sessionName, event string, rawEvent interface{}) {
-	wh, err := w.database.Webhooks.GetEnabledBySession(ctx, sessionID)
+// Send sends a webhook notification
+func (s *Service) Send(ctx context.Context, sessionID, sessionName, event string, rawEvent interface{}) {
+	wh, err := s.repo.GetEnabledBySession(ctx, sessionID)
 	if err != nil {
 		logger.Error().Err(err).Str("sessionId", sessionID).Msg("Failed to get webhook")
 		return
@@ -55,11 +56,11 @@ func (w *WebhookService) Send(ctx context.Context, sessionID, sessionName, event
 		return
 	}
 
-	if !w.shouldSendEvent(wh.Events, event) {
+	if !s.shouldSendEvent(wh.Events, event) {
 		return
 	}
 
-	payload := WebhookPayload{
+	payload := Payload{
 		Event:       event,
 		SessionID:   sessionID,
 		SessionName: sessionName,
@@ -73,10 +74,10 @@ func (w *WebhookService) Send(ctx context.Context, sessionID, sessionName, event
 		return
 	}
 
-	go w.sendWebhook(*wh, jsonPayload)
+	go s.sendWebhook(*wh, jsonPayload)
 }
 
-func (w *WebhookService) shouldSendEvent(events []string, event string) bool {
+func (s *Service) shouldSendEvent(events []string, event string) bool {
 	if len(events) == 0 {
 		return true
 	}
@@ -88,17 +89,17 @@ func (w *WebhookService) shouldSendEvent(events []string, event string) bool {
 	return false
 }
 
-func (w *WebhookService) sendWebhook(wh model.Webhook, payload []byte) {
+func (s *Service) sendWebhook(wh Webhook, payload []byte) {
 	var lastErr error
 
-	for attempt := 0; attempt < webhookMaxRetries; attempt++ {
+	for attempt := 0; attempt < maxRetries; attempt++ {
 		if attempt > 0 {
-			delay := webhookBaseDelay * time.Duration(1<<(attempt-1)) // exponential backoff: 1s, 2s, 4s
+			delay := baseDelay * time.Duration(1<<(attempt-1))
 			time.Sleep(delay)
 			logger.Debug().Str("url", wh.URL).Int("attempt", attempt+1).Msg("Retrying webhook")
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), webhookTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		req, err := http.NewRequestWithContext(ctx, "POST", wh.URL, bytes.NewReader(payload))
 		if err != nil {
 			cancel()
@@ -110,11 +111,11 @@ func (w *WebhookService) sendWebhook(wh model.Webhook, payload []byte) {
 		req.Header.Set("User-Agent", "ZPWoot-Webhook/1.0")
 
 		if wh.Secret != "" {
-			signature := w.generateSignature(payload, wh.Secret)
+			signature := s.generateSignature(payload, wh.Secret)
 			req.Header.Set("X-Webhook-Signature", signature)
 		}
 
-		resp, err := w.httpClient.Do(req)
+		resp, err := s.httpClient.Do(req)
 		cancel()
 
 		if err != nil {
@@ -140,36 +141,34 @@ func (w *WebhookService) sendWebhook(wh model.Webhook, payload []byte) {
 	}
 
 	if lastErr != nil {
-		logger.Error().Err(lastErr).Str("url", wh.URL).Int("maxRetries", webhookMaxRetries).Msg("Webhook failed after all retries")
+		logger.Error().Err(lastErr).Str("url", wh.URL).Int("maxRetries", maxRetries).Msg("Webhook failed after all retries")
 	}
 }
 
-func (w *WebhookService) generateSignature(payload []byte, secret string) string {
+func (s *Service) generateSignature(payload []byte, secret string) string {
 	h := hmac.New(sha256.New, []byte(secret))
 	h.Write(payload)
 	return "sha256=" + hex.EncodeToString(h.Sum(nil))
 }
 
-// CRUD operations
-
 // Set creates or updates the webhook for a session (one webhook per session)
-func (w *WebhookService) Set(ctx context.Context, sessionID string, url string, events []string, enabled bool, secret string) (*model.Webhook, error) {
-	wh := &model.Webhook{
+func (s *Service) Set(ctx context.Context, sessionID string, url string, events []string, enabled bool, secret string) (*Webhook, error) {
+	wh := &Webhook{
 		SessionID: sessionID,
 		URL:       url,
 		Events:    events,
 		Enabled:   enabled,
 		Secret:    secret,
 	}
-	return w.database.Webhooks.Upsert(ctx, wh)
+	return s.repo.Upsert(ctx, wh)
 }
 
 // GetBySession returns the webhook for a session (or nil if none)
-func (w *WebhookService) GetBySession(ctx context.Context, sessionID string) (*model.Webhook, error) {
-	return w.database.Webhooks.GetBySession(ctx, sessionID)
+func (s *Service) GetBySession(ctx context.Context, sessionID string) (*Webhook, error) {
+	return s.repo.GetBySession(ctx, sessionID)
 }
 
 // Delete removes the webhook for a session
-func (w *WebhookService) Delete(ctx context.Context, sessionID string) error {
-	return w.database.Webhooks.Delete(ctx, sessionID)
+func (s *Service) Delete(ctx context.Context, sessionID string) error {
+	return s.repo.Delete(ctx, sessionID)
 }

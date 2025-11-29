@@ -26,7 +26,6 @@ type Database struct {
 	Sessions       *repository.SessionRepository
 	Messages       *repository.MessageRepository
 	MessageUpdates *repository.MessageUpdateRepository
-	Webhooks       *repository.WebhookRepository
 }
 
 func New(ctx context.Context, databaseURL string) (*Database, error) {
@@ -58,7 +57,6 @@ func New(ctx context.Context, databaseURL string) (*Database, error) {
 		Sessions:       repository.NewSessionRepository(pool),
 		Messages:       repository.NewMessageRepository(pool),
 		MessageUpdates: repository.NewMessageUpdateRepository(pool),
-		Webhooks:       repository.NewWebhookRepository(pool),
 	}, nil
 }
 

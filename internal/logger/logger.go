@@ -11,6 +11,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+
+	"zpwoot/internal/config"
+)
+
+// Format aliases for convenience
+const (
+	Console = config.LogFormatConsole
+	JSON    = config.LogFormatJSON
 )
 
 const RequestIDKey = "X-Request-ID"
@@ -27,7 +35,7 @@ func Init(level, format string) {
 	zerolog.SetGlobalLevel(lvl)
 
 	var output io.Writer = os.Stdout
-	if format == "console" {
+	if format == "console" || format == string(Console) {
 		writer := zerolog.ConsoleWriter{
 			Out:           os.Stdout,
 			TimeFormat:    "15:04:05",

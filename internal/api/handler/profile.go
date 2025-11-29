@@ -1,9 +1,7 @@
 package handler
 
 import (
-	"encoding/base64"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.mau.fi/whatsmeow/types"
@@ -138,9 +136,8 @@ func (h *ProfileHandler) SetProfilePicture(c *gin.Context) {
 		return
 	}
 
-	imageData, err := base64.StdEncoding.DecodeString(req.Image)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 image"})
+	imageData, ok := DecodeBase64(c, req.Image, "image")
+	if !ok {
 		return
 	}
 
@@ -263,23 +260,9 @@ func (h *ProfileHandler) SetDefaultDisappearingTimer(c *gin.Context) {
 		return
 	}
 
-	var timer time.Duration
-	switch req.Timer {
-	case "24h":
-		timer = 24 * time.Hour
-	case "7d":
-		timer = 7 * 24 * time.Hour
-	case "90d":
-		timer = 90 * 24 * time.Hour
-	case "off", "0":
-		timer = 0
-	default:
-		parsed, err := time.ParseDuration(req.Timer)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid timer format. Use: 24h, 7d, 90d, off, or Go duration"})
-			return
-		}
-		timer = parsed
+	timer, ok := ParseDisappearingTimer(c, req.Timer)
+	if !ok {
+		return
 	}
 
 	if err := h.whatsappService.SetDefaultDisappearingTimer(c.Request.Context(), name, timer); err != nil {

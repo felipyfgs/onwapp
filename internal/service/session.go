@@ -21,17 +21,22 @@ import (
 // EventHandler is a function that handles WhatsApp events
 type EventHandler func(session *model.Session, evt interface{})
 
+// WebhookSender defines the interface for sending webhooks
+type WebhookSender interface {
+	Send(ctx context.Context, sessionID, sessionName, event string, rawEvent interface{})
+}
+
 type SessionService struct {
 	container        *sqlstore.Container
 	database         *db.Database
-	webhookService   *WebhookService
+	webhookService   WebhookSender
 	eventService     *EventService
 	sessions         map[string]*model.Session
 	mu               sync.RWMutex
 	externalHandlers []EventHandler
 }
 
-func NewSessionService(container *sqlstore.Container, database *db.Database, webhookService *WebhookService) *SessionService {
+func NewSessionService(container *sqlstore.Container, database *db.Database, webhookService WebhookSender) *SessionService {
 	eventService := NewEventService(database, webhookService)
 	return &SessionService{
 		container:      container,

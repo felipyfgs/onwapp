@@ -1,25 +1,25 @@
-package repository
+package webhook
 
 import (
 	"context"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-
-	"zpwoot/internal/model"
 )
 
-type WebhookRepository struct {
+// Repository handles database operations for Webhook integration
+type Repository struct {
 	pool *pgxpool.Pool
 }
 
-func NewWebhookRepository(pool *pgxpool.Pool) *WebhookRepository {
-	return &WebhookRepository{pool: pool}
+// NewRepository creates a new Webhook repository
+func NewRepository(pool *pgxpool.Pool) *Repository {
+	return &Repository{pool: pool}
 }
 
 // Upsert creates or updates the webhook for a session (one webhook per session)
-func (r *WebhookRepository) Upsert(ctx context.Context, wh *model.Webhook) (*model.Webhook, error) {
-	var w model.Webhook
+func (r *Repository) Upsert(ctx context.Context, wh *Webhook) (*Webhook, error) {
+	var w Webhook
 	err := r.pool.QueryRow(ctx, `
 		INSERT INTO "zpWebhooks" ("sessionId", "url", "events", "enabled", "secret")
 		VALUES ($1, $2, $3, $4, $5)
@@ -39,8 +39,8 @@ func (r *WebhookRepository) Upsert(ctx context.Context, wh *model.Webhook) (*mod
 }
 
 // GetBySession returns the single webhook for a session (or nil if none)
-func (r *WebhookRepository) GetBySession(ctx context.Context, sessionID string) (*model.Webhook, error) {
-	var w model.Webhook
+func (r *Repository) GetBySession(ctx context.Context, sessionID string) (*Webhook, error) {
+	var w Webhook
 	err := r.pool.QueryRow(ctx, `
 		SELECT "id", "sessionId", "url", "events", "enabled", COALESCE("secret", '') as "secret"
 		FROM "zpWebhooks" WHERE "sessionId" = $1`,
@@ -55,8 +55,8 @@ func (r *WebhookRepository) GetBySession(ctx context.Context, sessionID string) 
 }
 
 // GetEnabledBySession returns the webhook if enabled (for sending)
-func (r *WebhookRepository) GetEnabledBySession(ctx context.Context, sessionID string) (*model.Webhook, error) {
-	var w model.Webhook
+func (r *Repository) GetEnabledBySession(ctx context.Context, sessionID string) (*Webhook, error) {
+	var w Webhook
 	err := r.pool.QueryRow(ctx, `
 		SELECT "id", "sessionId", "url", "events", "enabled", COALESCE("secret", '') as "secret"
 		FROM "zpWebhooks" WHERE "sessionId" = $1 AND "enabled" = true`,
@@ -71,7 +71,7 @@ func (r *WebhookRepository) GetEnabledBySession(ctx context.Context, sessionID s
 }
 
 // Delete removes the webhook for a session
-func (r *WebhookRepository) Delete(ctx context.Context, sessionID string) error {
+func (r *Repository) Delete(ctx context.Context, sessionID string) error {
 	_, err := r.pool.Exec(ctx, `DELETE FROM "zpWebhooks" WHERE "sessionId" = $1`, sessionID)
 	return err
 }
