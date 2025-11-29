@@ -44,6 +44,7 @@ func NewHandler(svc *Service, sessionSvc *service.SessionService, whatsappSvc *s
 // @Success 200 {object} Config
 // @Failure 400 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
+// @Security ApiKeyAuth
 // @Router /sessions/{name}/chatwoot/set [post]
 func (h *Handler) SetConfig(c *gin.Context) {
 	sessionName := c.Param("name")
@@ -83,6 +84,7 @@ func (h *Handler) SetConfig(c *gin.Context) {
 // @Param name path string true "Session name"
 // @Success 200 {object} Config
 // @Failure 404 {object} map[string]interface{}
+// @Security ApiKeyAuth
 // @Router /sessions/{name}/chatwoot/find [get]
 func (h *Handler) GetConfig(c *gin.Context) {
 	sessionName := c.Param("name")
@@ -110,6 +112,7 @@ func (h *Handler) GetConfig(c *gin.Context) {
 // @Param name path string true "Session name"
 // @Success 200 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
+// @Security ApiKeyAuth
 // @Router /sessions/{name}/chatwoot [delete]
 func (h *Handler) DeleteConfig(c *gin.Context) {
 	sessionName := c.Param("name")
@@ -351,6 +354,7 @@ func downloadMedia(url string) ([]byte, string, error) {
 // @Param name path string true "Session name"
 // @Success 200 {object} SyncStats
 // @Failure 404 {object} map[string]interface{}
+// @Security ApiKeyAuth
 // @Router /sessions/{name}/chatwoot/sync/contacts [post]
 func (h *Handler) SyncContacts(c *gin.Context) {
 	sessionName := c.Param("name")
@@ -395,6 +399,7 @@ func (h *Handler) SyncContacts(c *gin.Context) {
 // @Param days query int false "Limit to last N days"
 // @Success 200 {object} SyncStats
 // @Failure 404 {object} map[string]interface{}
+// @Security ApiKeyAuth
 // @Router /sessions/{name}/chatwoot/sync/messages [post]
 func (h *Handler) SyncMessages(c *gin.Context) {
 	sessionName := c.Param("name")
@@ -439,6 +444,7 @@ func (h *Handler) SyncMessages(c *gin.Context) {
 // @Param days query int false "Limit to last N days"
 // @Success 200 {object} SyncStats
 // @Failure 404 {object} map[string]interface{}
+// @Security ApiKeyAuth
 // @Router /sessions/{name}/chatwoot/sync [post]
 func (h *Handler) SyncAll(c *gin.Context) {
 	sessionName := c.Param("name")

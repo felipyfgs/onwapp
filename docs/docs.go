@@ -67,7 +67,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/EventsResponse"
+                            "$ref": "#/definitions/webhook.EventsResponse"
                         }
                     }
                 }
@@ -97,14 +97,14 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/SessionResponse"
+                                "$ref": "#/definitions/dto.SessionResponse"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -133,7 +133,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateSessionRequest"
+                            "$ref": "#/definitions/dto.CreateSessionRequest"
                         }
                     }
                 ],
@@ -141,25 +141,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/SessionResponse"
+                            "$ref": "#/definitions/dto.SessionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -196,19 +196,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SessionResponse"
+                            "$ref": "#/definitions/dto.SessionResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -243,19 +243,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MessageResponse"
+                            "$ref": "#/definitions/dto.MessageResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -293,7 +293,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/RejectCallRequest"
+                            "$ref": "#/definitions/dto.RejectCallRequest"
                         }
                     }
                 ],
@@ -307,13 +307,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -351,7 +351,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ArchiveChatRequest"
+                            "$ref": "#/definitions/dto.ArchiveChatRequest"
                         }
                     }
                 ],
@@ -359,25 +359,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ChatActionResponse"
+                            "$ref": "#/definitions/dto.ChatActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -415,7 +415,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/DeleteMessageRequest"
+                            "$ref": "#/definitions/dto.DeleteMessageRequest"
                         }
                     }
                 ],
@@ -423,25 +423,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -477,7 +477,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/EditMessageRequest"
+                            "$ref": "#/definitions/dto.EditMessageRequest"
                         }
                     }
                 ],
@@ -485,25 +485,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -541,7 +541,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/MarkReadRequest"
+                            "$ref": "#/definitions/dto.MarkReadRequest"
                         }
                     }
                 ],
@@ -555,19 +555,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -605,7 +605,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/DisappearingRequest"
+                            "$ref": "#/definitions/dto.DisappearingRequest"
                         }
                     }
                 ],
@@ -619,13 +619,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -663,7 +663,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ChatPresenceRequest"
+                            "$ref": "#/definitions/dto.ChatPresenceRequest"
                         }
                     }
                 ],
@@ -671,25 +671,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ChatPresenceResponse"
+                            "$ref": "#/definitions/dto.ChatPresenceResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -697,6 +697,11 @@ const docTemplate = `{
         },
         "/sessions/{name}/chatwoot": {
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Remove Chatwoot integration configuration for a session",
                 "produces": [
                     "application/json"
@@ -734,6 +739,11 @@ const docTemplate = `{
         },
         "/sessions/{name}/chatwoot/find": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Get Chatwoot integration configuration for a session",
                 "produces": [
                     "application/json"
@@ -755,7 +765,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/Config"
+                            "$ref": "#/definitions/chatwoot.Config"
                         }
                     },
                     "404": {
@@ -770,6 +780,11 @@ const docTemplate = `{
         },
         "/sessions/{name}/chatwoot/set": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Configure Chatwoot integration for a session",
                 "consumes": [
                     "application/json"
@@ -795,7 +810,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SetConfigRequest"
+                            "$ref": "#/definitions/chatwoot.SetConfigRequest"
                         }
                     }
                 ],
@@ -803,7 +818,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/Config"
+                            "$ref": "#/definitions/chatwoot.Config"
                         }
                     },
                     "400": {
@@ -811,6 +826,141 @@ const docTemplate = `{
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{name}/chatwoot/sync": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Synchronize all contacts and messages to Chatwoot",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chatwoot"
+                ],
+                "summary": "Full sync to Chatwoot",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit to last N days",
+                        "name": "days",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/chatwoot.SyncStats"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{name}/chatwoot/sync/contacts": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Synchronize contacts from message history to Chatwoot",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chatwoot"
+                ],
+                "summary": "Sync contacts to Chatwoot",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/chatwoot.SyncStats"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{name}/chatwoot/sync/messages": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Synchronize message history to Chatwoot",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chatwoot"
+                ],
+                "summary": "Sync messages to Chatwoot",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit to last N days",
+                        "name": "days",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/chatwoot.SyncStats"
                         }
                     },
                     "404": {
@@ -858,13 +1008,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/CommunityResponse"
+                            "$ref": "#/definitions/dto.CommunityResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -900,7 +1050,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/LinkGroupRequest"
+                            "$ref": "#/definitions/dto.LinkGroupRequest"
                         }
                     }
                 ],
@@ -914,13 +1064,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -958,7 +1108,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/LinkGroupRequest"
+                            "$ref": "#/definitions/dto.LinkGroupRequest"
                         }
                     }
                 ],
@@ -972,13 +1122,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1015,19 +1165,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MessageResponse"
+                            "$ref": "#/definitions/dto.MessageResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1073,13 +1223,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1113,13 +1263,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/BlocklistResponse"
+                            "$ref": "#/definitions/dto.BlocklistResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1155,7 +1305,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/BlocklistRequest"
+                            "$ref": "#/definitions/dto.BlocklistRequest"
                         }
                     }
                 ],
@@ -1163,19 +1313,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/BlocklistActionResponse"
+                            "$ref": "#/definitions/dto.BlocklistActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1213,7 +1363,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CheckPhoneRequest"
+                            "$ref": "#/definitions/dto.CheckPhoneRequest"
                         }
                     }
                 ],
@@ -1223,26 +1373,26 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/CheckPhoneResult"
+                                "$ref": "#/definitions/dto.CheckPhoneResult"
                             }
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1280,7 +1430,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ContactInfoRequest"
+                            "$ref": "#/definitions/dto.ContactInfoRequest"
                         }
                     }
                 ],
@@ -1288,25 +1438,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ContactInfoResponse"
+                            "$ref": "#/definitions/dto.ContactInfoResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1350,19 +1500,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/AvatarResponse"
+                            "$ref": "#/definitions/dto.AvatarResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1403,13 +1553,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/BusinessProfileResponse"
+                            "$ref": "#/definitions/dto.BusinessProfileResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1447,7 +1597,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SubscribePresenceRequest"
+                            "$ref": "#/definitions/dto.SubscribePresenceRequest"
                         }
                     }
                 ],
@@ -1461,13 +1611,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1504,19 +1654,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/dto.GroupActionResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1552,7 +1702,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateGroupRequest"
+                            "$ref": "#/definitions/dto.CreateGroupRequest"
                         }
                     }
                 ],
@@ -1560,25 +1710,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1619,19 +1769,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1669,7 +1819,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/JoinGroupRequest"
+                            "$ref": "#/definitions/dto.JoinGroupRequest"
                         }
                     }
                 ],
@@ -1677,25 +1827,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1739,25 +1889,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1795,7 +1945,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupUpdateRequest"
+                            "$ref": "#/definitions/dto.GroupUpdateRequest"
                         }
                     }
                 ],
@@ -1803,25 +1953,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1871,19 +2021,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupInviteLinkResponse"
+                            "$ref": "#/definitions/dto.GroupInviteLinkResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1927,19 +2077,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/dto.GroupActionResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -1977,7 +2127,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendGroupMessageRequest"
+                            "$ref": "#/definitions/dto.SendGroupMessageRequest"
                         }
                     }
                 ],
@@ -1985,25 +2135,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2041,7 +2191,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupUpdateRequest"
+                            "$ref": "#/definitions/dto.GroupUpdateRequest"
                         }
                     }
                 ],
@@ -2049,25 +2199,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2105,7 +2255,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupParticipantsRequest"
+                            "$ref": "#/definitions/dto.GroupParticipantsRequest"
                         }
                     }
                 ],
@@ -2113,25 +2263,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2167,7 +2317,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupParticipantsRequest"
+                            "$ref": "#/definitions/dto.GroupParticipantsRequest"
                         }
                     }
                 ],
@@ -2175,25 +2325,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2231,7 +2381,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupParticipantsRequest"
+                            "$ref": "#/definitions/dto.GroupParticipantsRequest"
                         }
                     }
                 ],
@@ -2239,25 +2389,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2295,7 +2445,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupParticipantsRequest"
+                            "$ref": "#/definitions/dto.GroupParticipantsRequest"
                         }
                     }
                 ],
@@ -2303,25 +2453,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2359,7 +2509,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupPictureRequest"
+                            "$ref": "#/definitions/dto.GroupPictureRequest"
                         }
                     }
                 ],
@@ -2367,19 +2517,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SetPictureResponse"
+                            "$ref": "#/definitions/dto.SetPictureResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2420,13 +2570,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupRequestParticipantsResponse"
+                            "$ref": "#/definitions/dto.GroupRequestParticipantsResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2469,7 +2619,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupRequestActionBodyRequest"
+                            "$ref": "#/definitions/dto.GroupRequestActionBodyRequest"
                         }
                     }
                 ],
@@ -2477,19 +2627,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2527,7 +2677,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupAnnounceRequest"
+                            "$ref": "#/definitions/dto.GroupAnnounceRequest"
                         }
                     }
                 ],
@@ -2541,13 +2691,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2585,7 +2735,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupApprovalRequest"
+                            "$ref": "#/definitions/dto.GroupApprovalRequest"
                         }
                     }
                 ],
@@ -2599,13 +2749,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2643,7 +2793,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupLockedRequest"
+                            "$ref": "#/definitions/dto.GroupLockedRequest"
                         }
                     }
                 ],
@@ -2657,13 +2807,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2701,7 +2851,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupMemberAddModeRequest"
+                            "$ref": "#/definitions/dto.GroupMemberAddModeRequest"
                         }
                     }
                 ],
@@ -2715,13 +2865,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2758,19 +2908,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MessageResponse"
+                            "$ref": "#/definitions/dto.MessageResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2808,7 +2958,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendAudioRequest"
+                            "$ref": "#/definitions/dto.SendAudioRequest"
                         }
                     }
                 ],
@@ -2816,25 +2966,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2872,7 +3022,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendButtonsRequest"
+                            "$ref": "#/definitions/dto.SendButtonsRequest"
                         }
                     }
                 ],
@@ -2880,25 +3030,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -2936,7 +3086,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendCarouselRequest"
+                            "$ref": "#/definitions/dto.SendCarouselRequest"
                         }
                     }
                 ],
@@ -2944,25 +3094,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3000,7 +3150,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendContactRequest"
+                            "$ref": "#/definitions/dto.SendContactRequest"
                         }
                     }
                 ],
@@ -3008,25 +3158,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3064,7 +3214,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendDocumentRequest"
+                            "$ref": "#/definitions/dto.SendDocumentRequest"
                         }
                     }
                 ],
@@ -3072,25 +3222,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3128,7 +3278,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendImageRequest"
+                            "$ref": "#/definitions/dto.SendImageRequest"
                         }
                     }
                 ],
@@ -3136,25 +3286,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3192,7 +3342,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendInteractiveRequest"
+                            "$ref": "#/definitions/dto.SendInteractiveRequest"
                         }
                     }
                 ],
@@ -3200,25 +3350,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3256,7 +3406,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendListRequest"
+                            "$ref": "#/definitions/dto.SendListRequest"
                         }
                     }
                 ],
@@ -3264,25 +3414,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3320,7 +3470,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendLocationRequest"
+                            "$ref": "#/definitions/dto.SendLocationRequest"
                         }
                     }
                 ],
@@ -3328,25 +3478,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3384,7 +3534,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendPollRequest"
+                            "$ref": "#/definitions/dto.SendPollRequest"
                         }
                     }
                 ],
@@ -3392,25 +3542,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3448,7 +3598,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendPollVoteRequest"
+                            "$ref": "#/definitions/dto.SendPollVoteRequest"
                         }
                     }
                 ],
@@ -3456,25 +3606,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3512,7 +3662,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendReactionRequest"
+                            "$ref": "#/definitions/dto.SendReactionRequest"
                         }
                     }
                 ],
@@ -3520,25 +3670,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3576,7 +3726,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendStickerRequest"
+                            "$ref": "#/definitions/dto.SendStickerRequest"
                         }
                     }
                 ],
@@ -3584,25 +3734,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3640,7 +3790,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendTemplateRequest"
+                            "$ref": "#/definitions/dto.SendTemplateRequest"
                         }
                     }
                 ],
@@ -3648,25 +3798,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3704,7 +3854,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendTextRequest"
+                            "$ref": "#/definitions/dto.SendTextRequest"
                         }
                     }
                 ],
@@ -3712,25 +3862,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3768,7 +3918,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendVideoRequest"
+                            "$ref": "#/definitions/dto.SendVideoRequest"
                         }
                     }
                 ],
@@ -3776,25 +3926,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3837,7 +3987,7 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3873,7 +4023,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateNewsletterRequest"
+                            "$ref": "#/definitions/dto.CreateNewsletterRequest"
                         }
                     }
                 ],
@@ -3881,19 +4031,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/NewsletterResponse"
+                            "$ref": "#/definitions/dto.NewsletterResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3934,13 +4084,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/NewsletterResponse"
+                            "$ref": "#/definitions/dto.NewsletterResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -3978,7 +4128,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/NewsletterActionRequest"
+                            "$ref": "#/definitions/dto.NewsletterActionRequest"
                         }
                     }
                 ],
@@ -3992,13 +4142,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4034,7 +4184,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/NewsletterActionRequest"
+                            "$ref": "#/definitions/dto.NewsletterActionRequest"
                         }
                     }
                 ],
@@ -4048,13 +4198,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4108,13 +4258,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/NewsletterResponse"
+                            "$ref": "#/definitions/dto.NewsletterResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4152,7 +4302,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/NewsletterMuteRequest"
+                            "$ref": "#/definitions/dto.NewsletterMuteRequest"
                         }
                     }
                 ],
@@ -4166,13 +4316,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4210,7 +4360,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/NewsletterReactionRequest"
+                            "$ref": "#/definitions/dto.NewsletterReactionRequest"
                         }
                     }
                 ],
@@ -4224,13 +4374,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4268,7 +4418,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/PairPhoneRequest"
+                            "$ref": "#/definitions/dto.PairPhoneRequest"
                         }
                     }
                 ],
@@ -4276,19 +4426,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/PairPhoneResponse"
+                            "$ref": "#/definitions/dto.PairPhoneResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4326,7 +4476,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SetPresenceRequest"
+                            "$ref": "#/definitions/dto.SetPresenceRequest"
                         }
                     }
                 ],
@@ -4334,25 +4484,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/PresenceResponse"
+                            "$ref": "#/definitions/dto.PresenceResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4389,19 +4539,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ProfileInfoResponse"
+                            "$ref": "#/definitions/dto.ProfileInfoResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4439,7 +4589,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/DefaultDisappearingRequest"
+                            "$ref": "#/definitions/dto.DefaultDisappearingRequest"
                         }
                     }
                 ],
@@ -4453,13 +4603,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4497,7 +4647,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SetPushNameRequest"
+                            "$ref": "#/definitions/dto.SetPushNameRequest"
                         }
                     }
                 ],
@@ -4505,25 +4655,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SetNameResponse"
+                            "$ref": "#/definitions/dto.SetNameResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4561,7 +4711,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SetProfilePictureRequest"
+                            "$ref": "#/definitions/dto.SetProfilePictureRequest"
                         }
                     }
                 ],
@@ -4569,25 +4719,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SetPictureResponse"
+                            "$ref": "#/definitions/dto.SetPictureResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4628,13 +4778,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4671,19 +4821,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/PrivacySettingsResponse"
+                            "$ref": "#/definitions/dto.PrivacySettingsResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4719,7 +4869,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SetPrivacyRequest"
+                            "$ref": "#/definitions/dto.SetPrivacyRequest"
                         }
                     }
                 ],
@@ -4733,19 +4883,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4783,7 +4933,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SetStatusRequest"
+                            "$ref": "#/definitions/dto.SetStatusRequest"
                         }
                     }
                 ],
@@ -4791,25 +4941,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SetStatusResponse"
+                            "$ref": "#/definitions/dto.SetStatusResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4853,19 +5003,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/QRResponse"
+                            "$ref": "#/definitions/dto.QRResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4905,13 +5055,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/QRLinkResponse"
+                            "$ref": "#/definitions/dto.QRLinkResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4948,19 +5098,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MessageResponse"
+                            "$ref": "#/definitions/dto.MessageResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -4998,7 +5148,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendStatusRequest"
+                            "$ref": "#/definitions/dto.SendStatusRequest"
                         }
                     }
                 ],
@@ -5006,19 +5156,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -5052,13 +5202,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/StatusPrivacyResponse"
+                            "$ref": "#/definitions/dto.StatusPrivacyResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -5092,13 +5242,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/WebhookResponse"
+                            "$ref": "#/definitions/webhook.GetWebhookResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/webhook.ErrorResponse"
                         }
                     }
                 }
@@ -5134,7 +5284,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SetWebhookRequest"
+                            "$ref": "#/definitions/webhook.SetWebhookRequest"
                         }
                     }
                 ],
@@ -5142,19 +5292,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/WebhookResponse"
+                            "$ref": "#/definitions/webhook.GetWebhookResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/webhook.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/webhook.ErrorResponse"
                         }
                     }
                 }
@@ -5162,230 +5312,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "ArchiveChatRequest": {
-            "type": "object",
-            "required": [
-                "phone"
-            ],
-            "properties": {
-                "archive": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                }
-            }
-        },
-        "AvatarResponse": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string",
-                    "example": "abc123"
-                },
-                "url": {
-                    "type": "string",
-                    "example": "https://..."
-                }
-            }
-        },
-        "BlocklistActionResponse": {
-            "type": "object",
-            "properties": {
-                "action": {
-                    "type": "string",
-                    "example": "block"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                }
-            }
-        },
-        "BlocklistRequest": {
-            "type": "object",
-            "required": [
-                "action",
-                "phone"
-            ],
-            "properties": {
-                "action": {
-                    "description": "block or unblock",
-                    "type": "string",
-                    "example": "block"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                }
-            }
-        },
-        "BlocklistResponse": {
-            "type": "object",
-            "properties": {
-                "jids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "BusinessProfileResponse": {
-            "type": "object",
-            "properties": {
-                "profile": {}
-            }
-        },
-        "ButtonDTO": {
-            "type": "object",
-            "required": [
-                "buttonId",
-                "displayText"
-            ],
-            "properties": {
-                "buttonId": {
-                    "type": "string",
-                    "example": "btn1"
-                },
-                "displayText": {
-                    "type": "string",
-                    "example": "Click me"
-                }
-            }
-        },
-        "CarouselCardDTO": {
-            "type": "object",
-            "required": [
-                "body",
-                "buttons",
-                "header"
-            ],
-            "properties": {
-                "body": {
-                    "type": "string",
-                    "example": "Amazing product"
-                },
-                "buttons": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "$ref": "#/definitions/NativeFlowButtonDTO"
-                    }
-                },
-                "footer": {
-                    "type": "string",
-                    "example": "Only $9.99"
-                },
-                "header": {
-                    "$ref": "#/definitions/CarouselCardHeaderDTO"
-                }
-            }
-        },
-        "CarouselCardHeaderDTO": {
-            "type": "object",
-            "properties": {
-                "image": {
-                    "type": "string",
-                    "example": "base64_encoded_image"
-                },
-                "mimetype": {
-                    "type": "string",
-                    "example": "image/jpeg"
-                },
-                "title": {
-                    "type": "string",
-                    "example": "Product 1"
-                },
-                "video": {
-                    "type": "string",
-                    "example": "base64_encoded_video"
-                }
-            }
-        },
-        "ChatActionResponse": {
-            "type": "object",
-            "properties": {
-                "status": {
-                    "type": "string",
-                    "example": "archived"
-                }
-            }
-        },
-        "ChatPresenceRequest": {
-            "type": "object",
-            "required": [
-                "phone",
-                "state"
-            ],
-            "properties": {
-                "media": {
-                    "type": "string",
-                    "example": ""
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "state": {
-                    "type": "string",
-                    "example": "composing"
-                }
-            }
-        },
-        "ChatPresenceResponse": {
-            "type": "object",
-            "properties": {
-                "state": {
-                    "type": "string",
-                    "example": "composing"
-                }
-            }
-        },
-        "CheckPhoneRequest": {
-            "type": "object",
-            "required": [
-                "phones"
-            ],
-            "properties": {
-                "phones": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "5511999999999",
-                        "5511888888888"
-                    ]
-                }
-            }
-        },
-        "CheckPhoneResult": {
-            "type": "object",
-            "properties": {
-                "isRegistered": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "jid": {
-                    "type": "string",
-                    "example": "5511999999999@s.whatsapp.net"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                }
-            }
-        },
-        "CommunityResponse": {
-            "type": "object",
-            "properties": {
-                "groups": {}
-            }
-        },
-        "Config": {
+        "chatwoot.Config": {
             "type": "object",
             "properties": {
                 "account": {
@@ -5395,6 +5322,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "autoReopen": {
+                    "description": "Also sets lock_to_single_conversation on inbox",
                     "type": "boolean"
                 },
                 "createdAt": {
@@ -5456,1166 +5384,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ContactInfoRequest": {
-            "type": "object",
-            "required": [
-                "phones"
-            ],
-            "properties": {
-                "phones": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "ContactInfoResponse": {
-            "type": "object",
-            "properties": {
-                "users": {
-                    "type": "object",
-                    "additionalProperties": true
-                }
-            }
-        },
-        "CreateGroupRequest": {
-            "type": "object",
-            "required": [
-                "name",
-                "participants"
-            ],
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "example": "My Group"
-                },
-                "participants": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "CreateNewsletterRequest": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "example": "Channel description"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "My Channel"
-                },
-                "picture": {
-                    "type": "string",
-                    "example": "base64_encoded_image"
-                }
-            }
-        },
-        "CreateSessionRequest": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "example": "my-session"
-                }
-            }
-        },
-        "DefaultDisappearingRequest": {
-            "type": "object",
-            "required": [
-                "timer"
-            ],
-            "properties": {
-                "timer": {
-                    "description": "24h, 7d, 90d, or off",
-                    "type": "string",
-                    "example": "24h"
-                }
-            }
-        },
-        "DeleteMessageRequest": {
-            "type": "object",
-            "required": [
-                "messageId",
-                "phone"
-            ],
-            "properties": {
-                "forMe": {
-                    "type": "boolean",
-                    "example": false
-                },
-                "messageId": {
-                    "type": "string",
-                    "example": "ABCD1234"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                }
-            }
-        },
-        "DisappearingRequest": {
-            "type": "object",
-            "required": [
-                "phone",
-                "timer"
-            ],
-            "properties": {
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "timer": {
-                    "description": "24h, 7d, 90d, or off",
-                    "type": "string",
-                    "example": "24h"
-                }
-            }
-        },
-        "EditMessageRequest": {
-            "type": "object",
-            "required": [
-                "messageId",
-                "newText",
-                "phone"
-            ],
-            "properties": {
-                "messageId": {
-                    "type": "string",
-                    "example": "ABCD1234"
-                },
-                "newText": {
-                    "type": "string",
-                    "example": "Edited message"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                }
-            }
-        },
-        "ErrorResponse": {
-            "type": "object",
-            "properties": {
-                "error": {
-                    "type": "string",
-                    "example": "session not found"
-                }
-            }
-        },
-        "EventsResponse": {
-            "type": "object",
-            "properties": {
-                "all": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "categories": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "GroupActionResponse": {
-            "type": "object",
-            "properties": {
-                "data": {},
-                "groupId": {
-                    "type": "string",
-                    "example": "123456789@g.us"
-                }
-            }
-        },
-        "GroupAnnounceRequest": {
-            "type": "object",
-            "required": [
-                "groupId"
-            ],
-            "properties": {
-                "announce": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "groupId": {
-                    "type": "string",
-                    "example": "123456789@g.us"
-                }
-            }
-        },
-        "GroupApprovalRequest": {
-            "type": "object",
-            "required": [
-                "groupId"
-            ],
-            "properties": {
-                "approvalMode": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "groupId": {
-                    "type": "string",
-                    "example": "123456789@g.us"
-                }
-            }
-        },
-        "GroupInviteLinkResponse": {
-            "type": "object",
-            "properties": {
-                "groupId": {
-                    "type": "string",
-                    "example": "123456789@g.us"
-                },
-                "link": {
-                    "type": "string",
-                    "example": "https://chat.whatsapp.com/..."
-                }
-            }
-        },
-        "GroupLockedRequest": {
-            "type": "object",
-            "required": [
-                "groupId"
-            ],
-            "properties": {
-                "groupId": {
-                    "type": "string",
-                    "example": "123456789@g.us"
-                },
-                "locked": {
-                    "type": "boolean",
-                    "example": true
-                }
-            }
-        },
-        "GroupMemberAddModeRequest": {
-            "type": "object",
-            "required": [
-                "groupId",
-                "mode"
-            ],
-            "properties": {
-                "groupId": {
-                    "type": "string",
-                    "example": "123456789@g.us"
-                },
-                "mode": {
-                    "description": "admin_add or all_member_add",
-                    "type": "string",
-                    "example": "admin_add"
-                }
-            }
-        },
-        "GroupParticipantsRequest": {
-            "type": "object",
-            "required": [
-                "groupId",
-                "participants"
-            ],
-            "properties": {
-                "groupId": {
-                    "type": "string"
-                },
-                "participants": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "GroupPictureRequest": {
-            "type": "object",
-            "required": [
-                "groupId",
-                "image"
-            ],
-            "properties": {
-                "groupId": {
-                    "type": "string",
-                    "example": "123456789@g.us"
-                },
-                "image": {
-                    "type": "string",
-                    "example": "base64_encoded_image"
-                }
-            }
-        },
-        "GroupRequestActionBodyRequest": {
-            "type": "object",
-            "required": [
-                "action",
-                "participants"
-            ],
-            "properties": {
-                "action": {
-                    "description": "approve or reject",
-                    "type": "string",
-                    "example": "approve"
-                },
-                "participants": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "GroupRequestParticipantsResponse": {
-            "type": "object",
-            "properties": {
-                "groupId": {
-                    "type": "string",
-                    "example": "123456789@g.us"
-                },
-                "participants": {}
-            }
-        },
-        "GroupUpdateRequest": {
-            "type": "object",
-            "required": [
-                "groupId",
-                "value"
-            ],
-            "properties": {
-                "groupId": {
-                    "type": "string",
-                    "example": "123456789@g.us"
-                },
-                "value": {
-                    "type": "string",
-                    "example": "New Name"
-                }
-            }
-        },
-        "JoinGroupRequest": {
-            "type": "object",
-            "required": [
-                "inviteLink"
-            ],
-            "properties": {
-                "inviteLink": {
-                    "type": "string"
-                }
-            }
-        },
-        "LinkGroupRequest": {
-            "type": "object",
-            "required": [
-                "childGroupId",
-                "parentGroupId"
-            ],
-            "properties": {
-                "childGroupId": {
-                    "type": "string",
-                    "example": "987654321@g.us"
-                },
-                "parentGroupId": {
-                    "type": "string",
-                    "example": "123456789@g.us"
-                }
-            }
-        },
-        "ListRowDTO": {
-            "type": "object",
-            "required": [
-                "rowId",
-                "title"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "example": "Description of option 1"
-                },
-                "rowId": {
-                    "type": "string",
-                    "example": "row1"
-                },
-                "title": {
-                    "type": "string",
-                    "example": "Option 1"
-                }
-            }
-        },
-        "ListSectionDTO": {
-            "type": "object",
-            "required": [
-                "rows",
-                "title"
-            ],
-            "properties": {
-                "rows": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "$ref": "#/definitions/ListRowDTO"
-                    }
-                },
-                "title": {
-                    "type": "string",
-                    "example": "Section 1"
-                }
-            }
-        },
-        "MarkReadRequest": {
-            "type": "object",
-            "required": [
-                "messageIds",
-                "phone"
-            ],
-            "properties": {
-                "messageIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                }
-            }
-        },
-        "MessageResponse": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string",
-                    "example": "operation completed"
-                },
-                "status": {
-                    "type": "string",
-                    "example": "connected"
-                }
-            }
-        },
-        "NativeFlowButtonDTO": {
-            "type": "object",
-            "required": [
-                "name",
-                "params"
-            ],
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "example": "quick_reply"
-                },
-                "params": {
-                    "type": "object",
-                    "additionalProperties": true
-                }
-            }
-        },
-        "NewsletterActionRequest": {
-            "type": "object",
-            "required": [
-                "newsletterJid"
-            ],
-            "properties": {
-                "newsletterJid": {
-                    "type": "string",
-                    "example": "123456789@newsletter"
-                }
-            }
-        },
-        "NewsletterMuteRequest": {
-            "type": "object",
-            "required": [
-                "newsletterJid"
-            ],
-            "properties": {
-                "mute": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "newsletterJid": {
-                    "type": "string",
-                    "example": "123456789@newsletter"
-                }
-            }
-        },
-        "NewsletterReactionRequest": {
-            "type": "object",
-            "required": [
-                "newsletterJid",
-                "reaction",
-                "serverId"
-            ],
-            "properties": {
-                "messageId": {
-                    "type": "string",
-                    "example": "ABCD1234"
-                },
-                "newsletterJid": {
-                    "type": "string",
-                    "example": "123456789@newsletter"
-                },
-                "reaction": {
-                    "type": "string",
-                    "example": "👍"
-                },
-                "serverId": {
-                    "type": "integer",
-                    "example": 123
-                }
-            }
-        },
-        "NewsletterResponse": {
-            "type": "object",
-            "properties": {
-                "data": {}
-            }
-        },
-        "PairPhoneRequest": {
-            "type": "object",
-            "required": [
-                "phone"
-            ],
-            "properties": {
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                }
-            }
-        },
-        "PairPhoneResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string",
-                    "example": "ABCD-EFGH"
-                }
-            }
-        },
-        "PresenceResponse": {
-            "type": "object",
-            "properties": {
-                "status": {
-                    "type": "string",
-                    "example": "available"
-                }
-            }
-        },
-        "PrivacySettingsResponse": {
-            "type": "object",
-            "properties": {
-                "settings": {}
-            }
-        },
-        "ProfileInfoResponse": {
-            "type": "object",
-            "properties": {
-                "profile": {}
-            }
-        },
-        "QRLinkResponse": {
-            "type": "object",
-            "properties": {
-                "link": {
-                    "type": "string",
-                    "example": "https://wa.me/qr/..."
-                }
-            }
-        },
-        "QRResponse": {
-            "type": "object",
-            "properties": {
-                "qr": {
-                    "type": "string",
-                    "example": "data:image/png;base64,..."
-                },
-                "status": {
-                    "type": "string",
-                    "example": "connecting"
-                }
-            }
-        },
-        "RejectCallRequest": {
-            "type": "object",
-            "required": [
-                "callFrom",
-                "callId"
-            ],
-            "properties": {
-                "callFrom": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "callId": {
-                    "type": "string",
-                    "example": "CALL123"
-                }
-            }
-        },
-        "SendAudioRequest": {
-            "type": "object",
-            "required": [
-                "audio",
-                "phone"
-            ],
-            "properties": {
-                "audio": {
-                    "type": "string",
-                    "example": "base64_encoded_audio"
-                },
-                "mimetype": {
-                    "type": "string",
-                    "example": "audio/ogg; codecs=opus"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "ptt": {
-                    "type": "boolean",
-                    "example": true
-                }
-            }
-        },
-        "SendButtonsRequest": {
-            "type": "object",
-            "required": [
-                "buttons",
-                "contentText",
-                "phone"
-            ],
-            "properties": {
-                "buttons": {
-                    "type": "array",
-                    "maxItems": 3,
-                    "minItems": 1,
-                    "items": {
-                        "$ref": "#/definitions/ButtonDTO"
-                    }
-                },
-                "contentText": {
-                    "type": "string",
-                    "example": "Choose an option"
-                },
-                "footerText": {
-                    "type": "string",
-                    "example": "Footer text"
-                },
-                "headerText": {
-                    "type": "string",
-                    "example": "Header text"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                }
-            }
-        },
-        "SendCarouselRequest": {
-            "type": "object",
-            "required": [
-                "cards",
-                "phone"
-            ],
-            "properties": {
-                "body": {
-                    "type": "string",
-                    "example": "Browse our catalog"
-                },
-                "cards": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "$ref": "#/definitions/CarouselCardDTO"
-                    }
-                },
-                "footer": {
-                    "type": "string",
-                    "example": "Powered by ZPWoot"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "title": {
-                    "type": "string",
-                    "example": "Check out our products!"
-                }
-            }
-        },
-        "SendContactRequest": {
-            "type": "object",
-            "required": [
-                "contactName",
-                "contactPhone",
-                "phone"
-            ],
-            "properties": {
-                "contactName": {
-                    "type": "string",
-                    "example": "John Doe"
-                },
-                "contactPhone": {
-                    "type": "string",
-                    "example": "5511888888888"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                }
-            }
-        },
-        "SendDocumentRequest": {
-            "type": "object",
-            "required": [
-                "document",
-                "filename",
-                "phone"
-            ],
-            "properties": {
-                "document": {
-                    "type": "string",
-                    "example": "base64_encoded_document"
-                },
-                "filename": {
-                    "type": "string",
-                    "example": "document.pdf"
-                },
-                "mimetype": {
-                    "type": "string",
-                    "example": "application/pdf"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                }
-            }
-        },
-        "SendGroupMessageRequest": {
-            "type": "object",
-            "required": [
-                "groupId",
-                "text"
-            ],
-            "properties": {
-                "groupId": {
-                    "type": "string",
-                    "example": "123456789@g.us"
-                },
-                "text": {
-                    "type": "string",
-                    "example": "Hello Group!"
-                }
-            }
-        },
-        "SendImageRequest": {
-            "type": "object",
-            "required": [
-                "image",
-                "phone"
-            ],
-            "properties": {
-                "caption": {
-                    "type": "string",
-                    "example": "Image caption"
-                },
-                "image": {
-                    "type": "string",
-                    "example": "base64_encoded_image"
-                },
-                "mimetype": {
-                    "type": "string",
-                    "example": "image/jpeg"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                }
-            }
-        },
-        "SendInteractiveRequest": {
-            "type": "object",
-            "required": [
-                "body",
-                "buttons",
-                "phone"
-            ],
-            "properties": {
-                "body": {
-                    "type": "string",
-                    "example": "Message body text"
-                },
-                "buttons": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "$ref": "#/definitions/NativeFlowButtonDTO"
-                    }
-                },
-                "footer": {
-                    "type": "string",
-                    "example": "Footer text"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "title": {
-                    "type": "string",
-                    "example": "Interactive Title"
-                }
-            }
-        },
-        "SendListRequest": {
-            "type": "object",
-            "required": [
-                "buttonText",
-                "description",
-                "phone",
-                "sections",
-                "title"
-            ],
-            "properties": {
-                "buttonText": {
-                    "type": "string",
-                    "example": "Open Menu"
-                },
-                "description": {
-                    "type": "string",
-                    "example": "Please select an option"
-                },
-                "footerText": {
-                    "type": "string",
-                    "example": "Footer text"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "sections": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "$ref": "#/definitions/ListSectionDTO"
-                    }
-                },
-                "title": {
-                    "type": "string",
-                    "example": "Menu Title"
-                }
-            }
-        },
-        "SendLocationRequest": {
-            "type": "object",
-            "required": [
-                "latitude",
-                "longitude",
-                "phone"
-            ],
-            "properties": {
-                "address": {
-                    "type": "string",
-                    "example": "Street Address"
-                },
-                "latitude": {
-                    "type": "number",
-                    "example": -23.5505
-                },
-                "longitude": {
-                    "type": "number",
-                    "example": -46.6333
-                },
-                "name": {
-                    "type": "string",
-                    "example": "Location Name"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                }
-            }
-        },
-        "SendPollRequest": {
-            "type": "object",
-            "required": [
-                "name",
-                "options",
-                "phone"
-            ],
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "example": "What's your favorite color?"
-                },
-                "options": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "Red",
-                        "Blue",
-                        "Green"
-                    ]
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "selectableCount": {
-                    "type": "integer",
-                    "example": 1
-                }
-            }
-        },
-        "SendPollVoteRequest": {
-            "type": "object",
-            "required": [
-                "phone",
-                "pollMessageId",
-                "selectedOptions"
-            ],
-            "properties": {
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "pollMessageId": {
-                    "type": "string",
-                    "example": "ABCD1234"
-                },
-                "selectedOptions": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "Red"
-                    ]
-                }
-            }
-        },
-        "SendReactionRequest": {
-            "type": "object",
-            "required": [
-                "emoji",
-                "messageId",
-                "phone"
-            ],
-            "properties": {
-                "emoji": {
-                    "type": "string",
-                    "example": "👍"
-                },
-                "messageId": {
-                    "type": "string",
-                    "example": "ABCD1234"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                }
-            }
-        },
-        "SendResponse": {
-            "type": "object",
-            "properties": {
-                "messageId": {
-                    "type": "string",
-                    "example": "ABCD1234"
-                },
-                "timestamp": {
-                    "type": "integer",
-                    "example": 1699999999
-                }
-            }
-        },
-        "SendStatusRequest": {
-            "type": "object",
-            "properties": {
-                "caption": {
-                    "type": "string",
-                    "example": "Status caption"
-                },
-                "image": {
-                    "type": "string",
-                    "example": "base64_encoded_image"
-                },
-                "mimetype": {
-                    "type": "string",
-                    "example": "image/jpeg"
-                },
-                "text": {
-                    "type": "string",
-                    "example": "My status update"
-                },
-                "video": {
-                    "type": "string",
-                    "example": "base64_encoded_video"
-                }
-            }
-        },
-        "SendStickerRequest": {
-            "type": "object",
-            "required": [
-                "phone",
-                "sticker"
-            ],
-            "properties": {
-                "mimetype": {
-                    "type": "string",
-                    "example": "image/webp"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "sticker": {
-                    "type": "string",
-                    "example": "base64_encoded_sticker"
-                }
-            }
-        },
-        "SendTemplateRequest": {
-            "type": "object",
-            "required": [
-                "buttons",
-                "content",
-                "phone"
-            ],
-            "properties": {
-                "buttons": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "$ref": "#/definitions/TemplateButtonDTO"
-                    }
-                },
-                "content": {
-                    "type": "string",
-                    "example": "Please choose an option below"
-                },
-                "document": {
-                    "type": "string",
-                    "example": "base64_encoded_document"
-                },
-                "filename": {
-                    "type": "string",
-                    "example": "document.pdf"
-                },
-                "footer": {
-                    "type": "string",
-                    "example": "Powered by ZPWoot"
-                },
-                "image": {
-                    "type": "string",
-                    "example": "base64_encoded_image"
-                },
-                "mimetype": {
-                    "type": "string",
-                    "example": "image/jpeg"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "title": {
-                    "type": "string",
-                    "example": "Welcome!"
-                },
-                "video": {
-                    "type": "string",
-                    "example": "base64_encoded_video"
-                }
-            }
-        },
-        "SendTextRequest": {
-            "type": "object",
-            "required": [
-                "phone",
-                "text"
-            ],
-            "properties": {
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "text": {
-                    "type": "string",
-                    "example": "Hello World"
-                }
-            }
-        },
-        "SendVideoRequest": {
-            "type": "object",
-            "required": [
-                "phone",
-                "video"
-            ],
-            "properties": {
-                "caption": {
-                    "type": "string",
-                    "example": "Video caption"
-                },
-                "mimetype": {
-                    "type": "string",
-                    "example": "video/mp4"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "video": {
-                    "type": "string",
-                    "example": "base64_encoded_video"
-                }
-            }
-        },
-        "SessionResponse": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "type": "string",
-                    "example": "2025-11-29T14:18:15.324706Z"
-                },
-                "deviceJid": {
-                    "type": "string",
-                    "example": "5511999999999@s.whatsapp.net"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "ce270f0c-c3d6-41ad-b481-1587f813c3b1"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "my-session"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "status": {
-                    "type": "string",
-                    "example": "connected"
-                },
-                "updatedAt": {
-                    "type": "string",
-                    "example": "2025-11-29T14:18:15.324706Z"
-                }
-            }
-        },
-        "SetConfigRequest": {
+        "chatwoot.SetConfigRequest": {
             "type": "object",
             "properties": {
                 "account": {
@@ -6668,7 +5437,1395 @@ const docTemplate = `{
                 }
             }
         },
-        "SetNameResponse": {
+        "chatwoot.SyncStats": {
+            "type": "object",
+            "properties": {
+                "contactsCreated": {
+                    "type": "integer"
+                },
+                "contactsSkipped": {
+                    "type": "integer"
+                },
+                "contactsUpdated": {
+                    "type": "integer"
+                },
+                "conversationsUsed": {
+                    "type": "integer"
+                },
+                "errors": {
+                    "type": "integer"
+                },
+                "messagesImported": {
+                    "type": "integer"
+                },
+                "messagesSkipped": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.ArchiveChatRequest": {
+            "type": "object",
+            "required": [
+                "phone"
+            ],
+            "properties": {
+                "archive": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "dto.AvatarResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "abc123"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://..."
+                }
+            }
+        },
+        "dto.BlocklistActionResponse": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "example": "block"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "dto.BlocklistRequest": {
+            "type": "object",
+            "required": [
+                "action",
+                "phone"
+            ],
+            "properties": {
+                "action": {
+                    "description": "block or unblock",
+                    "type": "string",
+                    "example": "block"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "dto.BlocklistResponse": {
+            "type": "object",
+            "properties": {
+                "jids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "dto.BusinessProfileResponse": {
+            "type": "object",
+            "properties": {
+                "profile": {}
+            }
+        },
+        "dto.ButtonDTO": {
+            "type": "object",
+            "required": [
+                "buttonId",
+                "displayText"
+            ],
+            "properties": {
+                "buttonId": {
+                    "type": "string",
+                    "example": "btn1"
+                },
+                "displayText": {
+                    "type": "string",
+                    "example": "Click me"
+                }
+            }
+        },
+        "dto.CarouselCardDTO": {
+            "type": "object",
+            "required": [
+                "body",
+                "buttons",
+                "header"
+            ],
+            "properties": {
+                "body": {
+                    "type": "string",
+                    "example": "Amazing product"
+                },
+                "buttons": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/dto.NativeFlowButtonDTO"
+                    }
+                },
+                "footer": {
+                    "type": "string",
+                    "example": "Only $9.99"
+                },
+                "header": {
+                    "$ref": "#/definitions/dto.CarouselCardHeaderDTO"
+                }
+            }
+        },
+        "dto.CarouselCardHeaderDTO": {
+            "type": "object",
+            "properties": {
+                "image": {
+                    "type": "string",
+                    "example": "base64_encoded_image"
+                },
+                "mimetype": {
+                    "type": "string",
+                    "example": "image/jpeg"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Product 1"
+                },
+                "video": {
+                    "type": "string",
+                    "example": "base64_encoded_video"
+                }
+            }
+        },
+        "dto.ChatActionResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "example": "archived"
+                }
+            }
+        },
+        "dto.ChatPresenceRequest": {
+            "type": "object",
+            "required": [
+                "phone",
+                "state"
+            ],
+            "properties": {
+                "media": {
+                    "type": "string",
+                    "example": ""
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "state": {
+                    "type": "string",
+                    "example": "composing"
+                }
+            }
+        },
+        "dto.ChatPresenceResponse": {
+            "type": "object",
+            "properties": {
+                "state": {
+                    "type": "string",
+                    "example": "composing"
+                }
+            }
+        },
+        "dto.CheckPhoneRequest": {
+            "type": "object",
+            "required": [
+                "phones"
+            ],
+            "properties": {
+                "phones": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "5511999999999",
+                        "5511888888888"
+                    ]
+                }
+            }
+        },
+        "dto.CheckPhoneResult": {
+            "type": "object",
+            "properties": {
+                "isRegistered": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "jid": {
+                    "type": "string",
+                    "example": "5511999999999@s.whatsapp.net"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "dto.CommunityResponse": {
+            "type": "object",
+            "properties": {
+                "groups": {}
+            }
+        },
+        "dto.ContactInfoRequest": {
+            "type": "object",
+            "required": [
+                "phones"
+            ],
+            "properties": {
+                "phones": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "dto.ContactInfoResponse": {
+            "type": "object",
+            "properties": {
+                "users": {
+                    "type": "object",
+                    "additionalProperties": true
+                }
+            }
+        },
+        "dto.CreateGroupRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "participants"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "My Group"
+                },
+                "participants": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "dto.CreateNewsletterRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Channel description"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "My Channel"
+                },
+                "picture": {
+                    "type": "string",
+                    "example": "base64_encoded_image"
+                }
+            }
+        },
+        "dto.CreateSessionRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "my-session"
+                }
+            }
+        },
+        "dto.DefaultDisappearingRequest": {
+            "type": "object",
+            "required": [
+                "timer"
+            ],
+            "properties": {
+                "timer": {
+                    "description": "24h, 7d, 90d, or off",
+                    "type": "string",
+                    "example": "24h"
+                }
+            }
+        },
+        "dto.DeleteMessageRequest": {
+            "type": "object",
+            "required": [
+                "messageId",
+                "phone"
+            ],
+            "properties": {
+                "forMe": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "messageId": {
+                    "type": "string",
+                    "example": "ABCD1234"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "dto.DisappearingRequest": {
+            "type": "object",
+            "required": [
+                "phone",
+                "timer"
+            ],
+            "properties": {
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "timer": {
+                    "description": "24h, 7d, 90d, or off",
+                    "type": "string",
+                    "example": "24h"
+                }
+            }
+        },
+        "dto.EditMessageRequest": {
+            "type": "object",
+            "required": [
+                "messageId",
+                "newText",
+                "phone"
+            ],
+            "properties": {
+                "messageId": {
+                    "type": "string",
+                    "example": "ABCD1234"
+                },
+                "newText": {
+                    "type": "string",
+                    "example": "Edited message"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "dto.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "session not found"
+                }
+            }
+        },
+        "dto.GroupActionResponse": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "groupId": {
+                    "type": "string",
+                    "example": "123456789@g.us"
+                }
+            }
+        },
+        "dto.GroupAnnounceRequest": {
+            "type": "object",
+            "required": [
+                "groupId"
+            ],
+            "properties": {
+                "announce": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "groupId": {
+                    "type": "string",
+                    "example": "123456789@g.us"
+                }
+            }
+        },
+        "dto.GroupApprovalRequest": {
+            "type": "object",
+            "required": [
+                "groupId"
+            ],
+            "properties": {
+                "approvalMode": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "groupId": {
+                    "type": "string",
+                    "example": "123456789@g.us"
+                }
+            }
+        },
+        "dto.GroupInviteLinkResponse": {
+            "type": "object",
+            "properties": {
+                "groupId": {
+                    "type": "string",
+                    "example": "123456789@g.us"
+                },
+                "link": {
+                    "type": "string",
+                    "example": "https://chat.whatsapp.com/..."
+                }
+            }
+        },
+        "dto.GroupLockedRequest": {
+            "type": "object",
+            "required": [
+                "groupId"
+            ],
+            "properties": {
+                "groupId": {
+                    "type": "string",
+                    "example": "123456789@g.us"
+                },
+                "locked": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "dto.GroupMemberAddModeRequest": {
+            "type": "object",
+            "required": [
+                "groupId",
+                "mode"
+            ],
+            "properties": {
+                "groupId": {
+                    "type": "string",
+                    "example": "123456789@g.us"
+                },
+                "mode": {
+                    "description": "admin_add or all_member_add",
+                    "type": "string",
+                    "example": "admin_add"
+                }
+            }
+        },
+        "dto.GroupParticipantsRequest": {
+            "type": "object",
+            "required": [
+                "groupId",
+                "participants"
+            ],
+            "properties": {
+                "groupId": {
+                    "type": "string"
+                },
+                "participants": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "dto.GroupPictureRequest": {
+            "type": "object",
+            "required": [
+                "groupId",
+                "image"
+            ],
+            "properties": {
+                "groupId": {
+                    "type": "string",
+                    "example": "123456789@g.us"
+                },
+                "image": {
+                    "type": "string",
+                    "example": "base64_encoded_image"
+                }
+            }
+        },
+        "dto.GroupRequestActionBodyRequest": {
+            "type": "object",
+            "required": [
+                "action",
+                "participants"
+            ],
+            "properties": {
+                "action": {
+                    "description": "approve or reject",
+                    "type": "string",
+                    "example": "approve"
+                },
+                "participants": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "dto.GroupRequestParticipantsResponse": {
+            "type": "object",
+            "properties": {
+                "groupId": {
+                    "type": "string",
+                    "example": "123456789@g.us"
+                },
+                "participants": {}
+            }
+        },
+        "dto.GroupUpdateRequest": {
+            "type": "object",
+            "required": [
+                "groupId",
+                "value"
+            ],
+            "properties": {
+                "groupId": {
+                    "type": "string",
+                    "example": "123456789@g.us"
+                },
+                "value": {
+                    "type": "string",
+                    "example": "New Name"
+                }
+            }
+        },
+        "dto.JoinGroupRequest": {
+            "type": "object",
+            "required": [
+                "inviteLink"
+            ],
+            "properties": {
+                "inviteLink": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.LinkGroupRequest": {
+            "type": "object",
+            "required": [
+                "childGroupId",
+                "parentGroupId"
+            ],
+            "properties": {
+                "childGroupId": {
+                    "type": "string",
+                    "example": "987654321@g.us"
+                },
+                "parentGroupId": {
+                    "type": "string",
+                    "example": "123456789@g.us"
+                }
+            }
+        },
+        "dto.ListRowDTO": {
+            "type": "object",
+            "required": [
+                "rowId",
+                "title"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Description of option 1"
+                },
+                "rowId": {
+                    "type": "string",
+                    "example": "row1"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Option 1"
+                }
+            }
+        },
+        "dto.ListSectionDTO": {
+            "type": "object",
+            "required": [
+                "rows",
+                "title"
+            ],
+            "properties": {
+                "rows": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/dto.ListRowDTO"
+                    }
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Section 1"
+                }
+            }
+        },
+        "dto.MarkReadRequest": {
+            "type": "object",
+            "required": [
+                "messageIds",
+                "phone"
+            ],
+            "properties": {
+                "messageIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "dto.MessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "operation completed"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "connected"
+                }
+            }
+        },
+        "dto.NativeFlowButtonDTO": {
+            "type": "object",
+            "required": [
+                "name",
+                "params"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "quick_reply"
+                },
+                "params": {
+                    "type": "object",
+                    "additionalProperties": true
+                }
+            }
+        },
+        "dto.NewsletterActionRequest": {
+            "type": "object",
+            "required": [
+                "newsletterJid"
+            ],
+            "properties": {
+                "newsletterJid": {
+                    "type": "string",
+                    "example": "123456789@newsletter"
+                }
+            }
+        },
+        "dto.NewsletterMuteRequest": {
+            "type": "object",
+            "required": [
+                "newsletterJid"
+            ],
+            "properties": {
+                "mute": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "newsletterJid": {
+                    "type": "string",
+                    "example": "123456789@newsletter"
+                }
+            }
+        },
+        "dto.NewsletterReactionRequest": {
+            "type": "object",
+            "required": [
+                "newsletterJid",
+                "reaction",
+                "serverId"
+            ],
+            "properties": {
+                "messageId": {
+                    "type": "string",
+                    "example": "ABCD1234"
+                },
+                "newsletterJid": {
+                    "type": "string",
+                    "example": "123456789@newsletter"
+                },
+                "reaction": {
+                    "type": "string",
+                    "example": "👍"
+                },
+                "serverId": {
+                    "type": "integer",
+                    "example": 123
+                }
+            }
+        },
+        "dto.NewsletterResponse": {
+            "type": "object",
+            "properties": {
+                "data": {}
+            }
+        },
+        "dto.PairPhoneRequest": {
+            "type": "object",
+            "required": [
+                "phone"
+            ],
+            "properties": {
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "dto.PairPhoneResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "ABCD-EFGH"
+                }
+            }
+        },
+        "dto.PresenceResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "example": "available"
+                }
+            }
+        },
+        "dto.PrivacySettingsResponse": {
+            "type": "object",
+            "properties": {
+                "settings": {}
+            }
+        },
+        "dto.ProfileInfoResponse": {
+            "type": "object",
+            "properties": {
+                "profile": {}
+            }
+        },
+        "dto.QRLinkResponse": {
+            "type": "object",
+            "properties": {
+                "link": {
+                    "type": "string",
+                    "example": "https://wa.me/qr/..."
+                }
+            }
+        },
+        "dto.QRResponse": {
+            "type": "object",
+            "properties": {
+                "qr": {
+                    "type": "string",
+                    "example": "data:image/png;base64,..."
+                },
+                "status": {
+                    "type": "string",
+                    "example": "connecting"
+                }
+            }
+        },
+        "dto.RejectCallRequest": {
+            "type": "object",
+            "required": [
+                "callFrom",
+                "callId"
+            ],
+            "properties": {
+                "callFrom": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "callId": {
+                    "type": "string",
+                    "example": "CALL123"
+                }
+            }
+        },
+        "dto.SendAudioRequest": {
+            "type": "object",
+            "required": [
+                "audio",
+                "phone"
+            ],
+            "properties": {
+                "audio": {
+                    "type": "string",
+                    "example": "base64_encoded_audio"
+                },
+                "mimetype": {
+                    "type": "string",
+                    "example": "audio/ogg; codecs=opus"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "ptt": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "dto.SendButtonsRequest": {
+            "type": "object",
+            "required": [
+                "buttons",
+                "contentText",
+                "phone"
+            ],
+            "properties": {
+                "buttons": {
+                    "type": "array",
+                    "maxItems": 3,
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/dto.ButtonDTO"
+                    }
+                },
+                "contentText": {
+                    "type": "string",
+                    "example": "Choose an option"
+                },
+                "footerText": {
+                    "type": "string",
+                    "example": "Footer text"
+                },
+                "headerText": {
+                    "type": "string",
+                    "example": "Header text"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "dto.SendCarouselRequest": {
+            "type": "object",
+            "required": [
+                "cards",
+                "phone"
+            ],
+            "properties": {
+                "body": {
+                    "type": "string",
+                    "example": "Browse our catalog"
+                },
+                "cards": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/dto.CarouselCardDTO"
+                    }
+                },
+                "footer": {
+                    "type": "string",
+                    "example": "Powered by ZPWoot"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Check out our products!"
+                }
+            }
+        },
+        "dto.SendContactRequest": {
+            "type": "object",
+            "required": [
+                "contactName",
+                "contactPhone",
+                "phone"
+            ],
+            "properties": {
+                "contactName": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
+                "contactPhone": {
+                    "type": "string",
+                    "example": "5511888888888"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "dto.SendDocumentRequest": {
+            "type": "object",
+            "required": [
+                "document",
+                "filename",
+                "phone"
+            ],
+            "properties": {
+                "document": {
+                    "type": "string",
+                    "example": "base64_encoded_document"
+                },
+                "filename": {
+                    "type": "string",
+                    "example": "document.pdf"
+                },
+                "mimetype": {
+                    "type": "string",
+                    "example": "application/pdf"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "dto.SendGroupMessageRequest": {
+            "type": "object",
+            "required": [
+                "groupId",
+                "text"
+            ],
+            "properties": {
+                "groupId": {
+                    "type": "string",
+                    "example": "123456789@g.us"
+                },
+                "text": {
+                    "type": "string",
+                    "example": "Hello Group!"
+                }
+            }
+        },
+        "dto.SendImageRequest": {
+            "type": "object",
+            "required": [
+                "image",
+                "phone"
+            ],
+            "properties": {
+                "caption": {
+                    "type": "string",
+                    "example": "Image caption"
+                },
+                "image": {
+                    "type": "string",
+                    "example": "base64_encoded_image"
+                },
+                "mimetype": {
+                    "type": "string",
+                    "example": "image/jpeg"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "dto.SendInteractiveRequest": {
+            "type": "object",
+            "required": [
+                "body",
+                "buttons",
+                "phone"
+            ],
+            "properties": {
+                "body": {
+                    "type": "string",
+                    "example": "Message body text"
+                },
+                "buttons": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/dto.NativeFlowButtonDTO"
+                    }
+                },
+                "footer": {
+                    "type": "string",
+                    "example": "Footer text"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Interactive Title"
+                }
+            }
+        },
+        "dto.SendListRequest": {
+            "type": "object",
+            "required": [
+                "buttonText",
+                "description",
+                "phone",
+                "sections",
+                "title"
+            ],
+            "properties": {
+                "buttonText": {
+                    "type": "string",
+                    "example": "Open Menu"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Please select an option"
+                },
+                "footerText": {
+                    "type": "string",
+                    "example": "Footer text"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "sections": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/dto.ListSectionDTO"
+                    }
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Menu Title"
+                }
+            }
+        },
+        "dto.SendLocationRequest": {
+            "type": "object",
+            "required": [
+                "latitude",
+                "longitude",
+                "phone"
+            ],
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "example": "Street Address"
+                },
+                "latitude": {
+                    "type": "number",
+                    "example": -23.5505
+                },
+                "longitude": {
+                    "type": "number",
+                    "example": -46.6333
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Location Name"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "dto.SendPollRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "options",
+                "phone"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "What's your favorite color?"
+                },
+                "options": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "Red",
+                        "Blue",
+                        "Green"
+                    ]
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "selectableCount": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "dto.SendPollVoteRequest": {
+            "type": "object",
+            "required": [
+                "phone",
+                "pollMessageId",
+                "selectedOptions"
+            ],
+            "properties": {
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "pollMessageId": {
+                    "type": "string",
+                    "example": "ABCD1234"
+                },
+                "selectedOptions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "Red"
+                    ]
+                }
+            }
+        },
+        "dto.SendReactionRequest": {
+            "type": "object",
+            "required": [
+                "emoji",
+                "messageId",
+                "phone"
+            ],
+            "properties": {
+                "emoji": {
+                    "type": "string",
+                    "example": "👍"
+                },
+                "messageId": {
+                    "type": "string",
+                    "example": "ABCD1234"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "dto.SendResponse": {
+            "type": "object",
+            "properties": {
+                "messageId": {
+                    "type": "string",
+                    "example": "ABCD1234"
+                },
+                "timestamp": {
+                    "type": "integer",
+                    "example": 1699999999
+                }
+            }
+        },
+        "dto.SendStatusRequest": {
+            "type": "object",
+            "properties": {
+                "caption": {
+                    "type": "string",
+                    "example": "Status caption"
+                },
+                "image": {
+                    "type": "string",
+                    "example": "base64_encoded_image"
+                },
+                "mimetype": {
+                    "type": "string",
+                    "example": "image/jpeg"
+                },
+                "text": {
+                    "type": "string",
+                    "example": "My status update"
+                },
+                "video": {
+                    "type": "string",
+                    "example": "base64_encoded_video"
+                }
+            }
+        },
+        "dto.SendStickerRequest": {
+            "type": "object",
+            "required": [
+                "phone",
+                "sticker"
+            ],
+            "properties": {
+                "mimetype": {
+                    "type": "string",
+                    "example": "image/webp"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "sticker": {
+                    "type": "string",
+                    "example": "base64_encoded_sticker"
+                }
+            }
+        },
+        "dto.SendTemplateRequest": {
+            "type": "object",
+            "required": [
+                "buttons",
+                "content",
+                "phone"
+            ],
+            "properties": {
+                "buttons": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/dto.TemplateButtonDTO"
+                    }
+                },
+                "content": {
+                    "type": "string",
+                    "example": "Please choose an option below"
+                },
+                "document": {
+                    "type": "string",
+                    "example": "base64_encoded_document"
+                },
+                "filename": {
+                    "type": "string",
+                    "example": "document.pdf"
+                },
+                "footer": {
+                    "type": "string",
+                    "example": "Powered by ZPWoot"
+                },
+                "image": {
+                    "type": "string",
+                    "example": "base64_encoded_image"
+                },
+                "mimetype": {
+                    "type": "string",
+                    "example": "image/jpeg"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Welcome!"
+                },
+                "video": {
+                    "type": "string",
+                    "example": "base64_encoded_video"
+                }
+            }
+        },
+        "dto.SendTextRequest": {
+            "type": "object",
+            "required": [
+                "phone",
+                "text"
+            ],
+            "properties": {
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "text": {
+                    "type": "string",
+                    "example": "Hello World"
+                }
+            }
+        },
+        "dto.SendVideoRequest": {
+            "type": "object",
+            "required": [
+                "phone",
+                "video"
+            ],
+            "properties": {
+                "caption": {
+                    "type": "string",
+                    "example": "Video caption"
+                },
+                "mimetype": {
+                    "type": "string",
+                    "example": "video/mp4"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "video": {
+                    "type": "string",
+                    "example": "base64_encoded_video"
+                }
+            }
+        },
+        "dto.SessionResponse": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string",
+                    "example": "2025-11-29T14:18:15.324706Z"
+                },
+                "deviceJid": {
+                    "type": "string",
+                    "example": "5511999999999@s.whatsapp.net"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "ce270f0c-c3d6-41ad-b481-1587f813c3b1"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "my-session"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "connected"
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "example": "2025-11-29T14:18:15.324706Z"
+                }
+            }
+        },
+        "dto.SetNameResponse": {
             "type": "object",
             "properties": {
                 "name": {
@@ -6677,7 +6834,7 @@ const docTemplate = `{
                 }
             }
         },
-        "SetPictureResponse": {
+        "dto.SetPictureResponse": {
             "type": "object",
             "properties": {
                 "pictureId": {
@@ -6686,7 +6843,7 @@ const docTemplate = `{
                 }
             }
         },
-        "SetPresenceRequest": {
+        "dto.SetPresenceRequest": {
             "type": "object",
             "properties": {
                 "available": {
@@ -6695,7 +6852,7 @@ const docTemplate = `{
                 }
             }
         },
-        "SetPrivacyRequest": {
+        "dto.SetPrivacyRequest": {
             "type": "object",
             "required": [
                 "setting",
@@ -6714,7 +6871,7 @@ const docTemplate = `{
                 }
             }
         },
-        "SetProfilePictureRequest": {
+        "dto.SetProfilePictureRequest": {
             "type": "object",
             "required": [
                 "image"
@@ -6726,7 +6883,7 @@ const docTemplate = `{
                 }
             }
         },
-        "SetPushNameRequest": {
+        "dto.SetPushNameRequest": {
             "type": "object",
             "required": [
                 "name"
@@ -6738,7 +6895,7 @@ const docTemplate = `{
                 }
             }
         },
-        "SetStatusRequest": {
+        "dto.SetStatusRequest": {
             "type": "object",
             "required": [
                 "status"
@@ -6750,7 +6907,7 @@ const docTemplate = `{
                 }
             }
         },
-        "SetStatusResponse": {
+        "dto.SetStatusResponse": {
             "type": "object",
             "properties": {
                 "status": {
@@ -6759,40 +6916,13 @@ const docTemplate = `{
                 }
             }
         },
-        "SetWebhookRequest": {
-            "type": "object",
-            "properties": {
-                "enabled": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "events": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "message.received",
-                        "session.connected"
-                    ]
-                },
-                "secret": {
-                    "type": "string",
-                    "example": "my-secret-key"
-                },
-                "url": {
-                    "type": "string",
-                    "example": "https://example.com/webhook"
-                }
-            }
-        },
-        "StatusPrivacyResponse": {
+        "dto.StatusPrivacyResponse": {
             "type": "object",
             "properties": {
                 "privacy": {}
             }
         },
-        "SubscribePresenceRequest": {
+        "dto.SubscribePresenceRequest": {
             "type": "object",
             "required": [
                 "phone"
@@ -6804,25 +6934,25 @@ const docTemplate = `{
                 }
             }
         },
-        "TemplateButtonDTO": {
+        "dto.TemplateButtonDTO": {
             "type": "object",
             "properties": {
                 "callButton": {
-                    "$ref": "#/definitions/TemplateCallButtonDTO"
+                    "$ref": "#/definitions/dto.TemplateCallButtonDTO"
                 },
                 "index": {
                     "type": "integer",
                     "example": 0
                 },
                 "quickReply": {
-                    "$ref": "#/definitions/TemplateQuickReplyDTO"
+                    "$ref": "#/definitions/dto.TemplateQuickReplyDTO"
                 },
                 "urlButton": {
-                    "$ref": "#/definitions/TemplateURLButtonDTO"
+                    "$ref": "#/definitions/dto.TemplateURLButtonDTO"
                 }
             }
         },
-        "TemplateCallButtonDTO": {
+        "dto.TemplateCallButtonDTO": {
             "type": "object",
             "required": [
                 "displayText",
@@ -6839,7 +6969,7 @@ const docTemplate = `{
                 }
             }
         },
-        "TemplateQuickReplyDTO": {
+        "dto.TemplateQuickReplyDTO": {
             "type": "object",
             "required": [
                 "displayText",
@@ -6856,7 +6986,7 @@ const docTemplate = `{
                 }
             }
         },
-        "TemplateURLButtonDTO": {
+        "dto.TemplateURLButtonDTO": {
             "type": "object",
             "required": [
                 "displayText",
@@ -6873,34 +7003,74 @@ const docTemplate = `{
                 }
             }
         },
-        "WebhookResponse": {
+        "webhook.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "webhook.EventsResponse": {
+            "type": "object",
+            "properties": {
+                "all": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "categories": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "webhook.GetWebhookResponse": {
             "type": "object",
             "properties": {
                 "enabled": {
-                    "type": "boolean",
-                    "example": true
+                    "type": "boolean"
                 },
                 "events": {
                     "type": "array",
                     "items": {
                         "type": "string"
-                    },
-                    "example": [
-                        "message.received",
-                        "message.sent"
-                    ]
+                    }
                 },
                 "id": {
-                    "type": "string",
-                    "example": "uuid"
+                    "type": "string"
                 },
                 "sessionId": {
-                    "type": "string",
-                    "example": "uuid"
+                    "type": "string"
                 },
                 "url": {
-                    "type": "string",
-                    "example": "https://example.com/webhook"
+                    "type": "string"
+                }
+            }
+        },
+        "webhook.SetWebhookRequest": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "secret": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
                 }
             }
         }

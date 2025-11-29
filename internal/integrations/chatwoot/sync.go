@@ -286,11 +286,14 @@ func (s *SyncService) SyncMessages(ctx context.Context, daysLimit int) (*SyncSta
 }
 
 // importMessage imports a single message to Chatwoot
+// IMPORTANT: Only imports INCOMING messages to avoid re-sending to WhatsApp
+// Outgoing messages are skipped because creating them in Chatwoot would trigger
+// the webhook and try to send them to WhatsApp again
 func (s *SyncService) importMessage(ctx context.Context, conversationID int, msg *model.Message) error {
-	// Determine message type for Chatwoot
-	messageType := "incoming"
+	// SKIP outgoing messages - importing them would trigger Chatwoot webhook
+	// which would try to send them to WhatsApp again!
 	if msg.FromMe {
-		messageType = "outgoing"
+		return nil
 	}
 
 	// Get content
@@ -303,10 +306,10 @@ func (s *SyncService) importMessage(ctx context.Context, conversationID int, msg
 		}
 	}
 
-	// Create message in Chatwoot
+	// Create message in Chatwoot as INCOMING only
 	req := &CreateMessageRequest{
 		Content:     content,
-		MessageType: messageType,
+		MessageType: "incoming",
 		Private:     false,
 	}
 	cwMsg, err := s.client.CreateMessage(ctx, conversationID, req)
