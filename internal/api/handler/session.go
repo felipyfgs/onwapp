@@ -22,6 +22,27 @@ func NewSessionHandler(sessionService *service.SessionService, whatsappService *
 	return &SessionHandler{sessionService: sessionService, whatsappService: whatsappService}
 }
 
+func sessionToResponse(sess *model.Session) dto.SessionResponse {
+	resp := dto.SessionResponse{
+		ID:     sess.ID,
+		Name:   sess.Name,
+		Status: string(sess.GetStatus()),
+	}
+	if sess.DeviceJID != "" {
+		resp.DeviceJID = &sess.DeviceJID
+	}
+	if sess.Phone != "" {
+		resp.Phone = &sess.Phone
+	}
+	if sess.CreatedAt != nil {
+		resp.CreatedAt = sess.CreatedAt.Format("2006-01-02T15:04:05.999999Z07:00")
+	}
+	if sess.UpdatedAt != nil {
+		resp.UpdatedAt = sess.UpdatedAt.Format("2006-01-02T15:04:05.999999Z07:00")
+	}
+	return resp
+}
+
 // Fetch godoc
 // @Summary      Fetch all sessions
 // @Description  Get a list of all WhatsApp sessions
@@ -41,15 +62,7 @@ func (h *SessionHandler) Fetch(c *gin.Context) {
 		if err != nil {
 			continue
 		}
-		resp := dto.SessionResponse{
-			Name:   sess.Name,
-			Status: string(sess.GetStatus()),
-		}
-		if sess.Client.Store.ID != nil {
-			resp.JID = sess.Client.Store.ID.String()
-			resp.Phone = sess.Client.Store.ID.User
-		}
-		response = append(response, resp)
+		response = append(response, sessionToResponse(sess))
 	}
 
 	c.JSON(http.StatusOK, dto.SessionListResponse{
@@ -84,10 +97,7 @@ func (h *SessionHandler) Create(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, dto.SessionResponse{
-		Name:   session.Name,
-		Status: string(session.GetStatus()),
-	})
+	c.JSON(http.StatusCreated, sessionToResponse(session))
 }
 
 // Delete godoc

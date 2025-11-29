@@ -550,14 +550,21 @@ definitions:
     - messageIds
     - phone
     type: object
-  MessageResponse:
+  MessageData:
     properties:
       message:
-        example: operation completed
+        example: operation completed successfully
         type: string
-      status:
-        example: connected
-        type: string
+    type: object
+  MessageResponse:
+    properties:
+      data:
+        $ref: '#/definitions/MessageData'
+      error:
+        $ref: '#/definitions/APIError'
+      success:
+        example: true
+        type: boolean
     type: object
   NativeFlowButtonDTO:
     properties:
@@ -621,6 +628,12 @@ definitions:
       success:
         type: boolean
     type: object
+  PairPhoneData:
+    properties:
+      code:
+        example: ABCD-EFGH
+        type: string
+    type: object
   PairPhoneRequest:
     properties:
       phone:
@@ -631,9 +644,12 @@ definitions:
     type: object
   PairPhoneResponse:
     properties:
-      code:
-        type: string
+      data:
+        $ref: '#/definitions/PairPhoneData'
+      error:
+        $ref: '#/definitions/APIError'
       success:
+        example: true
         type: boolean
     type: object
   PresenceResponse:
@@ -655,6 +671,18 @@ definitions:
       success:
         type: boolean
     type: object
+  QRData:
+    properties:
+      base64:
+        example: data:image/png;base64,...
+        type: string
+      code:
+        example: 2@ABC123...
+        type: string
+      status:
+        example: pending
+        type: string
+    type: object
   QRLinkResponse:
     properties:
       link:
@@ -664,12 +692,13 @@ definitions:
     type: object
   QRResponse:
     properties:
-      qr:
-        example: 2@ABC123...
-        type: string
-      status:
-        example: connecting
-        type: string
+      data:
+        $ref: '#/definitions/QRData'
+      error:
+        $ref: '#/definitions/APIError'
+      success:
+        example: true
+        type: boolean
     type: object
   RejectCallRequest:
     properties:
@@ -1062,7 +1091,7 @@ definitions:
     - phone
     - video
     type: object
-  SessionResponse:
+  SessionData:
     properties:
       jid:
         example: 5511999999999@s.whatsapp.net
@@ -1076,6 +1105,16 @@ definitions:
       status:
         example: connected
         type: string
+    type: object
+  SessionResponse:
+    properties:
+      data:
+        $ref: '#/definitions/SessionData'
+      error:
+        $ref: '#/definitions/APIError'
+      success:
+        example: true
+        type: boolean
     type: object
   SetConfigRequest:
     properties:

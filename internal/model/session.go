@@ -41,13 +41,17 @@ type SessionRecord struct {
 }
 
 type Session struct {
-	ID     string
-	Name   string
-	Client *whatsmeow.Client
-	Device *store.Device
-	Status SessionStatus
-	QRCode string
-	mu     sync.RWMutex
+	ID        string
+	Name      string
+	DeviceJID string
+	Phone     string
+	Client    *whatsmeow.Client
+	Device    *store.Device
+	Status    SessionStatus
+	QRCode    string
+	CreatedAt *time.Time
+	UpdatedAt *time.Time
+	mu        sync.RWMutex
 }
 
 func (s *Session) SetStatus(status SessionStatus) {

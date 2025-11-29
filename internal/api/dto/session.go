@@ -39,9 +39,5 @@ type MessageData struct {
 	Message string `json:"message" example:"operation completed successfully"`
 }
 
-// Type aliases for common session responses
-type SessionResponse = Response[SessionData]
-type SessionListResponse = ListResponse[SessionData]
-type QRResponse = Response[QRData]
-type PairPhoneResponse = Response[PairPhoneData]
-type MessageResponse = Response[MessageData]
+// NOTE: SessionResponse, SessionListResponse, QRResponse, PairPhoneResponse, MessageResponse
+// are defined in response.go

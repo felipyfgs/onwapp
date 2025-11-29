@@ -5950,16 +5950,27 @@
                 }
             }
         },
-        "MessageResponse": {
+        "MessageData": {
             "type": "object",
             "properties": {
                 "message": {
                     "type": "string",
-                    "example": "operation completed"
+                    "example": "operation completed successfully"
+                }
+            }
+        },
+        "MessageResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/MessageData"
                 },
-                "status": {
-                    "type": "string",
-                    "example": "connected"
+                "error": {
+                    "$ref": "#/definitions/APIError"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },
@@ -6052,6 +6063,15 @@
                 }
             }
         },
+        "PairPhoneData": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "ABCD-EFGH"
+                }
+            }
+        },
         "PairPhoneRequest": {
             "type": "object",
             "required": [
@@ -6067,11 +6087,15 @@
         "PairPhoneResponse": {
             "type": "object",
             "properties": {
-                "code": {
-                    "type": "string"
+                "data": {
+                    "$ref": "#/definitions/PairPhoneData"
+                },
+                "error": {
+                    "$ref": "#/definitions/APIError"
                 },
                 "success": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },
@@ -6104,6 +6128,23 @@
                 }
             }
         },
+        "QRData": {
+            "type": "object",
+            "properties": {
+                "base64": {
+                    "type": "string",
+                    "example": "data:image/png;base64,..."
+                },
+                "code": {
+                    "type": "string",
+                    "example": "2@ABC123..."
+                },
+                "status": {
+                    "type": "string",
+                    "example": "pending"
+                }
+            }
+        },
         "QRLinkResponse": {
             "type": "object",
             "properties": {
@@ -6118,13 +6159,15 @@
         "QRResponse": {
             "type": "object",
             "properties": {
-                "qr": {
-                    "type": "string",
-                    "example": "2@ABC123..."
+                "data": {
+                    "$ref": "#/definitions/QRData"
                 },
-                "status": {
-                    "type": "string",
-                    "example": "connecting"
+                "error": {
+                    "$ref": "#/definitions/APIError"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },
@@ -6668,7 +6711,7 @@
                 }
             }
         },
-        "SessionResponse": {
+        "SessionData": {
             "type": "object",
             "properties": {
                 "jid": {
@@ -6686,6 +6729,21 @@
                 "status": {
                     "type": "string",
                     "example": "connected"
+                }
+            }
+        },
+        "SessionResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/SessionData"
+                },
+                "error": {
+                    "$ref": "#/definitions/APIError"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },

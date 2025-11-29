@@ -5957,16 +5957,27 @@ const docTemplate = `{
                 }
             }
         },
-        "MessageResponse": {
+        "MessageData": {
             "type": "object",
             "properties": {
                 "message": {
                     "type": "string",
-                    "example": "operation completed"
+                    "example": "operation completed successfully"
+                }
+            }
+        },
+        "MessageResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/MessageData"
                 },
-                "status": {
-                    "type": "string",
-                    "example": "connected"
+                "error": {
+                    "$ref": "#/definitions/APIError"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },
@@ -6059,6 +6070,15 @@ const docTemplate = `{
                 }
             }
         },
+        "PairPhoneData": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "ABCD-EFGH"
+                }
+            }
+        },
         "PairPhoneRequest": {
             "type": "object",
             "required": [
@@ -6074,11 +6094,15 @@ const docTemplate = `{
         "PairPhoneResponse": {
             "type": "object",
             "properties": {
-                "code": {
-                    "type": "string"
+                "data": {
+                    "$ref": "#/definitions/PairPhoneData"
+                },
+                "error": {
+                    "$ref": "#/definitions/APIError"
                 },
                 "success": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },
@@ -6111,6 +6135,23 @@ const docTemplate = `{
                 }
             }
         },
+        "QRData": {
+            "type": "object",
+            "properties": {
+                "base64": {
+                    "type": "string",
+                    "example": "data:image/png;base64,..."
+                },
+                "code": {
+                    "type": "string",
+                    "example": "2@ABC123..."
+                },
+                "status": {
+                    "type": "string",
+                    "example": "pending"
+                }
+            }
+        },
         "QRLinkResponse": {
             "type": "object",
             "properties": {
@@ -6125,13 +6166,15 @@ const docTemplate = `{
         "QRResponse": {
             "type": "object",
             "properties": {
-                "qr": {
-                    "type": "string",
-                    "example": "2@ABC123..."
+                "data": {
+                    "$ref": "#/definitions/QRData"
                 },
-                "status": {
-                    "type": "string",
-                    "example": "connecting"
+                "error": {
+                    "$ref": "#/definitions/APIError"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },
@@ -6675,7 +6718,7 @@ const docTemplate = `{
                 }
             }
         },
-        "SessionResponse": {
+        "SessionData": {
             "type": "object",
             "properties": {
                 "jid": {
@@ -6693,6 +6736,21 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "connected"
+                }
+            }
+        },
+        "SessionResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/SessionData"
+                },
+                "error": {
+                    "$ref": "#/definitions/APIError"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },

@@ -125,8 +125,8 @@ func (s *SessionService) Create(ctx context.Context, name string) (*model.Sessio
 		return nil, fmt.Errorf("session %s already exists", name)
 	}
 
-	// Save to database and get ID
-	id, err := s.database.Sessions.Create(ctx, name)
+	// Save to database and get record
+	rec, err := s.database.Sessions.Create(ctx, name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to save session to database: %w", err)
 	}
@@ -136,11 +136,15 @@ func (s *SessionService) Create(ctx context.Context, name string) (*model.Sessio
 	client := whatsmeow.NewClient(device, clientLog)
 
 	session := &model.Session{
-		ID:     id,
-		Name:   name,
-		Client: client,
-		Device: device,
-		Status: model.StatusDisconnected,
+		ID:        rec.ID,
+		Name:      rec.Name,
+		DeviceJID: rec.DeviceJID,
+		Phone:     rec.Phone,
+		Client:    client,
+		Device:    device,
+		Status:    model.StatusDisconnected,
+		CreatedAt: rec.CreatedAt,
+		UpdatedAt: rec.UpdatedAt,
 	}
 
 	s.sessions[name] = session

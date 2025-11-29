@@ -19,10 +19,13 @@ type SuccessResponse struct {
 // Session responses
 
 type SessionResponse struct {
-	Name   string `json:"name" example:"my-session"`
-	JID    string `json:"jid,omitempty" example:"5511999999999@s.whatsapp.net"`
-	Phone  string `json:"phone,omitempty" example:"5511999999999"`
-	Status string `json:"status" example:"connected"`
+	ID        string  `json:"id" example:"ce270f0c-c3d6-41ad-b481-1587f813c3b1"`
+	Name      string  `json:"name" example:"my-session"`
+	DeviceJID *string `json:"deviceJid,omitempty" example:"5511999999999@s.whatsapp.net"`
+	Phone     *string `json:"phone,omitempty" example:"5511999999999"`
+	Status    string  `json:"status" example:"connected"`
+	CreatedAt string  `json:"createdAt" example:"2025-11-29T14:18:15.324706Z"`
+	UpdatedAt string  `json:"updatedAt" example:"2025-11-29T14:18:15.324706Z"`
 }
 
 type SessionListResponse struct {

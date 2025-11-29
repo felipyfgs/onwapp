@@ -12,26 +12,30 @@ type SessionRepository struct {
 	pool *pgxpool.Pool
 }
 
-const sessionSelectFields = `"id", "name", COALESCE("deviceJid", ''), COALESCE("phone", ''), COALESCE("status", 'disconnected')`
+const sessionSelectFields = `"id", "name", COALESCE("deviceJid", ''), COALESCE("phone", ''), COALESCE("status", 'disconnected'), "createdAt", "updatedAt"`
 
 func NewSessionRepository(pool *pgxpool.Pool) *SessionRepository {
 	return &SessionRepository{pool: pool}
 }
 
-func (r *SessionRepository) Create(ctx context.Context, name string) (string, error) {
-	var id string
+func (r *SessionRepository) Create(ctx context.Context, name string) (*model.SessionRecord, error) {
+	var s model.SessionRecord
 	err := r.pool.QueryRow(ctx, `
 		INSERT INTO "zpSessions" ("name") 
 		VALUES ($1) 
 		ON CONFLICT ("name") DO UPDATE SET "updatedAt" = CURRENT_TIMESTAMP 
-		RETURNING "id"`, name).Scan(&id)
-	return id, err
+		RETURNING `+sessionSelectFields, name).
+		Scan(&s.ID, &s.Name, &s.DeviceJID, &s.Phone, &s.Status, &s.CreatedAt, &s.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &s, nil
 }
 
 func (r *SessionRepository) GetByID(ctx context.Context, id string) (*model.SessionRecord, error) {
 	var s model.SessionRecord
 	err := r.pool.QueryRow(ctx, `SELECT `+sessionSelectFields+` FROM "zpSessions" WHERE "id" = $1`, id).
-		Scan(&s.ID, &s.Name, &s.DeviceJID, &s.Phone, &s.Status)
+		Scan(&s.ID, &s.Name, &s.DeviceJID, &s.Phone, &s.Status, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +45,7 @@ func (r *SessionRepository) GetByID(ctx context.Context, id string) (*model.Sess
 func (r *SessionRepository) GetByName(ctx context.Context, name string) (*model.SessionRecord, error) {
 	var s model.SessionRecord
 	err := r.pool.QueryRow(ctx, `SELECT `+sessionSelectFields+` FROM "zpSessions" WHERE "name" = $1`, name).
-		Scan(&s.ID, &s.Name, &s.DeviceJID, &s.Phone, &s.Status)
+		Scan(&s.ID, &s.Name, &s.DeviceJID, &s.Phone, &s.Status, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +108,7 @@ func scanSessions(rows interface {
 	var sessions []model.SessionRecord
 	for rows.Next() {
 		var s model.SessionRecord
-		if err := rows.Scan(&s.ID, &s.Name, &s.DeviceJID, &s.Phone, &s.Status); err != nil {
+		if err := rows.Scan(&s.ID, &s.Name, &s.DeviceJID, &s.Phone, &s.Status, &s.CreatedAt, &s.UpdatedAt); err != nil {
 			return nil, err
 		}
 		sessions = append(sessions, s)

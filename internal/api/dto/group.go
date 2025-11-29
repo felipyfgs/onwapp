@@ -101,9 +101,4 @@ type GroupActionData struct {
 	Message string `json:"message,omitempty" example:"Participants added successfully"`
 }
 
-// Type aliases for group responses
-type GroupResponse = Response[GroupData]
-type GroupInfoResponse = Response[GroupInfoData]
-type GroupListResponse = ListResponse[GroupData]
-type GroupInviteResponse = Response[GroupInviteData]
-type GroupActionResponse = Response[GroupActionData]
+// NOTE: GroupResponse, GroupActionResponse are defined in response.go
