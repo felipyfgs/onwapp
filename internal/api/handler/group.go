@@ -51,7 +51,7 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-		Success: true,
+		
 		GroupID: info.JID.String(),
 		Data:    info,
 	})
@@ -82,7 +82,7 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-		Success: true,
+		
 		GroupID: groupID,
 		Data:    info,
 	})
@@ -110,7 +110,7 @@ func (h *GroupHandler) GetJoinedGroups(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-		Success: true,
+		
 		Data:    groups,
 	})
 }
@@ -138,7 +138,7 @@ func (h *GroupHandler) LeaveGroup(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-		Success: true,
+		
 		GroupID: groupID,
 	})
 }
@@ -172,7 +172,7 @@ func (h *GroupHandler) UpdateGroupName(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-		Success: true,
+		
 		GroupID: req.GroupID,
 	})
 }
@@ -206,7 +206,7 @@ func (h *GroupHandler) UpdateGroupTopic(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-		Success: true,
+		
 		GroupID: req.GroupID,
 	})
 }
@@ -241,7 +241,7 @@ func (h *GroupHandler) AddParticipants(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-		Success: true,
+		
 		GroupID: req.GroupID,
 		Data:    result,
 	})
@@ -277,7 +277,7 @@ func (h *GroupHandler) RemoveParticipants(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-		Success: true,
+		
 		GroupID: req.GroupID,
 		Data:    result,
 	})
@@ -313,7 +313,7 @@ func (h *GroupHandler) PromoteParticipants(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-		Success: true,
+		
 		GroupID: req.GroupID,
 		Data:    result,
 	})
@@ -349,7 +349,7 @@ func (h *GroupHandler) DemoteParticipants(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-		Success: true,
+		
 		GroupID: req.GroupID,
 		Data:    result,
 	})
@@ -381,7 +381,7 @@ func (h *GroupHandler) GetInviteLink(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupInviteLinkResponse{
-		Success: true,
+		
 		GroupID: groupID,
 		Link:    link,
 	})
@@ -417,7 +417,7 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-		Success: true,
+		
 		GroupID: jid.String(),
 	})
 }
@@ -452,7 +452,7 @@ func (h *GroupHandler) SendGroupMessage(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SendResponse{
-		Success:   true,
+		
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
 	})
@@ -466,7 +466,7 @@ func (h *GroupHandler) SendGroupMessage(c *gin.Context) {
 // @Produce      json
 // @Param        name path string true "Session name"
 // @Param        body body dto.GroupAnnounceRequest true "Announce setting"
-// @Success      200 {object} dto.SuccessResponse
+// @Success      200 {object} object
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
@@ -486,7 +486,7 @@ func (h *GroupHandler) SetGroupAnnounce(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessResponse{Success: true})
+	c.JSON(http.StatusOK, gin.H{})
 }
 
 // SetGroupLocked godoc
@@ -497,7 +497,7 @@ func (h *GroupHandler) SetGroupAnnounce(c *gin.Context) {
 // @Produce      json
 // @Param        name path string true "Session name"
 // @Param        body body dto.GroupLockedRequest true "Locked setting"
-// @Success      200 {object} dto.SuccessResponse
+// @Success      200 {object} object
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
@@ -517,7 +517,7 @@ func (h *GroupHandler) SetGroupLocked(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessResponse{Success: true})
+	c.JSON(http.StatusOK, gin.H{})
 }
 
 // SetGroupPicture godoc
@@ -555,7 +555,7 @@ func (h *GroupHandler) SetGroupPicture(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SetPictureResponse{Success: true, PictureID: pictureID})
+	c.JSON(http.StatusOK, dto.SetPictureResponse{ PictureID: pictureID})
 }
 
 // SetGroupApprovalMode godoc
@@ -566,7 +566,7 @@ func (h *GroupHandler) SetGroupPicture(c *gin.Context) {
 // @Produce      json
 // @Param        name path string true "Session name"
 // @Param        body body dto.GroupApprovalRequest true "Approval setting"
-// @Success      200 {object} dto.SuccessResponse
+// @Success      200 {object} object
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
@@ -586,7 +586,7 @@ func (h *GroupHandler) SetGroupApprovalMode(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessResponse{Success: true})
+	c.JSON(http.StatusOK, gin.H{})
 }
 
 // SetGroupMemberAddMode godoc
@@ -597,7 +597,7 @@ func (h *GroupHandler) SetGroupApprovalMode(c *gin.Context) {
 // @Produce      json
 // @Param        name path string true "Session name"
 // @Param        body body dto.GroupMemberAddModeRequest true "Member add mode"
-// @Success      200 {object} dto.SuccessResponse
+// @Success      200 {object} object
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
@@ -628,7 +628,7 @@ func (h *GroupHandler) SetGroupMemberAddMode(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessResponse{Success: true})
+	c.JSON(http.StatusOK, gin.H{})
 }
 
 // GetGroupRequestParticipants godoc
@@ -653,7 +653,6 @@ func (h *GroupHandler) GetGroupRequestParticipants(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupRequestParticipantsResponse{
-		Success:      true,
 		GroupID:      groupID,
 		Participants: requests,
 	})
@@ -701,7 +700,7 @@ func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-		Success: true,
+		
 		GroupID: groupID,
 		Data:    result,
 	})
@@ -744,7 +743,7 @@ func (h *GroupHandler) GetGroupInfoFromLink(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-		Success: true,
+		
 		GroupID: info.JID.String(),
 		Data:    info,
 	})

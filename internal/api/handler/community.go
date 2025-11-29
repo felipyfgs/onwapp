@@ -26,7 +26,7 @@ func NewCommunityHandler(whatsappService *service.WhatsAppService) *CommunityHan
 // @Produce      json
 // @Param        name   path      string               true  "Session name"
 // @Param        body   body      dto.LinkGroupRequest true  "Link data"
-// @Success      200    {object}  dto.SuccessResponse
+// @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
@@ -48,7 +48,7 @@ func (h *CommunityHandler) LinkGroup(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessResponse{Success: true})
+	c.JSON(http.StatusOK, gin.H{})
 }
 
 // UnlinkGroup godoc
@@ -59,7 +59,7 @@ func (h *CommunityHandler) LinkGroup(c *gin.Context) {
 // @Produce      json
 // @Param        name   path      string               true  "Session name"
 // @Param        body   body      dto.LinkGroupRequest true  "Unlink data"
-// @Success      200    {object}  dto.SuccessResponse
+// @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
@@ -81,7 +81,7 @@ func (h *CommunityHandler) UnlinkGroup(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessResponse{Success: true})
+	c.JSON(http.StatusOK, gin.H{})
 }
 
 // GetSubGroups godoc
@@ -106,7 +106,7 @@ func (h *CommunityHandler) GetSubGroups(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.CommunityResponse{
-		Success: true,
+		
 		Groups:  groups,
 	})
 }

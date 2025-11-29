@@ -69,7 +69,7 @@ func (h *StatusHandler) SendStory(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SendResponse{
-		Success:   true,
+		
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
 	})
@@ -95,7 +95,7 @@ func (h *StatusHandler) GetStatusPrivacy(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.StatusPrivacyResponse{
-		Success: true,
+		
 		Privacy: privacy,
 	})
 }

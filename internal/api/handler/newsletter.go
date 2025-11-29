@@ -47,7 +47,7 @@ func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.NewsletterResponse{
-		Success: true,
+		
 		Data:    newsletter,
 	})
 }
@@ -60,7 +60,7 @@ func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
 // @Produce      json
 // @Param        name   path      string                     true  "Session name"
 // @Param        body   body      dto.NewsletterActionRequest true  "Newsletter JID"
-// @Success      200    {object}  dto.SuccessResponse
+// @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
@@ -79,7 +79,7 @@ func (h *NewsletterHandler) FollowNewsletter(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessResponse{Success: true})
+	c.JSON(http.StatusOK, gin.H{})
 }
 
 // UnfollowNewsletter godoc
@@ -90,7 +90,7 @@ func (h *NewsletterHandler) FollowNewsletter(c *gin.Context) {
 // @Produce      json
 // @Param        name   path      string                     true  "Session name"
 // @Param        body   body      dto.NewsletterActionRequest true  "Newsletter JID"
-// @Success      200    {object}  dto.SuccessResponse
+// @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
@@ -109,7 +109,7 @@ func (h *NewsletterHandler) UnfollowNewsletter(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessResponse{Success: true})
+	c.JSON(http.StatusOK, gin.H{})
 }
 
 // GetNewsletterInfo godoc
@@ -134,7 +134,7 @@ func (h *NewsletterHandler) GetNewsletterInfo(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.NewsletterResponse{
-		Success: true,
+		
 		Data:    info,
 	})
 }
@@ -145,7 +145,7 @@ func (h *NewsletterHandler) GetNewsletterInfo(c *gin.Context) {
 // @Tags         newsletter
 // @Produce      json
 // @Param        name   path      string  true  "Session name"
-// @Success      200    {object}  dto.NewsletterListResponse
+// @Success      200    {array}   object
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{name}/newsletters [get]
@@ -158,10 +158,7 @@ func (h *NewsletterHandler) GetSubscribedNewsletters(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.NewsletterListResponse{
-		Success:     true,
-		Newsletters: newsletters,
-	})
+	c.JSON(http.StatusOK, newsletters)
 }
 
 // GetNewsletterMessages godoc
@@ -198,7 +195,7 @@ func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.NewsletterResponse{
-		Success: true,
+		
 		Data:    messages,
 	})
 }
@@ -211,7 +208,7 @@ func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
 // @Produce      json
 // @Param        name   path      string                        true  "Session name"
 // @Param        body   body      dto.NewsletterReactionRequest true  "Reaction data"
-// @Success      200    {object}  dto.SuccessResponse
+// @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
@@ -233,7 +230,7 @@ func (h *NewsletterHandler) NewsletterSendReaction(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessResponse{Success: true})
+	c.JSON(http.StatusOK, gin.H{})
 }
 
 // NewsletterToggleMute godoc
@@ -244,7 +241,7 @@ func (h *NewsletterHandler) NewsletterSendReaction(c *gin.Context) {
 // @Produce      json
 // @Param        name   path      string                   true  "Session name"
 // @Param        body   body      dto.NewsletterMuteRequest true  "Mute data"
-// @Success      200    {object}  dto.SuccessResponse
+// @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
@@ -263,5 +260,5 @@ func (h *NewsletterHandler) NewsletterToggleMute(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessResponse{Success: true})
+	c.JSON(http.StatusOK, gin.H{})
 }

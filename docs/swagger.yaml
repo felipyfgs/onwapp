@@ -14,20 +14,20 @@ definitions:
   AvatarResponse:
     properties:
       id:
+        example: abc123
         type: string
-      success:
-        type: boolean
       url:
+        example: https://...
         type: string
     type: object
   BlocklistActionResponse:
     properties:
       action:
+        example: block
         type: string
       phone:
+        example: "5511999999999"
         type: string
-      success:
-        type: boolean
     type: object
   BlocklistRequest:
     properties:
@@ -48,14 +48,10 @@ definitions:
         items:
           type: string
         type: array
-      success:
-        type: boolean
     type: object
   BusinessProfileResponse:
     properties:
       profile: {}
-      success:
-        type: boolean
     type: object
   ButtonDTO:
     properties:
@@ -109,9 +105,6 @@ definitions:
       status:
         example: archived
         type: string
-      success:
-        example: true
-        type: boolean
     type: object
   ChatPresenceRequest:
     properties:
@@ -131,9 +124,8 @@ definitions:
   ChatPresenceResponse:
     properties:
       state:
+        example: composing
         type: string
-      success:
-        type: boolean
     type: object
   CheckPhoneRequest:
     properties:
@@ -150,26 +142,18 @@ definitions:
   CheckPhoneResult:
     properties:
       isRegistered:
+        example: true
         type: boolean
       jid:
+        example: 5511999999999@s.whatsapp.net
         type: string
       phone:
+        example: "5511999999999"
         type: string
-    type: object
-  CheckPhoneResultsResponse:
-    properties:
-      results:
-        items:
-          $ref: '#/definitions/CheckPhoneResult'
-        type: array
-      success:
-        type: boolean
     type: object
   CommunityResponse:
     properties:
       groups: {}
-      success:
-        type: boolean
     type: object
   Config:
     properties:
@@ -229,17 +213,9 @@ definitions:
     type: object
   ContactInfoResponse:
     properties:
-      success:
-        type: boolean
       users:
         additionalProperties: true
         type: object
-    type: object
-  ContactsListResponse:
-    properties:
-      contacts: {}
-      success:
-        type: boolean
     type: object
   CreateGroupRequest:
     properties:
@@ -354,9 +330,6 @@ definitions:
       groupId:
         example: 123456789@g.us
         type: string
-      success:
-        example: true
-        type: boolean
     type: object
   GroupAnnounceRequest:
     properties:
@@ -383,11 +356,11 @@ definitions:
   GroupInviteLinkResponse:
     properties:
       groupId:
+        example: 123456789@g.us
         type: string
       link:
+        example: https://chat.whatsapp.com/...
         type: string
-      success:
-        type: boolean
     type: object
   GroupLockedRequest:
     properties:
@@ -454,10 +427,9 @@ definitions:
   GroupRequestParticipantsResponse:
     properties:
       groupId:
+        example: 123456789@g.us
         type: string
       participants: {}
-      success:
-        type: boolean
     type: object
   GroupUpdateRequest:
     properties:
@@ -561,12 +533,6 @@ definitions:
     required:
     - newsletterJid
     type: object
-  NewsletterListResponse:
-    properties:
-      newsletters: {}
-      success:
-        type: boolean
-    type: object
   NewsletterMuteRequest:
     properties:
       mute:
@@ -600,8 +566,6 @@ definitions:
   NewsletterResponse:
     properties:
       data: {}
-      success:
-        type: boolean
     type: object
   PairPhoneRequest:
     properties:
@@ -614,40 +578,33 @@ definitions:
   PairPhoneResponse:
     properties:
       code:
+        example: ABCD-EFGH
         type: string
-      success:
-        type: boolean
     type: object
   PresenceResponse:
     properties:
       status:
+        example: available
         type: string
-      success:
-        type: boolean
     type: object
   PrivacySettingsResponse:
     properties:
       settings: {}
-      success:
-        type: boolean
     type: object
   ProfileInfoResponse:
     properties:
       profile: {}
-      success:
-        type: boolean
     type: object
   QRLinkResponse:
     properties:
       link:
+        example: https://wa.me/qr/...
         type: string
-      success:
-        type: boolean
     type: object
   QRResponse:
     properties:
       qr:
-        example: 2@ABC123...
+        example: data:image/png;base64,...
         type: string
       status:
         example: connecting
@@ -935,9 +892,6 @@ definitions:
       messageId:
         example: ABCD1234
         type: string
-      success:
-        example: true
-        type: boolean
       timestamp:
         example: 1699999999
         type: integer
@@ -1106,16 +1060,14 @@ definitions:
   SetNameResponse:
     properties:
       name:
+        example: John Doe
         type: string
-      success:
-        type: boolean
     type: object
   SetPictureResponse:
     properties:
       pictureId:
+        example: abc123
         type: string
-      success:
-        type: boolean
     type: object
   SetPresenceRequest:
     properties:
@@ -1165,9 +1117,8 @@ definitions:
   SetStatusResponse:
     properties:
       status:
+        example: My new status
         type: string
-      success:
-        type: boolean
     type: object
   SetWebhookRequest:
     properties:
@@ -1191,8 +1142,6 @@ definitions:
   StatusPrivacyResponse:
     properties:
       privacy: {}
-      success:
-        type: boolean
     type: object
   SubscribePresenceRequest:
     properties:
@@ -1201,15 +1150,6 @@ definitions:
         type: string
     required:
     - phone
-    type: object
-  SuccessResponse:
-    properties:
-      message:
-        example: operation completed
-        type: string
-      success:
-        example: true
-        type: boolean
     type: object
   TemplateButtonDTO:
     properties:
@@ -1262,16 +1202,23 @@ definitions:
   WebhookResponse:
     properties:
       enabled:
+        example: true
         type: boolean
       events:
+        example:
+        - message.received
+        - message.sent
         items:
           type: string
         type: array
       id:
+        example: uuid
         type: string
       sessionId:
+        example: uuid
         type: string
       url:
+        example: https://example.com/webhook
         type: string
     type: object
 info:
@@ -1459,7 +1406,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            type: object
         "400":
           description: Bad Request
           schema:
@@ -1618,7 +1565,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            type: object
         "400":
           description: Bad Request
           schema:
@@ -1659,7 +1606,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            type: object
         "400":
           description: Bad Request
           schema:
@@ -1852,7 +1799,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            type: object
         "400":
           description: Bad Request
           schema:
@@ -1889,7 +1836,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            type: object
         "400":
           description: Bad Request
           schema:
@@ -1952,7 +1899,9 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ContactsListResponse'
+            items:
+              type: object
+            type: array
         "401":
           description: Unauthorized
           schema:
@@ -2096,7 +2045,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            type: object
         "400":
           description: Bad Request
           schema:
@@ -2194,7 +2143,9 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/CheckPhoneResultsResponse'
+            items:
+              $ref: '#/definitions/CheckPhoneResult'
+            type: array
         "400":
           description: Bad Request
           schema:
@@ -2816,7 +2767,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            type: object
         "400":
           description: Bad Request
           schema:
@@ -2853,7 +2804,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            type: object
         "400":
           description: Bad Request
           schema:
@@ -2890,7 +2841,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            type: object
         "400":
           description: Bad Request
           schema:
@@ -2927,7 +2878,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            type: object
         "400":
           description: Bad Request
           schema:
@@ -3721,7 +3672,9 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/NewsletterListResponse'
+            items:
+              type: object
+            type: array
         "500":
           description: Internal Server Error
           schema:
@@ -3820,7 +3773,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            type: object
         "400":
           description: Bad Request
           schema:
@@ -3856,7 +3809,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            type: object
         "400":
           description: Bad Request
           schema:
@@ -3932,7 +3885,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            type: object
         "400":
           description: Bad Request
           schema:
@@ -3969,7 +3922,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            type: object
         "400":
           description: Bad Request
           schema:
@@ -4115,7 +4068,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            type: object
         "400":
           description: Bad Request
           schema:
@@ -4187,7 +4140,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            type: object
         "401":
           description: Unauthorized
           schema:
@@ -4294,7 +4247,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SuccessResponse'
+            type: object
         "400":
           description: Bad Request
           schema:

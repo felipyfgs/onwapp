@@ -52,7 +52,7 @@ func (h *ChatHandler) ArchiveChat(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.ChatActionResponse{
-		Success: true,
+		
 		Status:  status,
 	})
 }
@@ -87,7 +87,7 @@ func (h *ChatHandler) DeleteMessage(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SendResponse{
-		Success:   true,
+		
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
 	})
@@ -123,7 +123,7 @@ func (h *ChatHandler) EditMessage(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SendResponse{
-		Success:   true,
+		
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
 	})
@@ -137,7 +137,7 @@ func (h *ChatHandler) EditMessage(c *gin.Context) {
 // @Produce      json
 // @Param        name path string true "Session name"
 // @Param        body body dto.DisappearingRequest true "Timer data"
-// @Success      200 {object} dto.SuccessResponse
+// @Success      200 {object} object
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
@@ -175,5 +175,5 @@ func (h *ChatHandler) SetDisappearingTimer(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessResponse{Success: true, Message: "timer set to " + req.Timer})
+	c.JSON(http.StatusOK, dto.MessageOnlyResponse{Message: "timer set to " + req.Timer})
 }

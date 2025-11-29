@@ -65,10 +65,7 @@ func (h *SessionHandler) Fetch(c *gin.Context) {
 		response = append(response, sessionToResponse(sess))
 	}
 
-	c.JSON(http.StatusOK, dto.SessionListResponse{
-		Success:  true,
-		Sessions: response,
-	})
+	c.JSON(http.StatusOK, response)
 }
 
 // Create godoc
@@ -314,8 +311,5 @@ func (h *SessionHandler) PairPhone(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.PairPhoneResponse{
-		Success: true,
-		Code:    code,
-	})
+	c.JSON(http.StatusOK, dto.PairPhoneResponse{Code: code})
 }

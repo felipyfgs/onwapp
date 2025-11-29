@@ -25,7 +25,7 @@ func NewContactHandler(whatsappService *service.WhatsAppService) *ContactHandler
 // @Produce      json
 // @Param        name   path      string                true  "Session name"
 // @Param        body   body      dto.CheckPhoneRequest true  "Phone numbers"
-// @Success      200    {object}  dto.CheckPhoneResultsResponse
+// @Success      200    {array}   dto.CheckPhoneResult
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
@@ -55,10 +55,7 @@ func (h *ContactHandler) CheckPhone(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, dto.CheckPhoneResultsResponse{
-		Success: true,
-		Results: checkResults,
-	})
+	c.JSON(http.StatusOK, checkResults)
 }
 
 // GetContactInfo godoc
@@ -100,7 +97,7 @@ func (h *ContactHandler) GetContactInfo(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.ContactInfoResponse{
-		Success: true,
+		
 		Users:   users,
 	})
 }
@@ -130,14 +127,14 @@ func (h *ContactHandler) GetAvatar(c *gin.Context) {
 
 	if pic == nil {
 		c.JSON(http.StatusOK, dto.AvatarResponse{
-			Success: true,
+			
 			URL:     "",
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, dto.AvatarResponse{
-		Success: true,
+		
 		URL:     pic.URL,
 		ID:      pic.ID,
 	})
@@ -150,7 +147,7 @@ func (h *ContactHandler) GetAvatar(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        name   path      string  true  "Session name"
-// @Success      200    {object}  dto.ContactsListResponse
+// @Success      200    {array}   object
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
@@ -164,10 +161,7 @@ func (h *ContactHandler) GetContacts(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.ContactsListResponse{
-		Success:  true,
-		Contacts: contacts,
-	})
+	c.JSON(http.StatusOK, contacts)
 }
 
 // SetPresence godoc
@@ -204,7 +198,7 @@ func (h *ContactHandler) SetPresence(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.PresenceResponse{
-		Success: true,
+		
 		Status:  status,
 	})
 }
@@ -238,7 +232,7 @@ func (h *ContactHandler) SetChatPresence(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.ChatPresenceResponse{
-		Success: true,
+		
 		State:   req.State,
 	})
 }
@@ -251,7 +245,7 @@ func (h *ContactHandler) SetChatPresence(c *gin.Context) {
 // @Produce      json
 // @Param        name   path      string              true  "Session name"
 // @Param        body   body      dto.MarkReadRequest true  "Messages to mark"
-// @Success      200    {object}  dto.SuccessResponse
+// @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
@@ -271,9 +265,7 @@ func (h *ContactHandler) MarkRead(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessResponse{
-		Success: true,
-	})
+	c.JSON(http.StatusOK, gin.H{})
 }
 
 // GetBlocklist godoc
@@ -301,7 +293,7 @@ func (h *ContactHandler) GetBlocklist(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.BlocklistResponse{
-		Success: true,
+		
 		JIDs:    jids,
 	})
 }
@@ -336,7 +328,7 @@ func (h *ContactHandler) UpdateBlocklist(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.BlocklistActionResponse{
-		Success: true,
+		
 		Action:  req.Action,
 		Phone:   req.Phone,
 	})
@@ -350,7 +342,7 @@ func (h *ContactHandler) UpdateBlocklist(c *gin.Context) {
 // @Produce      json
 // @Param        name   path      string                      true  "Session name"
 // @Param        body   body      dto.SubscribePresenceRequest true  "Subscribe data"
-// @Success      200    {object}  dto.SuccessResponse
+// @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
@@ -369,7 +361,7 @@ func (h *ContactHandler) SubscribePresence(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessResponse{Success: true})
+	c.JSON(http.StatusOK, gin.H{})
 }
 
 // GetContactQRLink godoc
@@ -394,7 +386,7 @@ func (h *ContactHandler) GetContactQRLink(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.QRLinkResponse{
-		Success: true,
+		
 		Link:    link,
 	})
 }
@@ -421,7 +413,7 @@ func (h *ContactHandler) GetBusinessProfile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.BusinessProfileResponse{
-		Success: true,
+		
 		Profile: profile,
 	})
 }

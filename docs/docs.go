@@ -301,7 +301,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "type": "object"
                         }
                     },
                     "400": {
@@ -549,7 +549,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "type": "object"
                         }
                     },
                     "400": {
@@ -613,7 +613,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "type": "object"
                         }
                     },
                     "400": {
@@ -908,7 +908,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "type": "object"
                         }
                     },
                     "400": {
@@ -966,7 +966,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "type": "object"
                         }
                     },
                     "400": {
@@ -1064,7 +1064,10 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ContactsListResponse"
+                            "type": "array",
+                            "items": {
+                                "type": "object"
+                            }
                         }
                     },
                     "401": {
@@ -1218,7 +1221,10 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/CheckPhoneResultsResponse"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/CheckPhoneResult"
+                            }
                         }
                     },
                     "400": {
@@ -1449,7 +1455,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "type": "object"
                         }
                     },
                     "400": {
@@ -2529,7 +2535,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "type": "object"
                         }
                     },
                     "400": {
@@ -2587,7 +2593,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "type": "object"
                         }
                     },
                     "400": {
@@ -2645,7 +2651,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "type": "object"
                         }
                     },
                     "400": {
@@ -2703,7 +2709,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "type": "object"
                         }
                     },
                     "400": {
@@ -3822,7 +3828,10 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/NewsletterListResponse"
+                            "type": "array",
+                            "items": {
+                                "type": "object"
+                            }
                         }
                     },
                     "500": {
@@ -3977,7 +3986,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "type": "object"
                         }
                     },
                     "400": {
@@ -4033,7 +4042,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "type": "object"
                         }
                     },
                     "400": {
@@ -4151,7 +4160,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "type": "object"
                         }
                     },
                     "400": {
@@ -4209,7 +4218,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "type": "object"
                         }
                     },
                     "400": {
@@ -4438,7 +4447,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "type": "object"
                         }
                     },
                     "400": {
@@ -4613,7 +4622,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "type": "object"
                         }
                     },
                     "401": {
@@ -4718,7 +4727,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SuccessResponse"
+                            "type": "object"
                         }
                     },
                     "400": {
@@ -5173,13 +5182,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "id": {
-                    "type": "string"
-                },
-                "success": {
-                    "type": "boolean"
+                    "type": "string",
+                    "example": "abc123"
                 },
                 "url": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "https://..."
                 }
             }
         },
@@ -5187,13 +5195,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "action": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "block"
                 },
                 "phone": {
-                    "type": "string"
-                },
-                "success": {
-                    "type": "boolean"
+                    "type": "string",
+                    "example": "5511999999999"
                 }
             }
         },
@@ -5223,19 +5230,13 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
-                },
-                "success": {
-                    "type": "boolean"
                 }
             }
         },
         "BusinessProfileResponse": {
             "type": "object",
             "properties": {
-                "profile": {},
-                "success": {
-                    "type": "boolean"
-                }
+                "profile": {}
             }
         },
         "ButtonDTO": {
@@ -5310,10 +5311,6 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "archived"
-                },
-                "success": {
-                    "type": "boolean",
-                    "example": true
                 }
             }
         },
@@ -5342,10 +5339,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "state": {
-                    "type": "string"
-                },
-                "success": {
-                    "type": "boolean"
+                    "type": "string",
+                    "example": "composing"
                 }
             }
         },
@@ -5371,37 +5366,23 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "isRegistered": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "jid": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "5511999999999@s.whatsapp.net"
                 },
                 "phone": {
-                    "type": "string"
-                }
-            }
-        },
-        "CheckPhoneResultsResponse": {
-            "type": "object",
-            "properties": {
-                "results": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/CheckPhoneResult"
-                    }
-                },
-                "success": {
-                    "type": "boolean"
+                    "type": "string",
+                    "example": "5511999999999"
                 }
             }
         },
         "CommunityResponse": {
             "type": "object",
             "properties": {
-                "groups": {},
-                "success": {
-                    "type": "boolean"
-                }
+                "groups": {}
             }
         },
         "Config": {
@@ -5492,21 +5473,9 @@ const docTemplate = `{
         "ContactInfoResponse": {
             "type": "object",
             "properties": {
-                "success": {
-                    "type": "boolean"
-                },
                 "users": {
                     "type": "object",
                     "additionalProperties": true
-                }
-            }
-        },
-        "ContactsListResponse": {
-            "type": "object",
-            "properties": {
-                "contacts": {},
-                "success": {
-                    "type": "boolean"
                 }
             }
         },
@@ -5671,10 +5640,6 @@ const docTemplate = `{
                 "groupId": {
                     "type": "string",
                     "example": "123456789@g.us"
-                },
-                "success": {
-                    "type": "boolean",
-                    "example": true
                 }
             }
         },
@@ -5714,13 +5679,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "groupId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "123456789@g.us"
                 },
                 "link": {
-                    "type": "string"
-                },
-                "success": {
-                    "type": "boolean"
+                    "type": "string",
+                    "example": "https://chat.whatsapp.com/..."
                 }
             }
         },
@@ -5817,12 +5781,10 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "groupId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "123456789@g.us"
                 },
-                "participants": {},
-                "success": {
-                    "type": "boolean"
-                }
+                "participants": {}
             }
         },
         "GroupUpdateRequest": {
@@ -5972,15 +5934,6 @@ const docTemplate = `{
                 }
             }
         },
-        "NewsletterListResponse": {
-            "type": "object",
-            "properties": {
-                "newsletters": {},
-                "success": {
-                    "type": "boolean"
-                }
-            }
-        },
         "NewsletterMuteRequest": {
             "type": "object",
             "required": [
@@ -6026,10 +5979,7 @@ const docTemplate = `{
         "NewsletterResponse": {
             "type": "object",
             "properties": {
-                "data": {},
-                "success": {
-                    "type": "boolean"
-                }
+                "data": {}
             }
         },
         "PairPhoneRequest": {
@@ -6048,10 +5998,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "code": {
-                    "type": "string"
-                },
-                "success": {
-                    "type": "boolean"
+                    "type": "string",
+                    "example": "ABCD-EFGH"
                 }
             }
         },
@@ -6059,39 +6007,29 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "status": {
-                    "type": "string"
-                },
-                "success": {
-                    "type": "boolean"
+                    "type": "string",
+                    "example": "available"
                 }
             }
         },
         "PrivacySettingsResponse": {
             "type": "object",
             "properties": {
-                "settings": {},
-                "success": {
-                    "type": "boolean"
-                }
+                "settings": {}
             }
         },
         "ProfileInfoResponse": {
             "type": "object",
             "properties": {
-                "profile": {},
-                "success": {
-                    "type": "boolean"
-                }
+                "profile": {}
             }
         },
         "QRLinkResponse": {
             "type": "object",
             "properties": {
                 "link": {
-                    "type": "string"
-                },
-                "success": {
-                    "type": "boolean"
+                    "type": "string",
+                    "example": "https://wa.me/qr/..."
                 }
             }
         },
@@ -6100,7 +6038,7 @@ const docTemplate = `{
             "properties": {
                 "qr": {
                     "type": "string",
-                    "example": "2@ABC123..."
+                    "example": "data:image/png;base64,..."
                 },
                 "status": {
                     "type": "string",
@@ -6497,10 +6435,6 @@ const docTemplate = `{
                     "type": "string",
                     "example": "ABCD1234"
                 },
-                "success": {
-                    "type": "boolean",
-                    "example": true
-                },
                 "timestamp": {
                     "type": "integer",
                     "example": 1699999999
@@ -6738,10 +6672,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "name": {
-                    "type": "string"
-                },
-                "success": {
-                    "type": "boolean"
+                    "type": "string",
+                    "example": "John Doe"
                 }
             }
         },
@@ -6749,10 +6681,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "pictureId": {
-                    "type": "string"
-                },
-                "success": {
-                    "type": "boolean"
+                    "type": "string",
+                    "example": "abc123"
                 }
             }
         },
@@ -6824,10 +6754,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "status": {
-                    "type": "string"
-                },
-                "success": {
-                    "type": "boolean"
+                    "type": "string",
+                    "example": "My new status"
                 }
             }
         },
@@ -6861,10 +6789,7 @@ const docTemplate = `{
         "StatusPrivacyResponse": {
             "type": "object",
             "properties": {
-                "privacy": {},
-                "success": {
-                    "type": "boolean"
-                }
+                "privacy": {}
             }
         },
         "SubscribePresenceRequest": {
@@ -6876,19 +6801,6 @@ const docTemplate = `{
                 "phone": {
                     "type": "string",
                     "example": "5511999999999"
-                }
-            }
-        },
-        "SuccessResponse": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string",
-                    "example": "operation completed"
-                },
-                "success": {
-                    "type": "boolean",
-                    "example": true
                 }
             }
         },
@@ -6965,22 +6877,30 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "enabled": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 },
                 "events": {
                     "type": "array",
                     "items": {
                         "type": "string"
-                    }
+                    },
+                    "example": [
+                        "message.received",
+                        "message.sent"
+                    ]
                 },
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "uuid"
                 },
                 "sessionId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "uuid"
                 },
                 "url": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "https://example.com/webhook"
                 }
             }
         }

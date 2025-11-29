@@ -1,19 +1,13 @@
 package dto
 
-// Common responses
-
+// ErrorResponse is the only envelope - used for errors
 type ErrorResponse struct {
 	Error string `json:"error" example:"session not found"`
 }
 
-type MessageResponse struct {
+// MessageOnlyResponse for operations that return just a message
+type MessageOnlyResponse struct {
 	Message string `json:"message" example:"operation completed"`
-	Status  string `json:"status,omitempty" example:"connected"`
-}
-
-type SuccessResponse struct {
-	Success bool   `json:"success" example:"true"`
-	Message string `json:"message,omitempty" example:"operation completed"`
 }
 
 // Session responses
@@ -28,32 +22,35 @@ type SessionResponse struct {
 	UpdatedAt string  `json:"updatedAt" example:"2025-11-29T14:18:15.324706Z"`
 }
 
-type SessionListResponse struct {
-	Success  bool              `json:"success" example:"true"`
-	Sessions []SessionResponse `json:"sessions"`
-}
-
 type QRResponse struct {
-	QR     string `json:"qr,omitempty" example:"2@ABC123..."`
+	QR     string `json:"qr,omitempty" example:"data:image/png;base64,..."`
 	Status string `json:"status" example:"connecting"`
 }
 
-// Message responses
+type PairPhoneResponse struct {
+	Code string `json:"code" example:"ABCD-EFGH"`
+}
+
+type MessageResponse struct {
+	Message string `json:"message" example:"operation completed"`
+	Status  string `json:"status,omitempty" example:"connected"`
+}
+
+// Send message response
 
 type SendResponse struct {
-	Success   bool   `json:"success" example:"true"`
-	MessageID string `json:"messageId,omitempty" example:"ABCD1234"`
-	Timestamp int64  `json:"timestamp,omitempty" example:"1699999999"`
+	MessageID string `json:"messageId" example:"ABCD1234"`
+	Timestamp int64  `json:"timestamp" example:"1699999999"`
 }
 
 // Webhook responses
 
 type WebhookResponse struct {
-	ID        string   `json:"id,omitempty"`
-	SessionID string   `json:"sessionId"`
-	URL       string   `json:"url,omitempty"`
-	Events    []string `json:"events,omitempty"`
-	Enabled   bool     `json:"enabled"`
+	ID        string   `json:"id,omitempty" example:"uuid"`
+	SessionID string   `json:"sessionId" example:"uuid"`
+	URL       string   `json:"url,omitempty" example:"https://example.com/webhook"`
+	Events    []string `json:"events,omitempty" example:"message.received,message.sent"`
+	Enabled   bool     `json:"enabled" example:"true"`
 }
 
 type EventsResponse struct {
@@ -63,189 +60,119 @@ type EventsResponse struct {
 
 // Contact responses
 
-type CheckPhoneResponse struct {
-	Phone      string `json:"phone"`
-	IsWhatsApp bool   `json:"isWhatsApp"`
-	JID        string `json:"jid,omitempty"`
+type CheckPhoneResult struct {
+	Phone        string `json:"phone" example:"5511999999999"`
+	IsRegistered bool   `json:"isRegistered" example:"true"`
+	JID          string `json:"jid,omitempty" example:"5511999999999@s.whatsapp.net"`
+}
+
+// CheckPhoneResultsResponse is array of CheckPhoneResult
+type CheckPhoneResultsResponse = []CheckPhoneResult
+
+type ContactInfoResponse struct {
+	Users map[string]interface{} `json:"users"`
+}
+
+type AvatarResponse struct {
+	URL string `json:"url" example:"https://..."`
+	ID  string `json:"id,omitempty" example:"abc123"`
+}
+
+type PresenceResponse struct {
+	Status string `json:"status" example:"available"`
+}
+
+type ChatPresenceResponse struct {
+	State string `json:"state" example:"composing"`
+}
+
+type BlocklistResponse struct {
+	JIDs []string `json:"jids"`
+}
+
+type BlocklistActionResponse struct {
+	Action string `json:"action" example:"block"`
+	Phone  string `json:"phone" example:"5511999999999"`
+}
+
+type QRLinkResponse struct {
+	Link string `json:"link" example:"https://wa.me/qr/..."`
+}
+
+type BusinessProfileResponse struct {
+	Profile interface{} `json:"profile"`
 }
 
 // Group responses
 
 type GroupResponse struct {
-	JID          string   `json:"jid"`
-	Name         string   `json:"name"`
-	Topic        string   `json:"topic,omitempty"`
+	JID          string   `json:"jid" example:"123456789@g.us"`
+	Name         string   `json:"name" example:"My Group"`
+	Topic        string   `json:"topic,omitempty" example:"Group description"`
 	Participants []string `json:"participants,omitempty"`
 }
 
-// Profile responses
-
-type ProfileResponse struct {
-	JID      string `json:"jid"`
-	PushName string `json:"pushName"`
-}
-
-type PrivacyResponse struct {
-	GroupAdd     string `json:"groupAdd"`
-	LastSeen     string `json:"lastSeen"`
-	Status       string `json:"status"`
-	Profile      string `json:"profile"`
-	ReadReceipts string `json:"readReceipts"`
-	CallAdd      string `json:"callAdd"`
-	Online       string `json:"online"`
-}
-
-// Chat responses
-
-type ChatActionResponse struct {
-	Success bool   `json:"success" example:"true"`
-	Status  string `json:"status,omitempty" example:"archived"`
-}
-
-// Contact responses (extended)
-
-type CheckPhoneResult struct {
-	Phone        string `json:"phone"`
-	IsRegistered bool   `json:"isRegistered"`
-	JID          string `json:"jid,omitempty"`
-}
-
-type CheckPhoneResultsResponse struct {
-	Success bool               `json:"success"`
-	Results []CheckPhoneResult `json:"results"`
-}
-
-type ContactInfoResponse struct {
-	Success bool                   `json:"success"`
-	Users   map[string]interface{} `json:"users"`
-}
-
-type AvatarResponse struct {
-	Success bool   `json:"success"`
-	URL     string `json:"url"`
-	ID      string `json:"id,omitempty"`
-}
-
-type ContactsListResponse struct {
-	Success  bool        `json:"success"`
-	Contacts interface{} `json:"contacts"`
-}
-
-type PresenceResponse struct {
-	Success bool   `json:"success"`
-	Status  string `json:"status"`
-}
-
-type ChatPresenceResponse struct {
-	Success bool   `json:"success"`
-	State   string `json:"state"`
-}
-
-// Group responses (extended)
-
 type GroupActionResponse struct {
-	Success bool        `json:"success" example:"true"`
 	GroupID string      `json:"groupId,omitempty" example:"123456789@g.us"`
 	Data    interface{} `json:"data,omitempty"`
 }
 
 type GroupInviteLinkResponse struct {
-	Success bool   `json:"success"`
-	GroupID string `json:"groupId"`
-	Link    string `json:"link"`
+	GroupID string `json:"groupId" example:"123456789@g.us"`
+	Link    string `json:"link" example:"https://chat.whatsapp.com/..."`
 }
 
-// Profile responses (extended)
+type GroupRequestParticipantsResponse struct {
+	GroupID      string      `json:"groupId" example:"123456789@g.us"`
+	Participants interface{} `json:"participants"`
+}
+
+// Profile responses
 
 type ProfileInfoResponse struct {
-	Success bool        `json:"success"`
 	Profile interface{} `json:"profile"`
 }
 
 type SetStatusResponse struct {
-	Success bool   `json:"success"`
-	Status  string `json:"status"`
+	Status string `json:"status" example:"My new status"`
 }
 
 type SetNameResponse struct {
-	Success bool   `json:"success"`
-	Name    string `json:"name"`
+	Name string `json:"name" example:"John Doe"`
 }
 
 type SetPictureResponse struct {
-	Success   bool   `json:"success"`
-	PictureID string `json:"pictureId"`
+	PictureID string `json:"pictureId" example:"abc123"`
 }
 
 type PrivacySettingsResponse struct {
-	Success  bool        `json:"success"`
 	Settings interface{} `json:"settings"`
 }
 
-// Blocklist responses
+// Chat responses
 
-type BlocklistResponse struct {
-	Success bool     `json:"success"`
-	JIDs    []string `json:"jids"`
-}
-
-type BlocklistActionResponse struct {
-	Success bool   `json:"success"`
-	Action  string `json:"action"`
-	Phone   string `json:"phone"`
+type ChatActionResponse struct {
+	Status string `json:"status,omitempty" example:"archived"`
 }
 
 // Newsletter responses
 
 type NewsletterResponse struct {
-	Success bool        `json:"success"`
-	Data    interface{} `json:"data"`
+	Data interface{} `json:"data"`
 }
 
 type NewsletterListResponse struct {
-	Success     bool        `json:"success"`
 	Newsletters interface{} `json:"newsletters"`
 }
 
 // Status responses
 
 type StatusPrivacyResponse struct {
-	Success bool        `json:"success"`
 	Privacy interface{} `json:"privacy"`
-}
-
-// Group request participants response
-
-type GroupRequestParticipantsResponse struct {
-	Success      bool        `json:"success"`
-	GroupID      string      `json:"groupId"`
-	Participants interface{} `json:"participants"`
-}
-
-// QR Link response
-
-type QRLinkResponse struct {
-	Success bool   `json:"success"`
-	Link    string `json:"link"`
-}
-
-// Business profile response
-
-type BusinessProfileResponse struct {
-	Success bool        `json:"success"`
-	Profile interface{} `json:"profile"`
-}
-
-// Pair phone response
-
-type PairPhoneResponse struct {
-	Success bool   `json:"success"`
-	Code    string `json:"code"`
 }
 
 // Community response
 
 type CommunityResponse struct {
-	Success bool        `json:"success"`
-	Groups  interface{} `json:"groups,omitempty"`
+	Groups interface{} `json:"groups,omitempty"`
 }

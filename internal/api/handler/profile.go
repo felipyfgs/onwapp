@@ -42,7 +42,7 @@ func (h *ProfileHandler) GetProfile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.ProfileInfoResponse{
-		Success: true,
+		
 		Profile: profile,
 	})
 }
@@ -76,7 +76,7 @@ func (h *ProfileHandler) SetStatus(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SetStatusResponse{
-		Success: true,
+		
 		Status:  req.Status,
 	})
 }
@@ -110,7 +110,7 @@ func (h *ProfileHandler) SetPushName(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SetNameResponse{
-		Success: true,
+		
 		Name:    req.Name,
 	})
 }
@@ -150,10 +150,7 @@ func (h *ProfileHandler) SetProfilePicture(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SetPictureResponse{
-		Success:   true,
-		PictureID: pictureID,
-	})
+	c.JSON(http.StatusOK, dto.SetPictureResponse{PictureID: pictureID})
 }
 
 // DeleteProfilePicture godoc
@@ -163,7 +160,7 @@ func (h *ProfileHandler) SetProfilePicture(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        name   path      string  true  "Session name"
-// @Success      200    {object}  dto.SuccessResponse
+// @Success      200    {object}  object
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
@@ -176,9 +173,7 @@ func (h *ProfileHandler) DeleteProfilePicture(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessResponse{
-		Success: true,
-	})
+	c.JSON(http.StatusOK, gin.H{})
 }
 
 // GetPrivacySettings godoc
@@ -203,7 +198,7 @@ func (h *ProfileHandler) GetPrivacySettings(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.PrivacySettingsResponse{
-		Success:  true,
+		
 		Settings: settings,
 	})
 }
@@ -216,7 +211,7 @@ func (h *ProfileHandler) GetPrivacySettings(c *gin.Context) {
 // @Produce      json
 // @Param        name   path      string                  true  "Session name"
 // @Param        body   body      dto.SetPrivacyRequest   true  "Privacy settings"
-// @Success      200    {object}  dto.SuccessResponse
+// @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
@@ -241,7 +236,7 @@ func (h *ProfileHandler) SetPrivacySettings(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.PrivacySettingsResponse{
-		Success:  true,
+		
 		Settings: settings,
 	})
 }
@@ -254,7 +249,7 @@ func (h *ProfileHandler) SetPrivacySettings(c *gin.Context) {
 // @Produce      json
 // @Param        name   path      string                        true  "Session name"
 // @Param        body   body      dto.DefaultDisappearingRequest true  "Timer data"
-// @Success      200    {object}  dto.SuccessResponse
+// @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
@@ -292,5 +287,5 @@ func (h *ProfileHandler) SetDefaultDisappearingTimer(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessResponse{Success: true, Message: "default timer set to " + req.Timer})
+	c.JSON(http.StatusOK, dto.MessageOnlyResponse{Message: "default timer set to " + req.Timer})
 }
