@@ -24,6 +24,10 @@ type MediaDownloader func(ctx context.Context, sessionName string, msg *waE2E.Me
 // This is an alias that matches ProfilePictureGetter in contact_manager.go
 type ProfilePictureFetcher = func(ctx context.Context, sessionName string, jid string) (string, error)
 
+// GroupInfoFetcher is a function type for getting group metadata from WhatsApp
+// Returns group name (subject) or error
+type GroupInfoFetcher = func(ctx context.Context, sessionName string, groupJid string) (string, error)
+
 // Service handles Chatwoot integration business logic
 type Service struct {
 	repo                  *Repository
@@ -31,6 +35,7 @@ type Service struct {
 	baseURL               string // Server base URL for webhooks
 	mediaDownloader       MediaDownloader
 	profilePictureFetcher ProfilePictureFetcher
+	groupInfoFetcher      GroupInfoFetcher
 	contactManager        *ContactManager
 }
 
@@ -52,6 +57,11 @@ func (s *Service) SetMediaDownloader(downloader MediaDownloader) {
 // SetProfilePictureFetcher sets the function used to fetch profile pictures from WhatsApp
 func (s *Service) SetProfilePictureFetcher(fetcher ProfilePictureFetcher) {
 	s.profilePictureFetcher = fetcher
+}
+
+// SetGroupInfoFetcher sets the function used to fetch group info from WhatsApp
+func (s *Service) SetGroupInfoFetcher(fetcher GroupInfoFetcher) {
+	s.groupInfoFetcher = fetcher
 }
 
 // SetConfig creates or updates Chatwoot configuration for a session
@@ -127,13 +137,28 @@ func (s *Service) DeleteConfig(ctx context.Context, sessionID string) error {
 	return s.repo.Delete(ctx, sessionID)
 }
 
-// initInbox creates or retrieves the inbox in Chatwoot
+// initInbox creates or retrieves the inbox in Chatwoot and ensures webhook URL is correct
 func (s *Service) initInbox(ctx context.Context, cfg *Config) error {
 	client := NewClient(cfg.URL, cfg.Token, cfg.Account)
 
 	inbox, err := client.GetOrCreateInbox(ctx, cfg.Inbox, cfg.WebhookURL)
 	if err != nil {
 		return err
+	}
+
+	// Always update webhook URL to ensure it matches the session name
+	if inbox.WebhookURL != cfg.WebhookURL {
+		logger.Info().
+			Str("oldWebhook", inbox.WebhookURL).
+			Str("newWebhook", cfg.WebhookURL).
+			Msg("Chatwoot: updating inbox webhook URL")
+		
+		updatedInbox, err := client.UpdateInboxWebhook(ctx, inbox.ID, cfg.WebhookURL)
+		if err != nil {
+			logger.Warn().Err(err).Msg("Chatwoot: failed to update inbox webhook URL")
+		} else {
+			inbox = updatedInbox
+		}
 	}
 
 	// Update config with inbox ID
@@ -188,6 +213,7 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 		evt.Info.IsFromMe,
 		participantJid,
 		s.profilePictureFetcher,
+		s.groupInfoFetcher,
 		session.Name,
 	)
 	if err != nil {
@@ -476,6 +502,13 @@ func (s *Service) handleConversationStatusChanged(ctx context.Context, sessionID
 // Helper methods
 
 func (s *Service) shouldIgnoreJid(cfg *Config, jid string) bool {
+	// Always ignore status@broadcast (WhatsApp Stories/Status updates)
+	// These are not valid conversations and their JIDs don't produce valid E164 phone numbers
+	// Reference: Evolution API also ignores this JID
+	if jid == "status@broadcast" {
+		return true
+	}
+
 	if len(cfg.IgnoreChats) == 0 {
 		return false
 	}

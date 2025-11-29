@@ -34,6 +34,10 @@ type contactCacheEntry struct {
 // Note: This must match ProfilePictureFetcher in service.go
 type ProfilePictureGetter = func(ctx context.Context, sessionName string, jid string) (string, error)
 
+// GroupInfoGetter is a function type for getting group metadata from WhatsApp
+// Returns group name (subject) or error
+type GroupInfoGetter = func(ctx context.Context, sessionName string, groupJid string) (string, error)
+
 // GetOrCreateContactAndConversation handles contact and conversation creation with proper caching
 // This follows the Evolution API pattern to avoid duplicate conversations
 func (cm *ContactManager) GetOrCreateContactAndConversation(
@@ -45,6 +49,7 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 	isFromMe bool,
 	participantJid string, // For groups: the actual sender
 	getProfilePicture ProfilePictureGetter,
+	getGroupInfo GroupInfoGetter,
 	sessionName string,
 ) (int, error) {
 	isGroup := strings.HasSuffix(remoteJid, "@g.us")
@@ -90,34 +95,58 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 	if colonIdx := strings.Index(phoneNumber, ":"); colonIdx > 0 {
 		phoneNumber = phoneNumber[:colonIdx]
 	}
-	contactName := pushName
-	if contactName == "" {
-		contactName = phoneNumber
-	}
 
-	// Get profile picture if available
-	var avatarURL string
-	if getProfilePicture != nil && !isFromMe {
-		if pic, err := getProfilePicture(ctx, sessionName, phoneNumber); err == nil && pic != "" {
-			avatarURL = pic
-		}
-	}
-
-	// For groups, use the full JID as identifier and add (GROUP) suffix
+	// For groups, use the full JID as identifier
+	// For individuals, use pushName or phone number as contact name
 	var contact *Contact
 	var err error
 
 	if isGroup {
-		// For groups: use group JID as identifier, fetch group name if available
-		groupName := contactName
-		if groupName == phoneNumber {
-			groupName = fmt.Sprintf("%s (GROUP)", phoneNumber)
-		} else {
-			groupName = fmt.Sprintf("%s (GROUP)", groupName)
+		// For groups: use group JID as identifier
+		// Try to get the actual group name from WhatsApp metadata
+		// This ensures all participants' messages go to the same conversation
+		groupName := fmt.Sprintf("%s (GROUP)", phoneNumber) // fallback name
+
+		// Try to get the real group name from WhatsApp
+		if getGroupInfo != nil {
+			if name, err := getGroupInfo(ctx, sessionName, remoteJid); err == nil && name != "" {
+				groupName = fmt.Sprintf("%s (GROUP)", name)
+				logger.Debug().
+					Str("groupJid", remoteJid).
+					Str("groupName", name).
+					Msg("Chatwoot: got group name from WhatsApp")
+			} else if err != nil {
+				logger.Debug().
+					Err(err).
+					Str("groupJid", remoteJid).
+					Msg("Chatwoot: failed to get group name, using fallback")
+			}
+		}
+
+		// Get profile picture for the group (not the participant)
+		var avatarURL string
+		if getProfilePicture != nil {
+			if pic, err := getProfilePicture(ctx, sessionName, remoteJid); err == nil && pic != "" {
+				avatarURL = pic
+			}
 		}
 
 		contact, err = cm.getOrCreateGroupContact(ctx, client, cfg, remoteJid, groupName, avatarURL)
 	} else {
+		// For individual contacts
+		contactName := pushName
+		if contactName == "" {
+			contactName = phoneNumber
+		}
+
+		// Get profile picture if available
+		var avatarURL string
+		if getProfilePicture != nil && !isFromMe {
+			if pic, err := getProfilePicture(ctx, sessionName, phoneNumber); err == nil && pic != "" {
+				avatarURL = pic
+			}
+		}
+
 		contact, err = cm.getOrCreateIndividualContact(ctx, client, cfg, phoneNumber, remoteJid, contactName, avatarURL)
 	}
 
