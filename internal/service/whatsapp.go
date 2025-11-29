@@ -110,6 +110,53 @@ func (w *WhatsAppService) SendTextWithQuote(ctx context.Context, sessionName, ph
 	return client.SendMessage(ctx, jid, msg)
 }
 
+// SendImageWithQuote sends an image with a quoted message reference
+func (w *WhatsAppService) SendImageWithQuote(ctx context.Context, sessionName, phone string, imageData []byte, caption string, mimeType string, quoted *QuotedMessage) (whatsmeow.SendResponse, error) {
+	if quoted == nil {
+		return w.SendImage(ctx, sessionName, phone, imageData, caption, mimeType)
+	}
+
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return whatsmeow.SendResponse{}, err
+	}
+
+	jid, err := parseJID(phone)
+	if err != nil {
+		return whatsmeow.SendResponse{}, fmt.Errorf("invalid phone number: %w", err)
+	}
+
+	uploaded, err := client.Upload(ctx, imageData, whatsmeow.MediaImage)
+	if err != nil {
+		return whatsmeow.SendResponse{}, fmt.Errorf("failed to upload image: %w", err)
+	}
+
+	var quotedParticipant *string
+	if quoted.SenderJID != "" {
+		quotedParticipant = proto.String(quoted.SenderJID)
+	}
+
+	msg := &waE2E.Message{
+		ImageMessage: &waE2E.ImageMessage{
+			URL:           proto.String(uploaded.URL),
+			DirectPath:    proto.String(uploaded.DirectPath),
+			MediaKey:      uploaded.MediaKey,
+			Mimetype:      proto.String(mimeType),
+			FileEncSHA256: uploaded.FileEncSHA256,
+			FileSHA256:    uploaded.FileSHA256,
+			FileLength:    proto.Uint64(uint64(len(imageData))),
+			Caption:       proto.String(caption),
+			ContextInfo: &waE2E.ContextInfo{
+				StanzaID:      proto.String(quoted.MessageID),
+				Participant:   quotedParticipant,
+				QuotedMessage: &waE2E.Message{Conversation: proto.String(quoted.Content)},
+			},
+		},
+	}
+
+	return client.SendMessage(ctx, jid, msg)
+}
+
 // SendImage envia imagem
 func (w *WhatsAppService) SendImage(ctx context.Context, sessionName, phone string, imageData []byte, caption string, mimeType string) (whatsmeow.SendResponse, error) {
 	client, err := w.getClient(sessionName)
@@ -137,6 +184,53 @@ func (w *WhatsAppService) SendImage(ctx context.Context, sessionName, phone stri
 			FileSHA256:    uploaded.FileSHA256,
 			FileLength:    proto.Uint64(uint64(len(imageData))),
 			Caption:       proto.String(caption),
+		},
+	}
+
+	return client.SendMessage(ctx, jid, msg)
+}
+
+// SendDocumentWithQuote sends a document with a quoted message reference
+func (w *WhatsAppService) SendDocumentWithQuote(ctx context.Context, sessionName, phone string, docData []byte, filename, mimeType string, quoted *QuotedMessage) (whatsmeow.SendResponse, error) {
+	if quoted == nil {
+		return w.SendDocument(ctx, sessionName, phone, docData, filename, mimeType)
+	}
+
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return whatsmeow.SendResponse{}, err
+	}
+
+	jid, err := parseJID(phone)
+	if err != nil {
+		return whatsmeow.SendResponse{}, fmt.Errorf("invalid phone number: %w", err)
+	}
+
+	uploaded, err := client.Upload(ctx, docData, whatsmeow.MediaDocument)
+	if err != nil {
+		return whatsmeow.SendResponse{}, fmt.Errorf("failed to upload document: %w", err)
+	}
+
+	var quotedParticipant *string
+	if quoted.SenderJID != "" {
+		quotedParticipant = proto.String(quoted.SenderJID)
+	}
+
+	msg := &waE2E.Message{
+		DocumentMessage: &waE2E.DocumentMessage{
+			URL:           proto.String(uploaded.URL),
+			DirectPath:    proto.String(uploaded.DirectPath),
+			MediaKey:      uploaded.MediaKey,
+			Mimetype:      proto.String(mimeType),
+			FileEncSHA256: uploaded.FileEncSHA256,
+			FileSHA256:    uploaded.FileSHA256,
+			FileLength:    proto.Uint64(uint64(len(docData))),
+			FileName:      proto.String(filename),
+			ContextInfo: &waE2E.ContextInfo{
+				StanzaID:      proto.String(quoted.MessageID),
+				Participant:   quotedParticipant,
+				QuotedMessage: &waE2E.Message{Conversation: proto.String(quoted.Content)},
+			},
 		},
 	}
 
@@ -176,6 +270,53 @@ func (w *WhatsAppService) SendDocument(ctx context.Context, sessionName, phone s
 	return client.SendMessage(ctx, jid, msg)
 }
 
+// SendAudioWithQuote sends an audio with a quoted message reference
+func (w *WhatsAppService) SendAudioWithQuote(ctx context.Context, sessionName, phone string, audioData []byte, mimeType string, ptt bool, quoted *QuotedMessage) (whatsmeow.SendResponse, error) {
+	if quoted == nil {
+		return w.SendAudio(ctx, sessionName, phone, audioData, mimeType, ptt)
+	}
+
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return whatsmeow.SendResponse{}, err
+	}
+
+	jid, err := parseJID(phone)
+	if err != nil {
+		return whatsmeow.SendResponse{}, fmt.Errorf("invalid phone number: %w", err)
+	}
+
+	uploaded, err := client.Upload(ctx, audioData, whatsmeow.MediaAudio)
+	if err != nil {
+		return whatsmeow.SendResponse{}, fmt.Errorf("failed to upload audio: %w", err)
+	}
+
+	var quotedParticipant *string
+	if quoted.SenderJID != "" {
+		quotedParticipant = proto.String(quoted.SenderJID)
+	}
+
+	msg := &waE2E.Message{
+		AudioMessage: &waE2E.AudioMessage{
+			URL:           proto.String(uploaded.URL),
+			DirectPath:    proto.String(uploaded.DirectPath),
+			MediaKey:      uploaded.MediaKey,
+			Mimetype:      proto.String(mimeType),
+			FileEncSHA256: uploaded.FileEncSHA256,
+			FileSHA256:    uploaded.FileSHA256,
+			FileLength:    proto.Uint64(uint64(len(audioData))),
+			PTT:           proto.Bool(ptt),
+			ContextInfo: &waE2E.ContextInfo{
+				StanzaID:      proto.String(quoted.MessageID),
+				Participant:   quotedParticipant,
+				QuotedMessage: &waE2E.Message{Conversation: proto.String(quoted.Content)},
+			},
+		},
+	}
+
+	return client.SendMessage(ctx, jid, msg)
+}
+
 // SendAudio envia áudio
 func (w *WhatsAppService) SendAudio(ctx context.Context, sessionName, phone string, audioData []byte, mimeType string, ptt bool) (whatsmeow.SendResponse, error) {
 	client, err := w.getClient(sessionName)
@@ -203,6 +344,53 @@ func (w *WhatsAppService) SendAudio(ctx context.Context, sessionName, phone stri
 			FileSHA256:    uploaded.FileSHA256,
 			FileLength:    proto.Uint64(uint64(len(audioData))),
 			PTT:           proto.Bool(ptt),
+		},
+	}
+
+	return client.SendMessage(ctx, jid, msg)
+}
+
+// SendVideoWithQuote sends a video with a quoted message reference
+func (w *WhatsAppService) SendVideoWithQuote(ctx context.Context, sessionName, phone string, videoData []byte, caption, mimeType string, quoted *QuotedMessage) (whatsmeow.SendResponse, error) {
+	if quoted == nil {
+		return w.SendVideo(ctx, sessionName, phone, videoData, caption, mimeType)
+	}
+
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return whatsmeow.SendResponse{}, err
+	}
+
+	jid, err := parseJID(phone)
+	if err != nil {
+		return whatsmeow.SendResponse{}, fmt.Errorf("invalid phone number: %w", err)
+	}
+
+	uploaded, err := client.Upload(ctx, videoData, whatsmeow.MediaVideo)
+	if err != nil {
+		return whatsmeow.SendResponse{}, fmt.Errorf("failed to upload video: %w", err)
+	}
+
+	var quotedParticipant *string
+	if quoted.SenderJID != "" {
+		quotedParticipant = proto.String(quoted.SenderJID)
+	}
+
+	msg := &waE2E.Message{
+		VideoMessage: &waE2E.VideoMessage{
+			URL:           proto.String(uploaded.URL),
+			DirectPath:    proto.String(uploaded.DirectPath),
+			MediaKey:      uploaded.MediaKey,
+			Mimetype:      proto.String(mimeType),
+			FileEncSHA256: uploaded.FileEncSHA256,
+			FileSHA256:    uploaded.FileSHA256,
+			FileLength:    proto.Uint64(uint64(len(videoData))),
+			Caption:       proto.String(caption),
+			ContextInfo: &waE2E.ContextInfo{
+				StanzaID:      proto.String(quoted.MessageID),
+				Participant:   quotedParticipant,
+				QuotedMessage: &waE2E.Message{Conversation: proto.String(quoted.Content)},
+			},
 		},
 	}
 

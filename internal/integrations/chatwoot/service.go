@@ -1,12 +1,14 @@
 package chatwoot
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
+	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types/events"
 
 	"zpwoot/internal/db"
@@ -14,20 +16,41 @@ import (
 	"zpwoot/internal/model"
 )
 
+// MediaDownloader is a function type for downloading media from WhatsApp messages
+type MediaDownloader func(ctx context.Context, sessionName string, msg *waE2E.Message) ([]byte, error)
+
+// ProfilePictureFetcher is a function type for getting profile pictures from WhatsApp
+// This is an alias that matches ProfilePictureGetter in contact_manager.go
+type ProfilePictureFetcher = func(ctx context.Context, sessionName string, jid string) (string, error)
+
 // Service handles Chatwoot integration business logic
 type Service struct {
-	repo     *Repository
-	database *db.Database
-	baseURL  string // Server base URL for webhooks
+	repo                  *Repository
+	database              *db.Database
+	baseURL               string // Server base URL for webhooks
+	mediaDownloader       MediaDownloader
+	profilePictureFetcher ProfilePictureFetcher
+	contactManager        *ContactManager
 }
 
 // NewService creates a new Chatwoot service
 func NewService(repo *Repository, database *db.Database, baseURL string) *Service {
 	return &Service{
-		repo:     repo,
-		database: database,
-		baseURL:  strings.TrimSuffix(baseURL, "/"),
+		repo:           repo,
+		database:       database,
+		baseURL:        strings.TrimSuffix(baseURL, "/"),
+		contactManager: NewContactManager(),
 	}
+}
+
+// SetMediaDownloader sets the function used to download media from WhatsApp
+func (s *Service) SetMediaDownloader(downloader MediaDownloader) {
+	s.mediaDownloader = downloader
+}
+
+// SetProfilePictureFetcher sets the function used to fetch profile pictures from WhatsApp
+func (s *Service) SetProfilePictureFetcher(fetcher ProfilePictureFetcher) {
+	s.profilePictureFetcher = fetcher
 }
 
 // SetConfig creates or updates Chatwoot configuration for a session
@@ -118,12 +141,6 @@ func (s *Service) initInbox(ctx context.Context, cfg *Config) error {
 	}
 
 	cfg.InboxID = inbox.ID
-	logger.Info().
-		Str("sessionId", cfg.SessionID).
-		Int("inboxId", inbox.ID).
-		Str("inboxName", inbox.Name).
-		Msg("Chatwoot inbox initialized")
-
 	return nil
 }
 
@@ -138,15 +155,9 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 		return nil // Chatwoot not enabled for this session
 	}
 
-	logger.Debug().
-		Str("session", session.Name).
-		Str("chatJid", evt.Info.Chat.String()).
-		Msg("Chatwoot: processing incoming message")
-
 	// Check if JID should be ignored
 	remoteJid := evt.Info.Chat.String()
 	if s.shouldIgnoreJid(cfg, remoteJid) {
-		logger.Debug().Str("jid", remoteJid).Msg("Chatwoot: ignoring JID")
 		return nil
 	}
 
@@ -159,38 +170,48 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 		}
 	}
 
-	// Get or create contact
+	// Check if this is a group message
 	isGroup := strings.HasSuffix(remoteJid, "@g.us")
-	phoneNumber := strings.Split(remoteJid, "@")[0]
-	contactName := evt.Info.PushName
-	if contactName == "" {
-		contactName = phoneNumber
+	participantJid := ""
+	if isGroup && evt.Info.Sender.String() != "" {
+		participantJid = evt.Info.Sender.String()
 	}
 
-	contact, err := client.GetOrCreateContact(ctx, cfg.InboxID, phoneNumber, remoteJid, contactName, "", isGroup)
-	if err != nil {
-		return fmt.Errorf("failed to get/create contact: %w", err)
-	}
-
-	// Get or create conversation
-	status := "open"
-	if cfg.ConversationPending {
-		status = "pending"
-	}
-
-	conv, err := client.GetOrCreateConversation(ctx, contact.ID, cfg.InboxID, status)
+	// Get or create contact and conversation using ContactManager with caching
+	convID, err := s.contactManager.GetOrCreateContactAndConversation(
+		ctx,
+		client,
+		cfg,
+		remoteJid,
+		evt.Info.PushName,
+		evt.Info.IsFromMe,
+		participantJid,
+		s.profilePictureFetcher,
+		session.Name,
+	)
 	if err != nil {
 		return fmt.Errorf("failed to get/create conversation: %w", err)
 	}
 
-	// Extract message content
+	sourceID := fmt.Sprintf("WAID:%s", evt.Info.ID)
+
+	// Check if this is a media message
+	if s.isMediaMessage(evt.Message) && s.mediaDownloader != nil {
+		return s.processIncomingMediaMessage(ctx, session, evt, client, convID, sourceID, cfg)
+	}
+
+	// Extract message content for text messages
 	content := s.extractMessageContent(evt)
 	if content == "" {
 		return nil
 	}
 
+	// Format group messages to show participant info
+	if isGroup && participantJid != "" && !evt.Info.IsFromMe {
+		content = s.contactManager.FormatGroupMessage(content, participantJid, evt.Info.PushName)
+	}
+
 	// Create message in Chatwoot
-	sourceID := fmt.Sprintf("WAID:%s", evt.Info.ID)
 	msgReq := &CreateMessageRequest{
 		Content:     content,
 		MessageType: "incoming",
@@ -203,39 +224,78 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 			"in_reply_to":             replyInfo.ChatwootMessageID,
 			"in_reply_to_external_id": replyInfo.WhatsAppMessageID,
 		}
-		logger.Info().
-			Int("in_reply_to", replyInfo.ChatwootMessageID).
-			Str("in_reply_to_external_id", replyInfo.WhatsAppMessageID).
-			Interface("content_attributes", msgReq.ContentAttributes).
-			Msg("Chatwoot: sending message with reply reference (WA->CW)")
 	}
 
-	cwMsg, err := client.CreateMessage(ctx, conv.ID, msgReq)
+	cwMsg, err := client.CreateMessage(ctx, convID, msgReq)
 	if err != nil {
 		return fmt.Errorf("failed to create message in chatwoot: %w", err)
 	}
 
 	// Save Chatwoot message ID for quote/reply support
 	if cwMsg != nil && s.database != nil {
-		if err := s.database.Messages.UpdateChatwootFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, conv.ID, sourceID); err != nil {
-			logger.Warn().Err(err).
-				Str("messageId", evt.Info.ID).
-				Int("chatwootMessageId", cwMsg.ID).
-				Msg("Chatwoot: failed to save chatwoot message ID")
-		} else {
-			logger.Debug().
-				Str("messageId", evt.Info.ID).
-				Int("chatwootMessageId", cwMsg.ID).
-				Msg("Chatwoot: saved chatwoot message ID")
+		if err := s.database.Messages.UpdateChatwootFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, convID, sourceID); err != nil {
+			logger.Warn().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update message fields")
 		}
 	}
 
-	logger.Info().
-		Str("session", session.Name).
-		Str("chatJid", remoteJid).
-		Int("conversationId", conv.ID).
-		Str("content", content).
-		Msg("Chatwoot: message sent successfully")
+	return nil
+}
+
+// processIncomingMediaMessage handles media messages (images, videos, documents, etc.)
+func (s *Service) processIncomingMediaMessage(ctx context.Context, session *model.Session, evt *events.Message, client *Client, conversationID int, sourceID string, cfg *Config) error {
+	mediaInfo := s.getMediaInfo(evt.Message)
+	if mediaInfo == nil {
+		return fmt.Errorf("failed to get media info")
+	}
+
+	// Check if this is a reply/quote message
+	var contentAttributes map[string]interface{}
+	if replyInfo := s.extractReplyInfo(ctx, session.ID, evt); replyInfo != nil {
+		contentAttributes = map[string]interface{}{
+			"in_reply_to":             replyInfo.ChatwootMessageID,
+			"in_reply_to_external_id": replyInfo.WhatsAppMessageID,
+		}
+	}
+
+	// Download media from WhatsApp
+	mediaData, err := s.mediaDownloader(ctx, session.Name, evt.Message)
+	if err != nil {
+		logger.Warn().Err(err).
+			Str("session", session.Name).
+			Str("messageId", evt.Info.ID).
+			Msg("Chatwoot: failed to download media, sending filename as text instead")
+
+		// Fallback: send filename as text
+		content := mediaInfo.Filename
+		if mediaInfo.Caption != "" {
+			content = mediaInfo.Caption
+		}
+		msgReq := &CreateMessageRequest{
+			Content:           content,
+			MessageType:       "incoming",
+			SourceID:          sourceID,
+			ContentAttributes: contentAttributes,
+		}
+		_, err := client.CreateMessage(ctx, conversationID, msgReq)
+		return err
+	}
+
+	// Upload media to Chatwoot with proper MIME type
+	content := mediaInfo.Caption
+	cwMsg, err := client.CreateMessageWithAttachmentAndMime(ctx, conversationID, content, "incoming", bytes.NewReader(mediaData), mediaInfo.Filename, mediaInfo.MimeType, contentAttributes)
+	if err != nil {
+		return fmt.Errorf("failed to upload media to chatwoot: %w", err)
+	}
+
+	// Save Chatwoot message ID for quote/reply support
+	if cwMsg != nil && s.database != nil {
+		if err := s.database.Messages.UpdateChatwootFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, conversationID, sourceID); err != nil {
+			logger.Warn().Err(err).
+				Str("messageId", evt.Info.ID).
+				Int("chatwootMessageId", cwMsg.ID).
+				Msg("Chatwoot: failed to save chatwoot message ID for media")
+		}
+	}
 
 	return nil
 }
@@ -265,24 +325,12 @@ func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Ses
 	sourceID := fmt.Sprintf("WAID:%s", evt.Info.ID)
 
 	// Check if this message was already sent by Chatwoot (avoid duplicates)
-	// If the message has a sourceID that matches, it was sent from Chatwoot
 	if s.database != nil {
 		existingMsg, _ := s.database.Messages.GetByMessageID(ctx, session.ID, evt.Info.ID)
 		if existingMsg != nil && existingMsg.ChatwootMessageID != nil && *existingMsg.ChatwootMessageID > 0 {
-			// Message already synced from Chatwoot, skip
-			logger.Debug().
-				Str("messageId", evt.Info.ID).
-				Int("chatwootMessageId", *existingMsg.ChatwootMessageID).
-				Msg("Chatwoot: skipping outgoing message - already synced from Chatwoot")
 			return nil
 		}
 	}
-
-	logger.Debug().
-		Str("session", session.Name).
-		Str("chatJid", remoteJid).
-		Str("content", content).
-		Msg("Chatwoot: processing outgoing message from WhatsApp")
 
 	client := NewClient(cfg.URL, cfg.APIAccessToken, cfg.AccountID)
 
@@ -330,19 +378,9 @@ func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Ses
 	// Save Chatwoot message ID for quote/reply support
 	if cwMsg != nil && s.database != nil {
 		if err := s.database.Messages.UpdateChatwootFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, conv.ID, sourceID); err != nil {
-			logger.Warn().Err(err).
-				Str("messageId", evt.Info.ID).
-				Int("chatwootMessageId", cwMsg.ID).
-				Msg("Chatwoot: failed to save chatwoot message ID for outgoing message")
+			logger.Warn().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update outgoing message fields")
 		}
 	}
-
-	logger.Info().
-		Str("session", session.Name).
-		Str("chatJid", remoteJid).
-		Int("conversationId", conv.ID).
-		Str("content", content).
-		Msg("Chatwoot: outgoing message synced successfully")
 
 	return nil
 }
@@ -353,11 +391,6 @@ func (s *Service) HandleWebhook(ctx context.Context, sessionID string, payload *
 	if err != nil || cfg == nil {
 		return fmt.Errorf("chatwoot not enabled for session: %s", sessionID)
 	}
-
-	logger.Debug().
-		Str("sessionId", sessionID).
-		Str("event", payload.Event).
-		Msg("Received Chatwoot webhook")
 
 	switch payload.Event {
 	case "message_created":
@@ -418,39 +451,17 @@ func (s *Service) handleMessageCreated(ctx context.Context, sessionID string, cf
 	// Convert Chatwoot markdown to WhatsApp format
 	content = s.convertMarkdown(content)
 
-	// Return data for handler to send via WhatsApp
-	// The actual sending will be done by the handler which has access to the session
-	logger.Info().
-		Str("sessionId", sessionID).
-		Str("chatJid", chatJid).
-		Str("content", content).
-		Msg("Message to send to WhatsApp from Chatwoot")
-
 	return nil
 }
 
 func (s *Service) handleMessageUpdated(ctx context.Context, sessionID string, cfg *Config, payload *WebhookPayload) error {
-	// Handle message deletion
-	if payload.ContentAttrs != nil {
-		if deleted, ok := payload.ContentAttrs["deleted"].(bool); ok && deleted {
-			logger.Debug().
-				Str("sessionId", sessionID).
-				Int("messageId", payload.ID).
-				Msg("Message deleted in Chatwoot")
-		}
-	}
 	return nil
 }
 
 func (s *Service) handleConversationStatusChanged(ctx context.Context, sessionID string, cfg *Config, payload *WebhookPayload) error {
 	// Handle conversation resolved/reopened
 	if payload.Conversation != nil {
-		logger.Debug().
-			Str("sessionId", sessionID).
-			Int("conversationId", payload.Conversation.ID).
-			Str("status", payload.Conversation.Status).
-			Msg("Conversation status changed")
-	}
+		}
 	return nil
 }
 
@@ -476,6 +487,88 @@ func (s *Service) shouldIgnoreJid(cfg *Config, jid string) bool {
 	return false
 }
 
+// MediaInfo holds information about media in a message
+type MediaInfo struct {
+	IsMedia  bool
+	MimeType string
+	Filename string
+	Caption  string
+}
+
+// isMediaMessage checks if the message contains downloadable media
+func (s *Service) isMediaMessage(msg *waE2E.Message) bool {
+	if msg == nil {
+		return false
+	}
+	return msg.ImageMessage != nil ||
+		msg.VideoMessage != nil ||
+		msg.AudioMessage != nil ||
+		msg.DocumentMessage != nil ||
+		msg.StickerMessage != nil
+}
+
+// getMediaInfo extracts media information from a message
+func (s *Service) getMediaInfo(msg *waE2E.Message) *MediaInfo {
+	if msg == nil {
+		return nil
+	}
+
+	if img := msg.GetImageMessage(); img != nil {
+		return &MediaInfo{
+			IsMedia:  true,
+			MimeType: img.GetMimetype(),
+			Filename: "image.jpg",
+			Caption:  img.GetCaption(),
+		}
+	}
+
+	if vid := msg.GetVideoMessage(); vid != nil {
+		return &MediaInfo{
+			IsMedia:  true,
+			MimeType: vid.GetMimetype(),
+			Filename: "video.mp4",
+			Caption:  vid.GetCaption(),
+		}
+	}
+
+	if aud := msg.GetAudioMessage(); aud != nil {
+		ext := "ogg"
+		if strings.Contains(aud.GetMimetype(), "mpeg") {
+			ext = "mp3"
+		}
+		return &MediaInfo{
+			IsMedia:  true,
+			MimeType: aud.GetMimetype(),
+			Filename: "audio." + ext,
+			Caption:  "",
+		}
+	}
+
+	if doc := msg.GetDocumentMessage(); doc != nil {
+		filename := doc.GetFileName()
+		if filename == "" {
+			filename = "document"
+		}
+		return &MediaInfo{
+			IsMedia:  true,
+			MimeType: doc.GetMimetype(),
+			Filename: filename,
+			Caption:  doc.GetCaption(),
+		}
+	}
+
+	if stk := msg.GetStickerMessage(); stk != nil {
+		return &MediaInfo{
+			IsMedia:  true,
+			MimeType: stk.GetMimetype(),
+			Filename: "sticker.webp",
+			Caption:  "",
+		}
+	}
+
+	return nil
+}
+
 func (s *Service) extractMessageContent(evt *events.Message) string {
 	msg := evt.Message
 
@@ -491,7 +584,7 @@ func (s *Service) extractMessageContent(evt *events.Message) string {
 		return ext.GetText()
 	}
 
-	// Media with caption
+	// Media with caption - return caption only (media will be handled separately)
 	if img := msg.GetImageMessage(); img != nil {
 		return img.GetCaption()
 	}
@@ -499,11 +592,7 @@ func (s *Service) extractMessageContent(evt *events.Message) string {
 		return vid.GetCaption()
 	}
 	if doc := msg.GetDocumentMessage(); doc != nil {
-		caption := doc.GetCaption()
-		if caption != "" {
-			return caption
-		}
-		return doc.GetFileName()
+		return doc.GetCaption() // Return only caption, not filename
 	}
 
 	// Location
@@ -603,35 +692,19 @@ func (s *Service) extractReplyInfo(ctx context.Context, sessionID string, evt *e
 	}
 
 	if stanzaID == "" {
-		return nil // Not a reply message
+		return nil
 	}
-
-	logger.Debug().
-		Str("stanzaId", stanzaID).
-		Str("sessionId", sessionID).
-		Msg("Chatwoot: found reply stanzaId, looking up original message")
 
 	// Find original message by WhatsApp message ID
 	originalMsg, err := s.database.Messages.GetByMessageID(ctx, sessionID, stanzaID)
-	if err != nil {
-		logger.Warn().Err(err).Str("stanzaId", stanzaID).Msg("Chatwoot: error looking up original message")
-		return nil
-	}
-	if originalMsg == nil {
-		logger.Debug().Str("stanzaId", stanzaID).Msg("Chatwoot: original message not found in database")
+	if err != nil || originalMsg == nil {
 		return nil
 	}
 
 	// Check if original message has Chatwoot message ID
 	if originalMsg.ChatwootMessageID == nil || *originalMsg.ChatwootMessageID == 0 {
-		logger.Debug().Str("stanzaId", stanzaID).Msg("Chatwoot: original message has no Chatwoot message ID")
 		return nil
 	}
-
-	logger.Info().
-		Str("stanzaId", stanzaID).
-		Int("chatwootMessageId", *originalMsg.ChatwootMessageID).
-		Msg("Chatwoot: found original message for reply")
 
 	return &ReplyInfo{
 		ChatwootMessageID:  *originalMsg.ChatwootMessageID,
@@ -667,19 +740,12 @@ type QuotedMessageInfo struct {
 func (s *Service) GetWebhookDataForSending(ctx context.Context, sessionID string, payload *WebhookPayload) (chatJid, content string, attachments []Attachment, err error) {
 	cfg, err := s.repo.GetEnabledBySessionID(ctx, sessionID)
 	if err != nil || cfg == nil {
-		logger.Debug().Str("sessionId", sessionID).Msg("Chatwoot: config not enabled, skipping")
 		return "", "", nil, fmt.Errorf("chatwoot not enabled")
 	}
 
 	// Skip non-outgoing or private messages
-	// Accept both "outgoing" string and "1" (numeric representation)
 	isOutgoing := payload.MessageType == "outgoing" || payload.MessageType == "1"
 	if !isOutgoing || payload.Private {
-		logger.Debug().
-			Str("sessionId", sessionID).
-			Str("messageType", payload.MessageType).
-			Bool("private", payload.Private).
-			Msg("Chatwoot: skipping non-outgoing or private message")
 		return "", "", nil, nil
 	}
 
@@ -687,11 +753,6 @@ func (s *Service) GetWebhookDataForSending(ctx context.Context, sessionID string
 	if payload.Conversation != nil && len(payload.Conversation.Messages) > 0 {
 		for _, msg := range payload.Conversation.Messages {
 			if strings.HasPrefix(msg.SourceID, "WAID:") && msg.ID == payload.ID {
-				logger.Debug().
-					Str("sessionId", sessionID).
-					Int("messageId", msg.ID).
-					Str("sourceId", msg.SourceID).
-					Msg("Chatwoot: skipping message already from WhatsApp")
 				return "", "", nil, nil
 			}
 		}
@@ -699,12 +760,6 @@ func (s *Service) GetWebhookDataForSending(ctx context.Context, sessionID string
 
 	// Get chat JID
 	if payload.Conversation == nil || payload.Conversation.Meta == nil || payload.Conversation.Meta.Sender == nil {
-		logger.Debug().
-			Str("sessionId", sessionID).
-			Bool("hasConversation", payload.Conversation != nil).
-			Bool("hasMeta", payload.Conversation != nil && payload.Conversation.Meta != nil).
-			Bool("hasSender", payload.Conversation != nil && payload.Conversation.Meta != nil && payload.Conversation.Meta.Sender != nil).
-			Msg("Chatwoot: missing conversation metadata")
 		return "", "", nil, fmt.Errorf("missing conversation metadata")
 	}
 
@@ -757,31 +812,14 @@ func (s *Service) GetQuotedMessage(ctx context.Context, sessionID string, payloa
 	case int64:
 		chatwootMsgID = int(v)
 	default:
-		logger.Debug().Interface("in_reply_to", inReplyTo).Msg("Chatwoot: invalid in_reply_to type")
 		return nil
 	}
-
-	logger.Debug().
-		Int("chatwootMessageId", chatwootMsgID).
-		Str("sessionId", sessionID).
-		Msg("Chatwoot: looking up quoted message")
 
 	// Find message by Chatwoot message ID
 	msg, err := s.database.Messages.GetByChatwootMessageID(ctx, sessionID, chatwootMsgID)
-	if err != nil {
-		logger.Warn().Err(err).Int("chatwootMessageId", chatwootMsgID).Msg("Chatwoot: error looking up quoted message")
+	if err != nil || msg == nil {
 		return nil
 	}
-	if msg == nil {
-		logger.Debug().Int("chatwootMessageId", chatwootMsgID).Msg("Chatwoot: quoted message not found")
-		return nil
-	}
-
-	logger.Info().
-		Str("messageId", msg.MessageID).
-		Str("chatJid", msg.ChatJID).
-		Bool("isFromMe", msg.IsFromMe).
-		Msg("Chatwoot: found quoted message for reply")
 
 	return &QuotedMessageInfo{
 		MessageID: msg.MessageID,
@@ -803,12 +841,7 @@ func (s *Service) ProcessReactionMessage(ctx context.Context, session *model.Ses
 		return nil
 	}
 
-	logger.Debug().
-		Str("emoji", emoji).
-		Str("targetMsgId", targetMsgID).
-		Str("remoteJid", remoteJid).
-		Bool("isFromMe", isFromMe).
-		Msg("Chatwoot: processing reaction")
+
 
 	client := NewClient(cfg.URL, cfg.APIAccessToken, cfg.AccountID)
 
@@ -869,26 +902,12 @@ func (s *Service) ProcessReactionMessage(ctx context.Context, session *model.Ses
 			"in_reply_to":             *inReplyTo,
 			"in_reply_to_external_id": inReplyToExternalID,
 		}
-		logger.Debug().
-			Int("in_reply_to", *inReplyTo).
-			Str("in_reply_to_external_id", inReplyToExternalID).
-			Str("emoji", emoji).
-			Str("messageType", messageType).
-			Msg("Chatwoot: sending reaction with reply reference")
 	}
 
 	_, err = client.CreateMessage(ctx, conv.ID, msgReq)
 	if err != nil {
 		return fmt.Errorf("failed to send reaction to chatwoot: %w", err)
 	}
-
-	logger.Info().
-		Str("session", session.Name).
-		Str("chatJid", remoteJid).
-		Str("emoji", emoji).
-		Str("targetMsgId", targetMsgID).
-		Str("messageType", messageType).
-		Msg("Chatwoot: reaction sent successfully")
 
 	return nil
 }

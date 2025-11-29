@@ -8,6 +8,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	"net/url"
 	"path"
 	"strconv"
@@ -302,6 +303,17 @@ func (c *Client) ListContactConversations(ctx context.Context, contactID int) ([
 	return result.Payload, nil
 }
 
+// MergeContacts merges two contacts (useful for Brazilian numbers with 8/9 digits)
+func (c *Client) MergeContacts(ctx context.Context, baseContactID, mergeContactID int) error {
+	body := map[string]interface{}{
+		"base_contact_id":   baseContactID,
+		"mergee_contact_id": mergeContactID,
+	}
+
+	_, err := c.doRequest(ctx, http.MethodPost, "/actions/contact_merge", body)
+	return err
+}
+
 // Conversations
 
 // GetConversation returns a conversation by ID
@@ -372,7 +384,12 @@ func (c *Client) CreateMessage(ctx context.Context, conversationID int, req *Cre
 }
 
 // CreateMessageWithAttachment creates a message with an attachment
-func (c *Client) CreateMessageWithAttachment(ctx context.Context, conversationID int, content, messageType string, attachment io.Reader, filename string) (*Message, error) {
+func (c *Client) CreateMessageWithAttachment(ctx context.Context, conversationID int, content, messageType string, attachment io.Reader, filename string, contentAttributes map[string]interface{}) (*Message, error) {
+	return c.CreateMessageWithAttachmentAndMime(ctx, conversationID, content, messageType, attachment, filename, "", contentAttributes)
+}
+
+// CreateMessageWithAttachmentAndMime creates a message with an attachment and specific MIME type
+func (c *Client) CreateMessageWithAttachmentAndMime(ctx context.Context, conversationID int, content, messageType string, attachment io.Reader, filename, mimeType string, contentAttributes map[string]interface{}) (*Message, error) {
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
 
@@ -381,7 +398,26 @@ func (c *Client) CreateMessageWithAttachment(ctx context.Context, conversationID
 	}
 	_ = writer.WriteField("message_type", messageType)
 
-	part, err := writer.CreateFormFile("attachments[]", filename)
+	// Add content_attributes for reply/quote support
+	if contentAttributes != nil {
+		attrsJSON, err := json.Marshal(contentAttributes)
+		if err == nil {
+			_ = writer.WriteField("content_attributes", string(attrsJSON))
+		}
+	}
+
+	// Create form file with proper Content-Type header
+	var part io.Writer
+	var err error
+	if mimeType != "" {
+		// Use CreatePart for custom Content-Type
+		h := make(textproto.MIMEHeader)
+		h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="attachments[]"; filename="%s"`, filename))
+		h.Set("Content-Type", mimeType)
+		part, err = writer.CreatePart(h)
+	} else {
+		part, err = writer.CreateFormFile("attachments[]", filename)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to create form file: %w", err)
 	}
