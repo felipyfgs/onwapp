@@ -154,13 +154,18 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 		return
 	}
 
-	logger.Debug().
+	logger.Info().
 		Str("session", sessionName).
 		Str("event", payload.Event).
+		Str("messageType", payload.MessageType).
+		Str("content", payload.Content).
+		Bool("private", payload.Private).
 		Msg("Received Chatwoot webhook")
 
 	// Handle message_created event - send to WhatsApp
-	if payload.Event == "message_created" && payload.MessageType == "outgoing" && !payload.Private {
+	// message_type can be "outgoing" or 1 (int)
+	isOutgoing := payload.MessageType == "outgoing" || payload.MessageType == "1"
+	if payload.Event == "message_created" && isOutgoing && !payload.Private {
 		chatJid, content, attachments, err := h.service.GetWebhookDataForSending(c.Request.Context(), session.ID, payload)
 		if err != nil {
 			logger.Warn().Err(err).Str("session", sessionName).Msg("Failed to process Chatwoot webhook")
@@ -168,9 +173,12 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 			return
 		}
 
+		// Check if this is a reply to another message
+		quotedMsg := h.service.GetQuotedMessage(c.Request.Context(), session.ID, payload)
+
 		if chatJid != "" && (content != "" || len(attachments) > 0) {
 			// Send message to WhatsApp
-			if err := h.sendToWhatsApp(c, session, chatJid, content, attachments); err != nil {
+			if err := h.sendToWhatsApp(c, session, chatJid, content, attachments, quotedMsg); err != nil {
 				logger.Error().Err(err).
 					Str("session", sessionName).
 					Str("chatJid", chatJid).
@@ -182,11 +190,27 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "ok"})
 }
 
-func (h *Handler) sendToWhatsApp(c *gin.Context, session *model.Session, chatJid, content string, attachments []Attachment) error {
+func (h *Handler) sendToWhatsApp(c *gin.Context, session *model.Session, chatJid, content string, attachments []Attachment, quotedMsg *QuotedMessageInfo) error {
 	ctx := c.Request.Context()
 
 	// Extract phone number from JID
 	phone := extractPhone(chatJid)
+
+	// Convert QuotedMessageInfo to service.QuotedMessage
+	var quoted *service.QuotedMessage
+	if quotedMsg != nil {
+		quoted = &service.QuotedMessage{
+			MessageID: quotedMsg.MessageID,
+			ChatJID:   quotedMsg.ChatJID,
+			SenderJID: quotedMsg.SenderJID,
+			Content:   quotedMsg.Content,
+			IsFromMe:  quotedMsg.IsFromMe,
+		}
+		logger.Info().
+			Str("quotedMessageId", quoted.MessageID).
+			Str("quotedContent", quoted.Content).
+			Msg("Chatwoot: sending message with quote")
+	}
 
 	// Send attachments first
 	for _, att := range attachments {
@@ -233,7 +257,8 @@ func (h *Handler) sendToWhatsApp(c *gin.Context, session *model.Session, chatJid
 
 	// Send text message if there's content left
 	if content != "" {
-		_, err := h.whatsappSvc.SendText(ctx, session.Name, phone, content)
+		// Use SendTextWithQuote if we have a quoted message
+		_, err := h.whatsappSvc.SendTextWithQuote(ctx, session.Name, phone, content, quoted)
 		if err != nil {
 			return err
 		}

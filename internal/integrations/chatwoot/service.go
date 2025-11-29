@@ -9,21 +9,24 @@ import (
 
 	"go.mau.fi/whatsmeow/types/events"
 
+	"zpwoot/internal/db"
 	"zpwoot/internal/logger"
 	"zpwoot/internal/model"
 )
 
 // Service handles Chatwoot integration business logic
 type Service struct {
-	repo    *Repository
-	baseURL string // Server base URL for webhooks
+	repo     *Repository
+	database *db.Database
+	baseURL  string // Server base URL for webhooks
 }
 
 // NewService creates a new Chatwoot service
-func NewService(repo *Repository, baseURL string) *Service {
+func NewService(repo *Repository, database *db.Database, baseURL string) *Service {
 	return &Service{
-		repo:    repo,
-		baseURL: strings.TrimSuffix(baseURL, "/"),
+		repo:     repo,
+		database: database,
+		baseURL:  strings.TrimSuffix(baseURL, "/"),
 	}
 }
 
@@ -187,15 +190,31 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 	}
 
 	// Create message in Chatwoot
+	sourceID := fmt.Sprintf("WAID:%s", evt.Info.ID)
 	msgReq := &CreateMessageRequest{
 		Content:     content,
 		MessageType: "incoming",
-		SourceID:    fmt.Sprintf("WAID:%s", evt.Info.ID),
+		SourceID:    sourceID,
 	}
 
-	_, err = client.CreateMessage(ctx, conv.ID, msgReq)
+	cwMsg, err := client.CreateMessage(ctx, conv.ID, msgReq)
 	if err != nil {
 		return fmt.Errorf("failed to create message in chatwoot: %w", err)
+	}
+
+	// Save Chatwoot message ID for quote/reply support
+	if cwMsg != nil && s.database != nil {
+		if err := s.database.Messages.UpdateChatwootFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, conv.ID, sourceID); err != nil {
+			logger.Warn().Err(err).
+				Str("messageId", evt.Info.ID).
+				Int("chatwootMessageId", cwMsg.ID).
+				Msg("Chatwoot: failed to save chatwoot message ID")
+		} else {
+			logger.Debug().
+				Str("messageId", evt.Info.ID).
+				Int("chatwootMessageId", cwMsg.ID).
+				Msg("Chatwoot: saved chatwoot message ID")
+		}
 	}
 
 	logger.Info().
@@ -444,6 +463,15 @@ func (s *Service) convertMarkdown(content string) string {
 	return content
 }
 
+// QuotedMessageInfo holds information about a quoted message for WhatsApp
+type QuotedMessageInfo struct {
+	MessageID string `json:"messageId"` // WhatsApp message ID
+	ChatJID   string `json:"chatJid"`   // Chat JID
+	SenderJID string `json:"senderJid"` // Sender JID
+	Content   string `json:"content"`   // Original message content
+	IsFromMe  bool   `json:"isFromMe"`  // Was message from me
+}
+
 // GetWebhookDataForSending extracts data from webhook for sending via WhatsApp
 func (s *Service) GetWebhookDataForSending(ctx context.Context, sessionID string, payload *WebhookPayload) (chatJid, content string, attachments []Attachment, err error) {
 	cfg, err := s.repo.GetEnabledBySessionID(ctx, sessionID)
@@ -491,6 +519,67 @@ func (s *Service) GetWebhookDataForSending(ctx context.Context, sessionID string
 	attachments = payload.Attachments
 
 	return chatJid, content, attachments, nil
+}
+
+// GetQuotedMessage finds the original message being replied to from Chatwoot
+func (s *Service) GetQuotedMessage(ctx context.Context, sessionID string, payload *WebhookPayload) *QuotedMessageInfo {
+	if s.database == nil {
+		return nil
+	}
+
+	// Check if this message is a reply (has content_attributes.in_reply_to)
+	if payload.ContentAttrs == nil {
+		return nil
+	}
+
+	inReplyTo, ok := payload.ContentAttrs["in_reply_to"]
+	if !ok || inReplyTo == nil {
+		return nil
+	}
+
+	// Convert to int (can be float64 from JSON)
+	var chatwootMsgID int
+	switch v := inReplyTo.(type) {
+	case float64:
+		chatwootMsgID = int(v)
+	case int:
+		chatwootMsgID = v
+	case int64:
+		chatwootMsgID = int(v)
+	default:
+		logger.Debug().Interface("in_reply_to", inReplyTo).Msg("Chatwoot: invalid in_reply_to type")
+		return nil
+	}
+
+	logger.Debug().
+		Int("chatwootMessageId", chatwootMsgID).
+		Str("sessionId", sessionID).
+		Msg("Chatwoot: looking up quoted message")
+
+	// Find message by Chatwoot message ID
+	msg, err := s.database.Messages.GetByChatwootMessageID(ctx, sessionID, chatwootMsgID)
+	if err != nil {
+		logger.Warn().Err(err).Int("chatwootMessageId", chatwootMsgID).Msg("Chatwoot: error looking up quoted message")
+		return nil
+	}
+	if msg == nil {
+		logger.Debug().Int("chatwootMessageId", chatwootMsgID).Msg("Chatwoot: quoted message not found")
+		return nil
+	}
+
+	logger.Info().
+		Str("messageId", msg.MessageID).
+		Str("chatJid", msg.ChatJID).
+		Bool("isFromMe", msg.IsFromMe).
+		Msg("Chatwoot: found quoted message for reply")
+
+	return &QuotedMessageInfo{
+		MessageID: msg.MessageID,
+		ChatJID:   msg.ChatJID,
+		SenderJID: msg.SenderJID,
+		Content:   msg.Content,
+		IsFromMe:  msg.IsFromMe,
+	}
 }
 
 // ProcessReceipt handles message receipt (delivered/read) events

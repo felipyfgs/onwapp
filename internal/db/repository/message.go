@@ -230,3 +230,38 @@ func (r *MessageRepository) RemoveReaction(ctx context.Context, sessionID, messa
 		sessionID, messageID, senderJid)
 	return err
 }
+
+// UpdateChatwootFields updates Chatwoot-related fields for a message
+func (r *MessageRepository) UpdateChatwootFields(ctx context.Context, sessionID, messageID string, chatwootMessageID, chatwootConversationID int, chatwootSourceID string) error {
+	_, err := r.pool.Exec(ctx, `
+		UPDATE "zpMessages" 
+		SET "chatwootMessageId" = $3, "chatwootConversationId" = $4, "chatwootSourceId" = $5
+		WHERE "sessionId" = $1::uuid AND "messageId" = $2`,
+		sessionID, messageID, chatwootMessageID, chatwootConversationID, chatwootSourceID)
+	return err
+}
+
+// GetByChatwootMessageID finds a message by its Chatwoot message ID
+func (r *MessageRepository) GetByChatwootMessageID(ctx context.Context, sessionID string, chatwootMessageID int) (*model.Message, error) {
+	row := r.pool.QueryRow(ctx,
+		`SELECT `+messageSelectFields+`, "chatwootMessageId", "chatwootConversationId", COALESCE("chatwootSourceId", '') FROM "zpMessages" WHERE "sessionId" = $1::uuid AND "chatwootMessageId" = $2`,
+		sessionID, chatwootMessageID)
+
+	var m model.Message
+	err := row.Scan(
+		&m.ID, &m.SessionID, &m.MessageID, &m.ChatJID, &m.SenderJID, &m.Timestamp,
+		&m.PushName, &m.SenderAlt, &m.ServerID, &m.VerifiedName,
+		&m.Type, &m.MediaType, &m.Category, &m.Content,
+		&m.IsFromMe, &m.IsGroup, &m.IsEphemeral, &m.IsViewOnce, &m.IsEdit,
+		&m.EditTargetID, &m.QuotedID, &m.QuotedSender,
+		&m.Status, &m.DeliveredAt, &m.ReadAt, &m.Reactions, &m.RawEvent, &m.CreatedAt,
+		&m.ChatwootMessageID, &m.ChatwootConversationID, &m.ChatwootSourceID,
+	)
+	if err == pgx.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &m, nil
+}

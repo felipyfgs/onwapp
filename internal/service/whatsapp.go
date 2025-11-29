@@ -65,6 +65,51 @@ func (w *WhatsAppService) SendText(ctx context.Context, sessionName, phone, text
 	return client.SendMessage(ctx, jid, msg)
 }
 
+// QuotedMessage holds information for quoting a previous message
+type QuotedMessage struct {
+	MessageID string // Original message ID (stanzaId)
+	ChatJID   string // Chat JID
+	SenderJID string // Sender JID
+	Content   string // Original message content
+	IsFromMe  bool   // Whether the quoted message was from us
+}
+
+// SendTextWithQuote sends a text message with a quoted message reference
+func (w *WhatsAppService) SendTextWithQuote(ctx context.Context, sessionName, phone, text string, quoted *QuotedMessage) (whatsmeow.SendResponse, error) {
+	if quoted == nil {
+		return w.SendText(ctx, sessionName, phone, text)
+	}
+
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return whatsmeow.SendResponse{}, err
+	}
+
+	jid, err := parseJID(phone)
+	if err != nil {
+		return whatsmeow.SendResponse{}, fmt.Errorf("invalid phone number: %w", err)
+	}
+
+	// Parse sender JID for quoted message
+	var quotedParticipant *string
+	if quoted.SenderJID != "" {
+		quotedParticipant = proto.String(quoted.SenderJID)
+	}
+
+	msg := &waE2E.Message{
+		ExtendedTextMessage: &waE2E.ExtendedTextMessage{
+			Text: proto.String(text),
+			ContextInfo: &waE2E.ContextInfo{
+				StanzaID:      proto.String(quoted.MessageID),
+				Participant:   quotedParticipant,
+				QuotedMessage: &waE2E.Message{Conversation: proto.String(quoted.Content)},
+			},
+		},
+	}
+
+	return client.SendMessage(ctx, jid, msg)
+}
+
 // SendImage envia imagem
 func (w *WhatsAppService) SendImage(ctx context.Context, sessionName, phone string, imageData []byte, caption string, mimeType string) (whatsmeow.SendResponse, error) {
 	client, err := w.getClient(sessionName)

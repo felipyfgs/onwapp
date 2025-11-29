@@ -97,6 +97,11 @@ type Message struct {
 	QuotedID     string `json:"quotedId,omitempty"`     // Replied message ID
 	QuotedSender string `json:"quotedSender,omitempty"` // Replied message sender
 
+	// Chatwoot Integration
+	ChatwootMessageID      *int   `json:"chatwootMessageId,omitempty"`      // Chatwoot message ID
+	ChatwootConversationID *int   `json:"chatwootConversationId,omitempty"` // Chatwoot conversation ID
+	ChatwootSourceID       string `json:"chatwootSourceId,omitempty"`       // Source ID (WAID:xxx)
+
 	// Delivery Status (for outgoing messages)
 	Status      MessageStatus `json:"status"`
 	DeliveredAt *time.Time    `json:"deliveredAt,omitempty"`
