@@ -144,17 +144,7 @@ func (h *SessionHandler) Info(c *gin.Context) {
 		return
 	}
 
-	resp := dto.SessionResponse{
-		Name:   session.Name,
-		Status: string(session.GetStatus()),
-	}
-
-	if session.Client.Store.ID != nil {
-		resp.JID = session.Client.Store.ID.String()
-		resp.Phone = session.Client.Store.ID.User
-	}
-
-	c.JSON(http.StatusOK, resp)
+	c.JSON(http.StatusOK, sessionToResponse(session))
 }
 
 // Connect godoc

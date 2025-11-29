@@ -1,14 +1,5 @@
 basePath: /
 definitions:
-  APIError:
-    properties:
-      code:
-        example: SESSION_NOT_FOUND
-        type: string
-      message:
-        example: Session 'my-session' not found
-        type: string
-    type: object
   ArchiveChatRequest:
     properties:
       archive:
@@ -357,21 +348,12 @@ definitions:
           type: array
         type: object
     type: object
-  GroupActionData:
-    properties:
-      jid:
-        example: 123456789@g.us
-        type: string
-      message:
-        example: Participants added successfully
-        type: string
-    type: object
   GroupActionResponse:
     properties:
-      data:
-        $ref: '#/definitions/GroupActionData'
-      error:
-        $ref: '#/definitions/APIError'
+      data: {}
+      groupId:
+        example: 123456789@g.us
+        type: string
       success:
         example: true
         type: boolean
@@ -550,21 +532,14 @@ definitions:
     - messageIds
     - phone
     type: object
-  MessageData:
-    properties:
-      message:
-        example: operation completed successfully
-        type: string
-    type: object
   MessageResponse:
     properties:
-      data:
-        $ref: '#/definitions/MessageData'
-      error:
-        $ref: '#/definitions/APIError'
-      success:
-        example: true
-        type: boolean
+      message:
+        example: operation completed
+        type: string
+      status:
+        example: connected
+        type: string
     type: object
   NativeFlowButtonDTO:
     properties:
@@ -628,12 +603,6 @@ definitions:
       success:
         type: boolean
     type: object
-  PairPhoneData:
-    properties:
-      code:
-        example: ABCD-EFGH
-        type: string
-    type: object
   PairPhoneRequest:
     properties:
       phone:
@@ -644,12 +613,9 @@ definitions:
     type: object
   PairPhoneResponse:
     properties:
-      data:
-        $ref: '#/definitions/PairPhoneData'
-      error:
-        $ref: '#/definitions/APIError'
+      code:
+        type: string
       success:
-        example: true
         type: boolean
     type: object
   PresenceResponse:
@@ -671,18 +637,6 @@ definitions:
       success:
         type: boolean
     type: object
-  QRData:
-    properties:
-      base64:
-        example: data:image/png;base64,...
-        type: string
-      code:
-        example: 2@ABC123...
-        type: string
-      status:
-        example: pending
-        type: string
-    type: object
   QRLinkResponse:
     properties:
       link:
@@ -692,13 +646,12 @@ definitions:
     type: object
   QRResponse:
     properties:
-      data:
-        $ref: '#/definitions/QRData'
-      error:
-        $ref: '#/definitions/APIError'
-      success:
-        example: true
-        type: boolean
+      qr:
+        example: 2@ABC123...
+        type: string
+      status:
+        example: connecting
+        type: string
     type: object
   RejectCallRequest:
     properties:
@@ -1091,10 +1044,16 @@ definitions:
     - phone
     - video
     type: object
-  SessionData:
+  SessionResponse:
     properties:
-      jid:
+      createdAt:
+        example: "2025-11-29T14:18:15.324706Z"
+        type: string
+      deviceJid:
         example: 5511999999999@s.whatsapp.net
+        type: string
+      id:
+        example: ce270f0c-c3d6-41ad-b481-1587f813c3b1
         type: string
       name:
         example: my-session
@@ -1105,16 +1064,9 @@ definitions:
       status:
         example: connected
         type: string
-    type: object
-  SessionResponse:
-    properties:
-      data:
-        $ref: '#/definitions/SessionData'
-      error:
-        $ref: '#/definitions/APIError'
-      success:
-        example: true
-        type: boolean
+      updatedAt:
+        example: "2025-11-29T14:18:15.324706Z"
+        type: string
     type: object
   SetConfigRequest:
     properties:

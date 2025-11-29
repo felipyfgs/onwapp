@@ -72,11 +72,15 @@ func (s *SessionService) LoadFromDatabase(ctx context.Context) error {
 		client := whatsmeow.NewClient(device, clientLog)
 
 		session := &model.Session{
-			ID:     rec.ID,
-			Name:   rec.Name,
-			Client: client,
-			Device: device,
-			Status: model.StatusDisconnected,
+			ID:        rec.ID,
+			Name:      rec.Name,
+			DeviceJID: rec.DeviceJID,
+			Phone:     rec.Phone,
+			Client:    client,
+			Device:    device,
+			Status:    model.StatusDisconnected,
+			CreatedAt: rec.CreatedAt,
+			UpdatedAt: rec.UpdatedAt,
 		}
 
 		s.mu.Lock()

@@ -5153,19 +5153,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "APIError": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string",
-                    "example": "SESSION_NOT_FOUND"
-                },
-                "message": {
-                    "type": "string",
-                    "example": "Session 'my-session' not found"
-                }
-            }
-        },
         "ArchiveChatRequest": {
             "type": "object",
             "required": [
@@ -5677,27 +5664,13 @@ const docTemplate = `{
                 }
             }
         },
-        "GroupActionData": {
-            "type": "object",
-            "properties": {
-                "jid": {
-                    "type": "string",
-                    "example": "123456789@g.us"
-                },
-                "message": {
-                    "type": "string",
-                    "example": "Participants added successfully"
-                }
-            }
-        },
         "GroupActionResponse": {
             "type": "object",
             "properties": {
-                "data": {
-                    "$ref": "#/definitions/GroupActionData"
-                },
-                "error": {
-                    "$ref": "#/definitions/APIError"
+                "data": {},
+                "groupId": {
+                    "type": "string",
+                    "example": "123456789@g.us"
                 },
                 "success": {
                     "type": "boolean",
@@ -5957,27 +5930,16 @@ const docTemplate = `{
                 }
             }
         },
-        "MessageData": {
+        "MessageResponse": {
             "type": "object",
             "properties": {
                 "message": {
                     "type": "string",
-                    "example": "operation completed successfully"
-                }
-            }
-        },
-        "MessageResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/MessageData"
+                    "example": "operation completed"
                 },
-                "error": {
-                    "$ref": "#/definitions/APIError"
-                },
-                "success": {
-                    "type": "boolean",
-                    "example": true
+                "status": {
+                    "type": "string",
+                    "example": "connected"
                 }
             }
         },
@@ -6070,15 +6032,6 @@ const docTemplate = `{
                 }
             }
         },
-        "PairPhoneData": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string",
-                    "example": "ABCD-EFGH"
-                }
-            }
-        },
         "PairPhoneRequest": {
             "type": "object",
             "required": [
@@ -6094,15 +6047,11 @@ const docTemplate = `{
         "PairPhoneResponse": {
             "type": "object",
             "properties": {
-                "data": {
-                    "$ref": "#/definitions/PairPhoneData"
-                },
-                "error": {
-                    "$ref": "#/definitions/APIError"
+                "code": {
+                    "type": "string"
                 },
                 "success": {
-                    "type": "boolean",
-                    "example": true
+                    "type": "boolean"
                 }
             }
         },
@@ -6135,23 +6084,6 @@ const docTemplate = `{
                 }
             }
         },
-        "QRData": {
-            "type": "object",
-            "properties": {
-                "base64": {
-                    "type": "string",
-                    "example": "data:image/png;base64,..."
-                },
-                "code": {
-                    "type": "string",
-                    "example": "2@ABC123..."
-                },
-                "status": {
-                    "type": "string",
-                    "example": "pending"
-                }
-            }
-        },
         "QRLinkResponse": {
             "type": "object",
             "properties": {
@@ -6166,15 +6098,13 @@ const docTemplate = `{
         "QRResponse": {
             "type": "object",
             "properties": {
-                "data": {
-                    "$ref": "#/definitions/QRData"
+                "qr": {
+                    "type": "string",
+                    "example": "2@ABC123..."
                 },
-                "error": {
-                    "$ref": "#/definitions/APIError"
-                },
-                "success": {
-                    "type": "boolean",
-                    "example": true
+                "status": {
+                    "type": "string",
+                    "example": "connecting"
                 }
             }
         },
@@ -6718,12 +6648,20 @@ const docTemplate = `{
                 }
             }
         },
-        "SessionData": {
+        "SessionResponse": {
             "type": "object",
             "properties": {
-                "jid": {
+                "createdAt": {
+                    "type": "string",
+                    "example": "2025-11-29T14:18:15.324706Z"
+                },
+                "deviceJid": {
                     "type": "string",
                     "example": "5511999999999@s.whatsapp.net"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "ce270f0c-c3d6-41ad-b481-1587f813c3b1"
                 },
                 "name": {
                     "type": "string",
@@ -6736,21 +6674,10 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "connected"
-                }
-            }
-        },
-        "SessionResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/SessionData"
                 },
-                "error": {
-                    "$ref": "#/definitions/APIError"
-                },
-                "success": {
-                    "type": "boolean",
-                    "example": true
+                "updatedAt": {
+                    "type": "string",
+                    "example": "2025-11-29T14:18:15.324706Z"
                 }
             }
         },
