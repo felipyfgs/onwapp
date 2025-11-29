@@ -600,20 +600,26 @@ func (c *Client) GetConversationWithContactInbox(ctx context.Context, conversati
 		return nil, "", err
 	}
 
-	// Parse the full response to get contact_inbox.source_id
+	// Parse the full response to get contact_inbox.source_id from last_non_activity_message
 	var result struct {
 		Conversation
-		ContactInbox *struct {
-			SourceID string `json:"source_id"`
-		} `json:"contact_inbox"`
+		LastNonActivityMessage *struct {
+			Conversation *struct {
+				ContactInbox *struct {
+					SourceID string `json:"source_id"`
+				} `json:"contact_inbox"`
+			} `json:"conversation"`
+		} `json:"last_non_activity_message"`
 	}
 	if err := json.Unmarshal(data, &result); err != nil {
 		return nil, "", fmt.Errorf("failed to parse conversation response: %w", err)
 	}
 
 	sourceID := ""
-	if result.ContactInbox != nil {
-		sourceID = result.ContactInbox.SourceID
+	if result.LastNonActivityMessage != nil &&
+		result.LastNonActivityMessage.Conversation != nil &&
+		result.LastNonActivityMessage.Conversation.ContactInbox != nil {
+		sourceID = result.LastNonActivityMessage.Conversation.ContactInbox.SourceID
 	}
 
 	return &result.Conversation, sourceID, nil

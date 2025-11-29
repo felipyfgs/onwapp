@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"go.mau.fi/whatsmeow/proto/waE2E"
+	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 
 	"zpwoot/internal/db"
@@ -930,7 +931,16 @@ func (s *Service) ProcessReceipt(ctx context.Context, session *model.Session, ev
 		return nil
 	}
 
-	// TODO: Update message status in Chatwoot if needed
+	// Only process READ receipts for messages we sent (fromMe)
+	// This updates the "seen" indicator in Chatwoot
+	if evt.Type == types.ReceiptTypeRead {
+		for _, msgID := range evt.MessageIDs {
+			if err := s.HandleMessageRead(ctx, session, msgID); err != nil {
+				logger.Debug().Err(err).Str("messageId", msgID).Msg("Chatwoot: failed to process read receipt")
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -1000,11 +1010,18 @@ func (s *Service) HandleMessageRead(ctx context.Context, session *model.Session,
 	}
 
 	// Get conversation to get contact_inbox source_id
-	_, contactSourceID, err := client.GetConversationWithContactInbox(ctx, *msg.ChatwootConversationID)
+	conv, contactSourceID, err := client.GetConversationWithContactInbox(ctx, *msg.ChatwootConversationID)
 	if err != nil {
 		logger.Warn().Err(err).Int("conversationId", *msg.ChatwootConversationID).Msg("Chatwoot: failed to get conversation")
 		return nil
 	}
+
+	logger.Debug().
+		Int("conversationId", *msg.ChatwootConversationID).
+		Str("contactSourceID", contactSourceID).
+		Str("inboxIdentifier", inbox.InboxIdentifier).
+		Interface("convID", conv.ID).
+		Msg("Chatwoot: read receipt debug info")
 
 	if contactSourceID == "" {
 		logger.Debug().Int("conversationId", *msg.ChatwootConversationID).Msg("Chatwoot: contact_source_id not found")
