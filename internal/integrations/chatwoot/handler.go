@@ -160,6 +160,17 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 		return
 	}
 
+	// Handle message_updated event with deleted flag - delete from WhatsApp
+	if payload.Event == "message_updated" && payload.ContentAttrs != nil {
+		if deleted, ok := payload.ContentAttrs["deleted"].(bool); ok && deleted {
+			if err := h.handleMessageDeleted(c.Request.Context(), session, payload); err != nil {
+				logger.Warn().Err(err).Str("session", sessionName).Msg("Chatwoot: failed to delete message from WhatsApp")
+			}
+			c.JSON(http.StatusOK, gin.H{"message": "ok"})
+			return
+		}
+	}
+
 	// Handle message_created event - send to WhatsApp
 	isOutgoing := payload.MessageType == "outgoing" || payload.MessageType == "1"
 
@@ -343,4 +354,52 @@ func extractPhone(jid string) string {
 		phone = jid[:idx]
 	}
 	return phone
+}
+
+// handleMessageDeleted handles message deletion from Chatwoot
+// Note: A single Chatwoot message with multiple attachments creates multiple WhatsApp messages
+func (h *Handler) handleMessageDeleted(ctx context.Context, session *model.Session, payload *WebhookPayload) error {
+	if h.database == nil {
+		return fmt.Errorf("database not available")
+	}
+
+	// Find ALL messages with this Chatwoot message ID
+	// (multiple attachments = multiple WhatsApp messages with same chatwootMessageId)
+	messages, err := h.database.Messages.GetAllByChatwootMessageID(ctx, session.ID, payload.ID)
+	if err != nil {
+		return fmt.Errorf("failed to query messages: %w", err)
+	}
+
+	if len(messages) == 0 {
+		logger.Debug().Int("chatwootMsgId", payload.ID).Msg("Chatwoot: no messages found for deletion")
+		return nil
+	}
+
+	// Delete ALL messages from WhatsApp and database
+	var deleteErrors []error
+	for _, msg := range messages {
+		// Delete from WhatsApp
+		if _, err := h.whatsappSvc.DeleteMessage(ctx, session.Name, msg.ChatJID, msg.MessageID, msg.IsFromMe); err != nil {
+			logger.Warn().Err(err).Str("messageId", msg.MessageID).Msg("Chatwoot: failed to delete message from WhatsApp")
+			deleteErrors = append(deleteErrors, err)
+			continue
+		}
+
+		// Delete from local database
+		if err := h.database.Messages.Delete(ctx, session.ID, msg.MessageID); err != nil {
+			logger.Warn().Err(err).Str("messageId", msg.MessageID).Msg("Chatwoot: failed to delete message from database")
+		}
+
+		logger.Info().
+			Str("session", session.Name).
+			Str("messageId", msg.MessageID).
+			Int("chatwootMsgId", payload.ID).
+			Msg("Chatwoot: message deleted from WhatsApp")
+	}
+
+	if len(deleteErrors) > 0 {
+		return fmt.Errorf("failed to delete %d/%d messages", len(deleteErrors), len(messages))
+	}
+
+	return nil
 }

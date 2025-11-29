@@ -375,6 +375,13 @@ func (c *Client) CreateMessage(ctx context.Context, conversationID int, req *Cre
 	return &msg, nil
 }
 
+// DeleteMessage deletes a message from a conversation
+func (c *Client) DeleteMessage(ctx context.Context, conversationID, messageID int) error {
+	endpoint := fmt.Sprintf("/conversations/%d/messages/%d", conversationID, messageID)
+	_, err := c.doRequest(ctx, http.MethodDelete, endpoint, nil)
+	return err
+}
+
 // CreateMessageWithAttachment creates a message with an attachment
 func (c *Client) CreateMessageWithAttachment(ctx context.Context, conversationID int, content, messageType string, attachment io.Reader, filename string, contentAttributes map[string]interface{}) (*Message, error) {
 	return c.CreateMessageWithAttachmentAndMime(ctx, conversationID, content, messageType, attachment, filename, "", contentAttributes)

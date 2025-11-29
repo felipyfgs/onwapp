@@ -944,6 +944,47 @@ func (s *Service) ProcessReceipt(ctx context.Context, session *model.Session, ev
 	return nil
 }
 
+// ProcessMessageDelete handles message deletion from WhatsApp and syncs to Chatwoot
+func (s *Service) ProcessMessageDelete(ctx context.Context, session *model.Session, messageID string) error {
+	cfg, err := s.repo.GetEnabledBySessionID(ctx, session.ID)
+	if err != nil || cfg == nil {
+		return nil
+	}
+
+	// Find the message in database
+	msg, err := s.database.Messages.GetByMessageID(ctx, session.ID, messageID)
+	if err != nil || msg == nil {
+		logger.Debug().Str("messageId", messageID).Msg("Chatwoot: message not found for deletion")
+		return nil
+	}
+
+	// Check if message has Chatwoot IDs
+	if msg.ChatwootMessageID == nil || msg.ChatwootConversationID == nil {
+		logger.Debug().Str("messageId", messageID).Msg("Chatwoot: message has no Chatwoot IDs")
+		return nil
+	}
+
+	client := NewClient(cfg.URL, cfg.APIAccessToken, cfg.AccountID)
+
+	// Delete message from Chatwoot
+	if err := client.DeleteMessage(ctx, *msg.ChatwootConversationID, *msg.ChatwootMessageID); err != nil {
+		return fmt.Errorf("failed to delete message from Chatwoot: %w", err)
+	}
+
+	// Delete from local database
+	if err := s.database.Messages.Delete(ctx, session.ID, messageID); err != nil {
+		logger.Warn().Err(err).Str("messageId", messageID).Msg("Chatwoot: failed to delete message from database")
+	}
+
+	logger.Info().
+		Str("session", session.Name).
+		Str("messageId", messageID).
+		Int("chatwootMsgId", *msg.ChatwootMessageID).
+		Msg("Chatwoot: message deleted from Chatwoot")
+
+	return nil
+}
+
 // Migrate runs database migrations for Chatwoot integration
 func (s *Service) Migrate(ctx context.Context) error {
 	return s.repo.Migrate(ctx)

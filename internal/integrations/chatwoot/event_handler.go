@@ -38,8 +38,12 @@ func (h *EventHandler) handleMessage(ctx context.Context, session *model.Session
 		return
 	}
 
-	// Skip protocol messages (deletes, etc.) but NOT reactions
-	if evt.Message.GetProtocolMessage() != nil {
+	// Handle protocol messages (deletes)
+	if proto := evt.Message.GetProtocolMessage(); proto != nil {
+		// Check if it's a delete message
+		if proto.GetType() == waE2E.ProtocolMessage_REVOKE {
+			h.handleMessageDelete(ctx, session, evt, proto)
+		}
 		return
 	}
 
@@ -105,5 +109,26 @@ func (h *EventHandler) handleReactionMessage(ctx context.Context, session *model
 			Str("targetMsgId", targetMsgID).
 			Bool("isFromMe", isFromMe).
 			Msg("Failed to process reaction message for Chatwoot")
+	}
+}
+
+func (h *EventHandler) handleMessageDelete(ctx context.Context, session *model.Session, evt *events.Message, proto *waE2E.ProtocolMessage) {
+	// Get the key of the deleted message
+	key := proto.GetKey()
+	if key == nil {
+		return
+	}
+
+	deletedMsgID := key.GetID()
+	if deletedMsgID == "" {
+		return
+	}
+
+	if err := h.service.ProcessMessageDelete(ctx, session, deletedMsgID); err != nil {
+		logger.Warn().
+			Err(err).
+			Str("session", session.Name).
+			Str("deletedMsgId", deletedMsgID).
+			Msg("Failed to process message deletion for Chatwoot")
 	}
 }

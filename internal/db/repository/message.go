@@ -283,3 +283,43 @@ func (r *MessageRepository) GetByChatwootMessageID(ctx context.Context, sessionI
 	}
 	return &m, nil
 }
+
+// GetAllByChatwootMessageID finds ALL messages with the same Chatwoot message ID
+// This is needed because multiple attachments in Chatwoot become multiple WhatsApp messages
+func (r *MessageRepository) GetAllByChatwootMessageID(ctx context.Context, sessionID string, chatwootMessageID int) ([]*model.Message, error) {
+	rows, err := r.pool.Query(ctx,
+		`SELECT `+messageSelectFields+` FROM "zpMessages" WHERE "sessionId" = $1::uuid AND "chatwootMessageId" = $2`,
+		sessionID, chatwootMessageID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var messages []*model.Message
+	for rows.Next() {
+		var m model.Message
+		err := rows.Scan(
+			&m.ID, &m.SessionID, &m.MessageID, &m.ChatJID, &m.SenderJID, &m.Timestamp,
+			&m.PushName, &m.SenderAlt, &m.ServerID, &m.VerifiedName,
+			&m.Type, &m.MediaType, &m.Category, &m.Content,
+			&m.IsFromMe, &m.IsGroup, &m.IsEphemeral, &m.IsViewOnce, &m.IsEdit,
+			&m.EditTargetID, &m.QuotedID, &m.QuotedSender,
+			&m.Status, &m.DeliveredAt, &m.ReadAt, &m.Reactions, &m.RawEvent, &m.CreatedAt,
+			&m.ChatwootMessageID, &m.ChatwootConversationID, &m.ChatwootSourceID,
+		)
+		if err != nil {
+			return nil, err
+		}
+		messages = append(messages, &m)
+	}
+	return messages, rows.Err()
+}
+
+// Delete removes a message from the database
+func (r *MessageRepository) Delete(ctx context.Context, sessionID, messageID string) error {
+	_, err := r.pool.Exec(ctx, `
+		DELETE FROM "zpMessages" 
+		WHERE "sessionId" = $1::uuid AND "messageId" = $2`,
+		sessionID, messageID)
+	return err
+}
