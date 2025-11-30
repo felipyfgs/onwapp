@@ -24,12 +24,6 @@ func NewContactManager() *ContactManager {
 	}
 }
 
-// ProfilePictureGetter is a function type alias for ProfilePictureFetcher
-type ProfilePictureGetter = ProfilePictureFetcher
-
-// GroupInfoGetter is a function type alias for GroupInfoFetcher
-type GroupInfoGetter = GroupInfoFetcher
-
 // GetOrCreateContactAndConversation handles contact and conversation creation with proper caching
 // This follows the Evolution API pattern to avoid duplicate conversations
 func (cm *ContactManager) GetOrCreateContactAndConversation(
@@ -40,8 +34,8 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 	pushName string,
 	isFromMe bool,
 	participantJid string, // For groups: the actual sender
-	getProfilePicture ProfilePictureGetter,
-	getGroupInfo GroupInfoGetter,
+	getProfilePicture ProfilePictureFetcher,
+	getGroupInfo GroupInfoFetcher,
 	sessionName string,
 ) (int, error) {
 	isGroup := strings.HasSuffix(remoteJid, "@g.us")

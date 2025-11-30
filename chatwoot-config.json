@@ -1,9 +1,9 @@
 {
   "enabled": true,
   "url": "https://chat.yourdomain.com",
-  "token": "TNL3LEGVRLth6UcVDgw1vHCk",
+  "token": "4hwJQ21FRHK3Wih3f5nuL8tB",
   "account": 1,
-  "inbox": "mysession",
+  "inbox": "my-session",
   "signAgent": true,
   "signSeparator": "\n",
   "autoReopen": true,

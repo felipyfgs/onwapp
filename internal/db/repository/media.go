@@ -246,6 +246,80 @@ func (r *MediaRepository) IncrementDownloadAttempts(ctx context.Context, id stri
 	return err
 }
 
+// UpdateDirectPath updates the direct path for a media after a successful MediaRetry
+func (r *MediaRepository) UpdateDirectPath(ctx context.Context, sessionID, msgID, newDirectPath string) error {
+	now := time.Now()
+	_, err := r.pool.Exec(ctx, `
+		UPDATE "zpMedia"
+		SET "waDirectPath" = $3,
+			"downloadError" = NULL,
+			"updatedAt" = $4
+		WHERE "sessionId" = $1 AND "msgId" = $2`,
+		sessionID, msgID, newDirectPath, now,
+	)
+	return err
+}
+
+// MarkAsRetryRequested marks media as having a retry request sent
+func (r *MediaRepository) MarkAsRetryRequested(ctx context.Context, id string) error {
+	now := time.Now()
+	_, err := r.pool.Exec(ctx, `
+		UPDATE "zpMedia"
+		SET "downloadError" = 'retry_requested',
+			"updatedAt" = $2
+		WHERE "id" = $1`,
+		id, now,
+	)
+	return err
+}
+
+// GetPendingRetries gets media that needs retry request (failed with 404/410)
+func (r *MediaRepository) GetPendingRetries(ctx context.Context, sessionID string, limit int) ([]*model.Media, error) {
+	rows, err := r.pool.Query(ctx, `
+		SELECT 
+			"id", "sessionId", "msgId", "mediaType", COALESCE("mimeType", ''), "fileSize", COALESCE("fileName", ''),
+			COALESCE("waDirectPath", ''), "waMediaKey", "waFileSHA256", "waFileEncSHA256", "waMediaKeyTimestamp",
+			COALESCE("width", 0), COALESCE("height", 0), COALESCE("duration", 0),
+			COALESCE("storageKey", ''), COALESCE("storageUrl", ''), "storedAt",
+			COALESCE("thumbnailKey", ''), COALESCE("thumbnailUrl", ''),
+			COALESCE("downloaded", false), COALESCE("downloadError", ''), COALESCE("downloadAttempts", 0),
+			"createdAt", "updatedAt"
+		FROM "zpMedia"
+		WHERE "sessionId" = $1 
+			AND "downloaded" = false 
+			AND ("downloadError" LIKE '%404%' OR "downloadError" LIKE '%410%' OR "downloadError" LIKE '%not found%')
+			AND "downloadError" NOT LIKE '%retry_requested%'
+			AND "downloadAttempts" < 5
+		ORDER BY "createdAt" ASC
+		LIMIT $2`,
+		sessionID, limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var medias []*model.Media
+	for rows.Next() {
+		m := &model.Media{}
+		err := rows.Scan(
+			&m.ID, &m.SessionID, &m.MsgID, &m.MediaType, &m.MimeType, &m.FileSize, &m.FileName,
+			&m.WADirectPath, &m.WAMediaKey, &m.WAFileSHA256, &m.WAFileEncSHA256, &m.WAMediaKeyTimestamp,
+			&m.Width, &m.Height, &m.Duration,
+			&m.StorageKey, &m.StorageURL, &m.StoredAt,
+			&m.ThumbnailKey, &m.ThumbnailURL,
+			&m.Downloaded, &m.DownloadError, &m.DownloadAttempts,
+			&m.CreatedAt, &m.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		medias = append(medias, m)
+	}
+
+	return medias, rows.Err()
+}
+
 func (r *MediaRepository) GetBySessionID(ctx context.Context, sessionID string, limit, offset int) ([]*model.Media, error) {
 	rows, err := r.pool.Query(ctx, `
 		SELECT 

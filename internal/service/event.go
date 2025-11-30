@@ -760,6 +760,11 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 				Int("totalMedia", len(allMedias)).
 				Int("saved", savedMedia).
 				Msg("History sync media info saved")
+
+			// Trigger async media download to storage
+			if s.mediaService != nil && session.Client != nil && savedMedia > 0 {
+				s.mediaService.ProcessHistorySyncMedia(ctx, session.Client, session.ID, savedMedia)
+			}
 		}
 	}
 
@@ -1276,12 +1281,23 @@ func (s *EventService) handleUndecryptableMessage(ctx context.Context, session *
 }
 
 func (s *EventService) handleMediaRetry(ctx context.Context, session *model.Session, e *events.MediaRetry) {
-	logger.Debug().
+	logger.Info().
 		Str("session", session.Name).
 		Str("event", "media_retry").
-		Str("messageId", e.MessageID).
+		Str("messageId", string(e.MessageID)).
 		Str("chat", e.ChatID.String()).
-		Msg("Media retry request")
+		Bool("hasError", e.Error != nil).
+		Msg("Media retry response received")
+
+	// Process media retry response if media service is configured
+	if s.mediaService != nil && session.Client != nil {
+		if err := s.mediaService.HandleMediaRetryResponse(ctx, session.Client, e, session.ID); err != nil {
+			logger.Warn().
+				Err(err).
+				Str("messageId", string(e.MessageID)).
+				Msg("Failed to process media retry response")
+		}
+	}
 
 	s.sendWebhook(ctx, session, string(model.EventMediaRetry), e)
 }
