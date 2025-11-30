@@ -542,6 +542,109 @@ func (c *Client) CreateMessageWithAttachmentAndMime(ctx context.Context, convers
 	return &msg, nil
 }
 
+// AttachmentUploadRequest contains all parameters for uploading a message with attachment
+type AttachmentUploadRequest struct {
+	ConversationID    int
+	Content           string
+	MessageType       string // incoming or outgoing
+	Attachment        io.Reader
+	Filename          string
+	MimeType          string
+	ContentAttributes map[string]interface{}
+	Timestamp         *time.Time // Optional: original message timestamp
+	SourceID          string     // Optional: source_id to prevent webhook loops
+}
+
+// CreateMessageWithAttachmentFull creates a message with attachment and all options including timestamp
+func (c *Client) CreateMessageWithAttachmentFull(ctx context.Context, req AttachmentUploadRequest) (*Message, error) {
+	var buf bytes.Buffer
+	writer := multipart.NewWriter(&buf)
+
+	if req.Content != "" {
+		_ = writer.WriteField("content", req.Content)
+	}
+	
+	messageType := req.MessageType
+	if messageType == "" {
+		messageType = "incoming"
+	}
+	_ = writer.WriteField("message_type", messageType)
+
+	// Add timestamp if provided (for historical message sync)
+	if req.Timestamp != nil {
+		_ = writer.WriteField("created_at", req.Timestamp.Format(time.RFC3339))
+	}
+
+	// Add source_id to prevent webhook loops during sync
+	if req.SourceID != "" {
+		_ = writer.WriteField("source_id", req.SourceID)
+	}
+
+	// Add content_attributes for reply/quote support
+	if req.ContentAttributes != nil {
+		attrsJSON, err := json.Marshal(req.ContentAttributes)
+		if err == nil {
+			_ = writer.WriteField("content_attributes", string(attrsJSON))
+		}
+	}
+
+	// Create form file with proper Content-Type header
+	var part io.Writer
+	var err error
+	if req.MimeType != "" {
+		h := make(textproto.MIMEHeader)
+		h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="attachments[]"; filename="%s"`, req.Filename))
+		h.Set("Content-Type", req.MimeType)
+		part, err = writer.CreatePart(h)
+	} else {
+		part, err = writer.CreateFormFile("attachments[]", req.Filename)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to create form file: %w", err)
+	}
+
+	if _, err := io.Copy(part, req.Attachment); err != nil {
+		return nil, fmt.Errorf("failed to copy attachment: %w", err)
+	}
+
+	writer.Close()
+
+	endpoint := c.buildURL(fmt.Sprintf("/conversations/%d/messages", req.ConversationID))
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, &buf)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	httpReq.Header.Set("Content-Type", writer.FormDataContentType())
+	httpReq.Header.Set("api_access_token", c.token)
+
+	resp, err := c.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	if resp.StatusCode >= 400 {
+		logger.Error().
+			Int("status", resp.StatusCode).
+			Str("response", string(respBody)).
+			Msg("Chatwoot: attachment upload failed")
+		return nil, fmt.Errorf("chatwoot API error: status %d, body: %s", resp.StatusCode, string(respBody))
+	}
+
+	var msg Message
+	if err := json.Unmarshal(respBody, &msg); err != nil {
+		return nil, fmt.Errorf("failed to parse message response: %w", err)
+	}
+
+	return &msg, nil
+}
+
 // Helper functions
 
 // GetInboxByName finds an inbox by name

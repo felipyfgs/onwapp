@@ -28,6 +28,12 @@ type MessageRepository interface {
 type ContactsGetter interface {
 	GetAllContacts(ctx context.Context) ([]WhatsAppContact, error)
 	GetProfilePictureURL(ctx context.Context, jid string) (string, error)
+	GetGroupName(ctx context.Context, groupJID string) (string, error)
+}
+
+// MediaGetter interface for getting media info by message ID
+type MediaGetter interface {
+	GetByMsgID(ctx context.Context, sessionID, msgID string) (*model.Media, error)
 }
 
 // =============================================================================
@@ -40,12 +46,13 @@ type ChatwootDBSync struct {
 	client         *Client
 	msgRepo        MessageRepository
 	contactsGetter ContactsGetter
+	mediaGetter    MediaGetter
 	sessionID      string
 	cwDB           *sql.DB
 }
 
 // NewChatwootDBSync creates a new direct database sync service
-func NewChatwootDBSync(cfg *Config, msgRepo MessageRepository, contactsGetter ContactsGetter, sessionID string) (*ChatwootDBSync, error) {
+func NewChatwootDBSync(cfg *Config, msgRepo MessageRepository, contactsGetter ContactsGetter, mediaGetter MediaGetter, sessionID string) (*ChatwootDBSync, error) {
 	if cfg.ChatwootDBHost == "" {
 		return nil, fmt.Errorf("chatwoot database host not configured")
 	}
@@ -78,6 +85,7 @@ func NewChatwootDBSync(cfg *Config, msgRepo MessageRepository, contactsGetter Co
 		client:         NewClient(cfg.URL, cfg.Token, cfg.Account),
 		msgRepo:        msgRepo,
 		contactsGetter: contactsGetter,
+		mediaGetter:    mediaGetter,
 		sessionID:      sessionID,
 		cwDB:           db,
 	}, nil
@@ -207,6 +215,9 @@ func (s *ChatwootDBSync) SyncMessages(ctx context.Context, daysLimit int) (*Sync
 		return stats, err
 	}
 
+	// Update contact avatars via API (DB insert doesn't handle avatars)
+	s.updateContactAvatars(ctx, chatCache)
+
 	const batchSize = 4000
 	var batch []model.Message
 
@@ -246,6 +257,9 @@ func (s *ChatwootDBSync) SyncMessages(ctx context.Context, daysLimit int) (*Sync
 		Int("conversations", stats.ConversationsUsed).
 		Int("errors", stats.Errors).
 		Msg("Chatwoot DB: messages sync completed")
+
+	// Start background avatar sync for contacts without conversations
+	go s.updateAllContactAvatarsBackground()
 
 	return stats, nil
 }
@@ -559,13 +573,11 @@ func (s *ChatwootDBSync) createContactsAndConversations(ctx context.Context, mes
 
 		var contactName string
 		if isGroup {
-			// For groups: use group JID as phone and add (GROUP) suffix
+			// For groups: fetch name from WhatsApp
 			contactName = phone + " (GROUP)"
-			// Try to get group name from messages
-			for i := len(chatMessages) - 1; i >= 0; i-- {
-				if chatMessages[i].PushName != "" {
-					contactName = chatMessages[i].PushName + " (GROUP)"
-					break
+			if s.contactsGetter != nil {
+				if groupName, err := s.contactsGetter.GetGroupName(ctx, chatJID); err == nil && groupName != "" {
+					contactName = groupName
 				}
 			}
 		} else {
@@ -606,6 +618,7 @@ func (s *ChatwootDBSync) createContactsAndConversations(ctx context.Context, mes
 			lastTS:     lastTS,
 			name:       contactName,
 			identifier: chatJID,
+			isGroup:    isGroup,
 		})
 	}
 
@@ -650,9 +663,9 @@ func (s *ChatwootDBSync) createFKsBatch(ctx context.Context, phoneData []phoneTi
 
 	for _, pd := range phoneData {
 		idx1 := len(args1) + 1
-		args1 = append(args1, pd.phone, pd.name, pd.identifier)
-		values1 = append(values1, fmt.Sprintf("($%d::text, %d::bigint, %d::bigint, $%d::text, $%d::text)",
-			idx1, pd.firstTS, pd.lastTS, idx1+1, idx1+2))
+		args1 = append(args1, pd.phone, pd.name, pd.identifier, pd.isGroup)
+		values1 = append(values1, fmt.Sprintf("($%d::text, %d::bigint, %d::bigint, $%d::text, $%d::text, $%d::boolean)",
+			idx1, pd.firstTS, pd.lastTS, idx1+1, idx1+2, idx1+3))
 
 		idx2 := len(args2) + 1
 		args2 = append(args2, pd.phone, pd.name, pd.identifier)
@@ -660,15 +673,15 @@ func (s *ChatwootDBSync) createFKsBatch(ctx context.Context, phoneData []phoneTi
 			idx2, pd.firstTS, pd.lastTS, idx2+1, idx2+2))
 	}
 
-	// Step 1: Upsert contacts
+	// Step 1: Upsert contacts (phone_number = NULL for groups to avoid e164 validation)
 	query1 := fmt.Sprintf(`
 		WITH phone_data AS (
-			SELECT phone_number, created_at, last_activity_at, contact_name, identifier FROM (
+			SELECT phone_number, created_at, last_activity_at, contact_name, identifier, is_group FROM (
 				VALUES %s
-			) AS t (phone_number, created_at, last_activity_at, contact_name, identifier)
+			) AS t (phone_number, created_at, last_activity_at, contact_name, identifier, is_group)
 		)
 		INSERT INTO contacts (name, phone_number, account_id, identifier, created_at, updated_at)
-		SELECT p.contact_name, p.phone_number, $1, p.identifier, to_timestamp(p.created_at), to_timestamp(p.last_activity_at)
+		SELECT p.contact_name, CASE WHEN p.is_group THEN NULL ELSE p.phone_number END, $1, p.identifier, to_timestamp(p.created_at), to_timestamp(p.last_activity_at)
 		FROM phone_data AS p
 		ON CONFLICT(identifier, account_id) DO UPDATE SET 
 			updated_at = EXCLUDED.updated_at,
@@ -792,74 +805,233 @@ func (s *ChatwootDBSync) insertMessageBatch(ctx context.Context, messages []mode
 		return 0, nil
 	}
 
-	query := `INSERT INTO messages 
-		(content, processed_message_content, account_id, inbox_id, conversation_id, 
-		 message_type, private, content_type, sender_type, sender_id, source_id, created_at, updated_at)
-		VALUES `
+	totalImported := 0
+	uploader := NewMediaUploader(s.client)
 
-	var values []string
-	var args []interface{}
-	idx := 1
-
+	// Process messages ONE BY ONE in chronological order to maintain correct ID sequence
 	for _, msg := range messages {
 		fks := chatCache[msg.ChatJID]
 		if fks == nil {
 			continue
 		}
 
-		content := GetMessageContent(&msg)
-		if content == "" {
-			continue
-		}
-
-		msgType := 0
+		// Determine message type and sender
+		msgType := 0 // incoming
 		senderType := "Contact"
 		senderID := fks.contactID
 		if msg.FromMe {
-			msgType = 1
+			msgType = 1 // outgoing
 			senderType = userType
 			senderID = userID
 		}
 
-		values = append(values, fmt.Sprintf(
-			"($%d, $%d, $%d, $%d, $%d, $%d, FALSE, 0, $%d, $%d, $%d, $%d, $%d)",
-			idx, idx+1, idx+2, idx+3, idx+4, idx+5, idx+6, idx+7, idx+8, idx+9, idx+10))
-
-		args = append(args,
-			content, content, s.cfg.Account, s.cfg.InboxID, fks.conversationID,
-			msgType, senderType, senderID, "WAID:"+msg.MsgId, msg.Timestamp, msg.Timestamp)
-		idx += 11
-	}
-
-	if len(values) == 0 {
-		return 0, nil
-	}
-
-	query += strings.Join(values, ", ")
-	result, err := s.cwDB.ExecContext(ctx, query, args...)
-	if err != nil {
-		return 0, fmt.Errorf("failed to insert messages: %w", err)
-	}
-
-	rows, _ := result.RowsAffected()
-
-	if rows > 0 {
-		convTimestamps := make(map[int]time.Time)
-		for _, msg := range messages {
-			if fks := chatCache[msg.ChatJID]; fks != nil {
-				if existing, ok := convTimestamps[fks.conversationID]; !ok || msg.Timestamp.After(existing) {
-					convTimestamps[fks.conversationID] = msg.Timestamp
-				}
+		// Check if it's a media message with available URL
+		isMedia := msg.IsMedia() && s.mediaGetter != nil
+		var media *model.Media
+		if isMedia {
+			var err error
+			media, err = s.mediaGetter.GetByMsgID(ctx, s.sessionID, msg.MsgId)
+			if err != nil || media == nil || media.StorageURL == "" {
+				isMedia = false // Fall back to text if no media URL
 			}
 		}
-		for convID, ts := range convTimestamps {
-			s.cwDB.ExecContext(ctx,
-				`UPDATE conversations SET last_activity_at = $1, updated_at = $1 WHERE id = $2 AND (last_activity_at IS NULL OR last_activity_at < $1)`,
-				ts, convID)
+
+		if isMedia && media != nil {
+			// Upload media via API (to save in app/storage/) then fix timestamp
+			messageType := "incoming"
+			if msg.FromMe {
+				messageType = "outgoing"
+			}
+
+			cwMsg, err := uploader.UploadFromURL(ctx, MediaUploadRequest{
+				ConversationID: fks.conversationID,
+				MediaURL:       media.StorageURL,
+				MediaType:      media.MediaType,
+				Filename:       media.FileName,
+				MimeType:       media.MimeType,
+				Caption:        msg.Content,
+				MessageType:    messageType,
+				SourceID:       "WAID:" + msg.MsgId, // Prevents webhook from sending to WhatsApp
+			})
+
+			if err != nil {
+				logger.Warn().Err(err).Str("msgId", msg.MsgId).Msg("Chatwoot sync: media upload failed")
+				continue
+			}
+
+			// Fix timestamp in DB (API ignores created_at for multipart)
+			if cwMsg != nil && cwMsg.ID > 0 {
+				s.cwDB.ExecContext(ctx,
+					`UPDATE messages SET created_at = $1, updated_at = $1 WHERE id = $2`,
+					msg.Timestamp, cwMsg.ID)
+			}
+			totalImported++
+		} else {
+			// Insert text message directly
+			content := GetMessageContent(&msg)
+			if content == "" {
+				continue
+			}
+
+			_, err := s.cwDB.ExecContext(ctx, `
+				INSERT INTO messages (content, processed_message_content, account_id, inbox_id, conversation_id, 
+					message_type, private, content_type, sender_type, sender_id, source_id, created_at, updated_at)
+				VALUES ($1, $1, $2, $3, $4, $5, FALSE, 0, $6, $7, $8, $9, $9)`,
+				content, s.cfg.Account, s.cfg.InboxID, fks.conversationID, msgType,
+				senderType, senderID, "WAID:"+msg.MsgId, msg.Timestamp)
+
+			if err != nil {
+				logger.Warn().Err(err).Str("msgId", msg.MsgId).Msg("Chatwoot sync: text insert failed")
+				continue
+			}
+			totalImported++
 		}
 	}
 
-	return int(rows), nil
+	// Update conversation timestamps
+	if totalImported > 0 {
+		s.updateConversationTimestamps(ctx, messages, chatCache)
+	}
+
+	return totalImported, nil
+}
+
+// updateConversationTimestamps updates last_activity_at for conversations
+func (s *ChatwootDBSync) updateConversationTimestamps(ctx context.Context, messages []model.Message, chatCache map[string]*chatFKs) {
+	convTimestamps := make(map[int]time.Time)
+	for _, msg := range messages {
+		if fks := chatCache[msg.ChatJID]; fks != nil {
+			if existing, ok := convTimestamps[fks.conversationID]; !ok || msg.Timestamp.After(existing) {
+				convTimestamps[fks.conversationID] = msg.Timestamp
+			}
+		}
+	}
+	for convID, ts := range convTimestamps {
+		s.cwDB.ExecContext(ctx,
+			`UPDATE conversations SET last_activity_at = $1, updated_at = $1 WHERE id = $2 AND (last_activity_at IS NULL OR last_activity_at < $1)`,
+			ts, convID)
+	}
+}
+
+// updateContactAvatars fetches avatars from WhatsApp and updates contacts via API
+// Priority: contacts with conversations first, then all others in background
+func (s *ChatwootDBSync) updateContactAvatars(ctx context.Context, chatCache map[string]*chatFKs) {
+	if s.contactsGetter == nil || len(chatCache) == 0 {
+		return
+	}
+
+	logger.Info().Int("contacts", len(chatCache)).Msg("Chatwoot DB: updating avatars for conversation contacts")
+
+	updated := 0
+	for jid, fks := range chatCache {
+		if fks == nil {
+			continue
+		}
+
+		if s.updateSingleContactAvatar(ctx, jid, fks.contactID) {
+			updated++
+		}
+	}
+
+	if updated > 0 {
+		logger.Info().Int("updated", updated).Msg("Chatwoot DB: conversation contact avatars updated")
+	}
+}
+
+// updateSingleContactAvatar updates avatar for a single contact
+func (s *ChatwootDBSync) updateSingleContactAvatar(ctx context.Context, jid string, contactID int) bool {
+	avatarURL, err := s.contactsGetter.GetProfilePictureURL(ctx, jid)
+	if err != nil || avatarURL == "" {
+		return false
+	}
+
+	// Update via API (works for both individual contacts and groups without phone_number)
+	_, err = s.client.UpdateContact(ctx, contactID, map[string]interface{}{
+		"avatar_url": avatarURL,
+	})
+	if err != nil {
+		logger.Debug().Err(err).Int("contactId", contactID).Msg("Chatwoot sync: avatar update failed")
+		return false
+	}
+
+	logger.Debug().Int("contactId", contactID).Msg("Chatwoot sync: avatar updated")
+	return true
+}
+
+// updateAllContactAvatarsBackground syncs avatars for all contacts without avatar in background
+func (s *ChatwootDBSync) updateAllContactAvatarsBackground() {
+	if s.contactsGetter == nil {
+		return
+	}
+
+	// Create own database connection (main one is closed after sync)
+	port := s.cfg.ChatwootDBPort
+	if port == 0 {
+		port = 5432
+	}
+	dsn := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
+		s.cfg.ChatwootDBUser, s.cfg.ChatwootDBPass, s.cfg.ChatwootDBHost, port, s.cfg.ChatwootDBName)
+
+	db, err := sql.Open("pgx", dsn)
+	if err != nil {
+		logger.Warn().Err(err).Msg("Chatwoot sync: failed to connect for background avatar sync")
+		return
+	}
+	defer db.Close()
+
+	ctx := context.Background()
+
+	// Get contacts without thumbnail, ordered by last activity
+	rows, err := db.QueryContext(ctx, `
+		SELECT c.id, c.identifier 
+		FROM contacts c
+		LEFT JOIN active_storage_attachments asa ON asa.record_type = 'Contact' AND asa.record_id = c.id AND asa.name = 'avatar'
+		WHERE c.account_id = $1 
+		AND c.identifier IS NOT NULL AND c.identifier != ''
+		AND asa.id IS NULL
+		ORDER BY c.last_activity_at DESC NULLS LAST
+		LIMIT 200`, s.cfg.Account)
+	if err != nil {
+		logger.Warn().Err(err).Msg("Chatwoot sync: failed to query contacts for background avatar sync")
+		return
+	}
+	defer rows.Close()
+
+	logger.Info().Msg("Chatwoot sync: starting background avatar sync")
+
+	updated := 0
+	errors := 0
+	for rows.Next() {
+		var contactID int
+		var identifier string
+		if err := rows.Scan(&contactID, &identifier); err != nil {
+			continue
+		}
+
+		avatarURL, err := s.contactsGetter.GetProfilePictureURL(ctx, identifier)
+		if err != nil || avatarURL == "" {
+			errors++
+			continue
+		}
+
+		_, err = s.client.UpdateContact(ctx, contactID, map[string]interface{}{
+			"avatar_url": avatarURL,
+		})
+		if err != nil {
+			errors++
+			continue
+		}
+
+		updated++
+
+		// Rate limit: 100ms between requests
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	logger.Info().
+		Int("updated", updated).
+		Int("errors", errors).
+		Msg("Chatwoot sync: background avatar sync completed")
 }
 
 // =============================================================================

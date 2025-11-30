@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.mau.fi/whatsmeow/types"
 
 	"zpwoot/internal/db"
 	"zpwoot/internal/logger"
@@ -501,7 +502,7 @@ func (h *Handler) handleSync(c *gin.Context, syncType string) {
 		sessionName: sessionName,
 	}
 
-	dbSync, err := NewChatwootDBSync(cfg, h.database.Messages, contactsAdapter, session.ID)
+	dbSync, err := NewChatwootDBSync(cfg, h.database.Messages, contactsAdapter, h.database.Media, session.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to connect to chatwoot db: " + err.Error()})
 		return
@@ -566,7 +567,7 @@ func (h *Handler) ResetChatwoot(c *gin.Context) {
 		return
 	}
 
-	dbSync, err := NewChatwootDBSync(cfg, nil, nil, session.ID)
+	dbSync, err := NewChatwootDBSync(cfg, nil, nil, nil, session.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to connect to database: " + err.Error()})
 		return
@@ -635,12 +636,21 @@ func (a *whatsappContactsAdapter) GetAllContacts(ctx context.Context) ([]WhatsAp
 }
 
 func (a *whatsappContactsAdapter) GetProfilePictureURL(ctx context.Context, jid string) (string, error) {
-	phone := ExtractPhoneFromJID(jid)
-	if phone == "" {
-		return "", nil
+	var pic *types.ProfilePictureInfo
+	var err error
+
+	if IsGroupJID(jid) {
+		// For groups, use GetGroupProfilePicture
+		pic, err = a.whatsappSvc.GetGroupProfilePicture(ctx, a.sessionName, jid)
+	} else {
+		// For individual contacts, extract phone and get profile picture
+		phone := ExtractPhoneFromJID(jid)
+		if phone == "" {
+			return "", nil
+		}
+		pic, err = a.whatsappSvc.GetProfilePicture(ctx, a.sessionName, phone)
 	}
 
-	pic, err := a.whatsappSvc.GetProfilePicture(ctx, a.sessionName, phone)
 	if err != nil {
 		return "", err
 	}
@@ -648,4 +658,15 @@ func (a *whatsappContactsAdapter) GetProfilePictureURL(ctx context.Context, jid 
 		return "", nil
 	}
 	return pic.URL, nil
+}
+
+func (a *whatsappContactsAdapter) GetGroupName(ctx context.Context, groupJID string) (string, error) {
+	info, err := a.whatsappSvc.GetGroupInfo(ctx, a.sessionName, groupJID)
+	if err != nil {
+		return "", err
+	}
+	if info == nil {
+		return "", nil
+	}
+	return info.Name, nil
 }

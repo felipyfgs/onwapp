@@ -647,6 +647,21 @@ func (w *WhatsAppService) GetProfilePicture(ctx context.Context, sessionName, ph
 	return client.GetProfilePictureInfo(ctx, jid, &whatsmeow.GetProfilePictureParams{})
 }
 
+// GetGroupProfilePicture obtém foto de perfil de um grupo
+func (w *WhatsAppService) GetGroupProfilePicture(ctx context.Context, sessionName, groupJID string) (*types.ProfilePictureInfo, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return nil, err
+	}
+
+	jid, err := parseGroupJID(groupJID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid group JID: %w", err)
+	}
+
+	return client.GetProfilePictureInfo(ctx, jid, &whatsmeow.GetProfilePictureParams{})
+}
+
 // GetUserInfo obtém informações de usuários
 func (w *WhatsAppService) GetUserInfo(ctx context.Context, sessionName string, phones []string) (map[types.JID]types.UserInfo, error) {
 	client, err := w.getClient(sessionName)

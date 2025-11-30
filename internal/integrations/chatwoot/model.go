@@ -239,6 +239,7 @@ type phoneTimestamp struct {
 	lastTS     int64
 	name       string
 	identifier string
+	isGroup    bool
 }
 
 // contactNameInfo holds name information from various sources
