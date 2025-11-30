@@ -30,7 +30,7 @@ func ParseWebhookPayload(data []byte) (*WebhookPayload, error) {
 func (s *Service) GetWebhookDataForSending(ctx context.Context, sessionID string, payload *WebhookPayload) (chatJid, content string, attachments []Attachment, err error) {
 	cfg, err := s.repo.GetEnabledBySessionID(ctx, sessionID)
 	if err != nil || cfg == nil {
-		return "", "", nil, fmt.Errorf("chatwoot not enabled")
+		return "", "", nil, ErrNotEnabled
 	}
 
 	isOutgoing := payload.MessageType == "outgoing" || payload.MessageType == "1"

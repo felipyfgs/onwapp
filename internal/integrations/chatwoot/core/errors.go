@@ -1,4 +1,4 @@
-package chatwoot
+package core
 
 import "errors"
 

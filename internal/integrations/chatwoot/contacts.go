@@ -63,7 +63,7 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 				}
 			}
 		}
-		return 0, fmt.Errorf("timeout waiting for conversation creation")
+		return 0, ErrConversationTimeout
 	}
 	defer cm.conversationLocks.Delete(lockKey)
 

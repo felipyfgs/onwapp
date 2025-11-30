@@ -259,7 +259,7 @@ func (s *Service) initBotContact(ctx context.Context, client *Client, inboxID in
 // SendBotStatusMessage sends a status message to the bot contact
 func (s *Service) SendBotStatusMessage(ctx context.Context, cfg *Config, status, message string) error {
 	if cfg == nil || !cfg.Enabled || cfg.InboxID == 0 {
-		return fmt.Errorf("chatwoot not configured")
+		return ErrNotConfigured
 	}
 
 	client := NewClient(cfg.URL, cfg.Token, cfg.Account)
@@ -268,11 +268,11 @@ func (s *Service) SendBotStatusMessage(ctx context.Context, cfg *Config, status,
 	contact, err := client.FindContactByPhone(ctx, "+"+botPhone)
 	if err != nil {
 		logger.Error().Err(err).Msg("Chatwoot: error finding bot contact")
-		return fmt.Errorf("bot contact not found: %w", err)
+		return ErrBotNotFound
 	}
 	if contact == nil {
 		logger.Error().Msg("Chatwoot: bot contact is nil")
-		return fmt.Errorf("bot contact not found")
+		return ErrBotNotFound
 	}
 
 	conv, err := client.GetOrCreateConversation(ctx, contact.ID, cfg.InboxID, "open", true)
@@ -304,7 +304,7 @@ func (s *Service) SendBotStatusMessage(ctx context.Context, cfg *Config, status,
 // SendBotQRCode sends a QR code image to the bot contact
 func (s *Service) SendBotQRCode(ctx context.Context, cfg *Config, qrCodeData []byte, pairingCode string) error {
 	if cfg == nil || !cfg.Enabled || cfg.InboxID == 0 {
-		return fmt.Errorf("chatwoot not configured")
+		return ErrNotConfigured
 	}
 
 	client := NewClient(cfg.URL, cfg.Token, cfg.Account)
@@ -312,7 +312,7 @@ func (s *Service) SendBotQRCode(ctx context.Context, cfg *Config, qrCodeData []b
 
 	contact, err := client.FindContactByPhone(ctx, "+"+botPhone)
 	if err != nil || contact == nil {
-		return fmt.Errorf("bot contact not found: %w", err)
+		return ErrBotNotFound
 	}
 
 	conv, err := client.GetOrCreateConversation(ctx, contact.ID, cfg.InboxID, "open", true)

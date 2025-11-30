@@ -10,8 +10,6 @@ import (
 	"zpwoot/internal/api/dto"
 )
 
-// DecodeBase64 decodes a base64 string and returns the data.
-// Returns nil and false if decoding fails, also sends error response.
 func DecodeBase64(c *gin.Context, data, mediaType string) ([]byte, bool) {
 	decoded, err := base64.StdEncoding.DecodeString(data)
 	if err != nil {
@@ -23,8 +21,6 @@ func DecodeBase64(c *gin.Context, data, mediaType string) ([]byte, bool) {
 	return decoded, true
 }
 
-// ParseDisappearingTimer parses a timer string (24h, 7d, 90d, off, or Go duration)
-// Returns 0 and false if parsing fails, also sends error response.
 func ParseDisappearingTimer(c *gin.Context, timer string) (time.Duration, bool) {
 	switch timer {
 	case "24h":
@@ -47,7 +43,6 @@ func ParseDisappearingTimer(c *gin.Context, timer string) (time.Duration, bool) 
 	}
 }
 
-// GetMimeTypeOrDefault returns the provided mimeType or a default value
 func GetMimeTypeOrDefault(mimeType, defaultType string) string {
 	if mimeType == "" {
 		return defaultType
