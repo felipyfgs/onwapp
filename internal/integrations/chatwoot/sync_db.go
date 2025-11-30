@@ -125,36 +125,6 @@ func getBestContactName(info *contactNameInfo, phone string) string {
 	return phone
 }
 
-// isNameJustPhone checks if a contact name is just the phone number or a variation
-// This is used to detect contacts that need name updates
-func isNameJustPhone(name, phone string) bool {
-	if name == "" || name == phone {
-		return true
-	}
-	// Check for phone with + prefix
-	if name == "+"+phone {
-		return true
-	}
-	// Check for Brazilian number variations (with/without 9)
-	if strings.HasPrefix(phone, "55") && len(phone) >= 12 {
-		// 13 digits with 9 -> check 12 digit version
-		if len(phone) == 13 {
-			without9 := phone[:4] + phone[5:]
-			if name == without9 || name == "+"+without9 {
-				return true
-			}
-		}
-		// 12 digits without 9 -> check 13 digit version
-		if len(phone) == 12 {
-			with9 := phone[:4] + "9" + phone[4:]
-			if name == with9 || name == "+"+with9 {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 // ChatwootDBSync handles direct database sync to Chatwoot PostgreSQL
 type ChatwootDBSync struct {
 	cfg            *Config

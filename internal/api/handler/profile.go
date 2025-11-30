@@ -73,10 +73,7 @@ func (h *ProfileHandler) SetStatus(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SetStatusResponse{
-		
-		Status:  req.Status,
-	})
+	c.JSON(http.StatusOK, dto.SetStatusResponse(req))
 }
 
 // SetPushName godoc
@@ -107,10 +104,7 @@ func (h *ProfileHandler) SetPushName(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SetNameResponse{
-		
-		Name:    req.Name,
-	})
+	c.JSON(http.StatusOK, dto.SetNameResponse(req))
 }
 
 // SetProfilePicture godoc

@@ -454,7 +454,7 @@ func (h *Handler) SyncContacts(c *gin.Context) {
 
 	daysLimit := cfg.SyncDays
 	if days := c.Query("days"); days != "" {
-		fmt.Sscanf(days, "%d", &daysLimit)
+		_, _ = fmt.Sscanf(days, "%d", &daysLimit)
 	}
 
 	status, err := dbSync.StartSyncAsync("contacts", daysLimit)
@@ -511,7 +511,7 @@ func (h *Handler) SyncMessages(c *gin.Context) {
 
 	daysLimit := cfg.SyncDays
 	if days := c.Query("days"); days != "" {
-		fmt.Sscanf(days, "%d", &daysLimit)
+		_, _ = fmt.Sscanf(days, "%d", &daysLimit)
 	}
 
 	status, err := dbSync.StartSyncAsync("messages", daysLimit)
@@ -568,7 +568,7 @@ func (h *Handler) SyncAll(c *gin.Context) {
 
 	daysLimit := cfg.SyncDays
 	if days := c.Query("days"); days != "" {
-		fmt.Sscanf(days, "%d", &daysLimit)
+		_, _ = fmt.Sscanf(days, "%d", &daysLimit)
 	}
 
 	status, err := dbSync.StartSyncAsync("all", daysLimit)
