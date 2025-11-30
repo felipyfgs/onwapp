@@ -87,6 +87,50 @@ func (c *Client) doRequest(ctx context.Context, method, endpoint string, body in
 	return respBody, nil
 }
 
+// doRequestSilent404 is like doRequest but doesn't log 404 errors (resource not found)
+func (c *Client) doRequestSilent404(ctx context.Context, method, endpoint string, body interface{}) ([]byte, error) {
+	var bodyReader io.Reader
+	if body != nil {
+		jsonData, err := json.Marshal(body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal request body: %w", err)
+		}
+		bodyReader = bytes.NewReader(jsonData)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, method, c.buildURL(endpoint), bodyReader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("api_access_token", c.token)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	if resp.StatusCode >= 400 {
+		if resp.StatusCode != 404 {
+			logger.Error().
+				Int("status", resp.StatusCode).
+				Str("endpoint", endpoint).
+				Str("response", string(respBody)).
+				Msg("Chatwoot API error")
+		}
+		return nil, fmt.Errorf("chatwoot API error: status %d, body: %s", resp.StatusCode, string(respBody))
+	}
+
+	return respBody, nil
+}
+
 // =============================================================================
 // INBOX OPERATIONS
 // =============================================================================
@@ -387,6 +431,21 @@ func (c *Client) CreateContact(ctx context.Context, req *CreateContactRequest) (
 // UpdateContact updates a contact
 func (c *Client) UpdateContact(ctx context.Context, contactID int, updates map[string]interface{}) (*core.Contact, error) {
 	data, err := c.doRequest(ctx, http.MethodPut, fmt.Sprintf("/contacts/%d", contactID), updates)
+	if err != nil {
+		return nil, err
+	}
+
+	var contact core.Contact
+	if err := json.Unmarshal(data, &contact); err != nil {
+		return nil, fmt.Errorf("failed to parse update contact response: %w", err)
+	}
+
+	return &contact, nil
+}
+
+// UpdateContactSilent404 updates a contact without logging 404 errors (deleted contacts)
+func (c *Client) UpdateContactSilent404(ctx context.Context, contactID int, updates map[string]interface{}) (*core.Contact, error) {
+	data, err := c.doRequestSilent404(ctx, http.MethodPut, fmt.Sprintf("/contacts/%d", contactID), updates)
 	if err != nil {
 		return nil, err
 	}

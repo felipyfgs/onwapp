@@ -431,7 +431,7 @@ func (s *ChatwootDBSync) ResetData(ctx context.Context) (*core.ResetStats, error
 func (s *ChatwootDBSync) filterValidContacts(contacts []core.WhatsAppContact, stats *core.SyncStats) []core.WhatsAppContact {
 	var valid []core.WhatsAppContact
 	for _, c := range contacts {
-		if util.IsGroupJID(c.JID) || util.IsStatusBroadcast(c.JID) || util.IsNewsletter(c.JID) || strings.HasSuffix(c.JID, "@lid") {
+		if util.IsGroupJID(c.JID) || util.IsStatusBroadcast(c.JID) || util.IsNewsletter(c.JID) || util.IsLIDJID(c.JID) {
 			stats.ContactsSkipped++
 			continue
 		}
@@ -475,12 +475,18 @@ func (s *ChatwootDBSync) filterMessages(ctx context.Context, messages []model.Me
 			continue
 		}
 
-		if util.IsStatusBroadcast(msg.ChatJID) || util.IsNewsletter(msg.ChatJID) {
+		if util.IsStatusBroadcast(msg.ChatJID) || util.IsNewsletter(msg.ChatJID) || util.IsLIDJID(msg.ChatJID) {
 			stats.MessagesSkipped++
 			continue
 		}
 
-		if msg.Type == "protocol" || msg.Type == "reaction" {
+		phone := util.ExtractPhoneFromJID(msg.ChatJID)
+		if phone == "" || phone == "0" {
+			stats.MessagesSkipped++
+			continue
+		}
+
+		if msg.Type == "protocol" || msg.Type == "reaction" || msg.Type == "system" {
 			stats.MessagesSkipped++
 			continue
 		}
@@ -935,7 +941,7 @@ func (s *ChatwootDBSync) updateSingleContactAvatar(ctx context.Context, jid stri
 		return false
 	}
 
-	_, err = s.client.UpdateContact(ctx, contactID, map[string]interface{}{
+	_, err = s.client.UpdateContactSilent404(ctx, contactID, map[string]interface{}{
 		"avatar_url": avatarURL,
 	})
 	if err != nil {
@@ -1004,7 +1010,7 @@ func (s *ChatwootDBSync) updateAllContactAvatarsBackground() {
 			continue
 		}
 
-		_, err = s.client.UpdateContact(ctx, c.ID, map[string]interface{}{
+		_, err = s.client.UpdateContactSilent404(ctx, c.ID, map[string]interface{}{
 			"avatar_url": avatarURL,
 		})
 		if err != nil {
