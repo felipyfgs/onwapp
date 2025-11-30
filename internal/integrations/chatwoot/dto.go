@@ -1,5 +1,9 @@
 package chatwoot
 
+// =============================================================================
+// API REQUEST DTOs
+// =============================================================================
+
 // SetConfigRequest represents the request to set Chatwoot config
 type SetConfigRequest struct {
 	Enabled        bool     `json:"enabled"`
@@ -17,15 +21,19 @@ type SetConfigRequest struct {
 	SyncDays       int      `json:"syncDays,omitempty"`
 	IgnoreChats    []string `json:"ignoreChats,omitempty"`
 	AutoCreate     bool     `json:"autoCreate"`
-	Number         string   `json:"number,omitempty"`       // Phone number for pairing (Evolution API compatible)
-	Organization   string   `json:"organization,omitempty"` // Bot contact name (default: ZPWoot)
-	Logo           string   `json:"logo,omitempty"`         // Bot contact avatar URL
+	Number         string   `json:"number,omitempty"`
+	Organization   string   `json:"organization,omitempty"`
+	Logo           string   `json:"logo,omitempty"`
 	ChatwootDBHost string   `json:"chatwootDbHost,omitempty"`
 	ChatwootDBPort int      `json:"chatwootDbPort,omitempty"`
 	ChatwootDBUser string   `json:"chatwootDbUser,omitempty"`
 	ChatwootDBPass string   `json:"chatwootDbPass,omitempty"`
 	ChatwootDBName string   `json:"chatwootDbName,omitempty"`
 }
+
+// =============================================================================
+// CHATWOOT API REQUEST DTOs
+// =============================================================================
 
 // CreateContactRequest for Chatwoot API calls
 type CreateContactRequest struct {
@@ -54,4 +62,40 @@ type CreateMessageRequest struct {
 	Private           bool                   `json:"private,omitempty"`
 	ContentAttributes map[string]interface{} `json:"content_attributes,omitempty"`
 	SourceID          string                 `json:"source_id,omitempty"`
+}
+
+// =============================================================================
+// WEBHOOK DTOs
+// =============================================================================
+
+// WebhookPayload represents incoming webhook from Chatwoot
+type WebhookPayload struct {
+	Event        string                 `json:"event"`
+	ID           int                    `json:"id,omitempty"`
+	Content      string                 `json:"content,omitempty"`
+	MessageType  string                 `json:"message_type,omitempty"`
+	ContentType  string                 `json:"content_type,omitempty"`
+	ContentAttrs map[string]interface{} `json:"content_attributes,omitempty"`
+	Private      bool                   `json:"private,omitempty"`
+	SourceID     string                 `json:"source_id,omitempty"`
+	Conversation *WebhookConversation   `json:"conversation,omitempty"`
+	Sender       *Sender                `json:"sender,omitempty"`
+	Inbox        *Inbox                 `json:"inbox,omitempty"`
+	Account      *Account               `json:"account,omitempty"`
+	Attachments  []Attachment           `json:"attachments,omitempty"`
+}
+
+// WebhookConversation represents conversation data in webhook payload
+type WebhookConversation struct {
+	ID           int               `json:"id"`
+	InboxID      int               `json:"inbox_id,omitempty"`
+	Status       string            `json:"status,omitempty"`
+	Messages     []Message         `json:"messages,omitempty"`
+	Meta         *ConversationMeta `json:"meta,omitempty"`
+	ContactInbox *ContactInbox     `json:"contact_inbox,omitempty"`
+}
+
+// ConversationMeta represents metadata in conversation
+type ConversationMeta struct {
+	Sender *Contact `json:"sender,omitempty"`
 }

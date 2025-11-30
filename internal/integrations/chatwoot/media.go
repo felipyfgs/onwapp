@@ -7,14 +7,6 @@ import (
 	"go.mau.fi/whatsmeow/proto/waE2E"
 )
 
-// MediaInfo holds information about media in a message
-type MediaInfo struct {
-	IsMedia  bool
-	MimeType string
-	Filename string
-	Caption  string
-}
-
 // IsMediaMessage checks if the message contains downloadable media
 func IsMediaMessage(msg *waE2E.Message) bool {
 	if msg == nil {
@@ -107,4 +99,10 @@ func GetMediaTypeFromFilename(filename string) string {
 // GetMediaTypeFromURL returns the media type based on URL path
 func GetMediaTypeFromURL(url string) string {
 	return GetMediaTypeFromFilename(url)
+}
+
+// GetMediaType returns the media type based on file extension
+// Deprecated: Use GetMediaTypeFromFilename instead
+func GetMediaType(filename string) string {
+	return GetMediaTypeFromFilename(filename)
 }

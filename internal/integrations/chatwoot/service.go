@@ -1,6 +1,7 @@
 package chatwoot
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"strings"
@@ -11,14 +12,22 @@ import (
 	"zpwoot/internal/logger"
 )
 
+// =============================================================================
+// FUNCTION TYPES
+// =============================================================================
+
 // MediaDownloader is a function type for downloading media from WhatsApp messages
 type MediaDownloader func(ctx context.Context, sessionName string, msg *waE2E.Message) ([]byte, error)
 
 // ProfilePictureFetcher is a function type for getting profile pictures from WhatsApp
-type ProfilePictureFetcher = func(ctx context.Context, sessionName string, jid string) (string, error)
+type ProfilePictureFetcher func(ctx context.Context, sessionName string, jid string) (string, error)
 
 // GroupInfoFetcher is a function type for getting group metadata from WhatsApp
-type GroupInfoFetcher = func(ctx context.Context, sessionName string, groupJid string) (string, error)
+type GroupInfoFetcher func(ctx context.Context, sessionName string, groupJid string) (string, error)
+
+// =============================================================================
+// SERVICE
+// =============================================================================
 
 // Service handles Chatwoot integration business logic
 type Service struct {
@@ -56,33 +65,37 @@ func (s *Service) SetGroupInfoFetcher(fetcher GroupInfoFetcher) {
 	s.groupInfoFetcher = fetcher
 }
 
+// =============================================================================
+// CONFIG MANAGEMENT
+// =============================================================================
+
 // SetConfig creates or updates Chatwoot configuration for a session
 func (s *Service) SetConfig(ctx context.Context, sessionID, sessionName string, req *SetConfigRequest) (*Config, error) {
 	webhookURL := fmt.Sprintf("%s/chatwoot/webhook/%s", s.baseURL, sessionName)
 
 	cfg := &Config{
-		SessionID:       sessionID,
-		Enabled:         req.Enabled,
-		URL:             strings.TrimSuffix(req.URL, "/"),
-		Token:           req.Token,
-		Account:         req.Account,
-		Inbox:           req.Inbox,
-		SignAgent:       req.SignAgent,
-		SignSeparator:   req.SignSeparator,
-		AutoReopen:      req.AutoReopen,
-		StartPending:    req.StartPending,
-		MergeBrPhones:   req.MergeBrPhones,
-		SyncContacts:    req.SyncContacts,
-		SyncMessages:    req.SyncMessages,
-		SyncDays:        req.SyncDays,
-		IgnoreChats:     req.IgnoreChats,
-		AutoCreate:      req.AutoCreate,
-		WebhookURL:      webhookURL,
-		ChatwootDBHost:  req.ChatwootDBHost,
-		ChatwootDBPort:  req.ChatwootDBPort,
-		ChatwootDBUser:  req.ChatwootDBUser,
-		ChatwootDBPass:  req.ChatwootDBPass,
-		ChatwootDBName:  req.ChatwootDBName,
+		SessionID:      sessionID,
+		Enabled:        req.Enabled,
+		URL:            strings.TrimSuffix(req.URL, "/"),
+		Token:          req.Token,
+		Account:        req.Account,
+		Inbox:          req.Inbox,
+		SignAgent:      req.SignAgent,
+		SignSeparator:  req.SignSeparator,
+		AutoReopen:     req.AutoReopen,
+		StartPending:   req.StartPending,
+		MergeBrPhones:  req.MergeBrPhones,
+		SyncContacts:   req.SyncContacts,
+		SyncMessages:   req.SyncMessages,
+		SyncDays:       req.SyncDays,
+		IgnoreChats:    req.IgnoreChats,
+		AutoCreate:     req.AutoCreate,
+		WebhookURL:     webhookURL,
+		ChatwootDBHost: req.ChatwootDBHost,
+		ChatwootDBPort: req.ChatwootDBPort,
+		ChatwootDBUser: req.ChatwootDBUser,
+		ChatwootDBPass: req.ChatwootDBPass,
+		ChatwootDBName: req.ChatwootDBName,
 	}
 
 	if cfg.Inbox == "" {
@@ -131,16 +144,19 @@ func (s *Service) DeleteConfig(ctx context.Context, sessionID string) error {
 	return s.repo.Delete(ctx, sessionID)
 }
 
-// initInbox creates or retrieves the inbox in Chatwoot (without bot contact)
-func (s *Service) initInbox(ctx context.Context, cfg *Config) error {
+// =============================================================================
+// INBOX MANAGEMENT
+// =============================================================================
+
+// InitInbox creates or retrieves the inbox in Chatwoot (without bot contact)
+func (s *Service) InitInbox(ctx context.Context, cfg *Config) error {
 	return s.initInboxWithBot(ctx, cfg, "", "", "")
 }
 
-// initInboxWithBot creates or retrieves the inbox in Chatwoot and creates a bot contact (Evolution API pattern)
+// initInboxWithBot creates or retrieves the inbox in Chatwoot and creates a bot contact
 func (s *Service) initInboxWithBot(ctx context.Context, cfg *Config, number, organization, logo string) error {
 	client := NewClient(cfg.URL, cfg.Token, cfg.Account)
 
-	// AutoReopen also sets lock_to_single_conversation on the inbox
 	inbox, err := client.GetOrCreateInboxWithOptions(ctx, cfg.Inbox, cfg.WebhookURL, cfg.AutoReopen)
 	if err != nil {
 		return err
@@ -154,8 +170,7 @@ func (s *Service) initInboxWithBot(ctx context.Context, cfg *Config, number, org
 			Str("newWebhook", cfg.WebhookURL).
 			Msg("Chatwoot: updating inbox webhook URL")
 
-		updatedInbox, err := client.UpdateInboxWebhook(ctx, inbox.ID, cfg.WebhookURL)
-		if err != nil {
+		if updatedInbox, err := client.UpdateInboxWebhook(ctx, inbox.ID, cfg.WebhookURL); err != nil {
 			logger.Warn().Err(err).Msg("Chatwoot: failed to update inbox webhook URL")
 		} else {
 			inbox = updatedInbox
@@ -168,7 +183,6 @@ func (s *Service) initInboxWithBot(ctx context.Context, cfg *Config, number, org
 
 	cfg.InboxID = inbox.ID
 
-	// Create bot contact with number 123456 (Evolution API pattern)
 	if err := s.initBotContact(ctx, client, inbox.ID, number, organization, logo); err != nil {
 		logger.Warn().Err(err).Msg("Chatwoot: failed to create bot contact")
 	}
@@ -176,29 +190,26 @@ func (s *Service) initInboxWithBot(ctx context.Context, cfg *Config, number, org
 	return nil
 }
 
-// initBotContact creates a bot contact with number 123456 and sends init message (Evolution API pattern)
+// initBotContact creates a bot contact with number 123456 (Evolution API pattern)
 func (s *Service) initBotContact(ctx context.Context, client *Client, inboxID int, number, organization, logo string) error {
 	const botPhone = "123456"
-	
-	// Default values like Evolution API
+
 	botName := "ZPWoot"
 	if organization != "" {
 		botName = organization
 	}
-	
+
 	botAvatar := "https://evolution-api.com/files/evolution-api-favicon.png"
 	if logo != "" {
 		botAvatar = logo
 	}
 
-	// Find contact by phone number (Evolution API pattern)
 	contact, err := client.FindContactByPhone(ctx, "+"+botPhone)
 	if err != nil {
 		logger.Debug().Err(err).Msg("Chatwoot: error finding bot contact")
 	}
 
 	if contact == nil {
-		// Create bot contact
 		createReq := &CreateContactRequest{
 			InboxID:     inboxID,
 			Name:        botName,
@@ -212,19 +223,16 @@ func (s *Service) initBotContact(ctx context.Context, client *Client, inboxID in
 		logger.Info().Int("contactId", contact.ID).Str("name", botName).Msg("Chatwoot: created bot contact")
 	}
 
-	// Create conversation for bot
 	convReq := &CreateConversationRequest{
 		InboxID:   fmt.Sprintf("%d", inboxID),
 		ContactID: fmt.Sprintf("%d", contact.ID),
 	}
 	conv, err := client.CreateConversation(ctx, convReq)
 	if err != nil {
-		// Conversation might already exist
 		logger.Debug().Err(err).Msg("Chatwoot: conversation might already exist")
 		return nil
 	}
 
-	// Send init message (with number if provided, like Evolution API)
 	initContent := "init"
 	if number != "" {
 		initContent = fmt.Sprintf("init:%s", number)
@@ -235,8 +243,7 @@ func (s *Service) initBotContact(ctx context.Context, client *Client, inboxID in
 		MessageType: "outgoing",
 		Private:     false,
 	}
-	_, err = client.CreateMessage(ctx, conv.ID, msgReq)
-	if err != nil {
+	if _, err = client.CreateMessage(ctx, conv.ID, msgReq); err != nil {
 		logger.Warn().Err(err).Msg("Chatwoot: failed to send init message")
 	} else {
 		logger.Info().Int("conversationId", conv.ID).Str("content", initContent).Msg("Chatwoot: sent init message to bot")
@@ -245,8 +252,114 @@ func (s *Service) initBotContact(ctx context.Context, client *Client, inboxID in
 	return nil
 }
 
-// shouldIgnoreJid checks if a JID should be ignored
-func (s *Service) shouldIgnoreJid(cfg *Config, jid string) bool {
+// =============================================================================
+// BOT STATUS MESSAGES
+// =============================================================================
+
+// SendBotStatusMessage sends a status message to the bot contact
+func (s *Service) SendBotStatusMessage(ctx context.Context, cfg *Config, status, message string) error {
+	if cfg == nil || !cfg.Enabled || cfg.InboxID == 0 {
+		return fmt.Errorf("chatwoot not configured")
+	}
+
+	client := NewClient(cfg.URL, cfg.Token, cfg.Account)
+	const botPhone = "123456"
+
+	contact, err := client.FindContactByPhone(ctx, "+"+botPhone)
+	if err != nil {
+		logger.Error().Err(err).Msg("Chatwoot: error finding bot contact")
+		return fmt.Errorf("bot contact not found: %w", err)
+	}
+	if contact == nil {
+		logger.Error().Msg("Chatwoot: bot contact is nil")
+		return fmt.Errorf("bot contact not found")
+	}
+
+	conv, err := client.GetOrCreateConversation(ctx, contact.ID, cfg.InboxID, "open", true)
+	if err != nil {
+		logger.Error().Err(err).Int("contactId", contact.ID).Msg("Chatwoot: failed to get bot conversation")
+		return fmt.Errorf("failed to get bot conversation: %w", err)
+	}
+
+	content := s.formatStatusMessage(status, message)
+
+	msgReq := &CreateMessageRequest{
+		Content:     content,
+		MessageType: "incoming",
+		Private:     false,
+	}
+
+	if _, err = client.CreateMessage(ctx, conv.ID, msgReq); err != nil {
+		return fmt.Errorf("failed to send status message: %w", err)
+	}
+
+	logger.Info().
+		Str("status", status).
+		Int("conversationId", conv.ID).
+		Msg("Chatwoot: sent bot status message")
+
+	return nil
+}
+
+// SendBotQRCode sends a QR code image to the bot contact
+func (s *Service) SendBotQRCode(ctx context.Context, cfg *Config, qrCodeData []byte, pairingCode string) error {
+	if cfg == nil || !cfg.Enabled || cfg.InboxID == 0 {
+		return fmt.Errorf("chatwoot not configured")
+	}
+
+	client := NewClient(cfg.URL, cfg.Token, cfg.Account)
+	const botPhone = "123456"
+
+	contact, err := client.FindContactByPhone(ctx, "+"+botPhone)
+	if err != nil || contact == nil {
+		return fmt.Errorf("bot contact not found: %w", err)
+	}
+
+	conv, err := client.GetOrCreateConversation(ctx, contact.ID, cfg.InboxID, "open", true)
+	if err != nil {
+		return fmt.Errorf("failed to get bot conversation: %w", err)
+	}
+
+	content := "📱 *Scan QR Code to connect*"
+	if pairingCode != "" {
+		content = fmt.Sprintf("📱 *Scan QR Code to connect*\n\n🔑 Pairing Code: `%s`", pairingCode)
+	}
+
+	reader := bytes.NewReader(qrCodeData)
+	msg, err := client.CreateMessageWithAttachmentAndMime(ctx, conv.ID, content, "incoming", reader, "qrcode.png", "image/png", nil)
+	if err != nil {
+		return fmt.Errorf("failed to send QR code: %w", err)
+	}
+
+	logger.Info().
+		Int("conversationId", conv.ID).
+		Int("messageId", msg.ID).
+		Msg("Chatwoot: sent QR code to bot")
+
+	return nil
+}
+
+func (s *Service) formatStatusMessage(status, message string) string {
+	switch status {
+	case "connected":
+		return fmt.Sprintf("🟢 *Connection established!*\n\n%s", message)
+	case "disconnected":
+		return fmt.Sprintf("🔴 *Disconnected*\n\n%s", message)
+	case "connecting":
+		return fmt.Sprintf("🟡 *Connecting...*\n\n%s", message)
+	case "qrcode":
+		return fmt.Sprintf("📱 *Scan QR Code*\n\n%s", message)
+	default:
+		return message
+	}
+}
+
+// =============================================================================
+// HELPER METHODS
+// =============================================================================
+
+// ShouldIgnoreJid checks if a JID should be ignored
+func (s *Service) ShouldIgnoreJid(cfg *Config, jid string) bool {
 	if IsStatusBroadcast(jid) || IsNewsletter(jid) {
 		return true
 	}
@@ -270,12 +383,11 @@ func (s *Service) shouldIgnoreJid(cfg *Config, jid string) bool {
 	return false
 }
 
-// isMediaMessage checks if the message contains downloadable media
-func (s *Service) isMediaMessage(msg *waE2E.Message) bool {
-	return IsMediaMessage(msg)
-}
-
-// getMediaInfo extracts media information from a message
-func (s *Service) getMediaInfo(msg *waE2E.Message) *MediaInfo {
-	return GetMediaInfo(msg)
+// ConvertMarkdown converts Chatwoot markdown to WhatsApp format
+func (s *Service) ConvertMarkdown(content string) string {
+	content = strings.ReplaceAll(content, "**", "§BOLD§")
+	content = strings.ReplaceAll(content, "*", "_")
+	content = strings.ReplaceAll(content, "§BOLD§", "*")
+	content = strings.ReplaceAll(content, "~~", "~")
+	return content
 }

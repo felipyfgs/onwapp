@@ -24,6 +24,9 @@ func RegisterRoutes(r *gin.Engine, handler *Handler, apiKey string) {
 		sessions.POST("/:name/chatwoot/sync/contacts", handler.SyncContacts)
 		sessions.POST("/:name/chatwoot/sync/messages", handler.SyncMessages)
 		sessions.GET("/:name/chatwoot/sync/status", handler.GetSyncStatusHandler)
+		
+		// Reset route (for testing)
+		sessions.POST("/:name/chatwoot/reset", handler.ResetChatwoot)
 	}
 }
 
@@ -38,6 +41,9 @@ func RegisterRoutesOnGroup(sessionsGroup *gin.RouterGroup, handler *Handler) {
 	sessionsGroup.POST("/:name/chatwoot/sync/contacts", handler.SyncContacts)
 	sessionsGroup.POST("/:name/chatwoot/sync/messages", handler.SyncMessages)
 	sessionsGroup.GET("/:name/chatwoot/sync/status", handler.GetSyncStatusHandler)
+	
+	// Reset route (for testing)
+	sessionsGroup.POST("/:name/chatwoot/reset", handler.ResetChatwoot)
 }
 
 // RegisterWebhookRoute registers the webhook route on the root engine

@@ -241,7 +241,7 @@ func (c *Client) FindContactByPhoneWithMerge(ctx context.Context, phone string, 
 	}
 
 	// Try alternate Brazilian number format (8 vs 9 digits)
-	altPhone := c.getAlternateBrazilianNumber(phone)
+	altPhone := GetAlternateBrazilianNumber(phone)
 	if altPhone == "" {
 		return nil, nil
 	}
@@ -253,26 +253,6 @@ func (c *Client) FindContactByPhoneWithMerge(ctx context.Context, phone string, 
 	}
 
 	return altContact, nil
-}
-
-// getAlternateBrazilianNumber returns the alternate format for Brazilian numbers
-// +55XX9XXXXXXXX (13 digits) <-> +55XXXXXXXXXX (12 digits)
-func (c *Client) getAlternateBrazilianNumber(phone string) string {
-	phone = strings.TrimPrefix(phone, "+")
-	
-	// 13 digits with 9 -> remove 9 to get 12 digits
-	if len(phone) == 13 && strings.HasPrefix(phone, "55") {
-		// +55 XX 9XXXX XXXX -> +55 XX XXXX XXXX
-		return "+" + phone[:4] + phone[5:]
-	}
-	
-	// 12 digits without 9 -> add 9 to get 13 digits
-	if len(phone) == 12 && strings.HasPrefix(phone, "55") {
-		// +55 XX XXXX XXXX -> +55 XX 9XXXX XXXX
-		return "+" + phone[:4] + "9" + phone[4:]
-	}
-	
-	return ""
 }
 
 // SearchContactsForBrazilianMerge searches for both Brazilian number formats and merges if needed
@@ -289,7 +269,7 @@ func (c *Client) SearchContactsForBrazilianMerge(ctx context.Context, phone stri
 	}
 	
 	// Search alternate number
-	altPhone := c.getAlternateBrazilianNumber(phone)
+	altPhone := GetAlternateBrazilianNumber(phone)
 	if altPhone != "" {
 		contact2, err := c.FindContactByPhone(ctx, altPhone)
 		if err != nil {
@@ -716,11 +696,7 @@ func (c *Client) GetOrCreateConversation(ctx context.Context, contactID, inboxID
 	return c.CreateConversation(ctx, req)
 }
 
-// GetMediaType returns the media type based on file extension
-// Deprecated: Use GetMediaTypeFromFilename instead
-func GetMediaType(filename string) string {
-	return GetMediaTypeFromFilename(filename)
-}
+
 
 // UpdateLastSeen marks a conversation as read/seen in Chatwoot using the public API
 // This updates the read receipts/ticks in the Chatwoot interface

@@ -24,16 +24,10 @@ func NewContactManager() *ContactManager {
 	}
 }
 
-// contactCacheEntry holds cached conversation data with expiry
-type contactCacheEntry struct {
-	conversationID int
-	expiresAt      time.Time
-}
-
-// ProfilePictureGetter is a function type for getting profile pictures from WhatsApp
+// ProfilePictureGetter is a function type alias for ProfilePictureFetcher
 type ProfilePictureGetter = ProfilePictureFetcher
 
-// GroupInfoGetter is a function type for getting group metadata from WhatsApp
+// GroupInfoGetter is a function type alias for GroupInfoFetcher
 type GroupInfoGetter = GroupInfoFetcher
 
 // GetOrCreateContactAndConversation handles contact and conversation creation with proper caching

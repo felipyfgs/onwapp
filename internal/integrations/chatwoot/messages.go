@@ -12,11 +12,9 @@ import (
 	"zpwoot/internal/model"
 )
 
-// ReplyInfo holds information about a reply reference for Chatwoot
-type ReplyInfo struct {
-	CwMsgId           int
-	WhatsAppMessageID string
-}
+// =============================================================================
+// INCOMING MESSAGE PROCESSING (WhatsApp -> Chatwoot)
+// =============================================================================
 
 // ProcessIncomingMessage processes a WhatsApp message and sends to Chatwoot
 func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Session, evt *events.Message) error {
@@ -30,14 +28,31 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 	}
 
 	remoteJid := evt.Info.Chat.String()
-	if s.shouldIgnoreJid(cfg, remoteJid) {
+
+	// Convert @lid JID to standard @s.whatsapp.net JID
+	if IsLIDJID(remoteJid) && s.database != nil {
+		convertedJid := ConvertLIDToStandardJID(ctx, s.database.Pool, remoteJid)
+		if convertedJid != remoteJid {
+			logger.Info().
+				Str("original", remoteJid).
+				Str("converted", convertedJid).
+				Msg("Chatwoot: converted LID to standard JID")
+			remoteJid = convertedJid
+		} else {
+			logger.Warn().
+				Str("lid", remoteJid).
+				Msg("Chatwoot: could not convert LID to PN (not found in whatsmeow_lid_map)")
+		}
+	}
+
+	if s.ShouldIgnoreJid(cfg, remoteJid) {
 		return nil
 	}
 
 	client := NewClient(cfg.URL, cfg.Token, cfg.Account)
 
 	if cfg.InboxID == 0 {
-		if err := s.initInbox(ctx, cfg); err != nil {
+		if err := s.InitInbox(ctx, cfg); err != nil {
 			return fmt.Errorf("failed to init inbox: %w", err)
 		}
 	}
@@ -66,7 +81,7 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 
 	sourceID := fmt.Sprintf("WAID:%s", evt.Info.ID)
 
-	if s.isMediaMessage(evt.Message) && s.mediaDownloader != nil {
+	if IsMediaMessage(evt.Message) && s.mediaDownloader != nil {
 		return s.processIncomingMediaMessage(ctx, session, evt, client, convID, sourceID, cfg)
 	}
 
@@ -108,7 +123,7 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 
 // processIncomingMediaMessage handles media messages (images, videos, documents, etc.)
 func (s *Service) processIncomingMediaMessage(ctx context.Context, session *model.Session, evt *events.Message, client *Client, conversationID int, sourceID string, cfg *Config) error {
-	mediaInfo := s.getMediaInfo(evt.Message)
+	mediaInfo := GetMediaInfo(evt.Message)
 	if mediaInfo == nil {
 		return fmt.Errorf("failed to get media info")
 	}
@@ -160,6 +175,10 @@ func (s *Service) processIncomingMediaMessage(ctx context.Context, session *mode
 	return nil
 }
 
+// =============================================================================
+// OUTGOING MESSAGE PROCESSING (WhatsApp direct -> Chatwoot)
+// =============================================================================
+
 // ProcessOutgoingMessage processes outgoing messages sent directly from WhatsApp
 func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Session, evt *events.Message) error {
 	cfg, err := s.repo.GetEnabledBySessionID(ctx, session.ID)
@@ -171,7 +190,15 @@ func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Ses
 	}
 
 	remoteJid := evt.Info.Chat.String()
-	if s.shouldIgnoreJid(cfg, remoteJid) {
+
+	if IsLIDJID(remoteJid) && s.database != nil {
+		convertedJid := ConvertLIDToStandardJID(ctx, s.database.Pool, remoteJid)
+		if convertedJid != remoteJid {
+			remoteJid = convertedJid
+		}
+	}
+
+	if s.ShouldIgnoreJid(cfg, remoteJid) {
 		return nil
 	}
 
@@ -192,7 +219,7 @@ func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Ses
 	client := NewClient(cfg.URL, cfg.Token, cfg.Account)
 
 	if cfg.InboxID == 0 {
-		if err := s.initInbox(ctx, cfg); err != nil {
+		if err := s.InitInbox(ctx, cfg); err != nil {
 			return fmt.Errorf("failed to init inbox: %w", err)
 		}
 	}
@@ -236,6 +263,10 @@ func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Ses
 
 	return nil
 }
+
+// =============================================================================
+// REACTION PROCESSING
+// =============================================================================
 
 // ProcessReactionMessage handles reaction events from WhatsApp
 func (s *Service) ProcessReactionMessage(ctx context.Context, session *model.Session, emoji, targetMsgID, remoteJid, senderJid string, isFromMe bool) error {
@@ -306,6 +337,10 @@ func (s *Service) ProcessReactionMessage(ctx context.Context, session *model.Ses
 	return nil
 }
 
+// =============================================================================
+// RECEIPT PROCESSING
+// =============================================================================
+
 // ProcessReceipt handles message receipt (delivered/read) events
 func (s *Service) ProcessReceipt(ctx context.Context, session *model.Session, evt *events.Receipt) error {
 	cfg, err := s.repo.GetEnabledBySessionID(ctx, session.ID)
@@ -320,43 +355,6 @@ func (s *Service) ProcessReceipt(ctx context.Context, session *model.Session, ev
 			}
 		}
 	}
-
-	return nil
-}
-
-// ProcessMessageDelete handles message deletion from WhatsApp
-func (s *Service) ProcessMessageDelete(ctx context.Context, session *model.Session, messageID string) error {
-	cfg, err := s.repo.GetEnabledBySessionID(ctx, session.ID)
-	if err != nil || cfg == nil {
-		return nil
-	}
-
-	msg, err := s.database.Messages.GetByMsgId(ctx, session.ID, messageID)
-	if err != nil || msg == nil {
-		logger.Debug().Str("messageId", messageID).Msg("Chatwoot: message not found for deletion")
-		return nil
-	}
-
-	if msg.CwMsgId == nil || msg.CwConvId == nil {
-		logger.Debug().Str("messageId", messageID).Msg("Chatwoot: message has no Chatwoot IDs")
-		return nil
-	}
-
-	client := NewClient(cfg.URL, cfg.Token, cfg.Account)
-
-	if err := client.DeleteMessage(ctx, *msg.CwConvId, *msg.CwMsgId); err != nil {
-		return fmt.Errorf("failed to delete message from Chatwoot: %w", err)
-	}
-
-	if err := s.database.Messages.Delete(ctx, session.ID, messageID); err != nil {
-		logger.Warn().Err(err).Str("messageId", messageID).Msg("Chatwoot: failed to delete message from database")
-	}
-
-	logger.Info().
-		Str("session", session.Name).
-		Str("messageId", messageID).
-		Int("chatwootMsgId", *msg.CwMsgId).
-		Msg("Chatwoot: message deleted from Chatwoot")
 
 	return nil
 }
@@ -432,6 +430,51 @@ func (s *Service) HandleMessageRead(ctx context.Context, session *model.Session,
 	return nil
 }
 
+// =============================================================================
+// MESSAGE DELETE PROCESSING
+// =============================================================================
+
+// ProcessMessageDelete handles message deletion from WhatsApp
+func (s *Service) ProcessMessageDelete(ctx context.Context, session *model.Session, messageID string) error {
+	cfg, err := s.repo.GetEnabledBySessionID(ctx, session.ID)
+	if err != nil || cfg == nil {
+		return nil
+	}
+
+	msg, err := s.database.Messages.GetByMsgId(ctx, session.ID, messageID)
+	if err != nil || msg == nil {
+		logger.Debug().Str("messageId", messageID).Msg("Chatwoot: message not found for deletion")
+		return nil
+	}
+
+	if msg.CwMsgId == nil || msg.CwConvId == nil {
+		logger.Debug().Str("messageId", messageID).Msg("Chatwoot: message has no Chatwoot IDs")
+		return nil
+	}
+
+	client := NewClient(cfg.URL, cfg.Token, cfg.Account)
+
+	if err := client.DeleteMessage(ctx, *msg.CwConvId, *msg.CwMsgId); err != nil {
+		return fmt.Errorf("failed to delete message from Chatwoot: %w", err)
+	}
+
+	if err := s.database.Messages.Delete(ctx, session.ID, messageID); err != nil {
+		logger.Warn().Err(err).Str("messageId", messageID).Msg("Chatwoot: failed to delete message from database")
+	}
+
+	logger.Info().
+		Str("session", session.Name).
+		Str("messageId", messageID).
+		Int("chatwootMsgId", *msg.CwMsgId).
+		Msg("Chatwoot: message deleted from Chatwoot")
+
+	return nil
+}
+
+// =============================================================================
+// CONTENT EXTRACTION
+// =============================================================================
+
 // extractMessageContent extracts text content from WhatsApp message
 func (s *Service) extractMessageContent(evt *events.Message) string {
 	msg := evt.Message
@@ -489,12 +532,12 @@ func (s *Service) extractReplyInfo(ctx context.Context, sessionID string, evt *e
 
 	var stanzaID string
 
+	// Check all message types for context info
 	if ext := msg.GetExtendedTextMessage(); ext != nil {
 		if ctx := ext.GetContextInfo(); ctx != nil {
 			stanzaID = ctx.GetStanzaID()
 		}
 	}
-
 	if stanzaID == "" {
 		if img := msg.GetImageMessage(); img != nil {
 			if ctx := img.GetContextInfo(); ctx != nil {
@@ -502,7 +545,6 @@ func (s *Service) extractReplyInfo(ctx context.Context, sessionID string, evt *e
 			}
 		}
 	}
-
 	if stanzaID == "" {
 		if vid := msg.GetVideoMessage(); vid != nil {
 			if ctx := vid.GetContextInfo(); ctx != nil {
@@ -510,7 +552,6 @@ func (s *Service) extractReplyInfo(ctx context.Context, sessionID string, evt *e
 			}
 		}
 	}
-
 	if stanzaID == "" {
 		if aud := msg.GetAudioMessage(); aud != nil {
 			if ctx := aud.GetContextInfo(); ctx != nil {
@@ -518,7 +559,6 @@ func (s *Service) extractReplyInfo(ctx context.Context, sessionID string, evt *e
 			}
 		}
 	}
-
 	if stanzaID == "" {
 		if doc := msg.GetDocumentMessage(); doc != nil {
 			if ctx := doc.GetContextInfo(); ctx != nil {
@@ -526,7 +566,6 @@ func (s *Service) extractReplyInfo(ctx context.Context, sessionID string, evt *e
 			}
 		}
 	}
-
 	if stanzaID == "" {
 		if stk := msg.GetStickerMessage(); stk != nil {
 			if ctx := stk.GetContextInfo(); ctx != nil {

@@ -2,28 +2,31 @@ package chatwoot
 
 import "time"
 
+// =============================================================================
+// CONFIGURATION
+// =============================================================================
+
 // Config represents the Chatwoot integration configuration for a session
 type Config struct {
-	ID            string     `json:"id"`
-	SessionID     string     `json:"sessionId"`
-	Enabled       bool       `json:"enabled"`
-	URL           string     `json:"url"`
-	Token         string     `json:"token"`
-	Account       int        `json:"account"`
-	InboxID       int        `json:"inboxId,omitempty"`
-	Inbox         string     `json:"inbox,omitempty"`
-	SignAgent     bool       `json:"signAgent"`
-	SignSeparator string     `json:"signSeparator,omitempty"`
-	AutoReopen    bool       `json:"autoReopen"` // Also sets lock_to_single_conversation on inbox
-	StartPending  bool       `json:"startPending"`
-	MergeBrPhones bool       `json:"mergeBrPhones"`
-	SyncContacts  bool       `json:"syncContacts"`
-	SyncMessages  bool       `json:"syncMessages"`
-	SyncDays      int        `json:"syncDays,omitempty"`
-	IgnoreChats   []string   `json:"ignoreChats,omitempty"`
-	AutoCreate    bool       `json:"autoCreate"`
-	WebhookURL    string     `json:"webhookUrl,omitempty"`
-	// Chatwoot PostgreSQL connection for direct import (preserves timestamps)
+	ID             string     `json:"id"`
+	SessionID      string     `json:"sessionId"`
+	Enabled        bool       `json:"enabled"`
+	URL            string     `json:"url"`
+	Token          string     `json:"token"`
+	Account        int        `json:"account"`
+	InboxID        int        `json:"inboxId,omitempty"`
+	Inbox          string     `json:"inbox,omitempty"`
+	SignAgent      bool       `json:"signAgent"`
+	SignSeparator  string     `json:"signSeparator,omitempty"`
+	AutoReopen     bool       `json:"autoReopen"`
+	StartPending   bool       `json:"startPending"`
+	MergeBrPhones  bool       `json:"mergeBrPhones"`
+	SyncContacts   bool       `json:"syncContacts"`
+	SyncMessages   bool       `json:"syncMessages"`
+	SyncDays       int        `json:"syncDays,omitempty"`
+	IgnoreChats    []string   `json:"ignoreChats,omitempty"`
+	AutoCreate     bool       `json:"autoCreate"`
+	WebhookURL     string     `json:"webhookUrl,omitempty"`
 	ChatwootDBHost string     `json:"chatwootDbHost,omitempty"`
 	ChatwootDBPort int        `json:"chatwootDbPort,omitempty"`
 	ChatwootDBUser string     `json:"chatwootDbUser,omitempty"`
@@ -32,6 +35,10 @@ type Config struct {
 	CreatedAt      *time.Time `json:"createdAt,omitempty"`
 	UpdatedAt      *time.Time `json:"updatedAt,omitempty"`
 }
+
+// =============================================================================
+// CHATWOOT API MODELS
+// =============================================================================
 
 // Contact represents a Chatwoot contact
 type Contact struct {
@@ -115,4 +122,114 @@ type Sender struct {
 	Type          string `json:"type,omitempty"`
 	AvailableName string `json:"available_name,omitempty"`
 	AvatarURL     string `json:"avatar_url,omitempty"`
+}
+
+// Account represents a Chatwoot account
+type Account struct {
+	ID   int    `json:"id"`
+	Name string `json:"name,omitempty"`
+}
+
+// =============================================================================
+// MEDIA INFO
+// =============================================================================
+
+// MediaInfo holds information about media in a message
+type MediaInfo struct {
+	IsMedia  bool
+	MimeType string
+	Filename string
+	Caption  string
+}
+
+// =============================================================================
+// SYNC MODELS
+// =============================================================================
+
+// SyncStats tracks synchronization statistics
+type SyncStats struct {
+	ContactsImported  int `json:"contactsImported"`
+	ContactsSkipped   int `json:"contactsSkipped"`
+	ContactsErrors    int `json:"contactsErrors"`
+	MessagesImported  int `json:"messagesImported"`
+	MessagesSkipped   int `json:"messagesSkipped"`
+	MessagesErrors    int `json:"messagesErrors"`
+	ConversationsUsed int `json:"conversationsUsed"`
+	Errors            int `json:"errors"`
+}
+
+// ResetStats tracks reset operation statistics
+type ResetStats struct {
+	ContactsDeleted      int `json:"contactsDeleted"`
+	ConversationsDeleted int `json:"conversationsDeleted"`
+	MessagesDeleted      int `json:"messagesDeleted"`
+	ContactInboxDeleted  int `json:"contactInboxDeleted"`
+}
+
+// SyncStatus represents the current sync status
+type SyncStatus struct {
+	SessionID string     `json:"sessionId"`
+	Status    string     `json:"status"` // idle, running, completed, failed
+	Type      string     `json:"type"`   // contacts, messages, all
+	StartedAt *time.Time `json:"startedAt,omitempty"`
+	EndedAt   *time.Time `json:"endedAt,omitempty"`
+	Stats     SyncStats  `json:"stats"`
+	Error     string     `json:"error,omitempty"`
+}
+
+// WhatsAppContact represents a contact from WhatsApp
+type WhatsAppContact struct {
+	JID          string
+	PushName     string
+	BusinessName string
+	FullName     string
+	FirstName    string
+}
+
+// =============================================================================
+// INTERNAL MODELS
+// =============================================================================
+
+// ReplyInfo holds information about a reply reference for Chatwoot
+type ReplyInfo struct {
+	CwMsgId           int
+	WhatsAppMessageID string
+}
+
+// QuotedMessageInfo holds information about a quoted message for WhatsApp
+type QuotedMessageInfo struct {
+	MsgId     string `json:"msgId"`
+	ChatJID   string `json:"chatJid"`
+	SenderJID string `json:"senderJid"`
+	Content   string `json:"content"`
+	FromMe    bool   `json:"fromMe"`
+}
+
+// contactCacheEntry holds cached conversation data with expiry
+type contactCacheEntry struct {
+	conversationID int
+	expiresAt      time.Time
+}
+
+// chatFKs holds foreign keys for a chat in sync operations
+type chatFKs struct {
+	contactID      int
+	conversationID int
+}
+
+// phoneTimestamp holds timestamp range for a phone number
+type phoneTimestamp struct {
+	phone      string
+	firstTS    int64
+	lastTS     int64
+	name       string
+	identifier string
+}
+
+// contactNameInfo holds name information from various sources
+type contactNameInfo struct {
+	FullName     string
+	FirstName    string
+	PushName     string
+	BusinessName string
 }

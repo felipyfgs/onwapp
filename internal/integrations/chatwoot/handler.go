@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -17,72 +18,27 @@ import (
 
 // Handler handles HTTP requests for Chatwoot integration
 type Handler struct {
-	service        *Service
-	sessionService *service.SessionService
-	whatsappSvc    *service.WhatsAppService
-	database       *db.Database
-}
-
-// whatsappContactsAdapter adapts WhatsAppService to ContactsGetter interface
-type whatsappContactsAdapter struct {
-	whatsappSvc *service.WhatsAppService
-	sessionName string
-}
-
-func (a *whatsappContactsAdapter) GetAllContacts(ctx context.Context) ([]WhatsAppContact, error) {
-	contactsMap, err := a.whatsappSvc.GetContacts(ctx, a.sessionName)
-	if err != nil {
-		return nil, err
-	}
-
-	var contacts []WhatsAppContact
-	for jid, data := range contactsMap {
-		if dataMap, ok := data.(map[string]interface{}); ok {
-			contact := WhatsAppContact{JID: jid}
-			if v, ok := dataMap["pushName"].(string); ok {
-				contact.PushName = v
-			}
-			if v, ok := dataMap["businessName"].(string); ok {
-				contact.BusinessName = v
-			}
-			if v, ok := dataMap["fullName"].(string); ok {
-				contact.FullName = v
-			}
-			if v, ok := dataMap["firstName"].(string); ok {
-				contact.FirstName = v
-			}
-			contacts = append(contacts, contact)
-		}
-	}
-	return contacts, nil
-}
-
-func (a *whatsappContactsAdapter) GetProfilePictureURL(ctx context.Context, jid string) (string, error) {
-	// Extract phone from JID (remove @s.whatsapp.net)
-	phone := ExtractPhoneFromJID(jid)
-	if phone == "" {
-		return "", nil
-	}
-
-	pic, err := a.whatsappSvc.GetProfilePicture(ctx, a.sessionName, phone)
-	if err != nil {
-		return "", err
-	}
-	if pic == nil {
-		return "", nil
-	}
-	return pic.URL, nil
+	service           *Service
+	sessionService    *service.SessionService
+	whatsappSvc       *service.WhatsAppService
+	database          *db.Database
+	botCommandHandler *BotCommandHandler
 }
 
 // NewHandler creates a new Chatwoot handler
 func NewHandler(svc *Service, sessionSvc *service.SessionService, whatsappSvc *service.WhatsAppService, database *db.Database) *Handler {
 	return &Handler{
-		service:        svc,
-		sessionService: sessionSvc,
-		whatsappSvc:    whatsappSvc,
-		database:       database,
+		service:           svc,
+		sessionService:    sessionSvc,
+		whatsappSvc:       whatsappSvc,
+		database:          database,
+		botCommandHandler: NewBotCommandHandler(svc, sessionSvc),
 	}
 }
+
+// =============================================================================
+// CONFIG ENDPOINTS
+// =============================================================================
 
 // SetConfig handles POST /sessions/:name/chatwoot/set
 // @Summary Set Chatwoot configuration
@@ -111,7 +67,6 @@ func (h *Handler) SetConfig(c *gin.Context) {
 		return
 	}
 
-	// Validate URL if enabled
 	if req.Enabled && req.URL == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "url is required when enabled"})
 		return
@@ -182,6 +137,10 @@ func (h *Handler) DeleteConfig(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "chatwoot configuration deleted"})
 }
 
+// =============================================================================
+// WEBHOOK ENDPOINT
+// =============================================================================
+
 // ReceiveWebhook handles POST /chatwoot/webhook/:name
 // @Summary Receive Chatwoot webhook
 // @Description Receive webhook events from Chatwoot
@@ -199,27 +158,24 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 		return
 	}
 
-	// Check if session is connected - if not, silently ignore (don't cause Chatwoot retry loop)
 	isConnected := session.Status == model.StatusConnected
 	logger.Info().
 		Str("session", sessionName).
 		Str("status", string(session.Status)).
 		Bool("isConnected", isConnected).
 		Msg("Chatwoot webhook check")
-	
+
 	if !isConnected {
 		c.JSON(http.StatusOK, gin.H{"message": "session not connected, ignored"})
 		return
 	}
 
-	// Read raw body
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to read body"})
 		return
 	}
 
-	// Parse webhook payload
 	payload, err := ParseWebhookPayload(body)
 	if err != nil {
 		logger.Warn().Err(err).Str("session", sessionName).Msg("Failed to parse Chatwoot webhook")
@@ -227,7 +183,7 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 		return
 	}
 
-	// Handle message_updated event with deleted flag - delete from WhatsApp
+	// Handle message_updated event with deleted flag
 	if payload.Event == "message_updated" && payload.ContentAttrs != nil {
 		if deleted, ok := payload.ContentAttrs["deleted"].(bool); ok && deleted {
 			if err := h.handleMessageDeleted(c.Request.Context(), session, payload); err != nil {
@@ -242,16 +198,26 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 	isOutgoing := payload.MessageType == "outgoing" || payload.MessageType == "1"
 
 	if payload.Event == "message_created" && isOutgoing && !payload.Private {
+		chatId := h.extractChatId(payload)
+
+		// Handle bot commands (Evolution API pattern)
+		if IsBotContact(chatId) {
+			cfg, _ := h.service.GetEnabledConfig(c.Request.Context(), session.ID)
+			if cfg != nil {
+				h.botCommandHandler.HandleCommand(c.Request.Context(), session, cfg, payload.Content)
+			}
+			c.JSON(http.StatusOK, gin.H{"message": "bot command"})
+			return
+		}
+
 		chatJid, content, attachments, err := h.service.GetWebhookDataForSending(c.Request.Context(), session.ID, payload)
 		if err != nil {
 			c.JSON(http.StatusOK, gin.H{"message": "processing error"})
 			return
 		}
 
-		// Check if this is a reply to another message
 		quotedMsg := h.service.GetQuotedMessage(c.Request.Context(), session.ID, payload)
 
-		// Get conversation ID for saving message
 		var conversationID int
 		if payload.Conversation != nil {
 			conversationID = payload.Conversation.ID
@@ -270,12 +236,25 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "ok"})
 }
 
+func (h *Handler) extractChatId(payload *WebhookPayload) string {
+	if payload.Conversation != nil && payload.Conversation.Meta != nil && payload.Conversation.Meta.Sender != nil {
+		chatId := payload.Conversation.Meta.Sender.Identifier
+		if chatId == "" {
+			chatId = strings.TrimPrefix(payload.Conversation.Meta.Sender.PhoneNumber, "+")
+		}
+		return chatId
+	}
+	return ""
+}
+
+// =============================================================================
+// WHATSAPP MESSAGE SENDING
+// =============================================================================
+
 func (h *Handler) sendToWhatsApp(c *gin.Context, session *model.Session, chatJid, content string, attachments []Attachment, quotedMsg *QuotedMessageInfo, chatwootMsgID, chatwootConvID int) error {
 	ctx := c.Request.Context()
-
 	phone := ExtractPhoneFromJID(chatJid)
 
-	// Convert QuotedMessageInfo to service.QuotedMessage
 	var quoted *service.QuotedMessage
 	if quotedMsg != nil {
 		quoted = &service.QuotedMessage{
@@ -287,7 +266,7 @@ func (h *Handler) sendToWhatsApp(c *gin.Context, session *model.Session, chatJid
 		}
 	}
 
-	// Send attachments first (with quote support)
+	// Send attachments first
 	for _, att := range attachments {
 		if att.DataURL != "" {
 			mediaData, mimeType, err := downloadMedia(att.DataURL)
@@ -305,8 +284,8 @@ func (h *Handler) sendToWhatsApp(c *gin.Context, session *model.Session, chatJid
 				} else {
 					h.saveOutgoingMessage(ctx, session, chatJid, content, resp.ID, chatwootMsgID, chatwootConvID)
 				}
-				content = "" // Don't send caption again
-				quoted = nil // Only quote on first attachment
+				content = ""
+				quoted = nil
 			case "video":
 				resp, err := h.whatsappSvc.SendVideoWithQuote(ctx, session.Name, phone, mediaData, content, mimeType, quoted)
 				if err != nil {
@@ -317,7 +296,6 @@ func (h *Handler) sendToWhatsApp(c *gin.Context, session *model.Session, chatJid
 				content = ""
 				quoted = nil
 			case "audio":
-				// Send as PTT (push-to-talk/voice note) so it appears as narrated audio in WhatsApp
 				resp, err := h.whatsappSvc.SendAudioWithQuote(ctx, session.Name, phone, mediaData, mimeType, true, quoted)
 				if err != nil {
 					logger.Warn().Err(err).Str("url", att.DataURL).Msg("Failed to send audio")
@@ -344,31 +322,28 @@ func (h *Handler) sendToWhatsApp(c *gin.Context, session *model.Session, chatJid
 
 	// Send text message if there's content left
 	if content != "" {
-		// Use SendTextWithQuote if we have a quoted message
 		resp, err := h.whatsappSvc.SendTextWithQuote(ctx, session.Name, phone, content, quoted)
 		if err != nil {
 			return err
 		}
-		// Save message to database for reply tracking
 		h.saveOutgoingMessage(ctx, session, chatJid, content, resp.ID, chatwootMsgID, chatwootConvID)
 	}
 
 	return nil
 }
 
-// saveOutgoingMessage saves a message sent from Chatwoot to database for reply tracking
 func (h *Handler) saveOutgoingMessage(ctx context.Context, session *model.Session, chatJid, content, messageID string, chatwootMsgID, chatwootConvID int) {
 	if h.database == nil {
 		return
 	}
 
 	sourceID := fmt.Sprintf("WAID:%s", messageID)
-	
+
 	var senderJID string
 	if session.Device != nil && session.Device.ID != nil {
 		senderJID = session.Device.ID.String()
 	}
-	
+
 	msg := &model.Message{
 		SessionID:  session.ID,
 		MsgId:      messageID,
@@ -388,6 +363,47 @@ func (h *Handler) saveOutgoingMessage(ctx context.Context, session *model.Sessio
 	if _, err := h.database.Messages.Save(ctx, msg); err != nil {
 		logger.Warn().Err(err).Str("messageId", messageID).Msg("Chatwoot: failed to save outgoing message")
 	}
+}
+
+func (h *Handler) handleMessageDeleted(ctx context.Context, session *model.Session, payload *WebhookPayload) error {
+	if h.database == nil {
+		return fmt.Errorf("database not available")
+	}
+
+	messages, err := h.database.Messages.GetAllByCwMsgId(ctx, session.ID, payload.ID)
+	if err != nil {
+		return fmt.Errorf("failed to query messages: %w", err)
+	}
+
+	if len(messages) == 0 {
+		logger.Debug().Int("chatwootMsgId", payload.ID).Msg("Chatwoot: no messages found for deletion")
+		return nil
+	}
+
+	var deleteErrors []error
+	for _, msg := range messages {
+		if _, err := h.whatsappSvc.DeleteMessage(ctx, session.Name, msg.ChatJID, msg.MsgId, msg.FromMe); err != nil {
+			logger.Warn().Err(err).Str("messageId", msg.MsgId).Msg("Chatwoot: failed to delete message from WhatsApp")
+			deleteErrors = append(deleteErrors, err)
+			continue
+		}
+
+		if err := h.database.Messages.Delete(ctx, session.ID, msg.MsgId); err != nil {
+			logger.Warn().Err(err).Str("messageId", msg.MsgId).Msg("Chatwoot: failed to delete message from database")
+		}
+
+		logger.Info().
+			Str("session", session.Name).
+			Str("messageId", msg.MsgId).
+			Int("chatwootMsgId", payload.ID).
+			Msg("Chatwoot: message deleted from WhatsApp")
+	}
+
+	if len(deleteErrors) > 0 {
+		return fmt.Errorf("failed to delete %d/%d messages", len(deleteErrors), len(messages))
+	}
+
+	return nil
 }
 
 func downloadMedia(url string) ([]byte, string, error) {
@@ -410,9 +426,13 @@ func downloadMedia(url string) ([]byte, string, error) {
 	return data, mimeType, nil
 }
 
+// =============================================================================
+// SYNC ENDPOINTS
+// =============================================================================
+
 // SyncContacts handles POST /sessions/:name/chatwoot/sync/contacts
 // @Summary Sync contacts to Chatwoot (async)
-// @Description Start async synchronization of contacts from message history to Chatwoot. Requires chatwootDbHost to be configured.
+// @Description Start async synchronization of contacts from message history to Chatwoot
 // @Tags Chatwoot
 // @Produce json
 // @Param name path string true "Session name"
@@ -422,53 +442,12 @@ func downloadMedia(url string) ([]byte, string, error) {
 // @Security ApiKeyAuth
 // @Router /sessions/{name}/chatwoot/sync/contacts [post]
 func (h *Handler) SyncContacts(c *gin.Context) {
-	sessionName := c.Param("name")
-	session, err := h.sessionService.Get(sessionName)
-	if err != nil || session == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
-		return
-	}
-
-	cfg, err := h.service.GetEnabledConfig(c.Request.Context(), session.ID)
-	if err != nil || cfg == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "chatwoot not configured or disabled"})
-		return
-	}
-
-	if cfg.ChatwootDBHost == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "chatwootDbHost not configured - sync requires direct database access"})
-		return
-	}
-
-	// Create contacts adapter for WhatsApp service
-	contactsAdapter := &whatsappContactsAdapter{
-		whatsappSvc: h.whatsappSvc,
-		sessionName: sessionName,
-	}
-
-	dbSync, err := NewChatwootDBSync(cfg, h.database.Messages, contactsAdapter, session.ID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to connect to chatwoot db: " + err.Error()})
-		return
-	}
-
-	daysLimit := cfg.SyncDays
-	if days := c.Query("days"); days != "" {
-		_, _ = fmt.Sscanf(days, "%d", &daysLimit)
-	}
-
-	status, err := dbSync.StartSyncAsync("contacts", daysLimit)
-	if err != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": err.Error(), "status": status})
-		return
-	}
-
-	c.JSON(http.StatusAccepted, status)
+	h.handleSync(c, "contacts")
 }
 
 // SyncMessages handles POST /sessions/:name/chatwoot/sync/messages
 // @Summary Sync messages to Chatwoot (async)
-// @Description Start async synchronization of message history to Chatwoot with original timestamps. Requires chatwootDbHost to be configured.
+// @Description Start async synchronization of message history to Chatwoot
 // @Tags Chatwoot
 // @Produce json
 // @Param name path string true "Session name"
@@ -479,53 +458,12 @@ func (h *Handler) SyncContacts(c *gin.Context) {
 // @Security ApiKeyAuth
 // @Router /sessions/{name}/chatwoot/sync/messages [post]
 func (h *Handler) SyncMessages(c *gin.Context) {
-	sessionName := c.Param("name")
-	session, err := h.sessionService.Get(sessionName)
-	if err != nil || session == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
-		return
-	}
-
-	cfg, err := h.service.GetEnabledConfig(c.Request.Context(), session.ID)
-	if err != nil || cfg == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "chatwoot not configured or disabled"})
-		return
-	}
-
-	if cfg.ChatwootDBHost == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "chatwootDbHost not configured - sync requires direct database access"})
-		return
-	}
-
-	// Create contacts adapter for WhatsApp service (needed for SyncAll)
-	contactsAdapter := &whatsappContactsAdapter{
-		whatsappSvc: h.whatsappSvc,
-		sessionName: sessionName,
-	}
-
-	dbSync, err := NewChatwootDBSync(cfg, h.database.Messages, contactsAdapter, session.ID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to connect to chatwoot db: " + err.Error()})
-		return
-	}
-
-	daysLimit := cfg.SyncDays
-	if days := c.Query("days"); days != "" {
-		_, _ = fmt.Sscanf(days, "%d", &daysLimit)
-	}
-
-	status, err := dbSync.StartSyncAsync("messages", daysLimit)
-	if err != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": err.Error(), "status": status})
-		return
-	}
-
-	c.JSON(http.StatusAccepted, status)
+	h.handleSync(c, "messages")
 }
 
 // SyncAll handles POST /sessions/:name/chatwoot/sync
 // @Summary Full sync to Chatwoot (async)
-// @Description Start async synchronization of all contacts and messages to Chatwoot with original timestamps. Requires chatwootDbHost to be configured.
+// @Description Start async synchronization of all contacts and messages to Chatwoot
 // @Tags Chatwoot
 // @Produce json
 // @Param name path string true "Session name"
@@ -536,6 +474,10 @@ func (h *Handler) SyncMessages(c *gin.Context) {
 // @Security ApiKeyAuth
 // @Router /sessions/{name}/chatwoot/sync [post]
 func (h *Handler) SyncAll(c *gin.Context) {
+	h.handleSync(c, "all")
+}
+
+func (h *Handler) handleSync(c *gin.Context, syncType string) {
 	sessionName := c.Param("name")
 	session, err := h.sessionService.Get(sessionName)
 	if err != nil || session == nil {
@@ -554,7 +496,6 @@ func (h *Handler) SyncAll(c *gin.Context) {
 		return
 	}
 
-	// Create contacts adapter for WhatsApp service
 	contactsAdapter := &whatsappContactsAdapter{
 		whatsappSvc: h.whatsappSvc,
 		sessionName: sessionName,
@@ -571,7 +512,7 @@ func (h *Handler) SyncAll(c *gin.Context) {
 		_, _ = fmt.Sscanf(days, "%d", &daysLimit)
 	}
 
-	status, err := dbSync.StartSyncAsync("all", daysLimit)
+	status, err := dbSync.StartSyncAsync(syncType, daysLimit)
 	if err != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": err.Error(), "status": status})
 		return
@@ -602,50 +543,109 @@ func (h *Handler) GetSyncStatusHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, status)
 }
 
-// handleMessageDeleted handles message deletion from Chatwoot
-// Note: A single Chatwoot message with multiple attachments creates multiple WhatsApp messages
-func (h *Handler) handleMessageDeleted(ctx context.Context, session *model.Session, payload *WebhookPayload) error {
-	if h.database == nil {
-		return fmt.Errorf("database not available")
+// ResetChatwoot handles POST /sessions/:name/chatwoot/reset
+// @Summary Reset Chatwoot data for testing
+// @Description Delete all Chatwoot contacts, conversations and messages (except bot)
+// @Tags Chatwoot
+// @Produce json
+// @Security ApiKeyAuth
+// @Param name path string true "Session name"
+// @Success 200 {object} map[string]interface{}
+// @Router /sessions/{name}/chatwoot/reset [post]
+func (h *Handler) ResetChatwoot(c *gin.Context) {
+	sessionName := c.Param("name")
+	session, err := h.sessionService.Get(sessionName)
+	if err != nil || session == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
+		return
 	}
 
-	// Find ALL messages with this Chatwoot message ID
-	// (multiple attachments = multiple WhatsApp messages with same chatwootMessageId)
-	messages, err := h.database.Messages.GetAllByCwMsgId(ctx, session.ID, payload.ID)
+	cfg, err := h.service.GetConfig(c.Request.Context(), session.ID)
+	if err != nil || cfg == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "chatwoot not configured"})
+		return
+	}
+
+	dbSync, err := NewChatwootDBSync(cfg, nil, nil, session.ID)
 	if err != nil {
-		return fmt.Errorf("failed to query messages: %w", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to connect to database: " + err.Error()})
+		return
+	}
+	defer dbSync.Close()
+
+	stats, err := dbSync.ResetData(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 
-	if len(messages) == 0 {
-		logger.Debug().Int("chatwootMsgId", payload.ID).Msg("Chatwoot: no messages found for deletion")
-		return nil
+	logger.Info().
+		Str("session", sessionName).
+		Int("contactsDeleted", stats.ContactsDeleted).
+		Int("conversationsDeleted", stats.ConversationsDeleted).
+		Int("messagesDeleted", stats.MessagesDeleted).
+		Msg("Chatwoot: data reset completed")
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "reset completed",
+		"deleted": gin.H{
+			"contacts":      stats.ContactsDeleted,
+			"conversations": stats.ConversationsDeleted,
+			"messages":      stats.MessagesDeleted,
+		},
+	})
+}
+
+// =============================================================================
+// ADAPTERS
+// =============================================================================
+
+// whatsappContactsAdapter adapts WhatsAppService to ContactsGetter interface
+type whatsappContactsAdapter struct {
+	whatsappSvc *service.WhatsAppService
+	sessionName string
+}
+
+func (a *whatsappContactsAdapter) GetAllContacts(ctx context.Context) ([]WhatsAppContact, error) {
+	contactsMap, err := a.whatsappSvc.GetContacts(ctx, a.sessionName)
+	if err != nil {
+		return nil, err
 	}
 
-	// Delete ALL messages from WhatsApp and database
-	var deleteErrors []error
-	for _, msg := range messages {
-		// Delete from WhatsApp
-		if _, err := h.whatsappSvc.DeleteMessage(ctx, session.Name, msg.ChatJID, msg.MsgId, msg.FromMe); err != nil {
-			logger.Warn().Err(err).Str("messageId", msg.MsgId).Msg("Chatwoot: failed to delete message from WhatsApp")
-			deleteErrors = append(deleteErrors, err)
-			continue
+	var contacts []WhatsAppContact
+	for jid, data := range contactsMap {
+		if dataMap, ok := data.(map[string]interface{}); ok {
+			contact := WhatsAppContact{JID: jid}
+			if v, ok := dataMap["pushName"].(string); ok {
+				contact.PushName = v
+			}
+			if v, ok := dataMap["businessName"].(string); ok {
+				contact.BusinessName = v
+			}
+			if v, ok := dataMap["fullName"].(string); ok {
+				contact.FullName = v
+			}
+			if v, ok := dataMap["firstName"].(string); ok {
+				contact.FirstName = v
+			}
+			contacts = append(contacts, contact)
 		}
+	}
+	return contacts, nil
+}
 
-		// Delete from local database
-		if err := h.database.Messages.Delete(ctx, session.ID, msg.MsgId); err != nil {
-			logger.Warn().Err(err).Str("messageId", msg.MsgId).Msg("Chatwoot: failed to delete message from database")
-		}
-
-		logger.Info().
-			Str("session", session.Name).
-			Str("messageId", msg.MsgId).
-			Int("chatwootMsgId", payload.ID).
-			Msg("Chatwoot: message deleted from WhatsApp")
+func (a *whatsappContactsAdapter) GetProfilePictureURL(ctx context.Context, jid string) (string, error) {
+	phone := ExtractPhoneFromJID(jid)
+	if phone == "" {
+		return "", nil
 	}
 
-	if len(deleteErrors) > 0 {
-		return fmt.Errorf("failed to delete %d/%d messages", len(deleteErrors), len(messages))
+	pic, err := a.whatsappSvc.GetProfilePicture(ctx, a.sessionName, phone)
+	if err != nil {
+		return "", err
 	}
-
-	return nil
+	if pic == nil {
+		return "", nil
+	}
+	return pic.URL, nil
 }
