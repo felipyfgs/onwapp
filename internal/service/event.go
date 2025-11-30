@@ -299,7 +299,6 @@ func (s *EventService) handleMessage(ctx context.Context, session *model.Session
 		Str("from", e.Info.Sender.String()).
 		Str("chat", e.Info.Chat.String()).
 		Str("id", e.Info.ID).
-		Interface("raw", e).
 		Msg("Message received")
 
 	rawEvent, _ := json.Marshal(e)
@@ -509,7 +508,8 @@ func (s *EventService) handleMessageEdit(ctx context.Context, session *model.Ses
 }
 
 func (s *EventService) handleReceipt(ctx context.Context, session *model.Session, e *events.Receipt) {
-	logger.Info().
+	// Only log receipts at DEBUG level to reduce noise (there are many receipts in groups)
+	logger.Debug().
 		Str("session", session.Name).
 		Str("event", "receipt").
 		Str("type", string(e.Type)).

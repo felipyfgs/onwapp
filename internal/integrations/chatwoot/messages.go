@@ -421,7 +421,7 @@ func (s *Service) HandleMessageRead(ctx context.Context, session *model.Session,
 		return err
 	}
 
-	logger.Info().
+	logger.Debug().
 		Str("session", session.Name).
 		Str("messageId", messageID).
 		Int("conversationId", *msg.CwConvId).

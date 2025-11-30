@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -132,6 +133,12 @@ func RateLimit(requestsPerMinute int) gin.HandlerFunc {
 	limiter := newRateLimiter(requestsPerMinute)
 
 	return func(c *gin.Context) {
+		// Skip rate limiting for webhook endpoints (Chatwoot sends many requests during sync)
+		if strings.HasPrefix(c.Request.URL.Path, "/chatwoot/webhook/") {
+			c.Next()
+			return
+		}
+
 		ip := c.ClientIP()
 
 		if !limiter.allow(ip) {

@@ -160,7 +160,7 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 	}
 
 	isConnected := session.Status == model.StatusConnected
-	logger.Info().
+	logger.Debug().
 		Str("session", sessionName).
 		Str("status", string(session.Status)).
 		Bool("isConnected", isConnected).
@@ -184,6 +184,21 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 		return
 	}
 
+	// Log webhook event details for debugging
+	contentPreview := payload.Content
+	if len(contentPreview) > 50 {
+		contentPreview = contentPreview[:50] + "..."
+	}
+	logger.Info().
+		Str("session", sessionName).
+		Str("event", payload.Event).
+		Interface("messageType", payload.MessageType).
+		Int("msgId", payload.ID).
+		Str("sourceId", payload.SourceID).
+		Bool("private", payload.Private).
+		Str("content", contentPreview).
+		Msg("Chatwoot webhook received")
+
 	// Handle message_updated event with deleted flag
 	if payload.Event == "message_updated" && payload.ContentAttrs != nil {
 		if deleted, ok := payload.ContentAttrs["deleted"].(bool); ok && deleted {
@@ -199,6 +214,31 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 	isOutgoing := payload.MessageType == "outgoing" || payload.MessageType == "1"
 
 	if payload.Event == "message_created" && isOutgoing && !payload.Private {
+		// Skip messages with WAID: source_id - prevents loop when syncing from WhatsApp
+		if payload.SourceID != "" && strings.HasPrefix(payload.SourceID, "WAID:") {
+			logger.Debug().
+				Str("session", sessionName).
+				Str("sourceId", payload.SourceID).
+				Int("msgId", payload.ID).
+				Msg("Chatwoot: skipping message with WAID source_id (anti-loop)")
+			c.JSON(http.StatusOK, gin.H{"message": "skipped - from whatsapp"})
+			return
+		}
+
+		// Also check first message in conversation (Evolution API pattern)
+		if payload.Conversation != nil && len(payload.Conversation.Messages) > 0 {
+			firstMsg := payload.Conversation.Messages[0]
+			if strings.HasPrefix(firstMsg.SourceID, "WAID:") && firstMsg.ID == payload.ID {
+				logger.Debug().
+					Str("session", sessionName).
+					Str("sourceId", firstMsg.SourceID).
+					Int("msgId", payload.ID).
+					Msg("Chatwoot: skipping message (conversation first msg has WAID)")
+				c.JSON(http.StatusOK, gin.H{"message": "skipped - from whatsapp"})
+				return
+			}
+		}
+
 		chatId := h.extractChatId(payload)
 
 		// Handle bot commands (Evolution API pattern)
@@ -213,9 +253,22 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 
 		chatJid, content, attachments, err := h.service.GetWebhookDataForSending(c.Request.Context(), session.ID, payload)
 		if err != nil {
+			logger.Warn().Err(err).
+				Str("session", sessionName).
+				Int("msgId", payload.ID).
+				Msg("Chatwoot: GetWebhookDataForSending failed")
 			c.JSON(http.StatusOK, gin.H{"message": "processing error"})
 			return
 		}
+
+		// Debug log to understand what's being extracted
+		logger.Debug().
+			Str("session", sessionName).
+			Str("chatJid", chatJid).
+			Str("content", content).
+			Int("attachments", len(attachments)).
+			Int("msgId", payload.ID).
+			Msg("Chatwoot: extracted data for sending")
 
 		quotedMsg := h.service.GetQuotedMessage(c.Request.Context(), session.ID, payload)
 
@@ -253,8 +306,14 @@ func (h *Handler) extractChatId(payload *WebhookPayload) string {
 // =============================================================================
 
 func (h *Handler) sendToWhatsApp(c *gin.Context, session *model.Session, chatJid, content string, attachments []Attachment, quotedMsg *QuotedMessageInfo, chatwootMsgID, chatwootConvID int) error {
-	ctx := c.Request.Context()
-	phone := ExtractPhoneFromJID(chatJid)
+	// Use a longer timeout context for sending messages, especially for groups
+	// Groups require encrypting for each participant, which can take time
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	// Use the full JID (chatJid) instead of extracting phone - parseJID now supports both
+	// This fixes sending to groups which have JIDs like "120363161632436488@g.us"
+	recipient := chatJid
 
 	var quoted *service.QuotedMessage
 	if quotedMsg != nil {
@@ -279,7 +338,7 @@ func (h *Handler) sendToWhatsApp(c *gin.Context, session *model.Session, chatJid
 			mediaType := GetMediaTypeFromURL(att.DataURL)
 			switch mediaType {
 			case "image":
-				resp, err := h.whatsappSvc.SendImageWithQuote(ctx, session.Name, phone, mediaData, content, mimeType, quoted)
+				resp, err := h.whatsappSvc.SendImageWithQuote(ctx, session.Name, recipient, mediaData, content, mimeType, quoted)
 				if err != nil {
 					logger.Warn().Err(err).Str("url", att.DataURL).Msg("Failed to send image")
 				} else {
@@ -288,7 +347,7 @@ func (h *Handler) sendToWhatsApp(c *gin.Context, session *model.Session, chatJid
 				content = ""
 				quoted = nil
 			case "video":
-				resp, err := h.whatsappSvc.SendVideoWithQuote(ctx, session.Name, phone, mediaData, content, mimeType, quoted)
+				resp, err := h.whatsappSvc.SendVideoWithQuote(ctx, session.Name, recipient, mediaData, content, mimeType, quoted)
 				if err != nil {
 					logger.Warn().Err(err).Str("url", att.DataURL).Msg("Failed to send video")
 				} else {
@@ -297,7 +356,7 @@ func (h *Handler) sendToWhatsApp(c *gin.Context, session *model.Session, chatJid
 				content = ""
 				quoted = nil
 			case "audio":
-				resp, err := h.whatsappSvc.SendAudioWithQuote(ctx, session.Name, phone, mediaData, mimeType, true, quoted)
+				resp, err := h.whatsappSvc.SendAudioWithQuote(ctx, session.Name, recipient, mediaData, mimeType, true, quoted)
 				if err != nil {
 					logger.Warn().Err(err).Str("url", att.DataURL).Msg("Failed to send audio")
 				} else {
@@ -309,7 +368,7 @@ func (h *Handler) sendToWhatsApp(c *gin.Context, session *model.Session, chatJid
 				if filename == "" {
 					filename = "document"
 				}
-				resp, err := h.whatsappSvc.SendDocumentWithQuote(ctx, session.Name, phone, mediaData, filename, mimeType, quoted)
+				resp, err := h.whatsappSvc.SendDocumentWithQuote(ctx, session.Name, recipient, mediaData, filename, mimeType, quoted)
 				if err != nil {
 					logger.Warn().Err(err).Str("url", att.DataURL).Msg("Failed to send document")
 				} else {
@@ -323,11 +382,17 @@ func (h *Handler) sendToWhatsApp(c *gin.Context, session *model.Session, chatJid
 
 	// Send text message if there's content left
 	if content != "" {
-		resp, err := h.whatsappSvc.SendTextWithQuote(ctx, session.Name, phone, content, quoted)
+		resp, err := h.whatsappSvc.SendTextWithQuote(ctx, session.Name, recipient, content, quoted)
 		if err != nil {
 			return err
 		}
 		h.saveOutgoingMessage(ctx, session, chatJid, content, resp.ID, chatwootMsgID, chatwootConvID)
+		logger.Info().
+			Str("session", session.Name).
+			Str("chatJid", chatJid).
+			Str("msgId", resp.ID).
+			Int("cwMsgId", chatwootMsgID).
+			Msg("Chatwoot: message sent to WhatsApp")
 	}
 
 	return nil
@@ -354,7 +419,7 @@ func (h *Handler) saveOutgoingMessage(ctx context.Context, session *model.Sessio
 		Type:       "text",
 		Content:    content,
 		FromMe:     true,
-		IsGroup:    false,
+		IsGroup:    IsGroupJID(chatJid),
 		Status:     model.MessageStatusSent,
 		CwMsgId:    &chatwootMsgID,
 		CwConvId:   &chatwootConvID,

@@ -60,6 +60,15 @@ func (s *Service) GetWebhookDataForSending(ctx context.Context, sessionID string
 		return "", "", nil, fmt.Errorf("missing conversation metadata")
 	}
 
+	// Debug: log sender info to understand what we're getting
+	sender := payload.Conversation.Meta.Sender
+	logger.Debug().
+		Str("identifier", sender.Identifier).
+		Str("phoneNumber", sender.PhoneNumber).
+		Str("name", sender.Name).
+		Int("conversationId", payload.Conversation.ID).
+		Msg("Chatwoot: sender info from webhook")
+
 	chatJid = payload.Conversation.Meta.Sender.Identifier
 	if chatJid == "" {
 		phoneNumber := strings.TrimPrefix(payload.Conversation.Meta.Sender.PhoneNumber, "+")

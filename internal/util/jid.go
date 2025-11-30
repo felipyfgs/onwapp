@@ -29,3 +29,39 @@ func ParseNewsletterJID(newsletterID string) (types.JID, error) {
 	}
 	return types.ParseJID(newsletterID + "@newsletter")
 }
+
+// ParseRecipientJID intelligently parses a JID string.
+// It detects the type based on suffix and parses accordingly:
+// - @g.us -> group
+// - @s.whatsapp.net -> individual contact
+// - @newsletter -> newsletter
+// - @lid -> linked ID
+// - No suffix -> assumes individual contact (adds @s.whatsapp.net)
+func ParseRecipientJID(jidStr string) (types.JID, error) {
+	// Already has a valid suffix - parse directly
+	if strings.HasSuffix(jidStr, "@g.us") ||
+		strings.HasSuffix(jidStr, "@s.whatsapp.net") ||
+		strings.HasSuffix(jidStr, "@newsletter") ||
+		strings.HasSuffix(jidStr, "@lid") ||
+		strings.HasSuffix(jidStr, "@broadcast") {
+		return types.ParseJID(jidStr)
+	}
+
+	// Remove leading + from phone numbers
+	if len(jidStr) > 0 && jidStr[0] == '+' {
+		jidStr = jidStr[1:]
+	}
+
+	// Default to individual contact
+	return types.ParseJID(jidStr + "@s.whatsapp.net")
+}
+
+// IsGroupJID checks if a JID string represents a group
+func IsGroupJID(jidStr string) bool {
+	return strings.HasSuffix(jidStr, "@g.us")
+}
+
+// IsStatusBroadcast checks if a JID string is a status broadcast
+func IsStatusBroadcast(jidStr string) bool {
+	return jidStr == "status@broadcast"
+}

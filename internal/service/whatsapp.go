@@ -77,7 +77,8 @@ func (w *WhatsAppService) getClient(sessionName string) (*whatsmeow.Client, erro
 }
 
 func parseJID(phone string) (types.JID, error) {
-	return util.ParsePhoneJID(phone)
+	// Use ParseRecipientJID to support both phone numbers and full JIDs (groups, etc.)
+	return util.ParseRecipientJID(phone)
 }
 
 func parseGroupJID(groupID string) (types.JID, error) {
