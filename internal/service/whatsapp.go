@@ -19,10 +19,50 @@ import (
 
 type WhatsAppService struct {
 	sessionService *SessionService
+	mediaService   *MediaService
 }
 
 func NewWhatsAppService(sessionService *SessionService) *WhatsAppService {
 	return &WhatsAppService{sessionService: sessionService}
+}
+
+// SetMediaService sets the media service for saving sent media
+func (w *WhatsAppService) SetMediaService(mediaService *MediaService) {
+	w.mediaService = mediaService
+}
+
+// saveSentMediaAsync saves sent media to storage asynchronously
+func (w *WhatsAppService) saveSentMediaAsync(sessionName, msgID, chatJID, mediaType, mimeType, fileName, caption string, data []byte) {
+	if w.mediaService == nil {
+		return
+	}
+
+	session, err := w.sessionService.Get(sessionName)
+	if err != nil {
+		return
+	}
+
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+		defer cancel()
+
+		info := &SentMediaInfo{
+			SessionID: session.ID,
+			MsgID:     msgID,
+			ChatJID:   chatJID,
+			MediaType: mediaType,
+			MimeType:  mimeType,
+			FileName:  fileName,
+			Caption:   caption,
+			FileSize:  int64(len(data)),
+			Data:      data,
+		}
+
+		if err := w.mediaService.SaveSentMedia(ctx, info); err != nil {
+			// Error already logged in SaveSentMedia
+			return
+		}
+	}()
 }
 
 func (w *WhatsAppService) getClient(sessionName string) (*whatsmeow.Client, error) {
@@ -185,7 +225,15 @@ func (w *WhatsAppService) SendImage(ctx context.Context, sessionName, phone stri
 		},
 	}
 
-	return client.SendMessage(ctx, jid, msg)
+	resp, err := client.SendMessage(ctx, jid, msg)
+	if err != nil {
+		return resp, err
+	}
+
+	// Save sent media asynchronously
+	w.saveSentMediaAsync(sessionName, resp.ID, jid.String(), "image", mimeType, "", caption, imageData)
+
+	return resp, nil
 }
 
 // SendDocumentWithQuote sends a document with a quoted message reference

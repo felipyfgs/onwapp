@@ -1,12 +1,21 @@
+-- Migration: 003_create_webhooks_table.sql
+-- Table: zpWebhooks
+-- Description: Webhook configurations for event notifications
+-- Dependencies: zpSessions
+
 CREATE TABLE IF NOT EXISTS "zpWebhooks" (
     "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "sessionId" UUID NOT NULL UNIQUE REFERENCES "zpSessions"("id") ON DELETE CASCADE,
     "url" VARCHAR(500) NOT NULL,
-    "events" TEXT[] DEFAULT '{}',
-    "enabled" BOOLEAN DEFAULT true,
+    "events" TEXT[] NOT NULL DEFAULT '{}',
+    "enabled" BOOLEAN NOT NULL DEFAULT TRUE,
     "secret" VARCHAR(255),
-    "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS "idx_zpWebhooks_enabled" ON "zpWebhooks"("enabled");
+CREATE INDEX IF NOT EXISTS "idx_zpWebhooks_enabled" ON "zpWebhooks"("enabled") WHERE "enabled" = TRUE;
+
+COMMENT ON TABLE "zpWebhooks" IS 'Webhook configurations for event notifications';
+COMMENT ON COLUMN "zpWebhooks"."events" IS 'Array of event types to subscribe (empty = all)';
+COMMENT ON COLUMN "zpWebhooks"."secret" IS 'HMAC secret for webhook signature verification';

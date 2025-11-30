@@ -1,31 +1,39 @@
+-- Migration: 005_create_chatwoot_table.sql
+-- Table: zpChatwoot
+-- Description: Chatwoot CRM integration configuration per session
+-- Dependencies: zpSessions
+
 CREATE TABLE IF NOT EXISTS "zpChatwoot" (
     "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "sessionId" UUID NOT NULL UNIQUE REFERENCES "zpSessions"("id") ON DELETE CASCADE,
-    "enabled" BOOLEAN NOT NULL DEFAULT false,
+    "enabled" BOOLEAN NOT NULL DEFAULT FALSE,
     "url" TEXT NOT NULL DEFAULT '',
     "token" TEXT NOT NULL DEFAULT '',
     "account" INTEGER NOT NULL DEFAULT 0,
     "inboxId" INTEGER,
     "inbox" TEXT,
-    "signAgent" BOOLEAN NOT NULL DEFAULT false,
+    "signAgent" BOOLEAN NOT NULL DEFAULT FALSE,
     "signSeparator" TEXT,
-    "autoReopen" BOOLEAN NOT NULL DEFAULT false,
-    "startPending" BOOLEAN NOT NULL DEFAULT false,
-    "mergeBrPhones" BOOLEAN NOT NULL DEFAULT false,
-    "syncContacts" BOOLEAN NOT NULL DEFAULT false,
-    "syncMessages" BOOLEAN NOT NULL DEFAULT false,
+    "autoReopen" BOOLEAN NOT NULL DEFAULT FALSE,
+    "startPending" BOOLEAN NOT NULL DEFAULT FALSE,
+    "mergeBrPhones" BOOLEAN NOT NULL DEFAULT FALSE,
+    "syncContacts" BOOLEAN NOT NULL DEFAULT FALSE,
+    "syncMessages" BOOLEAN NOT NULL DEFAULT FALSE,
     "syncDays" INTEGER DEFAULT 0,
     "ignoreChats" TEXT[],
-    "autoCreate" BOOLEAN NOT NULL DEFAULT false,
+    "autoCreate" BOOLEAN NOT NULL DEFAULT FALSE,
     "webhookUrl" TEXT,
     "chatwootDbHost" TEXT,
     "chatwootDbPort" INTEGER DEFAULT 5432,
     "chatwootDbUser" TEXT,
     "chatwootDbPass" TEXT,
     "chatwootDbName" TEXT,
-    "createdAt" TIMESTAMPTZ DEFAULT NOW(),
-    "updatedAt" TIMESTAMPTZ DEFAULT NOW()
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS "idx_zpChatwoot_sessionId" ON "zpChatwoot"("sessionId");
-CREATE INDEX IF NOT EXISTS "idx_zpChatwoot_enabled" ON "zpChatwoot"("enabled");
+CREATE INDEX IF NOT EXISTS "idx_zpChatwoot_enabled" ON "zpChatwoot"("enabled") WHERE "enabled" = TRUE;
+
+COMMENT ON TABLE "zpChatwoot" IS 'Chatwoot CRM integration configuration per session';
+COMMENT ON COLUMN "zpChatwoot"."mergeBrPhones" IS 'Normalize Brazilian phone numbers (9th digit)';
+COMMENT ON COLUMN "zpChatwoot"."syncDays" IS 'Number of days to sync history (0 = disabled)';

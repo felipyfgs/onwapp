@@ -61,6 +61,13 @@ type Config struct {
 	LogFormat   LogFormat
 	APIKey      string
 	ServerURL   string
+
+	// MinIO configuration
+	MinioEndpoint  string
+	MinioAccessKey string
+	MinioSecretKey string
+	MinioBucket    string
+	MinioUseSSL    bool
 }
 
 func Load() *Config {
@@ -79,6 +86,12 @@ func Load() *Config {
 		LogFormat:   LogFormat(getEnv("LOG_FORMAT", "console")),
 		APIKey:      getEnv("API_KEY", ""),
 		ServerURL:   serverURL,
+
+		MinioEndpoint:  getEnv("MINIO_ENDPOINT", "localhost:9000"),
+		MinioAccessKey: getEnv("MINIO_ACCESS_KEY", "zpwoot"),
+		MinioSecretKey: getEnv("MINIO_SECRET_KEY", "zpwoot123"),
+		MinioBucket:    getEnv("MINIO_BUCKET", "zpwoot-media"),
+		MinioUseSSL:    getEnv("MINIO_USE_SSL", "false") == "true",
 	}
 }
 

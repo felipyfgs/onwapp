@@ -33,6 +33,7 @@ type Handlers struct {
 	Status     *handler.StatusHandler
 	Call       *handler.CallHandler
 	Community  *handler.CommunityHandler
+	Media      *handler.MediaHandler
 }
 
 type Config struct {
@@ -221,6 +222,16 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 			sessions.POST("/:name/communities/:communityId/groups", h.Community.LinkGroup)
 			sessions.DELETE("/:name/communities/:communityId/groups/:groupId", h.Community.UnlinkGroup)
 			sessions.GET("/:name/communities/:communityId/groups", h.Community.GetSubGroups)
+		}
+
+		// ─────────────────────────────────────────────────────────────────────────
+		// Media
+		// ─────────────────────────────────────────────────────────────────────────
+		if h.Media != nil {
+			sessions.GET("/:name/media", h.Media.ListMedia)
+			sessions.GET("/:name/media/pending", h.Media.ListPendingMedia)
+			sessions.POST("/:name/media/process", h.Media.ProcessPendingMedia)
+			sessions.GET("/:name/media/:msgId", h.Media.GetMedia)
 		}
 	}
 

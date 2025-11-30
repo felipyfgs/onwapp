@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -21,6 +23,7 @@ import (
 type EventService struct {
 	database       *db.Database
 	webhookService WebhookSender
+	mediaService   *MediaService
 }
 
 func NewEventService(database *db.Database, webhookService WebhookSender) *EventService {
@@ -28,6 +31,11 @@ func NewEventService(database *db.Database, webhookService WebhookSender) *Event
 		database:       database,
 		webhookService: webhookService,
 	}
+}
+
+// SetMediaService sets the media service for downloading media to storage
+func (s *EventService) SetMediaService(mediaService *MediaService) {
+	s.mediaService = mediaService
 }
 
 func (s *EventService) HandleEvent(session *model.Session, evt interface{}) {
@@ -327,6 +335,32 @@ func (s *EventService) handleMessage(ctx context.Context, session *model.Session
 		logger.Warn().Err(err).Str("session", session.Name).Str("messageId", e.Info.ID).Msg("Failed to save message")
 	}
 
+	// Extract and save media info for media messages
+	if media := s.extractMediaInfo(session.ID, e.Info.ID, e.Message); media != nil {
+		if _, err := s.database.Media.Save(ctx, media); err != nil {
+			logger.Warn().Err(err).Str("session", session.Name).Str("messageId", e.Info.ID).Msg("Failed to save media info")
+		} else {
+			// Trigger async download to storage
+			if s.mediaService != nil && session.Client != nil {
+				go func(m *model.Media, client *model.Session) {
+					downloadCtx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+					defer cancel()
+					
+					// Get the saved media with ID
+					savedMedia, err := s.database.Media.GetByMsgID(downloadCtx, m.SessionID, m.MsgID)
+					if err != nil || savedMedia == nil {
+						logger.Warn().Err(err).Str("msgId", m.MsgID).Msg("Failed to get saved media for download")
+						return
+					}
+					
+					if err := s.mediaService.DownloadAndStore(downloadCtx, client.Client, savedMedia, client.Name); err != nil {
+						logger.Warn().Err(err).Str("msgId", m.MsgID).Msg("Failed to download media to storage")
+					}
+				}(media, session)
+			}
+		}
+	}
+
 	s.sendWebhook(ctx, session, string(model.EventMessageReceived), e)
 }
 
@@ -575,6 +609,9 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 		Int("conversations", len(conversations)).
 		Msg("History sync received")
 
+	// Save raw event to JSON file for inspection
+	s.saveHistorySyncToJSON(session.Name, e, syncType, chunkOrder)
+
 	// Skip non-message sync types
 	if e.Data.GetSyncType() == waHistorySync.HistorySync_PUSH_NAME {
 		s.handlePushNameSync(ctx, session, e.Data.GetPushnames())
@@ -583,6 +620,7 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 
 	// Process conversations and their messages
 	var allMessages []*model.Message
+	var allMedias []*model.Media
 	totalMsgs := 0
 
 	for _, conv := range conversations {
@@ -675,6 +713,11 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 			if len(webMsg.GetReactions()) > 0 {
 				s.saveHistoryReactions(ctx, session.ID, key.GetID(), webMsg.GetReactions())
 			}
+
+			// Extract media info if present
+			if media := s.extractMediaInfo(session.ID, key.GetID(), webMsg.GetMessage()); media != nil {
+				allMedias = append(allMedias, media)
+			}
 		}
 	}
 
@@ -697,6 +740,26 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 				Int("saved", saved).
 				Int("skipped", len(allMessages)-saved).
 				Msg("History sync messages saved")
+		}
+	}
+
+	// Batch save media info
+	if len(allMedias) > 0 {
+		savedMedia, err := s.database.Media.SaveBatch(ctx, allMedias)
+		if err != nil {
+			logger.Error().
+				Err(err).
+				Str("session", session.Name).
+				Int("total", len(allMedias)).
+				Msg("Failed to save history sync media")
+		} else {
+			logger.Info().
+				Str("session", session.Name).
+				Str("syncType", syncType).
+				Uint32("chunkOrder", chunkOrder).
+				Int("totalMedia", len(allMedias)).
+				Int("saved", savedMedia).
+				Msg("History sync media info saved")
 		}
 	}
 
@@ -1448,4 +1511,151 @@ func (s *EventService) sendWebhook(ctx context.Context, session *model.Session, 
 	if s.webhookService != nil {
 		s.webhookService.Send(ctx, session.ID, session.Name, event, rawEvent)
 	}
+}
+
+func (s *EventService) saveHistorySyncToJSON(sessionName string, e *events.HistorySync, syncType string, chunkOrder uint32) {
+	dir := "history_sync_dumps"
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		logger.Error().Err(err).Msg("Failed to create history sync dump directory")
+		return
+	}
+
+	timestamp := time.Now().Format("20060102_150405")
+	filename := fmt.Sprintf("%s_%s_%s_chunk%d.json", sessionName, timestamp, syncType, chunkOrder)
+	filePath := filepath.Join(dir, filename)
+
+	data, err := json.MarshalIndent(e.Data, "", "  ")
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to marshal history sync data")
+		return
+	}
+
+	if err := os.WriteFile(filePath, data, 0644); err != nil {
+		logger.Error().Err(err).Str("file", filePath).Msg("Failed to write history sync JSON")
+		return
+	}
+
+	logger.Info().
+		Str("session", sessionName).
+		Str("file", filePath).
+		Int("size", len(data)).
+		Msg("History sync saved to JSON")
+}
+
+// extractMediaInfo extracts media information from a WhatsApp message
+func (s *EventService) extractMediaInfo(sessionID, msgID string, msg *waE2E.Message) *model.Media {
+	if msg == nil {
+		return nil
+	}
+
+	var media *model.Media
+
+	// Image
+	if img := msg.GetImageMessage(); img != nil {
+		media = &model.Media{
+			SessionID:        sessionID,
+			MsgID:            msgID,
+			MediaType:        "image",
+			MimeType:         img.GetMimetype(),
+			FileSize:         int64(img.GetFileLength()),
+			Caption:          img.GetCaption(),
+			WADirectPath:     img.GetDirectPath(),
+			WAMediaKey:       img.GetMediaKey(),
+			WAFileSHA256:     img.GetFileSHA256(),
+			WAFileEncSHA256:  img.GetFileEncSHA256(),
+			WAMediaKeyTimestamp: int64(img.GetMediaKeyTimestamp()),
+			Width:            int(img.GetWidth()),
+			Height:           int(img.GetHeight()),
+		}
+		return media
+	}
+
+	// Video
+	if vid := msg.GetVideoMessage(); vid != nil {
+		media = &model.Media{
+			SessionID:        sessionID,
+			MsgID:            msgID,
+			MediaType:        "video",
+			MimeType:         vid.GetMimetype(),
+			FileSize:         int64(vid.GetFileLength()),
+			Caption:          vid.GetCaption(),
+			WADirectPath:     vid.GetDirectPath(),
+			WAMediaKey:       vid.GetMediaKey(),
+			WAFileSHA256:     vid.GetFileSHA256(),
+			WAFileEncSHA256:  vid.GetFileEncSHA256(),
+			WAMediaKeyTimestamp: int64(vid.GetMediaKeyTimestamp()),
+			Width:            int(vid.GetWidth()),
+			Height:           int(vid.GetHeight()),
+			Duration:         int(vid.GetSeconds()),
+		}
+		return media
+	}
+
+	// Audio
+	if aud := msg.GetAudioMessage(); aud != nil {
+		media = &model.Media{
+			SessionID:        sessionID,
+			MsgID:            msgID,
+			MediaType:        "audio",
+			MimeType:         aud.GetMimetype(),
+			FileSize:         int64(aud.GetFileLength()),
+			WADirectPath:     aud.GetDirectPath(),
+			WAMediaKey:       aud.GetMediaKey(),
+			WAFileSHA256:     aud.GetFileSHA256(),
+			WAFileEncSHA256:  aud.GetFileEncSHA256(),
+			WAMediaKeyTimestamp: int64(aud.GetMediaKeyTimestamp()),
+			Duration:         int(aud.GetSeconds()),
+		}
+		return media
+	}
+
+	// Document
+	if doc := msg.GetDocumentMessage(); doc != nil {
+		media = &model.Media{
+			SessionID:        sessionID,
+			MsgID:            msgID,
+			MediaType:        "document",
+			MimeType:         doc.GetMimetype(),
+			FileSize:         int64(doc.GetFileLength()),
+			FileName:         doc.GetFileName(),
+			Caption:          doc.GetCaption(),
+			WADirectPath:     doc.GetDirectPath(),
+			WAMediaKey:       doc.GetMediaKey(),
+			WAFileSHA256:     doc.GetFileSHA256(),
+			WAFileEncSHA256:  doc.GetFileEncSHA256(),
+			WAMediaKeyTimestamp: int64(doc.GetMediaKeyTimestamp()),
+		}
+		return media
+	}
+
+	// Sticker
+	if stk := msg.GetStickerMessage(); stk != nil {
+		media = &model.Media{
+			SessionID:        sessionID,
+			MsgID:            msgID,
+			MediaType:        "sticker",
+			MimeType:         stk.GetMimetype(),
+			FileSize:         int64(stk.GetFileLength()),
+			WADirectPath:     stk.GetDirectPath(),
+			WAMediaKey:       stk.GetMediaKey(),
+			WAFileSHA256:     stk.GetFileSHA256(),
+			WAFileEncSHA256:  stk.GetFileEncSHA256(),
+			WAMediaKeyTimestamp: int64(stk.GetMediaKeyTimestamp()),
+			Width:            int(stk.GetWidth()),
+			Height:           int(stk.GetHeight()),
+		}
+		return media
+	}
+
+	// ViewOnce Image
+	if vo := msg.GetViewOnceMessage(); vo != nil {
+		return s.extractMediaInfo(sessionID, msgID, vo.GetMessage())
+	}
+
+	// ViewOnce V2 Image
+	if vo2 := msg.GetViewOnceMessageV2(); vo2 != nil {
+		return s.extractMediaInfo(sessionID, msgID, vo2.GetMessage())
+	}
+
+	return nil
 }

@@ -26,6 +26,7 @@ type Database struct {
 	Sessions       *repository.SessionRepository
 	Messages       *repository.MessageRepository
 	MessageUpdates *repository.MessageUpdateRepository
+	Media          *repository.MediaRepository
 }
 
 func New(ctx context.Context, databaseURL string) (*Database, error) {
@@ -51,17 +52,28 @@ func New(ctx context.Context, databaseURL string) (*Database, error) {
 		return nil, fmt.Errorf("failed to create sqlstore: %w", err)
 	}
 
+	// Ensure whatsmeow FK constraints after sqlstore creates its tables
+	if err := ensureWhatsmeowFKs(ctx, pool); err != nil {
+		logger.Warn().Err(err).Msg("Failed to ensure whatsmeow FK constraints")
+	}
+
 	return &Database{
 		Pool:           pool,
 		Container:      container,
 		Sessions:       repository.NewSessionRepository(pool),
 		Messages:       repository.NewMessageRepository(pool),
 		MessageUpdates: repository.NewMessageUpdateRepository(pool),
+		Media:          repository.NewMediaRepository(pool),
 	}, nil
 }
 
 func (d *Database) Close() {
 	d.Pool.Close()
+}
+
+func ensureWhatsmeowFKs(ctx context.Context, pool *pgxpool.Pool) error {
+	_, err := pool.Exec(ctx, `SELECT zp_ensure_whatsmeow_fks()`)
+	return err
 }
 
 func runMigrations(ctx context.Context, pool *pgxpool.Pool) error {

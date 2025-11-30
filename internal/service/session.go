@@ -300,6 +300,11 @@ func (s *SessionService) AddEventHandler(handler EventHandler) {
 	s.externalHandlers = append(s.externalHandlers, handler)
 }
 
+// SetMediaService sets the media service for downloading media to storage
+func (s *SessionService) SetMediaService(mediaService *MediaService) {
+	s.eventService.SetMediaService(mediaService)
+}
+
 func (s *SessionService) Logout(ctx context.Context, name string) error {
 	session, err := s.Get(name)
 	if err != nil {

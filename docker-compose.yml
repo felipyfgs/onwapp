@@ -70,6 +70,28 @@ services:
       timeout: 5s
       retries: 5
 
+  # MinIO (S3-compatible object storage for media files)
+  minio:
+    image: quay.io/minio/minio:RELEASE.2024-01-13T07-53-03Z-cpuv1
+    container_name: zpwoot-minio
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-zpwoot}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-zpwoot123}
+    volumes:
+      - minio_data:/data
+    networks:
+      - zpwoot-network
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # API Go (comentado - rodar localmente)
   # api:
   #   build:
@@ -92,6 +114,8 @@ volumes:
   postgres_data:
     driver: local
   redis_data:
+    driver: local
+  minio_data:
     driver: local
 
 networks:
