@@ -35,10 +35,3 @@ func UpdateSyncStats(sessionID string, stats *SyncStats) {
 		status.Stats = *stats
 	}
 }
-
-// ClearSyncStatus removes the sync status for a session
-func ClearSyncStatus(sessionID string) {
-	syncStatusMutex.Lock()
-	defer syncStatusMutex.Unlock()
-	delete(syncStatusMap, sessionID)
-}

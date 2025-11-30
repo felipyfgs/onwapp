@@ -260,27 +260,3 @@ func (cm *ContactManager) InvalidateCache(sessionID, remoteJid string) {
 	cacheKey := fmt.Sprintf("%s:%s", sessionID, remoteJid)
 	cm.conversationCache.Delete(cacheKey)
 }
-
-// MergeBrazilianContacts handles Brazilian phone number merging (8 vs 9 digits)
-func (cm *ContactManager) MergeBrazilianContacts(ctx context.Context, client *Client, contacts []*Contact) error {
-	if len(contacts) != 2 {
-		return nil
-	}
-
-	// Find the 13-digit (with 9) and 12-digit (without 9) numbers
-	var baseContact, mergeContact *Contact
-	for _, c := range contacts {
-		phone := strings.TrimPrefix(c.PhoneNumber, "+")
-		if len(phone) == 13 {
-			baseContact = c
-		} else if len(phone) == 12 {
-			mergeContact = c
-		}
-	}
-
-	if baseContact == nil || mergeContact == nil {
-		return nil
-	}
-
-	return client.MergeContacts(ctx, baseContact.ID, mergeContact.ID)
-}

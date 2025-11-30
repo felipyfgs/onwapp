@@ -122,47 +122,6 @@ func (r *Repository) GetEnabledBySessionID(ctx context.Context, sessionID string
 	return cfg, nil
 }
 
-// GetAllEnabled retrieves all enabled configurations
-func (r *Repository) GetAllEnabled(ctx context.Context) ([]*Config, error) {
-	query := `
-		SELECT "id", "sessionId", "enabled", "url", "token", "account",
-			   "inboxId", "inbox", "signAgent", "signSeparator",
-			   "autoReopen", "startPending", "mergeBrPhones",
-			   "syncContacts", "syncMessages", "syncDays",
-			   "ignoreChats", "autoCreate", "webhookUrl",
-			   "chatwootDbHost", "chatwootDbPort", "chatwootDbUser", "chatwootDbPass", "chatwootDbName",
-			   "createdAt", "updatedAt"
-		FROM "zpChatwoot"
-		WHERE "enabled" = true
-	`
-
-	rows, err := r.pool.Query(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var configs []*Config
-	for rows.Next() {
-		cfg := &Config{}
-		err := rows.Scan(
-			&cfg.ID, &cfg.SessionID, &cfg.Enabled, &cfg.URL, &cfg.Token, &cfg.Account,
-			&cfg.InboxID, &cfg.Inbox, &cfg.SignAgent, &cfg.SignSeparator,
-			&cfg.AutoReopen, &cfg.StartPending, &cfg.MergeBrPhones,
-			&cfg.SyncContacts, &cfg.SyncMessages, &cfg.SyncDays,
-			&cfg.IgnoreChats, &cfg.AutoCreate, &cfg.WebhookURL,
-			&cfg.ChatwootDBHost, &cfg.ChatwootDBPort, &cfg.ChatwootDBUser, &cfg.ChatwootDBPass, &cfg.ChatwootDBName,
-			&cfg.CreatedAt, &cfg.UpdatedAt,
-		)
-		if err != nil {
-			return nil, err
-		}
-		configs = append(configs, cfg)
-	}
-
-	return configs, rows.Err()
-}
-
 // Delete removes a configuration by session ID
 func (r *Repository) Delete(ctx context.Context, sessionID string) error {
 	query := `DELETE FROM "zpChatwoot" WHERE "sessionId" = $1`

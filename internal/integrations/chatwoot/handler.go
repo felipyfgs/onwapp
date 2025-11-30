@@ -278,12 +278,21 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 		}
 
 		if chatJid != "" && (content != "" || len(attachments) > 0) {
-			if err := h.sendToWhatsApp(c, session, chatJid, content, attachments, quotedMsg, payload.ID, conversationID); err != nil {
-				logger.Error().Err(err).
-					Str("session", sessionName).
-					Str("chatJid", chatJid).
-					Msg("Chatwoot: failed to send to WhatsApp")
-			}
+			// Respond immediately to Chatwoot to avoid timeout
+			c.JSON(http.StatusOK, gin.H{"message": "accepted"})
+
+			// Process sending in background (groups can take 15+ seconds to encrypt)
+			go func(sess *model.Session, jid, txt string, atts []Attachment, quoted *QuotedMessageInfo, cwMsgID, convID int) {
+				bgCtx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+				defer cancel()
+				if err := h.sendToWhatsAppBackground(bgCtx, sess, jid, txt, atts, quoted, cwMsgID, convID); err != nil {
+					logger.Error().Err(err).
+						Str("session", sess.Name).
+						Str("chatJid", jid).
+						Msg("Chatwoot: failed to send to WhatsApp")
+				}
+			}(session, chatJid, content, attachments, quotedMsg, payload.ID, conversationID)
+			return
 		}
 	}
 
@@ -305,12 +314,8 @@ func (h *Handler) extractChatId(payload *WebhookPayload) string {
 // WHATSAPP MESSAGE SENDING
 // =============================================================================
 
-func (h *Handler) sendToWhatsApp(c *gin.Context, session *model.Session, chatJid, content string, attachments []Attachment, quotedMsg *QuotedMessageInfo, chatwootMsgID, chatwootConvID int) error {
-	// Use a longer timeout context for sending messages, especially for groups
-	// Groups require encrypting for each participant, which can take time
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-	defer cancel()
-
+// sendToWhatsAppBackground sends message to WhatsApp with provided context (for background processing)
+func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.Session, chatJid, content string, attachments []Attachment, quotedMsg *QuotedMessageInfo, chatwootMsgID, chatwootConvID int) error {
 	// Use the full JID (chatJid) instead of extracting phone - parseJID now supports both
 	// This fixes sending to groups which have JIDs like "120363161632436488@g.us"
 	recipient := chatJid

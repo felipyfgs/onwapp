@@ -100,9 +100,3 @@ func GetMediaTypeFromFilename(filename string) string {
 func GetMediaTypeFromURL(url string) string {
 	return GetMediaTypeFromFilename(url)
 }
-
-// GetMediaType returns the media type based on file extension
-// Deprecated: Use GetMediaTypeFromFilename instead
-func GetMediaType(filename string) string {
-	return GetMediaTypeFromFilename(filename)
-}

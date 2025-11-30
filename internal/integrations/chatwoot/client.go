@@ -121,11 +121,6 @@ func (c *Client) GetInbox(ctx context.Context, inboxID int) (*Inbox, error) {
 	return &inbox, nil
 }
 
-// CreateInbox creates a new API inbox
-func (c *Client) CreateInbox(ctx context.Context, name, webhookURL string) (*Inbox, error) {
-	return c.CreateInboxWithOptions(ctx, name, webhookURL, false)
-}
-
 // CreateInboxWithOptions creates a new API inbox with lock_to_single_conversation option
 func (c *Client) CreateInboxWithOptions(ctx context.Context, name, webhookURL string, lockToSingleConversation bool) (*Inbox, error) {
 	body := map[string]interface{}{
@@ -661,11 +656,6 @@ func (c *Client) GetInboxByName(ctx context.Context, name string) (*Inbox, error
 	}
 
 	return nil, nil
-}
-
-// GetOrCreateInbox gets an existing inbox by name or creates a new one
-func (c *Client) GetOrCreateInbox(ctx context.Context, name, webhookURL string) (*Inbox, error) {
-	return c.GetOrCreateInboxWithOptions(ctx, name, webhookURL, false)
 }
 
 // GetOrCreateInboxWithOptions gets an existing inbox or creates one with lock_to_single_conversation option

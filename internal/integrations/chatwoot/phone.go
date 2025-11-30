@@ -43,23 +43,9 @@ func IsLIDJID(jid string) bool {
 	return strings.HasSuffix(jid, "@lid")
 }
 
-// StripJIDSuffix removes @s.whatsapp.net or @g.us suffix from JID
-func StripJIDSuffix(jid string) string {
-	if idx := strings.Index(jid, "@"); idx > 0 {
-		return jid[:idx]
-	}
-	return jid
-}
-
 // =============================================================================
 // PHONE FORMATTING
 // =============================================================================
-
-// FormatPhoneE164 formats a phone number with + prefix for E164 format
-func FormatPhoneE164(phone string) string {
-	phone = strings.TrimPrefix(phone, "+")
-	return "+" + phone
-}
 
 // FormatPhoneDisplay formats a phone number for human-readable display
 // Brazilian numbers get special formatting: +55 (XX) XXXXX-XXXX
@@ -115,12 +101,6 @@ func GetAlternateBrazilianNumber(phone string) string {
 	}
 
 	return ""
-}
-
-// IsBrazilianNumber checks if a phone number is Brazilian
-func IsBrazilianNumber(phone string) bool {
-	phone = strings.TrimPrefix(phone, "+")
-	return strings.HasPrefix(phone, "55")
 }
 
 // =============================================================================

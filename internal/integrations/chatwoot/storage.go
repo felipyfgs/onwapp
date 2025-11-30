@@ -96,42 +96,6 @@ func (m *MediaUploader) UploadFromURL(ctx context.Context, req MediaUploadReques
 	return msg, nil
 }
 
-// UploadFromData uploads raw media data to Chatwoot
-func (m *MediaUploader) UploadFromData(ctx context.Context, conversationID int, data []byte, filename, mimeType, caption, messageType string, contentAttrs map[string]interface{}, timestamp *time.Time) (*Message, error) {
-	if messageType == "" {
-		messageType = "incoming"
-	}
-
-	logger.Debug().
-		Int("conversationId", conversationID).
-		Str("filename", filename).
-		Str("mimeType", mimeType).
-		Int("size", len(data)).
-		Msg("Chatwoot: uploading media from data via API")
-
-	msg, err := m.client.CreateMessageWithAttachmentFull(ctx, AttachmentUploadRequest{
-		ConversationID:    conversationID,
-		Content:           caption,
-		MessageType:       messageType,
-		Attachment:        bytes.NewReader(data),
-		Filename:          filename,
-		MimeType:          mimeType,
-		ContentAttributes: contentAttrs,
-		Timestamp:         timestamp,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to upload to Chatwoot: %w", err)
-	}
-
-	logger.Debug().
-		Int("conversationId", conversationID).
-		Int("messageId", msg.ID).
-		Str("filename", filename).
-		Msg("Chatwoot: media uploaded successfully from data")
-
-	return msg, nil
-}
-
 // Note: downloadMedia is defined in handler.go and reused here
 
 // extractFilename extracts or generates a filename from URL or mime type
