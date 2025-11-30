@@ -1,7 +1,7 @@
 {
   "enabled": true,
   "url": "https://chat.yourdomain.com",
-  "token": "jbT9T9wDV2KQgBXyAdnJiz8i",
+  "token": "bjfaPxxFUQR2LU2uMTg3pd19",
   "account": 1,
   "inbox": "mysession",
   "signAgent": true,
@@ -11,7 +11,12 @@
   "mergeBrPhones": true,
   "syncContacts": false,
   "syncMessages": false,
-  "syncDays": 0,
+  "syncDays": 7,
   "ignoreChats": [],
-  "autoInbox": true
+  "autoInbox": true,
+  "chatwootDbHost": "localhost",
+  "chatwootDbPort": 5433,
+  "chatwootDbUser": "postgres",
+  "chatwootDbPass": "postgres",
+  "chatwootDbName": "chatwoot"
 }

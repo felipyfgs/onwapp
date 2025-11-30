@@ -21,7 +21,7 @@ type Config struct {
 	SyncMessages  bool       `json:"syncMessages"`
 	SyncDays      int        `json:"syncDays,omitempty"`
 	IgnoreChats   []string   `json:"ignoreChats,omitempty"`
-	AutoInbox     bool       `json:"autoInbox"`
+	AutoCreate    bool       `json:"autoCreate"`
 	WebhookURL    string     `json:"webhookUrl,omitempty"`
 	// Chatwoot PostgreSQL connection for direct import (preserves timestamps)
 	ChatwootDBHost string     `json:"chatwootDbHost,omitempty"`

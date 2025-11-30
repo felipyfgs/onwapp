@@ -16,7 +16,10 @@ type SetConfigRequest struct {
 	SyncMessages   bool     `json:"syncMessages"`
 	SyncDays       int      `json:"syncDays,omitempty"`
 	IgnoreChats    []string `json:"ignoreChats,omitempty"`
-	AutoInbox      bool     `json:"autoInbox"`
+	AutoCreate     bool     `json:"autoCreate"`
+	Number         string   `json:"number,omitempty"`       // Phone number for pairing (Evolution API compatible)
+	Organization   string   `json:"organization,omitempty"` // Bot contact name (default: ZPWoot)
+	Logo           string   `json:"logo,omitempty"`         // Bot contact avatar URL
 	ChatwootDBHost string   `json:"chatwootDbHost,omitempty"`
 	ChatwootDBPort int      `json:"chatwootDbPort,omitempty"`
 	ChatwootDBUser string   `json:"chatwootDbUser,omitempty"`

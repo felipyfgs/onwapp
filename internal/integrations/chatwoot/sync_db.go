@@ -4,26 +4,169 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/lib/pq"
 
 	"zpwoot/internal/logger"
 	"zpwoot/internal/model"
 )
 
+// MessageRepository interface for accessing message data
+type MessageRepository interface {
+	GetBySession(ctx context.Context, sessionID string, limit, offset int) ([]model.Message, error)
+}
+
+// WhatsAppContact represents a contact from WhatsApp
+type WhatsAppContact struct {
+	JID          string
+	PushName     string
+	BusinessName string
+	FullName     string
+	FirstName    string
+}
+
+// ContactsGetter interface for getting WhatsApp contacts
+type ContactsGetter interface {
+	GetAllContacts(ctx context.Context) ([]WhatsAppContact, error)
+	GetProfilePictureURL(ctx context.Context, jid string) (string, error)
+}
+
+// SyncStats tracks synchronization statistics
+type SyncStats struct {
+	ContactsImported  int `json:"contactsImported"`
+	ContactsSkipped   int `json:"contactsSkipped"`
+	ContactsErrors    int `json:"contactsErrors"`
+	MessagesImported  int `json:"messagesImported"`
+	MessagesSkipped   int `json:"messagesSkipped"`
+	MessagesErrors    int `json:"messagesErrors"`
+	ConversationsUsed int `json:"conversationsUsed"`
+	Errors            int `json:"errors"`
+}
+
+// SyncStatus represents the current sync status
+type SyncStatus struct {
+	SessionID string     `json:"sessionId"`
+	Status    string     `json:"status"` // idle, running, completed, failed
+	Type      string     `json:"type"`   // contacts, messages, all
+	StartedAt *time.Time `json:"startedAt,omitempty"`
+	EndedAt   *time.Time `json:"endedAt,omitempty"`
+	Stats     SyncStats  `json:"stats"`
+	Error     string     `json:"error,omitempty"`
+}
+
+// Global sync status tracking
+var (
+	syncStatusMap   = make(map[string]*SyncStatus)
+	syncStatusMutex sync.RWMutex
+)
+
+// GetSyncStatus returns the current sync status for a session
+func GetSyncStatus(sessionID string) *SyncStatus {
+	syncStatusMutex.RLock()
+	defer syncStatusMutex.RUnlock()
+
+	if status, ok := syncStatusMap[sessionID]; ok {
+		return status
+	}
+
+	return &SyncStatus{
+		SessionID: sessionID,
+		Status:    "idle",
+	}
+}
+
+func setSyncStatus(sessionID string, status *SyncStatus) {
+	syncStatusMutex.Lock()
+	defer syncStatusMutex.Unlock()
+	syncStatusMap[sessionID] = status
+}
+
+// sortMessagesByTimestamp sorts messages by timestamp ascending
+func sortMessagesByTimestamp(messages []model.Message) {
+	sort.Slice(messages, func(i, j int) bool {
+		return messages[i].Timestamp.Before(messages[j].Timestamp)
+	})
+}
+
+// contactNameInfo holds name information from various sources
+type contactNameInfo struct {
+	FullName     string
+	FirstName    string
+	PushName     string
+	BusinessName string
+}
+
+// getBestContactName returns the best available name with priority:
+// 1. FullName from WhatsApp Contact Store
+// 2. FirstName from WhatsApp Contact Store
+// 3. PushName (from contact store or message)
+// 4. BusinessName from WhatsApp Contact Store
+// 5. Phone number (fallback)
+func getBestContactName(info *contactNameInfo, phone string) string {
+	if info != nil {
+		if info.FullName != "" {
+			return info.FullName
+		}
+		if info.FirstName != "" {
+			return info.FirstName
+		}
+		if info.PushName != "" {
+			return info.PushName
+		}
+		if info.BusinessName != "" {
+			return info.BusinessName
+		}
+	}
+	return phone
+}
+
+// isNameJustPhone checks if a contact name is just the phone number or a variation
+// This is used to detect contacts that need name updates
+func isNameJustPhone(name, phone string) bool {
+	if name == "" || name == phone {
+		return true
+	}
+	// Check for phone with + prefix
+	if name == "+"+phone {
+		return true
+	}
+	// Check for Brazilian number variations (with/without 9)
+	if strings.HasPrefix(phone, "55") && len(phone) >= 12 {
+		// 13 digits with 9 -> check 12 digit version
+		if len(phone) == 13 {
+			without9 := phone[:4] + phone[5:]
+			if name == without9 || name == "+"+without9 {
+				return true
+			}
+		}
+		// 12 digits without 9 -> check 13 digit version
+		if len(phone) == 12 {
+			with9 := phone[:4] + "9" + phone[4:]
+			if name == with9 || name == "+"+with9 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // ChatwootDBSync handles direct database sync to Chatwoot PostgreSQL
 type ChatwootDBSync struct {
-	cfg       *Config
-	client    *Client
-	msgRepo   MessageRepository
-	sessionID string
-	cwDB      *sql.DB
+	cfg            *Config
+	client         *Client
+	msgRepo        MessageRepository
+	contactsGetter ContactsGetter
+	sessionID      string
+	cwDB           *sql.DB
 }
 
 // NewChatwootDBSync creates a new direct database sync service
-func NewChatwootDBSync(cfg *Config, msgRepo MessageRepository, sessionID string) (*ChatwootDBSync, error) {
+func NewChatwootDBSync(cfg *Config, msgRepo MessageRepository, contactsGetter ContactsGetter, sessionID string) (*ChatwootDBSync, error) {
 	if cfg.ChatwootDBHost == "" {
 		return nil, fmt.Errorf("chatwoot database host not configured")
 	}
@@ -57,11 +200,12 @@ func NewChatwootDBSync(cfg *Config, msgRepo MessageRepository, sessionID string)
 		Msg("Chatwoot: connected to database for direct sync")
 
 	return &ChatwootDBSync{
-		cfg:       cfg,
-		client:    NewClient(cfg.URL, cfg.Token, cfg.Account),
-		msgRepo:   msgRepo,
-		sessionID: sessionID,
-		cwDB:      db,
+		cfg:            cfg,
+		client:         NewClient(cfg.URL, cfg.Token, cfg.Account),
+		msgRepo:        msgRepo,
+		contactsGetter: contactsGetter,
+		sessionID:      sessionID,
+		cwDB:           db,
 	}, nil
 }
 
@@ -71,6 +215,16 @@ func (s *ChatwootDBSync) Close() error {
 		return s.cwDB.Close()
 	}
 	return nil
+}
+
+// updateSyncStats updates the sync status with current stats
+func (s *ChatwootDBSync) updateSyncStats(stats *SyncStats) {
+	syncStatusMutex.Lock()
+	defer syncStatusMutex.Unlock()
+
+	if status, ok := syncStatusMap[s.sessionID]; ok {
+		status.Stats = *stats
+	}
 }
 
 // getChatwootUser gets the user info from Chatwoot API token
@@ -90,6 +244,7 @@ func (s *ChatwootDBSync) getChatwootUser(ctx context.Context) (userID int, userT
 }
 
 // getExistingSourceIDs returns set of source_ids that already exist in Chatwoot
+// Optimized: uses ANY($1) for efficient array query (Evolution API pattern)
 func (s *ChatwootDBSync) getExistingSourceIDs(ctx context.Context, messageIDs []string) (map[string]bool, error) {
 	existing := make(map[string]bool)
 	if len(messageIDs) == 0 {
@@ -102,8 +257,9 @@ func (s *ChatwootDBSync) getExistingSourceIDs(ctx context.Context, messageIDs []
 		sourceIDs[i] = "WAID:" + id
 	}
 
-	// Query in batches
-	batchSize := 500
+	// Use ANY($1) for efficient array query - much faster than IN (...)
+	// Process in batches of 10000 to avoid memory issues
+	batchSize := 10000
 	for i := 0; i < len(sourceIDs); i += batchSize {
 		end := i + batchSize
 		if end > len(sourceIDs) {
@@ -111,20 +267,10 @@ func (s *ChatwootDBSync) getExistingSourceIDs(ctx context.Context, messageIDs []
 		}
 		batch := sourceIDs[i:end]
 
-		placeholders := make([]string, len(batch))
-		args := make([]interface{}, len(batch)+1)
-		args[0] = s.cfg.Account
-		for j, id := range batch {
-			placeholders[j] = fmt.Sprintf("$%d", j+2)
-			args[j+1] = id
-		}
+		// Use pq.Array for efficient PostgreSQL array handling
+		query := `SELECT source_id FROM messages WHERE account_id = $1 AND source_id = ANY($2)`
 
-		query := fmt.Sprintf(`
-			SELECT source_id FROM messages 
-			WHERE account_id = $1 AND source_id IN (%s)
-		`, strings.Join(placeholders, ","))
-
-		rows, err := s.cwDB.QueryContext(ctx, query, args...)
+		rows, err := s.cwDB.QueryContext(ctx, query, s.cfg.Account, pq.Array(batch))
 		if err != nil {
 			return nil, err
 		}
@@ -143,35 +289,178 @@ func (s *ChatwootDBSync) getExistingSourceIDs(ctx context.Context, messageIDs []
 	return existing, nil
 }
 
-// getOrCreateContactAndConversation ensures contact and conversation exist
-func (s *ChatwootDBSync) getOrCreateContactAndConversation(ctx context.Context, phone, jid, name string) (contactID, conversationID int, err error) {
-	// Use the API client to get/create contact
-	contact, err := s.client.GetOrCreateContactWithMerge(
-		ctx,
-		s.cfg.InboxID,
-		phone,
-		jid,
-		name,
-		"",
-		false,
-		s.cfg.MergeBrPhones,
-	)
+// phoneTimestamp holds timestamp range for a phone number
+type phoneTimestamp struct {
+	phone     string
+	firstTS   int64
+	lastTS    int64
+	name      string
+	identifier string
+}
+
+// selectOrCreateFksFromChatwoot creates contacts, contact_inboxes, and conversations in a single SQL query
+// This follows the Evolution API pattern for efficient bulk import
+// Processes in batches of 500 to avoid query size limits
+func (s *ChatwootDBSync) selectOrCreateFksFromChatwoot(ctx context.Context, phoneData []phoneTimestamp) (map[string]*chatFKs, error) {
+	result := make(map[string]*chatFKs)
+	
+	if len(phoneData) == 0 {
+		return result, nil
+	}
+
+	// Process in batches of 500 to avoid PostgreSQL query size limits
+	batchSize := 500
+	for batchStart := 0; batchStart < len(phoneData); batchStart += batchSize {
+		batchEnd := batchStart + batchSize
+		if batchEnd > len(phoneData) {
+			batchEnd = len(phoneData)
+		}
+		batch := phoneData[batchStart:batchEnd]
+
+		batchResult, err := s.selectOrCreateFksBatch(ctx, batch)
+		if err != nil {
+			return nil, err
+		}
+		for k, v := range batchResult {
+			result[k] = v
+		}
+	}
+
+	return result, nil
+}
+
+// selectOrCreateFksBatch processes a single batch of phone data
+// Handles ALL cases: new contacts, existing contacts without contact_inbox, and existing complete chains
+func (s *ChatwootDBSync) selectOrCreateFksBatch(ctx context.Context, phoneData []phoneTimestamp) (map[string]*chatFKs, error) {
+	result := make(map[string]*chatFKs)
+
+	if len(phoneData) == 0 {
+		return result, nil
+	}
+
+	// Build VALUES clause for phone numbers with timestamps
+	var valuesClauses []string
+	args := []interface{}{s.cfg.Account, s.cfg.InboxID}
+	
+	for _, pd := range phoneData {
+		baseIdx := len(args) + 1
+		args = append(args, pd.phone, pd.name, pd.identifier)
+		// Embed timestamps directly in SQL to avoid int64 encoding issues
+		valuesClauses = append(valuesClauses, fmt.Sprintf("($%d::text, %d::bigint, %d::bigint, $%d::text, $%d::text)", 
+			baseIdx, pd.firstTS, pd.lastTS, baseIdx+1, baseIdx+2))
+	}
+
+	// Single CTE query that:
+	// 1. Upserts contacts (creates new or updates existing)
+	// 2. Creates contact_inboxes for ALL contacts that don't have one (new OR existing)
+	// 3. Creates conversations for ALL contact_inboxes that don't have one
+	// 4. Returns all FKs for all input phones
+	query := fmt.Sprintf(`
+		WITH
+		phone_data AS (
+			SELECT phone_number, created_at, last_activity_at, contact_name, identifier FROM (
+				VALUES %s
+			) AS t (phone_number, created_at, last_activity_at, contact_name, identifier)
+		),
+
+		-- Upsert all contacts (insert new, update name if it was just phone number)
+		upserted_contacts AS (
+			INSERT INTO contacts (name, phone_number, account_id, identifier, created_at, updated_at)
+			SELECT 
+				p.contact_name,
+				p.phone_number, 
+				$1, 
+				p.identifier,
+				to_timestamp(p.created_at), 
+				to_timestamp(p.last_activity_at)
+			FROM phone_data AS p
+			ON CONFLICT(identifier, account_id) DO UPDATE SET 
+				updated_at = EXCLUDED.updated_at,
+				name = CASE 
+					WHEN contacts.name = contacts.phone_number 
+					  OR contacts.name = REPLACE(contacts.phone_number, '+', '')
+					  OR contacts.name IS NULL 
+					  OR contacts.name = ''
+					THEN EXCLUDED.name 
+					ELSE contacts.name 
+				END
+			RETURNING id, phone_number, identifier
+		),
+
+		-- Get all contact IDs for the input phones (from upsert or existing)
+		all_contacts AS (
+			SELECT c.id, c.phone_number, c.identifier
+			FROM contacts c
+			WHERE c.account_id = $1 
+			AND c.identifier IN (SELECT identifier FROM phone_data)
+		),
+
+		-- Create contact_inboxes for ALL contacts that don't have one for this inbox
+		new_contact_inboxes AS (
+			INSERT INTO contact_inboxes (contact_id, inbox_id, source_id, created_at, updated_at)
+			SELECT ac.id, $2, gen_random_uuid(), NOW(), NOW()
+			FROM all_contacts ac
+			WHERE NOT EXISTS (
+				SELECT 1 FROM contact_inboxes ci 
+				WHERE ci.contact_id = ac.id AND ci.inbox_id = $2
+			)
+			RETURNING id, contact_id
+		),
+
+		-- Get all contact_inbox IDs for these contacts
+		all_contact_inboxes AS (
+			SELECT ci.id, ci.contact_id
+			FROM contact_inboxes ci
+			JOIN all_contacts ac ON ac.id = ci.contact_id
+			WHERE ci.inbox_id = $2
+		),
+
+		-- Create conversations for ALL contact_inboxes that don't have one
+		new_conversations AS (
+			INSERT INTO conversations (account_id, inbox_id, status, contact_id, contact_inbox_id, uuid, last_activity_at, created_at, updated_at)
+			SELECT $1, $2, 0, aci.contact_id, aci.id, gen_random_uuid(), NOW(), NOW(), NOW()
+			FROM all_contact_inboxes aci
+			WHERE NOT EXISTS (
+				SELECT 1 FROM conversations con 
+				WHERE con.contact_inbox_id = aci.id
+			)
+			RETURNING id, contact_id, contact_inbox_id
+		),
+
+		-- Get all conversations for these contact_inboxes
+		all_conversations AS (
+			SELECT con.id, con.contact_id, aci.id as contact_inbox_id
+			FROM conversations con
+			JOIN all_contact_inboxes aci ON aci.id = con.contact_inbox_id
+			WHERE con.account_id = $1 AND con.inbox_id = $2
+		)
+
+		-- Return phone -> contact_id -> conversation_id mapping for ALL input phones
+		SELECT ac.phone_number, ac.id AS contact_id, aconv.id AS conversation_id
+		FROM all_contacts ac
+		JOIN all_contact_inboxes aci ON aci.contact_id = ac.id
+		JOIN all_conversations aconv ON aconv.contact_inbox_id = aci.id
+	`, strings.Join(valuesClauses, ", "))
+
+	rows, err := s.cwDB.QueryContext(ctx, query, args...)
 	if err != nil {
-		return 0, 0, fmt.Errorf("failed to get/create contact: %w", err)
+		return nil, fmt.Errorf("failed to select/create FKs: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var phoneNumber string
+		var contactID, conversationID int
+		if err := rows.Scan(&phoneNumber, &contactID, &conversationID); err != nil {
+			return nil, err
+		}
+		result[phoneNumber] = &chatFKs{
+			contactID:      contactID,
+			conversationID: conversationID,
+		}
 	}
 
-	// Get or create conversation
-	status := "open"
-	if s.cfg.StartPending {
-		status = "pending"
-	}
-
-	conv, err := s.client.GetOrCreateConversation(ctx, contact.ID, s.cfg.InboxID, status, s.cfg.AutoReopen)
-	if err != nil {
-		return 0, 0, fmt.Errorf("failed to get/create conversation: %w", err)
-	}
-
-	return contact.ID, conv.ID, nil
+	return result, rows.Err()
 }
 
 // SyncMessages synchronizes messages directly to Chatwoot PostgreSQL with original timestamps
@@ -242,8 +531,8 @@ func (s *ChatwootDBSync) SyncMessages(ctx context.Context, daysLimit int) (*Sync
 			continue
 		}
 
-		// Skip groups and status broadcasts
-		if IsGroupJID(msg.ChatJID) || IsStatusBroadcast(msg.ChatJID) {
+		// Skip groups, status broadcasts, and newsletters
+		if IsGroupJID(msg.ChatJID) || IsStatusBroadcast(msg.ChatJID) || IsNewsletter(msg.ChatJID) {
 			stats.MessagesSkipped++
 			continue
 		}
@@ -276,46 +565,93 @@ func (s *ChatwootDBSync) SyncMessages(ctx context.Context, daysLimit int) (*Sync
 		messagesByChat[msg.ChatJID] = append(messagesByChat[msg.ChatJID], msg)
 	}
 
-	// Cache for contact/conversation IDs
-	type chatFKs struct {
-		contactID      int
-		conversationID int
+	// Build WhatsApp contacts cache for name lookup (optimized: single load)
+	waContactsCache := make(map[string]*contactNameInfo)
+	if s.contactsGetter != nil {
+		contacts, err := s.contactsGetter.GetAllContacts(ctx)
+		if err == nil {
+			for _, c := range contacts {
+				waContactsCache[c.JID] = &contactNameInfo{
+					FullName:     c.FullName,
+					FirstName:    c.FirstName,
+					PushName:     c.PushName,
+					BusinessName: c.BusinessName,
+				}
+			}
+			logger.Info().Int("count", len(waContactsCache)).Msg("Chatwoot DB: loaded WhatsApp contacts cache")
+		} else {
+			logger.Warn().Err(err).Msg("Chatwoot DB: failed to load WhatsApp contacts cache")
+		}
 	}
-	chatCache := make(map[string]*chatFKs)
 
-	// Get/create contacts and conversations first
+	// Prepare phone data for bulk contact/conversation creation (Evolution API pattern)
+	var phoneDataList []phoneTimestamp
 	for chatJID, chatMessages := range messagesByChat {
 		phone := ExtractPhoneFromJID(chatJID)
 		if phone == "" {
 			continue
 		}
 
-		// Get contact name from first message with pushName
-		contactName := phone
-		for _, msg := range chatMessages {
-			if msg.PushName != "" {
-				contactName = msg.PushName
-				break
+		// Get name from WhatsApp Contact Store or messages
+		nameInfo := waContactsCache[chatJID]
+		if nameInfo == nil || (nameInfo.FullName == "" && nameInfo.FirstName == "" && nameInfo.PushName == "" && nameInfo.BusinessName == "") {
+			for i := len(chatMessages) - 1; i >= 0; i-- {
+				msg := chatMessages[i]
+				if msg.PushName != "" && !msg.FromMe {
+					if nameInfo == nil {
+						nameInfo = &contactNameInfo{}
+					}
+					nameInfo.PushName = msg.PushName
+					break
+				}
 			}
 		}
+		contactName := getBestContactName(nameInfo, phone)
 
-		contactID, conversationID, err := s.getOrCreateContactAndConversation(ctx, phone, chatJID, contactName)
-		if err != nil {
-			logger.Warn().Err(err).Str("chatJID", chatJID).Msg("Chatwoot DB: failed to get/create contact/conversation")
-			stats.Errors++
-			continue
+		// Get first and last message timestamps
+		var firstTS, lastTS int64
+		if len(chatMessages) > 0 {
+			firstTS = chatMessages[0].Timestamp.Unix()
+			lastTS = chatMessages[len(chatMessages)-1].Timestamp.Unix()
+		} else {
+			firstTS = time.Now().Unix()
+			lastTS = firstTS
 		}
 
-		chatCache[chatJID] = &chatFKs{
-			contactID:      contactID,
-			conversationID: conversationID,
-		}
-		stats.ConversationsUsed++
+		phoneDataList = append(phoneDataList, phoneTimestamp{
+			phone:      "+" + phone,
+			firstTS:    firstTS,
+			lastTS:     lastTS,
+			name:       contactName,
+			identifier: chatJID,
+		})
 	}
 
+	logger.Info().Int("chats", len(phoneDataList)).Msg("Chatwoot DB: creating contacts/conversations in single query")
+
+	// Create all contacts and conversations in a single SQL query (Evolution API pattern)
+	chatCacheByPhone, err := s.selectOrCreateFksFromChatwoot(ctx, phoneDataList)
+	if err != nil {
+		logger.Error().Err(err).Msg("Chatwoot DB: failed to create contacts/conversations")
+		return stats, err
+	}
+
+	// Build chatCache by JID
+	chatCache := make(map[string]*chatFKs)
+	for _, pd := range phoneDataList {
+		if fks, ok := chatCacheByPhone[pd.phone]; ok {
+			chatCache[pd.identifier] = fks
+			stats.ConversationsUsed++
+		}
+	}
+
+	logger.Info().Int("conversations", stats.ConversationsUsed).Msg("Chatwoot DB: contacts/conversations created")
+
 	// Insert messages in batches directly to PostgreSQL
-	batchSize := 100
+	// Batch size 4000 like Evolution API for maximum performance
+	batchSize := 4000
 	var batch []model.Message
+	totalMsgs := len(filteredMessages)
 
 	for _, msg := range filteredMessages {
 		fks := chatCache[msg.ChatJID]
@@ -334,6 +670,13 @@ func (s *ChatwootDBSync) SyncMessages(ctx context.Context, daysLimit int) (*Sync
 				stats.MessagesImported += imported
 			}
 			batch = nil
+
+			// Update status for real-time monitoring
+			s.updateSyncStats(stats)
+			logger.Info().
+				Int("imported", stats.MessagesImported).
+				Int("total", totalMsgs).
+				Msg("Chatwoot DB: messages sync progress")
 		}
 	}
 
@@ -346,6 +689,7 @@ func (s *ChatwootDBSync) SyncMessages(ctx context.Context, daysLimit int) (*Sync
 		} else {
 			stats.MessagesImported += imported
 		}
+		s.updateSyncStats(stats)
 	}
 
 	logger.Info().
@@ -358,6 +702,12 @@ func (s *ChatwootDBSync) SyncMessages(ctx context.Context, daysLimit int) (*Sync
 }
 
 // insertMessageBatch inserts a batch of messages directly to Chatwoot PostgreSQL
+// chatFKs holds foreign keys for a chat
+type chatFKs struct {
+	contactID      int
+	conversationID int
+}
+
 func (s *ChatwootDBSync) insertMessageBatch(ctx context.Context, messages []model.Message, chatCache map[string]*chatFKs, userID int, userType string) (int, error) {
 	if len(messages) == 0 {
 		return 0, nil
@@ -434,6 +784,25 @@ func (s *ChatwootDBSync) insertMessageBatch(ctx context.Context, messages []mode
 	}
 
 	rowsAffected, _ := result.RowsAffected()
+
+	// Update last_activity_at for conversations that received new messages
+	if rowsAffected > 0 {
+		conversationIDs := make(map[int]time.Time)
+		for _, msg := range messages {
+			if fks := chatCache[msg.ChatJID]; fks != nil {
+				if existing, ok := conversationIDs[fks.conversationID]; !ok || msg.Timestamp.After(existing) {
+					conversationIDs[fks.conversationID] = msg.Timestamp
+				}
+			}
+		}
+		for convID, lastActivity := range conversationIDs {
+			_, _ = s.cwDB.ExecContext(ctx, 
+				`UPDATE conversations SET last_activity_at = $1, updated_at = $1 
+				 WHERE id = $2 AND (last_activity_at IS NULL OR last_activity_at < $1)`,
+				lastActivity, convID)
+		}
+	}
+
 	return int(rowsAffected), nil
 }
 
@@ -464,90 +833,144 @@ func (s *ChatwootDBSync) getMessageContent(msg *model.Message) string {
 	}
 }
 
-// SyncContacts synchronizes contacts to Chatwoot
+// SyncContacts synchronizes contacts to Chatwoot using direct PostgreSQL INSERT (batch)
 func (s *ChatwootDBSync) SyncContacts(ctx context.Context, daysLimit int) (*SyncStats, error) {
 	stats := &SyncStats{}
 
 	logger.Info().
 		Str("sessionId", s.sessionID).
-		Int("daysLimit", daysLimit).
-		Msg("Chatwoot DB: starting contacts sync")
+		Msg("Chatwoot DB: starting contacts sync (direct SQL batch)")
 
-	// Get messages from our database to extract contacts
-	limit := 10000
-	messages, err := s.msgRepo.GetBySession(ctx, s.sessionID, limit, 0)
+	if s.contactsGetter == nil {
+		return stats, fmt.Errorf("contacts getter not available")
+	}
+
+	contacts, err := s.contactsGetter.GetAllContacts(ctx)
 	if err != nil {
-		return stats, fmt.Errorf("failed to get messages: %w", err)
+		return stats, fmt.Errorf("failed to get contacts from WhatsApp: %w", err)
 	}
 
-	// Calculate cutoff date
-	var cutoffTime time.Time
-	if daysLimit > 0 {
-		cutoffTime = time.Now().AddDate(0, 0, -daysLimit)
-	}
+	logger.Info().Int("totalContacts", len(contacts)).Msg("Chatwoot DB: retrieved contacts from WhatsApp")
 
-	// Extract unique contacts from messages
-	contactMap := make(map[string]*contactInfo)
-	for _, msg := range messages {
-		if daysLimit > 0 && msg.Timestamp.Before(cutoffTime) {
+	// Filter valid contacts
+	var validContacts []WhatsAppContact
+	for _, contact := range contacts {
+		if IsGroupJID(contact.JID) || IsStatusBroadcast(contact.JID) || IsNewsletter(contact.JID) || strings.HasSuffix(contact.JID, "@lid") {
+			stats.ContactsSkipped++
 			continue
 		}
-
-		if IsGroupJID(msg.ChatJID) || IsStatusBroadcast(msg.ChatJID) {
-			continue
-		}
-
-		phone := ExtractPhoneFromJID(msg.ChatJID)
+		phone := ExtractPhoneFromJID(contact.JID)
 		if phone == "" {
+			stats.ContactsSkipped++
 			continue
 		}
-
-		if _, exists := contactMap[msg.ChatJID]; !exists {
-			name := msg.PushName
-			if name == "" {
-				name = phone
-			}
-			contactMap[msg.ChatJID] = &contactInfo{
-				phone:      phone,
-				name:       name,
-				identifier: msg.ChatJID,
-			}
-		} else if msg.PushName != "" && contactMap[msg.ChatJID].name == contactMap[msg.ChatJID].phone {
-			contactMap[msg.ChatJID].name = msg.PushName
-		}
+		validContacts = append(validContacts, contact)
 	}
 
 	logger.Info().
-		Int("uniqueContacts", len(contactMap)).
-		Msg("Chatwoot DB: extracted unique contacts")
+		Int("validContacts", len(validContacts)).
+		Int("skipped", stats.ContactsSkipped).
+		Msg("Chatwoot DB: filtered contacts for sync")
 
-	// Create contacts via API
-	for _, info := range contactMap {
-		contact, err := s.client.GetOrCreateContactWithMerge(
-			ctx,
-			s.cfg.InboxID,
-			info.phone,
-			info.identifier,
-			info.name,
-			"",
-			false,
-			s.cfg.MergeBrPhones,
-		)
+	if len(validContacts) == 0 {
+		return stats, nil
+	}
+
+	// Process in batches of 3000 contacts via direct SQL INSERT (Evolution API uses 3000)
+	batchSize := 3000
+	totalContacts := len(validContacts)
+
+	for batchStart := 0; batchStart < totalContacts; batchStart += batchSize {
+		batchEnd := batchStart + batchSize
+		if batchEnd > totalContacts {
+			batchEnd = totalContacts
+		}
+		batch := validContacts[batchStart:batchEnd]
+
+		imported, err := s.insertContactsBatch(ctx, batch)
 		if err != nil {
-			stats.Errors++
-			continue
+			logger.Warn().Err(err).Int("batchStart", batchStart).Msg("Chatwoot DB: batch insert failed")
+			stats.ContactsErrors += len(batch)
+		} else {
+			stats.ContactsImported += imported
 		}
-		if contact != nil {
-			stats.ContactsCreated++
-		}
+
+		// Update status after each batch for real-time monitoring
+		s.updateSyncStats(stats)
+		logger.Info().
+			Int("progress", batchEnd).
+			Int("total", totalContacts).
+			Int("imported", stats.ContactsImported).
+			Msg("Chatwoot DB: contacts sync progress")
 	}
 
 	logger.Info().
-		Int("created", stats.ContactsCreated).
-		Int("errors", stats.Errors).
+		Int("imported", stats.ContactsImported).
+		Int("skipped", stats.ContactsSkipped).
+		Int("errors", stats.ContactsErrors).
 		Msg("Chatwoot DB: contacts sync completed")
 
 	return stats, nil
+}
+
+// insertContactsBatch inserts/updates contacts ONLY (no contact_inbox or conversation)
+// Contact_inbox and conversation are created by SyncMessages when there are actual messages
+func (s *ChatwootDBSync) insertContactsBatch(ctx context.Context, contacts []WhatsAppContact) (int, error) {
+	if len(contacts) == 0 {
+		return 0, nil
+	}
+
+	// Build VALUES clause
+	var valuesClauses []string
+	args := []interface{}{s.cfg.Account}
+
+	for i, contact := range contacts {
+		phone := ExtractPhoneFromJID(contact.JID)
+		nameInfo := &contactNameInfo{
+			FullName:     contact.FullName,
+			FirstName:    contact.FirstName,
+			PushName:     contact.PushName,
+			BusinessName: contact.BusinessName,
+		}
+		name := getBestContactName(nameInfo, phone)
+
+		baseIdx := len(args) + 1
+		args = append(args, name, "+"+phone, contact.JID)
+		valuesClauses = append(valuesClauses, fmt.Sprintf("($%d, $%d, $%d)", baseIdx, baseIdx+1, baseIdx+2))
+
+		if i < 3 {
+			logger.Debug().
+				Str("name", name).
+				Str("phone", phone).
+				Str("jid", contact.JID).
+				Msg("Chatwoot DB: syncing contact")
+		}
+	}
+
+	// Simple upsert: insert new contacts or update name if it was just phone number
+	query := fmt.Sprintf(`
+		INSERT INTO contacts (name, phone_number, account_id, identifier, created_at, updated_at)
+		SELECT name, phone_number, $1, identifier, NOW(), NOW()
+		FROM (VALUES %s) AS t (name, phone_number, identifier)
+		ON CONFLICT (identifier, account_id) DO UPDATE SET
+			name = CASE 
+				WHEN contacts.name = contacts.phone_number 
+				  OR contacts.name = REPLACE(contacts.phone_number, '+', '')
+				  OR contacts.name IS NULL 
+				  OR contacts.name = ''
+				THEN EXCLUDED.name 
+				ELSE contacts.name 
+			END,
+			updated_at = NOW()
+	`, strings.Join(valuesClauses, ", "))
+
+	result, err := s.cwDB.ExecContext(ctx, query, args...)
+	if err != nil {
+		return 0, fmt.Errorf("failed to sync contacts batch: %w", err)
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	return int(rowsAffected), nil
 }
 
 // SyncAll performs full sync (contacts + messages)
@@ -557,26 +980,21 @@ func (s *ChatwootDBSync) SyncAll(ctx context.Context, daysLimit int) (*SyncStats
 	contactStats, err := s.SyncContacts(ctx, daysLimit)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Chatwoot DB: contacts sync failed")
-	} else {
-		totalStats.ContactsCreated = contactStats.ContactsCreated
-		totalStats.ContactsUpdated = contactStats.ContactsUpdated
+	} else if contactStats != nil {
+		totalStats.ContactsImported = contactStats.ContactsImported
 		totalStats.ContactsSkipped = contactStats.ContactsSkipped
+		totalStats.ContactsErrors = contactStats.ContactsErrors
 	}
 
 	msgStats, err := s.SyncMessages(ctx, daysLimit)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Chatwoot DB: messages sync failed")
-	} else {
+	} else if msgStats != nil {
 		totalStats.MessagesImported = msgStats.MessagesImported
 		totalStats.MessagesSkipped = msgStats.MessagesSkipped
+		totalStats.MessagesErrors = msgStats.MessagesErrors
 		totalStats.ConversationsUsed = msgStats.ConversationsUsed
-	}
-
-	if contactStats != nil {
-		totalStats.Errors += contactStats.Errors
-	}
-	if msgStats != nil {
-		totalStats.Errors += msgStats.Errors
+		totalStats.Errors = msgStats.Errors
 	}
 
 	return totalStats, nil
@@ -585,20 +1003,17 @@ func (s *ChatwootDBSync) SyncAll(ctx context.Context, daysLimit int) (*SyncStats
 // StartSyncAsync starts sync in background
 func (s *ChatwootDBSync) StartSyncAsync(syncType string, daysLimit int) (*SyncStatus, error) {
 	currentStatus := GetSyncStatus(s.sessionID)
-	if currentStatus.InProgress {
+	if currentStatus.Status == "running" {
 		return currentStatus, fmt.Errorf("sync already in progress")
 	}
 
-	startTime := time.Now().Format(time.RFC3339)
+	startTime := time.Now()
 	status := &SyncStatus{
-		SessionID:  s.sessionID,
-		InProgress: true,
-		Type:       syncType,
-		StartedAt:  startTime,
-		Stats: &SyncStats{
-			Status:    "running",
-			StartedAt: startTime,
-		},
+		SessionID: s.sessionID,
+		Status:    "running",
+		Type:      syncType,
+		StartedAt: &startTime,
+		Stats:     SyncStats{},
 	}
 	setSyncStatus(s.sessionID, status)
 
@@ -616,26 +1031,23 @@ func (s *ChatwootDBSync) StartSyncAsync(syncType string, daysLimit int) (*SyncSt
 			stats, err = s.SyncAll(ctx, daysLimit)
 		}
 
-		completedTime := time.Now().Format(time.RFC3339)
+		endTime := time.Now()
 		finalStatus := &SyncStatus{
-			SessionID:  s.sessionID,
-			InProgress: false,
-			Type:       syncType,
-			StartedAt:  startTime,
+			SessionID: s.sessionID,
+			Type:      syncType,
+			StartedAt: &startTime,
+			EndedAt:   &endTime,
 		}
 
 		if err != nil {
+			finalStatus.Status = "failed"
 			finalStatus.Error = err.Error()
-			if stats != nil {
-				stats.Status = "failed"
-				stats.CompletedAt = completedTime
-				finalStatus.Stats = stats
-			}
 		} else {
-			stats.Status = "completed"
-			stats.CompletedAt = completedTime
-			stats.StartedAt = startTime
-			finalStatus.Stats = stats
+			finalStatus.Status = "completed"
+		}
+
+		if stats != nil {
+			finalStatus.Stats = *stats
 		}
 
 		setSyncStatus(s.sessionID, finalStatus)
@@ -646,9 +1058,7 @@ func (s *ChatwootDBSync) StartSyncAsync(syncType string, daysLimit int) (*SyncSt
 		logger.Info().
 			Str("sessionId", s.sessionID).
 			Str("type", syncType).
-			Str("status", stats.Status).
-			Int("messagesImported", stats.MessagesImported).
-			Int("contactsCreated", stats.ContactsCreated).
+			Str("status", finalStatus.Status).
 			Msg("Chatwoot DB: async sync completed")
 	}()
 

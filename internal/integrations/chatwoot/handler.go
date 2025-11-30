@@ -23,6 +23,57 @@ type Handler struct {
 	database       *db.Database
 }
 
+// whatsappContactsAdapter adapts WhatsAppService to ContactsGetter interface
+type whatsappContactsAdapter struct {
+	whatsappSvc *service.WhatsAppService
+	sessionName string
+}
+
+func (a *whatsappContactsAdapter) GetAllContacts(ctx context.Context) ([]WhatsAppContact, error) {
+	contactsMap, err := a.whatsappSvc.GetContacts(ctx, a.sessionName)
+	if err != nil {
+		return nil, err
+	}
+
+	var contacts []WhatsAppContact
+	for jid, data := range contactsMap {
+		if dataMap, ok := data.(map[string]interface{}); ok {
+			contact := WhatsAppContact{JID: jid}
+			if v, ok := dataMap["pushName"].(string); ok {
+				contact.PushName = v
+			}
+			if v, ok := dataMap["businessName"].(string); ok {
+				contact.BusinessName = v
+			}
+			if v, ok := dataMap["fullName"].(string); ok {
+				contact.FullName = v
+			}
+			if v, ok := dataMap["firstName"].(string); ok {
+				contact.FirstName = v
+			}
+			contacts = append(contacts, contact)
+		}
+	}
+	return contacts, nil
+}
+
+func (a *whatsappContactsAdapter) GetProfilePictureURL(ctx context.Context, jid string) (string, error) {
+	// Extract phone from JID (remove @s.whatsapp.net)
+	phone := ExtractPhoneFromJID(jid)
+	if phone == "" {
+		return "", nil
+	}
+
+	pic, err := a.whatsappSvc.GetProfilePicture(ctx, a.sessionName, phone)
+	if err != nil {
+		return "", err
+	}
+	if pic == nil {
+		return "", nil
+	}
+	return pic.URL, nil
+}
+
 // NewHandler creates a new Chatwoot handler
 func NewHandler(svc *Service, sessionSvc *service.SessionService, whatsappSvc *service.WhatsAppService, database *db.Database) *Handler {
 	return &Handler{
@@ -361,11 +412,12 @@ func downloadMedia(url string) ([]byte, string, error) {
 
 // SyncContacts handles POST /sessions/:name/chatwoot/sync/contacts
 // @Summary Sync contacts to Chatwoot (async)
-// @Description Start async synchronization of contacts from message history to Chatwoot
+// @Description Start async synchronization of contacts from message history to Chatwoot. Requires chatwootDbHost to be configured.
 // @Tags Chatwoot
 // @Produce json
 // @Param name path string true "Session name"
 // @Success 202 {object} SyncStatus
+// @Failure 400 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
 // @Security ApiKeyAuth
 // @Router /sessions/{name}/chatwoot/sync/contacts [post]
@@ -377,24 +429,35 @@ func (h *Handler) SyncContacts(c *gin.Context) {
 		return
 	}
 
-	// Get Chatwoot config
 	cfg, err := h.service.GetEnabledConfig(c.Request.Context(), session.ID)
 	if err != nil || cfg == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "chatwoot not configured or disabled"})
 		return
 	}
 
-	// Create sync service
-	syncSvc := NewSyncService(cfg, h.database.Messages, session.ID)
+	if cfg.ChatwootDBHost == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "chatwootDbHost not configured - sync requires direct database access"})
+		return
+	}
 
-	// Get days limit from query param or config
+	// Create contacts adapter for WhatsApp service
+	contactsAdapter := &whatsappContactsAdapter{
+		whatsappSvc: h.whatsappSvc,
+		sessionName: sessionName,
+	}
+
+	dbSync, err := NewChatwootDBSync(cfg, h.database.Messages, contactsAdapter, session.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to connect to chatwoot db: " + err.Error()})
+		return
+	}
+
 	daysLimit := cfg.SyncDays
 	if days := c.Query("days"); days != "" {
 		fmt.Sscanf(days, "%d", &daysLimit)
 	}
 
-	// Start async sync
-	status, err := syncSvc.StartSyncAsync("contacts", daysLimit)
+	status, err := dbSync.StartSyncAsync("contacts", daysLimit)
 	if err != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": err.Error(), "status": status})
 		return
@@ -405,12 +468,13 @@ func (h *Handler) SyncContacts(c *gin.Context) {
 
 // SyncMessages handles POST /sessions/:name/chatwoot/sync/messages
 // @Summary Sync messages to Chatwoot (async)
-// @Description Start async synchronization of message history to Chatwoot
+// @Description Start async synchronization of message history to Chatwoot with original timestamps. Requires chatwootDbHost to be configured.
 // @Tags Chatwoot
 // @Produce json
 // @Param name path string true "Session name"
 // @Param days query int false "Limit to last N days"
 // @Success 202 {object} SyncStatus
+// @Failure 400 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
 // @Security ApiKeyAuth
 // @Router /sessions/{name}/chatwoot/sync/messages [post]
@@ -422,24 +486,35 @@ func (h *Handler) SyncMessages(c *gin.Context) {
 		return
 	}
 
-	// Get Chatwoot config
 	cfg, err := h.service.GetEnabledConfig(c.Request.Context(), session.ID)
 	if err != nil || cfg == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "chatwoot not configured or disabled"})
 		return
 	}
 
-	// Create sync service
-	syncSvc := NewSyncService(cfg, h.database.Messages, session.ID)
+	if cfg.ChatwootDBHost == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "chatwootDbHost not configured - sync requires direct database access"})
+		return
+	}
 
-	// Get days limit from query param or config
+	// Create contacts adapter for WhatsApp service (needed for SyncAll)
+	contactsAdapter := &whatsappContactsAdapter{
+		whatsappSvc: h.whatsappSvc,
+		sessionName: sessionName,
+	}
+
+	dbSync, err := NewChatwootDBSync(cfg, h.database.Messages, contactsAdapter, session.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to connect to chatwoot db: " + err.Error()})
+		return
+	}
+
 	daysLimit := cfg.SyncDays
 	if days := c.Query("days"); days != "" {
 		fmt.Sscanf(days, "%d", &daysLimit)
 	}
 
-	// Start async sync
-	status, err := syncSvc.StartSyncAsync("messages", daysLimit)
+	status, err := dbSync.StartSyncAsync("messages", daysLimit)
 	if err != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": err.Error(), "status": status})
 		return
@@ -450,12 +525,13 @@ func (h *Handler) SyncMessages(c *gin.Context) {
 
 // SyncAll handles POST /sessions/:name/chatwoot/sync
 // @Summary Full sync to Chatwoot (async)
-// @Description Start async synchronization of all contacts and messages to Chatwoot
+// @Description Start async synchronization of all contacts and messages to Chatwoot with original timestamps. Requires chatwootDbHost to be configured.
 // @Tags Chatwoot
 // @Produce json
 // @Param name path string true "Session name"
 // @Param days query int false "Limit to last N days"
 // @Success 202 {object} SyncStatus
+// @Failure 400 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
 // @Security ApiKeyAuth
 // @Router /sessions/{name}/chatwoot/sync [post]
@@ -467,24 +543,35 @@ func (h *Handler) SyncAll(c *gin.Context) {
 		return
 	}
 
-	// Get Chatwoot config
 	cfg, err := h.service.GetEnabledConfig(c.Request.Context(), session.ID)
 	if err != nil || cfg == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "chatwoot not configured or disabled"})
 		return
 	}
 
-	// Create sync service
-	syncSvc := NewSyncService(cfg, h.database.Messages, session.ID)
+	if cfg.ChatwootDBHost == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "chatwootDbHost not configured - sync requires direct database access"})
+		return
+	}
 
-	// Get days limit from query param or config
+	// Create contacts adapter for WhatsApp service
+	contactsAdapter := &whatsappContactsAdapter{
+		whatsappSvc: h.whatsappSvc,
+		sessionName: sessionName,
+	}
+
+	dbSync, err := NewChatwootDBSync(cfg, h.database.Messages, contactsAdapter, session.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to connect to chatwoot db: " + err.Error()})
+		return
+	}
+
 	daysLimit := cfg.SyncDays
 	if days := c.Query("days"); days != "" {
 		fmt.Sscanf(days, "%d", &daysLimit)
 	}
 
-	// Start async sync
-	status, err := syncSvc.StartSyncAsync("all", daysLimit)
+	status, err := dbSync.StartSyncAsync("all", daysLimit)
 	if err != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": err.Error(), "status": status})
 		return
@@ -493,7 +580,7 @@ func (h *Handler) SyncAll(c *gin.Context) {
 	c.JSON(http.StatusAccepted, status)
 }
 
-// GetSyncStatus handles GET /sessions/:name/chatwoot/sync/status
+// GetSyncStatusHandler handles GET /sessions/:name/chatwoot/sync/status
 // @Summary Get sync status
 // @Description Get the current sync status for a session
 // @Tags Chatwoot

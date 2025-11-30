@@ -26,6 +26,11 @@ func IsStatusBroadcast(jid string) bool {
 	return jid == "status@broadcast"
 }
 
+// IsNewsletter checks if the JID is a WhatsApp newsletter/channel
+func IsNewsletter(jid string) bool {
+	return strings.HasSuffix(jid, "@newsletter")
+}
+
 // FormatPhoneE164 formats a phone number with + prefix for E164 format
 func FormatPhoneE164(phone string) string {
 	phone = strings.TrimPrefix(phone, "+")

@@ -61,23 +61,28 @@ func (s *Service) SetConfig(ctx context.Context, sessionID, sessionName string, 
 	webhookURL := fmt.Sprintf("%s/chatwoot/webhook/%s", s.baseURL, sessionName)
 
 	cfg := &Config{
-		SessionID:     sessionID,
-		Enabled:       req.Enabled,
-		URL:           strings.TrimSuffix(req.URL, "/"),
-		Token:         req.Token,
-		Account:       req.Account,
-		Inbox:         req.Inbox,
-		SignAgent:     req.SignAgent,
-		SignSeparator: req.SignSeparator,
-		AutoReopen:    req.AutoReopen,
-		StartPending:  req.StartPending,
-		MergeBrPhones: req.MergeBrPhones,
-		SyncContacts:  req.SyncContacts,
-		SyncMessages:  req.SyncMessages,
-		SyncDays:      req.SyncDays,
-		IgnoreChats:   req.IgnoreChats,
-		AutoInbox:     req.AutoInbox,
-		WebhookURL:    webhookURL,
+		SessionID:       sessionID,
+		Enabled:         req.Enabled,
+		URL:             strings.TrimSuffix(req.URL, "/"),
+		Token:           req.Token,
+		Account:         req.Account,
+		Inbox:           req.Inbox,
+		SignAgent:       req.SignAgent,
+		SignSeparator:   req.SignSeparator,
+		AutoReopen:      req.AutoReopen,
+		StartPending:    req.StartPending,
+		MergeBrPhones:   req.MergeBrPhones,
+		SyncContacts:    req.SyncContacts,
+		SyncMessages:    req.SyncMessages,
+		SyncDays:        req.SyncDays,
+		IgnoreChats:     req.IgnoreChats,
+		AutoCreate:      req.AutoCreate,
+		WebhookURL:      webhookURL,
+		ChatwootDBHost:  req.ChatwootDBHost,
+		ChatwootDBPort:  req.ChatwootDBPort,
+		ChatwootDBUser:  req.ChatwootDBUser,
+		ChatwootDBPass:  req.ChatwootDBPass,
+		ChatwootDBName:  req.ChatwootDBName,
 	}
 
 	if cfg.Inbox == "" {
@@ -89,8 +94,8 @@ func (s *Service) SetConfig(ctx context.Context, sessionID, sessionName string, 
 		return nil, fmt.Errorf("failed to save chatwoot config: %w", err)
 	}
 
-	if req.Enabled && req.AutoInbox {
-		if err := s.initInbox(ctx, savedCfg); err != nil {
+	if req.Enabled && req.AutoCreate {
+		if err := s.initInboxWithBot(ctx, savedCfg, req.Number, req.Organization, req.Logo); err != nil {
 			logger.Warn().Err(err).Str("session", sessionName).Msg("Failed to auto-create Chatwoot inbox")
 		}
 	}
@@ -126,8 +131,13 @@ func (s *Service) DeleteConfig(ctx context.Context, sessionID string) error {
 	return s.repo.Delete(ctx, sessionID)
 }
 
-// initInbox creates or retrieves the inbox in Chatwoot
+// initInbox creates or retrieves the inbox in Chatwoot (without bot contact)
 func (s *Service) initInbox(ctx context.Context, cfg *Config) error {
+	return s.initInboxWithBot(ctx, cfg, "", "", "")
+}
+
+// initInboxWithBot creates or retrieves the inbox in Chatwoot and creates a bot contact (Evolution API pattern)
+func (s *Service) initInboxWithBot(ctx context.Context, cfg *Config, number, organization, logo string) error {
 	client := NewClient(cfg.URL, cfg.Token, cfg.Account)
 
 	// AutoReopen also sets lock_to_single_conversation on the inbox
@@ -135,6 +145,8 @@ func (s *Service) initInbox(ctx context.Context, cfg *Config) error {
 	if err != nil {
 		return err
 	}
+
+	logger.Info().Int("inboxId", inbox.ID).Str("name", inbox.Name).Msg("Chatwoot: inbox ready")
 
 	if inbox.WebhookURL != cfg.WebhookURL {
 		logger.Info().
@@ -155,12 +167,87 @@ func (s *Service) initInbox(ctx context.Context, cfg *Config) error {
 	}
 
 	cfg.InboxID = inbox.ID
+
+	// Create bot contact with number 123456 (Evolution API pattern)
+	if err := s.initBotContact(ctx, client, inbox.ID, number, organization, logo); err != nil {
+		logger.Warn().Err(err).Msg("Chatwoot: failed to create bot contact")
+	}
+
+	return nil
+}
+
+// initBotContact creates a bot contact with number 123456 and sends init message (Evolution API pattern)
+func (s *Service) initBotContact(ctx context.Context, client *Client, inboxID int, number, organization, logo string) error {
+	const botPhone = "123456"
+	
+	// Default values like Evolution API
+	botName := "ZPWoot"
+	if organization != "" {
+		botName = organization
+	}
+	
+	botAvatar := "https://evolution-api.com/files/evolution-api-favicon.png"
+	if logo != "" {
+		botAvatar = logo
+	}
+
+	// Find contact by phone number (Evolution API pattern)
+	contact, err := client.FindContactByPhone(ctx, "+"+botPhone)
+	if err != nil {
+		logger.Debug().Err(err).Msg("Chatwoot: error finding bot contact")
+	}
+
+	if contact == nil {
+		// Create bot contact
+		createReq := &CreateContactRequest{
+			InboxID:     inboxID,
+			Name:        botName,
+			PhoneNumber: "+" + botPhone,
+			AvatarURL:   botAvatar,
+		}
+		contact, err = client.CreateContact(ctx, createReq)
+		if err != nil {
+			return fmt.Errorf("failed to create bot contact: %w", err)
+		}
+		logger.Info().Int("contactId", contact.ID).Str("name", botName).Msg("Chatwoot: created bot contact")
+	}
+
+	// Create conversation for bot
+	convReq := &CreateConversationRequest{
+		InboxID:   fmt.Sprintf("%d", inboxID),
+		ContactID: fmt.Sprintf("%d", contact.ID),
+	}
+	conv, err := client.CreateConversation(ctx, convReq)
+	if err != nil {
+		// Conversation might already exist
+		logger.Debug().Err(err).Msg("Chatwoot: conversation might already exist")
+		return nil
+	}
+
+	// Send init message (with number if provided, like Evolution API)
+	initContent := "init"
+	if number != "" {
+		initContent = fmt.Sprintf("init:%s", number)
+	}
+
+	msgReq := &CreateMessageRequest{
+		Content:     initContent,
+		MessageType: "outgoing",
+		Private:     false,
+	}
+	_, err = client.CreateMessage(ctx, conv.ID, msgReq)
+	if err != nil {
+		logger.Warn().Err(err).Msg("Chatwoot: failed to send init message")
+	} else {
+		logger.Info().Int("conversationId", conv.ID).Str("content", initContent).Msg("Chatwoot: sent init message to bot")
+	}
+
 	return nil
 }
 
 // shouldIgnoreJid checks if a JID should be ignored
 func (s *Service) shouldIgnoreJid(cfg *Config, jid string) bool {
-	if IsStatusBroadcast(jid) {
+	if IsStatusBroadcast(jid) || IsNewsletter(jid) {
 		return true
 	}
 

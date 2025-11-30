@@ -28,8 +28,10 @@ func (r *Repository) Upsert(ctx context.Context, cfg *Config) (*Config, error) {
 			"inboxId", "inbox", "signAgent", "signSeparator",
 			"autoReopen", "startPending", "mergeBrPhones",
 			"syncContacts", "syncMessages", "syncDays",
-			"ignoreChats", "autoInbox", "webhookUrl", "updatedAt"
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW())
+			"ignoreChats", "autoCreate", "webhookUrl",
+			"chatwootDbHost", "chatwootDbPort", "chatwootDbUser", "chatwootDbPass", "chatwootDbName",
+			"updatedAt"
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, NOW())
 		ON CONFLICT ("sessionId") DO UPDATE SET
 			"enabled" = EXCLUDED."enabled",
 			"url" = EXCLUDED."url",
@@ -46,8 +48,13 @@ func (r *Repository) Upsert(ctx context.Context, cfg *Config) (*Config, error) {
 			"syncMessages" = EXCLUDED."syncMessages",
 			"syncDays" = EXCLUDED."syncDays",
 			"ignoreChats" = EXCLUDED."ignoreChats",
-			"autoInbox" = EXCLUDED."autoInbox",
+			"autoCreate" = EXCLUDED."autoCreate",
 			"webhookUrl" = EXCLUDED."webhookUrl",
+			"chatwootDbHost" = EXCLUDED."chatwootDbHost",
+			"chatwootDbPort" = EXCLUDED."chatwootDbPort",
+			"chatwootDbUser" = EXCLUDED."chatwootDbUser",
+			"chatwootDbPass" = EXCLUDED."chatwootDbPass",
+			"chatwootDbName" = EXCLUDED."chatwootDbName",
 			"updatedAt" = NOW()
 		RETURNING "id", "createdAt", "updatedAt"
 	`
@@ -57,7 +64,8 @@ func (r *Repository) Upsert(ctx context.Context, cfg *Config) (*Config, error) {
 		cfg.InboxID, cfg.Inbox, cfg.SignAgent, cfg.SignSeparator,
 		cfg.AutoReopen, cfg.StartPending, cfg.MergeBrPhones,
 		cfg.SyncContacts, cfg.SyncMessages, cfg.SyncDays,
-		cfg.IgnoreChats, cfg.AutoInbox, cfg.WebhookURL,
+		cfg.IgnoreChats, cfg.AutoCreate, cfg.WebhookURL,
+		cfg.ChatwootDBHost, cfg.ChatwootDBPort, cfg.ChatwootDBUser, cfg.ChatwootDBPass, cfg.ChatwootDBName,
 	).Scan(&cfg.ID, &cfg.CreatedAt, &cfg.UpdatedAt)
 
 	if err != nil {
@@ -74,7 +82,9 @@ func (r *Repository) GetBySessionID(ctx context.Context, sessionID string) (*Con
 			   "inboxId", "inbox", "signAgent", "signSeparator",
 			   "autoReopen", "startPending", "mergeBrPhones",
 			   "syncContacts", "syncMessages", "syncDays",
-			   "ignoreChats", "autoInbox", "webhookUrl", "createdAt", "updatedAt"
+			   "ignoreChats", "autoCreate", "webhookUrl",
+			   "chatwootDbHost", "chatwootDbPort", "chatwootDbUser", "chatwootDbPass", "chatwootDbName",
+			   "createdAt", "updatedAt"
 		FROM "zpChatwoot"
 		WHERE "sessionId" = $1
 	`
@@ -85,7 +95,9 @@ func (r *Repository) GetBySessionID(ctx context.Context, sessionID string) (*Con
 		&cfg.InboxID, &cfg.Inbox, &cfg.SignAgent, &cfg.SignSeparator,
 		&cfg.AutoReopen, &cfg.StartPending, &cfg.MergeBrPhones,
 		&cfg.SyncContacts, &cfg.SyncMessages, &cfg.SyncDays,
-		&cfg.IgnoreChats, &cfg.AutoInbox, &cfg.WebhookURL, &cfg.CreatedAt, &cfg.UpdatedAt,
+		&cfg.IgnoreChats, &cfg.AutoCreate, &cfg.WebhookURL,
+		&cfg.ChatwootDBHost, &cfg.ChatwootDBPort, &cfg.ChatwootDBUser, &cfg.ChatwootDBPass, &cfg.ChatwootDBName,
+		&cfg.CreatedAt, &cfg.UpdatedAt,
 	)
 
 	if err == pgx.ErrNoRows {
@@ -117,7 +129,9 @@ func (r *Repository) GetAllEnabled(ctx context.Context) ([]*Config, error) {
 			   "inboxId", "inbox", "signAgent", "signSeparator",
 			   "autoReopen", "startPending", "mergeBrPhones",
 			   "syncContacts", "syncMessages", "syncDays",
-			   "ignoreChats", "autoInbox", "webhookUrl", "createdAt", "updatedAt"
+			   "ignoreChats", "autoCreate", "webhookUrl",
+			   "chatwootDbHost", "chatwootDbPort", "chatwootDbUser", "chatwootDbPass", "chatwootDbName",
+			   "createdAt", "updatedAt"
 		FROM "zpChatwoot"
 		WHERE "enabled" = true
 	`
@@ -136,7 +150,9 @@ func (r *Repository) GetAllEnabled(ctx context.Context) ([]*Config, error) {
 			&cfg.InboxID, &cfg.Inbox, &cfg.SignAgent, &cfg.SignSeparator,
 			&cfg.AutoReopen, &cfg.StartPending, &cfg.MergeBrPhones,
 			&cfg.SyncContacts, &cfg.SyncMessages, &cfg.SyncDays,
-			&cfg.IgnoreChats, &cfg.AutoInbox, &cfg.WebhookURL, &cfg.CreatedAt, &cfg.UpdatedAt,
+			&cfg.IgnoreChats, &cfg.AutoCreate, &cfg.WebhookURL,
+			&cfg.ChatwootDBHost, &cfg.ChatwootDBPort, &cfg.ChatwootDBUser, &cfg.ChatwootDBPass, &cfg.ChatwootDBName,
+			&cfg.CreatedAt, &cfg.UpdatedAt,
 		)
 		if err != nil {
 			return nil, err

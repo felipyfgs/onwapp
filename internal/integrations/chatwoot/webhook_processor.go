@@ -112,6 +112,7 @@ func (s *Service) handleConversationStatusChanged(ctx context.Context, sessionID
 }
 
 // GetWebhookDataForSending extracts data from webhook for sending via WhatsApp
+// The signMsg signature is applied here for outgoing messages (like Evolution API)
 func (s *Service) GetWebhookDataForSending(ctx context.Context, sessionID string, payload *WebhookPayload) (chatJid, content string, attachments []Attachment, err error) {
 	cfg, err := s.repo.GetEnabledBySessionID(ctx, sessionID)
 	if err != nil || cfg == nil {
@@ -151,8 +152,9 @@ func (s *Service) GetWebhookDataForSending(ctx context.Context, sessionID string
 		chatJid = JIDToWhatsApp(phoneNumber)
 	}
 
-	content = payload.Content
+	content = s.convertMarkdown(payload.Content)
 
+	// Add agent signature to content sent to WhatsApp (like Evolution API signMsg)
 	if cfg.SignAgent && payload.Sender != nil {
 		senderName := payload.Sender.AvailableName
 		if senderName == "" {
@@ -169,7 +171,6 @@ func (s *Service) GetWebhookDataForSending(ctx context.Context, sessionID string
 		}
 	}
 
-	content = s.convertMarkdown(content)
 	attachments = payload.Attachments
 
 	return chatJid, content, attachments, nil

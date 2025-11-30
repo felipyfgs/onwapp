@@ -16,8 +16,13 @@ CREATE TABLE IF NOT EXISTS "zpChatwoot" (
     "syncMessages" BOOLEAN NOT NULL DEFAULT false,
     "syncDays" INTEGER DEFAULT 0,
     "ignoreChats" TEXT[],
-    "autoInbox" BOOLEAN NOT NULL DEFAULT false,
+    "autoCreate" BOOLEAN NOT NULL DEFAULT false,
     "webhookUrl" TEXT,
+    "chatwootDbHost" TEXT,
+    "chatwootDbPort" INTEGER DEFAULT 5432,
+    "chatwootDbUser" TEXT,
+    "chatwootDbPass" TEXT,
+    "chatwootDbName" TEXT,
     "createdAt" TIMESTAMPTZ DEFAULT NOW(),
     "updatedAt" TIMESTAMPTZ DEFAULT NOW()
 );

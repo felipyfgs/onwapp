@@ -5,7 +5,7 @@
       "command": "npx",
       "args": ["-y", "@upstash/context7-mcp"]
     },
-    "postgres": {
+    "zpwoot-db": {
       "type": "stdio",
       "command": "npx",
       "args": ["-y", "mcp-postgres-server"],
@@ -15,6 +15,18 @@
         "PG_USER": "zpwoot",
         "PG_PASSWORD": "zpwoot123",
         "PG_DATABASE": "zpwoot"
+      }
+    },
+    "chatwoot-db": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "mcp-postgres-server"],
+      "env": {
+        "PG_HOST": "localhost",
+        "PG_PORT": "5433",
+        "PG_USER": "postgres",
+        "PG_PASSWORD": "postgres",
+        "PG_DATABASE": "chatwoot"
       }
     },
     "github": {
