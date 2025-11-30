@@ -156,6 +156,21 @@ type SyncStats struct {
 	MessagesErrors    int `json:"messagesErrors"`
 	ConversationsUsed int `json:"conversationsUsed"`
 	Errors            int `json:"errors"`
+	// Detailed skip reasons
+	SkippedDetails *SkipDetails `json:"skippedDetails,omitempty"`
+}
+
+// SkipDetails provides detailed breakdown of skipped items
+type SkipDetails struct {
+	AlreadySynced   int `json:"alreadySynced"`
+	StatusBroadcast int `json:"statusBroadcast"`
+	Newsletters     int `json:"newsletters"`
+	Protocol        int `json:"protocol"`
+	Reactions       int `json:"reactions"`
+	Groups          int `json:"groups"`
+	LidContacts     int `json:"lidContacts"`
+	EmptyContent    int `json:"emptyContent"`
+	OldMessages     int `json:"oldMessages"`
 }
 
 // ResetStats tracks reset operation statistics

@@ -469,7 +469,7 @@ func (s *ChatwootDBSync) filterMessages(ctx context.Context, messages []model.Me
 			continue
 		}
 
-		if IsGroupJID(msg.ChatJID) || IsStatusBroadcast(msg.ChatJID) || IsNewsletter(msg.ChatJID) {
+		if IsStatusBroadcast(msg.ChatJID) || IsNewsletter(msg.ChatJID) {
 			stats.MessagesSkipped++
 			continue
 		}
@@ -582,24 +582,39 @@ func (s *ChatwootDBSync) createContactsAndConversations(ctx context.Context, mes
 	var phoneDataList []phoneTimestamp
 
 	for chatJID, chatMessages := range messagesByChat {
+		isGroup := IsGroupJID(chatJID)
 		phone := ExtractPhoneFromJID(chatJID)
 		if phone == "" {
 			continue
 		}
 
-		nameInfo := waContactsCache[chatJID]
-		if nameInfo == nil || (nameInfo.FullName == "" && nameInfo.FirstName == "" && nameInfo.PushName == "" && nameInfo.BusinessName == "") {
+		var contactName string
+		if isGroup {
+			// For groups: use group JID as phone and add (GROUP) suffix
+			contactName = phone + " (GROUP)"
+			// Try to get group name from messages
 			for i := len(chatMessages) - 1; i >= 0; i-- {
-				if chatMessages[i].PushName != "" && !chatMessages[i].FromMe {
-					if nameInfo == nil {
-						nameInfo = &contactNameInfo{}
-					}
-					nameInfo.PushName = chatMessages[i].PushName
+				if chatMessages[i].PushName != "" {
+					contactName = chatMessages[i].PushName + " (GROUP)"
 					break
 				}
 			}
+		} else {
+			// For individual contacts
+			nameInfo := waContactsCache[chatJID]
+			if nameInfo == nil || (nameInfo.FullName == "" && nameInfo.FirstName == "" && nameInfo.PushName == "" && nameInfo.BusinessName == "") {
+				for i := len(chatMessages) - 1; i >= 0; i-- {
+					if chatMessages[i].PushName != "" && !chatMessages[i].FromMe {
+						if nameInfo == nil {
+							nameInfo = &contactNameInfo{}
+						}
+						nameInfo.PushName = chatMessages[i].PushName
+						break
+					}
+				}
+			}
+			contactName = GetBestContactName(nameInfo, phone)
 		}
-		contactName := GetBestContactName(nameInfo, phone)
 
 		var firstTS, lastTS int64
 		if len(chatMessages) > 0 {
@@ -610,8 +625,14 @@ func (s *ChatwootDBSync) createContactsAndConversations(ctx context.Context, mes
 			lastTS = firstTS
 		}
 
+		// For groups, use the full JID as phone (Chatwoot uses it as identifier)
+		phoneValue := "+" + phone
+		if isGroup {
+			phoneValue = phone // Don't add + for groups
+		}
+
 		phoneDataList = append(phoneDataList, phoneTimestamp{
-			phone:      "+" + phone,
+			phone:      phoneValue,
 			firstTS:    firstTS,
 			lastTS:     lastTS,
 			name:       contactName,
