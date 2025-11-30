@@ -1,8 +1,7 @@
--- Migration: 006_create_media_table.sql
+-- Migration: 007_media.sql
 -- Table: zpMedia
 -- Description: Media files attached to WhatsApp messages
--- Dependencies: zpSessions, zpMessages
--- Note: chatJid, fromMe, caption obtained via JOIN with zpMessages (no redundancy)
+-- Dependencies: zpSessions (002)
 
 CREATE TABLE IF NOT EXISTS "zpMedia" (
     "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -15,14 +14,14 @@ CREATE TABLE IF NOT EXISTS "zpMedia" (
     "fileSize" BIGINT,
     "fileName" VARCHAR(500),
     
-    -- WhatsApp Download Info (required to download from WA servers)
+    -- WhatsApp Download Info
     "waDirectPath" TEXT,
     "waMediaKey" BYTEA,
     "waFileSHA256" BYTEA,
     "waFileEncSHA256" BYTEA,
     "waMediaKeyTimestamp" BIGINT,
     
-    -- Media Dimensions (images/videos/audio)
+    -- Media Dimensions
     "width" INTEGER,
     "height" INTEGER,
     "duration" INTEGER,
@@ -48,15 +47,7 @@ CREATE TABLE IF NOT EXISTS "zpMedia" (
     CONSTRAINT "zpMedia_sessionId_msgId_unique" UNIQUE ("sessionId", "msgId")
 );
 
--- Pending downloads optimization
-CREATE INDEX IF NOT EXISTS "idx_zpMedia_pending_downloads" 
-    ON "zpMedia"("sessionId", "createdAt") 
-    WHERE "downloaded" = FALSE AND "waDirectPath" IS NOT NULL AND "downloadAttempts" < 3;
-
--- Media type filtering
-CREATE INDEX IF NOT EXISTS "idx_zpMedia_mediaType" ON "zpMedia"("mediaType");
-
-COMMENT ON TABLE "zpMedia" IS 'Media files attached to WhatsApp messages. Use JOIN with zpMessages for chatJid/fromMe/caption.';
+COMMENT ON TABLE "zpMedia" IS 'Media files attached to WhatsApp messages';
 COMMENT ON COLUMN "zpMedia"."waDirectPath" IS 'WhatsApp CDN path for downloading';
 COMMENT ON COLUMN "zpMedia"."waMediaKey" IS 'Encryption key for media decryption';
 COMMENT ON COLUMN "zpMedia"."downloadAttempts" IS 'Number of download attempts (max 3)';

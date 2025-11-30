@@ -305,6 +305,11 @@ func (s *SessionService) SetMediaService(mediaService *MediaService) {
 	s.eventService.SetMediaService(mediaService)
 }
 
+// SetHistorySyncService sets the history sync service for processing sync data
+func (s *SessionService) SetHistorySyncService(historySyncService *HistorySyncService) {
+	s.eventService.SetHistorySyncService(historySyncService)
+}
+
 func (s *SessionService) Logout(ctx context.Context, name string) error {
 	session, err := s.Get(name)
 	if err != nil {

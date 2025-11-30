@@ -1,7 +1,7 @@
--- Migration: 005_create_chatwoot_table.sql
+-- Migration: 006_chatwoot.sql
 -- Table: zpChatwoot
 -- Description: Chatwoot CRM integration configuration per session
--- Dependencies: zpSessions
+-- Dependencies: zpSessions (002)
 
 CREATE TABLE IF NOT EXISTS "zpChatwoot" (
     "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -31,8 +31,6 @@ CREATE TABLE IF NOT EXISTS "zpChatwoot" (
     "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
-CREATE INDEX IF NOT EXISTS "idx_zpChatwoot_enabled" ON "zpChatwoot"("enabled") WHERE "enabled" = TRUE;
 
 COMMENT ON TABLE "zpChatwoot" IS 'Chatwoot CRM integration configuration per session';
 COMMENT ON COLUMN "zpChatwoot"."mergeBrPhones" IS 'Normalize Brazilian phone numbers (9th digit)';

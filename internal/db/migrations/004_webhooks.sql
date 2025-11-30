@@ -1,7 +1,7 @@
--- Migration: 003_create_webhooks_table.sql
+-- Migration: 004_webhooks.sql
 -- Table: zpWebhooks
 -- Description: Webhook configurations for event notifications
--- Dependencies: zpSessions
+-- Dependencies: zpSessions (002)
 
 CREATE TABLE IF NOT EXISTS "zpWebhooks" (
     "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -13,8 +13,6 @@ CREATE TABLE IF NOT EXISTS "zpWebhooks" (
     "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
-CREATE INDEX IF NOT EXISTS "idx_zpWebhooks_enabled" ON "zpWebhooks"("enabled") WHERE "enabled" = TRUE;
 
 COMMENT ON TABLE "zpWebhooks" IS 'Webhook configurations for event notifications';
 COMMENT ON COLUMN "zpWebhooks"."events" IS 'Array of event types to subscribe (empty = all)';

@@ -21,9 +21,10 @@ import (
 )
 
 type EventService struct {
-	database       *db.Database
-	webhookService WebhookSender
-	mediaService   *MediaService
+	database           *db.Database
+	webhookService     WebhookSender
+	mediaService       *MediaService
+	historySyncService *HistorySyncService
 }
 
 func NewEventService(database *db.Database, webhookService WebhookSender) *EventService {
@@ -36,6 +37,11 @@ func NewEventService(database *db.Database, webhookService WebhookSender) *Event
 // SetMediaService sets the media service for downloading media to storage
 func (s *EventService) SetMediaService(mediaService *MediaService) {
 	s.mediaService = mediaService
+}
+
+// SetHistorySyncService sets the history sync service for processing sync data
+func (s *EventService) SetHistorySyncService(historySyncService *HistorySyncService) {
+	s.historySyncService = historySyncService
 }
 
 func (s *EventService) HandleEvent(session *model.Session, evt interface{}) {
@@ -640,9 +646,30 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 				continue
 			}
 
-			// Skip system messages (messageStubType) - they have no useful content
-			if webMsg.GetMessageStubType() != 0 {
-				continue
+			// Extract msgOrderID from history sync
+			var msgOrderID *int64
+			if orderID := histMsg.GetMsgOrderID(); orderID > 0 {
+				oid := int64(orderID)
+				msgOrderID = &oid
+			}
+
+			// Extract stubType for system messages
+			var stubType *int
+			var stubParams []string
+			if st := webMsg.GetMessageStubType(); st != 0 {
+				stInt := int(st)
+				stubType = &stInt
+				stubParams = webMsg.GetMessageStubParameters()
+			}
+
+			// Extract messageSecret for view-once decryption
+			var messageSecret []byte
+			if webMsg.GetMessageSecret() != nil {
+				messageSecret = webMsg.GetMessageSecret()
+			} else if webMsg.GetMessage() != nil {
+				if ctx := webMsg.GetMessage().GetMessageContextInfo(); ctx != nil {
+					messageSecret = ctx.GetMessageSecret()
+				}
 			}
 
 			// Skip sender key distribution messages (encryption protocol)
@@ -653,8 +680,11 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 			// Determine message type and content
 			msgType, content := s.extractMessageTypeAndContent(webMsg.GetMessage())
 
-			// Skip unknown messages with no content
-			if msgType == "unknown" && content == "" {
+			// For system messages without content, set type as "system"
+			if stubType != nil && *stubType > 0 {
+				msgType = "system"
+			} else if msgType == "unknown" && content == "" {
+				// Skip unknown messages with no content (but not system messages)
 				continue
 			}
 
@@ -690,21 +720,31 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 				reactionsJSON = s.buildReactionsJSON(reactions)
 			}
 
+			// Check if broadcast message
+			broadcast := key.GetRemoteJID() == "status@broadcast" || 
+				webMsg.GetBroadcast() || 
+				(webMsg.GetMessage() != nil && webMsg.GetMessage().GetSenderKeyDistributionMessage() != nil)
+
 			msg := &model.Message{
-				SessionID: session.ID,
-				MsgId:     key.GetID(),
-				ChatJID:   chatJID,
-				SenderJID: senderJID,
-				Timestamp: timestamp,
-				PushName:  webMsg.GetPushName(),
-				Type:      msgType,
-				Content:   content,
-				FromMe:    key.GetFromMe(),
-				IsGroup:   isGroup,
-				Ephemeral: webMsg.GetEphemeralDuration() > 0,
-				Status:    status,
-				RawEvent:  rawEvent,
-				Reactions: reactionsJSON,
+				SessionID:     session.ID,
+				MsgId:         key.GetID(),
+				ChatJID:       chatJID,
+				SenderJID:     senderJID,
+				Timestamp:     timestamp,
+				PushName:      webMsg.GetPushName(),
+				Type:          msgType,
+				Content:       content,
+				FromMe:        key.GetFromMe(),
+				IsGroup:       isGroup,
+				Ephemeral:     webMsg.GetEphemeralDuration() > 0,
+				Status:        status,
+				RawEvent:      rawEvent,
+				Reactions:     reactionsJSON,
+				MsgOrderID:    msgOrderID,
+				StubType:      stubType,
+				StubParams:    stubParams,
+				MessageSecret: messageSecret,
+				Broadcast:     broadcast,
 			}
 
 			allMessages = append(allMessages, msg)
@@ -723,6 +763,44 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 
 	// Batch save messages
 	if len(allMessages) > 0 {
+		// Enrich messages with pushNames from whatsmeow_contacts
+		if session.Client != nil && session.Client.Store != nil && session.Client.Store.ID != nil {
+			deviceJID := session.Client.Store.ID.String()
+			
+			// Collect unique senderJIDs that need pushName lookup
+			var jidsToLookup []string
+			jidSet := make(map[string]bool)
+			for _, msg := range allMessages {
+				if msg.PushName == "" && msg.SenderJID != "" && !jidSet[msg.SenderJID] {
+					jidsToLookup = append(jidsToLookup, msg.SenderJID)
+					jidSet[msg.SenderJID] = true
+				}
+			}
+			
+			// Batch lookup pushNames
+			if len(jidsToLookup) > 0 {
+				pushNames := s.database.Contacts.GetPushNameBatch(ctx, deviceJID, jidsToLookup)
+				
+				// Apply pushNames to messages
+				enriched := 0
+				for _, msg := range allMessages {
+					if msg.PushName == "" && msg.SenderJID != "" {
+						if name, ok := pushNames[msg.SenderJID]; ok && name != "" {
+							msg.PushName = name
+							enriched++
+						}
+					}
+				}
+				
+				if enriched > 0 {
+					logger.Debug().
+						Int("enriched", enriched).
+						Int("total", len(allMessages)).
+						Msg("Enriched messages with pushNames from contacts")
+				}
+			}
+		}
+		
 		saved, err := s.database.Messages.SaveBatch(ctx, allMessages)
 		if err != nil {
 			logger.Error().
@@ -766,6 +844,17 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 				s.mediaService.ProcessHistorySyncMedia(ctx, session.Client, session.ID, savedMedia)
 			}
 		}
+	}
+
+	// Process additional history sync data (chats, stickers, past participants)
+	if s.historySyncService != nil {
+		go func() {
+			hsCtx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+			defer cancel()
+			if err := s.historySyncService.ProcessHistorySync(hsCtx, session.ID, e); err != nil {
+				logger.Warn().Err(err).Str("session", session.Name).Msg("Failed to process history sync metadata")
+			}
+		}()
 	}
 
 	// Send webhook
@@ -1530,6 +1619,11 @@ func (s *EventService) sendWebhook(ctx context.Context, session *model.Session, 
 }
 
 func (s *EventService) saveHistorySyncToJSON(sessionName string, e *events.HistorySync, syncType string, chunkOrder uint32) {
+	// Only save JSON dumps if DEBUG_HISTORY_SYNC=true in .env
+	if os.Getenv("DEBUG_HISTORY_SYNC") != "true" {
+		return
+	}
+
 	dir := "history_sync_dumps"
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		logger.Error().Err(err).Msg("Failed to create history sync dump directory")

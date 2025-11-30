@@ -27,6 +27,10 @@ type Database struct {
 	Messages       *repository.MessageRepository
 	MessageUpdates *repository.MessageUpdateRepository
 	Media          *repository.MediaRepository
+	Chats          *repository.ChatRepository
+	Stickers       *repository.StickerRepository
+	HistorySync    *repository.HistorySyncRepository
+	Contacts       *repository.ContactRepository
 }
 
 func New(ctx context.Context, databaseURL string) (*Database, error) {
@@ -40,16 +44,20 @@ func New(ctx context.Context, databaseURL string) (*Database, error) {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	if err := runMigrations(ctx, pool); err != nil {
-		pool.Close()
-		return nil, fmt.Errorf("failed to run migrations: %w", err)
-	}
-
+	// Create whatsmeow sqlstore FIRST - this creates all whatsmeow tables
+	// (whatsmeow_device, whatsmeow_contacts, whatsmeow_chat_settings, etc.)
+	// Our migrations may depend on these tables existing
 	dbLog := waLog.Stdout("Database", "INFO", true)
 	container, err := sqlstore.New(ctx, "pgx", databaseURL, dbLog)
 	if err != nil {
 		pool.Close()
 		return nil, fmt.Errorf("failed to create sqlstore: %w", err)
+	}
+
+	// Now run zpwoot migrations (safe to reference whatsmeow tables)
+	if err := runMigrations(ctx, pool); err != nil {
+		pool.Close()
+		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}
 
 	// Ensure whatsmeow FK constraints after sqlstore creates its tables
@@ -64,6 +72,10 @@ func New(ctx context.Context, databaseURL string) (*Database, error) {
 		Messages:       repository.NewMessageRepository(pool),
 		MessageUpdates: repository.NewMessageUpdateRepository(pool),
 		Media:          repository.NewMediaRepository(pool),
+		Chats:          repository.NewChatRepository(pool),
+		Stickers:       repository.NewStickerRepository(pool),
+		HistorySync:    repository.NewHistorySyncRepository(pool),
+		Contacts:       repository.NewContactRepository(pool),
 	}, nil
 }
 

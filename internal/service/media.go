@@ -37,6 +37,14 @@ type MediaService struct {
 	// Track pending media retries
 	pendingRetries   map[string]*MediaRetryInfo // key: msgID
 	pendingRetriesMu sync.RWMutex
+
+	// Track downloads in progress to prevent duplicates
+	downloading   map[string]bool // key: mediaID or msgID
+	downloadingMu sync.Mutex
+
+	// Track if history sync processing is running
+	historySyncRunning bool
+	historySyncMu      sync.Mutex
 }
 
 func NewMediaService(database *db.Database, storage *StorageService) *MediaService {
@@ -44,7 +52,28 @@ func NewMediaService(database *db.Database, storage *StorageService) *MediaServi
 		database:       database,
 		storage:        storage,
 		pendingRetries: make(map[string]*MediaRetryInfo),
+		downloading:    make(map[string]bool),
 	}
+}
+
+// tryStartDownload attempts to mark a media as being downloaded
+// Returns true if this goroutine should proceed with the download
+func (s *MediaService) tryStartDownload(mediaID string) bool {
+	s.downloadingMu.Lock()
+	defer s.downloadingMu.Unlock()
+
+	if s.downloading[mediaID] {
+		return false // Already being downloaded
+	}
+	s.downloading[mediaID] = true
+	return true
+}
+
+// finishDownload marks a media download as complete
+func (s *MediaService) finishDownload(mediaID string) {
+	s.downloadingMu.Lock()
+	defer s.downloadingMu.Unlock()
+	delete(s.downloading, mediaID)
 }
 
 // ErrMediaExpired indicates the media is no longer available on WhatsApp servers (404/410)
@@ -334,9 +363,18 @@ func (s *MediaService) ProcessPendingDownloads(ctx context.Context, client *what
 
 	success := 0
 	failed := 0
+	skipped := 0
 
 	for _, media := range medias {
+		// Skip if already being downloaded by another goroutine
+		if !s.tryStartDownload(media.ID) {
+			skipped++
+			continue
+		}
+
 		err := s.DownloadAndStore(ctx, client, media, sessionID)
+		s.finishDownload(media.ID)
+
 		if err != nil {
 			// Check if media expired and needs retry
 			if errors.Is(err, ErrMediaExpired) {
@@ -364,17 +402,38 @@ func (s *MediaService) ProcessPendingDownloads(ctx context.Context, client *what
 		time.Sleep(100 * time.Millisecond)
 	}
 
+	if skipped > 0 {
+		logger.Debug().Int("skipped", skipped).Msg("Skipped media already being downloaded")
+	}
+
 	return success, failed
 }
 
 // ProcessHistorySyncMedia processes media from history sync in background
+// Only one instance runs at a time per service to prevent duplicate downloads
 func (s *MediaService) ProcessHistorySyncMedia(ctx context.Context, client *whatsmeow.Client, sessionID string, mediaCount int) {
 	if s.storage == nil {
 		return
 	}
 
+	// Check if already running - only one history sync processor at a time
+	s.historySyncMu.Lock()
+	if s.historySyncRunning {
+		s.historySyncMu.Unlock()
+		logger.Debug().Msg("History sync media processing already running, skipping")
+		return
+	}
+	s.historySyncRunning = true
+	s.historySyncMu.Unlock()
+
 	// Process in background with delay to not overload
 	go func() {
+		defer func() {
+			s.historySyncMu.Lock()
+			s.historySyncRunning = false
+			s.historySyncMu.Unlock()
+		}()
+
 		// Wait a bit for history sync to settle
 		time.Sleep(2 * time.Second)
 
@@ -385,8 +444,9 @@ func (s *MediaService) ProcessHistorySyncMedia(ctx context.Context, client *what
 		batchSize := 10
 		totalSuccess := 0
 		totalFailed := 0
+		emptyBatches := 0
 
-		for i := 0; i < mediaCount; i += batchSize {
+		for emptyBatches < 3 { // Exit after 3 consecutive empty batches
 			select {
 			case <-processCtx.Done():
 				logger.Warn().Msg("History sync media processing timeout")
@@ -399,12 +459,13 @@ func (s *MediaService) ProcessHistorySyncMedia(ctx context.Context, client *what
 			totalFailed += failed
 
 			if success == 0 && failed == 0 {
-				// No more pending downloads
-				break
+				emptyBatches++
+			} else {
+				emptyBatches = 0
 			}
 
 			// Delay between batches
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(1 * time.Second)
 		}
 
 		if totalSuccess > 0 || totalFailed > 0 {

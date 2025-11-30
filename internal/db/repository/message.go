@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -10,6 +11,22 @@ import (
 
 	"zpwoot/internal/model"
 )
+
+// sanitizeString removes null bytes and other problematic Unicode characters
+// that PostgreSQL doesn't accept in TEXT fields
+func sanitizeString(s string) string {
+	// Remove null bytes (\u0000) which cause "unsupported Unicode escape sequence" error
+	return strings.ReplaceAll(s, "\x00", "")
+}
+
+// sanitizeBytes removes null bytes from byte slices (for json.RawMessage)
+func sanitizeBytes(b []byte) []byte {
+	if b == nil {
+		return nil
+	}
+	// Use strings.ReplaceAll via conversion for simplicity
+	return []byte(strings.ReplaceAll(string(b), "\x00", ""))
+}
 
 type MessageRepository struct {
 	pool *pgxpool.Pool
@@ -74,21 +91,32 @@ func (r *MessageRepository) SaveBatch(ctx context.Context, msgs []*model.Message
 	// Use batch for efficiency
 	batch := &pgx.Batch{}
 	for _, msg := range msgs {
+		// Sanitize string fields to remove null bytes that PostgreSQL doesn't accept
+		content := sanitizeString(msg.Content)
+		rawEvent := sanitizeBytes(msg.RawEvent)
+		pushName := sanitizeString(msg.PushName)
+
 		batch.Queue(`
 			INSERT INTO "zpMessages" (
 				"sessionId", "msgId", "chatJid", "senderJid", "timestamp",
 				"pushName", "senderAlt", "type", "mediaType", "category", "content",
 				"fromMe", "isGroup", "ephemeral", "viewOnce", "isEdit",
 				"editTargetId", "quotedId", "quotedSender",
-				"status", "deliveredAt", "readAt", "reactions", "rawEvent", "createdAt"
+				"status", "deliveredAt", "readAt", "reactions", "rawEvent", "createdAt",
+				"msgOrderID", "stubType", "stubParams", "messageSecret", "broadcast"
 			)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, COALESCE($23, '[]'::jsonb), $24, $25)
-			ON CONFLICT ("sessionId", "msgId") DO NOTHING`,
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, COALESCE($23, '[]'::jsonb), $24, $25, $26, $27, $28, $29, $30)
+			ON CONFLICT ("sessionId", "msgId") DO UPDATE SET
+				"msgOrderID" = COALESCE(EXCLUDED."msgOrderID", "zpMessages"."msgOrderID"),
+				"stubType" = COALESCE(EXCLUDED."stubType", "zpMessages"."stubType"),
+				"stubParams" = COALESCE(EXCLUDED."stubParams", "zpMessages"."stubParams"),
+				"messageSecret" = COALESCE(EXCLUDED."messageSecret", "zpMessages"."messageSecret")`,
 			msg.SessionID, msg.MsgId, msg.ChatJID, msg.SenderJID, msg.Timestamp,
-			msg.PushName, msg.SenderAlt, msg.Type, msg.MediaType, msg.Category, msg.Content,
+			pushName, msg.SenderAlt, msg.Type, msg.MediaType, msg.Category, content,
 			msg.FromMe, msg.IsGroup, msg.Ephemeral, msg.ViewOnce, msg.IsEdit,
 			msg.EditTargetID, msg.QuotedID, msg.QuotedSender,
-			msg.Status, msg.DeliveredAt, msg.ReadAt, msg.Reactions, msg.RawEvent, now,
+			msg.Status, msg.DeliveredAt, msg.ReadAt, msg.Reactions, rawEvent, now,
+			msg.MsgOrderID, msg.StubType, msg.StubParams, msg.MessageSecret, msg.Broadcast,
 		)
 	}
 
