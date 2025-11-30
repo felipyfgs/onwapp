@@ -1,4 +1,4 @@
-package chatwoot
+package service
 
 import (
 	"context"
@@ -7,8 +7,17 @@ import (
 	"sync"
 	"time"
 
+	"zpwoot/internal/integrations/chatwoot/client"
+	"zpwoot/internal/integrations/chatwoot/core"
+	"zpwoot/internal/integrations/chatwoot/util"
 	"zpwoot/internal/logger"
 )
+
+// ProfilePictureFetcher is a function type for getting profile pictures from WhatsApp
+type ProfilePictureFetcher func(ctx context.Context, sessionName string, jid string) (string, error)
+
+// GroupInfoFetcher is a function type for getting group metadata from WhatsApp
+type GroupInfoFetcher func(ctx context.Context, sessionName string, groupJid string) (string, error)
 
 // ContactManager handles contact and conversation management with caching
 type ContactManager struct {
@@ -25,15 +34,14 @@ func NewContactManager() *ContactManager {
 }
 
 // GetOrCreateContactAndConversation handles contact and conversation creation with proper caching
-// This follows the Evolution API pattern to avoid duplicate conversations
 func (cm *ContactManager) GetOrCreateContactAndConversation(
 	ctx context.Context,
-	client *Client,
-	cfg *Config,
+	c *client.Client,
+	cfg *core.Config,
 	remoteJid string,
 	pushName string,
 	isFromMe bool,
-	participantJid string, // For groups: the actual sender
+	participantJid string,
 	getProfilePicture ProfilePictureFetcher,
 	getGroupInfo GroupInfoFetcher,
 	sessionName string,
@@ -41,54 +49,44 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 	isGroup := strings.HasSuffix(remoteJid, "@g.us")
 	cacheKey := fmt.Sprintf("%s:%s", cfg.SessionID, remoteJid)
 
-	// Check cache first
 	if entry, ok := cm.conversationCache.Load(cacheKey); ok {
-		cached := entry.(contactCacheEntry)
-		if time.Now().Before(cached.expiresAt) {
-			return cached.conversationID, nil
+		cached := entry.(core.ContactCacheEntry)
+		if time.Now().Before(cached.ExpiresAt) {
+			return cached.ConversationID, nil
 		}
 		cm.conversationCache.Delete(cacheKey)
 	}
 
-	// Try to acquire lock to prevent duplicate creation
 	lockKey := fmt.Sprintf("lock:%s", cacheKey)
 	if _, loaded := cm.conversationLocks.LoadOrStore(lockKey, true); loaded {
-		// Another goroutine is creating the conversation, wait and check cache
-		for i := 0; i < 50; i++ { // Wait up to 5 seconds
+		for i := 0; i < 50; i++ {
 			time.Sleep(100 * time.Millisecond)
 			if entry, ok := cm.conversationCache.Load(cacheKey); ok {
-				cached := entry.(contactCacheEntry)
-				if time.Now().Before(cached.expiresAt) {
-					return cached.conversationID, nil
+				cached := entry.(core.ContactCacheEntry)
+				if time.Now().Before(cached.ExpiresAt) {
+					return cached.ConversationID, nil
 				}
 			}
 		}
-		return 0, ErrConversationTimeout
+		return 0, core.ErrConversationTimeout
 	}
 	defer cm.conversationLocks.Delete(lockKey)
 
-	// Double-check cache after acquiring lock
 	if entry, ok := cm.conversationCache.Load(cacheKey); ok {
-		cached := entry.(contactCacheEntry)
-		if time.Now().Before(cached.expiresAt) {
-			return cached.conversationID, nil
+		cached := entry.(core.ContactCacheEntry)
+		if time.Now().Before(cached.ExpiresAt) {
+			return cached.ConversationID, nil
 		}
 	}
 
-	phoneNumber := ExtractPhoneFromJID(remoteJid)
+	phoneNumber := util.ExtractPhoneFromJID(remoteJid)
 
-	// For groups, use the full JID as identifier
-	// For individuals, use pushName or phone number as contact name
-	var contact *Contact
+	var contact *core.Contact
 	var err error
 
 	if isGroup {
-		// For groups: use group JID as identifier
-		// Try to get the actual group name from WhatsApp metadata
-		// This ensures all participants' messages go to the same conversation
-		groupName := fmt.Sprintf("%s (GROUP)", phoneNumber) // fallback name
+		groupName := fmt.Sprintf("%s (GROUP)", phoneNumber)
 
-		// Try to get the real group name from WhatsApp
 		if getGroupInfo != nil {
 			if name, err := getGroupInfo(ctx, sessionName, remoteJid); err == nil && name != "" {
 				groupName = fmt.Sprintf("%s (GROUP)", name)
@@ -104,7 +102,6 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 			}
 		}
 
-		// Get profile picture for the group (not the participant)
 		var avatarURL string
 		if getProfilePicture != nil {
 			if pic, err := getProfilePicture(ctx, sessionName, remoteJid); err == nil && pic != "" {
@@ -112,15 +109,13 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 			}
 		}
 
-		contact, err = cm.getOrCreateGroupContact(ctx, client, cfg, remoteJid, groupName, avatarURL)
+		contact, err = cm.getOrCreateGroupContact(ctx, c, cfg, remoteJid, groupName, avatarURL)
 	} else {
-		// For individual contacts
 		contactName := pushName
 		if contactName == "" {
 			contactName = phoneNumber
 		}
 
-		// Get profile picture if available
 		var avatarURL string
 		if getProfilePicture != nil && !isFromMe {
 			if pic, err := getProfilePicture(ctx, sessionName, phoneNumber); err == nil && pic != "" {
@@ -128,28 +123,26 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 			}
 		}
 
-		contact, err = cm.getOrCreateIndividualContact(ctx, client, cfg, phoneNumber, remoteJid, contactName, avatarURL)
+		contact, err = cm.getOrCreateIndividualContact(ctx, c, cfg, phoneNumber, remoteJid, contactName, avatarURL)
 	}
 
 	if err != nil {
 		return 0, fmt.Errorf("failed to get/create contact: %w", err)
 	}
 
-	// Get or create conversation
 	status := "open"
 	if cfg.StartPending {
 		status = "pending"
 	}
 
-	conv, err := client.GetOrCreateConversation(ctx, contact.ID, cfg.InboxID, status, cfg.AutoReopen)
+	conv, err := c.GetOrCreateConversation(ctx, contact.ID, cfg.InboxID, status, cfg.AutoReopen)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get/create conversation: %w", err)
 	}
 
-	// Cache the conversation
-	cm.conversationCache.Store(cacheKey, contactCacheEntry{
-		conversationID: conv.ID,
-		expiresAt:      time.Now().Add(cm.cacheTTL),
+	cm.conversationCache.Store(cacheKey, core.ContactCacheEntry{
+		ConversationID: conv.ID,
+		ExpiresAt:      time.Now().Add(cm.cacheTTL),
 	})
 
 	return conv.ID, nil
@@ -158,43 +151,38 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 // getOrCreateIndividualContact handles individual (non-group) contacts
 func (cm *ContactManager) getOrCreateIndividualContact(
 	ctx context.Context,
-	client *Client,
-	cfg *Config,
+	c *client.Client,
+	cfg *core.Config,
 	phoneNumber string,
 	remoteJid string,
 	name string,
 	avatarURL string,
-) (*Contact, error) {
-	// Try to find existing contact with Brazilian number merge support
-	contact, err := client.GetOrCreateContactWithMerge(ctx, cfg.InboxID, phoneNumber, remoteJid, name, avatarURL, false, cfg.MergeBrPhones)
+) (*core.Contact, error) {
+	contact, err := c.GetOrCreateContactWithMerge(ctx, cfg.InboxID, phoneNumber, remoteJid, name, avatarURL, false, cfg.MergeBrPhones)
 	if err != nil {
 		return nil, err
 	}
 
-	// Check if we need to update the contact
 	needsUpdate := false
 	updateData := make(map[string]interface{})
 
-	// Update name if it was just the phone number
 	if contact.Name == phoneNumber && name != phoneNumber && name != "" {
 		updateData["name"] = name
 		needsUpdate = true
 	}
 
-	// Update avatar if we have a new one
 	if avatarURL != "" && contact.Thumbnail != avatarURL {
 		updateData["avatar_url"] = avatarURL
 		needsUpdate = true
 	}
 
-	// Update identifier if different (for @lid addresses)
 	if contact.Identifier != remoteJid && remoteJid != "" {
 		updateData["identifier"] = remoteJid
 		needsUpdate = true
 	}
 
 	if needsUpdate {
-		if _, err := client.UpdateContact(ctx, contact.ID, updateData); err != nil {
+		if _, err := c.UpdateContact(ctx, contact.ID, updateData); err != nil {
 			logger.Warn().Err(err).
 				Int("contactId", contact.ID).
 				Msg("Chatwoot: failed to update contact")
@@ -207,21 +195,19 @@ func (cm *ContactManager) getOrCreateIndividualContact(
 // getOrCreateGroupContact handles group contacts
 func (cm *ContactManager) getOrCreateGroupContact(
 	ctx context.Context,
-	client *Client,
-	cfg *Config,
+	c *client.Client,
+	cfg *core.Config,
 	groupJid string,
 	groupName string,
 	avatarURL string,
-) (*Contact, error) {
-	// For groups, use the full JID as both phone and identifier
-	contact, err := client.GetOrCreateContact(ctx, cfg.InboxID, groupJid, groupJid, groupName, avatarURL, true)
+) (*core.Contact, error) {
+	contact, err := c.GetOrCreateContact(ctx, cfg.InboxID, groupJid, groupJid, groupName, avatarURL, true)
 	if err != nil {
 		return nil, err
 	}
 
-	// Update name if needed
 	if contact.Name != groupName && groupName != "" {
-		if _, err := client.UpdateContact(ctx, contact.ID, map[string]interface{}{
+		if _, err := c.UpdateContact(ctx, contact.ID, map[string]interface{}{
 			"name": groupName,
 		}); err != nil {
 			logger.Warn().Err(err).
@@ -239,8 +225,8 @@ func (cm *ContactManager) FormatGroupMessage(content string, participantJid stri
 		return content
 	}
 
-	phone := ExtractPhoneFromJID(participantJid)
-	formattedPhone := FormatPhoneDisplay(phone)
+	phone := util.ExtractPhoneFromJID(participantJid)
+	formattedPhone := util.FormatPhoneDisplay(phone)
 
 	var participantInfo string
 	if pushName != "" && pushName != phone {

@@ -1,4 +1,4 @@
-package chatwoot
+package handler
 
 import (
 	"github.com/gin-gonic/gin"
@@ -18,16 +18,14 @@ func RegisterRoutes(r *gin.Engine, handler *Handler, apiKey string) {
 		sessions.POST("/:name/chatwoot/set", handler.SetConfig)
 		sessions.GET("/:name/chatwoot/find", handler.GetConfig)
 		sessions.DELETE("/:name/chatwoot", handler.DeleteConfig)
-		
+
 		// Sync routes
 		sessions.POST("/:name/chatwoot/sync", handler.SyncAll)
 		sessions.POST("/:name/chatwoot/sync/contacts", handler.SyncContacts)
 		sessions.POST("/:name/chatwoot/sync/messages", handler.SyncMessages)
 		sessions.GET("/:name/chatwoot/sync/status", handler.GetSyncStatusHandler)
-		
+
 		// Reset route (for testing)
 		sessions.POST("/:name/chatwoot/reset", handler.ResetChatwoot)
 	}
 }
-
-

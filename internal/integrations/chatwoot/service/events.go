@@ -1,4 +1,4 @@
-package chatwoot
+package service
 
 import (
 	"context"
@@ -33,32 +33,26 @@ func (h *EventHandler) HandleEvent(session *model.Session, evt interface{}) {
 }
 
 func (h *EventHandler) handleMessage(ctx context.Context, session *model.Session, evt *events.Message) {
-	// Skip sender key distribution messages
 	if evt.Message.GetSenderKeyDistributionMessage() != nil {
 		return
 	}
 
-	// Handle protocol messages (deletes)
 	if proto := evt.Message.GetProtocolMessage(); proto != nil {
-		// Check if it's a delete message
 		if proto.GetType() == waE2E.ProtocolMessage_REVOKE {
 			h.handleMessageDelete(ctx, session, evt, proto)
 		}
 		return
 	}
 
-	// Handle reactions separately - process them instead of skipping
 	if reaction := evt.Message.GetReactionMessage(); reaction != nil {
 		h.handleReactionMessage(ctx, session, evt, reaction)
 		return
 	}
 
-	// Skip edits
 	if evt.IsEdit {
 		return
 	}
 
-	// Process outgoing messages (from me) - sync to Chatwoot
 	if evt.Info.IsFromMe {
 		if err := h.service.ProcessOutgoingMessage(ctx, session, evt); err != nil {
 			logger.Warn().
@@ -70,7 +64,6 @@ func (h *EventHandler) handleMessage(ctx context.Context, session *model.Session
 		return
 	}
 
-	// Process incoming message
 	if err := h.service.ProcessIncomingMessage(ctx, session, evt); err != nil {
 		logger.Warn().
 			Err(err).
@@ -91,7 +84,6 @@ func (h *EventHandler) handleReceipt(ctx context.Context, session *model.Session
 
 func (h *EventHandler) handleReactionMessage(ctx context.Context, session *model.Session, evt *events.Message, reaction *waE2E.ReactionMessage) {
 	emoji := reaction.GetText()
-	// Skip empty reactions (reaction removals)
 	if emoji == "" {
 		return
 	}
@@ -113,7 +105,6 @@ func (h *EventHandler) handleReactionMessage(ctx context.Context, session *model
 }
 
 func (h *EventHandler) handleMessageDelete(ctx context.Context, session *model.Session, evt *events.Message, proto *waE2E.ProtocolMessage) {
-	// Get the key of the deleted message
 	key := proto.GetKey()
 	if key == nil {
 		return

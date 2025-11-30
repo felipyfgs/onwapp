@@ -1,23 +1,24 @@
-package chatwoot
+package service
 
 import (
 	"context"
 	"fmt"
 	"strings"
 
+	"zpwoot/internal/integrations/chatwoot/core"
 	"zpwoot/internal/logger"
 	"zpwoot/internal/model"
-	"zpwoot/internal/service"
+	zpservice "zpwoot/internal/service"
 )
 
 // BotCommandHandler handles commands sent to the bot contact (123456)
 type BotCommandHandler struct {
 	service        *Service
-	sessionService *service.SessionService
+	sessionService *zpservice.SessionService
 }
 
 // NewBotCommandHandler creates a new bot command handler
-func NewBotCommandHandler(svc *Service, sessionSvc *service.SessionService) *BotCommandHandler {
+func NewBotCommandHandler(svc *Service, sessionSvc *zpservice.SessionService) *BotCommandHandler {
 	return &BotCommandHandler{
 		service:        svc,
 		sessionService: sessionSvc,
@@ -25,8 +26,7 @@ func NewBotCommandHandler(svc *Service, sessionSvc *service.SessionService) *Bot
 }
 
 // HandleCommand processes commands sent to the bot contact (123456)
-// Supports commands like: init, status, disconnect, clearcache (Evolution API pattern)
-func (h *BotCommandHandler) HandleCommand(ctx context.Context, session *model.Session, cfg *Config, content string) {
+func (h *BotCommandHandler) HandleCommand(ctx context.Context, session *model.Session, cfg *core.Config, content string) {
 	command := strings.TrimSpace(content)
 	command = strings.TrimPrefix(command, "/")
 	command = strings.ToLower(command)
@@ -52,7 +52,7 @@ func (h *BotCommandHandler) HandleCommand(ctx context.Context, session *model.Se
 	}
 }
 
-func (h *BotCommandHandler) handleInit(ctx context.Context, session *model.Session, cfg *Config, command string) {
+func (h *BotCommandHandler) handleInit(ctx context.Context, session *model.Session, cfg *core.Config, command string) {
 	if session.Status == model.StatusConnected {
 		_ = h.service.SendBotStatusMessage(ctx, cfg, "connected",
 			fmt.Sprintf("✅ Inbox *%s* is already connected!", cfg.Inbox))
@@ -77,10 +77,10 @@ func (h *BotCommandHandler) handleInit(ctx context.Context, session *model.Sessi
 		}
 	}()
 
-	_ = number // number can be used for phone pairing if needed
+	_ = number
 }
 
-func (h *BotCommandHandler) handleStatus(ctx context.Context, session *model.Session, cfg *Config) {
+func (h *BotCommandHandler) handleStatus(ctx context.Context, session *model.Session, cfg *core.Config) {
 	var statusMsg string
 	switch session.Status {
 	case model.StatusConnected:
@@ -99,7 +99,7 @@ func (h *BotCommandHandler) handleStatus(ctx context.Context, session *model.Ses
 	_ = h.service.SendBotStatusMessage(ctx, cfg, "", statusMsg)
 }
 
-func (h *BotCommandHandler) handleDisconnect(ctx context.Context, session *model.Session, cfg *Config) {
+func (h *BotCommandHandler) handleDisconnect(ctx context.Context, session *model.Session, cfg *core.Config) {
 	_ = h.service.SendBotStatusMessage(ctx, cfg, "disconnected",
 		fmt.Sprintf("🔌 Disconnecting inbox *%s*...", cfg.Inbox))
 
@@ -110,13 +110,13 @@ func (h *BotCommandHandler) handleDisconnect(ctx context.Context, session *model
 	}()
 }
 
-func (h *BotCommandHandler) handleClearCache(ctx context.Context, session *model.Session, cfg *Config) {
+func (h *BotCommandHandler) handleClearCache(ctx context.Context, session *model.Session, cfg *core.Config) {
 	h.service.contactManager.InvalidateCache(session.ID, "")
 	_ = h.service.SendBotStatusMessage(ctx, cfg, "",
 		fmt.Sprintf("🗑️ Cache cleared for inbox *%s*", cfg.Inbox))
 }
 
-func (h *BotCommandHandler) handleHelp(ctx context.Context, cfg *Config) {
+func (h *BotCommandHandler) handleHelp(ctx context.Context, cfg *core.Config) {
 	helpMsg := `📖 *Available Commands:*
 
 • *init* - Connect to WhatsApp (generates QR code)
@@ -128,7 +128,7 @@ func (h *BotCommandHandler) handleHelp(ctx context.Context, cfg *Config) {
 	_ = h.service.SendBotStatusMessage(ctx, cfg, "", helpMsg)
 }
 
-func (h *BotCommandHandler) handleUnknown(ctx context.Context, cfg *Config, command string) {
+func (h *BotCommandHandler) handleUnknown(ctx context.Context, cfg *core.Config, command string) {
 	_ = h.service.SendBotStatusMessage(ctx, cfg, "",
 		fmt.Sprintf("❓ Unknown command: *%s*\n\nType *help* for available commands.", command))
 }

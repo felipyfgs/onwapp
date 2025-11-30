@@ -1,13 +1,16 @@
-package chatwoot
+package client
 
 import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"net/http"
 	"path"
 	"strings"
 	"time"
 
+	"zpwoot/internal/integrations/chatwoot/core"
 	"zpwoot/internal/logger"
 )
 
@@ -17,9 +20,9 @@ type MediaUploader struct {
 }
 
 // NewMediaUploader creates a new media uploader
-func NewMediaUploader(client *Client) *MediaUploader {
+func NewMediaUploader(c *Client) *MediaUploader {
 	return &MediaUploader{
-		client: client,
+		client: c,
 	}
 }
 
@@ -38,26 +41,22 @@ type MediaUploadRequest struct {
 }
 
 // UploadFromURL downloads media from URL and uploads to Chatwoot
-func (m *MediaUploader) UploadFromURL(ctx context.Context, req MediaUploadRequest) (*Message, error) {
-	// Download file from URL
-	data, contentType, err := downloadMedia(req.MediaURL)
+func (m *MediaUploader) UploadFromURL(ctx context.Context, req MediaUploadRequest) (*core.Message, error) {
+	data, contentType, err := DownloadMedia(req.MediaURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to download media: %w", err)
 	}
 
-	// Use provided mime type if available, otherwise use detected
 	mimeType := req.MimeType
 	if mimeType == "" {
 		mimeType = contentType
 	}
 
-	// Determine filename
 	filename := req.Filename
 	if filename == "" {
-		filename = extractFilename(req.MediaURL, mimeType)
+		filename = ExtractFilename(req.MediaURL, mimeType)
 	}
 
-	// Set default message type
 	messageType := req.MessageType
 	if messageType == "" {
 		messageType = "incoming"
@@ -71,7 +70,6 @@ func (m *MediaUploader) UploadFromURL(ctx context.Context, req MediaUploadReques
 		Int("size", len(data)).
 		Msg("Chatwoot: uploading media via API")
 
-	// Upload to Chatwoot using full method with timestamp support
 	msg, err := m.client.CreateMessageWithAttachmentFull(ctx, AttachmentUploadRequest{
 		ConversationID:    req.ConversationID,
 		Content:           req.Caption,
@@ -96,25 +94,42 @@ func (m *MediaUploader) UploadFromURL(ctx context.Context, req MediaUploadReques
 	return msg, nil
 }
 
-// Note: downloadMedia is defined in handler.go and reused here
+// DownloadMedia downloads media from a URL
+func DownloadMedia(url string) ([]byte, string, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, "", err
+	}
+	defer resp.Body.Close()
 
-// extractFilename extracts or generates a filename from URL or mime type
-func extractFilename(url, mimeType string) string {
-	// Try to get from URL path
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, "", err
+	}
+
+	mimeType := resp.Header.Get("Content-Type")
+	if mimeType == "" {
+		mimeType = "application/octet-stream"
+	}
+
+	return data, mimeType, nil
+}
+
+// ExtractFilename extracts or generates a filename from URL or mime type
+func ExtractFilename(url, mimeType string) string {
 	urlPath := strings.Split(url, "?")[0]
 	filename := path.Base(urlPath)
-	
+
 	if filename != "" && filename != "." && filename != "/" {
 		return filename
 	}
 
-	// Generate from mime type
-	ext := getExtensionFromMime(mimeType)
+	ext := GetExtensionFromMime(mimeType)
 	return fmt.Sprintf("file%s", ext)
 }
 
-// getExtensionFromMime returns file extension for common mime types
-func getExtensionFromMime(mimeType string) string {
+// GetExtensionFromMime returns file extension for common mime types
+func GetExtensionFromMime(mimeType string) string {
 	mimeToExt := map[string]string{
 		"image/jpeg":      ".jpg",
 		"image/png":       ".png",
@@ -127,7 +142,7 @@ func getExtensionFromMime(mimeType string) string {
 		"audio/mp4":       ".m4a",
 		"audio/aac":       ".aac",
 		"application/pdf": ".pdf",
-		"application/msword": ".doc",
+		"application/msword":                                                       ".doc",
 		"application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
 	}
 
@@ -135,21 +150,10 @@ func getExtensionFromMime(mimeType string) string {
 		return ext
 	}
 
-	// Try to extract from mime type
 	parts := strings.Split(mimeType, "/")
 	if len(parts) == 2 {
 		return "." + parts[1]
 	}
 
 	return ".bin"
-}
-
-// FileTypeMap maps media types to Chatwoot file_type strings
-var FileTypeMap = map[string]string{
-	"image":    "image",
-	"video":    "video",
-	"audio":    "audio",
-	"document": "file",
-	"file":     "file",
-	"sticker":  "image",
 }

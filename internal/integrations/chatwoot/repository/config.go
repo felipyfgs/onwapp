@@ -1,4 +1,4 @@
-package chatwoot
+package repository
 
 import (
 	"context"
@@ -6,22 +6,22 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"zpwoot/internal/integrations/chatwoot/core"
 )
 
-// Repository handles database operations for Chatwoot integration
-type Repository struct {
+// ConfigRepository handles database operations for Chatwoot configuration
+type ConfigRepository struct {
 	pool *pgxpool.Pool
 }
 
-// NewRepository creates a new Chatwoot repository
-func NewRepository(pool *pgxpool.Pool) *Repository {
-	return &Repository{pool: pool}
+// NewConfigRepository creates a new Chatwoot config repository
+func NewConfigRepository(pool *pgxpool.Pool) *ConfigRepository {
+	return &ConfigRepository{pool: pool}
 }
 
-
-
 // Upsert creates or updates a Chatwoot configuration
-func (r *Repository) Upsert(ctx context.Context, cfg *Config) (*Config, error) {
+func (r *ConfigRepository) Upsert(ctx context.Context, cfg *core.Config) (*core.Config, error) {
 	query := `
 		INSERT INTO "zpChatwoot" (
 			"sessionId", "enabled", "url", "token", "account",
@@ -76,7 +76,7 @@ func (r *Repository) Upsert(ctx context.Context, cfg *Config) (*Config, error) {
 }
 
 // GetBySessionID retrieves configuration by session ID
-func (r *Repository) GetBySessionID(ctx context.Context, sessionID string) (*Config, error) {
+func (r *ConfigRepository) GetBySessionID(ctx context.Context, sessionID string) (*core.Config, error) {
 	query := `
 		SELECT "id", "sessionId", "enabled", "url", "token", "account",
 			   "inboxId", "inbox", "signAgent", "signSeparator",
@@ -89,7 +89,7 @@ func (r *Repository) GetBySessionID(ctx context.Context, sessionID string) (*Con
 		WHERE "sessionId" = $1
 	`
 
-	cfg := &Config{}
+	cfg := &core.Config{}
 	err := r.pool.QueryRow(ctx, query, sessionID).Scan(
 		&cfg.ID, &cfg.SessionID, &cfg.Enabled, &cfg.URL, &cfg.Token, &cfg.Account,
 		&cfg.InboxID, &cfg.Inbox, &cfg.SignAgent, &cfg.SignSeparator,
@@ -111,7 +111,7 @@ func (r *Repository) GetBySessionID(ctx context.Context, sessionID string) (*Con
 }
 
 // GetEnabledBySessionID retrieves enabled configuration by session ID
-func (r *Repository) GetEnabledBySessionID(ctx context.Context, sessionID string) (*Config, error) {
+func (r *ConfigRepository) GetEnabledBySessionID(ctx context.Context, sessionID string) (*core.Config, error) {
 	cfg, err := r.GetBySessionID(ctx, sessionID)
 	if err != nil {
 		return nil, err
@@ -123,14 +123,14 @@ func (r *Repository) GetEnabledBySessionID(ctx context.Context, sessionID string
 }
 
 // Delete removes a configuration by session ID
-func (r *Repository) Delete(ctx context.Context, sessionID string) error {
+func (r *ConfigRepository) Delete(ctx context.Context, sessionID string) error {
 	query := `DELETE FROM "zpChatwoot" WHERE "sessionId" = $1`
 	_, err := r.pool.Exec(ctx, query, sessionID)
 	return err
 }
 
 // UpdateInboxID updates the inbox ID for a configuration
-func (r *Repository) UpdateInboxID(ctx context.Context, sessionID string, inboxID int) error {
+func (r *ConfigRepository) UpdateInboxID(ctx context.Context, sessionID string, inboxID int) error {
 	query := `UPDATE "zpChatwoot" SET "inboxId" = $1, "updatedAt" = $2 WHERE "sessionId" = $3`
 	_, err := r.pool.Exec(ctx, query, inboxID, time.Now(), sessionID)
 	return err

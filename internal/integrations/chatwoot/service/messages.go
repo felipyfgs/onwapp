@@ -1,4 +1,4 @@
-package chatwoot
+package service
 
 import (
 	"bytes"
@@ -8,6 +8,9 @@ import (
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 
+	"zpwoot/internal/integrations/chatwoot/client"
+	"zpwoot/internal/integrations/chatwoot/core"
+	"zpwoot/internal/integrations/chatwoot/util"
 	"zpwoot/internal/logger"
 	"zpwoot/internal/model"
 )
@@ -29,19 +32,14 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 
 	remoteJid := evt.Info.Chat.String()
 
-	// Convert @lid JID to standard @s.whatsapp.net JID
-	if IsLIDJID(remoteJid) && s.database != nil {
-		convertedJid := ConvertLIDToStandardJID(ctx, s.database.Pool, remoteJid)
+	if util.IsLIDJID(remoteJid) && s.database != nil {
+		convertedJid := util.ConvertLIDToStandardJID(ctx, s.database.Pool, remoteJid)
 		if convertedJid != remoteJid {
-			logger.Info().
+			logger.Debug().
 				Str("original", remoteJid).
 				Str("converted", convertedJid).
 				Msg("Chatwoot: converted LID to standard JID")
 			remoteJid = convertedJid
-		} else {
-			logger.Warn().
-				Str("lid", remoteJid).
-				Msg("Chatwoot: could not convert LID to PN (not found in whatsmeow_lid_map)")
 		}
 	}
 
@@ -49,7 +47,7 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 		return nil
 	}
 
-	client := NewClient(cfg.URL, cfg.Token, cfg.Account)
+	c := client.NewClient(cfg.URL, cfg.Token, cfg.Account)
 
 	if cfg.InboxID == 0 {
 		if err := s.InitInbox(ctx, cfg); err != nil {
@@ -57,7 +55,7 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 		}
 	}
 
-	isGroup := IsGroupJID(remoteJid)
+	isGroup := util.IsGroupJID(remoteJid)
 	participantJid := ""
 	if isGroup && evt.Info.Sender.String() != "" {
 		participantJid = evt.Info.Sender.String()
@@ -65,7 +63,7 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 
 	convID, err := s.contactManager.GetOrCreateContactAndConversation(
 		ctx,
-		client,
+		c,
 		cfg,
 		remoteJid,
 		evt.Info.PushName,
@@ -81,8 +79,8 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 
 	sourceID := fmt.Sprintf("WAID:%s", evt.Info.ID)
 
-	if IsMediaMessage(evt.Message) && s.mediaDownloader != nil {
-		return s.processIncomingMediaMessage(ctx, session, evt, client, convID, sourceID, cfg)
+	if util.IsMediaMessage(evt.Message) && s.mediaDownloader != nil {
+		return s.processIncomingMediaMessage(ctx, session, evt, c, convID, sourceID, cfg)
 	}
 
 	content := s.extractMessageContent(evt)
@@ -94,7 +92,7 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 		content = s.contactManager.FormatGroupMessage(content, participantJid, evt.Info.PushName)
 	}
 
-	msgReq := &CreateMessageRequest{
+	msgReq := &client.CreateMessageRequest{
 		Content:     content,
 		MessageType: "incoming",
 		SourceID:    sourceID,
@@ -107,14 +105,14 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 		}
 	}
 
-	cwMsg, err := client.CreateMessage(ctx, convID, msgReq)
+	cwMsg, err := c.CreateMessage(ctx, convID, msgReq)
 	if err != nil {
 		return fmt.Errorf("failed to create message in chatwoot: %w", err)
 	}
 
 	if cwMsg != nil && s.database != nil {
 		if err := s.database.Messages.UpdateCwFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, convID, sourceID); err != nil {
-			logger.Warn().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update message fields")
+			logger.Debug().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update message fields")
 		}
 	}
 
@@ -122,8 +120,8 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 }
 
 // processIncomingMediaMessage handles media messages (images, videos, documents, etc.)
-func (s *Service) processIncomingMediaMessage(ctx context.Context, session *model.Session, evt *events.Message, client *Client, conversationID int, sourceID string, cfg *Config) error {
-	mediaInfo := GetMediaInfo(evt.Message)
+func (s *Service) processIncomingMediaMessage(ctx context.Context, session *model.Session, evt *events.Message, c *client.Client, conversationID int, sourceID string, cfg *core.Config) error {
+	mediaInfo := util.GetMediaInfo(evt.Message)
 	if mediaInfo == nil {
 		return fmt.Errorf("failed to get media info")
 	}
@@ -138,37 +136,34 @@ func (s *Service) processIncomingMediaMessage(ctx context.Context, session *mode
 
 	mediaData, err := s.mediaDownloader(ctx, session.Name, evt.Message)
 	if err != nil {
-		logger.Warn().Err(err).
+		logger.Debug().Err(err).
 			Str("session", session.Name).
 			Str("messageId", evt.Info.ID).
-			Msg("Chatwoot: failed to download media, sending filename as text instead")
+			Msg("Chatwoot: failed to download media, sending filename as text")
 
 		content := mediaInfo.Filename
 		if mediaInfo.Caption != "" {
 			content = mediaInfo.Caption
 		}
-		msgReq := &CreateMessageRequest{
+		msgReq := &client.CreateMessageRequest{
 			Content:           content,
 			MessageType:       "incoming",
 			SourceID:          sourceID,
 			ContentAttributes: contentAttributes,
 		}
-		_, err := client.CreateMessage(ctx, conversationID, msgReq)
+		_, err := c.CreateMessage(ctx, conversationID, msgReq)
 		return err
 	}
 
 	content := mediaInfo.Caption
-	cwMsg, err := client.CreateMessageWithAttachmentAndMime(ctx, conversationID, content, "incoming", bytes.NewReader(mediaData), mediaInfo.Filename, mediaInfo.MimeType, contentAttributes)
+	cwMsg, err := c.CreateMessageWithAttachmentAndMime(ctx, conversationID, content, "incoming", bytes.NewReader(mediaData), mediaInfo.Filename, mediaInfo.MimeType, contentAttributes)
 	if err != nil {
 		return fmt.Errorf("failed to upload media to chatwoot: %w", err)
 	}
 
 	if cwMsg != nil && s.database != nil {
 		if err := s.database.Messages.UpdateCwFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, conversationID, sourceID); err != nil {
-			logger.Warn().Err(err).
-				Str("messageId", evt.Info.ID).
-				Int("chatwootMessageId", cwMsg.ID).
-				Msg("Chatwoot: failed to save chatwoot message ID for media")
+			logger.Debug().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update media message fields")
 		}
 	}
 
@@ -191,8 +186,8 @@ func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Ses
 
 	remoteJid := evt.Info.Chat.String()
 
-	if IsLIDJID(remoteJid) && s.database != nil {
-		convertedJid := ConvertLIDToStandardJID(ctx, s.database.Pool, remoteJid)
+	if util.IsLIDJID(remoteJid) && s.database != nil {
+		convertedJid := util.ConvertLIDToStandardJID(ctx, s.database.Pool, remoteJid)
 		if convertedJid != remoteJid {
 			remoteJid = convertedJid
 		}
@@ -216,7 +211,7 @@ func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Ses
 		}
 	}
 
-	client := NewClient(cfg.URL, cfg.Token, cfg.Account)
+	c := client.NewClient(cfg.URL, cfg.Token, cfg.Account)
 
 	if cfg.InboxID == 0 {
 		if err := s.InitInbox(ctx, cfg); err != nil {
@@ -224,20 +219,20 @@ func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Ses
 		}
 	}
 
-	isGroup := IsGroupJID(remoteJid)
-	phoneNumber := ExtractPhoneFromJID(remoteJid)
+	isGroup := util.IsGroupJID(remoteJid)
+	phoneNumber := util.ExtractPhoneFromJID(remoteJid)
 
-	contact, err := client.GetOrCreateContact(ctx, cfg.InboxID, phoneNumber, remoteJid, phoneNumber, "", isGroup)
+	contact, err := c.GetOrCreateContact(ctx, cfg.InboxID, phoneNumber, remoteJid, phoneNumber, "", isGroup)
 	if err != nil {
 		return fmt.Errorf("failed to get/create contact: %w", err)
 	}
 
-	conv, err := client.GetOrCreateConversation(ctx, contact.ID, cfg.InboxID, "open", cfg.AutoReopen)
+	conv, err := c.GetOrCreateConversation(ctx, contact.ID, cfg.InboxID, "open", cfg.AutoReopen)
 	if err != nil {
 		return fmt.Errorf("failed to get/create conversation: %w", err)
 	}
 
-	msgReq := &CreateMessageRequest{
+	msgReq := &client.CreateMessageRequest{
 		Content:     content,
 		MessageType: "outgoing",
 		SourceID:    sourceID,
@@ -250,14 +245,14 @@ func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Ses
 		}
 	}
 
-	cwMsg, err := client.CreateMessage(ctx, conv.ID, msgReq)
+	cwMsg, err := c.CreateMessage(ctx, conv.ID, msgReq)
 	if err != nil {
 		return fmt.Errorf("failed to create outgoing message in chatwoot: %w", err)
 	}
 
 	if cwMsg != nil && s.database != nil {
 		if err := s.database.Messages.UpdateCwFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, conv.ID, sourceID); err != nil {
-			logger.Warn().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update outgoing message fields")
+			logger.Debug().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update outgoing message fields")
 		}
 	}
 
@@ -279,14 +274,14 @@ func (s *Service) ProcessReactionMessage(ctx context.Context, session *model.Ses
 		return nil
 	}
 
-	client := NewClient(cfg.URL, cfg.Token, cfg.Account)
+	c := client.NewClient(cfg.URL, cfg.Token, cfg.Account)
 
-	isGroup := IsGroupJID(remoteJid)
-	phoneNumber := ExtractPhoneFromJID(remoteJid)
-	senderPhone := ExtractPhoneFromJID(senderJid)
+	isGroup := util.IsGroupJID(remoteJid)
+	phoneNumber := util.ExtractPhoneFromJID(remoteJid)
+	senderPhone := util.ExtractPhoneFromJID(senderJid)
 	contactName := senderPhone
 
-	contact, err := client.GetOrCreateContact(ctx, cfg.InboxID, phoneNumber, remoteJid, contactName, "", isGroup)
+	contact, err := c.GetOrCreateContact(ctx, cfg.InboxID, phoneNumber, remoteJid, contactName, "", isGroup)
 	if err != nil {
 		return fmt.Errorf("failed to get/create contact for reaction: %w", err)
 	}
@@ -296,7 +291,7 @@ func (s *Service) ProcessReactionMessage(ctx context.Context, session *model.Ses
 		status = "pending"
 	}
 
-	conv, err := client.GetOrCreateConversation(ctx, contact.ID, cfg.InboxID, status, cfg.AutoReopen)
+	conv, err := c.GetOrCreateConversation(ctx, contact.ID, cfg.InboxID, status, cfg.AutoReopen)
 	if err != nil {
 		return fmt.Errorf("failed to get/create conversation for reaction: %w", err)
 	}
@@ -317,7 +312,7 @@ func (s *Service) ProcessReactionMessage(ctx context.Context, session *model.Ses
 		messageType = "outgoing"
 	}
 
-	msgReq := &CreateMessageRequest{
+	msgReq := &client.CreateMessageRequest{
 		Content:     emoji,
 		MessageType: messageType,
 	}
@@ -329,7 +324,7 @@ func (s *Service) ProcessReactionMessage(ctx context.Context, session *model.Ses
 		}
 	}
 
-	_, err = client.CreateMessage(ctx, conv.ID, msgReq)
+	_, err = c.CreateMessage(ctx, conv.ID, msgReq)
 	if err != nil {
 		return fmt.Errorf("failed to send reaction to chatwoot: %w", err)
 	}
@@ -367,65 +362,34 @@ func (s *Service) HandleMessageRead(ctx context.Context, session *model.Session,
 	}
 
 	msg, err := s.database.Messages.GetByMsgId(ctx, session.ID, messageID)
-	if err != nil || msg == nil {
-		logger.Debug().Str("messageId", messageID).Msg("Chatwoot: message not found for read receipt")
+	if err != nil || msg == nil || msg.CwConvId == nil || *msg.CwConvId == 0 {
 		return nil
 	}
 
-	if msg.CwConvId == nil || *msg.CwConvId == 0 {
-		logger.Debug().Str("messageId", messageID).Msg("Chatwoot: message has no conversation ID")
-		return nil
-	}
-
-	client := NewClient(cfg.URL, cfg.Token, cfg.Account)
-
+	c := client.NewClient(cfg.URL, cfg.Token, cfg.Account)
 	if cfg.InboxID == 0 {
-		logger.Debug().Msg("Chatwoot: inbox ID not set")
 		return nil
 	}
 
-	inbox, err := client.GetInbox(ctx, cfg.InboxID)
+	inbox, err := c.GetInbox(ctx, cfg.InboxID)
+	if err != nil || inbox.InboxIdentifier == "" {
+		return nil
+	}
+
+	conv, contactSourceID, err := c.GetConversationWithContactInbox(ctx, *msg.CwConvId)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Chatwoot: failed to get inbox")
 		return nil
 	}
-
-	if inbox.InboxIdentifier == "" {
-		logger.Debug().Msg("Chatwoot: inbox_identifier not available")
-		return nil
-	}
-
-	conv, contactSourceID, err := client.GetConversationWithContactInbox(ctx, *msg.CwConvId)
-	if err != nil {
-		logger.Warn().Err(err).Int("conversationId", *msg.CwConvId).Msg("Chatwoot: failed to get conversation")
-		return nil
-	}
-
-	logger.Debug().
-		Int("conversationId", *msg.CwConvId).
-		Str("contactSourceID", contactSourceID).
-		Str("inboxIdentifier", inbox.InboxIdentifier).
-		Interface("convID", conv.ID).
-		Msg("Chatwoot: read receipt debug info")
+	_ = conv
 
 	if contactSourceID == "" {
-		logger.Debug().Int("conversationId", *msg.CwConvId).Msg("Chatwoot: contact_source_id not found")
 		return nil
 	}
 
-	if err := client.UpdateLastSeen(ctx, inbox.InboxIdentifier, contactSourceID, *msg.CwConvId); err != nil {
-		logger.Warn().Err(err).
-			Int("conversationId", *msg.CwConvId).
-			Str("inboxIdentifier", inbox.InboxIdentifier).
-			Msg("Chatwoot: failed to update last_seen")
+	if err := c.UpdateLastSeen(ctx, inbox.InboxIdentifier, contactSourceID, *msg.CwConvId); err != nil {
+		logger.Debug().Err(err).Int("conversationId", *msg.CwConvId).Msg("Chatwoot: failed to update last_seen")
 		return err
 	}
-
-	logger.Debug().
-		Str("session", session.Name).
-		Str("messageId", messageID).
-		Int("conversationId", *msg.CwConvId).
-		Msg("Chatwoot: updated last_seen (read receipt)")
 
 	return nil
 }
@@ -442,31 +406,17 @@ func (s *Service) ProcessMessageDelete(ctx context.Context, session *model.Sessi
 	}
 
 	msg, err := s.database.Messages.GetByMsgId(ctx, session.ID, messageID)
-	if err != nil || msg == nil {
-		logger.Debug().Str("messageId", messageID).Msg("Chatwoot: message not found for deletion")
+	if err != nil || msg == nil || msg.CwMsgId == nil || msg.CwConvId == nil {
 		return nil
 	}
 
-	if msg.CwMsgId == nil || msg.CwConvId == nil {
-		logger.Debug().Str("messageId", messageID).Msg("Chatwoot: message has no Chatwoot IDs")
-		return nil
-	}
+	c := client.NewClient(cfg.URL, cfg.Token, cfg.Account)
 
-	client := NewClient(cfg.URL, cfg.Token, cfg.Account)
-
-	if err := client.DeleteMessage(ctx, *msg.CwConvId, *msg.CwMsgId); err != nil {
+	if err := c.DeleteMessage(ctx, *msg.CwConvId, *msg.CwMsgId); err != nil {
 		return fmt.Errorf("failed to delete message from Chatwoot: %w", err)
 	}
 
-	if err := s.database.Messages.Delete(ctx, session.ID, messageID); err != nil {
-		logger.Warn().Err(err).Str("messageId", messageID).Msg("Chatwoot: failed to delete message from database")
-	}
-
-	logger.Info().
-		Str("session", session.Name).
-		Str("messageId", messageID).
-		Int("chatwootMsgId", *msg.CwMsgId).
-		Msg("Chatwoot: message deleted from Chatwoot")
+	_ = s.database.Messages.Delete(ctx, session.ID, messageID)
 
 	return nil
 }
@@ -520,7 +470,7 @@ func (s *Service) extractMessageContent(evt *events.Message) string {
 }
 
 // extractReplyInfo extracts reply/quote information from a WhatsApp message
-func (s *Service) extractReplyInfo(ctx context.Context, sessionID string, evt *events.Message) *ReplyInfo {
+func (s *Service) extractReplyInfo(ctx context.Context, sessionID string, evt *events.Message) *core.ReplyInfo {
 	if s.database == nil {
 		return nil
 	}
@@ -532,7 +482,6 @@ func (s *Service) extractReplyInfo(ctx context.Context, sessionID string, evt *e
 
 	var stanzaID string
 
-	// Check all message types for context info
 	if ext := msg.GetExtendedTextMessage(); ext != nil {
 		if ctx := ext.GetContextInfo(); ctx != nil {
 			stanzaID = ctx.GetStanzaID()
@@ -587,7 +536,7 @@ func (s *Service) extractReplyInfo(ctx context.Context, sessionID string, evt *e
 		return nil
 	}
 
-	return &ReplyInfo{
+	return &core.ReplyInfo{
 		CwMsgId:           *originalMsg.CwMsgId,
 		WhatsAppMessageID: stanzaID,
 	}

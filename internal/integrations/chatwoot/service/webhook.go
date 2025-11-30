@@ -1,4 +1,4 @@
-package chatwoot
+package service
 
 import (
 	"context"
@@ -6,8 +6,46 @@ import (
 	"fmt"
 	"strings"
 
+	"zpwoot/internal/integrations/chatwoot/core"
+	"zpwoot/internal/integrations/chatwoot/util"
 	"zpwoot/internal/logger"
 )
+
+// =============================================================================
+// WEBHOOK DTOs
+// =============================================================================
+
+// WebhookPayload represents incoming webhook from Chatwoot
+type WebhookPayload struct {
+	Event        string                 `json:"event"`
+	ID           int                    `json:"id,omitempty"`
+	Content      string                 `json:"content,omitempty"`
+	MessageType  string                 `json:"message_type,omitempty"`
+	ContentType  string                 `json:"content_type,omitempty"`
+	ContentAttrs map[string]interface{} `json:"content_attributes,omitempty"`
+	Private      bool                   `json:"private,omitempty"`
+	SourceID     string                 `json:"source_id,omitempty"`
+	Conversation *WebhookConversation   `json:"conversation,omitempty"`
+	Sender       *core.Sender           `json:"sender,omitempty"`
+	Inbox        *core.Inbox            `json:"inbox,omitempty"`
+	Account      *core.Account          `json:"account,omitempty"`
+	Attachments  []core.Attachment      `json:"attachments,omitempty"`
+}
+
+// WebhookConversation represents conversation data in webhook payload
+type WebhookConversation struct {
+	ID           int                `json:"id"`
+	InboxID      int                `json:"inbox_id,omitempty"`
+	Status       string             `json:"status,omitempty"`
+	Messages     []core.Message     `json:"messages,omitempty"`
+	Meta         *ConversationMeta  `json:"meta,omitempty"`
+	ContactInbox *core.ContactInbox `json:"contact_inbox,omitempty"`
+}
+
+// ConversationMeta represents metadata in conversation
+type ConversationMeta struct {
+	Sender *core.Contact `json:"sender,omitempty"`
+}
 
 // =============================================================================
 // WEBHOOK PARSING
@@ -27,10 +65,10 @@ func ParseWebhookPayload(data []byte) (*WebhookPayload, error) {
 // =============================================================================
 
 // GetWebhookDataForSending extracts data from webhook for sending via WhatsApp
-func (s *Service) GetWebhookDataForSending(ctx context.Context, sessionID string, payload *WebhookPayload) (chatJid, content string, attachments []Attachment, err error) {
+func (s *Service) GetWebhookDataForSending(ctx context.Context, sessionID string, payload *WebhookPayload) (chatJid, content string, attachments []core.Attachment, err error) {
 	cfg, err := s.repo.GetEnabledBySessionID(ctx, sessionID)
 	if err != nil || cfg == nil {
-		return "", "", nil, ErrNotEnabled
+		return "", "", nil, core.ErrNotEnabled
 	}
 
 	isOutgoing := payload.MessageType == "outgoing" || payload.MessageType == "1"
@@ -38,7 +76,6 @@ func (s *Service) GetWebhookDataForSending(ctx context.Context, sessionID string
 		return "", "", nil, nil
 	}
 
-	// Skip messages with WAID: source_id - these are imported from WhatsApp
 	if payload.SourceID != "" && strings.HasPrefix(payload.SourceID, "WAID:") {
 		logger.Debug().
 			Str("sourceId", payload.SourceID).
@@ -47,7 +84,6 @@ func (s *Service) GetWebhookDataForSending(ctx context.Context, sessionID string
 		return "", "", nil, nil
 	}
 
-	// Also check in conversation messages list
 	if payload.Conversation != nil && len(payload.Conversation.Messages) > 0 {
 		for _, msg := range payload.Conversation.Messages {
 			if strings.HasPrefix(msg.SourceID, "WAID:") && msg.ID == payload.ID {
@@ -60,7 +96,6 @@ func (s *Service) GetWebhookDataForSending(ctx context.Context, sessionID string
 		return "", "", nil, fmt.Errorf("missing conversation metadata")
 	}
 
-	// Debug: log sender info to understand what we're getting
 	sender := payload.Conversation.Meta.Sender
 	logger.Debug().
 		Str("identifier", sender.Identifier).
@@ -72,12 +107,11 @@ func (s *Service) GetWebhookDataForSending(ctx context.Context, sessionID string
 	chatJid = payload.Conversation.Meta.Sender.Identifier
 	if chatJid == "" {
 		phoneNumber := strings.TrimPrefix(payload.Conversation.Meta.Sender.PhoneNumber, "+")
-		chatJid = JIDToWhatsApp(phoneNumber)
+		chatJid = util.JIDToWhatsApp(phoneNumber)
 	}
 
 	content = s.ConvertMarkdown(payload.Content)
 
-	// Add agent signature to content sent to WhatsApp (like Evolution API signMsg)
 	if cfg.SignAgent && payload.Sender != nil {
 		senderName := payload.Sender.AvailableName
 		if senderName == "" {
@@ -100,7 +134,7 @@ func (s *Service) GetWebhookDataForSending(ctx context.Context, sessionID string
 }
 
 // GetQuotedMessage finds the original message being replied to from Chatwoot
-func (s *Service) GetQuotedMessage(ctx context.Context, sessionID string, payload *WebhookPayload) *QuotedMessageInfo {
+func (s *Service) GetQuotedMessage(ctx context.Context, sessionID string, payload *WebhookPayload) *core.QuotedMessageInfo {
 	if s.database == nil {
 		return nil
 	}
@@ -131,7 +165,7 @@ func (s *Service) GetQuotedMessage(ctx context.Context, sessionID string, payloa
 		return nil
 	}
 
-	return &QuotedMessageInfo{
+	return &core.QuotedMessageInfo{
 		MsgId:     msg.MsgId,
 		ChatJID:   msg.ChatJID,
 		SenderJID: msg.SenderJID,
@@ -139,5 +173,3 @@ func (s *Service) GetQuotedMessage(ctx context.Context, sessionID string, payloa
 		FromMe:    msg.FromMe,
 	}
 }
-
-
