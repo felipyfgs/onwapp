@@ -981,7 +981,7 @@ func (s *ChatwootDBSync) updateAllContactAvatarsBackground() {
 
 	ctx := context.Background()
 
-	// Get contacts without thumbnail, ordered by last activity
+	// Get all contacts without avatar, ordered by last activity
 	rows, err := db.QueryContext(ctx, `
 		SELECT c.id, c.identifier 
 		FROM contacts c
@@ -989,32 +989,48 @@ func (s *ChatwootDBSync) updateAllContactAvatarsBackground() {
 		WHERE c.account_id = $1 
 		AND c.identifier IS NOT NULL AND c.identifier != ''
 		AND asa.id IS NULL
-		ORDER BY c.last_activity_at DESC NULLS LAST
-		LIMIT 200`, s.cfg.Account)
+		ORDER BY c.last_activity_at DESC NULLS LAST`, s.cfg.Account)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Chatwoot sync: failed to query contacts for background avatar sync")
 		return
 	}
 	defer rows.Close()
 
-	logger.Info().Msg("Chatwoot sync: starting background avatar sync")
+	// Count total contacts
+	var contacts []struct {
+		ID         int
+		Identifier string
+	}
+	for rows.Next() {
+		var c struct {
+			ID         int
+			Identifier string
+		}
+		if err := rows.Scan(&c.ID, &c.Identifier); err != nil {
+			continue
+		}
+		contacts = append(contacts, c)
+	}
+	rows.Close()
+
+	total := len(contacts)
+	logger.Info().Int("total", total).Msg("Chatwoot sync: starting background avatar sync")
 
 	updated := 0
 	errors := 0
-	for rows.Next() {
-		var contactID int
-		var identifier string
-		if err := rows.Scan(&contactID, &identifier); err != nil {
-			continue
-		}
+	for i, c := range contacts {
+		// Create context with timeout for each request
+		reqCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 
-		avatarURL, err := s.contactsGetter.GetProfilePictureURL(ctx, identifier)
+		avatarURL, err := s.contactsGetter.GetProfilePictureURL(reqCtx, c.Identifier)
+		cancel()
+
 		if err != nil || avatarURL == "" {
 			errors++
 			continue
 		}
 
-		_, err = s.client.UpdateContact(ctx, contactID, map[string]interface{}{
+		_, err = s.client.UpdateContact(ctx, c.ID, map[string]interface{}{
 			"avatar_url": avatarURL,
 		})
 		if err != nil {
@@ -1024,6 +1040,11 @@ func (s *ChatwootDBSync) updateAllContactAvatarsBackground() {
 
 		updated++
 
+		// Log progress every 100 contacts
+		if (i+1)%100 == 0 {
+			logger.Info().Int("progress", i+1).Int("total", total).Int("updated", updated).Msg("Chatwoot sync: avatar sync progress")
+		}
+
 		// Rate limit: 100ms between requests
 		time.Sleep(100 * time.Millisecond)
 	}
@@ -1031,6 +1052,7 @@ func (s *ChatwootDBSync) updateAllContactAvatarsBackground() {
 	logger.Info().
 		Int("updated", updated).
 		Int("errors", errors).
+		Int("total", total).
 		Msg("Chatwoot sync: background avatar sync completed")
 }
 
