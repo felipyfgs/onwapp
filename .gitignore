@@ -17,17 +17,39 @@ vendor/
 
 # Go workspace file
 go.work
+go.work.sum
 
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
+*~
 
 # Environment files
 .env
 .env.local
+.env.*.local
 
-# Docker
+# Docker volumes and data
 postgres_data/
+minio_data/
+
+# Local development
 .local/
+
+# Factory AI
+.factory/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Debug
+*.log
+debug/
+tmp/
+
+# Build output
+dist/
+build/

@@ -1,0 +1,58 @@
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# GitHub
+.github/
+
+# Factory AI
+.factory/
+
+# Local development
+.local/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Docker files (not needed in build context)
+docker/
+docker-compose*.yaml
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+
+# Documentation
+docs/
+*.md
+LICENSE*
+
+# Development tools
+Makefile
+.goreleaser.yml
+scripts/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+dist/
+build/
+tmp/
+
+# Test files
+*_test.go
+coverage.out
+*.test
+
+# Config examples (not needed in image)
+chatwoot-config.json
