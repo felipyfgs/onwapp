@@ -18,9 +18,9 @@ type Chat struct {
 	MarkedAsUnread     bool `json:"markedAsUnread"`
 
 	// Ephemeral/Disappearing messages settings
-	EphemeralExpiration         int   `json:"ephemeralExpiration,omitempty"`
-	EphemeralSettingTimestamp   int64 `json:"ephemeralSettingTimestamp,omitempty"`
-	DisappearingModeInitiator   int16 `json:"disappearingInitiator,omitempty"`
+	EphemeralExpiration       int   `json:"ephemeralExpiration,omitempty"`
+	EphemeralSettingTimestamp int64 `json:"ephemeralSettingTimestamp,omitempty"`
+	DisappearingModeInitiator int16 `json:"disappearingInitiator,omitempty"`
 
 	// Chat state flags
 	ReadOnly  bool `json:"readOnly"`
@@ -28,10 +28,10 @@ type Chat struct {
 	Locked    bool `json:"locked"`
 
 	// Limit sharing (privacy feature)
-	LimitSharing            bool  `json:"limitSharing"`
-	LimitSharingTimestamp   int64 `json:"limitSharingTimestamp,omitempty"`
-	LimitSharingTrigger     int16 `json:"limitSharingTrigger,omitempty"`
-	LimitSharingInitiatedByMe bool `json:"limitSharingInitiatedByMe,omitempty"`
+	LimitSharing              bool  `json:"limitSharing"`
+	LimitSharingTimestamp     int64 `json:"limitSharingTimestamp,omitempty"`
+	LimitSharingTrigger       int16 `json:"limitSharingTrigger,omitempty"`
+	LimitSharingInitiatedByMe bool  `json:"limitSharingInitiatedByMe,omitempty"`
 
 	// Group specific
 	IsDefaultSubgroup bool `json:"isDefaultSubgroup"`

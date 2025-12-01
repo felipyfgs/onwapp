@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"encoding/base64"
 	"time"
 
 	"go.mau.fi/whatsmeow/proto/waHistorySync"
@@ -318,16 +317,4 @@ func mapSyncType(t waHistorySync.HistorySync_HistorySyncType) model.SyncType {
 
 func boolPtr(b bool) *bool {
 	return &b
-}
-
-// Helper to decode base64 strings to bytes (for JSON deserialization)
-func decodeBase64(s string) []byte {
-	if s == "" {
-		return nil
-	}
-	data, err := base64.StdEncoding.DecodeString(s)
-	if err != nil {
-		return nil
-	}
-	return data
 }

@@ -40,7 +40,7 @@ func (h *ProfileHandler) GetProfile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.ProfileInfoResponse{
-		
+
 		Profile: profile,
 	})
 }
@@ -189,7 +189,7 @@ func (h *ProfileHandler) GetPrivacySettings(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.PrivacySettingsResponse{
-		
+
 		Settings: settings,
 	})
 }
@@ -227,7 +227,7 @@ func (h *ProfileHandler) SetPrivacySettings(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.PrivacySettingsResponse{
-		
+
 		Settings: settings,
 	})
 }

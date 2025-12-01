@@ -62,26 +62,26 @@ const (
 type MessageStubType int
 
 const (
-	StubTypeRevoke              MessageStubType = 1   // Message revoked/deleted
-	StubTypeGroupCreate         MessageStubType = 4   // Group created
-	StubTypeGroupSubjectChange  MessageStubType = 7   // Group subject changed
-	StubTypeGroupIconChange     MessageStubType = 9   // Group icon changed
-	StubTypeGroupDescChange     MessageStubType = 12  // Group description changed
-	StubTypeGroupParticipantAdd MessageStubType = 28  // Participant added
-	StubTypeGroupParticipantRemove MessageStubType = 31  // Participant removed
-	StubTypeGroupParticipantLeave  MessageStubType = 32  // Participant left
-	StubTypeGroupParticipantPromote MessageStubType = 29 // Participant promoted to admin
-	StubTypeGroupParticipantDemote  MessageStubType = 30 // Participant demoted from admin
-	StubTypeCrypt               MessageStubType = 39  // E2E encryption notification
-	StubTypeIdentityChange      MessageStubType = 40  // Identity key changed
-	StubTypeGroupInviteLink     MessageStubType = 46  // Group invite link
-	StubTypeEphemeralSetting    MessageStubType = 64  // Disappearing messages setting changed
-	StubTypeEphemeralSync       MessageStubType = 65  // Disappearing messages sync
-	StubTypeBlockContact        MessageStubType = 73  // Contact blocked
-	StubTypeEphemeralNotification MessageStubType = 74 // Ephemeral notification
-	StubTypeCommunityCreate     MessageStubType = 130 // Community created
-	StubTypeCommunitySubgroupAdd MessageStubType = 131 // Subgroup added to community
-	StubTypeMessageDeleted      MessageStubType = 132 // Message deleted notification
+	StubTypeRevoke                  MessageStubType = 1   // Message revoked/deleted
+	StubTypeGroupCreate             MessageStubType = 4   // Group created
+	StubTypeGroupSubjectChange      MessageStubType = 7   // Group subject changed
+	StubTypeGroupIconChange         MessageStubType = 9   // Group icon changed
+	StubTypeGroupDescChange         MessageStubType = 12  // Group description changed
+	StubTypeGroupParticipantAdd     MessageStubType = 28  // Participant added
+	StubTypeGroupParticipantRemove  MessageStubType = 31  // Participant removed
+	StubTypeGroupParticipantLeave   MessageStubType = 32  // Participant left
+	StubTypeGroupParticipantPromote MessageStubType = 29  // Participant promoted to admin
+	StubTypeGroupParticipantDemote  MessageStubType = 30  // Participant demoted from admin
+	StubTypeCrypt                   MessageStubType = 39  // E2E encryption notification
+	StubTypeIdentityChange          MessageStubType = 40  // Identity key changed
+	StubTypeGroupInviteLink         MessageStubType = 46  // Group invite link
+	StubTypeEphemeralSetting        MessageStubType = 64  // Disappearing messages setting changed
+	StubTypeEphemeralSync           MessageStubType = 65  // Disappearing messages sync
+	StubTypeBlockContact            MessageStubType = 73  // Contact blocked
+	StubTypeEphemeralNotification   MessageStubType = 74  // Ephemeral notification
+	StubTypeCommunityCreate         MessageStubType = 130 // Community created
+	StubTypeCommunitySubgroupAdd    MessageStubType = 131 // Subgroup added to community
+	StubTypeMessageDeleted          MessageStubType = 132 // Message deleted notification
 )
 
 // =============================================================================
@@ -144,11 +144,11 @@ type Message struct {
 	RawEvent json.RawMessage `json:"rawEvent,omitempty"`
 
 	// History Sync Fields
-	MsgOrderID    *int64  `json:"msgOrderId,omitempty"`    // Server-assigned sequence for ordering
-	StubType      *int    `json:"stubType,omitempty"`      // System message type (28=add, 31=remove, etc.)
-	StubParams    []string `json:"stubParams,omitempty"`   // Parameters for system messages (JIDs)
-	MessageSecret []byte  `json:"messageSecret,omitempty"` // Decryption key for view-once
-	Broadcast     bool    `json:"broadcast,omitempty"`     // Is broadcast list message
+	MsgOrderID    *int64   `json:"msgOrderId,omitempty"`    // Server-assigned sequence for ordering
+	StubType      *int     `json:"stubType,omitempty"`      // System message type (28=add, 31=remove, etc.)
+	StubParams    []string `json:"stubParams,omitempty"`    // Parameters for system messages (JIDs)
+	MessageSecret []byte   `json:"messageSecret,omitempty"` // Decryption key for view-once
+	Broadcast     bool     `json:"broadcast,omitempty"`     // Is broadcast list message
 
 	// Metadata
 	CreatedAt time.Time `json:"createdAt"`
@@ -194,9 +194,9 @@ func (m *Message) IsParticipantEvent() bool {
 		return false
 	}
 	switch MessageStubType(*m.StubType) {
-	case StubTypeGroupParticipantAdd, StubTypeGroupParticipantRemove, 
-	     StubTypeGroupParticipantLeave, StubTypeGroupParticipantPromote, 
-	     StubTypeGroupParticipantDemote:
+	case StubTypeGroupParticipantAdd, StubTypeGroupParticipantRemove,
+		StubTypeGroupParticipantLeave, StubTypeGroupParticipantPromote,
+		StubTypeGroupParticipantDemote:
 		return true
 	}
 	return false
@@ -218,7 +218,7 @@ func (t MessageType) IsValid() bool {
 	case MessageTypeText, MessageTypeImage, MessageTypeVideo, MessageTypeAudio,
 		MessageTypeDocument, MessageTypeSticker, MessageTypeLocation,
 		MessageTypeLiveLocation, MessageTypeContact, MessageTypePoll,
-		MessageTypeReaction, MessageTypeInteractive, MessageTypeProtocol, 
+		MessageTypeReaction, MessageTypeInteractive, MessageTypeProtocol,
 		MessageTypeSystem, MessageTypeUnknown:
 		return true
 	}

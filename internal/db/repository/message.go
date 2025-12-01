@@ -278,12 +278,12 @@ func (r *MessageRepository) UpdateCwFields(ctx context.Context, sessionID, msgId
 	if err != nil {
 		return err
 	}
-	
+
 	// Log if no rows were affected (message not found in DB)
 	if result.RowsAffected() == 0 {
 		return fmt.Errorf("message not found in database: sessionID=%s, msgId=%s", sessionID, msgId)
 	}
-	
+
 	return nil
 }
 

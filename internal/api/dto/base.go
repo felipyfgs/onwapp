@@ -2,18 +2,18 @@ package dto
 
 // Error codes
 const (
-	ErrCodeSessionNotFound    = "SESSION_NOT_FOUND"
-	ErrCodeSessionExists      = "SESSION_ALREADY_EXISTS"
-	ErrCodeNotConnected       = "SESSION_NOT_CONNECTED"
-	ErrCodeInvalidRequest     = "INVALID_REQUEST"
-	ErrCodeInvalidPhone       = "INVALID_PHONE_NUMBER"
-	ErrCodeMessageFailed      = "MESSAGE_SEND_FAILED"
-	ErrCodeGroupNotFound      = "GROUP_NOT_FOUND"
-	ErrCodeContactNotFound    = "CONTACT_NOT_FOUND"
-	ErrCodeWebhookNotFound    = "WEBHOOK_NOT_FOUND"
-	ErrCodeUnauthorized       = "UNAUTHORIZED"
-	ErrCodeInternal           = "INTERNAL_ERROR"
-	ErrCodeNotImplemented     = "NOT_IMPLEMENTED"
+	ErrCodeSessionNotFound = "SESSION_NOT_FOUND"
+	ErrCodeSessionExists   = "SESSION_ALREADY_EXISTS"
+	ErrCodeNotConnected    = "SESSION_NOT_CONNECTED"
+	ErrCodeInvalidRequest  = "INVALID_REQUEST"
+	ErrCodeInvalidPhone    = "INVALID_PHONE_NUMBER"
+	ErrCodeMessageFailed   = "MESSAGE_SEND_FAILED"
+	ErrCodeGroupNotFound   = "GROUP_NOT_FOUND"
+	ErrCodeContactNotFound = "CONTACT_NOT_FOUND"
+	ErrCodeWebhookNotFound = "WEBHOOK_NOT_FOUND"
+	ErrCodeUnauthorized    = "UNAUTHORIZED"
+	ErrCodeInternal        = "INTERNAL_ERROR"
+	ErrCodeNotImplemented  = "NOT_IMPLEMENTED"
 )
 
 // APIError represents a structured error response

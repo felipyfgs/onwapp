@@ -350,14 +350,14 @@ func (s *EventService) handleMessage(ctx context.Context, session *model.Session
 				go func(m *model.Media, client *model.Session) {
 					downloadCtx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 					defer cancel()
-					
+
 					// Get the saved media with ID
 					savedMedia, err := s.database.Media.GetByMsgID(downloadCtx, m.SessionID, m.MsgID)
 					if err != nil || savedMedia == nil {
 						logger.Warn().Err(err).Str("msgId", m.MsgID).Msg("Failed to get saved media for download")
 						return
 					}
-					
+
 					if err := s.mediaService.DownloadAndStore(downloadCtx, client.Client, savedMedia, client.Name); err != nil {
 						logger.Warn().Err(err).Str("msgId", m.MsgID).Msg("Failed to download media to storage")
 					}
@@ -725,8 +725,8 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 			}
 
 			// Check if broadcast message
-			broadcast := key.GetRemoteJID() == "status@broadcast" || 
-				webMsg.GetBroadcast() || 
+			broadcast := key.GetRemoteJID() == "status@broadcast" ||
+				webMsg.GetBroadcast() ||
 				(webMsg.GetMessage() != nil && webMsg.GetMessage().GetSenderKeyDistributionMessage() != nil)
 
 			msg := &model.Message{
@@ -770,7 +770,7 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 		// Enrich messages with pushNames from whatsmeow_contacts
 		if session.Client != nil && session.Client.Store != nil && session.Client.Store.ID != nil {
 			deviceJID := session.Client.Store.ID.String()
-			
+
 			// Collect unique senderJIDs that need pushName lookup
 			var jidsToLookup []string
 			jidSet := make(map[string]bool)
@@ -780,11 +780,11 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 					jidSet[msg.SenderJID] = true
 				}
 			}
-			
+
 			// Batch lookup pushNames
 			if len(jidsToLookup) > 0 {
 				pushNames := s.database.Contacts.GetPushNameBatch(ctx, deviceJID, jidsToLookup)
-				
+
 				// Apply pushNames to messages
 				enriched := 0
 				for _, msg := range allMessages {
@@ -795,7 +795,7 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 						}
 					}
 				}
-				
+
 				if enriched > 0 {
 					logger.Debug().
 						Int("enriched", enriched).
@@ -804,7 +804,7 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 				}
 			}
 		}
-		
+
 		saved, err := s.database.Messages.SaveBatch(ctx, allMessages)
 		if err != nil {
 			logger.Error().
@@ -1112,7 +1112,7 @@ func (s *EventService) handlePushNameSync(ctx context.Context, session *model.Se
 		}
 	}
 
-	// Update messages with pushNames from LID JIDs  
+	// Update messages with pushNames from LID JIDs
 	if len(lidToName) > 0 {
 		updated := 0
 		for lidJID, name := range lidToName {
@@ -1777,19 +1777,19 @@ func (s *EventService) extractMediaInfo(sessionID, msgID string, msg *waE2E.Mess
 	// Image
 	if img := msg.GetImageMessage(); img != nil {
 		media = &model.Media{
-			SessionID:        sessionID,
-			MsgID:            msgID,
-			MediaType:        "image",
-			MimeType:         img.GetMimetype(),
-			FileSize:         int64(img.GetFileLength()),
-			Caption:          img.GetCaption(),
-			WADirectPath:     img.GetDirectPath(),
-			WAMediaKey:       img.GetMediaKey(),
-			WAFileSHA256:     img.GetFileSHA256(),
-			WAFileEncSHA256:  img.GetFileEncSHA256(),
+			SessionID:           sessionID,
+			MsgID:               msgID,
+			MediaType:           "image",
+			MimeType:            img.GetMimetype(),
+			FileSize:            int64(img.GetFileLength()),
+			Caption:             img.GetCaption(),
+			WADirectPath:        img.GetDirectPath(),
+			WAMediaKey:          img.GetMediaKey(),
+			WAFileSHA256:        img.GetFileSHA256(),
+			WAFileEncSHA256:     img.GetFileEncSHA256(),
 			WAMediaKeyTimestamp: int64(img.GetMediaKeyTimestamp()),
-			Width:            int(img.GetWidth()),
-			Height:           int(img.GetHeight()),
+			Width:               int(img.GetWidth()),
+			Height:              int(img.GetHeight()),
 		}
 		return media
 	}
@@ -1797,20 +1797,20 @@ func (s *EventService) extractMediaInfo(sessionID, msgID string, msg *waE2E.Mess
 	// Video
 	if vid := msg.GetVideoMessage(); vid != nil {
 		media = &model.Media{
-			SessionID:        sessionID,
-			MsgID:            msgID,
-			MediaType:        "video",
-			MimeType:         vid.GetMimetype(),
-			FileSize:         int64(vid.GetFileLength()),
-			Caption:          vid.GetCaption(),
-			WADirectPath:     vid.GetDirectPath(),
-			WAMediaKey:       vid.GetMediaKey(),
-			WAFileSHA256:     vid.GetFileSHA256(),
-			WAFileEncSHA256:  vid.GetFileEncSHA256(),
+			SessionID:           sessionID,
+			MsgID:               msgID,
+			MediaType:           "video",
+			MimeType:            vid.GetMimetype(),
+			FileSize:            int64(vid.GetFileLength()),
+			Caption:             vid.GetCaption(),
+			WADirectPath:        vid.GetDirectPath(),
+			WAMediaKey:          vid.GetMediaKey(),
+			WAFileSHA256:        vid.GetFileSHA256(),
+			WAFileEncSHA256:     vid.GetFileEncSHA256(),
 			WAMediaKeyTimestamp: int64(vid.GetMediaKeyTimestamp()),
-			Width:            int(vid.GetWidth()),
-			Height:           int(vid.GetHeight()),
-			Duration:         int(vid.GetSeconds()),
+			Width:               int(vid.GetWidth()),
+			Height:              int(vid.GetHeight()),
+			Duration:            int(vid.GetSeconds()),
 		}
 		return media
 	}
@@ -1818,17 +1818,17 @@ func (s *EventService) extractMediaInfo(sessionID, msgID string, msg *waE2E.Mess
 	// Audio
 	if aud := msg.GetAudioMessage(); aud != nil {
 		media = &model.Media{
-			SessionID:        sessionID,
-			MsgID:            msgID,
-			MediaType:        "audio",
-			MimeType:         aud.GetMimetype(),
-			FileSize:         int64(aud.GetFileLength()),
-			WADirectPath:     aud.GetDirectPath(),
-			WAMediaKey:       aud.GetMediaKey(),
-			WAFileSHA256:     aud.GetFileSHA256(),
-			WAFileEncSHA256:  aud.GetFileEncSHA256(),
+			SessionID:           sessionID,
+			MsgID:               msgID,
+			MediaType:           "audio",
+			MimeType:            aud.GetMimetype(),
+			FileSize:            int64(aud.GetFileLength()),
+			WADirectPath:        aud.GetDirectPath(),
+			WAMediaKey:          aud.GetMediaKey(),
+			WAFileSHA256:        aud.GetFileSHA256(),
+			WAFileEncSHA256:     aud.GetFileEncSHA256(),
 			WAMediaKeyTimestamp: int64(aud.GetMediaKeyTimestamp()),
-			Duration:         int(aud.GetSeconds()),
+			Duration:            int(aud.GetSeconds()),
 		}
 		return media
 	}
@@ -1836,17 +1836,17 @@ func (s *EventService) extractMediaInfo(sessionID, msgID string, msg *waE2E.Mess
 	// Document
 	if doc := msg.GetDocumentMessage(); doc != nil {
 		media = &model.Media{
-			SessionID:        sessionID,
-			MsgID:            msgID,
-			MediaType:        "document",
-			MimeType:         doc.GetMimetype(),
-			FileSize:         int64(doc.GetFileLength()),
-			FileName:         doc.GetFileName(),
-			Caption:          doc.GetCaption(),
-			WADirectPath:     doc.GetDirectPath(),
-			WAMediaKey:       doc.GetMediaKey(),
-			WAFileSHA256:     doc.GetFileSHA256(),
-			WAFileEncSHA256:  doc.GetFileEncSHA256(),
+			SessionID:           sessionID,
+			MsgID:               msgID,
+			MediaType:           "document",
+			MimeType:            doc.GetMimetype(),
+			FileSize:            int64(doc.GetFileLength()),
+			FileName:            doc.GetFileName(),
+			Caption:             doc.GetCaption(),
+			WADirectPath:        doc.GetDirectPath(),
+			WAMediaKey:          doc.GetMediaKey(),
+			WAFileSHA256:        doc.GetFileSHA256(),
+			WAFileEncSHA256:     doc.GetFileEncSHA256(),
 			WAMediaKeyTimestamp: int64(doc.GetMediaKeyTimestamp()),
 		}
 		return media
@@ -1855,18 +1855,18 @@ func (s *EventService) extractMediaInfo(sessionID, msgID string, msg *waE2E.Mess
 	// Sticker
 	if stk := msg.GetStickerMessage(); stk != nil {
 		media = &model.Media{
-			SessionID:        sessionID,
-			MsgID:            msgID,
-			MediaType:        "sticker",
-			MimeType:         stk.GetMimetype(),
-			FileSize:         int64(stk.GetFileLength()),
-			WADirectPath:     stk.GetDirectPath(),
-			WAMediaKey:       stk.GetMediaKey(),
-			WAFileSHA256:     stk.GetFileSHA256(),
-			WAFileEncSHA256:  stk.GetFileEncSHA256(),
+			SessionID:           sessionID,
+			MsgID:               msgID,
+			MediaType:           "sticker",
+			MimeType:            stk.GetMimetype(),
+			FileSize:            int64(stk.GetFileLength()),
+			WADirectPath:        stk.GetDirectPath(),
+			WAMediaKey:          stk.GetMediaKey(),
+			WAFileSHA256:        stk.GetFileSHA256(),
+			WAFileEncSHA256:     stk.GetFileEncSHA256(),
 			WAMediaKeyTimestamp: int64(stk.GetMediaKeyTimestamp()),
-			Width:            int(stk.GetWidth()),
-			Height:           int(stk.GetHeight()),
+			Width:               int(stk.GetWidth()),
+			Height:              int(stk.GetHeight()),
 		}
 		return media
 	}

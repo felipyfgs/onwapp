@@ -17,11 +17,11 @@ import (
 )
 
 type StorageService struct {
-	client     *minio.Client
-	bucket     string
-	endpoint   string
-	useSSL     bool
-	publicURL  string
+	client    *minio.Client
+	bucket    string
+	endpoint  string
+	useSSL    bool
+	publicURL string
 }
 
 type UploadResult struct {

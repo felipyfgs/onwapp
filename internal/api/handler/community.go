@@ -106,7 +106,7 @@ func (h *CommunityHandler) GetSubGroups(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.CommunityResponse{
-		
-		Groups:  groups,
+
+		Groups: groups,
 	})
 }

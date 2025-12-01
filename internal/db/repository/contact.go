@@ -204,7 +204,7 @@ func extractLIDNumber(lidJID string) string {
 		return ""
 	}
 	lidNum := lidJID[:len(lidJID)-4]
-	
+
 	// Remove device suffix (e.g., ":44")
 	for i := 0; i < len(lidNum); i++ {
 		if lidNum[i] == ':' {

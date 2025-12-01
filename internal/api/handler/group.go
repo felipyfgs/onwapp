@@ -50,7 +50,7 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-		
+
 		GroupID: info.JID.String(),
 		Data:    info,
 	})
@@ -81,7 +81,7 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-		
+
 		GroupID: groupID,
 		Data:    info,
 	})
@@ -109,8 +109,8 @@ func (h *GroupHandler) GetJoinedGroups(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-		
-		Data:    groups,
+
+		Data: groups,
 	})
 }
 
@@ -137,7 +137,7 @@ func (h *GroupHandler) LeaveGroup(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-		
+
 		GroupID: groupID,
 	})
 }
@@ -171,7 +171,7 @@ func (h *GroupHandler) UpdateGroupName(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-		
+
 		GroupID: req.GroupID,
 	})
 }
@@ -205,7 +205,7 @@ func (h *GroupHandler) UpdateGroupTopic(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-		
+
 		GroupID: req.GroupID,
 	})
 }
@@ -240,7 +240,7 @@ func (h *GroupHandler) AddParticipants(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-		
+
 		GroupID: req.GroupID,
 		Data:    result,
 	})
@@ -276,7 +276,7 @@ func (h *GroupHandler) RemoveParticipants(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-		
+
 		GroupID: req.GroupID,
 		Data:    result,
 	})
@@ -312,7 +312,7 @@ func (h *GroupHandler) PromoteParticipants(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-		
+
 		GroupID: req.GroupID,
 		Data:    result,
 	})
@@ -348,7 +348,7 @@ func (h *GroupHandler) DemoteParticipants(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-		
+
 		GroupID: req.GroupID,
 		Data:    result,
 	})
@@ -380,7 +380,7 @@ func (h *GroupHandler) GetInviteLink(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupInviteLinkResponse{
-		
+
 		GroupID: groupID,
 		Link:    link,
 	})
@@ -416,7 +416,7 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-		
+
 		GroupID: jid.String(),
 	})
 }
@@ -451,7 +451,7 @@ func (h *GroupHandler) SendGroupMessage(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SendResponse{
-		
+
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
 	})
@@ -553,7 +553,7 @@ func (h *GroupHandler) SetGroupPicture(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SetPictureResponse{ PictureID: pictureID})
+	c.JSON(http.StatusOK, dto.SetPictureResponse{PictureID: pictureID})
 }
 
 // SetGroupApprovalMode godoc
@@ -698,7 +698,7 @@ func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-		
+
 		GroupID: groupID,
 		Data:    result,
 	})
@@ -741,7 +741,7 @@ func (h *GroupHandler) GetGroupInfoFromLink(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-		
+
 		GroupID: info.JID.String(),
 		Data:    info,
 	})

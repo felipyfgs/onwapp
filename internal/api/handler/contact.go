@@ -97,8 +97,8 @@ func (h *ContactHandler) GetContactInfo(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.ContactInfoResponse{
-		
-		Users:   users,
+
+		Users: users,
 	})
 }
 
@@ -127,16 +127,16 @@ func (h *ContactHandler) GetAvatar(c *gin.Context) {
 
 	if pic == nil {
 		c.JSON(http.StatusOK, dto.AvatarResponse{
-			
-			URL:     "",
+
+			URL: "",
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, dto.AvatarResponse{
-		
-		URL:     pic.URL,
-		ID:      pic.ID,
+
+		URL: pic.URL,
+		ID:  pic.ID,
 	})
 }
 
@@ -198,8 +198,8 @@ func (h *ContactHandler) SetPresence(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.PresenceResponse{
-		
-		Status:  status,
+
+		Status: status,
 	})
 }
 
@@ -232,8 +232,8 @@ func (h *ContactHandler) SetChatPresence(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.ChatPresenceResponse{
-		
-		State:   req.State,
+
+		State: req.State,
 	})
 }
 
@@ -293,8 +293,8 @@ func (h *ContactHandler) GetBlocklist(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.BlocklistResponse{
-		
-		JIDs:    jids,
+
+		JIDs: jids,
 	})
 }
 
@@ -328,9 +328,9 @@ func (h *ContactHandler) UpdateBlocklist(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.BlocklistActionResponse{
-		
-		Action:  req.Action,
-		Phone:   req.Phone,
+
+		Action: req.Action,
+		Phone:  req.Phone,
 	})
 }
 
@@ -386,8 +386,8 @@ func (h *ContactHandler) GetContactQRLink(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.QRLinkResponse{
-		
-		Link:    link,
+
+		Link: link,
 	})
 }
 
@@ -413,7 +413,7 @@ func (h *ContactHandler) GetBusinessProfile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.BusinessProfileResponse{
-		
+
 		Profile: profile,
 	})
 }

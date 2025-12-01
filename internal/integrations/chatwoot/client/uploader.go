@@ -131,18 +131,18 @@ func ExtractFilename(url, mimeType string) string {
 // GetExtensionFromMime returns file extension for common mime types
 func GetExtensionFromMime(mimeType string) string {
 	mimeToExt := map[string]string{
-		"image/jpeg":      ".jpg",
-		"image/png":       ".png",
-		"image/gif":       ".gif",
-		"image/webp":      ".webp",
-		"video/mp4":       ".mp4",
-		"video/3gpp":      ".3gp",
-		"audio/ogg":       ".ogg",
-		"audio/mpeg":      ".mp3",
-		"audio/mp4":       ".m4a",
-		"audio/aac":       ".aac",
-		"application/pdf": ".pdf",
-		"application/msword":                                                       ".doc",
+		"image/jpeg":         ".jpg",
+		"image/png":          ".png",
+		"image/gif":          ".gif",
+		"image/webp":         ".webp",
+		"video/mp4":          ".mp4",
+		"video/3gpp":         ".3gp",
+		"audio/ogg":          ".ogg",
+		"audio/mpeg":         ".mp3",
+		"audio/mp4":          ".m4a",
+		"audio/aac":          ".aac",
+		"application/pdf":    ".pdf",
+		"application/msword": ".doc",
 		"application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
 	}
 

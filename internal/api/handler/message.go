@@ -51,7 +51,7 @@ func (h *MessageHandler) SendText(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SendResponse{
-		
+
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
 	})
@@ -94,7 +94,7 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SendResponse{
-		
+
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
 	})
@@ -137,7 +137,7 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SendResponse{
-		
+
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
 	})
@@ -180,7 +180,7 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SendResponse{
-		
+
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
 	})
@@ -223,7 +223,7 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SendResponse{
-		
+
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
 	})
@@ -266,7 +266,7 @@ func (h *MessageHandler) SendSticker(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SendResponse{
-		
+
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
 	})
@@ -302,7 +302,7 @@ func (h *MessageHandler) SendLocation(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SendResponse{
-		
+
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
 	})
@@ -338,7 +338,7 @@ func (h *MessageHandler) SendContact(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SendResponse{
-		
+
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
 	})
@@ -374,7 +374,7 @@ func (h *MessageHandler) SendReaction(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SendResponse{
-		
+
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
 	})
@@ -410,7 +410,7 @@ func (h *MessageHandler) SendPoll(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SendResponse{
-		
+
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
 	})
@@ -446,7 +446,7 @@ func (h *MessageHandler) SendPollVote(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SendResponse{
-		
+
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
 	})
@@ -497,7 +497,7 @@ func (h *MessageHandler) SendButtons(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SendResponse{
-		
+
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
 	})
@@ -557,7 +557,7 @@ func (h *MessageHandler) SendList(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SendResponse{
-		
+
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
 	})
@@ -608,7 +608,7 @@ func (h *MessageHandler) SendInteractive(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SendResponse{
-		
+
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
 	})
@@ -757,7 +757,7 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SendResponse{
-		
+
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
 	})
@@ -876,7 +876,7 @@ func (h *MessageHandler) SendCarousel(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SendResponse{
-		
+
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
 	})

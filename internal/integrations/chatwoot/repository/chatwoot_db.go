@@ -71,7 +71,9 @@ func (r *ChatwootDBRepository) GetExistingSourceIDs(ctx context.Context, message
 
 		for rows.Next() {
 			var sourceID string
-			rows.Scan(&sourceID)
+			if err := rows.Scan(&sourceID); err != nil {
+				continue
+			}
 			existing[sourceID] = true
 		}
 		rows.Close()

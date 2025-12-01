@@ -84,9 +84,9 @@ type GroupInfoData struct {
 
 // ParticipantData represents a group participant
 type ParticipantData struct {
-	JID     string `json:"jid" example:"5511999999999@s.whatsapp.net"`
-	IsAdmin bool   `json:"isAdmin" example:"false"`
-	IsSuperAdmin bool `json:"isSuperAdmin" example:"false"`
+	JID          string `json:"jid" example:"5511999999999@s.whatsapp.net"`
+	IsAdmin      bool   `json:"isAdmin" example:"false"`
+	IsSuperAdmin bool   `json:"isSuperAdmin" example:"false"`
 }
 
 // GroupInviteData represents invite link information

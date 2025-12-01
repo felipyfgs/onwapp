@@ -51,8 +51,8 @@ func (h *ChatHandler) ArchiveChat(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.ChatActionResponse{
-		
-		Status:  status,
+
+		Status: status,
 	})
 }
 
@@ -86,7 +86,7 @@ func (h *ChatHandler) DeleteMessage(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SendResponse{
-		
+
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
 	})
@@ -122,7 +122,7 @@ func (h *ChatHandler) EditMessage(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SendResponse{
-		
+
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
 	})

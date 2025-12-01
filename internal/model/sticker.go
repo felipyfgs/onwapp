@@ -26,8 +26,8 @@ type Sticker struct {
 	LastUsedAt *time.Time `json:"lastUsedAt,omitempty"`
 
 	// Storage Info (MinIO/S3)
-	StorageKey string     `json:"storageKey,omitempty"`
-	StorageURL string     `json:"storageUrl,omitempty"`
+	StorageKey string `json:"storageKey,omitempty"`
+	StorageURL string `json:"storageUrl,omitempty"`
 
 	// Download Status
 	Downloaded       bool   `json:"downloaded"`
