@@ -112,7 +112,7 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 
 	if cwMsg != nil && s.database != nil {
 		if err := s.database.Messages.UpdateCwFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, convID, sourceID); err != nil {
-			logger.Debug().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update message fields")
+			logger.Warn().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update message fields")
 		}
 	}
 
@@ -163,7 +163,7 @@ func (s *Service) processIncomingMediaMessage(ctx context.Context, session *mode
 
 	if cwMsg != nil && s.database != nil {
 		if err := s.database.Messages.UpdateCwFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, conversationID, sourceID); err != nil {
-			logger.Debug().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update media message fields")
+			logger.Warn().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update media message fields")
 		}
 	}
 
@@ -252,7 +252,7 @@ func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Ses
 
 	if cwMsg != nil && s.database != nil {
 		if err := s.database.Messages.UpdateCwFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, conv.ID, sourceID); err != nil {
-			logger.Debug().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update outgoing message fields")
+			logger.Warn().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update outgoing message fields")
 		}
 	}
 

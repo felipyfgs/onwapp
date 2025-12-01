@@ -84,7 +84,7 @@ type avatarJob struct {
 func (u *AvatarUpdater) runAvatarWorkers(cfg *core.Config) {
 	db, err := openChatwootDB(cfg)
 	if err != nil {
-		logger.Debug().Err(err).Msg("Chatwoot avatar: failed to connect to database")
+		logger.Warn().Err(err).Msg("Chatwoot avatar: failed to connect to database")
 		return
 	}
 	defer db.Close()
@@ -94,7 +94,7 @@ func (u *AvatarUpdater) runAvatarWorkers(cfg *core.Config) {
 
 	contacts, err := repo.GetContactsWithoutAvatar(ctx)
 	if err != nil {
-		logger.Debug().Err(err).Msg("Chatwoot avatar: failed to fetch contacts")
+		logger.Warn().Err(err).Msg("Chatwoot avatar: failed to fetch contacts")
 		return
 	}
 

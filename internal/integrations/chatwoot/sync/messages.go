@@ -364,7 +364,7 @@ func (s *MessageSyncer) insertMessagesInBatches(
 		if len(batch) >= core.MessageBatchSize {
 			imported, err := s.insertMessageBatch(ctx, batch, chatCache, userID, userType)
 			if err != nil {
-				logger.Debug().Err(err).Msg("Chatwoot sync: message batch insert failed")
+				logger.Warn().Err(err).Msg("Chatwoot sync: message batch insert failed")
 				stats.Errors += len(batch)
 			} else {
 				stats.MessagesImported += imported

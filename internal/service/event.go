@@ -1108,7 +1108,7 @@ func (s *EventService) handlePushNameSync(ctx context.Context, session *model.Se
 			}
 		}
 		if updated > 0 {
-			logger.Info().Int("updated", updated).Msg("Updated messages with pushNames from phone JIDs")
+			logger.Debug().Int("updated", updated).Msg("Updated messages with pushNames from phone JIDs")
 		}
 	}
 
@@ -1134,7 +1134,7 @@ func (s *EventService) handlePushNameSync(ctx context.Context, session *model.Se
 			}
 		}
 		if updated > 0 {
-			logger.Info().Int("updated", updated).Msg("Updated messages with pushNames from LID JIDs")
+			logger.Debug().Int("updated", updated).Msg("Updated messages with pushNames from LID JIDs")
 		}
 	}
 
@@ -1179,7 +1179,7 @@ func (s *EventService) handlePushNameSync(ctx context.Context, session *model.Se
 					}
 				}
 				if updated > 0 {
-					logger.Info().Int("updated", updated).Msg("Updated LID messages with pushNames via phone mapping")
+					logger.Debug().Int("updated", updated).Msg("Updated LID messages with pushNames via phone mapping")
 				}
 			}
 		}

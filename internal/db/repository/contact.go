@@ -240,7 +240,7 @@ func (r *ContactRepository) LoadAllPushNames(ctx context.Context, deviceJID stri
 	}
 
 	r.cacheTime = time.Now()
-	logger.Info().Int("contacts", count).Msg("Loaded pushNames into cache")
+	logger.Debug().Int("contacts", count).Msg("Loaded pushNames into cache")
 
 	return rows.Err()
 }

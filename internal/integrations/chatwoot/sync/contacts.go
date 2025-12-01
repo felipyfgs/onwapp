@@ -103,7 +103,7 @@ func (s *ContactSyncer) insertContactsInBatches(ctx context.Context, contacts []
 		insertData := s.prepareContactsForInsert(batch)
 		imported, err := s.repo.UpsertContactsBatch(ctx, insertData)
 		if err != nil {
-			logger.Debug().Err(err).Int("batchStart", i).Msg("Chatwoot sync: batch insert failed")
+			logger.Warn().Err(err).Int("batchStart", i).Msg("Chatwoot sync: batch insert failed")
 			stats.ContactsErrors += len(batch)
 		} else {
 			stats.ContactsImported += imported

@@ -203,7 +203,7 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 
 	payload, err := cwservice.ParseWebhookPayload(body)
 	if err != nil {
-		logger.Debug().Err(err).Str("session", sessionName).Msg("Chatwoot: invalid webhook payload")
+		logger.Warn().Err(err).Str("session", sessionName).Msg("Chatwoot: invalid webhook payload")
 		c.JSON(http.StatusOK, gin.H{"message": "invalid payload"})
 		return
 	}
@@ -253,7 +253,7 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 
 		chatJid, content, attachments, err := h.service.GetWebhookDataForSending(c.Request.Context(), session.ID, payload)
 		if err != nil {
-			logger.Debug().Err(err).Str("session", sessionName).Int("msgId", payload.ID).Msg("Chatwoot: webhook data extraction failed")
+			logger.Warn().Err(err).Str("session", sessionName).Int("msgId", payload.ID).Msg("Chatwoot: webhook data extraction failed")
 			c.JSON(http.StatusOK, gin.H{"message": "processing error"})
 			return
 		}
@@ -315,7 +315,7 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 		if att.DataURL != "" {
 			mediaData, mimeType, err := downloadMedia(att.DataURL)
 			if err != nil {
-				logger.Debug().Err(err).Str("url", att.DataURL).Msg("Chatwoot: failed to download attachment")
+				logger.Warn().Err(err).Str("url", att.DataURL).Msg("Chatwoot: failed to download attachment")
 				continue
 			}
 
@@ -324,7 +324,7 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 			case "image":
 				resp, err := h.whatsappSvc.SendImageWithQuote(ctx, session.Name, recipient, mediaData, content, mimeType, quoted)
 				if err != nil {
-					logger.Debug().Err(err).Msg("Chatwoot: failed to send image")
+					logger.Warn().Err(err).Msg("Chatwoot: failed to send image")
 				} else {
 					h.saveOutgoingMessage(ctx, session, chatJid, content, resp.ID, chatwootMsgID, chatwootConvID)
 				}
@@ -333,7 +333,7 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 			case "video":
 				resp, err := h.whatsappSvc.SendVideoWithQuote(ctx, session.Name, recipient, mediaData, content, mimeType, quoted)
 				if err != nil {
-					logger.Debug().Err(err).Msg("Chatwoot: failed to send video")
+					logger.Warn().Err(err).Msg("Chatwoot: failed to send video")
 				} else {
 					h.saveOutgoingMessage(ctx, session, chatJid, content, resp.ID, chatwootMsgID, chatwootConvID)
 				}
@@ -342,7 +342,7 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 			case "audio":
 				resp, err := h.whatsappSvc.SendAudioWithQuote(ctx, session.Name, recipient, mediaData, mimeType, true, quoted)
 				if err != nil {
-					logger.Debug().Err(err).Msg("Chatwoot: failed to send audio")
+					logger.Warn().Err(err).Msg("Chatwoot: failed to send audio")
 				} else {
 					h.saveOutgoingMessage(ctx, session, chatJid, "", resp.ID, chatwootMsgID, chatwootConvID)
 				}
@@ -354,7 +354,7 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 				}
 				resp, err := h.whatsappSvc.SendDocumentWithQuote(ctx, session.Name, recipient, mediaData, filename, mimeType, quoted)
 				if err != nil {
-					logger.Debug().Err(err).Msg("Chatwoot: failed to send document")
+					logger.Warn().Err(err).Msg("Chatwoot: failed to send document")
 				} else {
 					h.saveOutgoingMessage(ctx, session, chatJid, content, resp.ID, chatwootMsgID, chatwootConvID)
 				}
@@ -423,7 +423,7 @@ func (h *Handler) handleMessageDeleted(ctx context.Context, session *model.Sessi
 	var deleteErrors []error
 	for _, msg := range messages {
 		if _, err := h.whatsappSvc.DeleteMessage(ctx, session.Name, msg.ChatJID, msg.MsgId, msg.FromMe); err != nil {
-			logger.Debug().Err(err).Str("messageId", msg.MsgId).Msg("Chatwoot: failed to delete from WhatsApp")
+			logger.Warn().Err(err).Str("messageId", msg.MsgId).Msg("Chatwoot: failed to delete from WhatsApp")
 			deleteErrors = append(deleteErrors, err)
 			continue
 		}
