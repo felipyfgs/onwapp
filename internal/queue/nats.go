@@ -74,7 +74,9 @@ func NewClient(cfg *ClientConfig) (*Client, error) {
 // Close fecha a conexão NATS
 func (c *Client) Close() {
 	if c.nc != nil {
-		c.nc.Drain()
+		if err := c.nc.Drain(); err != nil {
+			logger.Warn().Err(err).Msg("Failed to drain NATS connection")
+		}
 		c.nc.Close()
 		logger.Info().Msg("NATS connection closed")
 	}

@@ -139,7 +139,9 @@ func (c *Consumer) processMessage(ctx context.Context, msg jetstream.Msg, stream
 	var queueMsg QueueMessage
 	if err := json.Unmarshal(msg.Data(), &queueMsg); err != nil {
 		logger.Error().Err(err).Msg("Failed to unmarshal queue message")
-		msg.Nak()
+		if nakErr := msg.Nak(); nakErr != nil {
+			logger.Error().Err(nakErr).Msg("Failed to NAK message")
+		}
 		return
 	}
 
@@ -152,7 +154,9 @@ func (c *Consumer) processMessage(ctx context.Context, msg jetstream.Msg, stream
 			Str("type", string(queueMsg.Type)).
 			Str("msgId", queueMsg.ID).
 			Msg("No handler registered for message type")
-		msg.Ack()
+		if ackErr := msg.Ack(); ackErr != nil {
+			logger.Error().Err(ackErr).Str("msgId", queueMsg.ID).Msg("Failed to ACK message")
+		}
 		return
 	}
 
@@ -173,15 +177,21 @@ func (c *Consumer) processMessage(ctx context.Context, msg jetstream.Msg, stream
 			if dlqErr := c.producer.PublishToDLQ(ctx, msg.Subject(), &queueMsg, err.Error()); dlqErr != nil {
 				logger.Error().Err(dlqErr).Str("msgId", queueMsg.ID).Msg("Failed to publish to DLQ")
 			}
-			msg.Ack()
+			if ackErr := msg.Ack(); ackErr != nil {
+				logger.Error().Err(ackErr).Str("msgId", queueMsg.ID).Msg("Failed to ACK message after DLQ")
+			}
 			return
 		}
 
-		msg.NakWithDelay(c.client.Config().RetryDelay)
+		if nakErr := msg.NakWithDelay(c.client.Config().RetryDelay); nakErr != nil {
+			logger.Error().Err(nakErr).Str("msgId", queueMsg.ID).Msg("Failed to NAK message with delay")
+		}
 		return
 	}
 
-	msg.Ack()
+	if ackErr := msg.Ack(); ackErr != nil {
+		logger.Error().Err(ackErr).Str("msgId", queueMsg.ID).Msg("Failed to ACK message")
+	}
 	logger.Debug().
 		Str("msgId", queueMsg.ID).
 		Str("type", string(queueMsg.Type)).
