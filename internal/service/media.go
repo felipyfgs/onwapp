@@ -356,7 +356,7 @@ func (s *MediaService) ProcessPendingDownloads(ctx context.Context, client *what
 		return 0, 0
 	}
 
-	logger.Info().
+	logger.Debug().
 		Str("sessionId", sessionID).
 		Int("count", len(medias)).
 		Msg("Processing pending media downloads")

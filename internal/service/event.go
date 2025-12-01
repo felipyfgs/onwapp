@@ -574,7 +574,7 @@ func (s *EventService) handleReceipt(ctx context.Context, session *model.Session
 // Presence events
 
 func (s *EventService) handlePresence(ctx context.Context, session *model.Session, e *events.Presence) {
-	logger.Info().
+	logger.Debug().
 		Str("session", session.Name).
 		Str("event", "presence").
 		Str("from", e.From.String()).
@@ -586,7 +586,7 @@ func (s *EventService) handlePresence(ctx context.Context, session *model.Sessio
 }
 
 func (s *EventService) handleChatPresence(ctx context.Context, session *model.Session, e *events.ChatPresence) {
-	logger.Info().
+	logger.Debug().
 		Str("session", session.Name).
 		Str("event", "chat_presence").
 		Str("chat", e.Chat.String()).
@@ -1219,7 +1219,7 @@ func (s *EventService) handlePushName(ctx context.Context, session *model.Sessio
 }
 
 func (s *EventService) handlePicture(ctx context.Context, session *model.Session, e *events.Picture) {
-	logger.Info().
+	logger.Debug().
 		Str("session", session.Name).
 		Str("event", "picture").
 		Str("jid", e.JID.String()).
@@ -1230,7 +1230,7 @@ func (s *EventService) handlePicture(ctx context.Context, session *model.Session
 }
 
 func (s *EventService) handleIdentityChange(ctx context.Context, session *model.Session, e *events.IdentityChange) {
-	logger.Info().
+	logger.Debug().
 		Str("session", session.Name).
 		Str("event", "identity_change").
 		Str("jid", e.JID.String()).
@@ -1239,12 +1239,12 @@ func (s *EventService) handleIdentityChange(ctx context.Context, session *model.
 }
 
 func (s *EventService) handleBlocklist(ctx context.Context, session *model.Session, e *events.Blocklist) {
-	logger.Info().
+	logger.Debug().
 		Str("session", session.Name).
 		Str("event", "blocklist").
 		Str("action", string(e.Action)).
 		Int("count", len(e.Changes)).
-		Msg("Event: Blocklist changed")
+		Msg("Blocklist changed")
 }
 
 // Call events
@@ -1255,7 +1255,7 @@ func (s *EventService) handleCallOffer(ctx context.Context, session *model.Sessi
 		Str("event", "call_offer").
 		Str("from", e.CallCreator.String()).
 		Str("callId", e.CallID).
-		Msg("Event: Call offer received")
+		Msg("Call offer received")
 
 	s.sendWebhook(ctx, session, string(model.EventCallOffer), e)
 }
@@ -1266,7 +1266,7 @@ func (s *EventService) handleCallAccept(ctx context.Context, session *model.Sess
 		Str("event", "call_accept").
 		Str("from", e.CallCreator.String()).
 		Str("callId", e.CallID).
-		Msg("Event: Call accepted")
+		Msg("Call accepted")
 
 	s.sendWebhook(ctx, session, string(model.EventCallAccept), e)
 }
@@ -1278,7 +1278,7 @@ func (s *EventService) handleCallTerminate(ctx context.Context, session *model.S
 		Str("from", e.CallCreator.String()).
 		Str("callId", e.CallID).
 		Str("reason", e.Reason).
-		Msg("Event: Call terminated")
+		Msg("Call terminated")
 
 	s.sendWebhook(ctx, session, string(model.EventCallTerminate), e)
 }
@@ -1286,12 +1286,12 @@ func (s *EventService) handleCallTerminate(ctx context.Context, session *model.S
 // Group events
 
 func (s *EventService) handleGroupInfo(ctx context.Context, session *model.Session, e *events.GroupInfo) {
-	logger.Info().
+	logger.Debug().
 		Str("session", session.Name).
 		Str("event", "group_info").
 		Str("group", e.JID.String()).
 		Str("notify", e.Notify).
-		Msg("Event: Group info changed")
+		Msg("Group info changed")
 
 	s.sendWebhook(ctx, session, string(model.EventGroupUpdate), e)
 }
@@ -1302,7 +1302,7 @@ func (s *EventService) handleJoinedGroup(ctx context.Context, session *model.Ses
 		Str("event", "joined_group").
 		Str("group", e.JID.String()).
 		Str("name", e.GroupInfo.GroupName.Name).
-		Msg("Event: Joined group")
+		Msg("Joined group")
 
 	s.sendWebhook(ctx, session, string(model.EventGroupJoined), e)
 }
@@ -1310,10 +1310,10 @@ func (s *EventService) handleJoinedGroup(ctx context.Context, session *model.Ses
 // Privacy events
 
 func (s *EventService) handlePrivacySettings(ctx context.Context, session *model.Session, e *events.PrivacySettings) {
-	logger.Info().
+	logger.Debug().
 		Str("session", session.Name).
 		Str("event", "privacy_settings").
-		Msg("Event: Privacy settings changed")
+		Msg("Privacy settings changed")
 }
 
 // Newsletter events
@@ -1323,7 +1323,7 @@ func (s *EventService) handleNewsletterJoin(ctx context.Context, session *model.
 		Str("session", session.Name).
 		Str("event", "newsletter_join").
 		Str("id", e.ID.String()).
-		Msg("Event: Newsletter joined")
+		Msg("Newsletter joined")
 }
 
 func (s *EventService) handleNewsletterLeave(ctx context.Context, session *model.Session, e *events.NewsletterLeave) {
@@ -1331,23 +1331,23 @@ func (s *EventService) handleNewsletterLeave(ctx context.Context, session *model
 		Str("session", session.Name).
 		Str("event", "newsletter_leave").
 		Str("id", e.ID.String()).
-		Msg("Event: Newsletter left")
+		Msg("Newsletter left")
 }
 
 func (s *EventService) handleNewsletterMuteChange(ctx context.Context, session *model.Session, e *events.NewsletterMuteChange) {
-	logger.Info().
+	logger.Debug().
 		Str("session", session.Name).
 		Str("event", "newsletter_mute_change").
 		Str("id", e.ID.String()).
-		Msg("Event: Newsletter mute changed")
+		Msg("Newsletter mute changed")
 }
 
 func (s *EventService) handleNewsletterLiveUpdate(ctx context.Context, session *model.Session, e *events.NewsletterLiveUpdate) {
-	logger.Info().
+	logger.Debug().
 		Str("session", session.Name).
 		Str("event", "newsletter_live_update").
 		Str("id", e.JID.String()).
-		Msg("Event: Newsletter live update")
+		Msg("Newsletter live update")
 }
 
 // New connection event handlers
@@ -1530,7 +1530,7 @@ func (s *EventService) handleAppStateSyncComplete(ctx context.Context, session *
 // New contact event handlers
 
 func (s *EventService) handleContact(ctx context.Context, session *model.Session, e *events.Contact) {
-	logger.Info().
+	logger.Debug().
 		Str("session", session.Name).
 		Str("event", "contact").
 		Str("jid", e.JID.String()).
@@ -1541,7 +1541,7 @@ func (s *EventService) handleContact(ctx context.Context, session *model.Session
 }
 
 func (s *EventService) handleBusinessName(ctx context.Context, session *model.Session, e *events.BusinessName) {
-	logger.Info().
+	logger.Debug().
 		Str("session", session.Name).
 		Str("event", "business_name").
 		Str("jid", e.JID.String()).
@@ -1613,7 +1613,7 @@ func (s *EventService) handleCallRelayLatency(ctx context.Context, session *mode
 // Chat management event handlers (AppState)
 
 func (s *EventService) handleMute(ctx context.Context, session *model.Session, e *events.Mute) {
-	logger.Info().
+	logger.Debug().
 		Str("session", session.Name).
 		Str("event", "mute").
 		Str("jid", e.JID.String()).
@@ -1624,7 +1624,7 @@ func (s *EventService) handleMute(ctx context.Context, session *model.Session, e
 }
 
 func (s *EventService) handleArchive(ctx context.Context, session *model.Session, e *events.Archive) {
-	logger.Info().
+	logger.Debug().
 		Str("session", session.Name).
 		Str("event", "archive").
 		Str("jid", e.JID.String()).
@@ -1635,7 +1635,7 @@ func (s *EventService) handleArchive(ctx context.Context, session *model.Session
 }
 
 func (s *EventService) handlePin(ctx context.Context, session *model.Session, e *events.Pin) {
-	logger.Info().
+	logger.Debug().
 		Str("session", session.Name).
 		Str("event", "pin").
 		Str("jid", e.JID.String()).
@@ -1646,7 +1646,7 @@ func (s *EventService) handlePin(ctx context.Context, session *model.Session, e 
 }
 
 func (s *EventService) handleStar(ctx context.Context, session *model.Session, e *events.Star) {
-	logger.Info().
+	logger.Debug().
 		Str("session", session.Name).
 		Str("event", "star").
 		Str("chat", e.ChatJID.String()).
@@ -1658,7 +1658,7 @@ func (s *EventService) handleStar(ctx context.Context, session *model.Session, e
 }
 
 func (s *EventService) handleDeleteForMe(ctx context.Context, session *model.Session, e *events.DeleteForMe) {
-	logger.Info().
+	logger.Debug().
 		Str("session", session.Name).
 		Str("event", "delete_for_me").
 		Str("chat", e.ChatJID.String()).
@@ -1670,7 +1670,7 @@ func (s *EventService) handleDeleteForMe(ctx context.Context, session *model.Ses
 }
 
 func (s *EventService) handleDeleteChat(ctx context.Context, session *model.Session, e *events.DeleteChat) {
-	logger.Info().
+	logger.Debug().
 		Str("session", session.Name).
 		Str("event", "delete_chat").
 		Str("jid", e.JID.String()).
@@ -1681,7 +1681,7 @@ func (s *EventService) handleDeleteChat(ctx context.Context, session *model.Sess
 }
 
 func (s *EventService) handleClearChat(ctx context.Context, session *model.Session, e *events.ClearChat) {
-	logger.Info().
+	logger.Debug().
 		Str("session", session.Name).
 		Str("event", "clear_chat").
 		Str("jid", e.JID.String()).
@@ -1703,7 +1703,7 @@ func (s *EventService) handleMarkChatAsRead(ctx context.Context, session *model.
 }
 
 func (s *EventService) handleLabelEdit(ctx context.Context, session *model.Session, e *events.LabelEdit) {
-	logger.Info().
+	logger.Debug().
 		Str("session", session.Name).
 		Str("event", "label_edit").
 		Time("timestamp", e.Timestamp).
@@ -1713,7 +1713,7 @@ func (s *EventService) handleLabelEdit(ctx context.Context, session *model.Sessi
 }
 
 func (s *EventService) handleLabelAssociationChat(ctx context.Context, session *model.Session, e *events.LabelAssociationChat) {
-	logger.Info().
+	logger.Debug().
 		Str("session", session.Name).
 		Str("event", "label_association_chat").
 		Str("jid", e.JID.String()).
