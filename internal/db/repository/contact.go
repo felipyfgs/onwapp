@@ -65,6 +65,7 @@ func (r *ContactRepository) GetPushName(ctx context.Context, deviceJID, theirJID
 }
 
 // GetPushNameBatch returns pushNames for multiple JIDs efficiently
+// Supports both regular JIDs (@s.whatsapp.net) and LID JIDs (@lid)
 func (r *ContactRepository) GetPushNameBatch(ctx context.Context, deviceJID string, jids []string) map[string]string {
 	if len(jids) == 0 {
 		return nil
@@ -72,46 +73,145 @@ func (r *ContactRepository) GetPushNameBatch(ctx context.Context, deviceJID stri
 
 	result := make(map[string]string)
 
-	// Check cache first
-	var uncached []string
-	r.cacheMu.RLock()
+	// Separate regular JIDs from LID JIDs
+	var regularJIDs []string
+	var lidJIDs []string
+	lidToOriginal := make(map[string]string) // maps resolved phone JID -> original LID JID
+
 	for _, jid := range jids {
+		if isLIDJID(jid) {
+			lidJIDs = append(lidJIDs, jid)
+		} else {
+			regularJIDs = append(regularJIDs, jid)
+		}
+	}
+
+	// Check cache first for regular JIDs
+	var uncachedRegular []string
+	r.cacheMu.RLock()
+	for _, jid := range regularJIDs {
 		if name, ok := r.cache[jid]; ok {
 			result[jid] = name
 		} else {
-			uncached = append(uncached, jid)
+			uncachedRegular = append(uncachedRegular, jid)
 		}
 	}
 	r.cacheMu.RUnlock()
 
-	if len(uncached) == 0 {
-		return result
-	}
-
-	// Query uncached JIDs
-	rows, err := r.pool.Query(ctx, `
-		SELECT their_jid, COALESCE(push_name, '')
-		FROM whatsmeow_contacts
-		WHERE our_jid = $1 AND their_jid = ANY($2)`,
-		deviceJID, uncached,
-	)
-	if err != nil {
-		return result
-	}
-	defer rows.Close()
-
-	// Update results and cache
-	r.cacheMu.Lock()
-	for rows.Next() {
-		var jid, pushName string
-		if err := rows.Scan(&jid, &pushName); err == nil {
-			result[jid] = pushName
-			r.cache[jid] = pushName
+	// Query uncached regular JIDs
+	if len(uncachedRegular) > 0 {
+		rows, err := r.pool.Query(ctx, `
+			SELECT their_jid, COALESCE(push_name, '')
+			FROM whatsmeow_contacts
+			WHERE our_jid = $1 AND their_jid = ANY($2)`,
+			deviceJID, uncachedRegular,
+		)
+		if err == nil {
+			r.cacheMu.Lock()
+			for rows.Next() {
+				var jid, pushName string
+				if err := rows.Scan(&jid, &pushName); err == nil {
+					result[jid] = pushName
+					r.cache[jid] = pushName
+				}
+			}
+			r.cacheMu.Unlock()
+			rows.Close()
 		}
 	}
-	r.cacheMu.Unlock()
+
+	// Resolve LID JIDs to phone numbers and lookup
+	if len(lidJIDs) > 0 {
+		// Extract LID numbers (without @lid suffix and device part)
+		lidNumbers := make([]string, 0, len(lidJIDs))
+		for _, lid := range lidJIDs {
+			lidNum := extractLIDNumber(lid)
+			if lidNum != "" {
+				lidNumbers = append(lidNumbers, lidNum)
+			}
+		}
+
+		if len(lidNumbers) > 0 {
+			// Resolve LIDs to phone numbers via whatsmeow_lid_map
+			lidMap := make(map[string]string) // lid number -> phone number
+			rows, err := r.pool.Query(ctx, `
+				SELECT lid, pn FROM whatsmeow_lid_map WHERE lid = ANY($1)`,
+				lidNumbers,
+			)
+			if err == nil {
+				for rows.Next() {
+					var lid, pn string
+					if err := rows.Scan(&lid, &pn); err == nil {
+						lidMap[lid] = pn
+					}
+				}
+				rows.Close()
+			}
+
+			// Build mapping from resolved phone JID to original LID JID
+			var phoneJIDs []string
+			for _, lidJID := range lidJIDs {
+				lidNum := extractLIDNumber(lidJID)
+				if phone, ok := lidMap[lidNum]; ok && phone != "" {
+					phoneJID := phone + "@s.whatsapp.net"
+					phoneJIDs = append(phoneJIDs, phoneJID)
+					lidToOriginal[phoneJID] = lidJID
+				}
+			}
+
+			// Lookup pushNames for resolved phone JIDs
+			if len(phoneJIDs) > 0 {
+				rows, err := r.pool.Query(ctx, `
+					SELECT their_jid, COALESCE(push_name, '')
+					FROM whatsmeow_contacts
+					WHERE our_jid = $1 AND their_jid = ANY($2)`,
+					deviceJID, phoneJIDs,
+				)
+				if err == nil {
+					r.cacheMu.Lock()
+					for rows.Next() {
+						var phoneJID, pushName string
+						if err := rows.Scan(&phoneJID, &pushName); err == nil && pushName != "" {
+							// Map back to original LID JID
+							if originalLID, ok := lidToOriginal[phoneJID]; ok {
+								result[originalLID] = pushName
+								r.cache[originalLID] = pushName
+							}
+							// Also cache the phone JID version
+							r.cache[phoneJID] = pushName
+						}
+					}
+					r.cacheMu.Unlock()
+					rows.Close()
+				}
+			}
+		}
+	}
 
 	return result
+}
+
+// isLIDJID checks if the JID is a LID (Linked ID) JID
+func isLIDJID(jid string) bool {
+	return len(jid) > 4 && jid[len(jid)-4:] == "@lid"
+}
+
+// extractLIDNumber extracts the LID number from a LID JID
+// e.g., "78915880149164:44@lid" -> "78915880149164"
+func extractLIDNumber(lidJID string) string {
+	// Remove @lid suffix
+	if len(lidJID) <= 4 {
+		return ""
+	}
+	lidNum := lidJID[:len(lidJID)-4]
+	
+	// Remove device suffix (e.g., ":44")
+	for i := 0; i < len(lidNum); i++ {
+		if lidNum[i] == ':' {
+			return lidNum[:i]
+		}
+	}
+	return lidNum
 }
 
 // LoadAllPushNames loads all pushNames for a device into cache

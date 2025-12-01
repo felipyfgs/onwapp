@@ -870,17 +870,31 @@ func (s *ChatwootDBSync) insertMessageBatch(ctx context.Context, messages []mode
 		if msg.IsGroup && !msg.FromMe && msg.SenderJID != "" {
 			senderPhone := ""
 
-			// For LID JIDs, try to extract phone from SenderAlt in rawEvent
-			if util.IsLIDJID(msg.SenderJID) && len(msg.RawEvent) > 0 {
-				var rawData struct {
-					Info struct {
-						SenderAlt string `json:"SenderAlt"`
-					} `json:"Info"`
+			// First try to get phone from SenderAlt field (contains phone JID for LID senders)
+			if msg.SenderAlt != "" && !util.IsLIDJID(msg.SenderAlt) {
+				senderPhone = util.ExtractPhoneFromJID(msg.SenderAlt)
+			}
+
+			// If no phone yet, check if SenderJID is a LID and try to resolve it
+			if senderPhone == "" && util.IsLIDJID(msg.SenderJID) {
+				// Try database resolution
+				if s.zpPool != nil {
+					senderPhone = util.ResolveLIDToPhone(ctx, s.zpPool, msg.SenderJID)
 				}
-				if err := json.Unmarshal(msg.RawEvent, &rawData); err == nil && rawData.Info.SenderAlt != "" {
-					senderPhone = util.ExtractPhoneFromJID(rawData.Info.SenderAlt)
+
+				// Fallback to SenderAlt from rawEvent if DB resolution failed
+				if senderPhone == "" && len(msg.RawEvent) > 0 {
+					var rawData struct {
+						Info struct {
+							SenderAlt string `json:"SenderAlt"`
+						} `json:"Info"`
+					}
+					if err := json.Unmarshal(msg.RawEvent, &rawData); err == nil && rawData.Info.SenderAlt != "" {
+						senderPhone = util.ExtractPhoneFromJID(rawData.Info.SenderAlt)
+					}
 				}
-			} else {
+			} else if senderPhone == "" && !util.IsGroupJID(msg.SenderJID) {
+				// Regular phone JID
 				senderPhone = util.ExtractPhoneFromJID(msg.SenderJID)
 			}
 
@@ -893,8 +907,14 @@ func (s *ChatwootDBSync) insertMessageBatch(ctx context.Context, messages []mode
 					senderPrefix = fmt.Sprintf("**%s:**\n\n", formattedPhone)
 				}
 			} else if senderName != "" {
-				// No phone (LID without SenderAlt) but has name
+				// No phone but has name
 				senderPrefix = fmt.Sprintf("**%s:**\n\n", senderName)
+			} else if !util.IsGroupJID(msg.SenderJID) {
+				// Fallback: use LID number as identifier (only if not a group JID)
+				lidNum := util.ExtractPhoneFromJID(msg.SenderJID)
+				if lidNum != "" {
+					senderPrefix = fmt.Sprintf("**[%s]:**\n\n", lidNum)
+				}
 			}
 		}
 

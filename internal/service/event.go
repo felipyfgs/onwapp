@@ -688,10 +688,14 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 				continue
 			}
 
-			// Determine sender JID
+			// Determine sender JID for group messages
+			// Priority: key.Participant > webMsg.Participant > key.RemoteJID
 			senderJID := key.GetRemoteJID()
 			if key.GetParticipant() != "" {
 				senderJID = key.GetParticipant()
+			} else if webMsg.GetParticipant() != "" {
+				// Fallback to webMsg.Participant (often contains participant for group history messages)
+				senderJID = webMsg.GetParticipant()
 			}
 
 			// Convert timestamp (Unix seconds)
@@ -1063,12 +1067,122 @@ func (s *EventService) handlePushNameSync(ctx context.Context, session *model.Se
 		Int("count", len(pushnames)).
 		Msg("Push name sync received")
 
+	// Build maps for bulk update
+	phoneToName := make(map[string]string) // phone@s.whatsapp.net -> pushName
+	lidToName := make(map[string]string)   // lid@lid -> pushName
+
 	for _, pn := range pushnames {
+		jid := pn.GetID()
+		name := pn.GetPushname()
+		if jid == "" || name == "" {
+			continue
+		}
+
+		// Determine if this is a LID or phone JID
+		if strings.HasSuffix(jid, "@lid") {
+			lidToName[jid] = name
+		} else {
+			phoneToName[jid] = name
+		}
+
 		logger.Debug().
 			Str("session", session.Name).
-			Str("jid", pn.GetID()).
-			Str("pushName", pn.GetPushname()).
+			Str("jid", jid).
+			Str("pushName", name).
 			Msg("Push name synced")
+	}
+
+	// Update messages with pushNames from phone JIDs
+	if len(phoneToName) > 0 {
+		updated := 0
+		for phoneJID, name := range phoneToName {
+			result, err := s.database.Pool.Exec(ctx, `
+				UPDATE "zpMessages" 
+				SET "pushName" = $1 
+				WHERE "sessionId" = $2 
+				AND "senderJid" = $3 
+				AND ("pushName" IS NULL OR "pushName" = '')`,
+				name, session.ID, phoneJID)
+			if err == nil {
+				updated += int(result.RowsAffected())
+			}
+		}
+		if updated > 0 {
+			logger.Info().Int("updated", updated).Msg("Updated messages with pushNames from phone JIDs")
+		}
+	}
+
+	// Update messages with pushNames from LID JIDs  
+	if len(lidToName) > 0 {
+		updated := 0
+		for lidJID, name := range lidToName {
+			// Extract LID number without device suffix for LIKE matching
+			lidNum := strings.TrimSuffix(lidJID, "@lid")
+			if colonIdx := strings.Index(lidNum, ":"); colonIdx > 0 {
+				lidNum = lidNum[:colonIdx]
+			}
+
+			result, err := s.database.Pool.Exec(ctx, `
+				UPDATE "zpMessages" 
+				SET "pushName" = $1 
+				WHERE "sessionId" = $2 
+				AND "senderJid" LIKE $3 
+				AND ("pushName" IS NULL OR "pushName" = '')`,
+				name, session.ID, lidNum+"%@lid")
+			if err == nil {
+				updated += int(result.RowsAffected())
+			}
+		}
+		if updated > 0 {
+			logger.Info().Int("updated", updated).Msg("Updated messages with pushNames from LID JIDs")
+		}
+	}
+
+	// Also try to update via LID -> Phone mapping for messages with LID senderJid
+	if len(phoneToName) > 0 {
+		// Get phone numbers from the pushname JIDs
+		var phones []string
+		for phoneJID := range phoneToName {
+			phone := strings.TrimSuffix(phoneJID, "@s.whatsapp.net")
+			phones = append(phones, phone)
+		}
+
+		if len(phones) > 0 {
+			// Find LIDs that map to these phones
+			rows, err := s.database.Pool.Query(ctx, `
+				SELECT lid, pn FROM whatsmeow_lid_map WHERE pn = ANY($1)`, phones)
+			if err == nil {
+				lidToPhone := make(map[string]string)
+				for rows.Next() {
+					var lid, pn string
+					if rows.Scan(&lid, &pn) == nil {
+						lidToPhone[lid] = pn
+					}
+				}
+				rows.Close()
+
+				// Update messages where senderJid is a LID that maps to a phone with pushName
+				updated := 0
+				for lid, phone := range lidToPhone {
+					phoneJID := phone + "@s.whatsapp.net"
+					if name, ok := phoneToName[phoneJID]; ok && name != "" {
+						result, err := s.database.Pool.Exec(ctx, `
+							UPDATE "zpMessages" 
+							SET "pushName" = $1 
+							WHERE "sessionId" = $2 
+							AND "senderJid" LIKE $3 
+							AND ("pushName" IS NULL OR "pushName" = '')`,
+							name, session.ID, lid+"%@lid")
+						if err == nil {
+							updated += int(result.RowsAffected())
+						}
+					}
+				}
+				if updated > 0 {
+					logger.Info().Int("updated", updated).Msg("Updated LID messages with pushNames via phone mapping")
+				}
+			}
+		}
 	}
 }
 
