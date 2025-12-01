@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strings"
 
+	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 
@@ -125,7 +127,7 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 
 	if cwMsg != nil && s.database != nil {
 		if err := s.database.Messages.UpdateCwFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, convID, sourceID); err != nil {
-			logger.Warn().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update message fields")
+			logger.Debug().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update message fields")
 		}
 	}
 
@@ -179,7 +181,7 @@ func (s *Service) processIncomingMediaMessage(ctx context.Context, session *mode
 
 	if cwMsg != nil && s.database != nil {
 		if err := s.database.Messages.UpdateCwFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, conversationID, sourceID); err != nil {
-			logger.Warn().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update media message fields")
+			logger.Debug().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update media message fields")
 		}
 	}
 
@@ -276,7 +278,7 @@ func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Ses
 
 	if cwMsg != nil && s.database != nil {
 		if err := s.database.Messages.UpdateCwFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, conv.ID, sourceID); err != nil {
-			logger.Warn().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update outgoing message fields")
+			logger.Debug().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update outgoing message fields")
 		}
 	}
 
@@ -330,7 +332,7 @@ func (s *Service) processOutgoingMediaMessage(ctx context.Context, session *mode
 
 	if cwMsg != nil && s.database != nil {
 		if err := s.database.Messages.UpdateCwFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, conversationID, sourceID); err != nil {
-			logger.Warn().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update outgoing media message fields")
+			logger.Debug().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update outgoing media message fields")
 		}
 	}
 
@@ -548,7 +550,11 @@ func (s *Service) extractMessageContent(evt *events.Message) string {
 	}
 
 	if contact := msg.GetContactMessage(); contact != nil {
-		return fmt.Sprintf("👤 Contact: %s", contact.GetDisplayName())
+		return formatContactMessage(contact)
+	}
+
+	if contacts := msg.GetContactsArrayMessage(); contacts != nil {
+		return formatContactsArrayMessage(contacts)
 	}
 
 	if msg.GetStickerMessage() != nil {
@@ -633,4 +639,161 @@ func (s *Service) extractReplyInfo(ctx context.Context, sessionID string, evt *e
 		CwMsgId:           *originalMsg.CwMsgId,
 		WhatsAppMessageID: stanzaID,
 	}
+}
+
+// =============================================================================
+// CONTACT MESSAGE FORMATTING
+// =============================================================================
+
+// formatContactMessage formats a single contact message with vCard details
+func formatContactMessage(contact *waE2E.ContactMessage) string {
+	name := contact.GetDisplayName()
+	vcard := contact.GetVcard()
+
+	phones := parseVCardPhones(vcard)
+	emails := parseVCardEmails(vcard)
+	org := parseVCardOrg(vcard)
+
+	// Debug: log parsed values
+	logger.Debug().
+		Str("name", name).
+		Strs("phones", phones).
+		Strs("emails", emails).
+		Str("org", org).
+		Msg("Parsed contact vCard")
+
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("**👤 %s**", name))
+
+	for _, phone := range phones {
+		sb.WriteString(fmt.Sprintf("\n📱 `%s`", phone))
+	}
+
+	for _, email := range emails {
+		sb.WriteString(fmt.Sprintf("\n📧 %s", email))
+	}
+
+	if org != "" {
+		sb.WriteString(fmt.Sprintf("\n🏢 _%s_", org))
+	}
+
+	return sb.String()
+}
+
+// formatContactsArrayMessage formats multiple contacts
+func formatContactsArrayMessage(contacts *waE2E.ContactsArrayMessage) string {
+	contactList := contacts.GetContacts()
+	if len(contactList) == 0 {
+		return "👥 Contacts: (empty)"
+	}
+
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("**👥 %d Contact(s)**", len(contactList)))
+
+	for i, contact := range contactList {
+		if i > 0 {
+			sb.WriteString("\n\n---\n")
+		} else {
+			sb.WriteString("\n")
+		}
+		sb.WriteString(formatContactMessage(contact))
+	}
+
+	return sb.String()
+}
+
+// normalizeVCardLines normalizes vCard line endings and splits into lines
+func normalizeVCardLines(vcard string) []string {
+	// Handle literal \n strings (common in some WhatsApp vCards)
+	vcard = strings.ReplaceAll(vcard, "\\n", "\n")
+	// Normalize CRLF and CR to LF
+	vcard = strings.ReplaceAll(vcard, "\r\n", "\n")
+	vcard = strings.ReplaceAll(vcard, "\r", "\n")
+	return strings.Split(vcard, "\n")
+}
+
+// parseVCardPhones extracts phone numbers from vCard
+func parseVCardPhones(vcard string) []string {
+	if vcard == "" {
+		return nil
+	}
+
+	var phones []string
+	lines := normalizeVCardLines(vcard)
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		upperLine := strings.ToUpper(line)
+
+		if strings.HasPrefix(upperLine, "TEL") || strings.Contains(upperLine, ".TEL") {
+			// Handle various TEL formats:
+			// TEL:+5511999999999
+			// TEL;type=CELL:+5511999999999
+			// TEL;TYPE=CELL;TYPE=VOICE;WAID=5511999999999:+5511999999999
+			// item1.TEL:+5511999999999
+			// item1.TEL;waid=5511999999999:+55 11 99999-9999
+			parts := strings.SplitN(line, ":", 2)
+			if len(parts) == 2 {
+				phone := strings.TrimSpace(parts[1])
+				if phone != "" {
+					phones = append(phones, phone)
+				}
+			}
+		}
+	}
+
+	return phones
+}
+
+// parseVCardEmails extracts email addresses from vCard
+func parseVCardEmails(vcard string) []string {
+	if vcard == "" {
+		return nil
+	}
+
+	var emails []string
+	lines := normalizeVCardLines(vcard)
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		upperLine := strings.ToUpper(line)
+
+		if strings.HasPrefix(upperLine, "EMAIL") || strings.Contains(upperLine, ".EMAIL") {
+			parts := strings.SplitN(line, ":", 2)
+			if len(parts) == 2 {
+				email := strings.TrimSpace(parts[1])
+				if email != "" {
+					emails = append(emails, email)
+				}
+			}
+		}
+	}
+
+	return emails
+}
+
+// parseVCardOrg extracts organization from vCard
+func parseVCardOrg(vcard string) string {
+	if vcard == "" {
+		return ""
+	}
+
+	lines := normalizeVCardLines(vcard)
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		upperLine := strings.ToUpper(line)
+
+		if strings.HasPrefix(upperLine, "ORG") || strings.Contains(upperLine, ".ORG") {
+			parts := strings.SplitN(line, ":", 2)
+			if len(parts) == 2 {
+				org := strings.TrimSpace(parts[1])
+				// Remove trailing semicolons (vCard format allows ORG:Company;Department)
+				org = strings.TrimSuffix(org, ";")
+				return org
+			}
+		}
+	}
+
+	return ""
 }
