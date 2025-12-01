@@ -78,8 +78,8 @@ changelog:
 
 dockers:
   - image_templates:
-      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/zpwoot:{{ .Version }}"
-      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/zpwoot:latest"
+      - "docker.io/onwapp/zpwoot:{{ .Version }}"
+      - "docker.io/onwapp/zpwoot:latest"
     dockerfile: Dockerfile
     goos: linux
     goarch: amd64
