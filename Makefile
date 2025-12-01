@@ -1,4 +1,4 @@
-.PHONY: build run dev clean swagger deps test lint docker-build docker-up docker-down help
+.PHONY: build run dev clean swagger deps test lint docker-build docker-up docker-down help version release release-dry
 
 # Variables
 BINARY_NAME=zpwoot
@@ -6,9 +6,15 @@ MAIN_PATH=./cmd/zpwoot
 SWAGGER_PATH=./cmd/zpwoot/main.go
 GO=/usr/local/go/bin/go
 
+# Version info (read from version.go or use defaults)
+VERSION ?= $(shell grep -E '^\s+Version\s*=' internal/version/version.go | head -1 | cut -d'"' -f2)
+GIT_COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+BUILD_DATE ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+LDFLAGS = -s -w -X zpwoot/internal/version.Version=$(VERSION) -X zpwoot/internal/version.GitCommit=$(GIT_COMMIT) -X zpwoot/internal/version.BuildDate=$(BUILD_DATE)
+
 # Build the application
 build:
-	$(GO) build -o $(BINARY_NAME) $(MAIN_PATH)
+	$(GO) build -ldflags "$(LDFLAGS)" -o $(BINARY_NAME) $(MAIN_PATH)
 
 # Run the application
 run: build
@@ -105,4 +111,34 @@ help:
 	@echo "  docker-logs  - View Docker Compose logs"
 	@echo "  rebuild      - Full rebuild (clean, deps, swagger, build)"
 	@echo "  setup        - Development setup"
+	@echo "  version      - Show current version"
+	@echo "  release-dry  - Test release build (no publish)"
+	@echo "  release      - Create and publish release"
 	@echo "  help         - Show this help"
+
+# Show version
+version:
+	@echo "Version: $(VERSION)"
+	@echo "Commit:  $(GIT_COMMIT)"
+	@echo "Date:    $(BUILD_DATE)"
+
+# Test release build (dry run)
+release-dry:
+	goreleaser release --snapshot --clean --skip=publish
+
+# Create release (requires GITHUB_TOKEN)
+release:
+	@if [ -z "$(GITHUB_TOKEN)" ]; then \
+		echo "Error: GITHUB_TOKEN is required"; \
+		exit 1; \
+	fi
+	goreleaser release --clean
+
+# Tag a new version
+tag:
+	@if [ -z "$(TAG)" ]; then \
+		echo "Usage: make tag TAG=v0.1.0"; \
+		exit 1; \
+	fi
+	git tag -a $(TAG) -m "Release $(TAG)"
+	git push origin $(TAG)

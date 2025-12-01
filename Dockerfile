@@ -8,7 +8,14 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -o /app/zpwoot ./cmd/api
+
+ARG VERSION=0.1.0
+ARG GIT_COMMIT=unknown
+ARG BUILD_DATE=unknown
+
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -ldflags "-s -w -X zpwoot/internal/version.Version=${VERSION} -X zpwoot/internal/version.GitCommit=${GIT_COMMIT} -X zpwoot/internal/version.BuildDate=${BUILD_DATE}" \
+    -o /app/zpwoot ./cmd/zpwoot
 
 FROM alpine:latest
 
@@ -20,4 +27,4 @@ COPY --from=builder /app/zpwoot .
 
 EXPOSE 3000
 
-CMD ["./zpwoot"]
+ENTRYPOINT ["./zpwoot"]

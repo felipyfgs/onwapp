@@ -1,0 +1,130 @@
+version: "3.7"
+
+services:
+
+  zpwoot_postgres:
+    image: postgres:16-alpine
+    volumes:
+      - zpwoot_postgres_data:/var/lib/postgresql/data
+    networks:
+      - infraNet
+    environment:
+      - POSTGRES_DB=zpwoot
+      - POSTGRES_USER=zpwoot
+      - POSTGRES_PASSWORD=zpwoot123
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+
+  zpwoot_nats:
+    image: nats:latest
+    command:
+      - "--http_port=8222"
+      - "--js"
+      - "--store_dir=/data"
+    volumes:
+      - zpwoot_nats_data:/data
+    networks:
+      - infraNet
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
+
+  zpwoot_minio:
+    image: quay.io/minio/minio:RELEASE.2024-01-13T07-53-03Z-cpuv1
+    command: server /data --console-address ":9001"
+    volumes:
+      - zpwoot_minio_data:/data
+    networks:
+      - infraNet
+    environment:
+      - MINIO_ROOT_USER=zpwoot
+      - MINIO_ROOT_PASSWORD=zpwoot123
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
+
+  zpwoot_api:
+    image: onwapp/zpwoot:latest
+    volumes:
+      - zpwoot_data:/app/data
+    networks:
+      - infraNet
+    environment:
+      # Database
+      - DATABASE_URL=postgres://zpwoot:zpwoot123@zpwoot_postgres:5432/zpwoot?sslmode=disable
+      # Server
+      - PORT=3000
+      - API_KEY=sua-api-key-aqui
+      - SERVER_URL=https://wpapi.yourdomain.com
+      # Logging
+      - LOG_LEVEL=info
+      - LOG_FORMAT=json
+      # MinIO
+      - MINIO_ENDPOINT=zpwoot_minio:9000
+      - MINIO_ACCESS_KEY=zpwoot
+      - MINIO_SECRET_KEY=zpwoot123
+      - MINIO_BUCKET=zpwoot-media
+      - MINIO_USE_SSL=false
+      # NATS
+      - NATS_ENABLED=true
+      - NATS_URL=nats://zpwoot_nats:4222
+      - NATS_STREAM_PREFIX=ZPWOOT
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1024M
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=infraNet
+        - traefik.http.routers.zpwoot_api.rule=Host(`wpapi.yourdomain.com`)
+        - traefik.http.routers.zpwoot_api.entrypoints=websecure
+        - traefik.http.routers.zpwoot_api.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.zpwoot_api.priority=1
+        - traefik.http.routers.zpwoot_api.service=zpwoot_api
+        - traefik.http.services.zpwoot_api.loadbalancer.server.port=3000
+        - traefik.http.services.zpwoot_api.loadbalancer.passhostheader=true
+        - traefik.http.middlewares.zpwoot_sslheader.headers.customrequestheaders.X-Forwarded-Proto=https
+        - traefik.http.routers.zpwoot_api.middlewares=zpwoot_sslheader@docker
+
+volumes:
+  zpwoot_postgres_data:
+    driver: local
+  zpwoot_nats_data:
+    driver: local
+  zpwoot_minio_data:
+    driver: local
+  zpwoot_data:
+    driver: local
+
+networks:
+  infraNet:
+    external: true
+    name: infraNet
