@@ -395,7 +395,7 @@ func (s *Service) formatStatusMessage(status, message string) string {
 // HandleConversationNotFound clears conversation references when a 404 error occurs
 // This allows the system to recreate the conversation on the next interaction
 func (s *Service) HandleConversationNotFound(ctx context.Context, sessionID string, conversationID int) {
-	if s.database == nil {
+	if s.database == nil || conversationID <= 0 {
 		return
 	}
 
