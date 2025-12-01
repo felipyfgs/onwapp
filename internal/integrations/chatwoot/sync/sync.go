@@ -865,6 +865,39 @@ func (s *ChatwootDBSync) insertMessageBatch(ctx context.Context, messages []mode
 			senderID = userID
 		}
 
+		// Build sender prefix for group messages (not from me)
+		senderPrefix := ""
+		if msg.IsGroup && !msg.FromMe && msg.SenderJID != "" {
+			senderPhone := ""
+
+			// For LID JIDs, try to extract phone from SenderAlt in rawEvent
+			if util.IsLIDJID(msg.SenderJID) && len(msg.RawEvent) > 0 {
+				var rawData struct {
+					Info struct {
+						SenderAlt string `json:"SenderAlt"`
+					} `json:"Info"`
+				}
+				if err := json.Unmarshal(msg.RawEvent, &rawData); err == nil && rawData.Info.SenderAlt != "" {
+					senderPhone = util.ExtractPhoneFromJID(rawData.Info.SenderAlt)
+				}
+			} else {
+				senderPhone = util.ExtractPhoneFromJID(msg.SenderJID)
+			}
+
+			senderName := msg.PushName
+			if senderPhone != "" {
+				formattedPhone := util.FormatPhoneDisplay(senderPhone)
+				if senderName != "" && senderName != senderPhone {
+					senderPrefix = fmt.Sprintf("**%s - %s:**\n\n", formattedPhone, senderName)
+				} else {
+					senderPrefix = fmt.Sprintf("**%s:**\n\n", formattedPhone)
+				}
+			} else if senderName != "" {
+				// No phone (LID without SenderAlt) but has name
+				senderPrefix = fmt.Sprintf("**%s:**\n\n", senderName)
+			}
+		}
+
 		isMedia := msg.IsMedia() && s.mediaGetter != nil
 		var media *model.Media
 		if isMedia {
@@ -881,13 +914,19 @@ func (s *ChatwootDBSync) insertMessageBatch(ctx context.Context, messages []mode
 				messageType = "outgoing"
 			}
 
+			// Add sender prefix to caption for group media messages
+			caption := msg.Content
+			if senderPrefix != "" {
+				caption = senderPrefix + caption
+			}
+
 			cwMsg, err := uploader.UploadFromURL(ctx, client.MediaUploadRequest{
 				ConversationID: fks.ConversationID,
 				MediaURL:       media.StorageURL,
 				MediaType:      media.MediaType,
 				Filename:       media.FileName,
 				MimeType:       media.MimeType,
-				Caption:        msg.Content,
+				Caption:        caption,
 				MessageType:    messageType,
 				SourceID:       "WAID:" + msg.MsgId,
 			})
@@ -906,6 +945,11 @@ func (s *ChatwootDBSync) insertMessageBatch(ctx context.Context, messages []mode
 			content := GetMessageContent(&msg)
 			if content == "" {
 				continue
+			}
+
+			// Add sender prefix for group text messages
+			if senderPrefix != "" {
+				content = senderPrefix + content
 			}
 
 			_, err := s.cwDB.ExecContext(ctx, `
