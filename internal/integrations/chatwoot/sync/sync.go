@@ -10,6 +10,7 @@ import (
 	gosync "sync"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/lib/pq"
 
@@ -89,10 +90,11 @@ type ChatwootDBSync struct {
 	mediaGetter    MediaGetter
 	sessionID      string
 	cwDB           *sql.DB
+	zpPool         *pgxpool.Pool // zpwoot database pool for LID resolution
 }
 
 // NewChatwootDBSync creates a new direct database sync service
-func NewChatwootDBSync(cfg *core.Config, msgRepo MessageRepository, contactsGetter ContactsGetter, mediaGetter MediaGetter, sessionID string) (*ChatwootDBSync, error) {
+func NewChatwootDBSync(cfg *core.Config, msgRepo MessageRepository, contactsGetter ContactsGetter, mediaGetter MediaGetter, sessionID string, zpPool *pgxpool.Pool) (*ChatwootDBSync, error) {
 	if cfg.ChatwootDBHost == "" {
 		return nil, core.ErrDBNotConfigured
 	}
@@ -127,6 +129,7 @@ func NewChatwootDBSync(cfg *core.Config, msgRepo MessageRepository, contactsGett
 		mediaGetter:    mediaGetter,
 		sessionID:      sessionID,
 		cwDB:           db,
+		zpPool:         zpPool,
 	}, nil
 }
 
@@ -182,7 +185,7 @@ func (s *ChatwootDBSync) SyncContacts(ctx context.Context, daysLimit int) (*core
 		return stats, fmt.Errorf("failed to get contacts from WhatsApp: %w", err)
 	}
 
-	validContacts := s.filterValidContacts(contacts, stats)
+	validContacts := s.filterValidContacts(ctx, contacts, stats)
 	if len(validContacts) == 0 {
 		return stats, nil
 	}
@@ -428,13 +431,25 @@ func (s *ChatwootDBSync) ResetData(ctx context.Context) (*core.ResetStats, error
 // FILTERING HELPERS
 // =============================================================================
 
-func (s *ChatwootDBSync) filterValidContacts(contacts []core.WhatsAppContact, stats *core.SyncStats) []core.WhatsAppContact {
+func (s *ChatwootDBSync) filterValidContacts(ctx context.Context, contacts []core.WhatsAppContact, stats *core.SyncStats) []core.WhatsAppContact {
 	var valid []core.WhatsAppContact
 	for _, c := range contacts {
-		if util.IsGroupJID(c.JID) || util.IsStatusBroadcast(c.JID) || util.IsNewsletter(c.JID) || util.IsLIDJID(c.JID) {
+		if util.IsGroupJID(c.JID) || util.IsStatusBroadcast(c.JID) || util.IsNewsletter(c.JID) {
 			stats.ContactsSkipped++
 			continue
 		}
+
+		// Handle LID JIDs - try to resolve to phone number
+		jid := c.JID
+		if util.IsLIDJID(jid) {
+			phone := util.ResolveLIDToPhone(ctx, s.zpPool, jid)
+			if phone == "" {
+				stats.ContactsSkipped++
+				continue
+			}
+			c.JID = phone + "@s.whatsapp.net"
+		}
+
 		if util.ExtractPhoneFromJID(c.JID) == "" {
 			stats.ContactsSkipped++
 			continue
@@ -475,12 +490,24 @@ func (s *ChatwootDBSync) filterMessages(ctx context.Context, messages []model.Me
 			continue
 		}
 
-		if util.IsStatusBroadcast(msg.ChatJID) || util.IsNewsletter(msg.ChatJID) || util.IsLIDJID(msg.ChatJID) {
+		if util.IsStatusBroadcast(msg.ChatJID) || util.IsNewsletter(msg.ChatJID) {
 			stats.MessagesSkipped++
 			continue
 		}
 
-		phone := util.ExtractPhoneFromJID(msg.ChatJID)
+		// Handle LID JIDs - try to resolve to phone number
+		chatJID := msg.ChatJID
+		if util.IsLIDJID(chatJID) {
+			phone := util.ResolveLIDToPhone(ctx, s.zpPool, chatJID)
+			if phone == "" {
+				stats.MessagesSkipped++
+				continue
+			}
+			chatJID = phone + "@s.whatsapp.net"
+			msg.ChatJID = chatJID // Update for later processing
+		}
+
+		phone := util.ExtractPhoneFromJID(chatJID)
 		if phone == "" || phone == "0" {
 			stats.MessagesSkipped++
 			continue

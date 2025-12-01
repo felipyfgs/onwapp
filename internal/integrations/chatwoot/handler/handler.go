@@ -533,7 +533,7 @@ func (h *Handler) handleSync(c *gin.Context, syncType string) {
 		sessionName: sessionName,
 	}
 
-	dbSync, err := cwsync.NewChatwootDBSync(cfg, h.database.Messages, contactsAdapter, h.database.Media, session.ID)
+	dbSync, err := cwsync.NewChatwootDBSync(cfg, h.database.Messages, contactsAdapter, h.database.Media, session.ID, h.database.Pool)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to connect to chatwoot db: " + err.Error()})
 		return
@@ -598,7 +598,7 @@ func (h *Handler) ResetChatwoot(c *gin.Context) {
 		return
 	}
 
-	dbSync, err := cwsync.NewChatwootDBSync(cfg, nil, nil, nil, session.ID)
+	dbSync, err := cwsync.NewChatwootDBSync(cfg, nil, nil, nil, session.ID, h.database.Pool)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to connect to database: " + err.Error()})
 		return
