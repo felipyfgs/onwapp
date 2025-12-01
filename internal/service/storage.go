@@ -33,8 +33,9 @@ type UploadResult struct {
 
 func NewStorageService(cfg *config.Config) (*StorageService, error) {
 	client, err := minio.New(cfg.MinioEndpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(cfg.MinioAccessKey, cfg.MinioSecretKey, ""),
-		Secure: cfg.MinioUseSSL,
+		Creds:        credentials.NewStaticV4(cfg.MinioAccessKey, cfg.MinioSecretKey, ""),
+		Secure:       cfg.MinioUseSSL,
+		BucketLookup: minio.BucketLookupPath, // Force path-style access for reverse proxy compatibility
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create minio client: %w", err)

@@ -47,13 +47,18 @@ services:
   zpwoot_minio:
     image: quay.io/minio/minio:RELEASE.2024-01-13T07-53-03Z-cpuv1
     command: server /data --console-address ":9001"
+    hostname: minio
     volumes:
       - zpwoot_minio_data:/data
     networks:
-      - infraNet
+      infraNet:
+        aliases:
+          - minio
     environment:
       - MINIO_ROOT_USER=zpwoot
       - MINIO_ROOT_PASSWORD=zpwoot123
+      - MINIO_BROWSER_REDIRECT_URL=https://minio.yourdomain.com
+      - MINIO_SERVER_URL=https://s3.yourdomain.com
     deploy:
       mode: replicated
       replicas: 1
@@ -64,6 +69,21 @@ services:
         limits:
           cpus: "0.25"
           memory: 256M
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=infraNet
+        - traefik.http.routers.zpwoot_minio_public.rule=Host(`s3.yourdomain.com`)
+        - traefik.http.routers.zpwoot_minio_public.entrypoints=websecure
+        - traefik.http.routers.zpwoot_minio_public.tls.certresolver=letsencryptresolver
+        - traefik.http.services.zpwoot_minio_public.loadbalancer.server.port=9000
+        - traefik.http.services.zpwoot_minio_public.loadbalancer.passHostHeader=true
+        - traefik.http.routers.zpwoot_minio_public.service=zpwoot_minio_public
+        - traefik.http.routers.zpwoot_minio_console.rule=Host(`minio.yourdomain.com`)
+        - traefik.http.routers.zpwoot_minio_console.entrypoints=websecure
+        - traefik.http.routers.zpwoot_minio_console.tls.certresolver=letsencryptresolver
+        - traefik.http.services.zpwoot_minio_console.loadbalancer.server.port=9001
+        - traefik.http.services.zpwoot_minio_console.loadbalancer.passHostHeader=true
+        - traefik.http.routers.zpwoot_minio_console.service=zpwoot_minio_console
 
   zpwoot_api:
     image: onwapp/zpwoot:latest
@@ -82,11 +102,11 @@ services:
       - LOG_LEVEL=info
       - LOG_FORMAT=json
       # MinIO
-      - MINIO_ENDPOINT=zpwoot_minio:9000
+      - MINIO_ENDPOINT=s3.yourdomain.com
       - MINIO_ACCESS_KEY=zpwoot
       - MINIO_SECRET_KEY=zpwoot123
       - MINIO_BUCKET=zpwoot-media
-      - MINIO_USE_SSL=false
+      - MINIO_USE_SSL=true
       # NATS
       - NATS_ENABLED=true
       - NATS_URL=nats://zpwoot_nats:4222
