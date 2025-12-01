@@ -309,6 +309,20 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 			Content:   quotedMsg.Content,
 			IsFromMe:  quotedMsg.FromMe,
 		}
+		logger.Debug().
+			Str("recipient", recipient).
+			Str("quoteMessageID", quotedMsg.MsgId).
+			Str("quoteChatJID", quotedMsg.ChatJID).
+			Str("quoteSenderJID", quotedMsg.SenderJID).
+			Str("quoteContent", quotedMsg.Content).
+			Bool("quoteFromMe", quotedMsg.FromMe).
+			Int("cwMsgID", chatwootMsgID).
+			Msg("Chatwoot: sending message with quote")
+	} else {
+		logger.Debug().
+			Str("recipient", recipient).
+			Int("cwMsgID", chatwootMsgID).
+			Msg("Chatwoot: sending message without quote")
 	}
 
 	for _, att := range attachments {
@@ -533,7 +547,7 @@ func (h *Handler) handleSync(c *gin.Context, syncType string) {
 		sessionName: sessionName,
 	}
 
-	dbSync, err := cwsync.NewChatwootDBSync(cfg, h.database.Messages, contactsAdapter, h.database.Media, session.ID, h.database.Pool)
+	dbSync, err := cwsync.NewChatwootDBSync(cfg, h.database.Messages, contactsAdapter, h.database.Media, session.ID, h.database.Contacts)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to connect to chatwoot db: " + err.Error()})
 		return
@@ -598,7 +612,7 @@ func (h *Handler) ResetChatwoot(c *gin.Context) {
 		return
 	}
 
-	dbSync, err := cwsync.NewChatwootDBSync(cfg, nil, nil, nil, session.ID, h.database.Pool)
+	dbSync, err := cwsync.NewChatwootDBSync(cfg, nil, nil, nil, session.ID, h.database.Contacts)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to connect to database: " + err.Error()})
 		return

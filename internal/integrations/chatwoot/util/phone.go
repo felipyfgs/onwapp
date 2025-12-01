@@ -5,10 +5,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jackc/pgx/v5/pgxpool"
-
 	"zpwoot/internal/integrations/chatwoot/core"
 )
+
+// LIDResolver interface for resolving LID to phone number
+// Implemented by ContactRepository
+type LIDResolver interface {
+	ResolveLIDToPhone(ctx context.Context, lidNumber string) string
+}
 
 // =============================================================================
 // JID EXTRACTION & VALIDATION
@@ -109,10 +113,10 @@ func GetAlternateBrazilianNumber(phone string) string {
 // LID RESOLUTION
 // =============================================================================
 
-// ResolveLIDToPhone resolves a LID to phone number using whatsmeow_lid_map table
+// ResolveLIDToPhone resolves a LID to phone number using the LIDResolver interface
 // Returns the phone number if found, or empty string if not found
-func ResolveLIDToPhone(ctx context.Context, pool *pgxpool.Pool, lid string) string {
-	if pool == nil {
+func ResolveLIDToPhone(ctx context.Context, resolver LIDResolver, lid string) string {
+	if resolver == nil {
 		return ""
 	}
 
@@ -122,25 +126,20 @@ func ResolveLIDToPhone(ctx context.Context, pool *pgxpool.Pool, lid string) stri
 		lidNum = lidNum[:colonIdx]
 	}
 
-	var phone string
-	err := pool.QueryRow(ctx, `SELECT pn FROM whatsmeow_lid_map WHERE lid = $1`, lidNum).Scan(&phone)
-	if err != nil {
-		return ""
-	}
-	return phone
+	return resolver.ResolveLIDToPhone(ctx, lidNum)
 }
 
 // ResolveJIDToPhone resolves any JID type to phone number
-// For @lid JIDs, uses the whatsmeow_lid_map table
+// For @lid JIDs, uses the LIDResolver interface
 // For @s.whatsapp.net JIDs, extracts directly
 // For groups, returns empty
-func ResolveJIDToPhone(ctx context.Context, pool *pgxpool.Pool, jid string) string {
+func ResolveJIDToPhone(ctx context.Context, resolver LIDResolver, jid string) string {
 	if IsGroupJID(jid) || IsStatusBroadcast(jid) || IsNewsletter(jid) {
 		return ""
 	}
 
 	if IsLIDJID(jid) {
-		return ResolveLIDToPhone(ctx, pool, jid)
+		return ResolveLIDToPhone(ctx, resolver, jid)
 	}
 
 	return ExtractPhoneFromJID(jid)
@@ -148,12 +147,12 @@ func ResolveJIDToPhone(ctx context.Context, pool *pgxpool.Pool, jid string) stri
 
 // ConvertLIDToStandardJID converts a @lid JID to @s.whatsapp.net JID
 // Returns the original JID if conversion not possible
-func ConvertLIDToStandardJID(ctx context.Context, pool *pgxpool.Pool, jid string) string {
+func ConvertLIDToStandardJID(ctx context.Context, resolver LIDResolver, jid string) string {
 	if !IsLIDJID(jid) {
 		return jid
 	}
 
-	phone := ResolveLIDToPhone(ctx, pool, jid)
+	phone := ResolveLIDToPhone(ctx, resolver, jid)
 	if phone == "" {
 		return jid
 	}

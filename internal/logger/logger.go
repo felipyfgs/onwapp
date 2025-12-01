@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -82,8 +83,13 @@ func GinMiddleware() gin.HandlerFunc {
 		latency := time.Since(start)
 		status := c.Writer.Status()
 
+		// Use DEBUG for high-frequency webhook routes
+		isWebhook := strings.HasPrefix(path, "/chatwoot/webhook/")
+
 		event := Log.Info()
-		if status >= 400 && status < 500 {
+		if isWebhook && status < 400 {
+			event = Log.Debug()
+		} else if status >= 400 && status < 500 {
 			event = Log.Warn()
 		} else if status >= 500 {
 			event = Log.Error()

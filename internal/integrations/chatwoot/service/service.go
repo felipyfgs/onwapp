@@ -392,6 +392,30 @@ func (s *Service) formatStatusMessage(status, message string) string {
 // HELPER METHODS
 // =============================================================================
 
+// HandleConversationNotFound clears conversation references when a 404 error occurs
+// This allows the system to recreate the conversation on the next interaction
+func (s *Service) HandleConversationNotFound(ctx context.Context, sessionID string, conversationID int) {
+	if s.database == nil {
+		return
+	}
+
+	affected, err := s.database.Messages.ClearCwConversation(ctx, sessionID, conversationID)
+	if err != nil {
+		logger.Warn().
+			Err(err).
+			Str("sessionId", sessionID).
+			Int("conversationId", conversationID).
+			Msg("Chatwoot: failed to clear deleted conversation references")
+		return
+	}
+
+	logger.Info().
+		Str("sessionId", sessionID).
+		Int("conversationId", conversationID).
+		Int64("messagesCleared", affected).
+		Msg("Chatwoot: cleared references for deleted conversation (will recreate on next message)")
+}
+
 // ShouldIgnoreJid checks if a JID should be ignored
 func (s *Service) ShouldIgnoreJid(cfg *core.Config, jid string) bool {
 	if util.IsStatusBroadcast(jid) || util.IsNewsletter(jid) {

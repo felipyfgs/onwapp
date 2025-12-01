@@ -220,10 +220,11 @@ type QuotedMessageInfo struct {
 	FromMe    bool   `json:"fromMe"`
 }
 
-// ContactCacheEntry holds cached conversation data with expiry
+// ContactCacheEntry holds cached contact data with expiry
+// Note: We cache ContactID instead of ConversationID to ensure autoReopen works
 type ContactCacheEntry struct {
-	ConversationID int
-	ExpiresAt      time.Time
+	ContactID int
+	ExpiresAt time.Time
 }
 
 // ChatFKs holds foreign keys for a chat in sync operations

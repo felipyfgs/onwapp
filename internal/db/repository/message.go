@@ -351,3 +351,67 @@ func (r *MessageRepository) Delete(ctx context.Context, sessionID, msgId string)
 		sessionID, msgId)
 	return err
 }
+
+// ClearCwConversation clears Chatwoot conversation reference for all messages in a conversation
+// This is used when a conversation is deleted in Chatwoot (404 error)
+func (r *MessageRepository) ClearCwConversation(ctx context.Context, sessionID string, cwConvId int) (int64, error) {
+	result, err := r.pool.Exec(ctx, `
+		UPDATE "zpMessages" 
+		SET "cwConvId" = NULL, "cwMsgId" = NULL, "cwSourceId" = NULL
+		WHERE "sessionId" = $1::uuid AND "cwConvId" = $2`,
+		sessionID, cwConvId)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+// UpdatePushNameByJID updates pushName for messages with specific senderJid
+// Only updates messages that have empty pushName
+func (r *MessageRepository) UpdatePushNameByJID(ctx context.Context, sessionID, senderJID, pushName string) (int64, error) {
+	result, err := r.pool.Exec(ctx, `
+		UPDATE "zpMessages" 
+		SET "pushName" = $1 
+		WHERE "sessionId" = $2 
+		AND "senderJid" = $3 
+		AND ("pushName" IS NULL OR "pushName" = '')`,
+		pushName, sessionID, senderJID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+// UpdatePushNameByLIDPattern updates pushName for messages where senderJid matches LID pattern
+// Uses LIKE pattern to match LID JIDs with device suffix variations
+func (r *MessageRepository) UpdatePushNameByLIDPattern(ctx context.Context, sessionID, lidPattern, pushName string) (int64, error) {
+	result, err := r.pool.Exec(ctx, `
+		UPDATE "zpMessages" 
+		SET "pushName" = $1 
+		WHERE "sessionId" = $2 
+		AND "senderJid" LIKE $3 
+		AND ("pushName" IS NULL OR "pushName" = '')`,
+		pushName, sessionID, lidPattern)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+// UpdatePushNamesBatch updates pushName for multiple JIDs efficiently
+// Returns total number of rows affected
+func (r *MessageRepository) UpdatePushNamesBatch(ctx context.Context, sessionID string, jidToName map[string]string) (int64, error) {
+	if len(jidToName) == 0 {
+		return 0, nil
+	}
+
+	var total int64
+	for jid, name := range jidToName {
+		affected, err := r.UpdatePushNameByJID(ctx, sessionID, jid, name)
+		if err != nil {
+			return total, err
+		}
+		total += affected
+	}
+	return total, nil
+}

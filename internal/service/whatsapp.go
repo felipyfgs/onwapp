@@ -129,7 +129,6 @@ func (w *WhatsAppService) SendTextWithQuote(ctx context.Context, sessionName, ph
 		return whatsmeow.SendResponse{}, fmt.Errorf("invalid phone number: %w", err)
 	}
 
-	// Parse sender JID for quoted message
 	var quotedParticipant *string
 	if quoted.SenderJID != "" {
 		quotedParticipant = proto.String(quoted.SenderJID)
@@ -141,7 +140,7 @@ func (w *WhatsAppService) SendTextWithQuote(ctx context.Context, sessionName, ph
 			ContextInfo: &waE2E.ContextInfo{
 				StanzaID:      proto.String(quoted.MessageID),
 				Participant:   quotedParticipant,
-				QuotedMessage: &waE2E.Message{Conversation: proto.String(quoted.Content)},
+				QuotedMessage: &waE2E.Message{Conversation: proto.String("")},
 			},
 		},
 	}
@@ -188,7 +187,7 @@ func (w *WhatsAppService) SendImageWithQuote(ctx context.Context, sessionName, p
 			ContextInfo: &waE2E.ContextInfo{
 				StanzaID:      proto.String(quoted.MessageID),
 				Participant:   quotedParticipant,
-				QuotedMessage: &waE2E.Message{Conversation: proto.String(quoted.Content)},
+				QuotedMessage: &waE2E.Message{Conversation: proto.String("")},
 			},
 		},
 	}
@@ -276,7 +275,7 @@ func (w *WhatsAppService) SendDocumentWithQuote(ctx context.Context, sessionName
 			ContextInfo: &waE2E.ContextInfo{
 				StanzaID:      proto.String(quoted.MessageID),
 				Participant:   quotedParticipant,
-				QuotedMessage: &waE2E.Message{Conversation: proto.String(quoted.Content)},
+				QuotedMessage: &waE2E.Message{Conversation: proto.String("")},
 			},
 		},
 	}
@@ -356,7 +355,7 @@ func (w *WhatsAppService) SendAudioWithQuote(ctx context.Context, sessionName, p
 			ContextInfo: &waE2E.ContextInfo{
 				StanzaID:      proto.String(quoted.MessageID),
 				Participant:   quotedParticipant,
-				QuotedMessage: &waE2E.Message{Conversation: proto.String(quoted.Content)},
+				QuotedMessage: &waE2E.Message{Conversation: proto.String("")},
 			},
 		},
 	}
@@ -436,7 +435,7 @@ func (w *WhatsAppService) SendVideoWithQuote(ctx context.Context, sessionName, p
 			ContextInfo: &waE2E.ContextInfo{
 				StanzaID:      proto.String(quoted.MessageID),
 				Participant:   quotedParticipant,
-				QuotedMessage: &waE2E.Message{Conversation: proto.String(quoted.Content)},
+				QuotedMessage: &waE2E.Message{Conversation: proto.String("")},
 			},
 		},
 	}

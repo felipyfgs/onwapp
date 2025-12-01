@@ -7,8 +7,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
-
 	"zpwoot/internal/integrations/chatwoot/client"
 	"zpwoot/internal/integrations/chatwoot/core"
 	"zpwoot/internal/integrations/chatwoot/util"
@@ -24,7 +22,7 @@ type MessageSyncer struct {
 	msgRepo        MessageRepository
 	contactsGetter ContactsGetter
 	mediaGetter    MediaGetter
-	zpPool         *pgxpool.Pool
+	lidResolver    util.LIDResolver
 	sessionID      string
 }
 
@@ -36,7 +34,7 @@ func NewMessageSyncer(
 	msgRepo MessageRepository,
 	contactsGetter ContactsGetter,
 	mediaGetter MediaGetter,
-	zpPool *pgxpool.Pool,
+	lidResolver util.LIDResolver,
 	sessionID string,
 ) *MessageSyncer {
 	return &MessageSyncer{
@@ -46,7 +44,7 @@ func NewMessageSyncer(
 		msgRepo:        msgRepo,
 		contactsGetter: contactsGetter,
 		mediaGetter:    mediaGetter,
-		zpPool:         zpPool,
+		lidResolver:    lidResolver,
 		sessionID:      sessionID,
 	}
 }
@@ -120,7 +118,7 @@ func (s *MessageSyncer) filterMessages(ctx context.Context, messages []model.Mes
 
 		// Handle LID JIDs
 		if util.IsLIDJID(msg.ChatJID) {
-			phone := util.ResolveLIDToPhone(ctx, s.zpPool, msg.ChatJID)
+			phone := util.ResolveLIDToPhone(ctx, s.lidResolver, msg.ChatJID)
 			if phone == "" {
 				stats.MessagesSkipped++
 				continue
@@ -478,8 +476,8 @@ func (s *MessageSyncer) resolveSenderPhone(ctx context.Context, msg *model.Messa
 
 	// If SenderJID is a LID, try to resolve
 	if util.IsLIDJID(msg.SenderJID) {
-		if s.zpPool != nil {
-			if phone := util.ResolveLIDToPhone(ctx, s.zpPool, msg.SenderJID); phone != "" {
+		if s.lidResolver != nil {
+			if phone := util.ResolveLIDToPhone(ctx, s.lidResolver, msg.SenderJID); phone != "" {
 				return phone
 			}
 		}

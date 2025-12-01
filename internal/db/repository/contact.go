@@ -312,3 +312,37 @@ func (r *ContactRepository) UpdatePastParticipantsPushNames(ctx context.Context,
 
 	return int(result.RowsAffected()), nil
 }
+
+// ResolveLIDToPhone resolves a LID number to phone number using whatsmeow_lid_map table
+// Returns the phone number if found, or empty string if not found
+func (r *ContactRepository) ResolveLIDToPhone(ctx context.Context, lidNumber string) string {
+	var phone string
+	err := r.pool.QueryRow(ctx, `SELECT pn FROM whatsmeow_lid_map WHERE lid = $1`, lidNumber).Scan(&phone)
+	if err != nil {
+		return ""
+	}
+	return phone
+}
+
+// GetLIDToPhoneMappings returns mappings of LID to phone for given phone numbers
+// Used to find which LIDs map to phones that have pushNames
+func (r *ContactRepository) GetLIDToPhoneMappings(ctx context.Context, phones []string) (map[string]string, error) {
+	if len(phones) == 0 {
+		return nil, nil
+	}
+
+	rows, err := r.pool.Query(ctx, `SELECT lid, pn FROM whatsmeow_lid_map WHERE pn = ANY($1)`, phones)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make(map[string]string)
+	for rows.Next() {
+		var lid, pn string
+		if err := rows.Scan(&lid, &pn); err == nil {
+			result[lid] = pn
+		}
+	}
+	return result, rows.Err()
+}

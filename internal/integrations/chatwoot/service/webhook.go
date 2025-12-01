@@ -165,10 +165,12 @@ func (s *Service) GetQuotedMessage(ctx context.Context, sessionID string, payloa
 		return nil
 	}
 
+	// Use the original SenderJID (which may be LID format) for Participant
+	// WhatsApp expects LID format in group quotes to avoid mention notifications
 	return &core.QuotedMessageInfo{
 		MsgId:     msg.MsgId,
 		ChatJID:   msg.ChatJID,
-		SenderJID: msg.SenderJID,
+		SenderJID: msg.SenderJID, // Keep original LID format
 		Content:   msg.Content,
 		FromMe:    msg.FromMe,
 	}

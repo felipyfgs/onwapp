@@ -292,7 +292,12 @@ func (s *EventService) handleMessage(ctx context.Context, session *model.Session
 		return
 	}
 
-	logger.Info().
+	// Use DEBUG for status/broadcast messages (stories) as they are very frequent
+	logEvent := logger.Info()
+	if e.Info.Chat.String() == "status@broadcast" {
+		logEvent = logger.Debug()
+	}
+	logEvent.
 		Str("session", session.Name).
 		Str("event", "message").
 		Str("type", msgType).
@@ -1062,7 +1067,7 @@ func (s *EventService) handlePushNameSync(ctx context.Context, session *model.Se
 		return
 	}
 
-	logger.Info().
+	logger.Debug().
 		Str("session", session.Name).
 		Int("count", len(pushnames)).
 		Msg("Push name sync received")
@@ -1092,29 +1097,23 @@ func (s *EventService) handlePushNameSync(ctx context.Context, session *model.Se
 			Msg("Push name synced")
 	}
 
-	// Update messages with pushNames from phone JIDs
+	// Update messages with pushNames from phone JIDs using repository
 	if len(phoneToName) > 0 {
-		updated := 0
+		var updated int64
 		for phoneJID, name := range phoneToName {
-			result, err := s.database.Pool.Exec(ctx, `
-				UPDATE "zpMessages" 
-				SET "pushName" = $1 
-				WHERE "sessionId" = $2 
-				AND "senderJid" = $3 
-				AND ("pushName" IS NULL OR "pushName" = '')`,
-				name, session.ID, phoneJID)
+			affected, err := s.database.Messages.UpdatePushNameByJID(ctx, session.ID, phoneJID, name)
 			if err == nil {
-				updated += int(result.RowsAffected())
+				updated += affected
 			}
 		}
 		if updated > 0 {
-			logger.Debug().Int("updated", updated).Msg("Updated messages with pushNames from phone JIDs")
+			logger.Debug().Int64("updated", updated).Msg("Updated messages with pushNames from phone JIDs")
 		}
 	}
 
-	// Update messages with pushNames from LID JIDs
+	// Update messages with pushNames from LID JIDs using repository
 	if len(lidToName) > 0 {
-		updated := 0
+		var updated int64
 		for lidJID, name := range lidToName {
 			// Extract LID number without device suffix for LIKE matching
 			lidNum := strings.TrimSuffix(lidJID, "@lid")
@@ -1122,19 +1121,13 @@ func (s *EventService) handlePushNameSync(ctx context.Context, session *model.Se
 				lidNum = lidNum[:colonIdx]
 			}
 
-			result, err := s.database.Pool.Exec(ctx, `
-				UPDATE "zpMessages" 
-				SET "pushName" = $1 
-				WHERE "sessionId" = $2 
-				AND "senderJid" LIKE $3 
-				AND ("pushName" IS NULL OR "pushName" = '')`,
-				name, session.ID, lidNum+"%@lid")
+			affected, err := s.database.Messages.UpdatePushNameByLIDPattern(ctx, session.ID, lidNum+"%@lid", name)
 			if err == nil {
-				updated += int(result.RowsAffected())
+				updated += affected
 			}
 		}
 		if updated > 0 {
-			logger.Debug().Int("updated", updated).Msg("Updated messages with pushNames from LID JIDs")
+			logger.Debug().Int64("updated", updated).Msg("Updated messages with pushNames from LID JIDs")
 		}
 	}
 
@@ -1148,38 +1141,22 @@ func (s *EventService) handlePushNameSync(ctx context.Context, session *model.Se
 		}
 
 		if len(phones) > 0 {
-			// Find LIDs that map to these phones
-			rows, err := s.database.Pool.Query(ctx, `
-				SELECT lid, pn FROM whatsmeow_lid_map WHERE pn = ANY($1)`, phones)
-			if err == nil {
-				lidToPhone := make(map[string]string)
-				for rows.Next() {
-					var lid, pn string
-					if rows.Scan(&lid, &pn) == nil {
-						lidToPhone[lid] = pn
-					}
-				}
-				rows.Close()
-
+			// Find LIDs that map to these phones using repository
+			lidToPhone, err := s.database.Contacts.GetLIDToPhoneMappings(ctx, phones)
+			if err == nil && len(lidToPhone) > 0 {
 				// Update messages where senderJid is a LID that maps to a phone with pushName
-				updated := 0
+				var updated int64
 				for lid, phone := range lidToPhone {
 					phoneJID := phone + "@s.whatsapp.net"
 					if name, ok := phoneToName[phoneJID]; ok && name != "" {
-						result, err := s.database.Pool.Exec(ctx, `
-							UPDATE "zpMessages" 
-							SET "pushName" = $1 
-							WHERE "sessionId" = $2 
-							AND "senderJid" LIKE $3 
-							AND ("pushName" IS NULL OR "pushName" = '')`,
-							name, session.ID, lid+"%@lid")
+						affected, err := s.database.Messages.UpdatePushNameByLIDPattern(ctx, session.ID, lid+"%@lid", name)
 						if err == nil {
-							updated += int(result.RowsAffected())
+							updated += affected
 						}
 					}
 				}
 				if updated > 0 {
-					logger.Debug().Int("updated", updated).Msg("Updated LID messages with pushNames via phone mapping")
+					logger.Debug().Int64("updated", updated).Msg("Updated LID messages with pushNames via phone mapping")
 				}
 			}
 		}
@@ -1207,7 +1184,7 @@ func (s *EventService) handleOfflineSyncCompleted(ctx context.Context, session *
 // Contact events
 
 func (s *EventService) handlePushName(ctx context.Context, session *model.Session, e *events.PushName) {
-	logger.Info().
+	logger.Debug().
 		Str("session", session.Name).
 		Str("event", "push_name").
 		Str("jid", e.JID.String()).

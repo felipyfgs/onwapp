@@ -3,8 +3,6 @@ package sync
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5/pgxpool"
-
 	"zpwoot/internal/integrations/chatwoot/core"
 	"zpwoot/internal/integrations/chatwoot/util"
 	"zpwoot/internal/logger"
@@ -14,16 +12,16 @@ import (
 type ContactSyncer struct {
 	repo           *Repository
 	contactsGetter ContactsGetter
-	zpPool         *pgxpool.Pool
+	lidResolver    util.LIDResolver
 	sessionID      string
 }
 
 // NewContactSyncer creates a new contact syncer
-func NewContactSyncer(repo *Repository, contactsGetter ContactsGetter, zpPool *pgxpool.Pool, sessionID string) *ContactSyncer {
+func NewContactSyncer(repo *Repository, contactsGetter ContactsGetter, lidResolver util.LIDResolver, sessionID string) *ContactSyncer {
 	return &ContactSyncer{
 		repo:           repo,
 		contactsGetter: contactsGetter,
-		zpPool:         zpPool,
+		lidResolver:    lidResolver,
 		sessionID:      sessionID,
 	}
 }
@@ -71,7 +69,7 @@ func (s *ContactSyncer) filterValidContacts(ctx context.Context, contacts []core
 
 		// Handle LID JIDs - try to resolve to phone number
 		if util.IsLIDJID(c.JID) {
-			phone := util.ResolveLIDToPhone(ctx, s.zpPool, c.JID)
+			phone := util.ResolveLIDToPhone(ctx, s.lidResolver, c.JID)
 			if phone == "" {
 				stats.ContactsSkipped++
 				continue

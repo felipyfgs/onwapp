@@ -34,6 +34,7 @@ func NewContactManager() *ContactManager {
 }
 
 // GetOrCreateContactAndConversation handles contact and conversation creation with proper caching
+// Note: We cache ContactID (not ConversationID) to ensure autoReopen is always checked
 func (cm *ContactManager) GetOrCreateContactAndConversation(
 	ctx context.Context,
 	c *client.Client,
@@ -49,101 +50,125 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 	isGroup := strings.HasSuffix(remoteJid, "@g.us")
 	cacheKey := fmt.Sprintf("%s:%s", cfg.SessionID, remoteJid)
 
+	var contactID int
+	var needsContactLookup bool = true
+
+	// Check cache for contactID (not conversationID)
 	if entry, ok := cm.conversationCache.Load(cacheKey); ok {
 		cached := entry.(core.ContactCacheEntry)
 		if time.Now().Before(cached.ExpiresAt) {
-			return cached.ConversationID, nil
+			contactID = cached.ContactID
+			needsContactLookup = false
+		} else {
+			cm.conversationCache.Delete(cacheKey)
 		}
-		cm.conversationCache.Delete(cacheKey)
 	}
 
-	lockKey := fmt.Sprintf("lock:%s", cacheKey)
-	if _, loaded := cm.conversationLocks.LoadOrStore(lockKey, true); loaded {
-		for i := 0; i < 50; i++ {
-			time.Sleep(100 * time.Millisecond)
+	// If we need to look up contact, use locking to prevent duplicate creation
+	if needsContactLookup {
+		lockKey := fmt.Sprintf("lock:%s", cacheKey)
+		if _, loaded := cm.conversationLocks.LoadOrStore(lockKey, true); loaded {
+			// Another goroutine is creating the contact, wait for it
+			for i := 0; i < 50; i++ {
+				time.Sleep(100 * time.Millisecond)
+				if entry, ok := cm.conversationCache.Load(cacheKey); ok {
+					cached := entry.(core.ContactCacheEntry)
+					if time.Now().Before(cached.ExpiresAt) {
+						contactID = cached.ContactID
+						needsContactLookup = false
+						break
+					}
+				}
+			}
+			if needsContactLookup {
+				return 0, core.ErrConversationTimeout
+			}
+		} else {
+			defer cm.conversationLocks.Delete(lockKey)
+
+			// Double-check cache after acquiring lock
 			if entry, ok := cm.conversationCache.Load(cacheKey); ok {
 				cached := entry.(core.ContactCacheEntry)
 				if time.Now().Before(cached.ExpiresAt) {
-					return cached.ConversationID, nil
+					contactID = cached.ContactID
+					needsContactLookup = false
 				}
 			}
 		}
-		return 0, core.ErrConversationTimeout
-	}
-	defer cm.conversationLocks.Delete(lockKey)
-
-	if entry, ok := cm.conversationCache.Load(cacheKey); ok {
-		cached := entry.(core.ContactCacheEntry)
-		if time.Now().Before(cached.ExpiresAt) {
-			return cached.ConversationID, nil
-		}
 	}
 
-	phoneNumber := util.ExtractPhoneFromJID(remoteJid)
+	// Create/get contact if not cached
+	if needsContactLookup {
+		phoneNumber := util.ExtractPhoneFromJID(remoteJid)
 
-	var contact *core.Contact
-	var err error
+		var contact *core.Contact
+		var err error
 
-	if isGroup {
-		groupName := fmt.Sprintf("%s (GROUP)", phoneNumber)
+		if isGroup {
+			groupName := fmt.Sprintf("%s (GROUP)", phoneNumber)
 
-		if getGroupInfo != nil {
-			if name, err := getGroupInfo(ctx, sessionName, remoteJid); err == nil && name != "" {
-				groupName = fmt.Sprintf("%s (GROUP)", name)
-				logger.Debug().
-					Str("groupJid", remoteJid).
-					Str("groupName", name).
-					Msg("Chatwoot: got group name from WhatsApp")
-			} else if err != nil {
-				logger.Debug().
-					Err(err).
-					Str("groupJid", remoteJid).
-					Msg("Chatwoot: failed to get group name, using fallback")
+			if getGroupInfo != nil {
+				if name, err := getGroupInfo(ctx, sessionName, remoteJid); err == nil && name != "" {
+					groupName = fmt.Sprintf("%s (GROUP)", name)
+					logger.Debug().
+						Str("groupJid", remoteJid).
+						Str("groupName", name).
+						Msg("Chatwoot: got group name from WhatsApp")
+				} else if err != nil {
+					logger.Debug().
+						Err(err).
+						Str("groupJid", remoteJid).
+						Msg("Chatwoot: failed to get group name, using fallback")
+				}
 			}
-		}
 
-		var avatarURL string
-		if getProfilePicture != nil {
-			if pic, err := getProfilePicture(ctx, sessionName, remoteJid); err == nil && pic != "" {
-				avatarURL = pic
+			var avatarURL string
+			if getProfilePicture != nil {
+				if pic, err := getProfilePicture(ctx, sessionName, remoteJid); err == nil && pic != "" {
+					avatarURL = pic
+				}
 			}
-		}
 
-		contact, err = cm.getOrCreateGroupContact(ctx, c, cfg, remoteJid, groupName, avatarURL)
-	} else {
-		contactName := pushName
-		if contactName == "" {
-			contactName = phoneNumber
-		}
-
-		var avatarURL string
-		if getProfilePicture != nil && !isFromMe {
-			if pic, err := getProfilePicture(ctx, sessionName, phoneNumber); err == nil && pic != "" {
-				avatarURL = pic
+			contact, err = cm.getOrCreateGroupContact(ctx, c, cfg, remoteJid, groupName, avatarURL)
+		} else {
+			contactName := pushName
+			if contactName == "" {
+				contactName = phoneNumber
 			}
+
+			var avatarURL string
+			if getProfilePicture != nil && !isFromMe {
+				if pic, err := getProfilePicture(ctx, sessionName, phoneNumber); err == nil && pic != "" {
+					avatarURL = pic
+				}
+			}
+
+			contact, err = cm.getOrCreateIndividualContact(ctx, c, cfg, phoneNumber, remoteJid, contactName, avatarURL)
 		}
 
-		contact, err = cm.getOrCreateIndividualContact(ctx, c, cfg, phoneNumber, remoteJid, contactName, avatarURL)
+		if err != nil {
+			return 0, fmt.Errorf("failed to get/create contact: %w", err)
+		}
+
+		contactID = contact.ID
+
+		// Cache the contactID (not conversationID)
+		cm.conversationCache.Store(cacheKey, core.ContactCacheEntry{
+			ContactID: contactID,
+			ExpiresAt: time.Now().Add(cm.cacheTTL),
+		})
 	}
 
-	if err != nil {
-		return 0, fmt.Errorf("failed to get/create contact: %w", err)
-	}
-
+	// ALWAYS call GetOrCreateConversation to check status and autoReopen if needed
 	status := "open"
 	if cfg.StartPending {
 		status = "pending"
 	}
 
-	conv, err := c.GetOrCreateConversation(ctx, contact.ID, cfg.InboxID, status, cfg.AutoReopen)
+	conv, err := c.GetOrCreateConversation(ctx, contactID, cfg.InboxID, status, cfg.AutoReopen)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get/create conversation: %w", err)
 	}
-
-	cm.conversationCache.Store(cacheKey, core.ContactCacheEntry{
-		ConversationID: conv.ID,
-		ExpiresAt:      time.Now().Add(cm.cacheTTL),
-	})
 
 	return conv.ID, nil
 }

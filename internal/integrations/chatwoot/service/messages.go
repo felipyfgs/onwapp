@@ -32,8 +32,8 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 
 	remoteJid := evt.Info.Chat.String()
 
-	if util.IsLIDJID(remoteJid) && s.database != nil {
-		convertedJid := util.ConvertLIDToStandardJID(ctx, s.database.Pool, remoteJid)
+	if util.IsLIDJID(remoteJid) && s.database != nil && s.database.Contacts != nil {
+		convertedJid := util.ConvertLIDToStandardJID(ctx, s.database.Contacts, remoteJid)
 		if convertedJid != remoteJid {
 			logger.Debug().
 				Str("original", remoteJid).
@@ -107,6 +107,9 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 
 	cwMsg, err := c.CreateMessage(ctx, convID, msgReq)
 	if err != nil {
+		if core.IsNotFoundError(err) {
+			s.HandleConversationNotFound(ctx, session.ID, convID)
+		}
 		return fmt.Errorf("failed to create message in chatwoot: %w", err)
 	}
 
@@ -158,6 +161,9 @@ func (s *Service) processIncomingMediaMessage(ctx context.Context, session *mode
 	content := mediaInfo.Caption
 	cwMsg, err := c.CreateMessageWithAttachmentAndMime(ctx, conversationID, content, "incoming", bytes.NewReader(mediaData), mediaInfo.Filename, mediaInfo.MimeType, contentAttributes)
 	if err != nil {
+		if core.IsNotFoundError(err) {
+			s.HandleConversationNotFound(ctx, session.ID, conversationID)
+		}
 		return fmt.Errorf("failed to upload media to chatwoot: %w", err)
 	}
 
@@ -186,8 +192,8 @@ func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Ses
 
 	remoteJid := evt.Info.Chat.String()
 
-	if util.IsLIDJID(remoteJid) && s.database != nil {
-		convertedJid := util.ConvertLIDToStandardJID(ctx, s.database.Pool, remoteJid)
+	if util.IsLIDJID(remoteJid) && s.database != nil && s.database.Contacts != nil {
+		convertedJid := util.ConvertLIDToStandardJID(ctx, s.database.Contacts, remoteJid)
 		if convertedJid != remoteJid {
 			remoteJid = convertedJid
 		}
@@ -247,6 +253,9 @@ func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Ses
 
 	cwMsg, err := c.CreateMessage(ctx, conv.ID, msgReq)
 	if err != nil {
+		if core.IsNotFoundError(err) {
+			s.HandleConversationNotFound(ctx, session.ID, conv.ID)
+		}
 		return fmt.Errorf("failed to create outgoing message in chatwoot: %w", err)
 	}
 
@@ -326,6 +335,9 @@ func (s *Service) ProcessReactionMessage(ctx context.Context, session *model.Ses
 
 	_, err = c.CreateMessage(ctx, conv.ID, msgReq)
 	if err != nil {
+		if core.IsNotFoundError(err) {
+			s.HandleConversationNotFound(ctx, session.ID, conv.ID)
+		}
 		return fmt.Errorf("failed to send reaction to chatwoot: %w", err)
 	}
 
@@ -378,6 +390,9 @@ func (s *Service) HandleMessageRead(ctx context.Context, session *model.Session,
 
 	conv, contactSourceID, err := c.GetConversationWithContactInbox(ctx, *msg.CwConvId)
 	if err != nil {
+		if core.IsNotFoundError(err) {
+			s.HandleConversationNotFound(ctx, session.ID, *msg.CwConvId)
+		}
 		return nil
 	}
 	_ = conv
@@ -387,6 +402,10 @@ func (s *Service) HandleMessageRead(ctx context.Context, session *model.Session,
 	}
 
 	if err := c.UpdateLastSeen(ctx, inbox.InboxIdentifier, contactSourceID, *msg.CwConvId); err != nil {
+		if core.IsNotFoundError(err) {
+			s.HandleConversationNotFound(ctx, session.ID, *msg.CwConvId)
+			return nil
+		}
 		logger.Debug().Err(err).Int("conversationId", *msg.CwConvId).Msg("Chatwoot: failed to update last_seen")
 		return err
 	}
@@ -413,6 +432,11 @@ func (s *Service) ProcessMessageDelete(ctx context.Context, session *model.Sessi
 	c := client.NewClient(cfg.URL, cfg.Token, cfg.Account)
 
 	if err := c.DeleteMessage(ctx, *msg.CwConvId, *msg.CwMsgId); err != nil {
+		if core.IsNotFoundError(err) {
+			s.HandleConversationNotFound(ctx, session.ID, *msg.CwConvId)
+			_ = s.database.Messages.Delete(ctx, session.ID, messageID)
+			return nil
+		}
 		return fmt.Errorf("failed to delete message from Chatwoot: %w", err)
 	}
 

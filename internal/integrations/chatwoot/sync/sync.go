@@ -5,12 +5,12 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/lib/pq"
 
 	"zpwoot/internal/integrations/chatwoot/client"
 	"zpwoot/internal/integrations/chatwoot/core"
+	"zpwoot/internal/integrations/chatwoot/util"
 	"zpwoot/internal/logger"
 	"zpwoot/internal/model"
 )
@@ -42,7 +42,7 @@ type ChatwootDBSync struct {
 	mediaGetter    MediaGetter
 	sessionID      string
 	cwDB           *sql.DB
-	zpPool         *pgxpool.Pool
+	lidResolver    util.LIDResolver
 }
 
 // NewChatwootDBSync creates a new direct database sync service
@@ -52,7 +52,7 @@ func NewChatwootDBSync(
 	contactsGetter ContactsGetter,
 	mediaGetter MediaGetter,
 	sessionID string,
-	zpPool *pgxpool.Pool,
+	lidResolver util.LIDResolver,
 ) (*ChatwootDBSync, error) {
 	if cfg.ChatwootDBHost == "" {
 		return nil, core.ErrDBNotConfigured
@@ -80,7 +80,7 @@ func NewChatwootDBSync(
 		mediaGetter:    mediaGetter,
 		sessionID:      sessionID,
 		cwDB:           db,
-		zpPool:         zpPool,
+		lidResolver:    lidResolver,
 	}, nil
 }
 
@@ -123,7 +123,7 @@ func (s *ChatwootDBSync) SyncAll(ctx context.Context, daysLimit int) (*core.Sync
 
 // SyncContacts synchronizes contacts to Chatwoot
 func (s *ChatwootDBSync) SyncContacts(ctx context.Context, daysLimit int) (*core.SyncStats, error) {
-	syncer := NewContactSyncer(s.repo, s.contactsGetter, s.zpPool, s.sessionID)
+	syncer := NewContactSyncer(s.repo, s.contactsGetter, s.lidResolver, s.sessionID)
 	return syncer.Sync(ctx, daysLimit)
 }
 
@@ -136,7 +136,7 @@ func (s *ChatwootDBSync) SyncMessages(ctx context.Context, daysLimit int) (*core
 		s.msgRepo,
 		s.contactsGetter,
 		s.mediaGetter,
-		s.zpPool,
+		s.lidResolver,
 		s.sessionID,
 	)
 
