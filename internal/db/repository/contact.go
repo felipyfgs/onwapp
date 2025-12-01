@@ -64,6 +64,39 @@ func (r *ContactRepository) GetPushName(ctx context.Context, deviceJID, theirJID
 	return pushName
 }
 
+// GetBestContactName returns the best available name for a contact
+// Priority: 1. full_name (address book), 2. business_name, 3. push_name
+// Returns empty string if no name found
+func (r *ContactRepository) GetBestContactName(ctx context.Context, deviceJID, theirJID string) string {
+	if theirJID == "" {
+		return ""
+	}
+
+	var fullName, businessName, pushName string
+	err := r.pool.QueryRow(ctx, `
+		SELECT 
+			COALESCE(full_name, ''),
+			COALESCE(business_name, ''),
+			COALESCE(push_name, '')
+		FROM whatsmeow_contacts 
+		WHERE our_jid = $1 AND their_jid = $2`,
+		deviceJID, theirJID,
+	).Scan(&fullName, &businessName, &pushName)
+
+	if err != nil {
+		return ""
+	}
+
+	// Return best available name with priority
+	if fullName != "" {
+		return fullName
+	}
+	if businessName != "" {
+		return businessName
+	}
+	return pushName
+}
+
 // GetPushNameBatch returns pushNames for multiple JIDs efficiently
 // Supports both regular JIDs (@s.whatsapp.net) and LID JIDs (@lid)
 func (r *ContactRepository) GetPushNameBatch(ctx context.Context, deviceJID string, jids []string) map[string]string {

@@ -167,11 +167,19 @@ func (c *Client) GetInbox(ctx context.Context, inboxID int) (*core.Inbox, error)
 	return &inbox, nil
 }
 
-// CreateInboxWithOptions creates a new API inbox with lock_to_single_conversation option
-func (c *Client) CreateInboxWithOptions(ctx context.Context, name, webhookURL string, lockToSingleConversation bool) (*core.Inbox, error) {
+// CreateInboxWithOptions creates a new API inbox with conversation management options
+// When autoReopen is true:
+//   - lock_to_single_conversation: true (one conversation per contact)
+//   - allow_messages_after_resolved: true (Chatwoot auto-reopens resolved conversations)
+//
+// When autoReopen is false:
+//   - lock_to_single_conversation: false
+//   - allow_messages_after_resolved: false (new messages create new conversations)
+func (c *Client) CreateInboxWithOptions(ctx context.Context, name, webhookURL string, autoReopen bool) (*core.Inbox, error) {
 	body := map[string]interface{}{
-		"name":                        name,
-		"lock_to_single_conversation": lockToSingleConversation,
+		"name":                          name,
+		"lock_to_single_conversation":   autoReopen,
+		"allow_messages_after_resolved": autoReopen,
 		"channel": map[string]interface{}{
 			"type":        "api",
 			"webhook_url": webhookURL,
@@ -191,10 +199,18 @@ func (c *Client) CreateInboxWithOptions(ctx context.Context, name, webhookURL st
 	return &inbox, nil
 }
 
-// UpdateInboxLockSetting updates the lock_to_single_conversation setting of an inbox
-func (c *Client) UpdateInboxLockSetting(ctx context.Context, inboxID int, lockToSingleConversation bool) (*core.Inbox, error) {
+// UpdateInboxConversationSettings updates conversation management settings of an inbox
+// When autoReopen is true:
+//   - lock_to_single_conversation: true (one conversation per contact)
+//   - allow_messages_after_resolved: true (Chatwoot auto-reopens resolved conversations)
+//
+// When autoReopen is false:
+//   - lock_to_single_conversation: false
+//   - allow_messages_after_resolved: false (new messages create new conversations)
+func (c *Client) UpdateInboxConversationSettings(ctx context.Context, inboxID int, autoReopen bool) (*core.Inbox, error) {
 	body := map[string]interface{}{
-		"lock_to_single_conversation": lockToSingleConversation,
+		"lock_to_single_conversation":   autoReopen,
+		"allow_messages_after_resolved": autoReopen,
 	}
 
 	data, err := c.doRequest(ctx, http.MethodPatch, fmt.Sprintf("/inboxes/%d", inboxID), body)
@@ -247,24 +263,26 @@ func (c *Client) GetInboxByName(ctx context.Context, name string) (*core.Inbox, 
 	return nil, nil
 }
 
-// GetOrCreateInboxWithOptions gets an existing inbox or creates one with lock_to_single_conversation option
-func (c *Client) GetOrCreateInboxWithOptions(ctx context.Context, name, webhookURL string, lockToSingleConversation bool) (*core.Inbox, error) {
+// GetOrCreateInboxWithOptions gets an existing inbox or creates one with conversation management options
+// The autoReopen parameter controls:
+//   - lock_to_single_conversation: ensures one conversation per contact
+//   - allow_messages_after_resolved: Chatwoot auto-reopens resolved conversations on new messages
+func (c *Client) GetOrCreateInboxWithOptions(ctx context.Context, name, webhookURL string, autoReopen bool) (*core.Inbox, error) {
 	inbox, err := c.GetInboxByName(ctx, name)
 	if err != nil {
 		return nil, err
 	}
 
 	if inbox != nil {
-		if lockToSingleConversation {
-			_, err := c.UpdateInboxLockSetting(ctx, inbox.ID, lockToSingleConversation)
-			if err != nil {
-				logger.Warn().Err(err).Int("inboxId", inbox.ID).Msg("Chatwoot: failed to update inbox lock_to_single_conversation")
-			}
+		// Always update inbox settings to ensure they match the current config
+		_, err := c.UpdateInboxConversationSettings(ctx, inbox.ID, autoReopen)
+		if err != nil {
+			logger.Warn().Err(err).Int("inboxId", inbox.ID).Bool("autoReopen", autoReopen).Msg("Chatwoot: failed to update inbox conversation settings")
 		}
 		return inbox, nil
 	}
 
-	return c.CreateInboxWithOptions(ctx, name, webhookURL, lockToSingleConversation)
+	return c.CreateInboxWithOptions(ctx, name, webhookURL, autoReopen)
 }
 
 // =============================================================================
@@ -619,7 +637,9 @@ type ConversationResult struct {
 	WasCreated   bool
 }
 
-// GetOrCreateConversation gets an open conversation or creates a new one
+// GetOrCreateConversation gets an existing conversation or creates a new one
+// Note: Conversation reopening is now handled natively by Chatwoot via allow_messages_after_resolved
+// inbox setting, configured when autoReopen=true in GetOrCreateInboxWithOptions
 func (c *Client) GetOrCreateConversation(ctx context.Context, contactID, inboxID int, status string, autoReopen bool) (*core.Conversation, error) {
 	result, err := c.GetOrCreateConversationWithInfo(ctx, contactID, inboxID, status, autoReopen)
 	if err != nil {
@@ -628,7 +648,10 @@ func (c *Client) GetOrCreateConversation(ctx context.Context, contactID, inboxID
 	return result.Conversation, nil
 }
 
-// GetOrCreateConversationWithInfo gets an open conversation or creates a new one, returning metadata about the operation
+// GetOrCreateConversationWithInfo gets an existing conversation or creates a new one, returning metadata
+// Note: When autoReopen=true, the inbox is configured with allow_messages_after_resolved=true,
+// which means Chatwoot automatically reopens resolved conversations when new messages arrive.
+// We simply return the existing conversation and let Chatwoot handle the status management.
 func (c *Client) GetOrCreateConversationWithInfo(ctx context.Context, contactID, inboxID int, status string, autoReopen bool) (*ConversationResult, error) {
 	conversations, err := c.ListContactConversations(ctx, contactID)
 	if err != nil {
@@ -640,24 +663,20 @@ func (c *Client) GetOrCreateConversationWithInfo(ctx context.Context, contactID,
 			continue
 		}
 
+		// When autoReopen=true: Chatwoot handles reopening via allow_messages_after_resolved
+		// Just return the conversation (even if resolved) - Chatwoot will reopen it automatically
 		if autoReopen {
-			if conv.Status == "resolved" {
-				reopened, err := c.ToggleConversationStatus(ctx, conv.ID, status)
-				if err != nil {
-					logger.Warn().Err(err).Int("conversationId", conv.ID).Msg("Chatwoot: failed to reopen conversation, using existing")
-					return &ConversationResult{Conversation: &conv, WasReopened: false}, nil
-				}
-				logger.Info().Int("conversationId", conv.ID).Msg("Chatwoot: conversation reopened due to new message")
-				return &ConversationResult{Conversation: reopened, WasReopened: true}, nil
-			}
 			return &ConversationResult{Conversation: &conv, WasReopened: false}, nil
 		}
 
+		// When autoReopen=false: Only use non-resolved conversations
+		// Resolved conversations are skipped, and a new one will be created
 		if conv.Status != "resolved" {
 			return &ConversationResult{Conversation: &conv, WasReopened: false}, nil
 		}
 	}
 
+	// No suitable conversation found, create a new one
 	req := &CreateConversationRequest{
 		InboxID:   strconv.Itoa(inboxID),
 		ContactID: strconv.Itoa(contactID),
@@ -669,7 +688,6 @@ func (c *Client) GetOrCreateConversationWithInfo(ctx context.Context, contactID,
 		return nil, err
 	}
 
-	// Validate that we got a valid conversation ID
 	if newConv == nil || newConv.ID == 0 {
 		return nil, fmt.Errorf("failed to create conversation: received invalid conversation ID")
 	}

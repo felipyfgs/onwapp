@@ -61,6 +61,15 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 		participantJid = evt.Info.Sender.String()
 	}
 
+	// Create contact name fetcher that queries WhatsApp contacts database
+	var contactNameFetcher ContactNameFetcher
+	if s.database != nil && s.database.Contacts != nil && session.Device != nil && session.Device.ID != nil {
+		deviceJID := session.Device.ID.String()
+		contactNameFetcher = func(ctx context.Context, jid string) string {
+			return s.database.Contacts.GetBestContactName(ctx, deviceJID, jid)
+		}
+	}
+
 	convID, err := s.contactManager.GetOrCreateContactAndConversation(
 		ctx,
 		c,
@@ -71,6 +80,7 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 		participantJid,
 		s.profilePictureFetcher,
 		s.groupInfoFetcher,
+		contactNameFetcher,
 		session.Name,
 	)
 	if err != nil {

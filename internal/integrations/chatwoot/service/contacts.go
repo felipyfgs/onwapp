@@ -19,6 +19,10 @@ type ProfilePictureFetcher func(ctx context.Context, sessionName string, jid str
 // GroupInfoFetcher is a function type for getting group metadata from WhatsApp
 type GroupInfoFetcher func(ctx context.Context, sessionName string, groupJid string) (string, error)
 
+// ContactNameFetcher is a function type for getting the best contact name from WhatsApp contacts
+// Priority: 1. full_name (address book), 2. business_name, 3. push_name
+type ContactNameFetcher func(ctx context.Context, jid string) string
+
 // ContactManager handles contact and conversation management with caching
 type ContactManager struct {
 	conversationCache sync.Map // map[cacheKey]conversationID
@@ -45,6 +49,7 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 	participantJid string,
 	getProfilePicture ProfilePictureFetcher,
 	getGroupInfo GroupInfoFetcher,
+	getContactName ContactNameFetcher,
 	sessionName string,
 ) (int, error) {
 	isGroup := strings.HasSuffix(remoteJid, "@g.us")
@@ -52,6 +57,7 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 
 	var contactID int
 	var needsContactLookup bool = true
+	var usedCache bool = false
 
 	// Check cache for contactID (not conversationID)
 	if entry, ok := cm.conversationCache.Load(cacheKey); ok {
@@ -59,6 +65,7 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 		if time.Now().Before(cached.ExpiresAt) {
 			contactID = cached.ContactID
 			needsContactLookup = false
+			usedCache = true
 		} else {
 			cm.conversationCache.Delete(cacheKey)
 		}
@@ -76,6 +83,7 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 					if time.Now().Before(cached.ExpiresAt) {
 						contactID = cached.ContactID
 						needsContactLookup = false
+						usedCache = true
 						break
 					}
 				}
@@ -92,6 +100,7 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 				if time.Now().Before(cached.ExpiresAt) {
 					contactID = cached.ContactID
 					needsContactLookup = false
+					usedCache = true
 				}
 			}
 		}
@@ -131,7 +140,14 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 
 			contact, err = cm.getOrCreateGroupContact(ctx, c, cfg, remoteJid, groupName, avatarURL)
 		} else {
-			contactName := pushName
+			// Priority for contact name: 1. Address book (full_name), 2. pushName, 3. phone number
+			contactName := ""
+			if getContactName != nil {
+				contactName = getContactName(ctx, remoteJid)
+			}
+			if contactName == "" && pushName != "" {
+				contactName = pushName
+			}
 			if contactName == "" {
 				contactName = phoneNumber
 			}
@@ -159,6 +175,22 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 		})
 	}
 
+	// If contact was from cache, check if name needs updating
+	// This ensures contact names are updated even when using cached contactID
+	if usedCache && !isGroup && !isFromMe {
+		// Get the best available name: address book > pushName > (skip update)
+		bestName := ""
+		if getContactName != nil {
+			bestName = getContactName(ctx, remoteJid)
+		}
+		if bestName == "" && pushName != "" {
+			bestName = pushName
+		}
+		if bestName != "" {
+			go cm.maybeUpdateContactName(context.Background(), c, contactID, bestName)
+		}
+	}
+
 	// ALWAYS call GetOrCreateConversation to check status and autoReopen if needed
 	status := "open"
 	if cfg.StartPending {
@@ -171,6 +203,47 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 	}
 
 	return conv.ID, nil
+}
+
+// maybeUpdateContactName updates contact name if it's still set to phone number
+func (cm *ContactManager) maybeUpdateContactName(ctx context.Context, c *client.Client, contactID int, pushName string) {
+	contact, err := c.GetContact(ctx, contactID)
+	if err != nil {
+		logger.Debug().Err(err).Int("contactId", contactID).Msg("Chatwoot: failed to get contact for name update")
+		return
+	}
+
+	// Only update if current name looks like a phone number and pushName is different
+	if contact != nil && pushName != "" && contact.Name != pushName {
+		// Check if current name is just a phone number (starts with + or is all digits)
+		currentName := contact.Name
+		isPhoneNumber := strings.HasPrefix(currentName, "+") ||
+			(len(currentName) > 8 && isNumeric(currentName))
+
+		if isPhoneNumber {
+			if _, err := c.UpdateContact(ctx, contactID, map[string]interface{}{
+				"name": pushName,
+			}); err != nil {
+				logger.Debug().Err(err).Int("contactId", contactID).Msg("Chatwoot: failed to update contact name")
+			} else {
+				logger.Info().
+					Int("contactId", contactID).
+					Str("oldName", currentName).
+					Str("newName", pushName).
+					Msg("Chatwoot: updated contact name from pushName")
+			}
+		}
+	}
+}
+
+// isNumeric checks if a string contains only digits
+func isNumeric(s string) bool {
+	for _, c := range s {
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 // getOrCreateIndividualContact handles individual (non-group) contacts
