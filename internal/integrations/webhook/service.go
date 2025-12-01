@@ -35,16 +35,7 @@ func NewService(repo *Repository) *Service {
 	}
 }
 
-// Payload represents the webhook payload sent to subscribers
-type Payload struct {
-	Event       string      `json:"event"`
-	SessionID   string      `json:"sessionId"`
-	SessionName string      `json:"sessionName"`
-	Timestamp   int64       `json:"timestamp"`
-	Raw         interface{} `json:"raw"`
-}
-
-// Send sends a webhook notification
+// Send sends a webhook notification with flat payload structure
 func (s *Service) Send(ctx context.Context, sessionID, sessionName, event string, rawEvent interface{}) {
 	wh, err := s.repo.GetEnabledBySession(ctx, sessionID)
 	if err != nil {
@@ -60,12 +51,23 @@ func (s *Service) Send(ctx context.Context, sessionID, sessionName, event string
 		return
 	}
 
-	payload := Payload{
-		Event:       event,
-		SessionID:   sessionID,
-		SessionName: sessionName,
-		Timestamp:   time.Now().Unix(),
-		Raw:         rawEvent,
+	// Build flat payload: metadata + event fields at same level
+	payload := make(map[string]interface{})
+	payload["event"] = event
+	payload["sessionId"] = sessionID
+	payload["sessionName"] = sessionName
+
+	// Merge event fields into payload (flatten)
+	if rawEvent != nil {
+		eventJSON, err := json.Marshal(rawEvent)
+		if err == nil {
+			var eventMap map[string]interface{}
+			if json.Unmarshal(eventJSON, &eventMap) == nil {
+				for k, v := range eventMap {
+					payload[k] = v
+				}
+			}
+		}
 	}
 
 	jsonPayload, err := json.Marshal(payload)
