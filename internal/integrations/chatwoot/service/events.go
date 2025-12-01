@@ -5,19 +5,27 @@ import (
 
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types/events"
+	"google.golang.org/protobuf/proto"
 
 	"zpwoot/internal/logger"
 	"zpwoot/internal/model"
+	"zpwoot/internal/queue"
 )
 
 // EventHandler handles WhatsApp events for Chatwoot integration
 type EventHandler struct {
-	service *Service
+	service       *Service
+	queueProducer *queue.Producer
 }
 
 // NewEventHandler creates a new Chatwoot event handler
 func NewEventHandler(svc *Service) *EventHandler {
 	return &EventHandler{service: svc}
+}
+
+// SetQueueProducer sets the queue producer for async message processing
+func (h *EventHandler) SetQueueProducer(producer *queue.Producer) {
+	h.queueProducer = producer
 }
 
 // HandleEvent processes WhatsApp events and forwards to Chatwoot
@@ -37,9 +45,9 @@ func (h *EventHandler) handleMessage(ctx context.Context, session *model.Session
 		return
 	}
 
-	if proto := evt.Message.GetProtocolMessage(); proto != nil {
-		if proto.GetType() == waE2E.ProtocolMessage_REVOKE {
-			h.handleMessageDelete(ctx, session, evt, proto)
+	if protoMsg := evt.Message.GetProtocolMessage(); protoMsg != nil {
+		if protoMsg.GetType() == waE2E.ProtocolMessage_REVOKE {
+			h.handleMessageDelete(ctx, session, evt, protoMsg)
 		}
 		return
 	}
@@ -53,6 +61,87 @@ func (h *EventHandler) handleMessage(ctx context.Context, session *model.Session
 		return
 	}
 
+	// Use queue if available, otherwise process directly
+	if h.queueProducer != nil && h.queueProducer.IsConnected() {
+		h.enqueueMessage(ctx, session, evt)
+		return
+	}
+
+	// Fallback to direct processing
+	if evt.Info.IsFromMe {
+		if err := h.service.ProcessOutgoingMessage(ctx, session, evt); err != nil {
+			logger.Warn().
+				Err(err).
+				Str("session", session.Name).
+				Str("messageId", evt.Info.ID).
+				Msg("Failed to process outgoing message for Chatwoot")
+		}
+		return
+	}
+
+	if err := h.service.ProcessIncomingMessage(ctx, session, evt); err != nil {
+		logger.Warn().
+			Err(err).
+			Str("session", session.Name).
+			Str("messageId", evt.Info.ID).
+			Msg("Failed to process message for Chatwoot")
+	}
+}
+
+// enqueueMessage serializes and enqueues a WhatsApp message for async processing
+func (h *EventHandler) enqueueMessage(ctx context.Context, session *model.Session, evt *events.Message) {
+	// Serialize the raw protobuf message
+	rawEvent, err := proto.Marshal(evt.Message)
+	if err != nil {
+		logger.Warn().Err(err).Str("messageId", evt.Info.ID).Msg("Failed to serialize message for queue, falling back to direct processing")
+		h.processDirectly(ctx, session, evt)
+		return
+	}
+
+	isGroup := evt.Info.Chat.Server == "g.us"
+	participantID := ""
+	if isGroup && evt.Info.Sender.String() != "" {
+		participantID = evt.Info.Sender.String()
+	}
+
+	queueMsg := &queue.WAToCWMessage{
+		MessageID:     evt.Info.ID,
+		ChatJID:       evt.Info.Chat.String(),
+		SenderJID:     evt.Info.Sender.String(),
+		PushName:      evt.Info.PushName,
+		IsFromMe:      evt.Info.IsFromMe,
+		IsGroup:       isGroup,
+		ParticipantID: participantID,
+		RawEvent:      rawEvent,
+	}
+
+	// Extract content for logging/debugging
+	queueMsg.Content = h.service.extractMessageContent(evt)
+
+	msgType := queue.MsgTypeIncoming
+	if evt.Info.IsFromMe {
+		msgType = queue.MsgTypeOutgoingSent
+	}
+
+	if err := h.queueProducer.PublishWAToCW(ctx, session.ID, session.Name, msgType, queueMsg); err != nil {
+		logger.Warn().
+			Err(err).
+			Str("session", session.Name).
+			Str("messageId", evt.Info.ID).
+			Msg("Failed to enqueue message, falling back to direct processing")
+		h.processDirectly(ctx, session, evt)
+		return
+	}
+
+	logger.Debug().
+		Str("session", session.Name).
+		Str("messageId", evt.Info.ID).
+		Bool("isFromMe", evt.Info.IsFromMe).
+		Msg("Message enqueued for Chatwoot processing")
+}
+
+// processDirectly processes the message without queue (fallback)
+func (h *EventHandler) processDirectly(ctx context.Context, session *model.Session, evt *events.Message) {
 	if evt.Info.IsFromMe {
 		if err := h.service.ProcessOutgoingMessage(ctx, session, evt); err != nil {
 			logger.Warn().

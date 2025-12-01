@@ -18,6 +18,7 @@ import (
 	"zpwoot/internal/integrations/chatwoot/util"
 	"zpwoot/internal/logger"
 	"zpwoot/internal/model"
+	"zpwoot/internal/queue"
 	"zpwoot/internal/service"
 )
 
@@ -28,6 +29,7 @@ type Handler struct {
 	whatsappSvc       *service.WhatsAppService
 	database          *db.Database
 	botCommandHandler *cwservice.BotCommandHandler
+	queueProducer     *queue.Producer
 }
 
 // NewHandler creates a new Chatwoot handler
@@ -39,6 +41,11 @@ func NewHandler(svc *cwservice.Service, sessionSvc *service.SessionService, what
 		database:          database,
 		botCommandHandler: cwservice.NewBotCommandHandler(svc, sessionSvc),
 	}
+}
+
+// SetQueueProducer sets the queue producer for async message processing
+func (h *Handler) SetQueueProducer(producer *queue.Producer) {
+	h.queueProducer = producer
 }
 
 // =============================================================================
@@ -268,13 +275,18 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 		if chatJid != "" && (content != "" || len(attachments) > 0) {
 			c.JSON(http.StatusOK, gin.H{"message": "accepted"})
 
-			go func(sess *model.Session, jid, txt string, atts []core.Attachment, quoted *core.QuotedMessageInfo, cwMsgID, convID int) {
-				bgCtx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
-				defer cancel()
-				if err := h.sendToWhatsAppBackground(bgCtx, sess, jid, txt, atts, quoted, cwMsgID, convID); err != nil {
-					logger.Warn().Err(err).Str("session", sess.Name).Str("chatJid", jid).Msg("Chatwoot: failed to send to WhatsApp")
-				}
-			}(session, chatJid, content, attachments, quotedMsg, payload.ID, conversationID)
+			// Use queue if available, otherwise process directly in goroutine
+			if h.queueProducer != nil && h.queueProducer.IsConnected() {
+				h.enqueueToWhatsApp(c.Request.Context(), session, chatJid, content, attachments, quotedMsg, payload.ID, conversationID)
+			} else {
+				go func(sess *model.Session, jid, txt string, atts []core.Attachment, quoted *core.QuotedMessageInfo, cwMsgID, convID int) {
+					bgCtx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+					defer cancel()
+					if err := h.sendToWhatsAppBackground(bgCtx, sess, jid, txt, atts, quoted, cwMsgID, convID); err != nil {
+						logger.Warn().Err(err).Str("session", sess.Name).Str("chatJid", jid).Msg("Chatwoot: failed to send to WhatsApp")
+					}
+				}(session, chatJid, content, attachments, quotedMsg, payload.ID, conversationID)
+			}
 			return
 		}
 	}
@@ -418,6 +430,79 @@ func (h *Handler) saveOutgoingMessage(ctx context.Context, session *model.Sessio
 	}
 
 	_, _ = h.database.Messages.Save(ctx, msg)
+}
+
+// enqueueToWhatsApp enqueues a message to be sent to WhatsApp via the queue
+func (h *Handler) enqueueToWhatsApp(ctx context.Context, session *model.Session, chatJid, content string, attachments []core.Attachment, quotedMsg *core.QuotedMessageInfo, chatwootMsgID, chatwootConvID int) {
+	var quotedInfo *queue.QuotedInfo
+	if quotedMsg != nil {
+		quotedInfo = &queue.QuotedInfo{
+			MsgID:     quotedMsg.MsgId,
+			ChatJID:   quotedMsg.ChatJID,
+			SenderJID: quotedMsg.SenderJID,
+			Content:   quotedMsg.Content,
+			FromMe:    quotedMsg.FromMe,
+		}
+	}
+
+	msgType := queue.MsgTypeSendText
+	if len(attachments) > 0 {
+		msgType = queue.MsgTypeSendMedia
+	}
+
+	queueMsg := &queue.CWToWAMessage{
+		ChatJID:        chatJid,
+		Content:        content,
+		Attachments:    attachments,
+		QuotedMsg:      quotedInfo,
+		ChatwootMsgID:  chatwootMsgID,
+		ChatwootConvID: chatwootConvID,
+	}
+
+	if err := h.queueProducer.PublishCWToWA(ctx, session.ID, session.Name, msgType, queueMsg); err != nil {
+		logger.Warn().
+			Err(err).
+			Str("session", session.Name).
+			Str("chatJid", chatJid).
+			Int("cwMsgId", chatwootMsgID).
+			Msg("Failed to enqueue message, falling back to direct processing")
+
+		// Fallback to direct processing
+		go func() {
+			bgCtx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+			defer cancel()
+			if err := h.sendToWhatsAppBackground(bgCtx, session, chatJid, content, attachments, quotedMsg, chatwootMsgID, chatwootConvID); err != nil {
+				logger.Warn().Err(err).Str("session", session.Name).Str("chatJid", chatJid).Msg("Chatwoot: failed to send to WhatsApp")
+			}
+		}()
+		return
+	}
+
+	logger.Debug().
+		Str("session", session.Name).
+		Str("chatJid", chatJid).
+		Int("cwMsgId", chatwootMsgID).
+		Int("attachments", len(attachments)).
+		Msg("Message enqueued for WhatsApp delivery")
+}
+
+// SendToWhatsAppFromQueue processes a message from the queue and sends it to WhatsApp
+func (h *Handler) SendToWhatsAppFromQueue(ctx context.Context, sessionID, sessionName string, data *queue.CWToWAMessage) error {
+	session, err := h.sessionService.Get(sessionName)
+	if err != nil || session == nil {
+		return fmt.Errorf("session not found: %s", sessionName)
+	}
+
+	if session.Status != model.StatusConnected {
+		return fmt.Errorf("session not connected: %s", sessionName)
+	}
+
+	var quotedMsg *core.QuotedMessageInfo
+	if data.QuotedMsg != nil {
+		quotedMsg = cwservice.QuotedMessageFromQueue(data.QuotedMsg)
+	}
+
+	return h.sendToWhatsAppBackground(ctx, session, data.ChatJID, data.Content, data.Attachments, quotedMsg, data.ChatwootMsgID, data.ChatwootConvID)
 }
 
 func (h *Handler) handleMessageDeleted(ctx context.Context, session *model.Session, payload *cwservice.WebhookPayload) error {

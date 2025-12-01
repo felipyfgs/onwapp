@@ -347,30 +347,61 @@ func (c *Client) FindContactByPhoneWithMerge(ctx context.Context, phone string, 
 	return altContact, nil
 }
 
-// SearchContactsForBrazilianMerge searches for both Brazilian number formats and merges if needed
-func (c *Client) SearchContactsForBrazilianMerge(ctx context.Context, phone string) ([]*core.Contact, error) {
-	var contacts []*core.Contact
+// FindContactWithBrazilianOR searches for Brazilian contacts using OR filter (like Evolution API)
+// This is more efficient as it searches both phone formats in a single API call
+func (c *Client) FindContactWithBrazilianOR(ctx context.Context, phone string) ([]core.Contact, error) {
+	phones := util.GetBrazilianPhoneVariants(phone)
 
-	contact1, err := c.FindContactByPhone(ctx, phone)
+	var payload []map[string]interface{}
+	for i, p := range phones {
+		filter := map[string]interface{}{
+			"attribute_key":   "phone_number",
+			"filter_operator": "equal_to",
+			"values":          []string{strings.TrimPrefix(p, "+")},
+		}
+		if i < len(phones)-1 {
+			filter["query_operator"] = "OR"
+		}
+		payload = append(payload, filter)
+	}
+
+	filterPayload := map[string]interface{}{
+		"payload": payload,
+	}
+
+	data, err := c.doRequest(ctx, http.MethodPost, "/contacts/filter", filterPayload)
 	if err != nil {
 		return nil, err
 	}
-	if contact1 != nil {
-		contacts = append(contacts, contact1)
+
+	var result struct {
+		Payload []core.Contact `json:"payload"`
+	}
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse contacts response: %w", err)
 	}
 
-	altPhone := util.GetAlternateBrazilianNumber(phone)
-	if altPhone != "" {
-		contact2, err := c.FindContactByPhone(ctx, altPhone)
-		if err != nil {
-			return nil, err
-		}
-		if contact2 != nil && (contact1 == nil || contact2.ID != contact1.ID) {
-			contacts = append(contacts, contact2)
+	return result.Payload, nil
+}
+
+// SearchContactsForBrazilianMerge searches for both Brazilian number formats and merges if needed
+// Uses single API call with OR filter for efficiency
+func (c *Client) SearchContactsForBrazilianMerge(ctx context.Context, phone string) ([]*core.Contact, error) {
+	contacts, err := c.FindContactWithBrazilianOR(ctx, phone)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []*core.Contact
+	seen := make(map[int]bool)
+	for i := range contacts {
+		if !seen[contacts[i].ID] {
+			seen[contacts[i].ID] = true
+			result = append(result, &contacts[i])
 		}
 	}
 
-	return contacts, nil
+	return result, nil
 }
 
 // FindContactByIdentifier searches for a contact by identifier
@@ -510,6 +541,7 @@ func (c *Client) GetOrCreateContact(ctx context.Context, inboxID int, phoneNumbe
 }
 
 // GetOrCreateContactWithMerge gets or creates a contact with optional Brazilian number merge
+// Follows Evolution API pattern: OR filter search, auto-merge, identifier update
 func (c *Client) GetOrCreateContactWithMerge(ctx context.Context, inboxID int, phoneNumber, identifier, name, avatarURL string, isGroup bool, mergeBrPhones bool) (*core.Contact, error) {
 	var contact *core.Contact
 	var err error
@@ -526,20 +558,32 @@ func (c *Client) GetOrCreateContactWithMerge(ctx context.Context, inboxID int, p
 			}
 
 			if len(contacts) == 2 {
-				if err := c.MergeContacts(ctx, contacts[0].ID, contacts[1].ID); err != nil {
+				// Auto-merge Brazilian contacts (prefer the one with 9 = 14 chars with +)
+				baseContact := contacts[0]
+				mergeContact := contacts[1]
+				if len(contacts[1].PhoneNumber) == 14 {
+					baseContact = contacts[1]
+					mergeContact = contacts[0]
+				}
+				if err := c.MergeContacts(ctx, baseContact.ID, mergeContact.ID); err != nil {
 					logger.Warn().Err(err).Msg("Chatwoot: failed to merge Brazilian contacts")
 				} else {
 					logger.Info().
-						Int("baseContactId", contacts[0].ID).
-						Int("mergeContactId", contacts[1].ID).
+						Int("baseContactId", baseContact.ID).
+						Int("mergeContactId", mergeContact.ID).
 						Msg("Chatwoot: merged Brazilian contacts")
 				}
-				contact = contacts[0]
+				contact = baseContact
 			} else if len(contacts) == 1 {
 				contact = contacts[0]
 			}
 		} else {
 			contact, err = c.FindContactByPhone(ctx, phone)
+		}
+
+		// If not found by phone, also search by identifier to avoid duplicate identifier errors
+		if err == nil && contact == nil && identifier != "" {
+			contact, err = c.FindContactByIdentifier(ctx, identifier)
 		}
 	}
 
@@ -548,6 +592,30 @@ func (c *Client) GetOrCreateContactWithMerge(ctx context.Context, inboxID int, p
 	}
 
 	if contact != nil {
+		// Update identifier if different (Evolution API pattern for LID migration)
+		if !isGroup && contact.Identifier != identifier && identifier != "" {
+			updates := map[string]interface{}{
+				"identifier": identifier,
+			}
+			if phoneNumber != "" {
+				updates["phone_number"] = "+" + phoneNumber
+			}
+			updatedContact, updateErr := c.UpdateContact(ctx, contact.ID, updates)
+			if updateErr != nil {
+				logger.Debug().Err(updateErr).
+					Int("contactId", contact.ID).
+					Str("oldIdentifier", contact.Identifier).
+					Str("newIdentifier", identifier).
+					Msg("Chatwoot: failed to update contact identifier")
+			} else if updatedContact != nil {
+				logger.Debug().
+					Int("contactId", contact.ID).
+					Str("oldIdentifier", contact.Identifier).
+					Str("newIdentifier", identifier).
+					Msg("Chatwoot: updated contact identifier")
+				contact = updatedContact
+			}
+		}
 		return contact, nil
 	}
 

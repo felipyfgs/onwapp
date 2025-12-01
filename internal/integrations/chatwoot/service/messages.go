@@ -213,11 +213,6 @@ func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Ses
 		return nil
 	}
 
-	content := s.extractMessageContent(evt)
-	if content == "" {
-		return nil
-	}
-
 	sourceID := fmt.Sprintf("WAID:%s", evt.Info.ID)
 
 	if s.database != nil {
@@ -238,7 +233,7 @@ func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Ses
 	isGroup := util.IsGroupJID(remoteJid)
 	phoneNumber := util.ExtractPhoneFromJID(remoteJid)
 
-	contact, err := c.GetOrCreateContact(ctx, cfg.InboxID, phoneNumber, remoteJid, phoneNumber, "", isGroup)
+	contact, err := c.GetOrCreateContactWithMerge(ctx, cfg.InboxID, phoneNumber, remoteJid, phoneNumber, "", isGroup, cfg.MergeBrPhones)
 	if err != nil {
 		return fmt.Errorf("failed to get/create contact: %w", err)
 	}
@@ -246,6 +241,16 @@ func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Ses
 	conv, err := c.GetOrCreateConversation(ctx, contact.ID, cfg.InboxID, "open", cfg.AutoReopen)
 	if err != nil {
 		return fmt.Errorf("failed to get/create conversation: %w", err)
+	}
+
+	// Handle media messages (audio, image, video, document, sticker)
+	if util.IsMediaMessage(evt.Message) && s.mediaDownloader != nil {
+		return s.processOutgoingMediaMessage(ctx, session, evt, c, conv.ID, sourceID, cfg)
+	}
+
+	content := s.extractMessageContent(evt)
+	if content == "" {
+		return nil
 	}
 
 	msgReq := &client.CreateMessageRequest{
@@ -278,6 +283,60 @@ func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Ses
 	return nil
 }
 
+// processOutgoingMediaMessage handles outgoing media messages (images, videos, audio, documents, etc.)
+func (s *Service) processOutgoingMediaMessage(ctx context.Context, session *model.Session, evt *events.Message, c *client.Client, conversationID int, sourceID string, cfg *core.Config) error {
+	mediaInfo := util.GetMediaInfo(evt.Message)
+	if mediaInfo == nil {
+		return fmt.Errorf("failed to get media info")
+	}
+
+	var contentAttributes map[string]interface{}
+	if replyInfo := s.extractReplyInfo(ctx, session.ID, evt); replyInfo != nil {
+		contentAttributes = map[string]interface{}{
+			"in_reply_to":             replyInfo.CwMsgId,
+			"in_reply_to_external_id": replyInfo.WhatsAppMessageID,
+		}
+	}
+
+	mediaData, err := s.mediaDownloader(ctx, session.Name, evt.Message)
+	if err != nil {
+		logger.Debug().Err(err).
+			Str("session", session.Name).
+			Str("messageId", evt.Info.ID).
+			Msg("Chatwoot: failed to download outgoing media, sending filename as text")
+
+		content := mediaInfo.Filename
+		if mediaInfo.Caption != "" {
+			content = mediaInfo.Caption
+		}
+		msgReq := &client.CreateMessageRequest{
+			Content:           content,
+			MessageType:       "outgoing",
+			SourceID:          sourceID,
+			ContentAttributes: contentAttributes,
+		}
+		_, err := c.CreateMessage(ctx, conversationID, msgReq)
+		return err
+	}
+
+	content := mediaInfo.Caption
+	cwMsg, err := c.CreateMessageWithAttachmentAndMime(ctx, conversationID, content, "outgoing", bytes.NewReader(mediaData), mediaInfo.Filename, mediaInfo.MimeType, contentAttributes)
+	if err != nil {
+		if core.IsNotFoundError(err) {
+			s.HandleConversationNotFound(ctx, session.ID, conversationID)
+		}
+		return fmt.Errorf("failed to upload outgoing media to chatwoot: %w", err)
+	}
+
+	if cwMsg != nil && s.database != nil {
+		if err := s.database.Messages.UpdateCwFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, conversationID, sourceID); err != nil {
+			logger.Warn().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update outgoing media message fields")
+		}
+	}
+
+	return nil
+}
+
 // =============================================================================
 // REACTION PROCESSING
 // =============================================================================
@@ -300,7 +359,7 @@ func (s *Service) ProcessReactionMessage(ctx context.Context, session *model.Ses
 	senderPhone := util.ExtractPhoneFromJID(senderJid)
 	contactName := senderPhone
 
-	contact, err := c.GetOrCreateContact(ctx, cfg.InboxID, phoneNumber, remoteJid, contactName, "", isGroup)
+	contact, err := c.GetOrCreateContactWithMerge(ctx, cfg.InboxID, phoneNumber, remoteJid, contactName, "", isGroup, cfg.MergeBrPhones)
 	if err != nil {
 		return fmt.Errorf("failed to get/create contact for reaction: %w", err)
 	}

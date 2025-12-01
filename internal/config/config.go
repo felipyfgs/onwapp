@@ -3,7 +3,9 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -71,6 +73,14 @@ type Config struct {
 
 	// Debug options
 	DebugHistorySync bool // Save history sync JSON dumps to files
+
+	// NATS Configuration
+	NatsURL          string
+	NatsEnabled      bool
+	NatsStreamPrefix string
+	NatsMaxRetries   int
+	NatsRetryDelay   time.Duration
+	NatsAckWait      time.Duration
 }
 
 func Load() *Config {
@@ -97,6 +107,13 @@ func Load() *Config {
 		MinioUseSSL:    getEnv("MINIO_USE_SSL", "false") == "true",
 
 		DebugHistorySync: getEnv("DEBUG_HISTORY_SYNC", "false") == "true",
+
+		NatsURL:          getEnv("NATS_URL", "nats://localhost:4222"),
+		NatsEnabled:      getEnv("NATS_ENABLED", "false") == "true",
+		NatsStreamPrefix: getEnv("NATS_STREAM_PREFIX", "ZPWOOT"),
+		NatsMaxRetries:   getEnvInt("NATS_MAX_RETRIES", 5),
+		NatsRetryDelay:   getEnvDuration("NATS_RETRY_DELAY", 5*time.Second),
+		NatsAckWait:      getEnvDuration("NATS_ACK_WAIT", 30*time.Second),
 	}
 }
 
@@ -129,6 +146,24 @@ func (c *Config) Validate() error {
 func getEnv(key, fallback string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
+	}
+	return fallback
+}
+
+func getEnvInt(key string, fallback int) int {
+	if value := os.Getenv(key); value != "" {
+		if i, err := strconv.Atoi(value); err == nil {
+			return i
+		}
+	}
+	return fallback
+}
+
+func getEnvDuration(key string, fallback time.Duration) time.Duration {
+	if value := os.Getenv(key); value != "" {
+		if d, err := time.ParseDuration(value); err == nil {
+			return d
+		}
 	}
 	return fallback
 }

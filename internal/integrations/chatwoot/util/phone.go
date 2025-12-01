@@ -109,6 +109,32 @@ func GetAlternateBrazilianNumber(phone string) string {
 	return ""
 }
 
+// GetBrazilianPhoneVariants returns all phone number variants for Brazilian numbers
+// Used for OR filter queries (like Evolution API pattern)
+// For BR numbers: returns both formats (with and without 9)
+// For non-BR: returns only the original number
+func GetBrazilianPhoneVariants(phone string) []string {
+	phone = strings.TrimPrefix(phone, "+")
+	variants := []string{"+" + phone}
+
+	if !strings.HasPrefix(phone, "55") {
+		return variants
+	}
+
+	// 14 chars with + means 13 digits: +55XX9XXXXXXXX
+	if len(phone) == 13 {
+		// Also search without the 9
+		withoutNine := "+" + phone[:4] + phone[5:]
+		variants = append(variants, withoutNine)
+	} else if len(phone) == 12 {
+		// Also search with the 9
+		withNine := "+" + phone[:4] + "9" + phone[4:]
+		variants = append(variants, withNine)
+	}
+
+	return variants
+}
+
 // =============================================================================
 // LID RESOLUTION
 // =============================================================================

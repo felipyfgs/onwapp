@@ -12,6 +12,7 @@ import (
 	"zpwoot/internal/integrations/chatwoot/repository"
 	"zpwoot/internal/integrations/chatwoot/service"
 	"zpwoot/internal/integrations/chatwoot/sync"
+	"zpwoot/internal/queue"
 	zpservice "zpwoot/internal/service"
 )
 
@@ -75,4 +76,18 @@ func RegisterRoutes(r *gin.Engine, h *Handler, apiKey string) {
 // GetSyncStatus returns the current sync status for a session
 func GetSyncStatus(sessionID string) *SyncStatus {
 	return sync.GetSyncStatus(sessionID)
+}
+
+// =============================================================================
+// QUEUE HANDLER REGISTRATION
+// =============================================================================
+
+// RegisterQueueHandlers registers WhatsApp -> Chatwoot queue handlers
+func RegisterQueueHandlers(queueSvc *queue.Service, chatwootSvc *Service) {
+	service.RegisterQueueHandlers(queueSvc, chatwootSvc)
+}
+
+// RegisterCWToWAQueueHandlers registers Chatwoot -> WhatsApp queue handlers
+func RegisterCWToWAQueueHandlers(queueSvc *queue.Service, h *Handler) {
+	service.RegisterCWToWAQueueHandlers(queueSvc, h)
 }
