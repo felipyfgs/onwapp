@@ -4,7 +4,7 @@
 BINARY_NAME=zpwoot
 MAIN_PATH=./cmd/zpwoot
 SWAGGER_PATH=./cmd/zpwoot/main.go
-GO=/usr/local/go/bin/go
+GO ?= go
 
 # Version info (read from version.go or use defaults)
 VERSION ?= $(shell grep -E '^\s+Version\s*=' internal/version/version.go | head -1 | cut -d'"' -f2)
