@@ -247,6 +247,19 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 			}
 		}
 
+		// Check for duplicate webhook (same Chatwoot message ID already processed)
+		if h.database != nil && payload.ID > 0 {
+			existingMsg, _ := h.database.Messages.GetByCwMsgId(c.Request.Context(), session.ID, payload.ID)
+			if existingMsg != nil {
+				logger.Debug().
+					Str("session", sessionName).
+					Int("cwMsgId", payload.ID).
+					Msg("Chatwoot: skipping duplicate webhook")
+				c.JSON(http.StatusOK, gin.H{"message": "skipped - duplicate"})
+				return
+			}
+		}
+
 		chatId := h.extractChatId(payload)
 
 		if cwservice.IsBotContact(chatId) {

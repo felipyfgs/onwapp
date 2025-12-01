@@ -107,8 +107,9 @@ func (s *MediaService) DownloadAndStore(ctx context.Context, client *whatsmeow.C
 	}
 
 	// Get fromMe from associated message (denormalized field not stored in zpMedia)
+	// Use media.SessionID (UUID) instead of sessionID parameter (which is session name for storage path)
 	fromMe := false
-	msg, err := s.database.Messages.GetByMsgId(ctx, sessionID, media.MsgID)
+	msg, err := s.database.Messages.GetByMsgId(ctx, media.SessionID, media.MsgID)
 	if err == nil && msg != nil {
 		fromMe = msg.FromMe
 	}
@@ -179,7 +180,8 @@ func (s *MediaService) SendMediaRetryRequest(ctx context.Context, client *whatsm
 	}
 
 	// Get message info for the retry request
-	msg, err := s.database.Messages.GetByMsgId(ctx, sessionID, media.MsgID)
+	// Use media.SessionID (UUID) instead of sessionID parameter (which is session name)
+	msg, err := s.database.Messages.GetByMsgId(ctx, media.SessionID, media.MsgID)
 	if err != nil || msg == nil {
 		return fmt.Errorf("failed to get message info: %w", err)
 	}
