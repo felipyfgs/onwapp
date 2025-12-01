@@ -612,8 +612,24 @@ func (c *Client) ToggleConversationStatus(ctx context.Context, conversationID in
 	return &conv, nil
 }
 
+// ConversationResult holds the result of GetOrCreateConversation with metadata
+type ConversationResult struct {
+	Conversation *core.Conversation
+	WasReopened  bool
+	WasCreated   bool
+}
+
 // GetOrCreateConversation gets an open conversation or creates a new one
 func (c *Client) GetOrCreateConversation(ctx context.Context, contactID, inboxID int, status string, autoReopen bool) (*core.Conversation, error) {
+	result, err := c.GetOrCreateConversationWithInfo(ctx, contactID, inboxID, status, autoReopen)
+	if err != nil {
+		return nil, err
+	}
+	return result.Conversation, nil
+}
+
+// GetOrCreateConversationWithInfo gets an open conversation or creates a new one, returning metadata about the operation
+func (c *Client) GetOrCreateConversationWithInfo(ctx context.Context, contactID, inboxID int, status string, autoReopen bool) (*ConversationResult, error) {
 	conversations, err := c.ListContactConversations(ctx, contactID)
 	if err != nil {
 		return nil, err
@@ -628,15 +644,17 @@ func (c *Client) GetOrCreateConversation(ctx context.Context, contactID, inboxID
 			if conv.Status == "resolved" {
 				reopened, err := c.ToggleConversationStatus(ctx, conv.ID, status)
 				if err != nil {
-					return &conv, nil
+					logger.Warn().Err(err).Int("conversationId", conv.ID).Msg("Chatwoot: failed to reopen conversation, using existing")
+					return &ConversationResult{Conversation: &conv, WasReopened: false}, nil
 				}
-				return reopened, nil
+				logger.Info().Int("conversationId", conv.ID).Msg("Chatwoot: conversation reopened due to new message")
+				return &ConversationResult{Conversation: reopened, WasReopened: true}, nil
 			}
-			return &conv, nil
+			return &ConversationResult{Conversation: &conv, WasReopened: false}, nil
 		}
 
 		if conv.Status != "resolved" {
-			return &conv, nil
+			return &ConversationResult{Conversation: &conv, WasReopened: false}, nil
 		}
 	}
 
@@ -646,7 +664,17 @@ func (c *Client) GetOrCreateConversation(ctx context.Context, contactID, inboxID
 		Status:    status,
 	}
 
-	return c.CreateConversation(ctx, req)
+	newConv, err := c.CreateConversation(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	// Validate that we got a valid conversation ID
+	if newConv == nil || newConv.ID == 0 {
+		return nil, fmt.Errorf("failed to create conversation: received invalid conversation ID")
+	}
+
+	return &ConversationResult{Conversation: newConv, WasCreated: true}, nil
 }
 
 // GetConversationWithContactInbox gets a conversation with contact inbox details
