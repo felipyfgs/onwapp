@@ -490,7 +490,8 @@ func (s *ChatwootDBSync) filterMessages(ctx context.Context, messages []model.Me
 			continue
 		}
 
-		if util.IsStatusBroadcast(msg.ChatJID) || util.IsNewsletter(msg.ChatJID) {
+		// Skip groups, status broadcasts, and newsletters (same as Evolution API)
+		if util.IsGroupJID(msg.ChatJID) || util.IsStatusBroadcast(msg.ChatJID) || util.IsNewsletter(msg.ChatJID) {
 			stats.MessagesSkipped++
 			continue
 		}
