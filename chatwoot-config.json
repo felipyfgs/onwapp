@@ -13,7 +13,7 @@
   "syncMessages": false,
   "syncDays": 7,
   "ignoreChats": [],
-  "autoInbox": true,
+  "autoCreate": true,
   "chatwootDbHost": "localhost",
   "chatwootDbPort": 5433,
   "chatwootDbUser": "postgres",
