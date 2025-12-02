@@ -1,4 +1,4 @@
-.PHONY: build run dev clean swagger deps test lint docker-build docker-up docker-down help version release release-dry
+.PHONY: build run dev clean swagger deps test lint docker-build docker-up docker-down dev-up dev-down dev-logs help version release release-dry
 
 # Variables
 BINARY_NAME=zpwoot
@@ -77,6 +77,18 @@ docker-down:
 docker-logs:
 	docker compose logs -f
 
+# Start dev Docker Compose services (full stack)
+dev-up:
+	docker compose -f docker/docker-compose.dev.yaml up -d
+
+# Stop dev Docker Compose services
+dev-down:
+	docker compose -f docker/docker-compose.dev.yaml down
+
+# View dev Docker logs
+dev-logs:
+	docker compose -f docker/docker-compose.dev.yaml logs -f
+
 # Database migrations (if needed)
 migrate-up:
 	$(GO) run ./cmd/migrate up
@@ -109,6 +121,9 @@ help:
 	@echo "  docker-up    - Start Docker Compose services"
 	@echo "  docker-down  - Stop Docker Compose services"
 	@echo "  docker-logs  - View Docker Compose logs"
+	@echo "  dev-up       - Start dev environment (full stack)"
+	@echo "  dev-down     - Stop dev environment"
+	@echo "  dev-logs     - View dev environment logs"
 	@echo "  rebuild      - Full rebuild (clean, deps, swagger, build)"
 	@echo "  setup        - Development setup"
 	@echo "  version      - Show current version"
