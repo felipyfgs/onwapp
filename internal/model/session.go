@@ -31,8 +31,8 @@ const (
 )
 
 type SessionRecord struct {
-	ID        string
-	SessionId string
+	ID      string // UUID (database primary key)
+	Session string // Session identifier (used in API routes)
 	DeviceJID string
 	Phone     string
 	Status    string
@@ -41,9 +41,8 @@ type SessionRecord struct {
 }
 
 type Session struct {
-	ID        string
-	SessionId string
-	Name      string // Deprecated: use SessionId instead (kept for compatibility)
+	ID      string // UUID (database primary key)
+	Session string // Session identifier (used in API routes)
 	DeviceJID string
 	Phone     string
 	Client    *whatsmeow.Client

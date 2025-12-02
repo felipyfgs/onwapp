@@ -106,7 +106,7 @@ func (s *Service) processIncomingMessageInternal(ctx context.Context, session *m
 		s.profilePictureFetcher,
 		s.groupInfoFetcher,
 		contactNameFetcher,
-		session.SessionId,
+		session.Session,
 	)
 	if err != nil {
 		return 0, 0, nil, fmt.Errorf("failed to get/create conversation: %w", err)
@@ -173,10 +173,10 @@ func (s *Service) processIncomingMediaMessageInternal(ctx context.Context, sessi
 		}
 	}
 
-	mediaData, err := s.mediaDownloader(ctx, session.SessionId, evt.Message)
+	mediaData, err := s.mediaDownloader(ctx, session.Session, evt.Message)
 	if err != nil {
 		logger.Debug().Err(err).
-			Str("session", session.SessionId).
+			Str("session", session.Session).
 			Str("messageId", evt.Info.ID).
 			Msg("Chatwoot: failed to download media, sending filename as text")
 
@@ -237,7 +237,7 @@ func (s *Service) sendWebhookWithChatwootIds(ctx context.Context, session *model
 		MessageID:      cwMsgID,
 	}
 
-	s.webhookSender.SendWithChatwoot(ctx, session.ID, session.SessionId, event, evt, cwInfo)
+	s.webhookSender.SendWithChatwoot(ctx, session.ID, session.Session, event, evt, cwInfo)
 }
 
 // sendWebhookWithPreserializedJSON sends webhook using pre-serialized JSON (optimized for queue processing)
@@ -258,7 +258,7 @@ func (s *Service) sendWebhookWithPreserializedJSON(ctx context.Context, session 
 		MessageID:      cwMsgID,
 	}
 
-	s.webhookSender.SendWithPreserializedJSON(ctx, session.ID, session.SessionId, event, fullEventJSON, cwInfo)
+	s.webhookSender.SendWithPreserializedJSON(ctx, session.ID, session.Session, event, fullEventJSON, cwInfo)
 }
 
 // =============================================================================
@@ -397,10 +397,10 @@ func (s *Service) processOutgoingMediaMessageInternal(ctx context.Context, sessi
 		}
 	}
 
-	mediaData, err := s.mediaDownloader(ctx, session.SessionId, evt.Message)
+	mediaData, err := s.mediaDownloader(ctx, session.Session, evt.Message)
 	if err != nil {
 		logger.Debug().Err(err).
-			Str("session", session.SessionId).
+			Str("session", session.Session).
 			Str("messageId", evt.Info.ID).
 			Msg("Chatwoot: failed to download outgoing media, sending filename as text")
 

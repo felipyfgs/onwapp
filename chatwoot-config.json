@@ -4,7 +4,7 @@
   "token": "sYb1fE42x2Pn4HJkyULfC2yd",
   "account": 1,
   "inbox": "WhatsApp-dev",
-  "signAgent": false,
+  "signAgent": true,
   "signSeparator": "\n",
   "autoReopen": true,
   "startPending": false,

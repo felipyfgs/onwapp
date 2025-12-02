@@ -25,7 +25,7 @@ func (r *SessionRepository) Create(ctx context.Context, sessionId string) (*mode
 		VALUES ($1) 
 		ON CONFLICT ("sessionId") DO UPDATE SET "updatedAt" = CURRENT_TIMESTAMP 
 		RETURNING `+sessionSelectFields, sessionId).
-		Scan(&s.ID, &s.SessionId, &s.DeviceJID, &s.Phone, &s.Status, &s.CreatedAt, &s.UpdatedAt)
+		Scan(&s.ID, &s.Session, &s.DeviceJID, &s.Phone, &s.Status, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func (r *SessionRepository) Create(ctx context.Context, sessionId string) (*mode
 func (r *SessionRepository) GetByID(ctx context.Context, id string) (*model.SessionRecord, error) {
 	var s model.SessionRecord
 	err := r.pool.QueryRow(ctx, `SELECT `+sessionSelectFields+` FROM "zpSessions" WHERE "id" = $1`, id).
-		Scan(&s.ID, &s.SessionId, &s.DeviceJID, &s.Phone, &s.Status, &s.CreatedAt, &s.UpdatedAt)
+		Scan(&s.ID, &s.Session, &s.DeviceJID, &s.Phone, &s.Status, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func (r *SessionRepository) GetByID(ctx context.Context, id string) (*model.Sess
 func (r *SessionRepository) GetBySessionId(ctx context.Context, sessionId string) (*model.SessionRecord, error) {
 	var s model.SessionRecord
 	err := r.pool.QueryRow(ctx, `SELECT `+sessionSelectFields+` FROM "zpSessions" WHERE "sessionId" = $1`, sessionId).
-		Scan(&s.ID, &s.SessionId, &s.DeviceJID, &s.Phone, &s.Status, &s.CreatedAt, &s.UpdatedAt)
+		Scan(&s.ID, &s.Session, &s.DeviceJID, &s.Phone, &s.Status, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func scanSessions(rows interface {
 	var sessions []model.SessionRecord
 	for rows.Next() {
 		var s model.SessionRecord
-		if err := rows.Scan(&s.ID, &s.SessionId, &s.DeviceJID, &s.Phone, &s.Status, &s.CreatedAt, &s.UpdatedAt); err != nil {
+		if err := rows.Scan(&s.ID, &s.Session, &s.DeviceJID, &s.Phone, &s.Status, &s.CreatedAt, &s.UpdatedAt); err != nil {
 			return nil, err
 		}
 		sessions = append(sessions, s)

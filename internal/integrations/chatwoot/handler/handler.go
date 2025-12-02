@@ -111,7 +111,7 @@ func (h *Handler) SetConfig(c *gin.Context) {
 		ChatwootDBName: req.ChatwootDBName,
 	}
 
-	cfg, err := h.service.SetConfig(c.Request.Context(), session.ID, session.SessionId, svcReq)
+	cfg, err := h.service.SetConfig(c.Request.Context(), session.ID, session.Session, svcReq)
 	if err != nil {
 		logger.Warn().Err(err).Str("session", sessionId).Msg("Chatwoot: failed to set config")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -302,7 +302,7 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 					bgCtx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 					defer cancel()
 					if err := h.sendToWhatsAppBackground(bgCtx, sess, jid, txt, atts, quoted, cwMsgID, convID); err != nil {
-						logger.Warn().Err(err).Str("session", sess.Name).Str("chatJid", jid).Msg("Chatwoot: failed to send to WhatsApp")
+						logger.Warn().Err(err).Str("session", sess.Session).Str("chatJid", jid).Msg("Chatwoot: failed to send to WhatsApp")
 					}
 				}(session, chatJid, content, attachments, quotedMsg, payload.ID, conversationID)
 			}
@@ -372,7 +372,7 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 			mediaType := util.GetMediaTypeFromURL(att.DataURL)
 			switch mediaType {
 			case "image":
-				resp, err := h.whatsappSvc.SendImageWithQuote(ctx, session.SessionId, recipient, mediaData, content, mimeType, quoted)
+				resp, err := h.whatsappSvc.SendImageWithQuote(ctx, session.Session, recipient, mediaData, content, mimeType, quoted)
 				if err != nil {
 					logger.Warn().Err(err).Msg("Chatwoot: failed to send image")
 				} else {
@@ -381,7 +381,7 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 				content = ""
 				quoted = nil
 			case "video":
-				resp, err := h.whatsappSvc.SendVideoWithQuote(ctx, session.SessionId, recipient, mediaData, content, mimeType, quoted)
+				resp, err := h.whatsappSvc.SendVideoWithQuote(ctx, session.Session, recipient, mediaData, content, mimeType, quoted)
 				if err != nil {
 					logger.Warn().Err(err).Msg("Chatwoot: failed to send video")
 				} else {
@@ -390,7 +390,7 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 				content = ""
 				quoted = nil
 			case "audio":
-				resp, err := h.whatsappSvc.SendAudioWithQuote(ctx, session.SessionId, recipient, mediaData, mimeType, true, quoted)
+				resp, err := h.whatsappSvc.SendAudioWithQuote(ctx, session.Session, recipient, mediaData, mimeType, true, quoted)
 				if err != nil {
 					logger.Warn().Err(err).Msg("Chatwoot: failed to send audio")
 				} else {
@@ -410,7 +410,7 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 				if filename == "" {
 					filename = "document"
 				}
-				resp, err := h.whatsappSvc.SendDocumentWithQuote(ctx, session.SessionId, recipient, mediaData, filename, mimeType, quoted)
+				resp, err := h.whatsappSvc.SendDocumentWithQuote(ctx, session.Session, recipient, mediaData, filename, mimeType, quoted)
 				if err != nil {
 					logger.Warn().Err(err).Msg("Chatwoot: failed to send document")
 				} else {
@@ -423,7 +423,7 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 	}
 
 	if content != "" {
-		resp, err := h.whatsappSvc.SendTextWithQuote(ctx, session.SessionId, recipient, content, quoted)
+		resp, err := h.whatsappSvc.SendTextWithQuote(ctx, session.Session, recipient, content, quoted)
 		if err != nil {
 			return err
 		}
@@ -494,7 +494,7 @@ func (h *Handler) enqueueToWhatsApp(ctx context.Context, session *model.Session,
 	if err := h.queueProducer.PublishCWToWA(ctx, session.ID, msgType, queueMsg); err != nil {
 		logger.Warn().
 			Err(err).
-			Str("session", session.SessionId).
+			Str("session", session.Session).
 			Str("chatJid", chatJid).
 			Int("cwMsgId", chatwootMsgID).
 			Msg("Failed to enqueue message, falling back to direct processing")
@@ -504,14 +504,14 @@ func (h *Handler) enqueueToWhatsApp(ctx context.Context, session *model.Session,
 			bgCtx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 			defer cancel()
 			if err := h.sendToWhatsAppBackground(bgCtx, session, chatJid, content, attachments, quotedMsg, chatwootMsgID, chatwootConvID); err != nil {
-				logger.Warn().Err(err).Str("session", session.SessionId).Str("chatJid", chatJid).Msg("Chatwoot: failed to send to WhatsApp")
+				logger.Warn().Err(err).Str("session", session.Session).Str("chatJid", chatJid).Msg("Chatwoot: failed to send to WhatsApp")
 			}
 		}()
 		return
 	}
 
 	logger.Debug().
-		Str("session", session.SessionId).
+		Str("session", session.Session).
 		Str("chatJid", chatJid).
 		Int("cwMsgId", chatwootMsgID).
 		Int("attachments", len(attachments)).
@@ -553,7 +553,7 @@ func (h *Handler) handleMessageDeleted(ctx context.Context, session *model.Sessi
 
 	var deleteErrors []error
 	for _, msg := range messages {
-		if _, err := h.whatsappSvc.DeleteMessage(ctx, session.SessionId, msg.ChatJID, msg.MsgId, msg.FromMe); err != nil {
+		if _, err := h.whatsappSvc.DeleteMessage(ctx, session.Session, msg.ChatJID, msg.MsgId, msg.FromMe); err != nil {
 			logger.Warn().Err(err).Str("messageId", msg.MsgId).Msg("Chatwoot: failed to delete from WhatsApp")
 			deleteErrors = append(deleteErrors, err)
 			continue

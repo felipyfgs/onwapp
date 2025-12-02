@@ -80,7 +80,7 @@ func (h *Handler) GetWebhook(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, GetWebhookResponse{
-		ID:        webhook.ID,
+		ID:      webhook.ID,
 		SessionID: webhook.SessionID,
 		URL:       webhook.URL,
 		Events:    webhook.Events,
@@ -131,7 +131,7 @@ func (h *Handler) SetWebhook(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, GetWebhookResponse{
-		ID:        webhook.ID,
+		ID:      webhook.ID,
 		SessionID: webhook.SessionID,
 		URL:       webhook.URL,
 		Events:    webhook.Events,
@@ -193,7 +193,7 @@ func (h *Handler) UpdateWebhook(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, GetWebhookResponse{
-		ID:        webhook.ID,
+		ID:      webhook.ID,
 		SessionID: webhook.SessionID,
 		URL:       webhook.URL,
 		Events:    webhook.Events,

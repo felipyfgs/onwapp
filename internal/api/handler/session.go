@@ -25,7 +25,7 @@ func NewSessionHandler(sessionService *service.SessionService, whatsappService *
 func sessionToResponse(sess *model.Session) dto.SessionResponse {
 	resp := dto.SessionResponse{
 		ID:        sess.ID,
-		SessionId: sess.SessionId,
+		SessionId: sess.Session,
 		Status:    string(sess.GetStatus()),
 	}
 	if sess.DeviceJID != "" {
