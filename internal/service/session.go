@@ -287,11 +287,13 @@ func (s *SessionService) startClientWithQR(session *model.Session) {
 
 func (s *SessionService) setupEventHandler(session *model.Session) {
 	session.Client.AddEventHandler(func(evt interface{}) {
-		s.eventService.HandleEvent(session, evt)
-		// Call external handlers (like Chatwoot)
+		// Call external handlers (like Chatwoot) FIRST so they can create messages
 		for _, handler := range s.externalHandlers {
 			handler(session, evt)
 		}
+		// Then handle internal events (including webhook dispatch)
+		// This allows webhook to include Chatwoot IDs that were just created
+		s.eventService.HandleEvent(session, evt)
 	})
 }
 

@@ -19,6 +19,19 @@ import (
 // MediaDownloader is a function type for downloading media from WhatsApp messages
 type MediaDownloader func(ctx context.Context, sessionName string, msg *waE2E.Message) ([]byte, error)
 
+// WebhookSender is an interface for sending webhooks with Chatwoot info
+type WebhookSender interface {
+	SendWithChatwoot(ctx context.Context, sessionID, sessionName, event string, rawEvent interface{}, cwInfo *ChatwootInfo)
+}
+
+// ChatwootInfo contains Chatwoot metadata for webhook
+type ChatwootInfo struct {
+	Account        int
+	InboxID        int
+	ConversationID int
+	MessageID      int
+}
+
 // Service handles Chatwoot integration business logic
 type Service struct {
 	repo                  *repository.ConfigRepository
@@ -28,6 +41,7 @@ type Service struct {
 	profilePictureFetcher ProfilePictureFetcher
 	groupInfoFetcher      GroupInfoFetcher
 	contactManager        *ContactManager
+	webhookSender         WebhookSender
 }
 
 // NewService creates a new Chatwoot service
@@ -38,6 +52,11 @@ func NewService(repo *repository.ConfigRepository, database *db.Database, baseUR
 		baseURL:        strings.TrimSuffix(baseURL, "/"),
 		contactManager: NewContactManager(),
 	}
+}
+
+// SetWebhookSender sets the webhook sender for dispatching webhooks after message processing
+func (s *Service) SetWebhookSender(sender WebhookSender) {
+	s.webhookSender = sender
 }
 
 // SetMediaDownloader sets the function used to download media from WhatsApp

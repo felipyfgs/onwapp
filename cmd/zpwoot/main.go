@@ -124,8 +124,8 @@ func main() {
 	chatwootRepo := chatwoot.NewRepository(database.Pool)
 	chatwootService := chatwoot.NewService(chatwootRepo, database, cfg.ServerURL)
 
-	// Connect Chatwoot provider to webhook service
-	webhookService.SetChatwootProvider(chatwoot.NewWebhookProvider(chatwootRepo))
+	// Connect Chatwoot provider to webhook service (with database for message IDs)
+	webhookService.SetChatwootProvider(chatwoot.NewWebhookProvider(chatwootRepo, database))
 	chatwootService.SetMediaDownloader(whatsappService.DownloadMedia) // Enable media upload to Chatwoot
 	// Set profile picture fetcher for contact management
 	chatwootService.SetProfilePictureFetcher(func(ctx context.Context, sessionName string, jid string) (string, error) {

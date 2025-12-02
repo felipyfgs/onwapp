@@ -21,13 +21,16 @@ const (
 
 // ChatwootInfo contains Chatwoot metadata to include in webhook payload
 type ChatwootInfo struct {
-	Account int `json:"chatwootAccount,omitempty"`
-	InboxID int `json:"chatwootInboxId,omitempty"`
+	Account        int `json:"chatwootAccount,omitempty"`
+	InboxID        int `json:"chatwootInboxId,omitempty"`
+	ConversationID int `json:"chatwootConversationId,omitempty"`
+	MessageID      int `json:"chatwootMessageId,omitempty"`
 }
 
 // ChatwootProvider fetches Chatwoot config for a session
 type ChatwootProvider interface {
 	GetChatwootInfo(ctx context.Context, sessionID string) *ChatwootInfo
+	GetChatwootInfoForMessage(ctx context.Context, sessionID, msgID string) *ChatwootInfo
 }
 
 // Service handles webhook business logic
@@ -54,6 +57,11 @@ func (s *Service) SetChatwootProvider(provider ChatwootProvider) {
 
 // Send sends a webhook notification with flat payload structure
 func (s *Service) Send(ctx context.Context, sessionID, sessionName, event string, rawEvent interface{}) {
+	s.SendWithChatwoot(ctx, sessionID, sessionName, event, rawEvent, nil)
+}
+
+// SendWithChatwoot sends a webhook notification with Chatwoot IDs included
+func (s *Service) SendWithChatwoot(ctx context.Context, sessionID, sessionName, event string, rawEvent interface{}, cwInfo *ChatwootInfo) {
 	wh, err := s.repo.GetEnabledBySession(ctx, sessionID)
 	if err != nil {
 		logger.Error().Err(err).Str("sessionId", sessionID).Msg("Failed to get webhook")
@@ -74,14 +82,47 @@ func (s *Service) Send(ctx context.Context, sessionID, sessionName, event string
 	payload["sessionId"] = sessionID
 	payload["sessionName"] = sessionName
 
-	// Add Chatwoot metadata if available
-	if s.chatwootProvider != nil {
-		if cwInfo := s.chatwootProvider.GetChatwootInfo(ctx, sessionID); cwInfo != nil {
-			if cwInfo.Account > 0 {
-				payload["chatwootAccount"] = cwInfo.Account
+	// Add Chatwoot metadata if provided directly
+	if cwInfo != nil {
+		if cwInfo.Account > 0 {
+			payload["chatwootAccount"] = cwInfo.Account
+		}
+		if cwInfo.InboxID > 0 {
+			payload["chatwootInboxId"] = cwInfo.InboxID
+		}
+		if cwInfo.ConversationID > 0 {
+			payload["chatwootConversationId"] = cwInfo.ConversationID
+		}
+		if cwInfo.MessageID > 0 {
+			payload["chatwootMessageId"] = cwInfo.MessageID
+		}
+	} else if s.chatwootProvider != nil {
+		// Try to get message-specific info if msgID is available
+		msgID := extractMsgIDFromEvent(rawEvent)
+		if msgID != "" {
+			if providerInfo := s.chatwootProvider.GetChatwootInfoForMessage(ctx, sessionID, msgID); providerInfo != nil {
+				if providerInfo.Account > 0 {
+					payload["chatwootAccount"] = providerInfo.Account
+				}
+				if providerInfo.InboxID > 0 {
+					payload["chatwootInboxId"] = providerInfo.InboxID
+				}
+				if providerInfo.ConversationID > 0 {
+					payload["chatwootConversationId"] = providerInfo.ConversationID
+				}
+				if providerInfo.MessageID > 0 {
+					payload["chatwootMessageId"] = providerInfo.MessageID
+				}
 			}
-			if cwInfo.InboxID > 0 {
-				payload["chatwootInboxId"] = cwInfo.InboxID
+		} else {
+			// Fallback to session-level info
+			if providerInfo := s.chatwootProvider.GetChatwootInfo(ctx, sessionID); providerInfo != nil {
+				if providerInfo.Account > 0 {
+					payload["chatwootAccount"] = providerInfo.Account
+				}
+				if providerInfo.InboxID > 0 {
+					payload["chatwootInboxId"] = providerInfo.InboxID
+				}
 			}
 		}
 	}
@@ -202,4 +243,50 @@ func (s *Service) GetBySession(ctx context.Context, sessionID string) (*Webhook,
 // Delete removes the webhook for a session
 func (s *Service) Delete(ctx context.Context, sessionID string) error {
 	return s.repo.Delete(ctx, sessionID)
+}
+
+// extractMsgIDFromEvent extracts the message ID from a WhatsApp event
+func extractMsgIDFromEvent(rawEvent interface{}) string {
+	if rawEvent == nil {
+		return ""
+	}
+
+	// Try to extract from map (after JSON marshaling)
+	if m, ok := rawEvent.(map[string]interface{}); ok {
+		if info, ok := m["Info"].(map[string]interface{}); ok {
+			if id, ok := info["ID"].(string); ok {
+				return id
+			}
+		}
+	}
+
+	// Try type assertion for whatsmeow events.Message
+	type messageEvent interface {
+		GetInfo() interface{}
+	}
+	if evt, ok := rawEvent.(messageEvent); ok {
+		info := evt.GetInfo()
+		if infoMap, ok := info.(map[string]interface{}); ok {
+			if id, ok := infoMap["ID"].(string); ok {
+				return id
+			}
+		}
+	}
+
+	// Use reflection as last resort
+	eventJSON, err := json.Marshal(rawEvent)
+	if err != nil {
+		return ""
+	}
+	var eventMap map[string]interface{}
+	if json.Unmarshal(eventJSON, &eventMap) != nil {
+		return ""
+	}
+	if info, ok := eventMap["Info"].(map[string]interface{}); ok {
+		if id, ok := info["ID"].(string); ok {
+			return id
+		}
+	}
+
+	return ""
 }
