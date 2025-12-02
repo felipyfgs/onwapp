@@ -74,6 +74,7 @@ services:
       - MINIO_SECRET_KEY=zpwoot123
       - MINIO_BUCKET=zpwoot-media
       - MINIO_USE_SSL=true
+      - MINIO_PUBLIC_URL=https://s3.yourdomain.com
       # NATS
       - NATS_ENABLED=true
       - NATS_URL=nats://zpwoot_nats:4222

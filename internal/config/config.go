@@ -70,6 +70,7 @@ type Config struct {
 	MinioSecretKey string
 	MinioBucket    string
 	MinioUseSSL    bool
+	MinioPublicURL string // Optional: public URL for media files (defaults to endpoint)
 
 	// Debug options
 	DebugHistorySync bool // Save history sync JSON dumps to files
@@ -105,6 +106,7 @@ func Load() *Config {
 		MinioSecretKey: getEnv("MINIO_SECRET_KEY", "zpwoot123"),
 		MinioBucket:    getEnv("MINIO_BUCKET", "zpwoot-media"),
 		MinioUseSSL:    getEnv("MINIO_USE_SSL", "false") == "true",
+		MinioPublicURL: getEnv("MINIO_PUBLIC_URL", ""),
 
 		DebugHistorySync: getEnv("DEBUG_HISTORY_SYNC", "false") == "true",
 

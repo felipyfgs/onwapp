@@ -49,11 +49,17 @@ func NewStorageService(cfg *config.Config) (*StorageService, error) {
 	}
 
 	// Build public URL
-	protocol := "http"
-	if cfg.MinioUseSSL {
-		protocol = "https"
+	if cfg.MinioPublicURL != "" {
+		// Use explicit public URL if provided
+		s.publicURL = fmt.Sprintf("%s/%s", strings.TrimSuffix(cfg.MinioPublicURL, "/"), cfg.MinioBucket)
+	} else {
+		// Default: build from endpoint
+		protocol := "http"
+		if cfg.MinioUseSSL {
+			protocol = "https"
+		}
+		s.publicURL = fmt.Sprintf("%s://%s/%s", protocol, cfg.MinioEndpoint, cfg.MinioBucket)
 	}
-	s.publicURL = fmt.Sprintf("%s://%s/%s", protocol, cfg.MinioEndpoint, cfg.MinioBucket)
 
 	return s, nil
 }
