@@ -5,20 +5,12 @@
       "command": "npx",
       "args": ["-y", "@upstash/context7-mcp"]
     },
-    // "zpwoot-db-dev": {
-    //   "type": "stdio",
-    //   "command": "npx",
-    //   "args": ["-y", "mcp-postgres-server"],
-    //   "env": {
-    //     "DATABASE_URL": "postgres://zpwoot:zpwoot123@localhost:5434/zpwoot"
-    //   }
-    // },
-    "zpwoot-db-prod": {
+    "zpwoot-db-dev": {
       "type": "stdio",
       "command": "npx",
       "args": ["-y", "mcp-postgres-server"],
       "env": {
-        "DATABASE_URL": "postgres://zpwoot:zpwoot123@localhost:5432/zpwoot"
+        "DATABASE_URL": "postgres://zpwoot:zpwoot123@localhost:5434/zpwoot"
       }
     },
     "chatwoot-db": {
