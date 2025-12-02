@@ -47,6 +47,14 @@ func (s *Service) processIncomingMessageInternal(ctx context.Context, session *m
 		return 0, 0, nil, nil
 	}
 
+	// Prevent duplicate processing with in-memory lock
+	cacheKey := fmt.Sprintf("in:%d:%s", cfg.InboxID, evt.Info.ID)
+	if !msgProcessingCache.tryAcquire(cacheKey) {
+		logger.Debug().Str("msgId", evt.Info.ID).Int("inboxId", cfg.InboxID).Msg("Chatwoot: skipping duplicate incoming processing")
+		return 0, 0, nil, nil
+	}
+	defer msgProcessingCache.release(cacheKey)
+
 	remoteJid := evt.Info.Chat.String()
 
 	if util.IsLIDJID(remoteJid) && s.database != nil && s.database.Contacts != nil {
@@ -281,6 +289,14 @@ func (s *Service) processOutgoingMessageInternal(ctx context.Context, session *m
 	if cfg == nil {
 		return 0, 0, nil, nil
 	}
+
+	// Prevent duplicate processing with in-memory lock
+	cacheKey := fmt.Sprintf("out:%d:%s", cfg.InboxID, evt.Info.ID)
+	if !msgProcessingCache.tryAcquire(cacheKey) {
+		logger.Debug().Str("msgId", evt.Info.ID).Int("inboxId", cfg.InboxID).Msg("Chatwoot: skipping duplicate outgoing processing")
+		return 0, 0, nil, nil
+	}
+	defer msgProcessingCache.release(cacheKey)
 
 	remoteJid := evt.Info.Chat.String()
 

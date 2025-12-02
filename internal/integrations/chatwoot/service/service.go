@@ -5,6 +5,8 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
+	"time"
 
 	"go.mau.fi/whatsmeow/proto/waE2E"
 
@@ -15,6 +17,48 @@ import (
 	"zpwoot/internal/integrations/chatwoot/util"
 	"zpwoot/internal/logger"
 )
+
+// processingCache prevents duplicate message processing
+type processingCache struct {
+	mu    sync.Mutex
+	items map[string]time.Time
+}
+
+func newProcessingCache() *processingCache {
+	return &processingCache{
+		items: make(map[string]time.Time),
+	}
+}
+
+// tryAcquire attempts to acquire a lock for processing a message.
+// Returns true if acquired, false if already being processed.
+func (c *processingCache) tryAcquire(key string) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Clean old entries (older than 30 seconds)
+	now := time.Now()
+	for k, t := range c.items {
+		if now.Sub(t) > 30*time.Second {
+			delete(c.items, k)
+		}
+	}
+
+	if _, exists := c.items[key]; exists {
+		return false
+	}
+	c.items[key] = now
+	return true
+}
+
+// release releases the lock for a message
+func (c *processingCache) release(key string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	delete(c.items, key)
+}
+
+var msgProcessingCache = newProcessingCache()
 
 // MediaDownloader is a function type for downloading media from WhatsApp messages
 type MediaDownloader func(ctx context.Context, sessionName string, msg *waE2E.Message) ([]byte, error)
