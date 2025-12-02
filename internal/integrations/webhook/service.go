@@ -19,10 +19,22 @@ const (
 	timeout    = 10 * time.Second
 )
 
+// ChatwootInfo contains Chatwoot metadata to include in webhook payload
+type ChatwootInfo struct {
+	Account int `json:"chatwootAccount,omitempty"`
+	InboxID int `json:"chatwootInboxId,omitempty"`
+}
+
+// ChatwootProvider fetches Chatwoot config for a session
+type ChatwootProvider interface {
+	GetChatwootInfo(ctx context.Context, sessionID string) *ChatwootInfo
+}
+
 // Service handles webhook business logic
 type Service struct {
-	repo       *Repository
-	httpClient *http.Client
+	repo             *Repository
+	httpClient       *http.Client
+	chatwootProvider ChatwootProvider
 }
 
 // NewService creates a new Webhook service
@@ -33,6 +45,11 @@ func NewService(repo *Repository) *Service {
 			Timeout: timeout,
 		},
 	}
+}
+
+// SetChatwootProvider sets the provider for Chatwoot metadata
+func (s *Service) SetChatwootProvider(provider ChatwootProvider) {
+	s.chatwootProvider = provider
 }
 
 // Send sends a webhook notification with flat payload structure
@@ -56,6 +73,18 @@ func (s *Service) Send(ctx context.Context, sessionID, sessionName, event string
 	payload["event"] = event
 	payload["sessionId"] = sessionID
 	payload["sessionName"] = sessionName
+
+	// Add Chatwoot metadata if available
+	if s.chatwootProvider != nil {
+		if cwInfo := s.chatwootProvider.GetChatwootInfo(ctx, sessionID); cwInfo != nil {
+			if cwInfo.Account > 0 {
+				payload["chatwootAccount"] = cwInfo.Account
+			}
+			if cwInfo.InboxID > 0 {
+				payload["chatwootInboxId"] = cwInfo.InboxID
+			}
+		}
+	}
 
 	// Merge event fields into payload (flatten)
 	if rawEvent != nil {
