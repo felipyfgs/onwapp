@@ -17,10 +17,10 @@ import (
 )
 
 // ProcessIncomingFromQueue processes an incoming message from the queue
-func (s *Service) ProcessIncomingFromQueue(ctx context.Context, sessionID, sessionId string, data *queue.WAToCWMessage) error {
+func (s *Service) ProcessIncomingFromQueue(ctx context.Context, sessionID string, data *queue.WAToCWMessage) error {
 	session := &model.Session{
-		ID:   sessionID,
-		Name: sessionId,
+		ID:        sessionID,
+		SessionId: sessionID,
 	}
 
 	// Deserialize the raw protobuf message
@@ -67,10 +67,10 @@ func (s *Service) ProcessIncomingFromQueue(ctx context.Context, sessionID, sessi
 }
 
 // ProcessOutgoingFromQueue processes an outgoing message from the queue
-func (s *Service) ProcessOutgoingFromQueue(ctx context.Context, sessionID, sessionId string, data *queue.WAToCWMessage) error {
+func (s *Service) ProcessOutgoingFromQueue(ctx context.Context, sessionID string, data *queue.WAToCWMessage) error {
 	session := &model.Session{
-		ID:   sessionID,
-		Name: sessionId,
+		ID:        sessionID,
+		SessionId: sessionID,
 	}
 
 	// Deserialize the raw protobuf message
@@ -117,20 +117,20 @@ func (s *Service) ProcessOutgoingFromQueue(ctx context.Context, sessionID, sessi
 }
 
 // ProcessReactionFromQueue processes a reaction message from the queue
-func (s *Service) ProcessReactionFromQueue(ctx context.Context, sessionID, sessionId string, data *queue.WAToCWReactionMessage) error {
+func (s *Service) ProcessReactionFromQueue(ctx context.Context, sessionID string, data *queue.WAToCWReactionMessage) error {
 	session := &model.Session{
-		ID:   sessionID,
-		Name: sessionId,
+		ID:        sessionID,
+		SessionId: sessionID,
 	}
 
 	return s.ProcessReactionMessage(ctx, session, data.Emoji, data.TargetMsgID, data.ChatJID, data.SenderJID, data.IsFromMe)
 }
 
 // ProcessDeleteFromQueue processes a message deletion from the queue
-func (s *Service) ProcessDeleteFromQueue(ctx context.Context, sessionID, sessionId string, data *queue.WAToCWDeleteMessage) error {
+func (s *Service) ProcessDeleteFromQueue(ctx context.Context, sessionID string, data *queue.WAToCWDeleteMessage) error {
 	session := &model.Session{
-		ID:   sessionID,
-		Name: sessionId,
+		ID:        sessionID,
+		SessionId: sessionID,
 	}
 
 	return s.ProcessMessageDelete(ctx, session, data.DeletedMsgID)
@@ -154,7 +154,7 @@ func RegisterQueueHandlers(queueSvc *queue.Service, chatwootSvc *Service) {
 			Str("messageId", data.MessageID).
 			Msg("Processing incoming message from queue")
 
-		return chatwootSvc.ProcessIncomingFromQueue(ctx, msg.SessionID, msg.SessionId, &data)
+		return chatwootSvc.ProcessIncomingFromQueue(ctx, msg.SessionID, &data)
 	})
 
 	// Handler for outgoing messages sent directly from WhatsApp
@@ -169,7 +169,7 @@ func RegisterQueueHandlers(queueSvc *queue.Service, chatwootSvc *Service) {
 			Str("messageId", data.MessageID).
 			Msg("Processing outgoing message from queue")
 
-		return chatwootSvc.ProcessOutgoingFromQueue(ctx, msg.SessionID, msg.SessionId, &data)
+		return chatwootSvc.ProcessOutgoingFromQueue(ctx, msg.SessionID, &data)
 	})
 
 	// Handler for reactions

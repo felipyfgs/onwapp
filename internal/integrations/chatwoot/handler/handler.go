@@ -491,7 +491,7 @@ func (h *Handler) enqueueToWhatsApp(ctx context.Context, session *model.Session,
 		ChatwootConvID: chatwootConvID,
 	}
 
-	if err := h.queueProducer.PublishCWToWA(ctx, session.ID, session.SessionId, msgType, queueMsg); err != nil {
+	if err := h.queueProducer.PublishCWToWA(ctx, session.ID, msgType, queueMsg); err != nil {
 		logger.Warn().
 			Err(err).
 			Str("session", session.SessionId).

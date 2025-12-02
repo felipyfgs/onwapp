@@ -146,7 +146,7 @@ func (h *EventHandler) enqueueMessage(ctx context.Context, session *model.Sessio
 		msgType = queue.MsgTypeOutgoingSent
 	}
 
-	if err := h.queueProducer.PublishWAToCW(ctx, session.ID, session.SessionId, msgType, queueMsg); err != nil {
+	if err := h.queueProducer.PublishWAToCW(ctx, session.ID, msgType, queueMsg); err != nil {
 		logger.Warn().
 			Err(err).
 			Str("session", session.SessionId).

@@ -22,20 +22,19 @@ func NewProducer(client *Client) *Producer {
 }
 
 // PublishWAToCW publica mensagem WhatsApp -> Chatwoot
-func (p *Producer) PublishWAToCW(ctx context.Context, sessionID, sessionId string, msgType MessageType, data interface{}) error {
+func (p *Producer) PublishWAToCW(ctx context.Context, sessionID string, msgType MessageType, data interface{}) error {
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("failed to marshal data: %w", err)
 	}
 
 	msg := &QueueMessage{
-		ID:          uuid.NewString(),
-		Type:        msgType,
-		SessionID:   sessionID,
-		SessionId: sessionId,
-		Timestamp:   time.Now(),
-		Retries:     0,
-		Data:        dataBytes,
+		ID:        uuid.NewString(),
+		Type:      msgType,
+		SessionID: sessionID,
+		Timestamp: time.Now(),
+		Retries:   0,
+		Data:      dataBytes,
 	}
 
 	subject := p.client.Subject(StreamWAToCW, string(msgType))
@@ -43,20 +42,19 @@ func (p *Producer) PublishWAToCW(ctx context.Context, sessionID, sessionId strin
 }
 
 // PublishCWToWA publica mensagem Chatwoot -> WhatsApp
-func (p *Producer) PublishCWToWA(ctx context.Context, sessionID, sessionId string, msgType MessageType, data interface{}) error {
+func (p *Producer) PublishCWToWA(ctx context.Context, sessionID string, msgType MessageType, data interface{}) error {
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("failed to marshal data: %w", err)
 	}
 
 	msg := &QueueMessage{
-		ID:          uuid.NewString(),
-		Type:        msgType,
-		SessionID:   sessionID,
-		SessionId: sessionId,
-		Timestamp:   time.Now(),
-		Retries:     0,
-		Data:        dataBytes,
+		ID:        uuid.NewString(),
+		Type:      msgType,
+		SessionID: sessionID,
+		Timestamp: time.Now(),
+		Retries:   0,
+		Data:      dataBytes,
 	}
 
 	subject := p.client.Subject(StreamCWToWA, string(msgType))
