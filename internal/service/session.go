@@ -302,6 +302,20 @@ func (s *SessionService) AddEventHandler(handler EventHandler) {
 	s.externalHandlers = append(s.externalHandlers, handler)
 }
 
+// EmitSyntheticEvent emits a synthetic event to all external handlers.
+// Used to notify integrations (like Chatwoot) about messages sent via API.
+func (s *SessionService) EmitSyntheticEvent(sessionName string, evt interface{}) {
+	session, err := s.Get(sessionName)
+	if err != nil {
+		logger.Debug().Err(err).Str("session", sessionName).Msg("EmitSyntheticEvent: session not found")
+		return
+	}
+
+	for _, handler := range s.externalHandlers {
+		handler(session, evt)
+	}
+}
+
 // SetMediaService sets the media service for downloading media to storage
 func (s *SessionService) SetMediaService(mediaService *MediaService) {
 	s.eventService.SetMediaService(mediaService)

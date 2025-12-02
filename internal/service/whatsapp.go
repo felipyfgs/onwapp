@@ -85,6 +85,31 @@ func parseGroupJID(groupID string) (types.JID, error) {
 	return util.ParseGroupJID(groupID)
 }
 
+// emitSentMessageEvent emits a synthetic event for messages sent via API.
+// This allows integrations (like Chatwoot) to process outgoing messages.
+func (w *WhatsAppService) emitSentMessageEvent(sessionName string, resp whatsmeow.SendResponse, jid types.JID, msg *waE2E.Message) {
+	session, err := w.sessionService.Get(sessionName)
+	if err != nil || session.Client.Store.ID == nil {
+		return
+	}
+
+	evt := &events.Message{
+		Info: types.MessageInfo{
+			ID:        resp.ID,
+			Timestamp: resp.Timestamp,
+			MessageSource: types.MessageSource{
+				Chat:     jid,
+				Sender:   session.Client.Store.ID.ToNonAD(),
+				IsFromMe: true,
+				IsGroup:  jid.Server == types.GroupServer,
+			},
+		},
+		Message: msg,
+	}
+
+	w.sessionService.EmitSyntheticEvent(sessionName, evt)
+}
+
 // SendText envia mensagem de texto
 func (w *WhatsAppService) SendText(ctx context.Context, sessionName, phone, text string) (whatsmeow.SendResponse, error) {
 	client, err := w.getClient(sessionName)
@@ -101,7 +126,13 @@ func (w *WhatsAppService) SendText(ctx context.Context, sessionName, phone, text
 		Conversation: proto.String(text),
 	}
 
-	return client.SendMessage(ctx, jid, msg)
+	resp, err := client.SendMessage(ctx, jid, msg)
+	if err != nil {
+		return resp, err
+	}
+
+	w.emitSentMessageEvent(sessionName, resp, jid, msg)
+	return resp, nil
 }
 
 // QuotedMessage holds information for quoting a previous message
@@ -232,6 +263,7 @@ func (w *WhatsAppService) SendImage(ctx context.Context, sessionName, phone stri
 
 	// Save sent media asynchronously
 	w.saveSentMediaAsync(sessionName, resp.ID, jid.String(), "image", mimeType, "", caption, imageData)
+	w.emitSentMessageEvent(sessionName, resp, jid, msg)
 
 	return resp, nil
 }
@@ -313,7 +345,13 @@ func (w *WhatsAppService) SendDocument(ctx context.Context, sessionName, phone s
 		},
 	}
 
-	return client.SendMessage(ctx, jid, msg)
+	resp, err := client.SendMessage(ctx, jid, msg)
+	if err != nil {
+		return resp, err
+	}
+
+	w.emitSentMessageEvent(sessionName, resp, jid, msg)
+	return resp, nil
 }
 
 // SendAudioWithQuote sends an audio with a quoted message reference
@@ -393,7 +431,13 @@ func (w *WhatsAppService) SendAudio(ctx context.Context, sessionName, phone stri
 		},
 	}
 
-	return client.SendMessage(ctx, jid, msg)
+	resp, err := client.SendMessage(ctx, jid, msg)
+	if err != nil {
+		return resp, err
+	}
+
+	w.emitSentMessageEvent(sessionName, resp, jid, msg)
+	return resp, nil
 }
 
 // SendVideoWithQuote sends a video with a quoted message reference
@@ -473,7 +517,13 @@ func (w *WhatsAppService) SendVideo(ctx context.Context, sessionName, phone stri
 		},
 	}
 
-	return client.SendMessage(ctx, jid, msg)
+	resp, err := client.SendMessage(ctx, jid, msg)
+	if err != nil {
+		return resp, err
+	}
+
+	w.emitSentMessageEvent(sessionName, resp, jid, msg)
+	return resp, nil
 }
 
 // SendSticker envia sticker
@@ -505,7 +555,13 @@ func (w *WhatsAppService) SendSticker(ctx context.Context, sessionName, phone st
 		},
 	}
 
-	return client.SendMessage(ctx, jid, msg)
+	resp, err := client.SendMessage(ctx, jid, msg)
+	if err != nil {
+		return resp, err
+	}
+
+	w.emitSentMessageEvent(sessionName, resp, jid, msg)
+	return resp, nil
 }
 
 // SendLocation envia localização
@@ -529,7 +585,13 @@ func (w *WhatsAppService) SendLocation(ctx context.Context, sessionName, phone s
 		},
 	}
 
-	return client.SendMessage(ctx, jid, msg)
+	resp, err := client.SendMessage(ctx, jid, msg)
+	if err != nil {
+		return resp, err
+	}
+
+	w.emitSentMessageEvent(sessionName, resp, jid, msg)
+	return resp, nil
 }
 
 // SendContact envia contato
@@ -554,7 +616,13 @@ func (w *WhatsAppService) SendContact(ctx context.Context, sessionName, phone, c
 		},
 	}
 
-	return client.SendMessage(ctx, jid, msg)
+	resp, err := client.SendMessage(ctx, jid, msg)
+	if err != nil {
+		return resp, err
+	}
+
+	w.emitSentMessageEvent(sessionName, resp, jid, msg)
+	return resp, nil
 }
 
 // SendReaction envia reação a uma mensagem
@@ -1020,7 +1088,13 @@ func (w *WhatsAppService) SendGroupMessage(ctx context.Context, sessionName, gro
 		Conversation: proto.String(text),
 	}
 
-	return client.SendMessage(ctx, jid, msg)
+	resp, err := client.SendMessage(ctx, jid, msg)
+	if err != nil {
+		return resp, err
+	}
+
+	w.emitSentMessageEvent(sessionName, resp, jid, msg)
+	return resp, nil
 }
 
 // CONTACT METHODS
@@ -1261,7 +1335,13 @@ func (w *WhatsAppService) SendPoll(ctx context.Context, sessionName, phone, name
 	}
 
 	msg := client.BuildPollCreation(name, options, selectableCount)
-	return client.SendMessage(ctx, jid, msg)
+	resp, err := client.SendMessage(ctx, jid, msg)
+	if err != nil {
+		return resp, err
+	}
+
+	w.emitSentMessageEvent(sessionName, resp, jid, msg)
+	return resp, nil
 }
 
 // SendPollVote vota em uma enquete

@@ -1,43 +1,12 @@
-# Production Stack - ZPWoot API with all dependencies
-# Usage: docker compose up -d
+# Development Stack - Dependencies only (API runs locally)
+# Usage: make up (or docker compose up -d)
+# Note: Uses different container/volume names to avoid conflicts with Swarm stack
 
 services:
-  # ZPWoot API
-  zpwoot:
-    image: onwapp/zpwoot:latest
-    container_name: zpwoot-api
-    restart: unless-stopped
-    ports:
-      - '3000:3000'
-    environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-zpwoot}:${POSTGRES_PASSWORD:-zpwoot123}@postgres:5432/${POSTGRES_DB:-zpwoot}?sslmode=disable
-      PORT: 3000
-      API_KEY: ${API_KEY:-change-this-api-key}
-      LOG_LEVEL: ${LOG_LEVEL:-info}
-      LOG_FORMAT: ${LOG_FORMAT:-console}
-      # MinIO
-      MINIO_ENDPOINT: minio:9000
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-zpwoot}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-zpwoot123}
-      MINIO_BUCKET: ${MINIO_BUCKET:-zpwoot-media}
-      MINIO_USE_SSL: "false"
-      # NATS
-      NATS_ENABLED: ${NATS_ENABLED:-true}
-      NATS_URL: nats://nats:4222
-    volumes:
-      - ./chatwoot-config.json:/app/chatwoot-config.json:ro
-    depends_on:
-      postgres:
-        condition: service_healthy
-      nats:
-        condition: service_healthy
-    networks:
-      - zpwoot-network
-
   # PostgreSQL Database
-  postgres:
+  dev_postgres:
     image: postgres:16-alpine
-    container_name: zpwoot-postgres
+    container_name: zpwoot-dev-postgres
     restart: unless-stopped
     ports:
       - '5432:5432'
@@ -47,9 +16,9 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-zpwoot}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - dev_postgres_data:/var/lib/postgresql/data
     networks:
-      - zpwoot-network
+      - zpwoot-dev-network
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-zpwoot} -d ${POSTGRES_DB:-zpwoot}']
       interval: 10s
@@ -57,9 +26,9 @@ services:
       retries: 5
 
   # NATS JetStream
-  nats:
+  dev_nats:
     image: nats:latest
-    container_name: zpwoot-nats
+    container_name: zpwoot-dev-nats
     restart: unless-stopped
     ports:
       - '4222:4222'
@@ -69,19 +38,14 @@ services:
       - "--js"
       - "--store_dir=/data"
     volumes:
-      - nats_data:/data
-    healthcheck:
-      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:8222/healthz']
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - dev_nats_data:/data
     networks:
-      - zpwoot-network
+      - zpwoot-dev-network
 
   # MinIO (S3 Storage)
-  minio:
+  dev_minio:
     image: quay.io/minio/minio:RELEASE.2024-01-13T07-53-03Z-cpuv1
-    container_name: zpwoot-minio
+    container_name: zpwoot-dev-minio
     command: server /data --console-address ":9001"
     restart: unless-stopped
     ports:
@@ -91,15 +55,15 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-zpwoot}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-zpwoot123}
     volumes:
-      - minio_data:/data
+      - dev_minio_data:/data
     networks:
-      - zpwoot-network
+      - zpwoot-dev-network
 
 volumes:
-  postgres_data:
-  nats_data:
-  minio_data:
+  dev_postgres_data:
+  dev_nats_data:
+  dev_minio_data:
 
 networks:
-  zpwoot-network:
+  zpwoot-dev-network:
     driver: bridge
