@@ -61,7 +61,26 @@ func GetMediaInfo(msg *waE2E.Message) *core.MediaInfo {
 	if doc := msg.GetDocumentMessage(); doc != nil {
 		filename := doc.GetFileName()
 		if filename == "" {
-			filename = "document"
+			filename = doc.GetTitle()
+		}
+		if filename == "" {
+			// Generate filename from mimetype
+			ext := ".bin"
+			switch doc.GetMimetype() {
+			case "application/pdf":
+				ext = ".pdf"
+			case "application/msword":
+				ext = ".doc"
+			case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+				ext = ".docx"
+			case "application/vnd.ms-excel":
+				ext = ".xls"
+			case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+				ext = ".xlsx"
+			case "text/plain":
+				ext = ".txt"
+			}
+			filename = "document" + ext
 		}
 		return &core.MediaInfo{
 			IsMedia:  true,
