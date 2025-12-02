@@ -23,7 +23,7 @@ type EventHandler func(session *model.Session, evt interface{})
 
 // WebhookSender defines the interface for sending webhooks
 type WebhookSender interface {
-	Send(ctx context.Context, sessionID, sessionName, event string, rawEvent interface{})
+	Send(ctx context.Context, sessionID, sessionId, event string, rawEvent interface{})
 }
 
 type SessionService struct {

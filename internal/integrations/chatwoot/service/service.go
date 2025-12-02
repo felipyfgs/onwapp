@@ -185,12 +185,12 @@ func ReleaseCWToWAProcessing(key string) {
 }
 
 // MediaDownloader is a function type for downloading media from WhatsApp messages
-type MediaDownloader func(ctx context.Context, sessionName string, msg *waE2E.Message) ([]byte, error)
+type MediaDownloader func(ctx context.Context, sessionId string, msg *waE2E.Message) ([]byte, error)
 
 // WebhookSender is an interface for sending webhooks with Chatwoot info
 type WebhookSender interface {
-	SendWithChatwoot(ctx context.Context, sessionID, sessionName, event string, rawEvent interface{}, cwInfo *ChatwootInfo)
-	SendWithPreserializedJSON(ctx context.Context, sessionID, sessionName, event string, eventJSON []byte, cwInfo *ChatwootInfo)
+	SendWithChatwoot(ctx context.Context, sessionID, sessionId, event string, rawEvent interface{}, cwInfo *ChatwootInfo)
+	SendWithPreserializedJSON(ctx context.Context, sessionID, sessionId, event string, eventJSON []byte, cwInfo *ChatwootInfo)
 }
 
 // ChatwootInfo contains Chatwoot metadata for webhook
@@ -309,8 +309,8 @@ type SetConfigRequest struct {
 }
 
 // SetConfig creates or updates Chatwoot configuration for a session
-func (s *Service) SetConfig(ctx context.Context, sessionID, sessionName string, req *SetConfigRequest) (*core.Config, error) {
-	webhookURL := fmt.Sprintf("%s/chatwoot/webhook/%s", s.baseURL, sessionName)
+func (s *Service) SetConfig(ctx context.Context, sessionID, sessionId string, req *SetConfigRequest) (*core.Config, error) {
+	webhookURL := fmt.Sprintf("%s/chatwoot/webhook/%s", s.baseURL, sessionId)
 
 	cfg := &core.Config{
 		SessionID:      sessionID,
@@ -338,7 +338,7 @@ func (s *Service) SetConfig(ctx context.Context, sessionID, sessionName string, 
 	}
 
 	if cfg.Inbox == "" {
-		cfg.Inbox = sessionName
+		cfg.Inbox = sessionId
 	}
 
 	savedCfg, err := s.repo.Upsert(ctx, cfg)
@@ -348,7 +348,7 @@ func (s *Service) SetConfig(ctx context.Context, sessionID, sessionName string, 
 
 	if req.Enabled && req.AutoCreate {
 		if err := s.initInboxWithBot(ctx, savedCfg, req.Number, req.Organization, req.Logo); err != nil {
-			logger.Warn().Err(err).Str("session", sessionName).Msg("Failed to auto-create Chatwoot inbox")
+			logger.Warn().Err(err).Str("session", sessionId).Msg("Failed to auto-create Chatwoot inbox")
 		}
 	}
 

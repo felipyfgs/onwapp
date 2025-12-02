@@ -56,13 +56,13 @@ func (s *Service) SetChatwootProvider(provider ChatwootProvider) {
 }
 
 // Send sends a webhook notification with flat payload structure
-func (s *Service) Send(ctx context.Context, sessionID, sessionName, event string, rawEvent interface{}) {
-	s.SendWithChatwoot(ctx, sessionID, sessionName, event, rawEvent, nil)
+func (s *Service) Send(ctx context.Context, sessionID, sessionId, event string, rawEvent interface{}) {
+	s.SendWithChatwoot(ctx, sessionID, sessionId, event, rawEvent, nil)
 }
 
 // SendWithPreserializedJSON sends webhook using pre-serialized JSON (most performant)
 // Avoids re-serialization when JSON is already available (e.g., from queue processing)
-func (s *Service) SendWithPreserializedJSON(ctx context.Context, sessionID, sessionName, event string, eventJSON []byte, cwInfo *ChatwootInfo) {
+func (s *Service) SendWithPreserializedJSON(ctx context.Context, sessionID, sessionId, event string, eventJSON []byte, cwInfo *ChatwootInfo) {
 	wh, err := s.repo.GetEnabledBySession(ctx, sessionID)
 	if err != nil {
 		logger.Error().Err(err).Str("sessionId", sessionID).Msg("Failed to get webhook")
@@ -90,7 +90,7 @@ func (s *Service) SendWithPreserializedJSON(ctx context.Context, sessionID, sess
 	// Inject metadata
 	payload["event"] = event
 	payload["sessionId"] = sessionID
-	payload["sessionName"] = sessionName
+	payload["sessionId"] = sessionId
 
 	// Add Chatwoot metadata
 	if cwInfo != nil {
@@ -118,7 +118,7 @@ func (s *Service) SendWithPreserializedJSON(ctx context.Context, sessionID, sess
 }
 
 // SendWithChatwoot sends a webhook notification with Chatwoot IDs included
-func (s *Service) SendWithChatwoot(ctx context.Context, sessionID, sessionName, event string, rawEvent interface{}, cwInfo *ChatwootInfo) {
+func (s *Service) SendWithChatwoot(ctx context.Context, sessionID, sessionId, event string, rawEvent interface{}, cwInfo *ChatwootInfo) {
 	wh, err := s.repo.GetEnabledBySession(ctx, sessionID)
 	if err != nil {
 		logger.Error().Err(err).Str("sessionId", sessionID).Msg("Failed to get webhook")
@@ -137,7 +137,7 @@ func (s *Service) SendWithChatwoot(ctx context.Context, sessionID, sessionName, 
 	payload := make(map[string]interface{})
 	payload["event"] = event
 	payload["sessionId"] = sessionID
-	payload["sessionName"] = sessionName
+	payload["sessionId"] = sessionId
 
 	// Add Chatwoot metadata if provided directly
 	if cwInfo != nil {

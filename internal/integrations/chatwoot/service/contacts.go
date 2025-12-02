@@ -14,10 +14,10 @@ import (
 )
 
 // ProfilePictureFetcher is a function type for getting profile pictures from WhatsApp
-type ProfilePictureFetcher func(ctx context.Context, sessionName string, jid string) (string, error)
+type ProfilePictureFetcher func(ctx context.Context, sessionId string, jid string) (string, error)
 
 // GroupInfoFetcher is a function type for getting group metadata from WhatsApp
-type GroupInfoFetcher func(ctx context.Context, sessionName string, groupJid string) (string, error)
+type GroupInfoFetcher func(ctx context.Context, sessionId string, groupJid string) (string, error)
 
 // ContactNameFetcher is a function type for getting the best contact name from WhatsApp contacts
 // Priority: 1. full_name (address book), 2. business_name, 3. push_name
@@ -50,7 +50,7 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 	getProfilePicture ProfilePictureFetcher,
 	getGroupInfo GroupInfoFetcher,
 	getContactName ContactNameFetcher,
-	sessionName string,
+	sessionId string,
 ) (int, error) {
 	isGroup := strings.HasSuffix(remoteJid, "@g.us")
 	cacheKey := fmt.Sprintf("%s:%s", cfg.SessionID, remoteJid)
@@ -117,7 +117,7 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 			groupName := fmt.Sprintf("%s (GROUP)", phoneNumber)
 
 			if getGroupInfo != nil {
-				if name, err := getGroupInfo(ctx, sessionName, remoteJid); err == nil && name != "" {
+				if name, err := getGroupInfo(ctx, sessionId, remoteJid); err == nil && name != "" {
 					groupName = fmt.Sprintf("%s (GROUP)", name)
 					logger.Debug().
 						Str("groupJid", remoteJid).
@@ -133,7 +133,7 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 
 			var avatarURL string
 			if getProfilePicture != nil {
-				if pic, err := getProfilePicture(ctx, sessionName, remoteJid); err == nil && pic != "" {
+				if pic, err := getProfilePicture(ctx, sessionId, remoteJid); err == nil && pic != "" {
 					avatarURL = pic
 				}
 			}
@@ -154,7 +154,7 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 
 			var avatarURL string
 			if getProfilePicture != nil && !isFromMe {
-				if pic, err := getProfilePicture(ctx, sessionName, phoneNumber); err == nil && pic != "" {
+				if pic, err := getProfilePicture(ctx, sessionId, phoneNumber); err == nil && pic != "" {
 					avatarURL = pic
 				}
 			}
@@ -212,7 +212,7 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 			// Retry without cache - recursive call with cleared cache
 			return cm.GetOrCreateContactAndConversation(
 				ctx, c, cfg, remoteJid, pushName, isFromMe,
-				participantJid, getProfilePicture, getGroupInfo, getContactName, sessionName,
+				participantJid, getProfilePicture, getGroupInfo, getContactName, sessionId,
 			)
 		}
 		return 0, fmt.Errorf("failed to get/create conversation: %w", err)

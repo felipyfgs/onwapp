@@ -66,8 +66,8 @@ func (h *Handler) SetQueueProducer(producer *queue.Producer) {
 // @Security ApiKeyAuth
 // @Router /sessions/{sessionId}/chatwoot/set [post]
 func (h *Handler) SetConfig(c *gin.Context) {
-	sessionName := c.Param("sessionId")
-	session, err := h.sessionService.Get(sessionName)
+	sessionId := c.Param("sessionId")
+	session, err := h.sessionService.Get(sessionId)
 	if err != nil || session == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
 		return
@@ -113,7 +113,7 @@ func (h *Handler) SetConfig(c *gin.Context) {
 
 	cfg, err := h.service.SetConfig(c.Request.Context(), session.ID, session.SessionId, svcReq)
 	if err != nil {
-		logger.Warn().Err(err).Str("session", sessionName).Msg("Chatwoot: failed to set config")
+		logger.Warn().Err(err).Str("session", sessionId).Msg("Chatwoot: failed to set config")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -132,8 +132,8 @@ func (h *Handler) SetConfig(c *gin.Context) {
 // @Security ApiKeyAuth
 // @Router /sessions/{sessionId}/chatwoot/find [get]
 func (h *Handler) GetConfig(c *gin.Context) {
-	sessionName := c.Param("sessionId")
-	session, err := h.sessionService.Get(sessionName)
+	sessionId := c.Param("sessionId")
+	session, err := h.sessionService.Get(sessionId)
 	if err != nil || session == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
 		return
@@ -141,7 +141,7 @@ func (h *Handler) GetConfig(c *gin.Context) {
 
 	cfg, err := h.service.GetConfig(c.Request.Context(), session.ID)
 	if err != nil {
-		logger.Warn().Err(err).Str("session", sessionName).Msg("Chatwoot: failed to get config")
+		logger.Warn().Err(err).Str("session", sessionId).Msg("Chatwoot: failed to get config")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -160,15 +160,15 @@ func (h *Handler) GetConfig(c *gin.Context) {
 // @Security ApiKeyAuth
 // @Router /sessions/{sessionId}/chatwoot [delete]
 func (h *Handler) DeleteConfig(c *gin.Context) {
-	sessionName := c.Param("sessionId")
-	session, err := h.sessionService.Get(sessionName)
+	sessionId := c.Param("sessionId")
+	session, err := h.sessionService.Get(sessionId)
 	if err != nil || session == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
 		return
 	}
 
 	if err := h.service.DeleteConfig(c.Request.Context(), session.ID); err != nil {
-		logger.Warn().Err(err).Str("session", sessionName).Msg("Chatwoot: failed to delete config")
+		logger.Warn().Err(err).Str("session", sessionId).Msg("Chatwoot: failed to delete config")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -190,8 +190,8 @@ func (h *Handler) DeleteConfig(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /chatwoot/webhook/{sessionId} [post]
 func (h *Handler) ReceiveWebhook(c *gin.Context) {
-	sessionName := c.Param("sessionId")
-	session, err := h.sessionService.Get(sessionName)
+	sessionId := c.Param("sessionId")
+	session, err := h.sessionService.Get(sessionId)
 	if err != nil || session == nil {
 		c.JSON(http.StatusOK, gin.H{"message": "session not found, ignoring"})
 		return
@@ -210,13 +210,13 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 
 	payload, err := cwservice.ParseWebhookPayload(body)
 	if err != nil {
-		logger.Warn().Err(err).Str("session", sessionName).Msg("Chatwoot: invalid webhook payload")
+		logger.Warn().Err(err).Str("session", sessionId).Msg("Chatwoot: invalid webhook payload")
 		c.JSON(http.StatusOK, gin.H{"message": "invalid payload"})
 		return
 	}
 
 	logger.Debug().
-		Str("session", sessionName).
+		Str("session", sessionId).
 		Str("event", payload.Event).
 		Int("msgId", payload.ID).
 		Msg("Chatwoot: webhook received")
@@ -229,7 +229,7 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 			go func() {
 				defer cancel()
 				if err := h.handleMessageDeleted(deleteCtx, session, payload); err != nil {
-					logger.Warn().Err(err).Str("session", sessionName).Msg("Chatwoot: failed to delete message from WhatsApp")
+					logger.Warn().Err(err).Str("session", sessionId).Msg("Chatwoot: failed to delete message from WhatsApp")
 				}
 			}()
 			c.JSON(http.StatusOK, gin.H{"message": "ok"})
@@ -258,7 +258,7 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 			existingMsg, _ := h.database.Messages.GetByCwMsgId(c.Request.Context(), session.ID, payload.ID)
 			if existingMsg != nil {
 				logger.Debug().
-					Str("session", sessionName).
+					Str("session", sessionId).
 					Int("cwMsgId", payload.ID).
 					Msg("Chatwoot: skipping duplicate webhook")
 				c.JSON(http.StatusOK, gin.H{"message": "skipped - duplicate"})
@@ -279,7 +279,7 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 
 		chatJid, content, attachments, err := h.service.GetWebhookDataForSending(c.Request.Context(), session.ID, payload)
 		if err != nil {
-			logger.Warn().Err(err).Str("session", sessionName).Int("msgId", payload.ID).Msg("Chatwoot: webhook data extraction failed")
+			logger.Warn().Err(err).Str("session", sessionId).Int("msgId", payload.ID).Msg("Chatwoot: webhook data extraction failed")
 			c.JSON(http.StatusOK, gin.H{"message": "processing error"})
 			return
 		}
@@ -519,14 +519,14 @@ func (h *Handler) enqueueToWhatsApp(ctx context.Context, session *model.Session,
 }
 
 // SendToWhatsAppFromQueue processes a message from the queue and sends it to WhatsApp
-func (h *Handler) SendToWhatsAppFromQueue(ctx context.Context, sessionID, sessionName string, data *queue.CWToWAMessage) error {
-	session, err := h.sessionService.Get(sessionName)
+func (h *Handler) SendToWhatsAppFromQueue(ctx context.Context, sessionID, sessionId string, data *queue.CWToWAMessage) error {
+	session, err := h.sessionService.Get(sessionId)
 	if err != nil || session == nil {
-		return fmt.Errorf("session not found: %s", sessionName)
+		return fmt.Errorf("session not found: %s", sessionId)
 	}
 
 	if session.Status != model.StatusConnected {
-		return fmt.Errorf("session not connected: %s", sessionName)
+		return fmt.Errorf("session not connected: %s", sessionId)
 	}
 
 	var quotedMsg *core.QuotedMessageInfo
@@ -641,8 +641,8 @@ func (h *Handler) SyncAll(c *gin.Context) {
 }
 
 func (h *Handler) handleSync(c *gin.Context, syncType string) {
-	sessionName := c.Param("sessionId")
-	session, err := h.sessionService.Get(sessionName)
+	sessionId := c.Param("sessionId")
+	session, err := h.sessionService.Get(sessionId)
 	if err != nil || session == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
 		return
@@ -661,7 +661,7 @@ func (h *Handler) handleSync(c *gin.Context, syncType string) {
 
 	contactsAdapter := &whatsappContactsAdapter{
 		whatsappSvc: h.whatsappSvc,
-		sessionName: sessionName,
+		sessionId: sessionId,
 	}
 
 	dbSync, err := cwsync.NewChatwootDBSync(cfg, h.database.Messages, contactsAdapter, h.database.Media, session.ID, h.database.Contacts)
@@ -695,8 +695,8 @@ func (h *Handler) handleSync(c *gin.Context, syncType string) {
 // @Security ApiKeyAuth
 // @Router /sessions/{sessionId}/chatwoot/sync/status [get]
 func (h *Handler) GetSyncStatusHandler(c *gin.Context) {
-	sessionName := c.Param("sessionId")
-	session, err := h.sessionService.Get(sessionName)
+	sessionId := c.Param("sessionId")
+	session, err := h.sessionService.Get(sessionId)
 	if err != nil || session == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
 		return
@@ -716,8 +716,8 @@ func (h *Handler) GetSyncStatusHandler(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /sessions/{sessionId}/chatwoot/reset [post]
 func (h *Handler) ResetChatwoot(c *gin.Context) {
-	sessionName := c.Param("sessionId")
-	session, err := h.sessionService.Get(sessionName)
+	sessionId := c.Param("sessionId")
+	session, err := h.sessionService.Get(sessionId)
 	if err != nil || session == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
 		return
@@ -743,7 +743,7 @@ func (h *Handler) ResetChatwoot(c *gin.Context) {
 	}
 
 	logger.Info().
-		Str("session", sessionName).
+		Str("session", sessionId).
 		Int("contactsDeleted", stats.ContactsDeleted).
 		Int("conversationsDeleted", stats.ConversationsDeleted).
 		Int("messagesDeleted", stats.MessagesDeleted).
@@ -765,11 +765,11 @@ func (h *Handler) ResetChatwoot(c *gin.Context) {
 
 type whatsappContactsAdapter struct {
 	whatsappSvc *service.WhatsAppService
-	sessionName string
+	sessionId string
 }
 
 func (a *whatsappContactsAdapter) GetAllContacts(ctx context.Context) ([]core.WhatsAppContact, error) {
-	contactsMap, err := a.whatsappSvc.GetContacts(ctx, a.sessionName)
+	contactsMap, err := a.whatsappSvc.GetContacts(ctx, a.sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -801,13 +801,13 @@ func (a *whatsappContactsAdapter) GetProfilePictureURL(ctx context.Context, jid 
 	var err error
 
 	if util.IsGroupJID(jid) {
-		pic, err = a.whatsappSvc.GetGroupProfilePicture(ctx, a.sessionName, jid)
+		pic, err = a.whatsappSvc.GetGroupProfilePicture(ctx, a.sessionId, jid)
 	} else {
 		phone := util.ExtractPhoneFromJID(jid)
 		if phone == "" {
 			return "", nil
 		}
-		pic, err = a.whatsappSvc.GetProfilePicture(ctx, a.sessionName, phone)
+		pic, err = a.whatsappSvc.GetProfilePicture(ctx, a.sessionId, phone)
 	}
 
 	if err != nil {
@@ -820,7 +820,7 @@ func (a *whatsappContactsAdapter) GetProfilePictureURL(ctx context.Context, jid 
 }
 
 func (a *whatsappContactsAdapter) GetGroupName(ctx context.Context, groupJID string) (string, error) {
-	info, err := a.whatsappSvc.GetGroupInfo(ctx, a.sessionName, groupJID)
+	info, err := a.whatsappSvc.GetGroupInfo(ctx, a.sessionId, groupJID)
 	if err != nil {
 		return "", err
 	}

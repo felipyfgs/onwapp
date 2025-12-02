@@ -71,7 +71,7 @@ func NewWebhookSenderAdapter(ws *webhook.Service) *WebhookSenderAdapter {
 }
 
 // SendWithChatwoot implements cwservice.WebhookSender interface
-func (a *WebhookSenderAdapter) SendWithChatwoot(ctx context.Context, sessionID, sessionName, event string, rawEvent interface{}, cwInfo *cwservice.ChatwootInfo) {
+func (a *WebhookSenderAdapter) SendWithChatwoot(ctx context.Context, sessionID, sessionId, event string, rawEvent interface{}, cwInfo *cwservice.ChatwootInfo) {
 	var webhookInfo *webhook.ChatwootInfo
 	if cwInfo != nil {
 		webhookInfo = &webhook.ChatwootInfo{
@@ -81,11 +81,11 @@ func (a *WebhookSenderAdapter) SendWithChatwoot(ctx context.Context, sessionID, 
 			MessageID:      cwInfo.MessageID,
 		}
 	}
-	a.webhookService.SendWithChatwoot(ctx, sessionID, sessionName, event, rawEvent, webhookInfo)
+	a.webhookService.SendWithChatwoot(ctx, sessionID, sessionId, event, rawEvent, webhookInfo)
 }
 
 // SendWithPreserializedJSON implements cwservice.WebhookSender interface (optimized path)
-func (a *WebhookSenderAdapter) SendWithPreserializedJSON(ctx context.Context, sessionID, sessionName, event string, eventJSON []byte, cwInfo *cwservice.ChatwootInfo) {
+func (a *WebhookSenderAdapter) SendWithPreserializedJSON(ctx context.Context, sessionID, sessionId, event string, eventJSON []byte, cwInfo *cwservice.ChatwootInfo) {
 	var webhookInfo *webhook.ChatwootInfo
 	if cwInfo != nil {
 		webhookInfo = &webhook.ChatwootInfo{
@@ -95,5 +95,5 @@ func (a *WebhookSenderAdapter) SendWithPreserializedJSON(ctx context.Context, se
 			MessageID:      cwInfo.MessageID,
 		}
 	}
-	a.webhookService.SendWithPreserializedJSON(ctx, sessionID, sessionName, event, eventJSON, webhookInfo)
+	a.webhookService.SendWithPreserializedJSON(ctx, sessionID, sessionId, event, eventJSON, webhookInfo)
 }

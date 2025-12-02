@@ -32,12 +32,12 @@ func (w *WhatsAppService) SetMediaService(mediaService *MediaService) {
 }
 
 // saveSentMediaAsync saves sent media to storage asynchronously
-func (w *WhatsAppService) saveSentMediaAsync(sessionName, msgID, chatJID, mediaType, mimeType, fileName, caption string, data []byte) {
+func (w *WhatsAppService) saveSentMediaAsync(sessionId, msgID, chatJID, mediaType, mimeType, fileName, caption string, data []byte) {
 	if w.mediaService == nil {
 		return
 	}
 
-	session, err := w.sessionService.Get(sessionName)
+	session, err := w.sessionService.Get(sessionId)
 	if err != nil {
 		return
 	}
@@ -65,13 +65,13 @@ func (w *WhatsAppService) saveSentMediaAsync(sessionName, msgID, chatJID, mediaT
 	}()
 }
 
-func (w *WhatsAppService) getClient(sessionName string) (*whatsmeow.Client, error) {
-	session, err := w.sessionService.Get(sessionName)
+func (w *WhatsAppService) getClient(sessionId string) (*whatsmeow.Client, error) {
+	session, err := w.sessionService.Get(sessionId)
 	if err != nil {
 		return nil, err
 	}
 	if !session.Client.IsConnected() {
-		return nil, fmt.Errorf("session %s is not connected", sessionName)
+		return nil, fmt.Errorf("session %s is not connected", sessionId)
 	}
 	return session.Client, nil
 }
@@ -87,8 +87,8 @@ func parseGroupJID(groupID string) (types.JID, error) {
 
 // emitSentMessageEvent emits a synthetic event for messages sent via API.
 // This allows integrations (like Chatwoot) to process outgoing messages.
-func (w *WhatsAppService) emitSentMessageEvent(sessionName string, resp whatsmeow.SendResponse, jid types.JID, msg *waE2E.Message) {
-	session, err := w.sessionService.Get(sessionName)
+func (w *WhatsAppService) emitSentMessageEvent(sessionId string, resp whatsmeow.SendResponse, jid types.JID, msg *waE2E.Message) {
+	session, err := w.sessionService.Get(sessionId)
 	if err != nil || session.Client.Store.ID == nil {
 		return
 	}
@@ -107,12 +107,12 @@ func (w *WhatsAppService) emitSentMessageEvent(sessionName string, resp whatsmeo
 		Message: msg,
 	}
 
-	w.sessionService.EmitSyntheticEvent(sessionName, evt)
+	w.sessionService.EmitSyntheticEvent(sessionId, evt)
 }
 
 // SendText envia mensagem de texto
-func (w *WhatsAppService) SendText(ctx context.Context, sessionName, phone, text string) (whatsmeow.SendResponse, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SendText(ctx context.Context, sessionId, phone, text string) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return whatsmeow.SendResponse{}, err
 	}
@@ -131,7 +131,7 @@ func (w *WhatsAppService) SendText(ctx context.Context, sessionName, phone, text
 		return resp, err
 	}
 
-	w.emitSentMessageEvent(sessionName, resp, jid, msg)
+	w.emitSentMessageEvent(sessionId, resp, jid, msg)
 	return resp, nil
 }
 
@@ -145,12 +145,12 @@ type QuotedMessage struct {
 }
 
 // SendTextWithQuote sends a text message with a quoted message reference
-func (w *WhatsAppService) SendTextWithQuote(ctx context.Context, sessionName, phone, text string, quoted *QuotedMessage) (whatsmeow.SendResponse, error) {
+func (w *WhatsAppService) SendTextWithQuote(ctx context.Context, sessionId, phone, text string, quoted *QuotedMessage) (whatsmeow.SendResponse, error) {
 	if quoted == nil {
-		return w.SendText(ctx, sessionName, phone, text)
+		return w.SendText(ctx, sessionId, phone, text)
 	}
 
-	client, err := w.getClient(sessionName)
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return whatsmeow.SendResponse{}, err
 	}
@@ -180,12 +180,12 @@ func (w *WhatsAppService) SendTextWithQuote(ctx context.Context, sessionName, ph
 }
 
 // SendImageWithQuote sends an image with a quoted message reference
-func (w *WhatsAppService) SendImageWithQuote(ctx context.Context, sessionName, phone string, imageData []byte, caption string, mimeType string, quoted *QuotedMessage) (whatsmeow.SendResponse, error) {
+func (w *WhatsAppService) SendImageWithQuote(ctx context.Context, sessionId, phone string, imageData []byte, caption string, mimeType string, quoted *QuotedMessage) (whatsmeow.SendResponse, error) {
 	if quoted == nil {
-		return w.SendImage(ctx, sessionName, phone, imageData, caption, mimeType)
+		return w.SendImage(ctx, sessionId, phone, imageData, caption, mimeType)
 	}
 
-	client, err := w.getClient(sessionName)
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return whatsmeow.SendResponse{}, err
 	}
@@ -227,8 +227,8 @@ func (w *WhatsAppService) SendImageWithQuote(ctx context.Context, sessionName, p
 }
 
 // SendImage envia imagem
-func (w *WhatsAppService) SendImage(ctx context.Context, sessionName, phone string, imageData []byte, caption string, mimeType string) (whatsmeow.SendResponse, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SendImage(ctx context.Context, sessionId, phone string, imageData []byte, caption string, mimeType string) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return whatsmeow.SendResponse{}, err
 	}
@@ -262,19 +262,19 @@ func (w *WhatsAppService) SendImage(ctx context.Context, sessionName, phone stri
 	}
 
 	// Save sent media asynchronously
-	w.saveSentMediaAsync(sessionName, resp.ID, jid.String(), "image", mimeType, "", caption, imageData)
-	w.emitSentMessageEvent(sessionName, resp, jid, msg)
+	w.saveSentMediaAsync(sessionId, resp.ID, jid.String(), "image", mimeType, "", caption, imageData)
+	w.emitSentMessageEvent(sessionId, resp, jid, msg)
 
 	return resp, nil
 }
 
 // SendDocumentWithQuote sends a document with a quoted message reference
-func (w *WhatsAppService) SendDocumentWithQuote(ctx context.Context, sessionName, phone string, docData []byte, filename, mimeType string, quoted *QuotedMessage) (whatsmeow.SendResponse, error) {
+func (w *WhatsAppService) SendDocumentWithQuote(ctx context.Context, sessionId, phone string, docData []byte, filename, mimeType string, quoted *QuotedMessage) (whatsmeow.SendResponse, error) {
 	if quoted == nil {
-		return w.SendDocument(ctx, sessionName, phone, docData, filename, mimeType)
+		return w.SendDocument(ctx, sessionId, phone, docData, filename, mimeType)
 	}
 
-	client, err := w.getClient(sessionName)
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return whatsmeow.SendResponse{}, err
 	}
@@ -316,8 +316,8 @@ func (w *WhatsAppService) SendDocumentWithQuote(ctx context.Context, sessionName
 }
 
 // SendDocument envia documento
-func (w *WhatsAppService) SendDocument(ctx context.Context, sessionName, phone string, docData []byte, filename, mimeType string) (whatsmeow.SendResponse, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SendDocument(ctx context.Context, sessionId, phone string, docData []byte, filename, mimeType string) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return whatsmeow.SendResponse{}, err
 	}
@@ -350,17 +350,17 @@ func (w *WhatsAppService) SendDocument(ctx context.Context, sessionName, phone s
 		return resp, err
 	}
 
-	w.emitSentMessageEvent(sessionName, resp, jid, msg)
+	w.emitSentMessageEvent(sessionId, resp, jid, msg)
 	return resp, nil
 }
 
 // SendAudioWithQuote sends an audio with a quoted message reference
-func (w *WhatsAppService) SendAudioWithQuote(ctx context.Context, sessionName, phone string, audioData []byte, mimeType string, ptt bool, quoted *QuotedMessage) (whatsmeow.SendResponse, error) {
+func (w *WhatsAppService) SendAudioWithQuote(ctx context.Context, sessionId, phone string, audioData []byte, mimeType string, ptt bool, quoted *QuotedMessage) (whatsmeow.SendResponse, error) {
 	if quoted == nil {
-		return w.SendAudio(ctx, sessionName, phone, audioData, mimeType, ptt)
+		return w.SendAudio(ctx, sessionId, phone, audioData, mimeType, ptt)
 	}
 
-	client, err := w.getClient(sessionName)
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return whatsmeow.SendResponse{}, err
 	}
@@ -402,8 +402,8 @@ func (w *WhatsAppService) SendAudioWithQuote(ctx context.Context, sessionName, p
 }
 
 // SendAudio envia áudio
-func (w *WhatsAppService) SendAudio(ctx context.Context, sessionName, phone string, audioData []byte, mimeType string, ptt bool) (whatsmeow.SendResponse, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SendAudio(ctx context.Context, sessionId, phone string, audioData []byte, mimeType string, ptt bool) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return whatsmeow.SendResponse{}, err
 	}
@@ -436,17 +436,17 @@ func (w *WhatsAppService) SendAudio(ctx context.Context, sessionName, phone stri
 		return resp, err
 	}
 
-	w.emitSentMessageEvent(sessionName, resp, jid, msg)
+	w.emitSentMessageEvent(sessionId, resp, jid, msg)
 	return resp, nil
 }
 
 // SendVideoWithQuote sends a video with a quoted message reference
-func (w *WhatsAppService) SendVideoWithQuote(ctx context.Context, sessionName, phone string, videoData []byte, caption, mimeType string, quoted *QuotedMessage) (whatsmeow.SendResponse, error) {
+func (w *WhatsAppService) SendVideoWithQuote(ctx context.Context, sessionId, phone string, videoData []byte, caption, mimeType string, quoted *QuotedMessage) (whatsmeow.SendResponse, error) {
 	if quoted == nil {
-		return w.SendVideo(ctx, sessionName, phone, videoData, caption, mimeType)
+		return w.SendVideo(ctx, sessionId, phone, videoData, caption, mimeType)
 	}
 
-	client, err := w.getClient(sessionName)
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return whatsmeow.SendResponse{}, err
 	}
@@ -488,8 +488,8 @@ func (w *WhatsAppService) SendVideoWithQuote(ctx context.Context, sessionName, p
 }
 
 // SendVideo envia vídeo
-func (w *WhatsAppService) SendVideo(ctx context.Context, sessionName, phone string, videoData []byte, caption, mimeType string) (whatsmeow.SendResponse, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SendVideo(ctx context.Context, sessionId, phone string, videoData []byte, caption, mimeType string) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return whatsmeow.SendResponse{}, err
 	}
@@ -522,13 +522,13 @@ func (w *WhatsAppService) SendVideo(ctx context.Context, sessionName, phone stri
 		return resp, err
 	}
 
-	w.emitSentMessageEvent(sessionName, resp, jid, msg)
+	w.emitSentMessageEvent(sessionId, resp, jid, msg)
 	return resp, nil
 }
 
 // SendSticker envia sticker
-func (w *WhatsAppService) SendSticker(ctx context.Context, sessionName, phone string, stickerData []byte, mimeType string) (whatsmeow.SendResponse, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SendSticker(ctx context.Context, sessionId, phone string, stickerData []byte, mimeType string) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return whatsmeow.SendResponse{}, err
 	}
@@ -560,13 +560,13 @@ func (w *WhatsAppService) SendSticker(ctx context.Context, sessionName, phone st
 		return resp, err
 	}
 
-	w.emitSentMessageEvent(sessionName, resp, jid, msg)
+	w.emitSentMessageEvent(sessionId, resp, jid, msg)
 	return resp, nil
 }
 
 // SendLocation envia localização
-func (w *WhatsAppService) SendLocation(ctx context.Context, sessionName, phone string, lat, lng float64, name, address string) (whatsmeow.SendResponse, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SendLocation(ctx context.Context, sessionId, phone string, lat, lng float64, name, address string) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return whatsmeow.SendResponse{}, err
 	}
@@ -590,13 +590,13 @@ func (w *WhatsAppService) SendLocation(ctx context.Context, sessionName, phone s
 		return resp, err
 	}
 
-	w.emitSentMessageEvent(sessionName, resp, jid, msg)
+	w.emitSentMessageEvent(sessionId, resp, jid, msg)
 	return resp, nil
 }
 
 // SendContact envia contato
-func (w *WhatsAppService) SendContact(ctx context.Context, sessionName, phone, contactName, contactPhone string) (whatsmeow.SendResponse, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SendContact(ctx context.Context, sessionId, phone, contactName, contactPhone string) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return whatsmeow.SendResponse{}, err
 	}
@@ -621,13 +621,13 @@ func (w *WhatsAppService) SendContact(ctx context.Context, sessionName, phone, c
 		return resp, err
 	}
 
-	w.emitSentMessageEvent(sessionName, resp, jid, msg)
+	w.emitSentMessageEvent(sessionId, resp, jid, msg)
 	return resp, nil
 }
 
 // SendReaction envia reação a uma mensagem
-func (w *WhatsAppService) SendReaction(ctx context.Context, sessionName, phone, messageID, emoji string) (whatsmeow.SendResponse, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SendReaction(ctx context.Context, sessionId, phone, messageID, emoji string) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return whatsmeow.SendResponse{}, err
 	}
@@ -641,8 +641,8 @@ func (w *WhatsAppService) SendReaction(ctx context.Context, sessionName, phone, 
 }
 
 // SendPresence envia status de presença (available/unavailable)
-func (w *WhatsAppService) SendPresence(ctx context.Context, sessionName string, available bool) error {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SendPresence(ctx context.Context, sessionId string, available bool) error {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return err
 	}
@@ -656,8 +656,8 @@ func (w *WhatsAppService) SendPresence(ctx context.Context, sessionName string, 
 }
 
 // SendChatPresence envia status de digitando/gravando
-func (w *WhatsAppService) SendChatPresence(ctx context.Context, sessionName, phone string, state model.ChatPresence, media model.ChatPresenceMedia) error {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SendChatPresence(ctx context.Context, sessionId, phone string, state model.ChatPresence, media model.ChatPresenceMedia) error {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return err
 	}
@@ -671,8 +671,8 @@ func (w *WhatsAppService) SendChatPresence(ctx context.Context, sessionName, pho
 }
 
 // MarkRead marca mensagens como lidas
-func (w *WhatsAppService) MarkRead(ctx context.Context, sessionName, phone string, messageIDs []string) error {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) MarkRead(ctx context.Context, sessionId, phone string, messageIDs []string) error {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return err
 	}
@@ -691,8 +691,8 @@ func (w *WhatsAppService) MarkRead(ctx context.Context, sessionName, phone strin
 }
 
 // CheckPhoneRegistered verifica se número está registrado no WhatsApp
-func (w *WhatsAppService) CheckPhoneRegistered(ctx context.Context, sessionName string, phones []string) ([]types.IsOnWhatsAppResponse, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) CheckPhoneRegistered(ctx context.Context, sessionId string, phones []string) ([]types.IsOnWhatsAppResponse, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -701,8 +701,8 @@ func (w *WhatsAppService) CheckPhoneRegistered(ctx context.Context, sessionName 
 }
 
 // GetProfilePicture obtém foto de perfil
-func (w *WhatsAppService) GetProfilePicture(ctx context.Context, sessionName, phone string) (*types.ProfilePictureInfo, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) GetProfilePicture(ctx context.Context, sessionId, phone string) (*types.ProfilePictureInfo, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -716,8 +716,8 @@ func (w *WhatsAppService) GetProfilePicture(ctx context.Context, sessionName, ph
 }
 
 // GetGroupProfilePicture obtém foto de perfil de um grupo
-func (w *WhatsAppService) GetGroupProfilePicture(ctx context.Context, sessionName, groupJID string) (*types.ProfilePictureInfo, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) GetGroupProfilePicture(ctx context.Context, sessionId, groupJID string) (*types.ProfilePictureInfo, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -731,8 +731,8 @@ func (w *WhatsAppService) GetGroupProfilePicture(ctx context.Context, sessionNam
 }
 
 // GetUserInfo obtém informações de usuários
-func (w *WhatsAppService) GetUserInfo(ctx context.Context, sessionName string, phones []string) (map[types.JID]types.UserInfo, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) GetUserInfo(ctx context.Context, sessionId string, phones []string) (map[types.JID]types.UserInfo, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -750,8 +750,8 @@ func (w *WhatsAppService) GetUserInfo(ctx context.Context, sessionName string, p
 }
 
 // DownloadMedia baixa mídia de uma mensagem
-func (w *WhatsAppService) DownloadMedia(ctx context.Context, sessionName string, msg *waE2E.Message) ([]byte, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) DownloadMedia(ctx context.Context, sessionId string, msg *waE2E.Message) ([]byte, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -777,53 +777,53 @@ func (w *WhatsAppService) DownloadMedia(ctx context.Context, sessionName string,
 }
 
 // SendImageFromFile envia imagem de arquivo
-func (w *WhatsAppService) SendImageFromFile(ctx context.Context, sessionName, phone, filePath, caption string) (whatsmeow.SendResponse, error) {
+func (w *WhatsAppService) SendImageFromFile(ctx context.Context, sessionId, phone, filePath, caption string) (whatsmeow.SendResponse, error) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return whatsmeow.SendResponse{}, fmt.Errorf("failed to read file: %w", err)
 	}
 
 	mimeType := "image/jpeg"
-	return w.SendImage(ctx, sessionName, phone, data, caption, mimeType)
+	return w.SendImage(ctx, sessionId, phone, data, caption, mimeType)
 }
 
 // SendDocumentFromFile envia documento de arquivo
-func (w *WhatsAppService) SendDocumentFromFile(ctx context.Context, sessionName, phone, filePath, filename, mimeType string) (whatsmeow.SendResponse, error) {
+func (w *WhatsAppService) SendDocumentFromFile(ctx context.Context, sessionId, phone, filePath, filename, mimeType string) (whatsmeow.SendResponse, error) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return whatsmeow.SendResponse{}, fmt.Errorf("failed to read file: %w", err)
 	}
 
-	return w.SendDocument(ctx, sessionName, phone, data, filename, mimeType)
+	return w.SendDocument(ctx, sessionId, phone, data, filename, mimeType)
 }
 
 // SendAudioFromFile envia áudio de arquivo
-func (w *WhatsAppService) SendAudioFromFile(ctx context.Context, sessionName, phone, filePath string, ptt bool) (whatsmeow.SendResponse, error) {
+func (w *WhatsAppService) SendAudioFromFile(ctx context.Context, sessionId, phone, filePath string, ptt bool) (whatsmeow.SendResponse, error) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return whatsmeow.SendResponse{}, fmt.Errorf("failed to read file: %w", err)
 	}
 
 	mimeType := "audio/ogg; codecs=opus"
-	return w.SendAudio(ctx, sessionName, phone, data, mimeType, ptt)
+	return w.SendAudio(ctx, sessionId, phone, data, mimeType, ptt)
 }
 
 // SendVideoFromFile envia vídeo de arquivo
-func (w *WhatsAppService) SendVideoFromFile(ctx context.Context, sessionName, phone, filePath, caption string) (whatsmeow.SendResponse, error) {
+func (w *WhatsAppService) SendVideoFromFile(ctx context.Context, sessionId, phone, filePath, caption string) (whatsmeow.SendResponse, error) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return whatsmeow.SendResponse{}, fmt.Errorf("failed to read file: %w", err)
 	}
 
 	mimeType := "video/mp4"
-	return w.SendVideo(ctx, sessionName, phone, data, caption, mimeType)
+	return w.SendVideo(ctx, sessionId, phone, data, caption, mimeType)
 }
 
 // GROUP METHODS
 
 // CreateGroup cria um grupo
-func (w *WhatsAppService) CreateGroup(ctx context.Context, sessionName, name string, participants []string) (*types.GroupInfo, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) CreateGroup(ctx context.Context, sessionId, name string, participants []string) (*types.GroupInfo, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -846,8 +846,8 @@ func (w *WhatsAppService) CreateGroup(ctx context.Context, sessionName, name str
 }
 
 // GetGroupInfo obtém informações do grupo
-func (w *WhatsAppService) GetGroupInfo(ctx context.Context, sessionName, groupID string) (*types.GroupInfo, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) GetGroupInfo(ctx context.Context, sessionId, groupID string) (*types.GroupInfo, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -861,8 +861,8 @@ func (w *WhatsAppService) GetGroupInfo(ctx context.Context, sessionName, groupID
 }
 
 // GetJoinedGroups lista grupos que participa
-func (w *WhatsAppService) GetJoinedGroups(ctx context.Context, sessionName string) ([]*types.GroupInfo, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) GetJoinedGroups(ctx context.Context, sessionId string) ([]*types.GroupInfo, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -871,8 +871,8 @@ func (w *WhatsAppService) GetJoinedGroups(ctx context.Context, sessionName strin
 }
 
 // LeaveGroup sai de um grupo
-func (w *WhatsAppService) LeaveGroup(ctx context.Context, sessionName, groupID string) error {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) LeaveGroup(ctx context.Context, sessionId, groupID string) error {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return err
 	}
@@ -886,8 +886,8 @@ func (w *WhatsAppService) LeaveGroup(ctx context.Context, sessionName, groupID s
 }
 
 // UpdateGroupName atualiza nome do grupo
-func (w *WhatsAppService) UpdateGroupName(ctx context.Context, sessionName, groupID, name string) error {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) UpdateGroupName(ctx context.Context, sessionId, groupID, name string) error {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return err
 	}
@@ -901,8 +901,8 @@ func (w *WhatsAppService) UpdateGroupName(ctx context.Context, sessionName, grou
 }
 
 // UpdateGroupTopic atualiza descrição do grupo
-func (w *WhatsAppService) UpdateGroupTopic(ctx context.Context, sessionName, groupID, topic string) error {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) UpdateGroupTopic(ctx context.Context, sessionId, groupID, topic string) error {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return err
 	}
@@ -916,8 +916,8 @@ func (w *WhatsAppService) UpdateGroupTopic(ctx context.Context, sessionName, gro
 }
 
 // AddGroupParticipants adiciona participantes ao grupo
-func (w *WhatsAppService) AddGroupParticipants(ctx context.Context, sessionName, groupID string, participants []string) ([]types.GroupParticipant, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) AddGroupParticipants(ctx context.Context, sessionId, groupID string, participants []string) ([]types.GroupParticipant, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -949,8 +949,8 @@ func (w *WhatsAppService) AddGroupParticipants(ctx context.Context, sessionName,
 }
 
 // RemoveGroupParticipants remove participantes do grupo
-func (w *WhatsAppService) RemoveGroupParticipants(ctx context.Context, sessionName, groupID string, participants []string) ([]types.GroupParticipant, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) RemoveGroupParticipants(ctx context.Context, sessionId, groupID string, participants []string) ([]types.GroupParticipant, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -982,8 +982,8 @@ func (w *WhatsAppService) RemoveGroupParticipants(ctx context.Context, sessionNa
 }
 
 // PromoteGroupParticipants promove participantes a admin
-func (w *WhatsAppService) PromoteGroupParticipants(ctx context.Context, sessionName, groupID string, participants []string) ([]types.GroupParticipant, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) PromoteGroupParticipants(ctx context.Context, sessionId, groupID string, participants []string) ([]types.GroupParticipant, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -1015,8 +1015,8 @@ func (w *WhatsAppService) PromoteGroupParticipants(ctx context.Context, sessionN
 }
 
 // DemoteGroupParticipants remove admin de participantes
-func (w *WhatsAppService) DemoteGroupParticipants(ctx context.Context, sessionName, groupID string, participants []string) ([]types.GroupParticipant, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) DemoteGroupParticipants(ctx context.Context, sessionId, groupID string, participants []string) ([]types.GroupParticipant, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -1048,8 +1048,8 @@ func (w *WhatsAppService) DemoteGroupParticipants(ctx context.Context, sessionNa
 }
 
 // GetGroupInviteLink obtém link de convite do grupo
-func (w *WhatsAppService) GetGroupInviteLink(ctx context.Context, sessionName, groupID string, reset bool) (string, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) GetGroupInviteLink(ctx context.Context, sessionId, groupID string, reset bool) (string, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return "", err
 	}
@@ -1063,8 +1063,8 @@ func (w *WhatsAppService) GetGroupInviteLink(ctx context.Context, sessionName, g
 }
 
 // JoinGroupWithLink entra em grupo pelo link
-func (w *WhatsAppService) JoinGroupWithLink(ctx context.Context, sessionName, link string) (types.JID, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) JoinGroupWithLink(ctx context.Context, sessionId, link string) (types.JID, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return types.JID{}, err
 	}
@@ -1073,8 +1073,8 @@ func (w *WhatsAppService) JoinGroupWithLink(ctx context.Context, sessionName, li
 }
 
 // SendGroupMessage envia mensagem para grupo
-func (w *WhatsAppService) SendGroupMessage(ctx context.Context, sessionName, groupID, text string) (whatsmeow.SendResponse, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SendGroupMessage(ctx context.Context, sessionId, groupID, text string) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return whatsmeow.SendResponse{}, err
 	}
@@ -1093,15 +1093,15 @@ func (w *WhatsAppService) SendGroupMessage(ctx context.Context, sessionName, gro
 		return resp, err
 	}
 
-	w.emitSentMessageEvent(sessionName, resp, jid, msg)
+	w.emitSentMessageEvent(sessionId, resp, jid, msg)
 	return resp, nil
 }
 
 // CONTACT METHODS
 
 // GetContacts obtém todos os contatos
-func (w *WhatsAppService) GetContacts(ctx context.Context, sessionName string) (map[string]interface{}, error) {
-	session, err := w.sessionService.Get(sessionName)
+func (w *WhatsAppService) GetContacts(ctx context.Context, sessionId string) (map[string]interface{}, error) {
+	session, err := w.sessionService.Get(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -1125,8 +1125,8 @@ func (w *WhatsAppService) GetContacts(ctx context.Context, sessionName string) (
 }
 
 // SendChatPresenceRaw envia presença de chat com strings
-func (w *WhatsAppService) SendChatPresenceRaw(ctx context.Context, sessionName, phone, state, media string) error {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SendChatPresenceRaw(ctx context.Context, sessionId, phone, state, media string) error {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return err
 	}
@@ -1160,8 +1160,8 @@ func (w *WhatsAppService) SendChatPresenceRaw(ctx context.Context, sessionName, 
 // CHAT METHODS
 
 // ArchiveChat arquiva ou desarquiva um chat
-func (w *WhatsAppService) ArchiveChat(ctx context.Context, sessionName, phone string, archive bool) error {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) ArchiveChat(ctx context.Context, sessionId, phone string, archive bool) error {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return err
 	}
@@ -1175,8 +1175,8 @@ func (w *WhatsAppService) ArchiveChat(ctx context.Context, sessionName, phone st
 }
 
 // DeleteMessage deleta uma mensagem
-func (w *WhatsAppService) DeleteMessage(ctx context.Context, sessionName, phone, messageID string, forMe bool) (whatsmeow.SendResponse, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) DeleteMessage(ctx context.Context, sessionId, phone, messageID string, forMe bool) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return whatsmeow.SendResponse{}, err
 	}
@@ -1194,8 +1194,8 @@ func (w *WhatsAppService) DeleteMessage(ctx context.Context, sessionName, phone,
 }
 
 // EditMessage edita uma mensagem
-func (w *WhatsAppService) EditMessage(ctx context.Context, sessionName, phone, messageID, newText string) (whatsmeow.SendResponse, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) EditMessage(ctx context.Context, sessionId, phone, messageID, newText string) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return whatsmeow.SendResponse{}, err
 	}
@@ -1213,8 +1213,8 @@ func (w *WhatsAppService) EditMessage(ctx context.Context, sessionName, phone, m
 // PROFILE METHODS
 
 // GetOwnProfile obtém o perfil próprio
-func (w *WhatsAppService) GetOwnProfile(ctx context.Context, sessionName string) (map[string]interface{}, error) {
-	session, err := w.sessionService.Get(sessionName)
+func (w *WhatsAppService) GetOwnProfile(ctx context.Context, sessionId string) (map[string]interface{}, error) {
+	session, err := w.sessionService.Get(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -1233,8 +1233,8 @@ func (w *WhatsAppService) GetOwnProfile(ctx context.Context, sessionName string)
 }
 
 // SetStatusMessage define a mensagem de status
-func (w *WhatsAppService) SetStatusMessage(ctx context.Context, sessionName, status string) error {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SetStatusMessage(ctx context.Context, sessionId, status string) error {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return err
 	}
@@ -1243,8 +1243,8 @@ func (w *WhatsAppService) SetStatusMessage(ctx context.Context, sessionName, sta
 }
 
 // SetPushName define o nome de exibição
-func (w *WhatsAppService) SetPushName(ctx context.Context, sessionName, name string) error {
-	session, err := w.sessionService.Get(sessionName)
+func (w *WhatsAppService) SetPushName(ctx context.Context, sessionId, name string) error {
+	session, err := w.sessionService.Get(sessionId)
 	if err != nil {
 		return err
 	}
@@ -1254,8 +1254,8 @@ func (w *WhatsAppService) SetPushName(ctx context.Context, sessionName, name str
 }
 
 // SetProfilePicture define a foto de perfil
-func (w *WhatsAppService) SetProfilePicture(ctx context.Context, sessionName string, imageData []byte) (string, error) {
-	session, err := w.sessionService.Get(sessionName)
+func (w *WhatsAppService) SetProfilePicture(ctx context.Context, sessionId string, imageData []byte) (string, error) {
+	session, err := w.sessionService.Get(sessionId)
 	if err != nil {
 		return "", err
 	}
@@ -1273,8 +1273,8 @@ func (w *WhatsAppService) SetProfilePicture(ctx context.Context, sessionName str
 }
 
 // DeleteProfilePicture remove a foto de perfil
-func (w *WhatsAppService) DeleteProfilePicture(ctx context.Context, sessionName string) error {
-	session, err := w.sessionService.Get(sessionName)
+func (w *WhatsAppService) DeleteProfilePicture(ctx context.Context, sessionId string) error {
+	session, err := w.sessionService.Get(sessionId)
 	if err != nil {
 		return err
 	}
@@ -1288,8 +1288,8 @@ func (w *WhatsAppService) DeleteProfilePicture(ctx context.Context, sessionName 
 }
 
 // GetPrivacySettings obtém configurações de privacidade
-func (w *WhatsAppService) GetPrivacySettings(ctx context.Context, sessionName string) (map[string]interface{}, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) GetPrivacySettings(ctx context.Context, sessionId string) (map[string]interface{}, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -1308,8 +1308,8 @@ func (w *WhatsAppService) GetPrivacySettings(ctx context.Context, sessionName st
 }
 
 // SetPrivacySettings define configurações de privacidade
-func (w *WhatsAppService) SetPrivacySettings(ctx context.Context, sessionName string, settingName types.PrivacySettingType, value types.PrivacySetting) (types.PrivacySettings, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SetPrivacySettings(ctx context.Context, sessionId string, settingName types.PrivacySettingType, value types.PrivacySetting) (types.PrivacySettings, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return types.PrivacySettings{}, err
 	}
@@ -1319,8 +1319,8 @@ func (w *WhatsAppService) SetPrivacySettings(ctx context.Context, sessionName st
 // POLL METHODS
 
 // SendPoll envia uma enquete
-func (w *WhatsAppService) SendPoll(ctx context.Context, sessionName, phone, name string, options []string, selectableCount int) (whatsmeow.SendResponse, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SendPoll(ctx context.Context, sessionId, phone, name string, options []string, selectableCount int) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return whatsmeow.SendResponse{}, err
 	}
@@ -1340,13 +1340,13 @@ func (w *WhatsAppService) SendPoll(ctx context.Context, sessionName, phone, name
 		return resp, err
 	}
 
-	w.emitSentMessageEvent(sessionName, resp, jid, msg)
+	w.emitSentMessageEvent(sessionId, resp, jid, msg)
 	return resp, nil
 }
 
 // SendPollVote vota em uma enquete
-func (w *WhatsAppService) SendPollVote(ctx context.Context, sessionName, phone, pollMsgID string, selectedOptions []string) (whatsmeow.SendResponse, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SendPollVote(ctx context.Context, sessionId, phone, pollMsgID string, selectedOptions []string) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return whatsmeow.SendResponse{}, err
 	}
@@ -1375,8 +1375,8 @@ func (w *WhatsAppService) SendPollVote(ctx context.Context, sessionName, phone, 
 // BLOCKLIST METHODS
 
 // GetBlocklist obtém lista de bloqueados
-func (w *WhatsAppService) GetBlocklist(ctx context.Context, sessionName string) (*types.Blocklist, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) GetBlocklist(ctx context.Context, sessionId string) (*types.Blocklist, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -1384,8 +1384,8 @@ func (w *WhatsAppService) GetBlocklist(ctx context.Context, sessionName string) 
 }
 
 // UpdateBlocklist bloqueia ou desbloqueia um contato
-func (w *WhatsAppService) UpdateBlocklist(ctx context.Context, sessionName, phone string, block bool) (*types.Blocklist, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) UpdateBlocklist(ctx context.Context, sessionId, phone string, block bool) (*types.Blocklist, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -1408,8 +1408,8 @@ func (w *WhatsAppService) UpdateBlocklist(ctx context.Context, sessionName, phon
 // DISAPPEARING MESSAGES
 
 // SetDisappearingTimer define timer de mensagens temporárias para um chat
-func (w *WhatsAppService) SetDisappearingTimer(ctx context.Context, sessionName, phone string, timer time.Duration) error {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SetDisappearingTimer(ctx context.Context, sessionId, phone string, timer time.Duration) error {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return err
 	}
@@ -1423,8 +1423,8 @@ func (w *WhatsAppService) SetDisappearingTimer(ctx context.Context, sessionName,
 }
 
 // SetDefaultDisappearingTimer define timer padrão de mensagens temporárias
-func (w *WhatsAppService) SetDefaultDisappearingTimer(ctx context.Context, sessionName string, timer time.Duration) error {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SetDefaultDisappearingTimer(ctx context.Context, sessionId string, timer time.Duration) error {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return err
 	}
@@ -1434,8 +1434,8 @@ func (w *WhatsAppService) SetDefaultDisappearingTimer(ctx context.Context, sessi
 // GROUP SETTINGS METHODS
 
 // SetGroupAnnounce define se só admins podem enviar mensagens
-func (w *WhatsAppService) SetGroupAnnounce(ctx context.Context, sessionName, groupID string, announce bool) error {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SetGroupAnnounce(ctx context.Context, sessionId, groupID string, announce bool) error {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return err
 	}
@@ -1449,8 +1449,8 @@ func (w *WhatsAppService) SetGroupAnnounce(ctx context.Context, sessionName, gro
 }
 
 // SetGroupLocked define se só admins podem editar info do grupo
-func (w *WhatsAppService) SetGroupLocked(ctx context.Context, sessionName, groupID string, locked bool) error {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SetGroupLocked(ctx context.Context, sessionId, groupID string, locked bool) error {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return err
 	}
@@ -1464,8 +1464,8 @@ func (w *WhatsAppService) SetGroupLocked(ctx context.Context, sessionName, group
 }
 
 // SetGroupPhoto define foto do grupo
-func (w *WhatsAppService) SetGroupPhoto(ctx context.Context, sessionName, groupID string, imageData []byte) (string, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SetGroupPhoto(ctx context.Context, sessionId, groupID string, imageData []byte) (string, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return "", err
 	}
@@ -1479,8 +1479,8 @@ func (w *WhatsAppService) SetGroupPhoto(ctx context.Context, sessionName, groupI
 }
 
 // DeleteGroupPhoto remove foto do grupo
-func (w *WhatsAppService) DeleteGroupPhoto(ctx context.Context, sessionName, groupID string) error {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) DeleteGroupPhoto(ctx context.Context, sessionId, groupID string) error {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return err
 	}
@@ -1495,8 +1495,8 @@ func (w *WhatsAppService) DeleteGroupPhoto(ctx context.Context, sessionName, gro
 }
 
 // GetGroupInfoFromInvite obtém informações do grupo a partir de convite (sem entrar)
-func (w *WhatsAppService) GetGroupInfoFromInvite(ctx context.Context, sessionName string, jid types.JID, inviter types.JID, code string, expiration int64) (*types.GroupInfo, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) GetGroupInfoFromInvite(ctx context.Context, sessionId string, jid types.JID, inviter types.JID, code string, expiration int64) (*types.GroupInfo, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -1505,8 +1505,8 @@ func (w *WhatsAppService) GetGroupInfoFromInvite(ctx context.Context, sessionNam
 }
 
 // SetGroupJoinApprovalMode define modo de aprovação para entrar no grupo
-func (w *WhatsAppService) SetGroupJoinApprovalMode(ctx context.Context, sessionName, groupID string, mode bool) error {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SetGroupJoinApprovalMode(ctx context.Context, sessionId, groupID string, mode bool) error {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return err
 	}
@@ -1520,8 +1520,8 @@ func (w *WhatsAppService) SetGroupJoinApprovalMode(ctx context.Context, sessionN
 }
 
 // SetGroupMemberAddMode define quem pode adicionar membros
-func (w *WhatsAppService) SetGroupMemberAddMode(ctx context.Context, sessionName, groupID string, mode types.GroupMemberAddMode) error {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SetGroupMemberAddMode(ctx context.Context, sessionId, groupID string, mode types.GroupMemberAddMode) error {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return err
 	}
@@ -1535,8 +1535,8 @@ func (w *WhatsAppService) SetGroupMemberAddMode(ctx context.Context, sessionName
 }
 
 // GetGroupRequestParticipants obtém solicitações pendentes de entrada no grupo
-func (w *WhatsAppService) GetGroupRequestParticipants(ctx context.Context, sessionName, groupID string) ([]types.GroupParticipantRequest, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) GetGroupRequestParticipants(ctx context.Context, sessionId, groupID string) ([]types.GroupParticipantRequest, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -1550,8 +1550,8 @@ func (w *WhatsAppService) GetGroupRequestParticipants(ctx context.Context, sessi
 }
 
 // UpdateGroupRequestParticipants aprova ou rejeita solicitações de entrada
-func (w *WhatsAppService) UpdateGroupRequestParticipants(ctx context.Context, sessionName, groupID string, participants []string, action whatsmeow.ParticipantRequestChange) ([]types.GroupParticipant, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) UpdateGroupRequestParticipants(ctx context.Context, sessionId, groupID string, participants []string, action whatsmeow.ParticipantRequestChange) ([]types.GroupParticipant, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -1574,8 +1574,8 @@ func (w *WhatsAppService) UpdateGroupRequestParticipants(ctx context.Context, se
 }
 
 // GetGroupInfoFromLink obtém info do grupo pelo link de convite
-func (w *WhatsAppService) GetGroupInfoFromLink(ctx context.Context, sessionName, code string) (*types.GroupInfo, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) GetGroupInfoFromLink(ctx context.Context, sessionId, code string) (*types.GroupInfo, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -1585,8 +1585,8 @@ func (w *WhatsAppService) GetGroupInfoFromLink(ctx context.Context, sessionName,
 // NEWSLETTER METHODS
 
 // CreateNewsletter cria um canal/newsletter
-func (w *WhatsAppService) CreateNewsletter(ctx context.Context, sessionName, name, description string) (*types.NewsletterMetadata, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) CreateNewsletter(ctx context.Context, sessionId, name, description string) (*types.NewsletterMetadata, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -1600,8 +1600,8 @@ func (w *WhatsAppService) CreateNewsletter(ctx context.Context, sessionName, nam
 }
 
 // FollowNewsletter segue um canal
-func (w *WhatsAppService) FollowNewsletter(ctx context.Context, sessionName, newsletterJID string) error {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) FollowNewsletter(ctx context.Context, sessionId, newsletterJID string) error {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return err
 	}
@@ -1615,8 +1615,8 @@ func (w *WhatsAppService) FollowNewsletter(ctx context.Context, sessionName, new
 }
 
 // UnfollowNewsletter deixa de seguir um canal
-func (w *WhatsAppService) UnfollowNewsletter(ctx context.Context, sessionName, newsletterJID string) error {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) UnfollowNewsletter(ctx context.Context, sessionId, newsletterJID string) error {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return err
 	}
@@ -1630,8 +1630,8 @@ func (w *WhatsAppService) UnfollowNewsletter(ctx context.Context, sessionName, n
 }
 
 // GetNewsletterInfo obtém info de um canal
-func (w *WhatsAppService) GetNewsletterInfo(ctx context.Context, sessionName, newsletterJID string) (*types.NewsletterMetadata, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) GetNewsletterInfo(ctx context.Context, sessionId, newsletterJID string) (*types.NewsletterMetadata, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -1645,8 +1645,8 @@ func (w *WhatsAppService) GetNewsletterInfo(ctx context.Context, sessionName, ne
 }
 
 // GetSubscribedNewsletters lista canais seguidos
-func (w *WhatsAppService) GetSubscribedNewsletters(ctx context.Context, sessionName string) ([]*types.NewsletterMetadata, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) GetSubscribedNewsletters(ctx context.Context, sessionId string) ([]*types.NewsletterMetadata, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -1654,8 +1654,8 @@ func (w *WhatsAppService) GetSubscribedNewsletters(ctx context.Context, sessionN
 }
 
 // GetNewsletterMessages obtém mensagens de um canal
-func (w *WhatsAppService) GetNewsletterMessages(ctx context.Context, sessionName, newsletterJID string, count int, before types.MessageServerID) ([]*types.NewsletterMessage, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) GetNewsletterMessages(ctx context.Context, sessionId, newsletterJID string, count int, before types.MessageServerID) ([]*types.NewsletterMessage, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -1674,8 +1674,8 @@ func (w *WhatsAppService) GetNewsletterMessages(ctx context.Context, sessionName
 }
 
 // NewsletterSendReaction envia reação em mensagem do canal
-func (w *WhatsAppService) NewsletterSendReaction(ctx context.Context, sessionName, newsletterJID string, serverID types.MessageServerID, reaction string, messageID types.MessageID) error {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) NewsletterSendReaction(ctx context.Context, sessionId, newsletterJID string, serverID types.MessageServerID, reaction string, messageID types.MessageID) error {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return err
 	}
@@ -1689,8 +1689,8 @@ func (w *WhatsAppService) NewsletterSendReaction(ctx context.Context, sessionNam
 }
 
 // NewsletterToggleMute silencia ou ativa notificações do canal
-func (w *WhatsAppService) NewsletterToggleMute(ctx context.Context, sessionName, newsletterJID string, mute bool) error {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) NewsletterToggleMute(ctx context.Context, sessionId, newsletterJID string, mute bool) error {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return err
 	}
@@ -1704,8 +1704,8 @@ func (w *WhatsAppService) NewsletterToggleMute(ctx context.Context, sessionName,
 }
 
 // NewsletterMarkViewed marca mensagens do canal como visualizadas
-func (w *WhatsAppService) NewsletterMarkViewed(ctx context.Context, sessionName, newsletterJID string, serverIDs []types.MessageServerID) error {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) NewsletterMarkViewed(ctx context.Context, sessionId, newsletterJID string, serverIDs []types.MessageServerID) error {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return err
 	}
@@ -1719,8 +1719,8 @@ func (w *WhatsAppService) NewsletterMarkViewed(ctx context.Context, sessionName,
 }
 
 // NewsletterSubscribeLiveUpdates inscreve para atualizações em tempo real do canal
-func (w *WhatsAppService) NewsletterSubscribeLiveUpdates(ctx context.Context, sessionName, newsletterJID string) (time.Duration, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) NewsletterSubscribeLiveUpdates(ctx context.Context, sessionId, newsletterJID string) (time.Duration, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return 0, err
 	}
@@ -1737,14 +1737,14 @@ func (w *WhatsAppService) NewsletterSubscribeLiveUpdates(ctx context.Context, se
 
 // GetContactLID obtém o LID (Linked ID) de um contato
 // Note: LID mappings are obtained via history sync and stored in whatsmeow_lid_map table
-func (w *WhatsAppService) GetContactLID(ctx context.Context, sessionName, phone string) (string, error) {
-	session, err := w.sessionService.Get(sessionName)
+func (w *WhatsAppService) GetContactLID(ctx context.Context, sessionId, phone string) (string, error) {
+	session, err := w.sessionService.Get(sessionId)
 	if err != nil {
 		return "", err
 	}
 
 	if !session.Client.IsConnected() {
-		return "", fmt.Errorf("session %s is not connected", sessionName)
+		return "", fmt.Errorf("session %s is not connected", sessionId)
 	}
 
 	jid, err := parseJID(phone)
@@ -1769,8 +1769,8 @@ func (w *WhatsAppService) GetContactLID(ctx context.Context, sessionName, phone 
 }
 
 // SubscribePresence inscreve para receber atualizações de presença
-func (w *WhatsAppService) SubscribePresence(ctx context.Context, sessionName, phone string) error {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SubscribePresence(ctx context.Context, sessionId, phone string) error {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return err
 	}
@@ -1784,8 +1784,8 @@ func (w *WhatsAppService) SubscribePresence(ctx context.Context, sessionName, ph
 }
 
 // GetContactQRLink obtém QR link para adicionar contato
-func (w *WhatsAppService) GetContactQRLink(ctx context.Context, sessionName string, revoke bool) (string, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) GetContactQRLink(ctx context.Context, sessionId string, revoke bool) (string, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return "", err
 	}
@@ -1793,8 +1793,8 @@ func (w *WhatsAppService) GetContactQRLink(ctx context.Context, sessionName stri
 }
 
 // GetBusinessProfile obtém perfil comercial de um contato
-func (w *WhatsAppService) GetBusinessProfile(ctx context.Context, sessionName, phone string) (*types.BusinessProfile, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) GetBusinessProfile(ctx context.Context, sessionId, phone string) (*types.BusinessProfile, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -1810,8 +1810,8 @@ func (w *WhatsAppService) GetBusinessProfile(ctx context.Context, sessionName, p
 // STATUS METHODS
 
 // GetStatusPrivacy obtém configurações de privacidade do status
-func (w *WhatsAppService) GetStatusPrivacy(ctx context.Context, sessionName string) ([]types.StatusPrivacy, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) GetStatusPrivacy(ctx context.Context, sessionId string) ([]types.StatusPrivacy, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -1819,8 +1819,8 @@ func (w *WhatsAppService) GetStatusPrivacy(ctx context.Context, sessionName stri
 }
 
 // SendStatus envia status/story (experimental)
-func (w *WhatsAppService) SendStatus(ctx context.Context, sessionName string, msg *waE2E.Message) (whatsmeow.SendResponse, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SendStatus(ctx context.Context, sessionId string, msg *waE2E.Message) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return whatsmeow.SendResponse{}, err
 	}
@@ -1832,8 +1832,8 @@ func (w *WhatsAppService) SendStatus(ctx context.Context, sessionName string, ms
 // CALL METHODS
 
 // RejectCall rejeita uma chamada
-func (w *WhatsAppService) RejectCall(ctx context.Context, sessionName, callFrom, callID string) error {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) RejectCall(ctx context.Context, sessionId, callFrom, callID string) error {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return err
 	}
@@ -1849,8 +1849,8 @@ func (w *WhatsAppService) RejectCall(ctx context.Context, sessionName, callFrom,
 // SESSION METHODS (extended)
 
 // PairPhone pareia usando número de telefone
-func (w *WhatsAppService) PairPhone(ctx context.Context, sessionName, phone string) (string, error) {
-	session, err := w.sessionService.Get(sessionName)
+func (w *WhatsAppService) PairPhone(ctx context.Context, sessionId, phone string) (string, error) {
+	session, err := w.sessionService.Get(sessionId)
 	if err != nil {
 		return "", err
 	}
@@ -1866,8 +1866,8 @@ func (w *WhatsAppService) PairPhone(ctx context.Context, sessionName, phone stri
 // COMMUNITY METHODS
 
 // LinkGroup vincula um grupo a uma comunidade
-func (w *WhatsAppService) LinkGroup(ctx context.Context, sessionName, parentGroupID, childGroupID string) error {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) LinkGroup(ctx context.Context, sessionId, parentGroupID, childGroupID string) error {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return err
 	}
@@ -1886,8 +1886,8 @@ func (w *WhatsAppService) LinkGroup(ctx context.Context, sessionName, parentGrou
 }
 
 // UnlinkGroup desvincula um grupo de uma comunidade
-func (w *WhatsAppService) UnlinkGroup(ctx context.Context, sessionName, parentGroupID, childGroupID string) error {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) UnlinkGroup(ctx context.Context, sessionId, parentGroupID, childGroupID string) error {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return err
 	}
@@ -1906,8 +1906,8 @@ func (w *WhatsAppService) UnlinkGroup(ctx context.Context, sessionName, parentGr
 }
 
 // GetSubGroups obtém subgrupos de uma comunidade
-func (w *WhatsAppService) GetSubGroups(ctx context.Context, sessionName, communityID string) ([]*types.GroupLinkTarget, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) GetSubGroups(ctx context.Context, sessionId, communityID string) ([]*types.GroupLinkTarget, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -1923,8 +1923,8 @@ func (w *WhatsAppService) GetSubGroups(ctx context.Context, sessionName, communi
 // INTERACTIVE MESSAGES METHODS
 
 // SendButtonsMessage envia mensagem com botões (max 3 botões)
-func (w *WhatsAppService) SendButtonsMessage(ctx context.Context, sessionName, phone string, params whatsmeow.ButtonsMessageParams) (whatsmeow.SendResponse, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SendButtonsMessage(ctx context.Context, sessionId, phone string, params whatsmeow.ButtonsMessageParams) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return whatsmeow.SendResponse{}, err
 	}
@@ -1938,8 +1938,8 @@ func (w *WhatsAppService) SendButtonsMessage(ctx context.Context, sessionName, p
 }
 
 // SendListMessage envia mensagem com lista
-func (w *WhatsAppService) SendListMessage(ctx context.Context, sessionName, phone string, params whatsmeow.ListMessageParams) (whatsmeow.SendResponse, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SendListMessage(ctx context.Context, sessionId, phone string, params whatsmeow.ListMessageParams) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return whatsmeow.SendResponse{}, err
 	}
@@ -1953,8 +1953,8 @@ func (w *WhatsAppService) SendListMessage(ctx context.Context, sessionName, phon
 }
 
 // SendNativeFlowMessage envia mensagem interativa com native flow buttons
-func (w *WhatsAppService) SendNativeFlowMessage(ctx context.Context, sessionName, phone string, params whatsmeow.NativeFlowMessageParams) (whatsmeow.SendResponse, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SendNativeFlowMessage(ctx context.Context, sessionId, phone string, params whatsmeow.NativeFlowMessageParams) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return whatsmeow.SendResponse{}, err
 	}
@@ -1968,8 +1968,8 @@ func (w *WhatsAppService) SendNativeFlowMessage(ctx context.Context, sessionName
 }
 
 // SendTemplateMessage envia mensagem com template (botões URL, Call, QuickReply)
-func (w *WhatsAppService) SendTemplateMessage(ctx context.Context, sessionName, phone string, params whatsmeow.TemplateMessageParams) (whatsmeow.SendResponse, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SendTemplateMessage(ctx context.Context, sessionId, phone string, params whatsmeow.TemplateMessageParams) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return whatsmeow.SendResponse{}, err
 	}
@@ -1983,8 +1983,8 @@ func (w *WhatsAppService) SendTemplateMessage(ctx context.Context, sessionName, 
 }
 
 // SendCarouselMessage envia mensagem de carousel com múltiplos cards
-func (w *WhatsAppService) SendCarouselMessage(ctx context.Context, sessionName, phone string, params whatsmeow.CarouselMessageParams) (whatsmeow.SendResponse, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) SendCarouselMessage(ctx context.Context, sessionId, phone string, params whatsmeow.CarouselMessageParams) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return whatsmeow.SendResponse{}, err
 	}
@@ -1998,8 +1998,8 @@ func (w *WhatsAppService) SendCarouselMessage(ctx context.Context, sessionName, 
 }
 
 // UploadMedia faz upload de mídia e retorna os dados necessários para mensagens interativas
-func (w *WhatsAppService) UploadMedia(ctx context.Context, sessionName string, data []byte, mediaType whatsmeow.MediaType) (*whatsmeow.UploadResponse, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) UploadMedia(ctx context.Context, sessionId string, data []byte, mediaType whatsmeow.MediaType) (*whatsmeow.UploadResponse, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -2015,8 +2015,8 @@ func (w *WhatsAppService) UploadMedia(ctx context.Context, sessionName string, d
 // HISTORY SYNC METHODS
 
 // RequestHistorySync sends a history sync request to get messages from the phone
-func (w *WhatsAppService) RequestHistorySync(ctx context.Context, sessionName string, count int) (whatsmeow.SendResponse, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) RequestHistorySync(ctx context.Context, sessionId string, count int) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return whatsmeow.SendResponse{}, err
 	}
@@ -2031,8 +2031,8 @@ func (w *WhatsAppService) RequestHistorySync(ctx context.Context, sessionName st
 }
 
 // RequestUnavailableMessage requests an unavailable message from the phone
-func (w *WhatsAppService) RequestUnavailableMessage(ctx context.Context, sessionName, chatJID, senderJID, messageID string) (whatsmeow.SendResponse, error) {
-	client, err := w.getClient(sessionName)
+func (w *WhatsAppService) RequestUnavailableMessage(ctx context.Context, sessionId, chatJID, senderJID, messageID string) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionId)
 	if err != nil {
 		return whatsmeow.SendResponse{}, err
 	}

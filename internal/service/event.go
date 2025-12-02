@@ -1727,7 +1727,7 @@ func (s *EventService) sendWebhook(ctx context.Context, session *model.Session, 
 	s.webhookService.Send(ctx, session.ID, session.SessionId, event, rawEvent)
 }
 
-func (s *EventService) saveHistorySyncToJSON(sessionName string, e *events.HistorySync, syncType string, chunkOrder uint32) {
+func (s *EventService) saveHistorySyncToJSON(sessionId string, e *events.HistorySync, syncType string, chunkOrder uint32) {
 	// Only save JSON dumps if DEBUG_HISTORY_SYNC=true in .env
 	if os.Getenv("DEBUG_HISTORY_SYNC") != "true" {
 		return
@@ -1740,7 +1740,7 @@ func (s *EventService) saveHistorySyncToJSON(sessionName string, e *events.Histo
 	}
 
 	timestamp := time.Now().Format("20060102_150405")
-	filename := fmt.Sprintf("%s_%s_%s_chunk%d.json", sessionName, timestamp, syncType, chunkOrder)
+	filename := fmt.Sprintf("%s_%s_%s_chunk%d.json", sessionId, timestamp, syncType, chunkOrder)
 	filePath := filepath.Join(dir, filename)
 
 	data, err := json.MarshalIndent(e.Data, "", "  ")
@@ -1755,7 +1755,7 @@ func (s *EventService) saveHistorySyncToJSON(sessionName string, e *events.Histo
 	}
 
 	logger.Info().
-		Str("session", sessionName).
+		Str("session", sessionId).
 		Str("file", filePath).
 		Int("size", len(data)).
 		Msg("History sync saved to JSON")
