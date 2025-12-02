@@ -12,20 +12,20 @@ type SessionRepository struct {
 	pool *pgxpool.Pool
 }
 
-const sessionSelectFields = `"id", "name", COALESCE("deviceJid", ''), COALESCE("phone", ''), COALESCE("status", 'disconnected'), "createdAt", "updatedAt"`
+const sessionSelectFields = `"id", "sessionId", COALESCE("deviceJid", ''), COALESCE("phone", ''), COALESCE("status", 'disconnected'), "createdAt", "updatedAt"`
 
 func NewSessionRepository(pool *pgxpool.Pool) *SessionRepository {
 	return &SessionRepository{pool: pool}
 }
 
-func (r *SessionRepository) Create(ctx context.Context, name string) (*model.SessionRecord, error) {
+func (r *SessionRepository) Create(ctx context.Context, sessionId string) (*model.SessionRecord, error) {
 	var s model.SessionRecord
 	err := r.pool.QueryRow(ctx, `
-		INSERT INTO "zpSessions" ("name") 
+		INSERT INTO "zpSessions" ("sessionId") 
 		VALUES ($1) 
-		ON CONFLICT ("name") DO UPDATE SET "updatedAt" = CURRENT_TIMESTAMP 
-		RETURNING `+sessionSelectFields, name).
-		Scan(&s.ID, &s.Name, &s.DeviceJID, &s.Phone, &s.Status, &s.CreatedAt, &s.UpdatedAt)
+		ON CONFLICT ("sessionId") DO UPDATE SET "updatedAt" = CURRENT_TIMESTAMP 
+		RETURNING `+sessionSelectFields, sessionId).
+		Scan(&s.ID, &s.SessionId, &s.DeviceJID, &s.Phone, &s.Status, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -35,39 +35,44 @@ func (r *SessionRepository) Create(ctx context.Context, name string) (*model.Ses
 func (r *SessionRepository) GetByID(ctx context.Context, id string) (*model.SessionRecord, error) {
 	var s model.SessionRecord
 	err := r.pool.QueryRow(ctx, `SELECT `+sessionSelectFields+` FROM "zpSessions" WHERE "id" = $1`, id).
-		Scan(&s.ID, &s.Name, &s.DeviceJID, &s.Phone, &s.Status, &s.CreatedAt, &s.UpdatedAt)
+		Scan(&s.ID, &s.SessionId, &s.DeviceJID, &s.Phone, &s.Status, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
 	return &s, nil
 }
 
-func (r *SessionRepository) GetByName(ctx context.Context, name string) (*model.SessionRecord, error) {
+func (r *SessionRepository) GetBySessionId(ctx context.Context, sessionId string) (*model.SessionRecord, error) {
 	var s model.SessionRecord
-	err := r.pool.QueryRow(ctx, `SELECT `+sessionSelectFields+` FROM "zpSessions" WHERE "name" = $1`, name).
-		Scan(&s.ID, &s.Name, &s.DeviceJID, &s.Phone, &s.Status, &s.CreatedAt, &s.UpdatedAt)
+	err := r.pool.QueryRow(ctx, `SELECT `+sessionSelectFields+` FROM "zpSessions" WHERE "sessionId" = $1`, sessionId).
+		Scan(&s.ID, &s.SessionId, &s.DeviceJID, &s.Phone, &s.Status, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
 	return &s, nil
 }
 
-func (r *SessionRepository) UpdateJID(ctx context.Context, name, jid, phone string) error {
+// GetByName is deprecated, use GetBySessionId instead
+func (r *SessionRepository) GetByName(ctx context.Context, name string) (*model.SessionRecord, error) {
+	return r.GetBySessionId(ctx, name)
+}
+
+func (r *SessionRepository) UpdateJID(ctx context.Context, sessionId, jid, phone string) error {
 	_, err := r.pool.Exec(ctx, `
 		UPDATE "zpSessions" SET "deviceJid" = $1, "phone" = $2, "updatedAt" = CURRENT_TIMESTAMP 
-		WHERE "name" = $3`, jid, phone, name)
+		WHERE "sessionId" = $3`, jid, phone, sessionId)
 	return err
 }
 
-func (r *SessionRepository) UpdateStatus(ctx context.Context, name, status string) error {
+func (r *SessionRepository) UpdateStatus(ctx context.Context, sessionId, status string) error {
 	_, err := r.pool.Exec(ctx, `
 		UPDATE "zpSessions" SET "status" = $1, "updatedAt" = CURRENT_TIMESTAMP 
-		WHERE "name" = $2`, status, name)
+		WHERE "sessionId" = $2`, status, sessionId)
 	return err
 }
 
-func (r *SessionRepository) Delete(ctx context.Context, name string) error {
-	_, err := r.pool.Exec(ctx, `DELETE FROM "zpSessions" WHERE "name" = $1`, name)
+func (r *SessionRepository) Delete(ctx context.Context, sessionId string) error {
+	_, err := r.pool.Exec(ctx, `DELETE FROM "zpSessions" WHERE "sessionId" = $1`, sessionId)
 	return err
 }
 
@@ -108,7 +113,7 @@ func scanSessions(rows interface {
 	var sessions []model.SessionRecord
 	for rows.Next() {
 		var s model.SessionRecord
-		if err := rows.Scan(&s.ID, &s.Name, &s.DeviceJID, &s.Phone, &s.Status, &s.CreatedAt, &s.UpdatedAt); err != nil {
+		if err := rows.Scan(&s.ID, &s.SessionId, &s.DeviceJID, &s.Phone, &s.Status, &s.CreatedAt, &s.UpdatedAt); err != nil {
 			return nil, err
 		}
 		sessions = append(sessions, s)

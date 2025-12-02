@@ -32,7 +32,7 @@ const (
 
 type SessionRecord struct {
 	ID        string
-	Name      string
+	SessionId string
 	DeviceJID string
 	Phone     string
 	Status    string
@@ -42,7 +42,8 @@ type SessionRecord struct {
 
 type Session struct {
 	ID        string
-	Name      string
+	SessionId string
+	Name      string // Deprecated: use SessionId instead (kept for compatibility)
 	DeviceJID string
 	Phone     string
 	Client    *whatsmeow.Client

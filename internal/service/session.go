@@ -63,7 +63,7 @@ func (s *SessionService) LoadFromDatabase(ctx context.Context) error {
 			if err == nil {
 				device, err = s.container.GetDevice(ctx, jid)
 				if err != nil {
-					logger.Warn().Err(err).Str("session", rec.Name).Msg("Failed to get device, creating new")
+					logger.Warn().Err(err).Str("session", rec.SessionId).Msg("Failed to get device, creating new")
 					device = s.container.NewDevice()
 				}
 			} else {
@@ -73,12 +73,13 @@ func (s *SessionService) LoadFromDatabase(ctx context.Context) error {
 			device = s.container.NewDevice()
 		}
 
-		clientLog := waLog.Stdout("Client-"+rec.Name, "INFO", true)
+		clientLog := waLog.Stdout("Client-"+rec.SessionId, "INFO", true)
 		client := whatsmeow.NewClient(device, clientLog)
 
 		session := &model.Session{
 			ID:        rec.ID,
-			Name:      rec.Name,
+			SessionId: rec.SessionId,
+			Name:      rec.SessionId, // Deprecated compatibility
 			DeviceJID: rec.DeviceJID,
 			Phone:     rec.Phone,
 			Client:    client,
@@ -89,16 +90,16 @@ func (s *SessionService) LoadFromDatabase(ctx context.Context) error {
 		}
 
 		s.mu.Lock()
-		s.sessions[rec.Name] = session
+		s.sessions[rec.SessionId] = session
 		s.mu.Unlock()
 
-		logger.Info().Str("session", rec.Name).Str("jid", rec.DeviceJID).Str("phone", rec.Phone).Str("status", rec.Status).Msg("Session loaded from database")
+		logger.Info().Str("session", rec.SessionId).Str("jid", rec.DeviceJID).Str("phone", rec.Phone).Str("status", rec.Status).Msg("Session loaded from database")
 
 		// Se a sessão tem credenciais válidas (deviceJID preenchido), reconecta automaticamente
 		// O device.ID será preenchido pelo whatsmeow se houver credenciais no sqlstore
 		if device != nil && device.ID != nil {
 			sessionsToReconnect = append(sessionsToReconnect, session)
-			logger.Info().Str("session", rec.Name).Msg("Session has valid credentials, will auto-reconnect")
+			logger.Info().Str("session", rec.SessionId).Msg("Session has valid credentials, will auto-reconnect")
 		}
 	}
 
@@ -111,42 +112,43 @@ func (s *SessionService) LoadFromDatabase(ctx context.Context) error {
 }
 
 func (s *SessionService) reconnectSession(session *model.Session) {
-	logger.Info().Str("session", session.Name).Msg("Auto-reconnecting session...")
+	logger.Info().Str("session", session.SessionId).Msg("Auto-reconnecting session...")
 
 	s.setupEventHandler(session)
 
 	if err := session.Client.Connect(); err != nil {
-		logger.Error().Err(err).Str("session", session.Name).Msg("Failed to auto-reconnect session")
+		logger.Error().Err(err).Str("session", session.SessionId).Msg("Failed to auto-reconnect session")
 		session.SetStatus(model.StatusDisconnected)
-		_ = s.database.Sessions.UpdateStatus(context.Background(), session.Name, "disconnected")
+		_ = s.database.Sessions.UpdateStatus(context.Background(), session.SessionId, "disconnected")
 		return
 	}
 
 	session.SetStatus(model.StatusConnected)
-	logger.Info().Str("session", session.Name).Msg("Session auto-reconnected successfully")
+	logger.Info().Str("session", session.SessionId).Msg("Session auto-reconnected successfully")
 }
 
-func (s *SessionService) Create(ctx context.Context, name string) (*model.Session, error) {
+func (s *SessionService) Create(ctx context.Context, sessionId string) (*model.Session, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, exists := s.sessions[name]; exists {
-		return nil, fmt.Errorf("session %s already exists", name)
+	if _, exists := s.sessions[sessionId]; exists {
+		return nil, fmt.Errorf("session %s already exists", sessionId)
 	}
 
 	// Save to database and get record
-	rec, err := s.database.Sessions.Create(ctx, name)
+	rec, err := s.database.Sessions.Create(ctx, sessionId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to save session to database: %w", err)
 	}
 
 	device := s.container.NewDevice()
-	clientLog := waLog.Stdout("Client-"+name, "INFO", true)
+	clientLog := waLog.Stdout("Client-"+sessionId, "INFO", true)
 	client := whatsmeow.NewClient(device, clientLog)
 
 	session := &model.Session{
 		ID:        rec.ID,
-		Name:      rec.Name,
+		SessionId: rec.SessionId,
+		Name:      rec.SessionId, // Deprecated compatibility
 		DeviceJID: rec.DeviceJID,
 		Phone:     rec.Phone,
 		Client:    client,
@@ -156,28 +158,28 @@ func (s *SessionService) Create(ctx context.Context, name string) (*model.Sessio
 		UpdatedAt: rec.UpdatedAt,
 	}
 
-	s.sessions[name] = session
+	s.sessions[sessionId] = session
 	return session, nil
 }
 
-func (s *SessionService) Get(name string) (*model.Session, error) {
+func (s *SessionService) Get(sessionId string) (*model.Session, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	session, exists := s.sessions[name]
+	session, exists := s.sessions[sessionId]
 	if !exists {
-		return nil, fmt.Errorf("session %s not found", name)
+		return nil, fmt.Errorf("session %s not found", sessionId)
 	}
 	return session, nil
 }
 
-func (s *SessionService) Delete(ctx context.Context, name string) error {
+func (s *SessionService) Delete(ctx context.Context, sessionId string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	session, exists := s.sessions[name]
+	session, exists := s.sessions[sessionId]
 	if !exists {
-		return fmt.Errorf("session %s not found", name)
+		return fmt.Errorf("session %s not found", sessionId)
 	}
 
 	hasCredentials := session.Device != nil && session.Device.ID != nil
@@ -186,23 +188,23 @@ func (s *SessionService) Delete(ctx context.Context, name string) error {
 	if hasCredentials {
 		// If not connected, try to connect first so we can send logout to server
 		if !session.Client.IsConnected() {
-			logger.Info().Str("session", name).Msg("Connecting to send logout request before delete...")
+			logger.Info().Str("session", sessionId).Msg("Connecting to send logout request before delete...")
 			if err := session.Client.Connect(); err != nil {
-				logger.Warn().Err(err).Str("session", name).Msg("Failed to connect for logout, will delete locally only")
+				logger.Warn().Err(err).Str("session", sessionId).Msg("Failed to connect for logout, will delete locally only")
 			}
 		}
 
 		// Send logout to WhatsApp server (removes device from their servers)
 		if session.Client.IsConnected() {
 			if err := session.Client.Logout(ctx); err != nil {
-				logger.Warn().Err(err).Str("session", name).Msg("Failed to logout from WhatsApp server")
+				logger.Warn().Err(err).Str("session", sessionId).Msg("Failed to logout from WhatsApp server")
 				session.Client.Disconnect()
 			}
 		}
 
 		// Ensure device is deleted from whatsmeow store
 		if err := s.container.DeleteDevice(ctx, session.Device); err != nil {
-			logger.Debug().Err(err).Str("session", name).Msg("DeleteDevice (may already be deleted by Logout)")
+			logger.Debug().Err(err).Str("session", sessionId).Msg("DeleteDevice (may already be deleted by Logout)")
 		}
 	} else {
 		// No credentials, just disconnect if connected
@@ -212,12 +214,12 @@ func (s *SessionService) Delete(ctx context.Context, name string) error {
 	}
 
 	// Delete from database
-	if err := s.database.Sessions.Delete(ctx, name); err != nil {
-		logger.Warn().Err(err).Str("session", name).Msg("Failed to delete session from database")
+	if err := s.database.Sessions.Delete(ctx, sessionId); err != nil {
+		logger.Warn().Err(err).Str("session", sessionId).Msg("Failed to delete session from database")
 	}
 
-	delete(s.sessions, name)
-	logger.Info().Str("session", name).Msg("Session deleted successfully")
+	delete(s.sessions, sessionId)
+	logger.Info().Str("session", sessionId).Msg("Session deleted successfully")
 	return nil
 }
 
@@ -232,8 +234,8 @@ func (s *SessionService) List() []string {
 	return names
 }
 
-func (s *SessionService) Connect(ctx context.Context, name string) (*model.Session, error) {
-	session, err := s.Get(name)
+func (s *SessionService) Connect(ctx context.Context, sessionId string) (*model.Session, error) {
+	session, err := s.Get(sessionId)
 	if err != nil {
 		return nil, err
 	}
