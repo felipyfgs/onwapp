@@ -1,23 +1,23 @@
-# Development Stack - Dependencies only (run API locally)
+# Development Stack - Full stack with API
 # Usage: docker compose -f docker-compose.dev.yaml up -d
 
 services:
   # PostgreSQL Database
-  postgres:
+  postgres-dev:
     image: postgres:16-alpine
-    container_name: zpwoot-postgres
+    container_name: zpwoot-postgres-dev
     restart: unless-stopped
     ports:
-      - '5432:5432'
+      - '5434:5432'
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-zpwoot}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-zpwoot123}
       POSTGRES_DB: ${POSTGRES_DB:-zpwoot}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data_dev:/var/lib/postgresql/data
     networks:
-      - zpwoot-network
+      - zpwoot-network-dev
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-zpwoot} -d ${POSTGRES_DB:-zpwoot}']
       interval: 10s
@@ -25,48 +25,48 @@ services:
       retries: 5
 
   # DBGate (Database UI)
-  dbgate:
+  dbgate-dev:
     image: dbgate/dbgate:latest
-    container_name: zpwoot-dbgate
+    container_name: zpwoot-dbgate-dev
     restart: unless-stopped
     ports:
-      - '3001:3000'
+      - '3002:3000'
     environment:
       CONNECTIONS: con1
-      LABEL_con1: zpwoot PostgreSQL
-      SERVER_con1: postgres
+      LABEL_con1: zpwoot PostgreSQL Dev
+      SERVER_con1: postgres-dev
       USER_con1: ${POSTGRES_USER:-zpwoot}
       PASSWORD_con1: ${POSTGRES_PASSWORD:-zpwoot123}
       PORT_con1: 5432
       ENGINE_con1: postgres@dbgate-plugin-postgres
       DATABASE_con1: ${POSTGRES_DB:-zpwoot}
     depends_on:
-      postgres:
+      postgres-dev:
         condition: service_healthy
     networks:
-      - zpwoot-network
+      - zpwoot-network-dev
 
   # Webhook Tester
-  webhook-tester:
+  webhook-tester-dev:
     image: tarampampam/webhook-tester:latest
-    container_name: zpwoot-webhook-tester
+    container_name: zpwoot-webhook-tester-dev
     restart: unless-stopped
     ports:
-      - '8080:8080'
+      - '8081:8080'
     networks:
-      - zpwoot-network
+      - zpwoot-network-dev
 
   # Redis
-  redis:
+  redis-dev:
     image: redis:7-alpine
-    container_name: zpwoot-redis
+    container_name: zpwoot-redis-dev
     restart: unless-stopped
     ports:
-      - '6379:6379'
+      - '6380:6379'
     volumes:
-      - redis_data:/data
+      - redis_data_dev:/data
     networks:
-      - zpwoot-network
+      - zpwoot-network-dev
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
@@ -74,50 +74,76 @@ services:
       retries: 5
 
   # NATS JetStream
-  nats:
+  nats-dev:
     image: nats:latest
-    container_name: zpwoot-nats
+    container_name: zpwoot-nats-dev
     restart: unless-stopped
     ports:
-      - '4222:4222'
-      - '8222:8222'
+      - '4223:4222'
+      - '8223:8222'
     command:
       - "--http_port=8222"
       - "--js"
       - "--store_dir=/data"
     volumes:
-      - nats_data:/data
-    healthcheck:
-      test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:8222/healthz']
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - nats_data_dev:/data
     networks:
-      - zpwoot-network
+      - zpwoot-network-dev
 
   # MinIO (S3 Storage)
-  minio:
+  minio-dev:
     image: quay.io/minio/minio:RELEASE.2024-01-13T07-53-03Z-cpuv1
-    container_name: zpwoot-minio
+    container_name: zpwoot-minio-dev
     command: server /data --console-address ":9001"
     restart: unless-stopped
     ports:
-      - '9000:9000'
-      - '9001:9001'
+      - '9002:9000'
+      - '9003:9001'
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-zpwoot}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-zpwoot123}
     volumes:
-      - minio_data:/data
+      - minio_data_dev:/data
     networks:
-      - zpwoot-network
+      - zpwoot-network-dev
+
+  # ZPWoot API
+  api-dev:
+    image: onwapp/zpwoot:latest
+    container_name: zpwoot-api-dev
+    restart: unless-stopped
+    ports:
+      - '3003:3000'
+    environment:
+      DATABASE_URL: postgres://zpwoot:zpwoot123@postgres-dev:5432/zpwoot?sslmode=disable
+      PORT: '3000'
+      API_KEY: ${API_KEY:-dev-api-key-12345}
+      SERVER_URL: ${SERVER_URL:-http://localhost:3003}
+      LOG_LEVEL: debug
+      LOG_FORMAT: console
+      MINIO_ENDPOINT: minio-dev:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-zpwoot}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-zpwoot123}
+      MINIO_BUCKET: zpwoot-media
+      MINIO_USE_SSL: 'false'
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9002}
+      NATS_ENABLED: 'true'
+      NATS_URL: nats://nats-dev:4222
+      NATS_STREAM_PREFIX: ZPWOOT_DEV
+    depends_on:
+      postgres-dev:
+        condition: service_healthy
+      nats-dev:
+        condition: service_started
+    networks:
+      - zpwoot-network-dev
 
 volumes:
-  postgres_data:
-  redis_data:
-  minio_data:
-  nats_data:
+  postgres_data_dev:
+  redis_data_dev:
+  minio_data_dev:
+  nats_data_dev:
 
 networks:
-  zpwoot-network:
+  zpwoot-network-dev:
     driver: bridge
