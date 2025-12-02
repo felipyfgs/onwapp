@@ -219,6 +219,17 @@ func RegisterCWToWAQueueHandlers(queueSvc *queue.Service, handler CWToWAHandler)
 			return fmt.Errorf("failed to unmarshal CWToWAMessage: %w", err)
 		}
 
+		// Prevent duplicate processing (NATS may redeliver on slow ACK)
+		// DO NOT release the lock - let it expire naturally to block redeliveries
+		cacheKey := fmt.Sprintf("cw2wa:text:%s:%d", msg.SessionID, data.ChatwootMsgID)
+		if !TryAcquireCWToWAProcessing(cacheKey) {
+			logger.Debug().
+				Str("sessionId", msg.SessionID).
+				Int("cwMsgId", data.ChatwootMsgID).
+				Msg("Chatwoot->WhatsApp: skipping duplicate text (already processed or processing)")
+			return nil
+		}
+
 		logger.Debug().
 			Str("sessionId", msg.SessionID).
 			Str("chatJid", data.ChatJID).
@@ -233,6 +244,18 @@ func RegisterCWToWAQueueHandlers(queueSvc *queue.Service, handler CWToWAHandler)
 		var data queue.CWToWAMessage
 		if err := json.Unmarshal(msg.Data, &data); err != nil {
 			return fmt.Errorf("failed to unmarshal CWToWAMessage: %w", err)
+		}
+
+		// Prevent duplicate processing (NATS may redeliver on slow ACK)
+		// DO NOT release the lock - let it expire naturally to block redeliveries
+		cacheKey := fmt.Sprintf("cw2wa:media:%s:%d", msg.SessionID, data.ChatwootMsgID)
+		if !TryAcquireCWToWAProcessing(cacheKey) {
+			logger.Debug().
+				Str("sessionId", msg.SessionID).
+				Int("cwMsgId", data.ChatwootMsgID).
+				Int("attachments", len(data.Attachments)).
+				Msg("Chatwoot->WhatsApp: skipping duplicate media (already processed or processing)")
+			return nil
 		}
 
 		logger.Debug().

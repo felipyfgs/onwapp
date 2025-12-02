@@ -78,10 +78,10 @@ func (c *pendingSentCache) markPending(sessionID, chatJID string, cwMsgID int) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	// Clean old entries (older than 60 seconds)
+	// Clean old entries (older than 2 minutes)
 	now := time.Now()
 	for k, t := range c.items {
-		if now.Sub(t) > 60*time.Second {
+		if now.Sub(t) > 2*time.Minute {
 			delete(c.items, k)
 		}
 	}
@@ -99,8 +99,8 @@ func (c *pendingSentCache) isPendingByChat(sessionID, chatJID string) bool {
 	prefix := fmt.Sprintf("%s:%s:", sessionID, chatJID)
 	now := time.Now()
 	for k, t := range c.items {
-		// Only consider recent entries (within 5 seconds)
-		if strings.HasPrefix(k, prefix) && now.Sub(t) < 5*time.Second {
+		// Consider entries within 2 minutes (enough for sending many large files)
+		if strings.HasPrefix(k, prefix) && now.Sub(t) < 2*time.Minute {
 			return true
 		}
 	}
@@ -132,6 +132,56 @@ func ClearPendingSentFromChatwoot(sessionID, chatJID string, cwMsgID int) {
 // IsPendingSentFromChatwoot checks if there's a pending send for this chat
 func IsPendingSentFromChatwoot(sessionID, chatJID string) bool {
 	return pendingSentFromChatwoot.isPendingByChat(sessionID, chatJID)
+}
+
+// cwToWAProcessingCache prevents duplicate CW->WA message processing
+// when NATS redelivers messages due to slow ACK (e.g., sending multiple large files)
+var cwToWAProcessingCache = newCWToWAProcessingCache()
+
+type cwToWAProcessingCacheType struct {
+	mu    sync.Mutex
+	items map[string]time.Time
+}
+
+func newCWToWAProcessingCache() *cwToWAProcessingCacheType {
+	return &cwToWAProcessingCacheType{
+		items: make(map[string]time.Time),
+	}
+}
+
+func (c *cwToWAProcessingCacheType) tryAcquire(key string) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	now := time.Now()
+	// Clean old entries (older than 2 minutes - enough for large file transfers)
+	for k, t := range c.items {
+		if now.Sub(t) > 2*time.Minute {
+			delete(c.items, k)
+		}
+	}
+
+	if _, exists := c.items[key]; exists {
+		return false
+	}
+	c.items[key] = now
+	return true
+}
+
+func (c *cwToWAProcessingCacheType) release(key string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	delete(c.items, key)
+}
+
+// TryAcquireCWToWAProcessing attempts to acquire processing lock for a CW->WA message
+func TryAcquireCWToWAProcessing(key string) bool {
+	return cwToWAProcessingCache.tryAcquire(key)
+}
+
+// ReleaseCWToWAProcessing releases the processing lock
+func ReleaseCWToWAProcessing(key string) {
+	cwToWAProcessingCache.release(key)
 }
 
 // MediaDownloader is a function type for downloading media from WhatsApp messages

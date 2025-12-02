@@ -223,9 +223,15 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 
 	if payload.Event == "message_updated" && payload.ContentAttrs != nil {
 		if deleted, ok := payload.ContentAttrs["deleted"].(bool); ok && deleted {
-			if err := h.handleMessageDeleted(c.Request.Context(), session, payload); err != nil {
-				logger.Warn().Err(err).Str("session", sessionName).Msg("Chatwoot: failed to delete message from WhatsApp")
-			}
+			// Use a separate context with longer timeout for deletion
+			// HTTP context may timeout before all messages are deleted
+			deleteCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+			go func() {
+				defer cancel()
+				if err := h.handleMessageDeleted(deleteCtx, session, payload); err != nil {
+					logger.Warn().Err(err).Str("session", sessionName).Msg("Chatwoot: failed to delete message from WhatsApp")
+				}
+			}()
 			c.JSON(http.StatusOK, gin.H{"message": "ok"})
 			return
 		}
