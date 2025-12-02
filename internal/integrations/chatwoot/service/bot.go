@@ -32,7 +32,7 @@ func (h *BotCommandHandler) HandleCommand(ctx context.Context, session *model.Se
 	command = strings.ToLower(command)
 
 	logger.Info().
-		Str("session", session.Name).
+		Str("session", session.SessionId).
 		Str("command", command).
 		Msg("Chatwoot: processing bot command")
 
@@ -71,7 +71,7 @@ func (h *BotCommandHandler) handleInit(ctx context.Context, session *model.Sessi
 	}
 
 	go func() {
-		if _, err := h.sessionService.Connect(context.Background(), session.Name); err != nil {
+		if _, err := h.sessionService.Connect(context.Background(), session.SessionId); err != nil {
 			_ = h.service.SendBotStatusMessage(context.Background(), cfg, "disconnected",
 				fmt.Sprintf("❌ Failed to connect: %s", err.Error()))
 		}
@@ -104,8 +104,8 @@ func (h *BotCommandHandler) handleDisconnect(ctx context.Context, session *model
 		fmt.Sprintf("🔌 Disconnecting inbox *%s*...", cfg.Inbox))
 
 	go func() {
-		if err := h.sessionService.Logout(context.Background(), session.Name); err != nil {
-			logger.Warn().Err(err).Str("session", session.Name).Msg("Chatwoot: failed to logout")
+		if err := h.sessionService.Logout(context.Background(), session.SessionId); err != nil {
+			logger.Warn().Err(err).Str("session", session.SessionId).Msg("Chatwoot: failed to logout")
 		}
 	}()
 }
