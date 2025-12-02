@@ -129,6 +129,9 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 		if err := s.database.Messages.UpdateCwFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, convID, sourceID); err != nil {
 			logger.Debug().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update message fields")
 		}
+
+		// Send webhook with Chatwoot IDs after they are saved
+		s.sendWebhookWithChatwootIds(ctx, session, cfg, evt, cwMsg.ID, convID)
 	}
 
 	return nil
@@ -183,9 +186,33 @@ func (s *Service) processIncomingMediaMessage(ctx context.Context, session *mode
 		if err := s.database.Messages.UpdateCwFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, conversationID, sourceID); err != nil {
 			logger.Debug().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update media message fields")
 		}
+
+		// Send webhook with Chatwoot IDs after they are saved
+		s.sendWebhookWithChatwootIds(ctx, session, cfg, evt, cwMsg.ID, conversationID)
 	}
 
 	return nil
+}
+
+// sendWebhookWithChatwootIds sends a webhook notification with Chatwoot message and conversation IDs
+func (s *Service) sendWebhookWithChatwootIds(ctx context.Context, session *model.Session, cfg *core.Config, evt *events.Message, cwMsgID, cwConvID int) {
+	if s.webhookSender == nil {
+		return
+	}
+
+	cwInfo := &ChatwootInfo{
+		Account:        cfg.Account,
+		InboxID:        cfg.InboxID,
+		ConversationID: cwConvID,
+		MessageID:      cwMsgID,
+	}
+
+	event := "message.received"
+	if evt.Info.IsFromMe {
+		event = "message.sent"
+	}
+
+	s.webhookSender.SendWithChatwoot(ctx, session.ID, session.Name, event, evt, cwInfo)
 }
 
 // =============================================================================
@@ -280,6 +307,9 @@ func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Ses
 		if err := s.database.Messages.UpdateCwFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, conv.ID, sourceID); err != nil {
 			logger.Debug().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update outgoing message fields")
 		}
+
+		// Send webhook with Chatwoot IDs after they are saved
+		s.sendWebhookWithChatwootIds(ctx, session, cfg, evt, cwMsg.ID, conv.ID)
 	}
 
 	return nil
@@ -334,6 +364,9 @@ func (s *Service) processOutgoingMediaMessage(ctx context.Context, session *mode
 		if err := s.database.Messages.UpdateCwFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, conversationID, sourceID); err != nil {
 			logger.Debug().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update outgoing media message fields")
 		}
+
+		// Send webhook with Chatwoot IDs after they are saved
+		s.sendWebhookWithChatwootIds(ctx, session, cfg, evt, cwMsg.ID, conversationID)
 	}
 
 	return nil

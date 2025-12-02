@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"zpwoot/internal/db"
+	cwservice "zpwoot/internal/integrations/chatwoot/service"
 	"zpwoot/internal/integrations/webhook"
 )
 
@@ -57,4 +58,28 @@ func (p *WebhookProvider) GetChatwootInfoForMessage(ctx context.Context, session
 	}
 
 	return info
+}
+
+// WebhookSenderAdapter adapts webhook.Service to cwservice.WebhookSender interface
+type WebhookSenderAdapter struct {
+	webhookService *webhook.Service
+}
+
+// NewWebhookSenderAdapter creates a new adapter for webhook service
+func NewWebhookSenderAdapter(ws *webhook.Service) *WebhookSenderAdapter {
+	return &WebhookSenderAdapter{webhookService: ws}
+}
+
+// SendWithChatwoot implements cwservice.WebhookSender interface
+func (a *WebhookSenderAdapter) SendWithChatwoot(ctx context.Context, sessionID, sessionName, event string, rawEvent interface{}, cwInfo *cwservice.ChatwootInfo) {
+	var webhookInfo *webhook.ChatwootInfo
+	if cwInfo != nil {
+		webhookInfo = &webhook.ChatwootInfo{
+			Account:        cwInfo.Account,
+			InboxID:        cwInfo.InboxID,
+			ConversationID: cwInfo.ConversationID,
+			MessageID:      cwInfo.MessageID,
+		}
+	}
+	a.webhookService.SendWithChatwoot(ctx, sessionID, sessionName, event, rawEvent, webhookInfo)
 }
