@@ -325,6 +325,11 @@ func (h *Handler) extractChatId(payload *cwservice.WebhookPayload) string {
 func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.Session, chatJid, content string, attachments []core.Attachment, quotedMsg *core.QuotedMessageInfo, chatwootMsgID, chatwootConvID int) error {
 	recipient := chatJid
 
+	// Mark as pending BEFORE sending to prevent duplicate processing
+	// when emitSentMessageEvent triggers the Chatwoot event handler
+	cwservice.MarkPendingSentFromChatwoot(session.ID, chatJid, chatwootMsgID)
+	defer cwservice.ClearPendingSentFromChatwoot(session.ID, chatJid, chatwootMsgID)
+
 	var quoted *service.QuotedMessage
 	if quotedMsg != nil {
 		quoted = &service.QuotedMessage{
@@ -385,9 +390,17 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 				} else {
 					h.saveOutgoingMessage(ctx, session, chatJid, "", resp.ID, chatwootMsgID, chatwootConvID)
 				}
+				content = "" // Clear content to prevent sending agent signature as separate text
 				quoted = nil
 			default:
-				filename := att.Extension
+				filename := att.FileName
+				if filename == "" {
+					filename = att.Extension
+				}
+				if filename == "" {
+					// Try to extract filename from URL
+					filename = util.ExtractFilenameFromURL(att.DataURL)
+				}
 				if filename == "" {
 					filename = "document"
 				}

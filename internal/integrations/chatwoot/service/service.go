@@ -60,6 +60,80 @@ func (c *processingCache) release(key string) {
 
 var msgProcessingCache = newProcessingCache()
 
+// pendingSentCache tracks messages being sent from Chatwoot to WhatsApp
+// This prevents the event handler from reprocessing messages we just sent
+type pendingSentCache struct {
+	mu    sync.Mutex
+	items map[string]time.Time // key: "sessionID:chatJID:cwMsgId"
+}
+
+func newPendingSentCache() *pendingSentCache {
+	return &pendingSentCache{
+		items: make(map[string]time.Time),
+	}
+}
+
+// markPending marks a message as being sent from Chatwoot
+func (c *pendingSentCache) markPending(sessionID, chatJID string, cwMsgID int) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Clean old entries (older than 60 seconds)
+	now := time.Now()
+	for k, t := range c.items {
+		if now.Sub(t) > 60*time.Second {
+			delete(c.items, k)
+		}
+	}
+
+	key := fmt.Sprintf("%s:%s:%d", sessionID, chatJID, cwMsgID)
+	c.items[key] = now
+}
+
+// isPendingByChat checks if there's any pending message for this session/chat
+// Used when we don't have cwMsgId (from WhatsApp event)
+func (c *pendingSentCache) isPendingByChat(sessionID, chatJID string) bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	prefix := fmt.Sprintf("%s:%s:", sessionID, chatJID)
+	now := time.Now()
+	for k, t := range c.items {
+		// Only consider recent entries (within 5 seconds)
+		if strings.HasPrefix(k, prefix) && now.Sub(t) < 5*time.Second {
+			return true
+		}
+	}
+	return false
+}
+
+// clearPending removes a pending message
+func (c *pendingSentCache) clearPending(sessionID, chatJID string, cwMsgID int) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	key := fmt.Sprintf("%s:%s:%d", sessionID, chatJID, cwMsgID)
+	delete(c.items, key)
+}
+
+var pendingSentFromChatwoot = newPendingSentCache()
+
+// MarkPendingSentFromChatwoot marks a message as being sent from Chatwoot webhook
+// Call this BEFORE sending to WhatsApp to prevent duplicate processing
+func MarkPendingSentFromChatwoot(sessionID, chatJID string, cwMsgID int) {
+	pendingSentFromChatwoot.markPending(sessionID, chatJID, cwMsgID)
+}
+
+// ClearPendingSentFromChatwoot removes the pending marker after message is saved
+func ClearPendingSentFromChatwoot(sessionID, chatJID string, cwMsgID int) {
+	pendingSentFromChatwoot.clearPending(sessionID, chatJID, cwMsgID)
+}
+
+// IsPendingSentFromChatwoot checks if there's a pending send for this chat
+func IsPendingSentFromChatwoot(sessionID, chatJID string) bool {
+	return pendingSentFromChatwoot.isPendingByChat(sessionID, chatJID)
+}
+
 // MediaDownloader is a function type for downloading media from WhatsApp messages
 type MediaDownloader func(ctx context.Context, sessionName string, msg *waE2E.Message) ([]byte, error)
 

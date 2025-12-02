@@ -62,6 +62,20 @@ func (h *EventHandler) handleMessage(ctx context.Context, session *model.Session
 		return
 	}
 
+	// Skip outgoing messages that were just sent from Chatwoot webhook
+	// This prevents duplicate processing when emitSentMessageEvent triggers
+	if evt.Info.IsFromMe {
+		chatJID := evt.Info.Chat.String()
+		if IsPendingSentFromChatwoot(session.ID, chatJID) {
+			logger.Debug().
+				Str("session", session.Name).
+				Str("messageId", evt.Info.ID).
+				Str("chatJid", chatJID).
+				Msg("Chatwoot: skipping outgoing message (sent from Chatwoot webhook)")
+			return
+		}
+	}
+
 	// Use queue if available, otherwise process directly
 	if h.queueProducer != nil && h.queueProducer.IsConnected() {
 		h.enqueueMessage(ctx, session, evt)

@@ -112,7 +112,9 @@ func (s *Service) GetWebhookDataForSending(ctx context.Context, sessionID string
 
 	content = s.ConvertMarkdown(payload.Content)
 
-	if cfg.SignAgent && payload.Sender != nil {
+	// Only add agent signature if there's actual text content
+	// This prevents sending just the signature when agent sends only attachments
+	if cfg.SignAgent && payload.Sender != nil && content != "" {
 		senderName := payload.Sender.AvailableName
 		if senderName == "" {
 			senderName = payload.Sender.Name

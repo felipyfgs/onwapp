@@ -122,6 +122,31 @@ func GetMediaTypeFromURL(url string) string {
 	return GetMediaTypeFromFilename(url)
 }
 
+// ExtractFilenameFromURL extracts the filename from a URL
+func ExtractFilenameFromURL(url string) string {
+	if url == "" {
+		return ""
+	}
+
+	// Remove query string
+	urlPath := strings.Split(url, "?")[0]
+
+	// Get the base name
+	filename := path.Base(urlPath)
+
+	// Validate it's a reasonable filename
+	if filename == "" || filename == "." || filename == "/" {
+		return ""
+	}
+
+	// Check if it has an extension
+	if !strings.Contains(filename, ".") {
+		return ""
+	}
+
+	return filename
+}
+
 // FileTypeMap maps media types to Chatwoot file_type strings
 var FileTypeMap = map[string]string{
 	"image":    "image",

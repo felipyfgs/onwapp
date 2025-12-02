@@ -107,6 +107,7 @@ type Attachment struct {
 	FileType  string `json:"file_type"`
 	AccountID int    `json:"account_id,omitempty"`
 	Extension string `json:"extension,omitempty"`
+	FileName  string `json:"file_name,omitempty"`
 	DataURL   string `json:"data_url,omitempty"`
 	ThumbURL  string `json:"thumb_url,omitempty"`
 	FileSize  int    `json:"file_size,omitempty"`

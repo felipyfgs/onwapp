@@ -199,6 +199,22 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 
 	conv, err := c.GetOrCreateConversation(ctx, contactID, cfg.InboxID, status, cfg.AutoReopen)
 	if err != nil {
+		// If contact was from cache and we got a 404 error, the contact was deleted
+		// Invalidate cache and retry with fresh contact creation
+		if usedCache && core.IsNotFoundError(err) {
+			logger.Info().
+				Str("cacheKey", cacheKey).
+				Int("contactId", contactID).
+				Msg("Chatwoot: cached contact not found (404), invalidating cache and recreating")
+
+			cm.conversationCache.Delete(cacheKey)
+
+			// Retry without cache - recursive call with cleared cache
+			return cm.GetOrCreateContactAndConversation(
+				ctx, c, cfg, remoteJid, pushName, isFromMe,
+				participantJid, getProfilePicture, getGroupInfo, getContactName, sessionName,
+			)
+		}
 		return 0, fmt.Errorf("failed to get/create conversation: %w", err)
 	}
 
@@ -209,6 +225,12 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 func (cm *ContactManager) maybeUpdateContactName(ctx context.Context, c *client.Client, contactID int, pushName string) {
 	contact, err := c.GetContact(ctx, contactID)
 	if err != nil {
+		// If 404, the contact was deleted - just log at debug level and return
+		// The main flow will handle cache invalidation on next message
+		if core.IsNotFoundError(err) {
+			logger.Debug().Int("contactId", contactID).Msg("Chatwoot: contact not found (404), skipping name update")
+			return
+		}
 		logger.Debug().Err(err).Int("contactId", contactID).Msg("Chatwoot: failed to get contact for name update")
 		return
 	}
