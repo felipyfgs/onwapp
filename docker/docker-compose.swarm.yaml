@@ -12,6 +12,7 @@ services:
       - POSTGRES_DB=zpwoot
       - POSTGRES_USER=zpwoot
       - POSTGRES_PASSWORD=zpwoot123
+      - TZ=America/Sao_Paulo
     deploy:
       mode: replicated
       replicas: 1
@@ -33,6 +34,8 @@ services:
       - zpwoot_nats_data:/data
     networks:
       - infraNet
+    environment:
+      - TZ=America/Sao_Paulo
     deploy:
       mode: replicated
       replicas: 1
@@ -56,6 +59,7 @@ services:
       - MINIO_ROOT_PASSWORD=zpwoot123
       - MINIO_BROWSER_REDIRECT_URL=https://minio.yourdomain.com
       - MINIO_SERVER_URL=https://s3.yourdomain.com
+      - TZ=America/Sao_Paulo
     deploy:
       mode: replicated
       replicas: 1
@@ -84,8 +88,6 @@ services:
     networks:
       - infraNet
     environment:
-      # Timezone
-      - TZ=America/Sao_Paulo
       # Database
       - DATABASE_URL=postgres://zpwoot:zpwoot123@zpwoot_postgres:5432/zpwoot?sslmode=disable
       # Server
@@ -93,12 +95,12 @@ services:
       - API_KEY=your-api-key-here
       - SERVER_URL=https://wpapi.yourdomain.com
       # Logging
-      - LOG_LEVEL=info
+      - LOG_LEVEL=debug
       - LOG_FORMAT=json
       # MinIO (internal endpoint for bucket creation, public URL for media access)
       - MINIO_ENDPOINT=s3.yourdomain.com
-      - MINIO_ACCESS_KEY=zpwoot
-      - MINIO_SECRET_KEY=zpwoot123
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
       - MINIO_BUCKET=zpwoot-media
       - MINIO_USE_SSL=true
       - MINIO_PUBLIC_URL=https://s3.yourdomain.com
@@ -106,6 +108,7 @@ services:
       - NATS_ENABLED=true
       - NATS_URL=nats://zpwoot_nats:4222
       - NATS_STREAM_PREFIX=ZPWOOT
+      - TZ=America/Sao_Paulo
     deploy:
       mode: replicated
       replicas: 1
