@@ -96,7 +96,7 @@ services:
       - DATABASE_URL=postgres://zpwoot:zpwoot123@zpwoot_postgres:5432/zpwoot?sslmode=disable
       # Server
       - PORT=3000
-      - API_KEY=sua-api-key-aqui
+      - API_KEY=your-api-key-here
       - SERVER_URL=https://wpapi.yourdomain.com
       # Logging
       - LOG_LEVEL=info
