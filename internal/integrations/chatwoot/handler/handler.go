@@ -58,15 +58,15 @@ func (h *Handler) SetQueueProducer(producer *queue.Producer) {
 // @Tags Chatwoot
 // @Accept json
 // @Produce json
-// @Param name path string true "Session name"
+// @Param sessionId path string true "Session name"
 // @Param config body SetConfigRequest true "Chatwoot configuration"
 // @Success 200 {object} core.Config
 // @Failure 400 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
 // @Security ApiKeyAuth
-// @Router /sessions/{name}/chatwoot/set [post]
+// @Router /sessions/{sessionId}/chatwoot/set [post]
 func (h *Handler) SetConfig(c *gin.Context) {
-	sessionName := c.Param("name")
+	sessionName := c.Param("sessionId")
 	session, err := h.sessionService.Get(sessionName)
 	if err != nil || session == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
@@ -126,13 +126,13 @@ func (h *Handler) SetConfig(c *gin.Context) {
 // @Description Get Chatwoot integration configuration for a session
 // @Tags Chatwoot
 // @Produce json
-// @Param name path string true "Session name"
+// @Param sessionId path string true "Session name"
 // @Success 200 {object} core.Config
 // @Failure 404 {object} map[string]interface{}
 // @Security ApiKeyAuth
-// @Router /sessions/{name}/chatwoot/find [get]
+// @Router /sessions/{sessionId}/chatwoot/find [get]
 func (h *Handler) GetConfig(c *gin.Context) {
-	sessionName := c.Param("name")
+	sessionName := c.Param("sessionId")
 	session, err := h.sessionService.Get(sessionName)
 	if err != nil || session == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
@@ -154,13 +154,13 @@ func (h *Handler) GetConfig(c *gin.Context) {
 // @Description Remove Chatwoot integration configuration for a session
 // @Tags Chatwoot
 // @Produce json
-// @Param name path string true "Session name"
+// @Param sessionId path string true "Session name"
 // @Success 200 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
 // @Security ApiKeyAuth
-// @Router /sessions/{name}/chatwoot [delete]
+// @Router /sessions/{sessionId}/chatwoot [delete]
 func (h *Handler) DeleteConfig(c *gin.Context) {
-	sessionName := c.Param("name")
+	sessionName := c.Param("sessionId")
 	session, err := h.sessionService.Get(sessionName)
 	if err != nil || session == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
@@ -186,11 +186,11 @@ func (h *Handler) DeleteConfig(c *gin.Context) {
 // @Tags Chatwoot
 // @Accept json
 // @Produce json
-// @Param name path string true "Session name"
+// @Param sessionId path string true "Session name"
 // @Success 200 {object} map[string]interface{}
-// @Router /chatwoot/webhook/{name} [post]
+// @Router /chatwoot/webhook/{sessionId} [post]
 func (h *Handler) ReceiveWebhook(c *gin.Context) {
-	sessionName := c.Param("name")
+	sessionName := c.Param("sessionId")
 	session, err := h.sessionService.Get(sessionName)
 	if err != nil || session == nil {
 		c.JSON(http.StatusOK, gin.H{"message": "session not found, ignoring"})
@@ -598,12 +598,12 @@ func downloadMedia(url string) ([]byte, string, error) {
 // @Description Start async synchronization of contacts from message history to Chatwoot
 // @Tags Chatwoot
 // @Produce json
-// @Param name path string true "Session name"
+// @Param sessionId path string true "Session name"
 // @Success 202 {object} core.SyncStatus
 // @Failure 400 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
 // @Security ApiKeyAuth
-// @Router /sessions/{name}/chatwoot/sync/contacts [post]
+// @Router /sessions/{sessionId}/chatwoot/sync/contacts [post]
 func (h *Handler) SyncContacts(c *gin.Context) {
 	h.handleSync(c, "contacts")
 }
@@ -613,13 +613,13 @@ func (h *Handler) SyncContacts(c *gin.Context) {
 // @Description Start async synchronization of message history to Chatwoot
 // @Tags Chatwoot
 // @Produce json
-// @Param name path string true "Session name"
+// @Param sessionId path string true "Session name"
 // @Param days query int false "Limit to last N days"
 // @Success 202 {object} core.SyncStatus
 // @Failure 400 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
 // @Security ApiKeyAuth
-// @Router /sessions/{name}/chatwoot/sync/messages [post]
+// @Router /sessions/{sessionId}/chatwoot/sync/messages [post]
 func (h *Handler) SyncMessages(c *gin.Context) {
 	h.handleSync(c, "messages")
 }
@@ -629,19 +629,19 @@ func (h *Handler) SyncMessages(c *gin.Context) {
 // @Description Start async synchronization of all contacts and messages to Chatwoot
 // @Tags Chatwoot
 // @Produce json
-// @Param name path string true "Session name"
+// @Param sessionId path string true "Session name"
 // @Param days query int false "Limit to last N days"
 // @Success 202 {object} core.SyncStatus
 // @Failure 400 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
 // @Security ApiKeyAuth
-// @Router /sessions/{name}/chatwoot/sync [post]
+// @Router /sessions/{sessionId}/chatwoot/sync [post]
 func (h *Handler) SyncAll(c *gin.Context) {
 	h.handleSync(c, "all")
 }
 
 func (h *Handler) handleSync(c *gin.Context, syncType string) {
-	sessionName := c.Param("name")
+	sessionName := c.Param("sessionId")
 	session, err := h.sessionService.Get(sessionName)
 	if err != nil || session == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
@@ -689,13 +689,13 @@ func (h *Handler) handleSync(c *gin.Context, syncType string) {
 // @Description Get the current sync status for a session
 // @Tags Chatwoot
 // @Produce json
-// @Param name path string true "Session name"
+// @Param sessionId path string true "Session name"
 // @Success 200 {object} core.SyncStatus
 // @Failure 404 {object} map[string]interface{}
 // @Security ApiKeyAuth
-// @Router /sessions/{name}/chatwoot/sync/status [get]
+// @Router /sessions/{sessionId}/chatwoot/sync/status [get]
 func (h *Handler) GetSyncStatusHandler(c *gin.Context) {
-	sessionName := c.Param("name")
+	sessionName := c.Param("sessionId")
 	session, err := h.sessionService.Get(sessionName)
 	if err != nil || session == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
@@ -712,11 +712,11 @@ func (h *Handler) GetSyncStatusHandler(c *gin.Context) {
 // @Tags Chatwoot
 // @Produce json
 // @Security ApiKeyAuth
-// @Param name path string true "Session name"
+// @Param sessionId path string true "Session name"
 // @Success 200 {object} map[string]interface{}
-// @Router /sessions/{name}/chatwoot/reset [post]
+// @Router /sessions/{sessionId}/chatwoot/reset [post]
 func (h *Handler) ResetChatwoot(c *gin.Context) {
-	sessionName := c.Param("name")
+	sessionName := c.Param("sessionId")
 	session, err := h.sessionService.Get(sessionName)
 	if err != nil || session == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})

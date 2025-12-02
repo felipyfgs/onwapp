@@ -349,11 +349,11 @@ definitions:
     type: object
   dto.CreateSessionRequest:
     properties:
-      name:
+      sessionId:
         example: my-session
         type: string
     required:
-    - name
+    - sessionId
     type: object
   dto.DefaultDisappearingRequest:
     properties:
@@ -1199,11 +1199,11 @@ definitions:
       id:
         example: ce270f0c-c3d6-41ad-b481-1587f813c3b1
         type: string
-      name:
-        example: my-session
-        type: string
       phone:
         example: "5511999999999"
+        type: string
+      sessionId:
+        example: my-session
         type: string
       status:
         example: connected
@@ -1513,7 +1513,7 @@ info:
   title: ZPWoot WhatsApp API
   version: 0.1.0
 paths:
-  /chatwoot/webhook/{name}:
+  /chatwoot/webhook/{sessionId}:
     post:
       consumes:
       - application/json
@@ -1521,7 +1521,7 @@ paths:
       parameters:
       - description: Session name
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       produces:
@@ -1696,249 +1696,6 @@ paths:
       summary: Process pending media downloads
       tags:
       - media
-  /sessions/{name}/chatwoot:
-    delete:
-      description: Remove Chatwoot integration configuration for a session
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - ApiKeyAuth: []
-      summary: Delete Chatwoot configuration
-      tags:
-      - Chatwoot
-  /sessions/{name}/chatwoot/find:
-    get:
-      description: Get Chatwoot integration configuration for a session
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/core.Config'
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - ApiKeyAuth: []
-      summary: Get Chatwoot configuration
-      tags:
-      - Chatwoot
-  /sessions/{name}/chatwoot/reset:
-    post:
-      description: Delete all Chatwoot contacts, conversations and messages (except
-        bot)
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - ApiKeyAuth: []
-      summary: Reset Chatwoot data for testing
-      tags:
-      - Chatwoot
-  /sessions/{name}/chatwoot/set:
-    post:
-      consumes:
-      - application/json
-      description: Configure Chatwoot integration for a session
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Chatwoot configuration
-        in: body
-        name: config
-        required: true
-        schema:
-          $ref: '#/definitions/handler.SetConfigRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/core.Config'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - ApiKeyAuth: []
-      summary: Set Chatwoot configuration
-      tags:
-      - Chatwoot
-  /sessions/{name}/chatwoot/sync:
-    post:
-      description: Start async synchronization of all contacts and messages to Chatwoot
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Limit to last N days
-        in: query
-        name: days
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "202":
-          description: Accepted
-          schema:
-            $ref: '#/definitions/core.SyncStatus'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - ApiKeyAuth: []
-      summary: Full sync to Chatwoot (async)
-      tags:
-      - Chatwoot
-  /sessions/{name}/chatwoot/sync/contacts:
-    post:
-      description: Start async synchronization of contacts from message history to
-        Chatwoot
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "202":
-          description: Accepted
-          schema:
-            $ref: '#/definitions/core.SyncStatus'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - ApiKeyAuth: []
-      summary: Sync contacts to Chatwoot (async)
-      tags:
-      - Chatwoot
-  /sessions/{name}/chatwoot/sync/messages:
-    post:
-      description: Start async synchronization of message history to Chatwoot
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Limit to last N days
-        in: query
-        name: days
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "202":
-          description: Accepted
-          schema:
-            $ref: '#/definitions/core.SyncStatus'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - ApiKeyAuth: []
-      summary: Sync messages to Chatwoot (async)
-      tags:
-      - Chatwoot
-  /sessions/{name}/chatwoot/sync/status:
-    get:
-      description: Get the current sync status for a session
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/core.SyncStatus'
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - ApiKeyAuth: []
-      summary: Get sync status
-      tags:
-      - Chatwoot
   /sessions/{name}/webhooks:
     delete:
       description: Delete the webhook configuration for a session
@@ -2456,47 +2213,249 @@ paths:
       summary: Set disappearing messages timer
       tags:
       - chat
-  /sessions/{sessionId}/chats/{chatId}/typing:
-    post:
-      consumes:
-      - application/json
-      description: Set typing or recording presence in a chat
+  /sessions/{sessionId}/chatwoot:
+    delete:
+      description: Remove Chatwoot integration configuration for a session
       parameters:
-      - description: Session ID
+      - description: Session name
         in: path
         name: sessionId
         required: true
         type: string
-      - description: Chat presence data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/dto.ChatPresenceRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.ChatPresenceResponse'
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Delete Chatwoot configuration
+      tags:
+      - Chatwoot
+  /sessions/{sessionId}/chatwoot/find:
+    get:
+      description: Get Chatwoot integration configuration for a session
+      parameters:
+      - description: Session name
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/core.Config'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get Chatwoot configuration
+      tags:
+      - Chatwoot
+  /sessions/{sessionId}/chatwoot/reset:
+    post:
+      description: Delete all Chatwoot contacts, conversations and messages (except
+        bot)
+      parameters:
+      - description: Session name
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Reset Chatwoot data for testing
+      tags:
+      - Chatwoot
+  /sessions/{sessionId}/chatwoot/set:
+    post:
+      consumes:
+      - application/json
+      description: Configure Chatwoot integration for a session
+      parameters:
+      - description: Session name
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Chatwoot configuration
+        in: body
+        name: config
+        required: true
+        schema:
+          $ref: '#/definitions/handler.SetConfigRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/core.Config'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "401":
-          description: Unauthorized
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            additionalProperties: true
+            type: object
       security:
       - ApiKeyAuth: []
-      summary: Set chat presence (typing/recording)
+      summary: Set Chatwoot configuration
       tags:
-      - contact
+      - Chatwoot
+  /sessions/{sessionId}/chatwoot/sync:
+    post:
+      description: Start async synchronization of all contacts and messages to Chatwoot
+      parameters:
+      - description: Session name
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Limit to last N days
+        in: query
+        name: days
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/core.SyncStatus'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Full sync to Chatwoot (async)
+      tags:
+      - Chatwoot
+  /sessions/{sessionId}/chatwoot/sync/contacts:
+    post:
+      description: Start async synchronization of contacts from message history to
+        Chatwoot
+      parameters:
+      - description: Session name
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/core.SyncStatus'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Sync contacts to Chatwoot (async)
+      tags:
+      - Chatwoot
+  /sessions/{sessionId}/chatwoot/sync/messages:
+    post:
+      description: Start async synchronization of message history to Chatwoot
+      parameters:
+      - description: Session name
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Limit to last N days
+        in: query
+        name: days
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/core.SyncStatus'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Sync messages to Chatwoot (async)
+      tags:
+      - Chatwoot
+  /sessions/{sessionId}/chatwoot/sync/status:
+    get:
+      description: Get the current sync status for a session
+      parameters:
+      - description: Session name
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/core.SyncStatus'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Get sync status
+      tags:
+      - Chatwoot
   /sessions/{sessionId}/communities/{communityId}/groups:
     get:
       description: Get list of subgroups in a community

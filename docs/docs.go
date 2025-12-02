@@ -15,7 +15,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/chatwoot/webhook/{name}": {
+        "/chatwoot/webhook/{sessionId}": {
             "post": {
                 "description": "Receive webhook events from Chatwoot",
                 "consumes": [
@@ -32,7 +32,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Session name",
-                        "name": "name",
+                        "name": "sessionId",
                         "in": "path",
                         "required": true
                     }
@@ -299,381 +299,6 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/sessions/{name}/chatwoot": {
-            "delete": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Remove Chatwoot integration configuration for a session",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Chatwoot"
-                ],
-                "summary": "Delete Chatwoot configuration",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session name",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/sessions/{name}/chatwoot/find": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Get Chatwoot integration configuration for a session",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Chatwoot"
-                ],
-                "summary": "Get Chatwoot configuration",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session name",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/core.Config"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/sessions/{name}/chatwoot/reset": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Delete all Chatwoot contacts, conversations and messages (except bot)",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Chatwoot"
-                ],
-                "summary": "Reset Chatwoot data for testing",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session name",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/sessions/{name}/chatwoot/set": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Configure Chatwoot integration for a session",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Chatwoot"
-                ],
-                "summary": "Set Chatwoot configuration",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session name",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Chatwoot configuration",
-                        "name": "config",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handler.SetConfigRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/core.Config"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/sessions/{name}/chatwoot/sync": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Start async synchronization of all contacts and messages to Chatwoot",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Chatwoot"
-                ],
-                "summary": "Full sync to Chatwoot (async)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session name",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Limit to last N days",
-                        "name": "days",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "202": {
-                        "description": "Accepted",
-                        "schema": {
-                            "$ref": "#/definitions/core.SyncStatus"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/sessions/{name}/chatwoot/sync/contacts": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Start async synchronization of contacts from message history to Chatwoot",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Chatwoot"
-                ],
-                "summary": "Sync contacts to Chatwoot (async)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session name",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "202": {
-                        "description": "Accepted",
-                        "schema": {
-                            "$ref": "#/definitions/core.SyncStatus"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/sessions/{name}/chatwoot/sync/messages": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Start async synchronization of message history to Chatwoot",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Chatwoot"
-                ],
-                "summary": "Sync messages to Chatwoot (async)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session name",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Limit to last N days",
-                        "name": "days",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "202": {
-                        "description": "Accepted",
-                        "schema": {
-                            "$ref": "#/definitions/core.SyncStatus"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/sessions/{name}/chatwoot/sync/status": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Get the current sync status for a session",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Chatwoot"
-                ],
-                "summary": "Get sync status",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session name",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/core.SyncStatus"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
                         }
                     }
                 }
@@ -1484,14 +1109,132 @@ const docTemplate = `{
                 }
             }
         },
-        "/sessions/{sessionId}/chats/{chatId}/typing": {
+        "/sessions/{sessionId}/chatwoot": {
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Remove Chatwoot integration configuration for a session",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chatwoot"
+                ],
+                "summary": "Delete Chatwoot configuration",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session name",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{sessionId}/chatwoot/find": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get Chatwoot integration configuration for a session",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chatwoot"
+                ],
+                "summary": "Get Chatwoot configuration",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session name",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/core.Config"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{sessionId}/chatwoot/reset": {
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Set typing or recording presence in a chat",
+                "description": "Delete all Chatwoot contacts, conversations and messages (except bot)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chatwoot"
+                ],
+                "summary": "Reset Chatwoot data for testing",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session name",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{sessionId}/chatwoot/set": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Configure Chatwoot integration for a session",
                 "consumes": [
                     "application/json"
                 ],
@@ -1499,24 +1242,24 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "contact"
+                    "Chatwoot"
                 ],
-                "summary": "Set chat presence (typing/recording)",
+                "summary": "Set Chatwoot configuration",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Session ID",
+                        "description": "Session name",
                         "name": "sessionId",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Chat presence data",
-                        "name": "body",
+                        "description": "Chatwoot configuration",
+                        "name": "config",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.ChatPresenceRequest"
+                            "$ref": "#/definitions/handler.SetConfigRequest"
                         }
                     }
                 ],
@@ -1524,25 +1267,218 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ChatPresenceResponse"
+                            "$ref": "#/definitions/core.Config"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
-                    "401": {
-                        "description": "Unauthorized",
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{sessionId}/chatwoot/sync": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Start async synchronization of all contacts and messages to Chatwoot",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chatwoot"
+                ],
+                "summary": "Full sync to Chatwoot (async)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session name",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit to last N days",
+                        "name": "days",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/core.SyncStatus"
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{sessionId}/chatwoot/sync/contacts": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Start async synchronization of contacts from message history to Chatwoot",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chatwoot"
+                ],
+                "summary": "Sync contacts to Chatwoot (async)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session name",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/core.SyncStatus"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{sessionId}/chatwoot/sync/messages": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Start async synchronization of message history to Chatwoot",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chatwoot"
+                ],
+                "summary": "Sync messages to Chatwoot (async)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session name",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit to last N days",
+                        "name": "days",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/core.SyncStatus"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{sessionId}/chatwoot/sync/status": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get the current sync status for a session",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chatwoot"
+                ],
+                "summary": "Get sync status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session name",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/core.SyncStatus"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -7018,10 +6954,10 @@ const docTemplate = `{
         "dto.CreateSessionRequest": {
             "type": "object",
             "required": [
-                "name"
+                "sessionId"
             ],
             "properties": {
-                "name": {
+                "sessionId": {
                     "type": "string",
                     "example": "my-session"
                 }
@@ -8215,13 +8151,13 @@ const docTemplate = `{
                     "type": "string",
                     "example": "ce270f0c-c3d6-41ad-b481-1587f813c3b1"
                 },
-                "name": {
-                    "type": "string",
-                    "example": "my-session"
-                },
                 "phone": {
                     "type": "string",
                     "example": "5511999999999"
+                },
+                "sessionId": {
+                    "type": "string",
+                    "example": "my-session"
                 },
                 "status": {
                     "type": "string",

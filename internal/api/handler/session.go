@@ -24,9 +24,9 @@ func NewSessionHandler(sessionService *service.SessionService, whatsappService *
 
 func sessionToResponse(sess *model.Session) dto.SessionResponse {
 	resp := dto.SessionResponse{
-		ID:     sess.ID,
-		Name:   sess.Name,
-		Status: string(sess.GetStatus()),
+		ID:        sess.ID,
+		SessionId: sess.SessionId,
+		Status:    string(sess.GetStatus()),
 	}
 	if sess.DeviceJID != "" {
 		resp.DeviceJID = &sess.DeviceJID
@@ -88,7 +88,7 @@ func (h *SessionHandler) Create(c *gin.Context) {
 		return
 	}
 
-	session, err := h.sessionService.Create(c.Request.Context(), req.Name)
+	session, err := h.sessionService.Create(c.Request.Context(), req.SessionId)
 	if err != nil {
 		c.JSON(http.StatusConflict, dto.ErrorResponse{Error: err.Error()})
 		return

@@ -3,7 +3,7 @@ package dto
 // Session requests
 
 type CreateSessionRequest struct {
-	Name string `json:"name" binding:"required" example:"my-session"`
+	SessionId string `json:"sessionId" binding:"required" example:"my-session"`
 }
 
 // Message requests
