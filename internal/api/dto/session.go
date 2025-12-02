@@ -4,7 +4,7 @@ package dto
 
 // CreateSessionReq is the request to create a new session
 type CreateSessionReq struct {
-	SessionId string `json:"sessionId" binding:"required" example:"my-session"`
+	Session string `json:"session" binding:"required" example:"my-session"`
 }
 
 // PairPhoneReq is the request to pair via phone number
@@ -16,8 +16,8 @@ type PairPhoneReq struct {
 
 // SessionData represents session information
 type SessionData struct {
-	SessionId string `json:"sessionId" example:"my-session"`
-	JID       string `json:"jid,omitempty" example:"5511999999999@s.whatsapp.net"`
+	Session string `json:"session" example:"my-session"`
+	JID     string `json:"jid,omitempty" example:"5511999999999@s.whatsapp.net"`
 	Phone     string `json:"phone,omitempty" example:"5511999999999"`
 	Status    string `json:"status" example:"connected"`
 }

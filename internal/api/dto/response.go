@@ -15,8 +15,8 @@ type MessageOnlyResponse struct {
 // Session responses
 
 type SessionResponse struct {
-	ID        string  `json:"id" example:"ce270f0c-c3d6-41ad-b481-1587f813c3b1"`
-	SessionId string  `json:"sessionId" example:"my-session"`
+	ID      string  `json:"id" example:"ce270f0c-c3d6-41ad-b481-1587f813c3b1"`
+	Session string  `json:"session" example:"my-session"`
 	DeviceJID *string `json:"deviceJid,omitempty" example:"5511999999999@s.whatsapp.net"`
 	Phone     *string `json:"phone,omitempty" example:"5511999999999"`
 	Status    string  `json:"status" example:"connected"`

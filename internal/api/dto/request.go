@@ -3,7 +3,7 @@ package dto
 // Session requests
 
 type CreateSessionRequest struct {
-	SessionId string `json:"sessionId" binding:"required" example:"my-session"`
+	Session string `json:"session" binding:"required" example:"my-session"`
 }
 
 // Message requests
@@ -275,7 +275,7 @@ type NewsletterMuteRequest struct {
 }
 
 type NewsletterMarkViewedRequest struct {
-	ServerIDs []int `json:"serverIds" binding:"required" example:"[1,2,3]"`
+	ServerIDs []int `json:"serverIds" binding:"required" example:"1,2,3"`
 }
 
 // Contact subscribe request

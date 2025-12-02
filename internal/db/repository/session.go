@@ -12,7 +12,7 @@ type SessionRepository struct {
 	pool *pgxpool.Pool
 }
 
-const sessionSelectFields = `"id", "sessionId", COALESCE("deviceJid", ''), COALESCE("phone", ''), COALESCE("status", 'disconnected'), "createdAt", "updatedAt"`
+const sessionSelectFields = `"id", "session", COALESCE("deviceJid", ''), COALESCE("phone", ''), COALESCE("status", 'disconnected'), "createdAt", "updatedAt"`
 
 func NewSessionRepository(pool *pgxpool.Pool) *SessionRepository {
 	return &SessionRepository{pool: pool}
@@ -21,9 +21,9 @@ func NewSessionRepository(pool *pgxpool.Pool) *SessionRepository {
 func (r *SessionRepository) Create(ctx context.Context, sessionId string) (*model.SessionRecord, error) {
 	var s model.SessionRecord
 	err := r.pool.QueryRow(ctx, `
-		INSERT INTO "zpSessions" ("sessionId") 
+		INSERT INTO "zpSessions" ("session") 
 		VALUES ($1) 
-		ON CONFLICT ("sessionId") DO UPDATE SET "updatedAt" = CURRENT_TIMESTAMP 
+		ON CONFLICT ("session") DO UPDATE SET "updatedAt" = CURRENT_TIMESTAMP 
 		RETURNING `+sessionSelectFields, sessionId).
 		Scan(&s.ID, &s.Session, &s.DeviceJID, &s.Phone, &s.Status, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
@@ -44,7 +44,7 @@ func (r *SessionRepository) GetByID(ctx context.Context, id string) (*model.Sess
 
 func (r *SessionRepository) GetBySessionId(ctx context.Context, sessionId string) (*model.SessionRecord, error) {
 	var s model.SessionRecord
-	err := r.pool.QueryRow(ctx, `SELECT `+sessionSelectFields+` FROM "zpSessions" WHERE "sessionId" = $1`, sessionId).
+	err := r.pool.QueryRow(ctx, `SELECT `+sessionSelectFields+` FROM "zpSessions" WHERE "session" = $1`, sessionId).
 		Scan(&s.ID, &s.Session, &s.DeviceJID, &s.Phone, &s.Status, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
 		return nil, err
@@ -60,19 +60,19 @@ func (r *SessionRepository) GetByName(ctx context.Context, name string) (*model.
 func (r *SessionRepository) UpdateJID(ctx context.Context, sessionId, jid, phone string) error {
 	_, err := r.pool.Exec(ctx, `
 		UPDATE "zpSessions" SET "deviceJid" = $1, "phone" = $2, "updatedAt" = CURRENT_TIMESTAMP 
-		WHERE "sessionId" = $3`, jid, phone, sessionId)
+		WHERE "session" = $3`, jid, phone, sessionId)
 	return err
 }
 
 func (r *SessionRepository) UpdateStatus(ctx context.Context, sessionId, status string) error {
 	_, err := r.pool.Exec(ctx, `
 		UPDATE "zpSessions" SET "status" = $1, "updatedAt" = CURRENT_TIMESTAMP 
-		WHERE "sessionId" = $2`, status, sessionId)
+		WHERE "session" = $2`, status, sessionId)
 	return err
 }
 
 func (r *SessionRepository) Delete(ctx context.Context, sessionId string) error {
-	_, err := r.pool.Exec(ctx, `DELETE FROM "zpSessions" WHERE "sessionId" = $1`, sessionId)
+	_, err := r.pool.Exec(ctx, `DELETE FROM "zpSessions" WHERE "session" = $1`, sessionId)
 	return err
 }
 
