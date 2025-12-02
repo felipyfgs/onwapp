@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	_ "zpwoot/internal/api/dto" // for swagger
 	"zpwoot/internal/db"
 	"zpwoot/internal/service"
 )
@@ -31,7 +32,7 @@ func NewMediaHandler(database *db.Database, mediaService *service.MediaService, 
 // @Produce      json
 // @Param        id     path     string  true  "Session ID"
 // @Param        msgId  path     string  true  "Message ID"
-// @Success      200  {object}  model.Media
+// @Success      200  {object}  dto.MediaResponse
 // @Failure      404  {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{id}/media/{msgId} [get]
@@ -66,7 +67,7 @@ func (h *MediaHandler) GetMedia(c *gin.Context) {
 // @Produce      json
 // @Param        id     path     string  true   "Session ID"
 // @Param        limit  query    int     false  "Limit (default: 100)"
-// @Success      200  {array}   model.Media
+// @Success      200  {array}   dto.MediaResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{id}/media/pending [get]
 func (h *MediaHandler) ListPendingMedia(c *gin.Context) {
@@ -151,7 +152,7 @@ func (h *MediaHandler) ProcessPendingMedia(c *gin.Context) {
 // @Param        id      path     string  true   "Session ID"
 // @Param        limit   query    int     false  "Limit (default: 100)"
 // @Param        offset  query    int     false  "Offset (default: 0)"
-// @Success      200  {array}   model.Media
+// @Success      200  {array}   dto.MediaResponse
 // @Security     ApiKeyAuth
 // @Router       /sessions/{id}/media [get]
 func (h *MediaHandler) ListMedia(c *gin.Context) {

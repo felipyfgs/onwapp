@@ -84,25 +84,106 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 	r.GET("/events", middleware.Auth(cfg.APIKey), h.Webhook.GetEvents)
 
 	// ─────────────────────────────────────────────────────────────────────────────
-	// Sessions
+	// API Routes (organized by domain flow)
 	// ─────────────────────────────────────────────────────────────────────────────
 	sessions := r.Group("/sessions")
 	sessions.Use(middleware.Auth(cfg.APIKey))
 	{
+		// ═══════════════════════════════════════════════════════════════════════
+		// 1. SESSIONS - Authentication & Connection
+		// ═══════════════════════════════════════════════════════════════════════
 		sessions.GET("", h.Session.Fetch)
 		sessions.POST("", h.Session.Create)
 		sessions.GET("/:name", h.Session.Info)
 		sessions.DELETE("/:name", h.Session.Delete)
 		sessions.POST("/:name/connect", h.Session.Connect)
+		sessions.POST("/:name/disconnect", h.Session.Disconnect)
 		sessions.POST("/:name/logout", h.Session.Logout)
 		sessions.POST("/:name/restart", h.Session.Restart)
 		sessions.GET("/:name/qr", h.Session.QR)
 		sessions.POST("/:name/pair/phone", h.Session.PairPhone)
 		sessions.GET("/:name/qrlink", h.Contact.GetContactQRLink)
 
-		// ─────────────────────────────────────────────────────────────────────────
-		// Messages
-		// ─────────────────────────────────────────────────────────────────────────
+		// ═══════════════════════════════════════════════════════════════════════
+		// 2. PROFILE - Account Identity & Settings
+		// ═══════════════════════════════════════════════════════════════════════
+		sessions.GET("/:name/profile", h.Profile.GetProfile)
+		sessions.PATCH("/:name/profile/status", h.Profile.SetStatus)
+		sessions.PATCH("/:name/profile/name", h.Profile.SetPushName)
+		sessions.PUT("/:name/profile/picture", h.Profile.SetProfilePicture)
+		sessions.DELETE("/:name/profile/picture", h.Profile.DeleteProfilePicture)
+		sessions.GET("/:name/profile/privacy", h.Profile.GetPrivacySettings)
+		sessions.PUT("/:name/profile/privacy", h.Profile.SetPrivacySettings)
+		sessions.PATCH("/:name/profile/disappearing", h.Profile.SetDefaultDisappearingTimer)
+
+		// ═══════════════════════════════════════════════════════════════════════
+		// 3. STATUS/STORIES - Presence & Stories
+		// ═══════════════════════════════════════════════════════════════════════
+		sessions.PUT("/:name/presence", h.Contact.SetPresence)
+		if h.Status != nil {
+			sessions.POST("/:name/stories", h.Status.SendStory)
+			sessions.GET("/:name/stories/privacy", h.Status.GetStatusPrivacy)
+		}
+
+		// ═══════════════════════════════════════════════════════════════════════
+		// 4. CONTACTS - Social Network Core
+		// ═══════════════════════════════════════════════════════════════════════
+		sessions.GET("/:name/contacts", h.Contact.GetContacts)
+		sessions.POST("/:name/contacts/check", h.Contact.CheckPhone)
+		sessions.GET("/:name/contacts/:phone", h.Contact.GetContactInfo)
+		sessions.GET("/:name/contacts/:phone/avatar", h.Contact.GetAvatar)
+		sessions.GET("/:name/contacts/:phone/business", h.Contact.GetBusinessProfile)
+		sessions.GET("/:name/contacts/blocklist", h.Contact.GetBlocklist)
+		sessions.PUT("/:name/contacts/blocklist", h.Contact.UpdateBlocklist)
+		sessions.POST("/:name/contacts/:phone/presence/subscribe", h.Contact.SubscribePresence)
+
+		// ═══════════════════════════════════════════════════════════════════════
+		// 5. GROUPS - Contact Collections
+		// ═══════════════════════════════════════════════════════════════════════
+		sessions.POST("/:name/groups", h.Group.CreateGroup)
+		sessions.GET("/:name/groups", h.Group.GetJoinedGroups)
+		sessions.GET("/:name/groups/info/link", h.Group.GetGroupInfoFromLink)
+		sessions.POST("/:name/groups/join", h.Group.JoinGroup)
+		sessions.GET("/:name/groups/:groupId", h.Group.GetGroupInfo)
+		sessions.DELETE("/:name/groups/:groupId/membership", h.Group.LeaveGroup)
+		sessions.GET("/:name/groups/:groupId/invite", h.Group.GetInviteLink)
+		sessions.PATCH("/:name/groups/:groupId/name", h.Group.UpdateGroupName)
+		sessions.PATCH("/:name/groups/:groupId/description", h.Group.UpdateGroupTopic)
+		sessions.PUT("/:name/groups/:groupId/picture", h.Group.SetGroupPicture)
+		sessions.POST("/:name/groups/:groupId/participants", h.Group.AddParticipants)
+		sessions.DELETE("/:name/groups/:groupId/participants", h.Group.RemoveParticipants)
+		sessions.PATCH("/:name/groups/:groupId/participants/promote", h.Group.PromoteParticipants)
+		sessions.PATCH("/:name/groups/:groupId/participants/demote", h.Group.DemoteParticipants)
+		sessions.PATCH("/:name/groups/:groupId/settings/announce", h.Group.SetGroupAnnounce)
+		sessions.PATCH("/:name/groups/:groupId/settings/locked", h.Group.SetGroupLocked)
+		sessions.PATCH("/:name/groups/:groupId/settings/approval", h.Group.SetGroupApprovalMode)
+		sessions.PATCH("/:name/groups/:groupId/settings/memberadd", h.Group.SetGroupMemberAddMode)
+		sessions.GET("/:name/groups/:groupId/requests", h.Group.GetGroupRequestParticipants)
+		sessions.POST("/:name/groups/:groupId/requests", h.Group.UpdateGroupRequestParticipants)
+		sessions.POST("/:name/groups/:groupId/messages", h.Group.SendGroupMessage)
+
+		// ═══════════════════════════════════════════════════════════════════════
+		// 6. COMMUNITIES - Group Collections
+		// ═══════════════════════════════════════════════════════════════════════
+		if h.Community != nil {
+			sessions.GET("/:name/communities/:communityId/groups", h.Community.GetSubGroups)
+			sessions.POST("/:name/communities/:communityId/groups", h.Community.LinkGroup)
+			sessions.DELETE("/:name/communities/:communityId/groups/:groupId", h.Community.UnlinkGroup)
+		}
+
+		// ═══════════════════════════════════════════════════════════════════════
+		// 7. CHATS - Conversations
+		// ═══════════════════════════════════════════════════════════════════════
+		sessions.POST("/:name/chats/:chatId/typing", h.Contact.SetChatPresence)
+		sessions.POST("/:name/chats/:chatId/read", h.Contact.MarkRead)
+		sessions.PATCH("/:name/chats/:chatId/archive", h.Chat.ArchiveChat)
+		sessions.PATCH("/:name/chats/:chatId/settings/disappearing", h.Chat.SetDisappearingTimer)
+		sessions.PATCH("/:name/chats/:chatId/messages/:messageId", h.Chat.EditMessage)
+		sessions.DELETE("/:name/chats/:chatId/messages/:messageId", h.Chat.DeleteMessage)
+
+		// ═══════════════════════════════════════════════════════════════════════
+		// 8. MESSAGES - Send & Receive
+		// ═══════════════════════════════════════════════════════════════════════
 		sessions.POST("/:name/messages/text", h.Message.SendText)
 		sessions.POST("/:name/messages/image", h.Message.SendImage)
 		sessions.POST("/:name/messages/audio", h.Message.SendAudio)
@@ -120,75 +201,16 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 		sessions.POST("/:name/messages/template", h.Message.SendTemplate)
 		sessions.POST("/:name/messages/carousel", h.Message.SendCarousel)
 
-		// ─────────────────────────────────────────────────────────────────────────
-		// Groups
-		// ─────────────────────────────────────────────────────────────────────────
-		sessions.POST("/:name/groups", h.Group.CreateGroup)
-		sessions.GET("/:name/groups", h.Group.GetJoinedGroups)
-		sessions.GET("/:name/groups/:groupId", h.Group.GetGroupInfo)
-		sessions.DELETE("/:name/groups/:groupId/membership", h.Group.LeaveGroup)
-		sessions.GET("/:name/groups/:groupId/invite", h.Group.GetInviteLink)
-		sessions.PATCH("/:name/groups/:groupId/name", h.Group.UpdateGroupName)
-		sessions.PATCH("/:name/groups/:groupId/description", h.Group.UpdateGroupTopic)
-		sessions.POST("/:name/groups/:groupId/participants", h.Group.AddParticipants)
-		sessions.DELETE("/:name/groups/:groupId/participants", h.Group.RemoveParticipants)
-		sessions.PATCH("/:name/groups/:groupId/participants/promote", h.Group.PromoteParticipants)
-		sessions.PATCH("/:name/groups/:groupId/participants/demote", h.Group.DemoteParticipants)
-		sessions.POST("/:name/groups/join", h.Group.JoinGroup)
-		sessions.POST("/:name/groups/:groupId/messages", h.Group.SendGroupMessage)
-		sessions.PATCH("/:name/groups/:groupId/settings/announce", h.Group.SetGroupAnnounce)
-		sessions.PATCH("/:name/groups/:groupId/settings/locked", h.Group.SetGroupLocked)
-		sessions.PUT("/:name/groups/:groupId/picture", h.Group.SetGroupPicture)
-		sessions.PATCH("/:name/groups/:groupId/settings/approval", h.Group.SetGroupApprovalMode)
-		sessions.PATCH("/:name/groups/:groupId/settings/memberadd", h.Group.SetGroupMemberAddMode)
-		sessions.GET("/:name/groups/:groupId/requests", h.Group.GetGroupRequestParticipants)
-		sessions.POST("/:name/groups/:groupId/requests", h.Group.UpdateGroupRequestParticipants)
-		sessions.GET("/:name/groups/info/link", h.Group.GetGroupInfoFromLink)
+		// ═══════════════════════════════════════════════════════════════════════
+		// 9. CALLS - Voice/Video
+		// ═══════════════════════════════════════════════════════════════════════
+		if h.Call != nil {
+			sessions.POST("/:name/calls/reject", h.Call.RejectCall)
+		}
 
-		// ─────────────────────────────────────────────────────────────────────────
-		// Contacts
-		// ─────────────────────────────────────────────────────────────────────────
-		sessions.GET("/:name/contacts", h.Contact.GetContacts)
-		sessions.POST("/:name/contacts/check", h.Contact.CheckPhone)
-		sessions.GET("/:name/contacts/:phone", h.Contact.GetContactInfo)
-		sessions.GET("/:name/contacts/:phone/avatar", h.Contact.GetAvatar)
-		sessions.GET("/:name/contacts/:phone/business", h.Contact.GetBusinessProfile)
-		sessions.GET("/:name/contacts/blocklist", h.Contact.GetBlocklist)
-		sessions.PUT("/:name/contacts/blocklist", h.Contact.UpdateBlocklist)
-		sessions.POST("/:name/contacts/:phone/presence/subscribe", h.Contact.SubscribePresence)
-
-		// ─────────────────────────────────────────────────────────────────────────
-		// Chats
-		// ─────────────────────────────────────────────────────────────────────────
-		sessions.PUT("/:name/presence", h.Contact.SetPresence)
-		sessions.POST("/:name/chats/:chatId/typing", h.Contact.SetChatPresence)
-		sessions.POST("/:name/chats/:chatId/read", h.Contact.MarkRead)
-		sessions.PATCH("/:name/chats/:chatId/archive", h.Chat.ArchiveChat)
-		sessions.DELETE("/:name/chats/:chatId/messages/:messageId", h.Chat.DeleteMessage)
-		sessions.PATCH("/:name/chats/:chatId/messages/:messageId", h.Chat.EditMessage)
-		sessions.PATCH("/:name/chats/:chatId/settings/disappearing", h.Chat.SetDisappearingTimer)
-
-		// ─────────────────────────────────────────────────────────────────────────
-		// Profile
-		// ─────────────────────────────────────────────────────────────────────────
-		sessions.GET("/:name/profile", h.Profile.GetProfile)
-		sessions.PATCH("/:name/profile/status", h.Profile.SetStatus)
-		sessions.PATCH("/:name/profile/name", h.Profile.SetPushName)
-		sessions.PUT("/:name/profile/picture", h.Profile.SetProfilePicture)
-		sessions.DELETE("/:name/profile/picture", h.Profile.DeleteProfilePicture)
-		sessions.GET("/:name/profile/privacy", h.Profile.GetPrivacySettings)
-		sessions.PUT("/:name/profile/privacy", h.Profile.SetPrivacySettings)
-		sessions.PATCH("/:name/profile/disappearing", h.Profile.SetDefaultDisappearingTimer)
-
-		// ─────────────────────────────────────────────────────────────────────────
-		// Webhooks
-		// ─────────────────────────────────────────────────────────────────────────
-		sessions.GET("/:name/webhooks", h.Webhook.GetWebhook)
-		sessions.POST("/:name/webhooks", h.Webhook.SetWebhook)
-
-		// ─────────────────────────────────────────────────────────────────────────
-		// Newsletters
-		// ─────────────────────────────────────────────────────────────────────────
+		// ═══════════════════════════════════════════════════════════════════════
+		// 10. NEWSLETTERS - Broadcast Channels
+		// ═══════════════════════════════════════════════════════════════════════
 		if h.Newsletter != nil {
 			sessions.POST("/:name/newsletters", h.Newsletter.CreateNewsletter)
 			sessions.GET("/:name/newsletters", h.Newsletter.GetSubscribedNewsletters)
@@ -200,39 +222,21 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 			sessions.PATCH("/:name/newsletters/:newsletterId/mute", h.Newsletter.NewsletterToggleMute)
 		}
 
-		// ─────────────────────────────────────────────────────────────────────────
-		// Stories
-		// ─────────────────────────────────────────────────────────────────────────
-		if h.Status != nil {
-			sessions.POST("/:name/stories", h.Status.SendStory)
-			sessions.GET("/:name/stories/privacy", h.Status.GetStatusPrivacy)
-		}
-
-		// ─────────────────────────────────────────────────────────────────────────
-		// Calls
-		// ─────────────────────────────────────────────────────────────────────────
-		if h.Call != nil {
-			sessions.POST("/:name/calls/reject", h.Call.RejectCall)
-		}
-
-		// ─────────────────────────────────────────────────────────────────────────
-		// Communities
-		// ─────────────────────────────────────────────────────────────────────────
-		if h.Community != nil {
-			sessions.POST("/:name/communities/:communityId/groups", h.Community.LinkGroup)
-			sessions.DELETE("/:name/communities/:communityId/groups/:groupId", h.Community.UnlinkGroup)
-			sessions.GET("/:name/communities/:communityId/groups", h.Community.GetSubGroups)
-		}
-
-		// ─────────────────────────────────────────────────────────────────────────
-		// Media
-		// ─────────────────────────────────────────────────────────────────────────
+		// ═══════════════════════════════════════════════════════════════════════
+		// 11. MEDIA - File Storage
+		// ═══════════════════════════════════════════════════════════════════════
 		if h.Media != nil {
 			sessions.GET("/:name/media", h.Media.ListMedia)
 			sessions.GET("/:name/media/pending", h.Media.ListPendingMedia)
 			sessions.POST("/:name/media/process", h.Media.ProcessPendingMedia)
 			sessions.GET("/:name/media/:msgId", h.Media.GetMedia)
 		}
+
+		// ═══════════════════════════════════════════════════════════════════════
+		// 12. WEBHOOKS - Integrations
+		// ═══════════════════════════════════════════════════════════════════════
+		sessions.GET("/:name/webhooks", h.Webhook.GetWebhook)
+		sessions.POST("/:name/webhooks", h.Webhook.SetWebhook)
 	}
 
 	return r

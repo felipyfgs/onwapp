@@ -180,13 +180,34 @@ func (s *SessionService) Delete(ctx context.Context, name string) error {
 		return fmt.Errorf("session %s not found", name)
 	}
 
-	if session.Client.IsConnected() {
-		session.Client.Disconnect()
-	}
+	hasCredentials := session.Device != nil && session.Device.ID != nil
 
-	if session.Device != nil && session.Device.ID != nil {
+	// If we have credentials, properly logout from WhatsApp server first
+	if hasCredentials {
+		// If not connected, try to connect first so we can send logout to server
+		if !session.Client.IsConnected() {
+			logger.Info().Str("session", name).Msg("Connecting to send logout request before delete...")
+			if err := session.Client.Connect(); err != nil {
+				logger.Warn().Err(err).Str("session", name).Msg("Failed to connect for logout, will delete locally only")
+			}
+		}
+
+		// Send logout to WhatsApp server (removes device from their servers)
+		if session.Client.IsConnected() {
+			if err := session.Client.Logout(ctx); err != nil {
+				logger.Warn().Err(err).Str("session", name).Msg("Failed to logout from WhatsApp server")
+				session.Client.Disconnect()
+			}
+		}
+
+		// Ensure device is deleted from whatsmeow store
 		if err := s.container.DeleteDevice(ctx, session.Device); err != nil {
-			return fmt.Errorf("failed to delete device: %w", err)
+			logger.Debug().Err(err).Str("session", name).Msg("DeleteDevice (may already be deleted by Logout)")
+		}
+	} else {
+		// No credentials, just disconnect if connected
+		if session.Client.IsConnected() {
+			session.Client.Disconnect()
 		}
 	}
 
@@ -196,6 +217,7 @@ func (s *SessionService) Delete(ctx context.Context, name string) error {
 	}
 
 	delete(s.sessions, name)
+	logger.Info().Str("session", name).Msg("Session deleted successfully")
 	return nil
 }
 
@@ -332,17 +354,83 @@ func (s *SessionService) SetWebhookSkipChecker(checker WebhookSkipChecker) {
 	s.eventService.SetWebhookSkipChecker(checker)
 }
 
+// Disconnect disconnects the session but keeps credentials for auto-reconnect
+func (s *SessionService) Disconnect(ctx context.Context, name string) error {
+	session, err := s.Get(name)
+	if err != nil {
+		return err
+	}
+
+	if session.Client.IsConnected() {
+		session.Client.Disconnect()
+	}
+
+	session.SetStatus(model.StatusDisconnected)
+	if err := s.database.Sessions.UpdateStatus(ctx, name, "disconnected"); err != nil {
+		logger.Warn().Err(err).Str("session", name).Msg("Failed to update session status")
+	}
+
+	return nil
+}
+
+// Logout logs out from WhatsApp and clears credentials (requires new QR scan to reconnect)
+// This sends remove-companion-device to WhatsApp server and deletes local credentials
 func (s *SessionService) Logout(ctx context.Context, name string) error {
 	session, err := s.Get(name)
 	if err != nil {
 		return err
 	}
 
-	if err := session.Client.Logout(ctx); err != nil {
-		return err
+	hasCredentials := session.Device != nil && session.Device.ID != nil
+
+	// If we have credentials, we need to properly logout from WhatsApp server
+	if hasCredentials {
+		// If not connected, try to connect first so we can send logout to server
+		if !session.Client.IsConnected() {
+			logger.Info().Str("session", name).Msg("Connecting to send logout request...")
+			if err := session.Client.Connect(); err != nil {
+				logger.Warn().Err(err).Str("session", name).Msg("Failed to connect for logout, will clear locally only")
+			}
+		}
+
+		// Send logout to WhatsApp server (removes device from their servers)
+		// This calls: sendIQ(remove-companion-device) + Disconnect() + Store.Delete()
+		if session.Client.IsConnected() {
+			if err := session.Client.Logout(ctx); err != nil {
+				logger.Warn().Err(err).Str("session", name).Msg("Failed to logout from WhatsApp server")
+				// Even if logout fails, disconnect and clear locally
+				session.Client.Disconnect()
+			}
+		}
+
+		// Ensure device is deleted from whatsmeow store (in case Logout() failed)
+		if err := s.container.DeleteDevice(ctx, session.Device); err != nil {
+			logger.Debug().Err(err).Str("session", name).Msg("DeleteDevice (may already be deleted by Logout)")
+		}
+	} else {
+		// No credentials, just disconnect if connected
+		if session.Client.IsConnected() {
+			session.Client.Disconnect()
+		}
 	}
 
+	// Clear JID and phone in database but keep the session record
+	if err := s.database.Sessions.UpdateJID(ctx, name, "", ""); err != nil {
+		logger.Warn().Err(err).Str("session", name).Msg("Failed to clear session JID")
+	}
+	if err := s.database.Sessions.UpdateStatus(ctx, name, "disconnected"); err != nil {
+		logger.Warn().Err(err).Str("session", name).Msg("Failed to update session status")
+	}
+
+	// Create new device for next connection
+	session.Device = s.container.NewDevice()
+	session.Client.Store = session.Device
+	session.DeviceJID = ""
+	session.Phone = ""
 	session.SetStatus(model.StatusDisconnected)
+	session.SetQR("")
+
+	logger.Info().Str("session", name).Msg("Session logged out successfully")
 	return nil
 }
 

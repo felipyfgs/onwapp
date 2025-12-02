@@ -176,3 +176,24 @@ type StatusPrivacyResponse struct {
 type CommunityResponse struct {
 	Groups interface{} `json:"groups,omitempty"`
 }
+
+// Media responses
+
+type MediaResponse struct {
+	ID          string `json:"id" example:"uuid"`
+	SessionID   string `json:"sessionId" example:"uuid"`
+	MsgID       string `json:"msgId" example:"ABCD1234"`
+	MediaType   string `json:"mediaType" example:"image"`
+	MimeType    string `json:"mimeType,omitempty" example:"image/jpeg"`
+	FileSize    int64  `json:"fileSize,omitempty" example:"12345"`
+	FileName    string `json:"fileName,omitempty" example:"photo.jpg"`
+	StorageURL  string `json:"storageUrl,omitempty" example:"https://s3.example.com/media/photo.jpg"`
+	Downloaded  bool   `json:"downloaded" example:"true"`
+	ChatJID     string `json:"chatJid,omitempty" example:"5511999999999@s.whatsapp.net"`
+	FromMe      bool   `json:"fromMe,omitempty" example:"false"`
+	Caption     string `json:"caption,omitempty" example:"Check this out!"`
+	Width       int    `json:"width,omitempty" example:"1920"`
+	Height      int    `json:"height,omitempty" example:"1080"`
+	Duration    int    `json:"duration,omitempty" example:"30"`
+	CreatedAt   string `json:"createdAt" example:"2025-01-01T00:00:00Z"`
+}

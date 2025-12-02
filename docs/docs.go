@@ -165,6 +165,192 @@ const docTemplate = `{
                 }
             }
         },
+        "/sessions/{id}/media": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get list of all media files for a session",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "media"
+                ],
+                "summary": "List all media for session",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit (default: 100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset (default: 0)",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/MediaResponse"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{id}/media/pending": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get list of media files pending download",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "media"
+                ],
+                "summary": "List pending media downloads",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit (default: 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/MediaResponse"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{id}/media/process": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Download pending media from WhatsApp and upload to storage",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "media"
+                ],
+                "summary": "Process pending media downloads",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Batch size (default: 10)",
+                        "name": "batchSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{id}/media/{msgId}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get media information for a specific message",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "media"
+                ],
+                "summary": "Get media by message ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Message ID",
+                        "name": "msgId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/MediaResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/sessions/{name}": {
             "get": {
                 "security": [
@@ -880,7 +1066,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Start async synchronization of all contacts and messages to Chatwoot with original timestamps. Requires chatwootDbHost to be configured.",
+                "description": "Start async synchronization of all contacts and messages to Chatwoot",
                 "produces": [
                     "application/json"
                 ],
@@ -934,7 +1120,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Start async synchronization of contacts from message history to Chatwoot. Requires chatwootDbHost to be configured.",
+                "description": "Start async synchronization of contacts from message history to Chatwoot",
                 "produces": [
                     "application/json"
                 ],
@@ -982,7 +1168,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Start async synchronization of message history to Chatwoot with original timestamps. Requires chatwootDbHost to be configured.",
+                "description": "Start async synchronization of message history to Chatwoot",
                 "produces": [
                     "application/json"
                 ],
@@ -1707,6 +1893,61 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{name}/disconnect": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Disconnect from WhatsApp but keep credentials (can auto-reconnect)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sessions"
+                ],
+                "summary": "Disconnect session",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/MessageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -2981,7 +3222,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Logout from WhatsApp and clear session credentials",
+                "description": "Logout from WhatsApp and clear credentials (requires new QR scan to reconnect)",
                 "consumes": [
                     "application/json"
                 ],
@@ -3010,6 +3251,12 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -5642,11 +5889,9 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "autoReopen": {
-                    "description": "Also sets lock_to_single_conversation on inbox",
                     "type": "boolean"
                 },
                 "chatwootDbHost": {
-                    "description": "Chatwoot PostgreSQL connection for direct import (preserves timestamps)",
                     "type": "string"
                 },
                 "chatwootDbName": {
@@ -6175,6 +6420,75 @@ const docTemplate = `{
                 "phone": {
                     "type": "string",
                     "example": "5511999999999"
+                }
+            }
+        },
+        "MediaResponse": {
+            "type": "object",
+            "properties": {
+                "caption": {
+                    "type": "string",
+                    "example": "Check this out!"
+                },
+                "chatJid": {
+                    "type": "string",
+                    "example": "5511999999999@s.whatsapp.net"
+                },
+                "createdAt": {
+                    "type": "string",
+                    "example": "2025-01-01T00:00:00Z"
+                },
+                "downloaded": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "duration": {
+                    "type": "integer",
+                    "example": 30
+                },
+                "fileName": {
+                    "type": "string",
+                    "example": "photo.jpg"
+                },
+                "fileSize": {
+                    "type": "integer",
+                    "example": 12345
+                },
+                "fromMe": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "height": {
+                    "type": "integer",
+                    "example": 1080
+                },
+                "id": {
+                    "type": "string",
+                    "example": "uuid"
+                },
+                "mediaType": {
+                    "type": "string",
+                    "example": "image"
+                },
+                "mimeType": {
+                    "type": "string",
+                    "example": "image/jpeg"
+                },
+                "msgId": {
+                    "type": "string",
+                    "example": "ABCD1234"
+                },
+                "sessionId": {
+                    "type": "string",
+                    "example": "uuid"
+                },
+                "storageUrl": {
+                    "type": "string",
+                    "example": "https://s3.example.com/media/photo.jpg"
+                },
+                "width": {
+                    "type": "integer",
+                    "example": 1920
                 }
             }
         },
@@ -6911,6 +7225,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "autoReopen": {
+                    "description": "AutoReopen configures Chatwoot inbox settings for conversation management.\nWhen true: sets lock_to_single_conversation=true and allow_messages_after_resolved=true\nThis means Chatwoot will automatically reopen resolved conversations when new messages arrive.\nWhen false: creates new conversations for each interaction (default Chatwoot behavior).",
                     "type": "boolean"
                 },
                 "chatwootDbHost": {
@@ -6941,18 +7256,15 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "logo": {
-                    "description": "Bot contact avatar URL",
                     "type": "string"
                 },
                 "mergeBrPhones": {
                     "type": "boolean"
                 },
                 "number": {
-                    "description": "Phone number for pairing (Evolution API compatible)",
                     "type": "string"
                 },
                 "organization": {
-                    "description": "Bot contact name (default: ZPWoot)",
                     "type": "string"
                 },
                 "signAgent": {
@@ -7092,6 +7404,38 @@ const docTemplate = `{
                 }
             }
         },
+        "SkipDetails": {
+            "type": "object",
+            "properties": {
+                "alreadySynced": {
+                    "type": "integer"
+                },
+                "emptyContent": {
+                    "type": "integer"
+                },
+                "groups": {
+                    "type": "integer"
+                },
+                "lidContacts": {
+                    "type": "integer"
+                },
+                "newsletters": {
+                    "type": "integer"
+                },
+                "oldMessages": {
+                    "type": "integer"
+                },
+                "protocol": {
+                    "type": "integer"
+                },
+                "reactions": {
+                    "type": "integer"
+                },
+                "statusBroadcast": {
+                    "type": "integer"
+                }
+            }
+        },
         "StatusPrivacyResponse": {
             "type": "object",
             "properties": {
@@ -7136,6 +7480,14 @@ const docTemplate = `{
                 },
                 "messagesSkipped": {
                     "type": "integer"
+                },
+                "skippedDetails": {
+                    "description": "Detailed skip reasons",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/SkipDetails"
+                        }
+                    ]
                 }
             }
         },
@@ -7244,6 +7596,60 @@ const docTemplate = `{
             "in": "header"
         }
     },
+    "tags": [
+        {
+            "description": "Authentication \u0026 Connection management",
+            "name": "sessions"
+        },
+        {
+            "description": "Account identity \u0026 settings",
+            "name": "profile"
+        },
+        {
+            "description": "Presence \u0026 Stories",
+            "name": "status"
+        },
+        {
+            "description": "Social network core",
+            "name": "contact"
+        },
+        {
+            "description": "Contact collections",
+            "name": "groups"
+        },
+        {
+            "description": "Group collections",
+            "name": "community"
+        },
+        {
+            "description": "Conversations",
+            "name": "chat"
+        },
+        {
+            "description": "Send \u0026 receive messages",
+            "name": "messages"
+        },
+        {
+            "description": "Voice/Video calls",
+            "name": "call"
+        },
+        {
+            "description": "Broadcast channels",
+            "name": "newsletter"
+        },
+        {
+            "description": "File storage",
+            "name": "media"
+        },
+        {
+            "description": "Integrations",
+            "name": "webhook"
+        },
+        {
+            "description": "Chatwoot integration",
+            "name": "chatwoot"
+        }
+    ],
     "x-extension-openapi": {
         "disableSwaggerDefaultValue": true
     }
@@ -7251,12 +7657,12 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "1.0",
+	Version:          "0.1.0",
 	Host:             "",
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "ZPWoot WhatsApp API",
-	Description:      "WhatsApp API using whatsmeow library",
+	Description:      "WhatsApp API with Chatwoot Integration",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

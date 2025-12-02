@@ -183,14 +183,43 @@ func (h *SessionHandler) Connect(c *gin.Context) {
 	})
 }
 
-// Logout godoc
-// @Summary      Logout session
-// @Description  Logout from WhatsApp and clear session credentials
+// Disconnect godoc
+// @Summary      Disconnect session
+// @Description  Disconnect from WhatsApp but keep credentials (can auto-reconnect)
 // @Tags         sessions
 // @Accept       json
 // @Produce      json
 // @Param        name path      string  true  "Session name"
 // @Success      200    {object}  dto.MessageResponse
+// @Failure      404    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /sessions/{name}/disconnect [post]
+func (h *SessionHandler) Disconnect(c *gin.Context) {
+	name := c.Param("name")
+
+	if err := h.sessionService.Disconnect(c.Request.Context(), name); err != nil {
+		if err.Error() == "session "+name+" not found" {
+			c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.MessageResponse{Message: "disconnected (credentials kept, use /connect to reconnect)"})
+}
+
+// Logout godoc
+// @Summary      Logout session
+// @Description  Logout from WhatsApp and clear credentials (requires new QR scan to reconnect)
+// @Tags         sessions
+// @Accept       json
+// @Produce      json
+// @Param        name path      string  true  "Session name"
+// @Success      200    {object}  dto.MessageResponse
+// @Failure      404    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
@@ -199,11 +228,15 @@ func (h *SessionHandler) Logout(c *gin.Context) {
 	name := c.Param("name")
 
 	if err := h.sessionService.Logout(c.Request.Context(), name); err != nil {
+		if err.Error() == "session "+name+" not found" {
+			c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.MessageResponse{Message: "logged out"})
+	c.JSON(http.StatusOK, dto.MessageResponse{Message: "logged out (credentials cleared, scan QR to reconnect)"})
 }
 
 // Restart godoc

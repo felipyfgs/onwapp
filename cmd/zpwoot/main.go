@@ -34,6 +34,33 @@ import (
 // @in header
 // @name apikey
 
+// @tag.name sessions
+// @tag.description Authentication & Connection management
+// @tag.name profile
+// @tag.description Account identity & settings
+// @tag.name status
+// @tag.description Presence & Stories
+// @tag.name contact
+// @tag.description Social network core
+// @tag.name groups
+// @tag.description Contact collections
+// @tag.name community
+// @tag.description Group collections
+// @tag.name chat
+// @tag.description Conversations
+// @tag.name messages
+// @tag.description Send & receive messages
+// @tag.name call
+// @tag.description Voice/Video calls
+// @tag.name newsletter
+// @tag.description Broadcast channels
+// @tag.name media
+// @tag.description File storage
+// @tag.name webhook
+// @tag.description Integrations
+// @tag.name chatwoot
+// @tag.description Chatwoot integration
+
 // @x-extension-openapi {"disableSwaggerDefaultValue": true}
 
 func main() {
