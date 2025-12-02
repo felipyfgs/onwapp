@@ -3,7 +3,7 @@
   "url": "https://chat.yourdomain.com",
   "token": "wBU5GPN1D67gTWBVc3fh7LCy",
   "account": 1,
-  "inbox": "WhatsApp",
+  "inbox": "WhatsApp-dev",
   "signAgent": false,
   "signSeparator": "\n",
   "autoReopen": true,
