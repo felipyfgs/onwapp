@@ -24,15 +24,15 @@ func NewCommunityHandler(whatsappService *service.WhatsAppService) *CommunityHan
 // @Tags         community
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string               true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.LinkGroupRequest true  "Link data"
 // @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/communities/{communityId}/groups [post]
+// @Router       /sessions/{sessionId}/communities/{communityId}/groups [post]
 func (h *CommunityHandler) LinkGroup(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.LinkGroupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -43,7 +43,7 @@ func (h *CommunityHandler) LinkGroup(c *gin.Context) {
 	parentID := strings.TrimSuffix(req.ParentGroupID, "@g.us")
 	childID := strings.TrimSuffix(req.ChildGroupID, "@g.us")
 
-	if err := h.whatsappService.LinkGroup(c.Request.Context(), name, parentID, childID); err != nil {
+	if err := h.whatsappService.LinkGroup(c.Request.Context(), sessionId, parentID, childID); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -57,15 +57,15 @@ func (h *CommunityHandler) LinkGroup(c *gin.Context) {
 // @Tags         community
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string               true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.LinkGroupRequest true  "Unlink data"
 // @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/communities/{communityId}/groups/{groupId} [delete]
+// @Router       /sessions/{sessionId}/communities/{communityId}/groups/{groupId} [delete]
 func (h *CommunityHandler) UnlinkGroup(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.LinkGroupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -76,7 +76,7 @@ func (h *CommunityHandler) UnlinkGroup(c *gin.Context) {
 	parentID := strings.TrimSuffix(req.ParentGroupID, "@g.us")
 	childID := strings.TrimSuffix(req.ChildGroupID, "@g.us")
 
-	if err := h.whatsappService.UnlinkGroup(c.Request.Context(), name, parentID, childID); err != nil {
+	if err := h.whatsappService.UnlinkGroup(c.Request.Context(), sessionId, parentID, childID); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -89,17 +89,17 @@ func (h *CommunityHandler) UnlinkGroup(c *gin.Context) {
 // @Description  Get list of subgroups in a community
 // @Tags         community
 // @Produce      json
-// @Param        name         path      string  true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        communityId  path      string  true  "Community ID"
 // @Success      200          {object}  dto.CommunityResponse
 // @Failure      500          {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/communities/{communityId}/groups [get]
+// @Router       /sessions/{sessionId}/communities/{communityId}/groups [get]
 func (h *CommunityHandler) GetSubGroups(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 	communityID := strings.TrimSuffix(c.Param("communityId"), "@g.us")
 
-	groups, err := h.whatsappService.GetSubGroups(c.Request.Context(), name, communityID)
+	groups, err := h.whatsappService.GetSubGroups(c.Request.Context(), sessionId, communityID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return

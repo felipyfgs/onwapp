@@ -27,16 +27,16 @@ func NewMessageHandler(whatsappService *service.WhatsAppService) *MessageHandler
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string          true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.SendTextRequest true  "Message data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/messages/text [post]
+// @Router       /sessions/{sessionId}/messages/text [post]
 func (h *MessageHandler) SendText(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.SendTextRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -44,7 +44,7 @@ func (h *MessageHandler) SendText(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.whatsappService.SendText(c.Request.Context(), name, req.Phone, req.Text)
+	resp, err := h.whatsappService.SendText(c.Request.Context(), sessionId, req.Phone, req.Text)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -63,16 +63,16 @@ func (h *MessageHandler) SendText(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string           true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.SendImageRequest true  "Image data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/messages/image [post]
+// @Router       /sessions/{sessionId}/messages/image [post]
 func (h *MessageHandler) SendImage(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.SendImageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -87,7 +87,7 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 
 	mimeType := GetMimeTypeOrDefault(req.MimeType, "image/jpeg")
 
-	resp, err := h.whatsappService.SendImage(c.Request.Context(), name, req.Phone, imageData, req.Caption, mimeType)
+	resp, err := h.whatsappService.SendImage(c.Request.Context(), sessionId, req.Phone, imageData, req.Caption, mimeType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -106,16 +106,16 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string           true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.SendAudioRequest true  "Audio data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/messages/audio [post]
+// @Router       /sessions/{sessionId}/messages/audio [post]
 func (h *MessageHandler) SendAudio(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.SendAudioRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -130,7 +130,7 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 
 	mimeType := GetMimeTypeOrDefault(req.MimeType, "audio/ogg; codecs=opus")
 
-	resp, err := h.whatsappService.SendAudio(c.Request.Context(), name, req.Phone, audioData, mimeType, req.PTT)
+	resp, err := h.whatsappService.SendAudio(c.Request.Context(), sessionId, req.Phone, audioData, mimeType, req.PTT)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -149,16 +149,16 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string           true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.SendVideoRequest true  "Video data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/messages/video [post]
+// @Router       /sessions/{sessionId}/messages/video [post]
 func (h *MessageHandler) SendVideo(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.SendVideoRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -173,7 +173,7 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 
 	mimeType := GetMimeTypeOrDefault(req.MimeType, "video/mp4")
 
-	resp, err := h.whatsappService.SendVideo(c.Request.Context(), name, req.Phone, videoData, req.Caption, mimeType)
+	resp, err := h.whatsappService.SendVideo(c.Request.Context(), sessionId, req.Phone, videoData, req.Caption, mimeType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -192,16 +192,16 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string              true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.SendDocumentRequest true  "Document data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/messages/document [post]
+// @Router       /sessions/{sessionId}/messages/document [post]
 func (h *MessageHandler) SendDocument(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.SendDocumentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -216,7 +216,7 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 
 	mimeType := GetMimeTypeOrDefault(req.MimeType, "application/octet-stream")
 
-	resp, err := h.whatsappService.SendDocument(c.Request.Context(), name, req.Phone, docData, req.Filename, mimeType)
+	resp, err := h.whatsappService.SendDocument(c.Request.Context(), sessionId, req.Phone, docData, req.Filename, mimeType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -235,16 +235,16 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string             true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.SendStickerRequest true  "Sticker data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/messages/sticker [post]
+// @Router       /sessions/{sessionId}/messages/sticker [post]
 func (h *MessageHandler) SendSticker(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.SendStickerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -259,7 +259,7 @@ func (h *MessageHandler) SendSticker(c *gin.Context) {
 
 	mimeType := GetMimeTypeOrDefault(req.MimeType, "image/webp")
 
-	resp, err := h.whatsappService.SendSticker(c.Request.Context(), name, req.Phone, stickerData, mimeType)
+	resp, err := h.whatsappService.SendSticker(c.Request.Context(), sessionId, req.Phone, stickerData, mimeType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -278,16 +278,16 @@ func (h *MessageHandler) SendSticker(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string              true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.SendLocationRequest true  "Location data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/messages/location [post]
+// @Router       /sessions/{sessionId}/messages/location [post]
 func (h *MessageHandler) SendLocation(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.SendLocationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -295,7 +295,7 @@ func (h *MessageHandler) SendLocation(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.whatsappService.SendLocation(c.Request.Context(), name, req.Phone, req.Latitude, req.Longitude, req.Name, req.Address)
+	resp, err := h.whatsappService.SendLocation(c.Request.Context(), sessionId, req.Phone, req.Latitude, req.Longitude, req.Name, req.Address)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -314,16 +314,16 @@ func (h *MessageHandler) SendLocation(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string             true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.SendContactRequest true  "Contact data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/messages/contact [post]
+// @Router       /sessions/{sessionId}/messages/contact [post]
 func (h *MessageHandler) SendContact(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.SendContactRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -331,7 +331,7 @@ func (h *MessageHandler) SendContact(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.whatsappService.SendContact(c.Request.Context(), name, req.Phone, req.ContactName, req.ContactPhone)
+	resp, err := h.whatsappService.SendContact(c.Request.Context(), sessionId, req.Phone, req.ContactName, req.ContactPhone)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -350,16 +350,16 @@ func (h *MessageHandler) SendContact(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string              true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.SendReactionRequest true  "Reaction data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/messages/reaction [post]
+// @Router       /sessions/{sessionId}/messages/reaction [post]
 func (h *MessageHandler) SendReaction(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.SendReactionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -367,7 +367,7 @@ func (h *MessageHandler) SendReaction(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.whatsappService.SendReaction(c.Request.Context(), name, req.Phone, req.MessageID, req.Emoji)
+	resp, err := h.whatsappService.SendReaction(c.Request.Context(), sessionId, req.Phone, req.MessageID, req.Emoji)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -386,16 +386,16 @@ func (h *MessageHandler) SendReaction(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string              true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.SendPollRequest true  "Poll data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/messages/poll [post]
+// @Router       /sessions/{sessionId}/messages/poll [post]
 func (h *MessageHandler) SendPoll(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.SendPollRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -403,7 +403,7 @@ func (h *MessageHandler) SendPoll(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.whatsappService.SendPoll(c.Request.Context(), name, req.Phone, req.Name, req.Options, req.SelectableCount)
+	resp, err := h.whatsappService.SendPoll(c.Request.Context(), sessionId, req.Phone, req.Name, req.Options, req.SelectableCount)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -422,16 +422,16 @@ func (h *MessageHandler) SendPoll(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                  true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.SendPollVoteRequest true  "Vote data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/messages/poll/vote [post]
+// @Router       /sessions/{sessionId}/messages/poll/vote [post]
 func (h *MessageHandler) SendPollVote(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.SendPollVoteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -439,7 +439,7 @@ func (h *MessageHandler) SendPollVote(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.whatsappService.SendPollVote(c.Request.Context(), name, req.Phone, req.PollMessageID, req.SelectedOptions)
+	resp, err := h.whatsappService.SendPollVote(c.Request.Context(), sessionId, req.Phone, req.PollMessageID, req.SelectedOptions)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -458,16 +458,16 @@ func (h *MessageHandler) SendPollVote(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                 true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.SendButtonsRequest true  "Buttons data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/messages/buttons [post]
+// @Router       /sessions/{sessionId}/messages/buttons [post]
 func (h *MessageHandler) SendButtons(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.SendButtonsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -490,7 +490,7 @@ func (h *MessageHandler) SendButtons(c *gin.Context) {
 		Buttons:     buttons,
 	}
 
-	resp, err := h.whatsappService.SendButtonsMessage(c.Request.Context(), name, req.Phone, params)
+	resp, err := h.whatsappService.SendButtonsMessage(c.Request.Context(), sessionId, req.Phone, params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -509,16 +509,16 @@ func (h *MessageHandler) SendButtons(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string              true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.SendListRequest true  "List data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/messages/list [post]
+// @Router       /sessions/{sessionId}/messages/list [post]
 func (h *MessageHandler) SendList(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.SendListRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -550,7 +550,7 @@ func (h *MessageHandler) SendList(c *gin.Context) {
 		Sections:    sections,
 	}
 
-	resp, err := h.whatsappService.SendListMessage(c.Request.Context(), name, req.Phone, params)
+	resp, err := h.whatsappService.SendListMessage(c.Request.Context(), sessionId, req.Phone, params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -569,16 +569,16 @@ func (h *MessageHandler) SendList(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                     true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.SendInteractiveRequest true  "Interactive data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/messages/interactive [post]
+// @Router       /sessions/{sessionId}/messages/interactive [post]
 func (h *MessageHandler) SendInteractive(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.SendInteractiveRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -601,7 +601,7 @@ func (h *MessageHandler) SendInteractive(c *gin.Context) {
 		Buttons: buttons,
 	}
 
-	resp, err := h.whatsappService.SendNativeFlowMessage(c.Request.Context(), name, req.Phone, params)
+	resp, err := h.whatsappService.SendNativeFlowMessage(c.Request.Context(), sessionId, req.Phone, params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -620,16 +620,16 @@ func (h *MessageHandler) SendInteractive(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                   true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.SendTemplateRequest  true  "Template data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/messages/template [post]
+// @Router       /sessions/{sessionId}/messages/template [post]
 func (h *MessageHandler) SendTemplate(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.SendTemplateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -675,7 +675,7 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 image"})
 			return
 		}
-		uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), name, imageData, whatsmeow.MediaImage)
+		uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), sessionId, imageData, whatsmeow.MediaImage)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to upload image: " + err.Error()})
 			return
@@ -702,7 +702,7 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 video"})
 			return
 		}
-		uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), name, videoData, whatsmeow.MediaVideo)
+		uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), sessionId, videoData, whatsmeow.MediaVideo)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to upload video: " + err.Error()})
 			return
@@ -729,7 +729,7 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 document"})
 			return
 		}
-		uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), name, docData, whatsmeow.MediaDocument)
+		uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), sessionId, docData, whatsmeow.MediaDocument)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to upload document: " + err.Error()})
 			return
@@ -750,7 +750,7 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 		}
 	}
 
-	resp, err := h.whatsappService.SendTemplateMessage(c.Request.Context(), name, req.Phone, params)
+	resp, err := h.whatsappService.SendTemplateMessage(c.Request.Context(), sessionId, req.Phone, params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -769,16 +769,16 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                   true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.SendCarouselRequest  true  "Carousel data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/messages/carousel [post]
+// @Router       /sessions/{sessionId}/messages/carousel [post]
 func (h *MessageHandler) SendCarousel(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.SendCarouselRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -807,7 +807,7 @@ func (h *MessageHandler) SendCarousel(c *gin.Context) {
 				c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 image in card"})
 				return
 			}
-			uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), name, imageData, whatsmeow.MediaImage)
+			uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), sessionId, imageData, whatsmeow.MediaImage)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to upload card image: " + err.Error()})
 				return
@@ -834,7 +834,7 @@ func (h *MessageHandler) SendCarousel(c *gin.Context) {
 				c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 video in card"})
 				return
 			}
-			uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), name, videoData, whatsmeow.MediaVideo)
+			uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), sessionId, videoData, whatsmeow.MediaVideo)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to upload card video: " + err.Error()})
 				return
@@ -869,7 +869,7 @@ func (h *MessageHandler) SendCarousel(c *gin.Context) {
 		Cards:  cards,
 	}
 
-	resp, err := h.whatsappService.SendCarouselMessage(c.Request.Context(), name, req.Phone, params)
+	resp, err := h.whatsappService.SendCarouselMessage(c.Request.Context(), sessionId, req.Phone, params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return

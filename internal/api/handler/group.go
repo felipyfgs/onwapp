@@ -26,16 +26,16 @@ func NewGroupHandler(whatsappService *service.WhatsAppService) *GroupHandler {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                  true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.CreateGroupRequest  true  "Group data"
 // @Success      200    {object}  dto.GroupActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/groups [post]
+// @Router       /sessions/{sessionId}/groups [post]
 func (h *GroupHandler) CreateGroup(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.CreateGroupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -43,7 +43,7 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 		return
 	}
 
-	info, err := h.whatsappService.CreateGroup(c.Request.Context(), name, req.Name, req.Participants)
+	info, err := h.whatsappService.CreateGroup(c.Request.Context(), sessionId, req.Name, req.Participants)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -62,19 +62,19 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name    path      string  true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        groupId  path      string  true  "Group ID"
 // @Success      200      {object}  dto.GroupActionResponse
 // @Failure      400      {object}  dto.ErrorResponse
 // @Failure      401      {object}  dto.ErrorResponse
 // @Failure      500      {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/groups/{groupId} [get]
+// @Router       /sessions/{sessionId}/groups/{groupId} [get]
 func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 	groupID := c.Param("groupId")
 
-	info, err := h.whatsappService.GetGroupInfo(c.Request.Context(), name, groupID)
+	info, err := h.whatsappService.GetGroupInfo(c.Request.Context(), sessionId, groupID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -93,16 +93,16 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string  true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Success      200    {object}  dto.GroupActionResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/groups [get]
+// @Router       /sessions/{sessionId}/groups [get]
 func (h *GroupHandler) GetJoinedGroups(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
-	groups, err := h.whatsappService.GetJoinedGroups(c.Request.Context(), name)
+	groups, err := h.whatsappService.GetJoinedGroups(c.Request.Context(), sessionId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -120,18 +120,18 @@ func (h *GroupHandler) GetJoinedGroups(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name    path      string  true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        groupId  path      string  true  "Group ID"
 // @Success      200      {object}  dto.GroupActionResponse
 // @Failure      401      {object}  dto.ErrorResponse
 // @Failure      500      {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/groups/{groupId}/membership [delete]
+// @Router       /sessions/{sessionId}/groups/{groupId}/membership [delete]
 func (h *GroupHandler) LeaveGroup(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 	groupID := c.Param("groupId")
 
-	if err := h.whatsappService.LeaveGroup(c.Request.Context(), name, groupID); err != nil {
+	if err := h.whatsappService.LeaveGroup(c.Request.Context(), sessionId, groupID); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -148,16 +148,16 @@ func (h *GroupHandler) LeaveGroup(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                  true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.GroupUpdateRequest  true  "New name"
 // @Success      200    {object}  dto.GroupActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/groups/{groupId}/name [patch]
+// @Router       /sessions/{sessionId}/groups/{groupId}/name [patch]
 func (h *GroupHandler) UpdateGroupName(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.GroupUpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -165,7 +165,7 @@ func (h *GroupHandler) UpdateGroupName(c *gin.Context) {
 		return
 	}
 
-	if err := h.whatsappService.UpdateGroupName(c.Request.Context(), name, req.GroupID, req.Value); err != nil {
+	if err := h.whatsappService.UpdateGroupName(c.Request.Context(), sessionId, req.GroupID, req.Value); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -182,16 +182,16 @@ func (h *GroupHandler) UpdateGroupName(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                  true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.GroupUpdateRequest  true  "New description"
 // @Success      200    {object}  dto.GroupActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/groups/{groupId}/description [patch]
+// @Router       /sessions/{sessionId}/groups/{groupId}/description [patch]
 func (h *GroupHandler) UpdateGroupTopic(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.GroupUpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -199,7 +199,7 @@ func (h *GroupHandler) UpdateGroupTopic(c *gin.Context) {
 		return
 	}
 
-	if err := h.whatsappService.UpdateGroupTopic(c.Request.Context(), name, req.GroupID, req.Value); err != nil {
+	if err := h.whatsappService.UpdateGroupTopic(c.Request.Context(), sessionId, req.GroupID, req.Value); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -216,16 +216,16 @@ func (h *GroupHandler) UpdateGroupTopic(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                        true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.GroupParticipantsRequest  true  "Participants"
 // @Success      200    {object}  dto.GroupActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/groups/{groupId}/participants [post]
+// @Router       /sessions/{sessionId}/groups/{groupId}/participants [post]
 func (h *GroupHandler) AddParticipants(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.GroupParticipantsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -233,7 +233,7 @@ func (h *GroupHandler) AddParticipants(c *gin.Context) {
 		return
 	}
 
-	result, err := h.whatsappService.AddGroupParticipants(c.Request.Context(), name, req.GroupID, req.Participants)
+	result, err := h.whatsappService.AddGroupParticipants(c.Request.Context(), sessionId, req.GroupID, req.Participants)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -252,16 +252,16 @@ func (h *GroupHandler) AddParticipants(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                        true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.GroupParticipantsRequest  true  "Participants"
 // @Success      200    {object}  dto.GroupActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/groups/{groupId}/participants [delete]
+// @Router       /sessions/{sessionId}/groups/{groupId}/participants [delete]
 func (h *GroupHandler) RemoveParticipants(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.GroupParticipantsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -269,7 +269,7 @@ func (h *GroupHandler) RemoveParticipants(c *gin.Context) {
 		return
 	}
 
-	result, err := h.whatsappService.RemoveGroupParticipants(c.Request.Context(), name, req.GroupID, req.Participants)
+	result, err := h.whatsappService.RemoveGroupParticipants(c.Request.Context(), sessionId, req.GroupID, req.Participants)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -288,16 +288,16 @@ func (h *GroupHandler) RemoveParticipants(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                        true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.GroupParticipantsRequest  true  "Participants"
 // @Success      200    {object}  dto.GroupActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/groups/{groupId}/participants/promote [patch]
+// @Router       /sessions/{sessionId}/groups/{groupId}/participants/promote [patch]
 func (h *GroupHandler) PromoteParticipants(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.GroupParticipantsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -305,7 +305,7 @@ func (h *GroupHandler) PromoteParticipants(c *gin.Context) {
 		return
 	}
 
-	result, err := h.whatsappService.PromoteGroupParticipants(c.Request.Context(), name, req.GroupID, req.Participants)
+	result, err := h.whatsappService.PromoteGroupParticipants(c.Request.Context(), sessionId, req.GroupID, req.Participants)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -324,16 +324,16 @@ func (h *GroupHandler) PromoteParticipants(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                        true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.GroupParticipantsRequest  true  "Participants"
 // @Success      200    {object}  dto.GroupActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/groups/{groupId}/participants/demote [patch]
+// @Router       /sessions/{sessionId}/groups/{groupId}/participants/demote [patch]
 func (h *GroupHandler) DemoteParticipants(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.GroupParticipantsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -341,7 +341,7 @@ func (h *GroupHandler) DemoteParticipants(c *gin.Context) {
 		return
 	}
 
-	result, err := h.whatsappService.DemoteGroupParticipants(c.Request.Context(), name, req.GroupID, req.Participants)
+	result, err := h.whatsappService.DemoteGroupParticipants(c.Request.Context(), sessionId, req.GroupID, req.Participants)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -360,20 +360,20 @@ func (h *GroupHandler) DemoteParticipants(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name    path      string  true   "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        groupId  path      string  true   "Group ID"
 // @Param        reset    query     bool    false  "Reset link"
 // @Success      200      {object}  dto.GroupInviteLinkResponse
 // @Failure      401      {object}  dto.ErrorResponse
 // @Failure      500      {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/groups/{groupId}/invite [get]
+// @Router       /sessions/{sessionId}/groups/{groupId}/invite [get]
 func (h *GroupHandler) GetInviteLink(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 	groupID := c.Param("groupId")
 	reset := c.Query("reset") == "true"
 
-	link, err := h.whatsappService.GetGroupInviteLink(c.Request.Context(), name, groupID, reset)
+	link, err := h.whatsappService.GetGroupInviteLink(c.Request.Context(), sessionId, groupID, reset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -392,16 +392,16 @@ func (h *GroupHandler) GetInviteLink(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.JoinGroupRequest  true  "Invite link"
 // @Success      200    {object}  dto.GroupActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/groups/join [post]
+// @Router       /sessions/{sessionId}/groups/join [post]
 func (h *GroupHandler) JoinGroup(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.JoinGroupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -409,7 +409,7 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 		return
 	}
 
-	jid, err := h.whatsappService.JoinGroupWithLink(c.Request.Context(), name, req.InviteLink)
+	jid, err := h.whatsappService.JoinGroupWithLink(c.Request.Context(), sessionId, req.InviteLink)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -427,16 +427,16 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                       true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.SendGroupMessageRequest  true  "Message data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/groups/{groupId}/messages [post]
+// @Router       /sessions/{sessionId}/groups/{groupId}/messages [post]
 func (h *GroupHandler) SendGroupMessage(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.SendGroupMessageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -444,7 +444,7 @@ func (h *GroupHandler) SendGroupMessage(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.whatsappService.SendGroupMessage(c.Request.Context(), name, req.GroupID, req.Text)
+	resp, err := h.whatsappService.SendGroupMessage(c.Request.Context(), sessionId, req.GroupID, req.Text)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -463,15 +463,15 @@ func (h *GroupHandler) SendGroupMessage(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name path string true "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body body dto.GroupAnnounceRequest true "Announce setting"
 // @Success      200 {object} object
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/groups/{groupId}/settings/announce [patch]
+// @Router       /sessions/{sessionId}/groups/{groupId}/settings/announce [patch]
 func (h *GroupHandler) SetGroupAnnounce(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.GroupAnnounceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -480,7 +480,7 @@ func (h *GroupHandler) SetGroupAnnounce(c *gin.Context) {
 	}
 
 	groupID := strings.TrimSuffix(req.GroupID, "@g.us")
-	if err := h.whatsappService.SetGroupAnnounce(c.Request.Context(), name, groupID, req.Announce); err != nil {
+	if err := h.whatsappService.SetGroupAnnounce(c.Request.Context(), sessionId, groupID, req.Announce); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -494,15 +494,15 @@ func (h *GroupHandler) SetGroupAnnounce(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name path string true "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body body dto.GroupLockedRequest true "Locked setting"
 // @Success      200 {object} object
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/groups/{groupId}/settings/locked [patch]
+// @Router       /sessions/{sessionId}/groups/{groupId}/settings/locked [patch]
 func (h *GroupHandler) SetGroupLocked(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.GroupLockedRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -511,7 +511,7 @@ func (h *GroupHandler) SetGroupLocked(c *gin.Context) {
 	}
 
 	groupID := strings.TrimSuffix(req.GroupID, "@g.us")
-	if err := h.whatsappService.SetGroupLocked(c.Request.Context(), name, groupID, req.Locked); err != nil {
+	if err := h.whatsappService.SetGroupLocked(c.Request.Context(), sessionId, groupID, req.Locked); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -525,15 +525,15 @@ func (h *GroupHandler) SetGroupLocked(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name path string true "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body body dto.GroupPictureRequest true "Picture data"
 // @Success      200 {object} dto.SetPictureResponse
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/groups/{groupId}/picture [put]
+// @Router       /sessions/{sessionId}/groups/{groupId}/picture [put]
 func (h *GroupHandler) SetGroupPicture(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.GroupPictureRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -547,7 +547,7 @@ func (h *GroupHandler) SetGroupPicture(c *gin.Context) {
 	}
 
 	groupID := strings.TrimSuffix(req.GroupID, "@g.us")
-	pictureID, err := h.whatsappService.SetGroupPhoto(c.Request.Context(), name, groupID, imageData)
+	pictureID, err := h.whatsappService.SetGroupPhoto(c.Request.Context(), sessionId, groupID, imageData)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -561,19 +561,19 @@ func (h *GroupHandler) SetGroupPicture(c *gin.Context) {
 // @Description  Remove the group profile picture
 // @Tags         groups
 // @Produce      json
-// @Param        name path string true "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        groupId path string true "Group ID"
 // @Success      200 {object} dto.MessageOnlyResponse
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/groups/{groupId}/picture [delete]
+// @Router       /sessions/{sessionId}/groups/{groupId}/picture [delete]
 func (h *GroupHandler) DeleteGroupPicture(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 	groupID := c.Param("groupId")
 
 	groupID = strings.TrimSuffix(groupID, "@g.us")
-	if err := h.whatsappService.DeleteGroupPhoto(c.Request.Context(), name, groupID); err != nil {
+	if err := h.whatsappService.DeleteGroupPhoto(c.Request.Context(), sessionId, groupID); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -587,15 +587,15 @@ func (h *GroupHandler) DeleteGroupPicture(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name path string true "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body body dto.GroupApprovalRequest true "Approval setting"
 // @Success      200 {object} object
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/groups/{groupId}/settings/approval [patch]
+// @Router       /sessions/{sessionId}/groups/{groupId}/settings/approval [patch]
 func (h *GroupHandler) SetGroupApprovalMode(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.GroupApprovalRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -604,7 +604,7 @@ func (h *GroupHandler) SetGroupApprovalMode(c *gin.Context) {
 	}
 
 	groupID := strings.TrimSuffix(req.GroupID, "@g.us")
-	if err := h.whatsappService.SetGroupJoinApprovalMode(c.Request.Context(), name, groupID, req.ApprovalMode); err != nil {
+	if err := h.whatsappService.SetGroupJoinApprovalMode(c.Request.Context(), sessionId, groupID, req.ApprovalMode); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -618,15 +618,15 @@ func (h *GroupHandler) SetGroupApprovalMode(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name path string true "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body body dto.GroupMemberAddModeRequest true "Member add mode"
 // @Success      200 {object} object
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/groups/{groupId}/settings/memberadd [patch]
+// @Router       /sessions/{sessionId}/groups/{groupId}/settings/memberadd [patch]
 func (h *GroupHandler) SetGroupMemberAddMode(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.GroupMemberAddModeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -646,7 +646,7 @@ func (h *GroupHandler) SetGroupMemberAddMode(c *gin.Context) {
 	}
 
 	groupID := strings.TrimSuffix(req.GroupID, "@g.us")
-	if err := h.whatsappService.SetGroupMemberAddMode(c.Request.Context(), name, groupID, mode); err != nil {
+	if err := h.whatsappService.SetGroupMemberAddMode(c.Request.Context(), sessionId, groupID, mode); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -659,17 +659,17 @@ func (h *GroupHandler) SetGroupMemberAddMode(c *gin.Context) {
 // @Description  Get list of pending join requests for a group
 // @Tags         groups
 // @Produce      json
-// @Param        name path string true "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        groupId path string true "Group ID"
 // @Success      200 {object} dto.GroupRequestParticipantsResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/groups/{groupId}/requests [get]
+// @Router       /sessions/{sessionId}/groups/{groupId}/requests [get]
 func (h *GroupHandler) GetGroupRequestParticipants(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 	groupID := strings.TrimSuffix(c.Param("groupId"), "@g.us")
 
-	requests, err := h.whatsappService.GetGroupRequestParticipants(c.Request.Context(), name, groupID)
+	requests, err := h.whatsappService.GetGroupRequestParticipants(c.Request.Context(), sessionId, groupID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -687,16 +687,16 @@ func (h *GroupHandler) GetGroupRequestParticipants(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        name path string true "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        groupId path string true "Group ID"
 // @Param        body body dto.GroupRequestActionBodyRequest true "Action data"
 // @Success      200 {object} dto.GroupActionResponse
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/groups/{groupId}/requests [post]
+// @Router       /sessions/{sessionId}/groups/{groupId}/requests [post]
 func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 	groupID := strings.TrimSuffix(c.Param("groupId"), "@g.us")
 
 	var req dto.GroupRequestActionBodyRequest
@@ -716,7 +716,7 @@ func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
 		return
 	}
 
-	result, err := h.whatsappService.UpdateGroupRequestParticipants(c.Request.Context(), name, groupID, req.Participants, action)
+	result, err := h.whatsappService.UpdateGroupRequestParticipants(c.Request.Context(), sessionId, groupID, req.Participants, action)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -734,15 +734,15 @@ func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
 // @Description  Get group information using an invite link
 // @Tags         groups
 // @Produce      json
-// @Param        name path string true "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        link query string true "Invite link or code"
 // @Success      200 {object} dto.GroupActionResponse
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/groups/info/link [get]
+// @Router       /sessions/{sessionId}/groups/info/link [get]
 func (h *GroupHandler) GetGroupInfoFromLink(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	link := c.Query("link")
 	if link == "" {
@@ -759,7 +759,7 @@ func (h *GroupHandler) GetGroupInfoFromLink(c *gin.Context) {
 		}
 	}
 
-	info, err := h.whatsappService.GetGroupInfoFromLink(c.Request.Context(), name, code)
+	info, err := h.whatsappService.GetGroupInfoFromLink(c.Request.Context(), sessionId, code)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return

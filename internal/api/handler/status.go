@@ -26,15 +26,15 @@ func NewStatusHandler(whatsappService *service.WhatsAppService) *StatusHandler {
 // @Tags         status
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string               true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.SendStatusRequest true  "Story data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/stories [post]
+// @Router       /sessions/{sessionId}/stories [post]
 func (h *StatusHandler) SendStory(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.SendStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -62,7 +62,7 @@ func (h *StatusHandler) SendStory(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.whatsappService.SendStatus(c.Request.Context(), name, msg)
+	resp, err := h.whatsappService.SendStatus(c.Request.Context(), sessionId, msg)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -80,15 +80,15 @@ func (h *StatusHandler) SendStory(c *gin.Context) {
 // @Description  Get who can see your status updates
 // @Tags         status
 // @Produce      json
-// @Param        name   path      string  true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Success      200    {object}  dto.StatusPrivacyResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/stories/privacy [get]
+// @Router       /sessions/{sessionId}/stories/privacy [get]
 func (h *StatusHandler) GetStatusPrivacy(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
-	privacy, err := h.whatsappService.GetStatusPrivacy(c.Request.Context(), name)
+	privacy, err := h.whatsappService.GetStatusPrivacy(c.Request.Context(), sessionId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return

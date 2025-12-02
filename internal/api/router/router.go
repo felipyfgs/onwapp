@@ -25,18 +25,19 @@ type WebhookHandlerInterface interface {
 
 type Handlers struct {
 	Session    *handler.SessionHandler
-	Message    *handler.MessageHandler
-	Group      *handler.GroupHandler
-	Contact    *handler.ContactHandler
-	Chat       *handler.ChatHandler
 	Profile    *handler.ProfileHandler
-	Webhook    WebhookHandlerInterface
+	Presence   *handler.PresenceHandler
+	Contact    *handler.ContactHandler
+	Group      *handler.GroupHandler
+	Community  *handler.CommunityHandler
+	Chat       *handler.ChatHandler
+	Message    *handler.MessageHandler
+	Media      *handler.MediaHandler
 	Newsletter *handler.NewsletterHandler
 	Status     *handler.StatusHandler
 	Call       *handler.CallHandler
-	Community  *handler.CommunityHandler
-	Media      *handler.MediaHandler
 	History    *handler.HistoryHandler
+	Webhook    WebhookHandlerInterface
 }
 
 type Config struct {
@@ -87,178 +88,220 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 	r.GET("/events", middleware.Auth(cfg.APIKey), h.Webhook.GetEvents)
 
 	// ─────────────────────────────────────────────────────────────────────────────
-	// API Routes (organized by domain flow)
+	// API Routes (organized by whatsmeow pattern)
 	// ─────────────────────────────────────────────────────────────────────────────
 	sessions := r.Group("/sessions")
 	sessions.Use(middleware.Auth(cfg.APIKey))
 	{
 		// ═══════════════════════════════════════════════════════════════════════
-		// 1. SESSIONS - Authentication & Connection
+		// 1. CONNECTION - Session lifecycle
+		// whatsmeow: Connect, Disconnect, Logout, IsConnected, GetQRChannel, PairPhone
 		// ═══════════════════════════════════════════════════════════════════════
 		sessions.GET("", h.Session.Fetch)
 		sessions.POST("", h.Session.Create)
-		sessions.GET("/:name", h.Session.Info)
-		sessions.DELETE("/:name", h.Session.Delete)
-		sessions.POST("/:name/connect", h.Session.Connect)
-		sessions.POST("/:name/disconnect", h.Session.Disconnect)
-		sessions.POST("/:name/logout", h.Session.Logout)
-		sessions.POST("/:name/restart", h.Session.Restart)
-		sessions.GET("/:name/qr", h.Session.QR)
-		sessions.POST("/:name/pair/phone", h.Session.PairPhone)
-		sessions.GET("/:name/qrlink", h.Contact.GetContactQRLink)
+		sessions.GET("/:sessionId", h.Session.Info)
+		sessions.DELETE("/:sessionId", h.Session.Delete)
+		sessions.POST("/:sessionId/connect", h.Session.Connect)
+		sessions.POST("/:sessionId/disconnect", h.Session.Disconnect)
+		sessions.POST("/:sessionId/logout", h.Session.Logout)
+		sessions.POST("/:sessionId/restart", h.Session.Restart)
+		sessions.GET("/:sessionId/qr", h.Session.QR)
+		sessions.POST("/:sessionId/pair/phone", h.Session.PairPhone)
 
 		// ═══════════════════════════════════════════════════════════════════════
-		// 2. PROFILE - Account Identity & Settings
+		// 2. PROFILE - Account identity & settings
+		// whatsmeow: SetStatusMessage, GetPrivacySettings, SetPrivacySetting
 		// ═══════════════════════════════════════════════════════════════════════
-		sessions.GET("/:name/profile", h.Profile.GetProfile)
-		sessions.PATCH("/:name/profile/status", h.Profile.SetStatus)
-		sessions.PATCH("/:name/profile/name", h.Profile.SetPushName)
-		sessions.PUT("/:name/profile/picture", h.Profile.SetProfilePicture)
-		sessions.DELETE("/:name/profile/picture", h.Profile.DeleteProfilePicture)
-		sessions.GET("/:name/profile/privacy", h.Profile.GetPrivacySettings)
-		sessions.PUT("/:name/profile/privacy", h.Profile.SetPrivacySettings)
-		sessions.PATCH("/:name/profile/disappearing", h.Profile.SetDefaultDisappearingTimer)
+		sessions.GET("/:sessionId/profile", h.Profile.GetProfile)
+		sessions.PATCH("/:sessionId/profile/status", h.Profile.SetStatus)
+		sessions.PATCH("/:sessionId/profile/name", h.Profile.SetPushName)
+		sessions.PUT("/:sessionId/profile/picture", h.Profile.SetProfilePicture)
+		sessions.DELETE("/:sessionId/profile/picture", h.Profile.DeleteProfilePicture)
+		sessions.GET("/:sessionId/profile/privacy", h.Profile.GetPrivacySettings)
+		sessions.PUT("/:sessionId/profile/privacy", h.Profile.SetPrivacySettings)
+		sessions.PATCH("/:sessionId/profile/disappearing", h.Profile.SetDefaultDisappearingTimer)
 
 		// ═══════════════════════════════════════════════════════════════════════
-		// 3. STATUS/STORIES - Presence & Stories
+		// 3. PRESENCE - Online status & typing
+		// whatsmeow: SendPresence, SendChatPresence, SubscribePresence, MarkRead
 		// ═══════════════════════════════════════════════════════════════════════
-		sessions.PUT("/:name/presence", h.Contact.SetPresence)
-		if h.Status != nil {
-			sessions.POST("/:name/stories", h.Status.SendStory)
-			sessions.GET("/:name/stories/privacy", h.Status.GetStatusPrivacy)
-		}
+		sessions.PUT("/:sessionId/presence", h.Presence.SetPresence)
+		sessions.POST("/:sessionId/presence/subscribe/:phone", h.Presence.SubscribePresence)
+		sessions.POST("/:sessionId/chats/:chatId/presence", h.Presence.SetChatPresence)
+		sessions.POST("/:sessionId/chats/:chatId/read", h.Presence.MarkRead)
 
 		// ═══════════════════════════════════════════════════════════════════════
-		// 4. CONTACTS - Social Network Core
+		// 4. CONTACTS - User management
+		// whatsmeow: IsOnWhatsApp, GetUserInfo, GetBlocklist, GetBusinessProfile
 		// ═══════════════════════════════════════════════════════════════════════
-		sessions.GET("/:name/contacts", h.Contact.GetContacts)
-		sessions.POST("/:name/contacts/check", h.Contact.CheckPhone)
-		sessions.GET("/:name/contacts/:phone", h.Contact.GetContactInfo)
-		sessions.GET("/:name/contacts/:phone/avatar", h.Contact.GetAvatar)
-		sessions.GET("/:name/contacts/:phone/business", h.Contact.GetBusinessProfile)
-		sessions.GET("/:name/contacts/:phone/lid", h.Contact.GetContactLID)
-		sessions.GET("/:name/contacts/blocklist", h.Contact.GetBlocklist)
-		sessions.PUT("/:name/contacts/blocklist", h.Contact.UpdateBlocklist)
-		sessions.POST("/:name/contacts/:phone/presence/subscribe", h.Contact.SubscribePresence)
+		sessions.GET("/:sessionId/contacts", h.Contact.GetContacts)
+		sessions.POST("/:sessionId/contacts/check", h.Contact.CheckPhone)
+		sessions.GET("/:sessionId/contacts/blocklist", h.Contact.GetBlocklist)
+		sessions.PUT("/:sessionId/contacts/blocklist", h.Contact.UpdateBlocklist)
+		sessions.GET("/:sessionId/contacts/:phone", h.Contact.GetContactInfo)
+		sessions.GET("/:sessionId/contacts/:phone/avatar", h.Contact.GetAvatar)
+		sessions.GET("/:sessionId/contacts/:phone/business", h.Contact.GetBusinessProfile)
+		sessions.GET("/:sessionId/contacts/:phone/lid", h.Contact.GetContactLID)
+		sessions.GET("/:sessionId/contacts/:phone/qrlink", h.Contact.GetContactQRLink)
 
 		// ═══════════════════════════════════════════════════════════════════════
-		// 5. GROUPS - Contact Collections
+		// 5. GROUPS - Core CRUD
+		// whatsmeow: CreateGroup, GetGroupInfo, GetJoinedGroups, LeaveGroup
 		// ═══════════════════════════════════════════════════════════════════════
-		sessions.POST("/:name/groups", h.Group.CreateGroup)
-		sessions.GET("/:name/groups", h.Group.GetJoinedGroups)
-		sessions.GET("/:name/groups/info/link", h.Group.GetGroupInfoFromLink)
-		sessions.POST("/:name/groups/join", h.Group.JoinGroup)
-		sessions.GET("/:name/groups/:groupId", h.Group.GetGroupInfo)
-		sessions.DELETE("/:name/groups/:groupId/membership", h.Group.LeaveGroup)
-		sessions.GET("/:name/groups/:groupId/invite", h.Group.GetInviteLink)
-		sessions.PATCH("/:name/groups/:groupId/name", h.Group.UpdateGroupName)
-		sessions.PATCH("/:name/groups/:groupId/description", h.Group.UpdateGroupTopic)
-		sessions.PUT("/:name/groups/:groupId/picture", h.Group.SetGroupPicture)
-		sessions.DELETE("/:name/groups/:groupId/picture", h.Group.DeleteGroupPicture)
-		sessions.POST("/:name/groups/:groupId/participants", h.Group.AddParticipants)
-		sessions.DELETE("/:name/groups/:groupId/participants", h.Group.RemoveParticipants)
-		sessions.PATCH("/:name/groups/:groupId/participants/promote", h.Group.PromoteParticipants)
-		sessions.PATCH("/:name/groups/:groupId/participants/demote", h.Group.DemoteParticipants)
-		sessions.PATCH("/:name/groups/:groupId/settings/announce", h.Group.SetGroupAnnounce)
-		sessions.PATCH("/:name/groups/:groupId/settings/locked", h.Group.SetGroupLocked)
-		sessions.PATCH("/:name/groups/:groupId/settings/approval", h.Group.SetGroupApprovalMode)
-		sessions.PATCH("/:name/groups/:groupId/settings/memberadd", h.Group.SetGroupMemberAddMode)
-		sessions.GET("/:name/groups/:groupId/requests", h.Group.GetGroupRequestParticipants)
-		sessions.POST("/:name/groups/:groupId/requests", h.Group.UpdateGroupRequestParticipants)
-		sessions.POST("/:name/groups/:groupId/messages", h.Group.SendGroupMessage)
+		sessions.POST("/:sessionId/groups", h.Group.CreateGroup)
+		sessions.GET("/:sessionId/groups", h.Group.GetJoinedGroups)
+		sessions.GET("/:sessionId/groups/:groupId", h.Group.GetGroupInfo)
+		sessions.DELETE("/:sessionId/groups/:groupId", h.Group.LeaveGroup)
+		sessions.PATCH("/:sessionId/groups/:groupId/name", h.Group.UpdateGroupName)
+		sessions.PATCH("/:sessionId/groups/:groupId/topic", h.Group.UpdateGroupTopic)
+		sessions.PUT("/:sessionId/groups/:groupId/picture", h.Group.SetGroupPicture)
+		sessions.DELETE("/:sessionId/groups/:groupId/picture", h.Group.DeleteGroupPicture)
 
 		// ═══════════════════════════════════════════════════════════════════════
-		// 6. COMMUNITIES - Group Collections
+		// 6. GROUPS - Participants
+		// whatsmeow: UpdateGroupParticipants
+		// ═══════════════════════════════════════════════════════════════════════
+		sessions.POST("/:sessionId/groups/:groupId/participants", h.Group.AddParticipants)
+		sessions.DELETE("/:sessionId/groups/:groupId/participants", h.Group.RemoveParticipants)
+		sessions.PATCH("/:sessionId/groups/:groupId/participants/promote", h.Group.PromoteParticipants)
+		sessions.PATCH("/:sessionId/groups/:groupId/participants/demote", h.Group.DemoteParticipants)
+
+		// ═══════════════════════════════════════════════════════════════════════
+		// 7. GROUPS - Settings
+		// whatsmeow: SetGroupAnnounce, SetGroupLocked, SetGroupJoinApprovalMode
+		// ═══════════════════════════════════════════════════════════════════════
+		sessions.PATCH("/:sessionId/groups/:groupId/settings/announce", h.Group.SetGroupAnnounce)
+		sessions.PATCH("/:sessionId/groups/:groupId/settings/locked", h.Group.SetGroupLocked)
+		sessions.PATCH("/:sessionId/groups/:groupId/settings/approval", h.Group.SetGroupApprovalMode)
+		sessions.PATCH("/:sessionId/groups/:groupId/settings/memberadd", h.Group.SetGroupMemberAddMode)
+
+		// ═══════════════════════════════════════════════════════════════════════
+		// 8. GROUPS - Invites & Requests
+		// whatsmeow: GetGroupInviteLink, JoinGroupWithLink, GetGroupInfoFromLink
+		// ═══════════════════════════════════════════════════════════════════════
+		sessions.GET("/:sessionId/groups/invite/info", h.Group.GetGroupInfoFromLink)
+		sessions.POST("/:sessionId/groups/join", h.Group.JoinGroup)
+		sessions.GET("/:sessionId/groups/:groupId/invite", h.Group.GetInviteLink)
+		sessions.GET("/:sessionId/groups/:groupId/requests", h.Group.GetGroupRequestParticipants)
+		sessions.POST("/:sessionId/groups/:groupId/requests", h.Group.UpdateGroupRequestParticipants)
+		sessions.POST("/:sessionId/groups/:groupId/messages", h.Group.SendGroupMessage)
+
+		// ═══════════════════════════════════════════════════════════════════════
+		// 9. COMMUNITIES - Group collections
+		// whatsmeow: LinkGroup, UnlinkGroup, GetSubGroups
 		// ═══════════════════════════════════════════════════════════════════════
 		if h.Community != nil {
-			sessions.GET("/:name/communities/:communityId/groups", h.Community.GetSubGroups)
-			sessions.POST("/:name/communities/:communityId/groups", h.Community.LinkGroup)
-			sessions.DELETE("/:name/communities/:communityId/groups/:groupId", h.Community.UnlinkGroup)
+			sessions.GET("/:sessionId/communities/:communityId/groups", h.Community.GetSubGroups)
+			sessions.POST("/:sessionId/communities/:communityId/groups", h.Community.LinkGroup)
+			sessions.DELETE("/:sessionId/communities/:communityId/groups/:groupId", h.Community.UnlinkGroup)
 		}
 
 		// ═══════════════════════════════════════════════════════════════════════
-		// 7. CHATS - Conversations
+		// 10. CHATS - Conversations
+		// whatsmeow: SetDisappearingTimer, BuildEdit, BuildRevoke
 		// ═══════════════════════════════════════════════════════════════════════
-		sessions.POST("/:name/chats/:chatId/typing", h.Contact.SetChatPresence)
-		sessions.POST("/:name/chats/:chatId/read", h.Contact.MarkRead)
-		sessions.PATCH("/:name/chats/:chatId/archive", h.Chat.ArchiveChat)
-		sessions.PATCH("/:name/chats/:chatId/settings/disappearing", h.Chat.SetDisappearingTimer)
-		sessions.PATCH("/:name/chats/:chatId/messages/:messageId", h.Chat.EditMessage)
-		sessions.DELETE("/:name/chats/:chatId/messages/:messageId", h.Chat.DeleteMessage)
-		sessions.POST("/:name/chats/:chatId/messages/:messageId/request", h.Chat.RequestUnavailableMessage)
+		sessions.PATCH("/:sessionId/chats/:chatId/archive", h.Chat.ArchiveChat)
+		sessions.PATCH("/:sessionId/chats/:chatId/disappearing", h.Chat.SetDisappearingTimer)
+		sessions.PATCH("/:sessionId/chats/:chatId/messages/:messageId", h.Chat.EditMessage)
+		sessions.DELETE("/:sessionId/chats/:chatId/messages/:messageId", h.Chat.DeleteMessage)
+		sessions.POST("/:sessionId/chats/:chatId/messages/:messageId/request", h.Chat.RequestUnavailableMessage)
 
 		// ═══════════════════════════════════════════════════════════════════════
-		// 8. MESSAGES - Send & Receive
+		// 11. MESSAGES - Text & Basic
+		// whatsmeow: SendMessage
 		// ═══════════════════════════════════════════════════════════════════════
-		sessions.POST("/:name/messages/text", h.Message.SendText)
-		sessions.POST("/:name/messages/image", h.Message.SendImage)
-		sessions.POST("/:name/messages/audio", h.Message.SendAudio)
-		sessions.POST("/:name/messages/video", h.Message.SendVideo)
-		sessions.POST("/:name/messages/document", h.Message.SendDocument)
-		sessions.POST("/:name/messages/sticker", h.Message.SendSticker)
-		sessions.POST("/:name/messages/location", h.Message.SendLocation)
-		sessions.POST("/:name/messages/contact", h.Message.SendContact)
-		sessions.POST("/:name/messages/reaction", h.Message.SendReaction)
-		sessions.POST("/:name/messages/poll", h.Message.SendPoll)
-		sessions.POST("/:name/messages/poll/vote", h.Message.SendPollVote)
-		sessions.POST("/:name/messages/buttons", h.Message.SendButtons)
-		sessions.POST("/:name/messages/list", h.Message.SendList)
-		sessions.POST("/:name/messages/interactive", h.Message.SendInteractive)
-		sessions.POST("/:name/messages/template", h.Message.SendTemplate)
-		sessions.POST("/:name/messages/carousel", h.Message.SendCarousel)
+		sessions.POST("/:sessionId/messages/text", h.Message.SendText)
+		sessions.POST("/:sessionId/messages/location", h.Message.SendLocation)
+		sessions.POST("/:sessionId/messages/contact", h.Message.SendContact)
+		sessions.POST("/:sessionId/messages/reaction", h.Message.SendReaction)
 
 		// ═══════════════════════════════════════════════════════════════════════
-		// 9. CALLS - Voice/Video
+		// 12. MESSAGES - Media
+		// whatsmeow: Upload + SendMessage
 		// ═══════════════════════════════════════════════════════════════════════
-		if h.Call != nil {
-			sessions.POST("/:name/calls/reject", h.Call.RejectCall)
-		}
+		sessions.POST("/:sessionId/messages/image", h.Message.SendImage)
+		sessions.POST("/:sessionId/messages/audio", h.Message.SendAudio)
+		sessions.POST("/:sessionId/messages/video", h.Message.SendVideo)
+		sessions.POST("/:sessionId/messages/document", h.Message.SendDocument)
+		sessions.POST("/:sessionId/messages/sticker", h.Message.SendSticker)
 
 		// ═══════════════════════════════════════════════════════════════════════
-		// 10. NEWSLETTERS - Broadcast Channels
+		// 13. MESSAGES - Interactive
+		// whatsmeow: BuildPollCreation, BuildPollVote
 		// ═══════════════════════════════════════════════════════════════════════
-		if h.Newsletter != nil {
-			sessions.POST("/:name/newsletters", h.Newsletter.CreateNewsletter)
-			sessions.GET("/:name/newsletters", h.Newsletter.GetSubscribedNewsletters)
-			sessions.GET("/:name/newsletters/:newsletterId", h.Newsletter.GetNewsletterInfo)
-			sessions.POST("/:name/newsletters/:newsletterId/follow", h.Newsletter.FollowNewsletter)
-			sessions.DELETE("/:name/newsletters/:newsletterId/follow", h.Newsletter.UnfollowNewsletter)
-			sessions.GET("/:name/newsletters/:newsletterId/messages", h.Newsletter.GetNewsletterMessages)
-			sessions.POST("/:name/newsletters/:newsletterId/reactions", h.Newsletter.NewsletterSendReaction)
-			sessions.PATCH("/:name/newsletters/:newsletterId/mute", h.Newsletter.NewsletterToggleMute)
-			sessions.POST("/:name/newsletters/:newsletterId/viewed", h.Newsletter.NewsletterMarkViewed)
-			sessions.POST("/:name/newsletters/:newsletterId/subscribe-live", h.Newsletter.NewsletterSubscribeLiveUpdates)
-		}
+		sessions.POST("/:sessionId/messages/poll", h.Message.SendPoll)
+		sessions.POST("/:sessionId/messages/poll/vote", h.Message.SendPollVote)
+		sessions.POST("/:sessionId/messages/buttons", h.Message.SendButtons)
+		sessions.POST("/:sessionId/messages/list", h.Message.SendList)
+		sessions.POST("/:sessionId/messages/interactive", h.Message.SendInteractive)
+		sessions.POST("/:sessionId/messages/template", h.Message.SendTemplate)
+		sessions.POST("/:sessionId/messages/carousel", h.Message.SendCarousel)
 
 		// ═══════════════════════════════════════════════════════════════════════
-		// 11. MEDIA - File Storage
+		// 14. MEDIA - File storage
+		// whatsmeow: Download
 		// ═══════════════════════════════════════════════════════════════════════
 		if h.Media != nil {
-			sessions.GET("/:name/media", h.Media.ListMedia)
-			sessions.GET("/:name/media/pending", h.Media.ListPendingMedia)
-			sessions.POST("/:name/media/process", h.Media.ProcessPendingMedia)
-			sessions.GET("/:name/media/:msgId", h.Media.GetMedia)
+			sessions.GET("/:sessionId/media", h.Media.ListMedia)
+			sessions.GET("/:sessionId/media/pending", h.Media.ListPendingMedia)
+			sessions.POST("/:sessionId/media/process", h.Media.ProcessPendingMedia)
+			sessions.GET("/:sessionId/media/:messageId", h.Media.GetMedia)
 		}
 
 		// ═══════════════════════════════════════════════════════════════════════
-		// 12. HISTORY SYNC - Historical Data
+		// 15. NEWSLETTERS - Channels
+		// whatsmeow: CreateNewsletter, GetNewsletterInfo, Follow/Unfollow
+		// ═══════════════════════════════════════════════════════════════════════
+		if h.Newsletter != nil {
+			sessions.POST("/:sessionId/newsletters", h.Newsletter.CreateNewsletter)
+			sessions.GET("/:sessionId/newsletters", h.Newsletter.GetSubscribedNewsletters)
+			sessions.GET("/:sessionId/newsletters/:newsletterId", h.Newsletter.GetNewsletterInfo)
+			sessions.POST("/:sessionId/newsletters/:newsletterId/follow", h.Newsletter.FollowNewsletter)
+			sessions.DELETE("/:sessionId/newsletters/:newsletterId/follow", h.Newsletter.UnfollowNewsletter)
+			sessions.GET("/:sessionId/newsletters/:newsletterId/messages", h.Newsletter.GetNewsletterMessages)
+			sessions.POST("/:sessionId/newsletters/:newsletterId/reactions", h.Newsletter.NewsletterSendReaction)
+			sessions.PATCH("/:sessionId/newsletters/:newsletterId/mute", h.Newsletter.NewsletterToggleMute)
+			sessions.POST("/:sessionId/newsletters/:newsletterId/viewed", h.Newsletter.NewsletterMarkViewed)
+			sessions.POST("/:sessionId/newsletters/:newsletterId/subscribe-live", h.Newsletter.NewsletterSubscribeLiveUpdates)
+		}
+
+		// ═══════════════════════════════════════════════════════════════════════
+		// 16. STORIES - Status updates
+		// whatsmeow: GetStatusPrivacy
+		// ═══════════════════════════════════════════════════════════════════════
+		if h.Status != nil {
+			sessions.POST("/:sessionId/stories", h.Status.SendStory)
+			sessions.GET("/:sessionId/stories/privacy", h.Status.GetStatusPrivacy)
+		}
+
+		// ═══════════════════════════════════════════════════════════════════════
+		// 17. CALLS - Voice/Video
+		// whatsmeow: RejectCall
+		// ═══════════════════════════════════════════════════════════════════════
+		if h.Call != nil {
+			sessions.POST("/:sessionId/calls/reject", h.Call.RejectCall)
+		}
+
+		// ═══════════════════════════════════════════════════════════════════════
+		// 18. HISTORY - Sync data
+		// whatsmeow: BuildHistorySyncRequest, DownloadHistorySync
 		// ═══════════════════════════════════════════════════════════════════════
 		if h.History != nil {
-			sessions.POST("/:name/history/sync", h.History.RequestHistorySync)
-			sessions.GET("/:name/history/progress", h.History.GetSyncProgress)
-			sessions.GET("/:name/history/chats/unread", h.History.GetUnreadChats)
-			sessions.GET("/:name/history/chats/:chatId", h.History.GetChatInfo)
-			sessions.GET("/:name/history/groups/:groupId/participants/past", h.History.GetGroupPastParticipants)
-			sessions.GET("/:name/history/stickers", h.History.GetTopStickers)
+			sessions.POST("/:sessionId/history/sync", h.History.RequestHistorySync)
+			sessions.GET("/:sessionId/history/progress", h.History.GetSyncProgress)
+			sessions.GET("/:sessionId/history/chats/unread", h.History.GetUnreadChats)
+			sessions.GET("/:sessionId/history/chats/:chatId", h.History.GetChatInfo)
+			sessions.GET("/:sessionId/history/groups/:groupId/participants/past", h.History.GetGroupPastParticipants)
+			sessions.GET("/:sessionId/history/stickers", h.History.GetTopStickers)
 		}
 
 		// ═══════════════════════════════════════════════════════════════════════
-		// 13. WEBHOOKS - Integrations
+		// 19. WEBHOOKS - Integrations
 		// ═══════════════════════════════════════════════════════════════════════
-		sessions.GET("/:name/webhooks", h.Webhook.GetWebhook)
-		sessions.POST("/:name/webhooks", h.Webhook.SetWebhook)
-		sessions.PUT("/:name/webhooks", h.Webhook.UpdateWebhook)
-		sessions.DELETE("/:name/webhooks", h.Webhook.DeleteWebhook)
+		sessions.GET("/:sessionId/webhooks", h.Webhook.GetWebhook)
+		sessions.POST("/:sessionId/webhooks", h.Webhook.SetWebhook)
+		sessions.PUT("/:sessionId/webhooks", h.Webhook.UpdateWebhook)
+		sessions.DELETE("/:sessionId/webhooks", h.Webhook.DeleteWebhook)
 	}
 
 	return r

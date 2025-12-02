@@ -23,15 +23,15 @@ func NewCallHandler(whatsappService *service.WhatsAppService) *CallHandler {
 // @Tags         call
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string               true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.RejectCallRequest true  "Call data"
 // @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/calls/reject [post]
+// @Router       /sessions/{sessionId}/calls/reject [post]
 func (h *CallHandler) RejectCall(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.RejectCallRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -39,7 +39,7 @@ func (h *CallHandler) RejectCall(c *gin.Context) {
 		return
 	}
 
-	if err := h.whatsappService.RejectCall(c.Request.Context(), name, req.CallFrom, req.CallID); err != nil {
+	if err := h.whatsappService.RejectCall(c.Request.Context(), sessionId, req.CallFrom, req.CallID); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}

@@ -30,17 +30,17 @@ func NewMediaHandler(database *db.Database, mediaService *service.MediaService, 
 // @Description  Get media information for a specific message
 // @Tags         media
 // @Produce      json
-// @Param        id     path     string  true  "Session ID"
-// @Param        msgId  path     string  true  "Message ID"
+// @Param        sessionId   path     string  true  "Session ID"
+// @Param        messageId   path     string  true  "Message ID"
 // @Success      200  {object}  dto.MediaResponse
 // @Failure      404  {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{id}/media/{msgId} [get]
+// @Router       /sessions/{sessionId}/media/{messageId} [get]
 func (h *MediaHandler) GetMedia(c *gin.Context) {
-	sessionName := c.Param("id")
-	msgID := c.Param("msgId")
+	sessionId := c.Param("sessionId")
+	msgID := c.Param("messageId")
 
-	session, err := h.sessionSvc.Get(sessionName)
+	session, err := h.sessionSvc.Get(sessionId)
 	if err != nil || session == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
 		return
@@ -71,9 +71,9 @@ func (h *MediaHandler) GetMedia(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{id}/media/pending [get]
 func (h *MediaHandler) ListPendingMedia(c *gin.Context) {
-	sessionName := c.Param("id")
+	sessionId := c.Param("sessionId")
 
-	session, err := h.sessionSvc.Get(sessionName)
+	session, err := h.sessionSvc.Get(sessionId)
 	if err != nil || session == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
 		return
@@ -110,14 +110,14 @@ func (h *MediaHandler) ListPendingMedia(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{id}/media/process [post]
 func (h *MediaHandler) ProcessPendingMedia(c *gin.Context) {
-	sessionName := c.Param("id")
+	sessionId := c.Param("sessionId")
 
 	if h.mediaService == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "media service not configured"})
 		return
 	}
 
-	session, err := h.sessionSvc.Get(sessionName)
+	session, err := h.sessionSvc.Get(sessionId)
 	if err != nil || session == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
 		return
@@ -156,9 +156,9 @@ func (h *MediaHandler) ProcessPendingMedia(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /sessions/{id}/media [get]
 func (h *MediaHandler) ListMedia(c *gin.Context) {
-	sessionName := c.Param("id")
+	sessionId := c.Param("sessionId")
 
-	session, err := h.sessionSvc.Get(sessionName)
+	session, err := h.sessionSvc.Get(sessionId)
 	if err != nil || session == nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
 		return

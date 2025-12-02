@@ -235,18 +235,19 @@ func main() {
 
 	handlers := &router.Handlers{
 		Session:    handler.NewSessionHandler(sessionService, whatsappService),
-		Message:    handler.NewMessageHandler(whatsappService),
-		Group:      handler.NewGroupHandler(whatsappService),
-		Contact:    handler.NewContactHandler(whatsappService),
-		Chat:       handler.NewChatHandler(whatsappService),
 		Profile:    handler.NewProfileHandler(whatsappService),
-		Webhook:    webhookHandler,
+		Presence:   handler.NewPresenceHandler(whatsappService),
+		Contact:    handler.NewContactHandler(whatsappService),
+		Group:      handler.NewGroupHandler(whatsappService),
+		Community:  handler.NewCommunityHandler(whatsappService),
+		Chat:       handler.NewChatHandler(whatsappService),
+		Message:    handler.NewMessageHandler(whatsappService),
+		Media:      mediaHandler,
 		Newsletter: handler.NewNewsletterHandler(whatsappService),
 		Status:     handler.NewStatusHandler(whatsappService),
 		Call:       handler.NewCallHandler(whatsappService),
-		Community:  handler.NewCommunityHandler(whatsappService),
-		Media:      mediaHandler,
 		History:    historyHandler,
+		Webhook:    webhookHandler,
 	}
 
 	r := router.SetupWithConfig(&router.Config{

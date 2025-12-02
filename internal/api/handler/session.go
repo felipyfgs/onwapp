@@ -103,16 +103,16 @@ func (h *SessionHandler) Create(c *gin.Context) {
 // @Tags         sessions
 // @Accept       json
 // @Produce      json
-// @Param        name path      string  true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Success      200    {object}  dto.MessageResponse
 // @Failure      404    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name} [delete]
+// @Router       /sessions/{sessionId} [delete]
 func (h *SessionHandler) Delete(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
-	if err := h.sessionService.Delete(c.Request.Context(), name); err != nil {
+	if err := h.sessionService.Delete(c.Request.Context(), sessionId); err != nil {
 		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -126,16 +126,16 @@ func (h *SessionHandler) Delete(c *gin.Context) {
 // @Tags         sessions
 // @Accept       json
 // @Produce      json
-// @Param        name path      string  true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Success      200    {object}  dto.SessionResponse
 // @Failure      404    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name} [get]
+// @Router       /sessions/{sessionId} [get]
 func (h *SessionHandler) Info(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
-	session, err := h.sessionService.Get(name)
+	session, err := h.sessionService.Get(sessionId)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -150,18 +150,18 @@ func (h *SessionHandler) Info(c *gin.Context) {
 // @Tags         sessions
 // @Accept       json
 // @Produce      json
-// @Param        name path      string  true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Success      200    {object}  dto.MessageResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/connect [post]
+// @Router       /sessions/{sessionId}/connect [post]
 func (h *SessionHandler) Connect(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
-	session, err := h.sessionService.Connect(c.Request.Context(), name)
+	session, err := h.sessionService.Connect(c.Request.Context(), sessionId)
 	if err != nil {
-		if err.Error() == fmt.Sprintf("session %s not found", name) {
+		if err.Error() == fmt.Sprintf("session %s not found", sessionId) {
 			c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
@@ -171,7 +171,7 @@ func (h *SessionHandler) Connect(c *gin.Context) {
 
 	if session.Client.Store.ID == nil {
 		c.JSON(http.StatusOK, dto.MessageResponse{
-			Message: "connecting, check terminal for QR code or use /sessions/" + name + "/qr",
+			Message: "connecting, check terminal for QR code or use /sessions/" + sessionId + "/qr",
 			Status:  string(model.StatusConnecting),
 		})
 		return
@@ -189,18 +189,18 @@ func (h *SessionHandler) Connect(c *gin.Context) {
 // @Tags         sessions
 // @Accept       json
 // @Produce      json
-// @Param        name path      string  true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Success      200    {object}  dto.MessageResponse
 // @Failure      404    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/disconnect [post]
+// @Router       /sessions/{sessionId}/disconnect [post]
 func (h *SessionHandler) Disconnect(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
-	if err := h.sessionService.Disconnect(c.Request.Context(), name); err != nil {
-		if err.Error() == "session "+name+" not found" {
+	if err := h.sessionService.Disconnect(c.Request.Context(), sessionId); err != nil {
+		if err.Error() == "session "+sessionId+" not found" {
 			c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
@@ -217,18 +217,18 @@ func (h *SessionHandler) Disconnect(c *gin.Context) {
 // @Tags         sessions
 // @Accept       json
 // @Produce      json
-// @Param        name path      string  true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Success      200    {object}  dto.MessageResponse
 // @Failure      404    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/logout [post]
+// @Router       /sessions/{sessionId}/logout [post]
 func (h *SessionHandler) Logout(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
-	if err := h.sessionService.Logout(c.Request.Context(), name); err != nil {
-		if err.Error() == "session "+name+" not found" {
+	if err := h.sessionService.Logout(c.Request.Context(), sessionId); err != nil {
+		if err.Error() == "session "+sessionId+" not found" {
 			c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
@@ -245,16 +245,16 @@ func (h *SessionHandler) Logout(c *gin.Context) {
 // @Tags         sessions
 // @Accept       json
 // @Produce      json
-// @Param        name path      string  true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Success      200    {object}  dto.MessageResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/restart [post]
+// @Router       /sessions/{sessionId}/restart [post]
 func (h *SessionHandler) Restart(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
-	session, err := h.sessionService.Restart(c.Request.Context(), name)
+	session, err := h.sessionService.Restart(c.Request.Context(), sessionId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -272,18 +272,18 @@ func (h *SessionHandler) Restart(c *gin.Context) {
 // @Tags         sessions
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string  true   "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        format  query     string  false  "Response format (json or image)"  default(json)
 // @Success      200     {object}  dto.QRResponse
 // @Failure      404     {object}  dto.ErrorResponse
 // @Failure      401     {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/qr [get]
+// @Router       /sessions/{sessionId}/qr [get]
 func (h *SessionHandler) QR(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 	format := c.DefaultQuery("format", "json")
 
-	session, err := h.sessionService.Get(name)
+	session, err := h.sessionService.Get(sessionId)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -322,15 +322,15 @@ func (h *SessionHandler) QR(c *gin.Context) {
 // @Tags         sessions
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string               true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.PairPhoneRequest true  "Phone data"
 // @Success      200    {object}  dto.PairPhoneResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/pair/phone [post]
+// @Router       /sessions/{sessionId}/pair/phone [post]
 func (h *SessionHandler) PairPhone(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.PairPhoneRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -338,7 +338,7 @@ func (h *SessionHandler) PairPhone(c *gin.Context) {
 		return
 	}
 
-	code, err := h.whatsappService.PairPhone(c.Request.Context(), name, req.Phone)
+	code, err := h.whatsappService.PairPhone(c.Request.Context(), sessionId, req.Phone)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return

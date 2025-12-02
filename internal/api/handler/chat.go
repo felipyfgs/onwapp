@@ -23,16 +23,16 @@ func NewChatHandler(whatsappService *service.WhatsAppService) *ChatHandler {
 // @Tags         chat
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                 true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.ArchiveChatRequest true  "Archive data"
 // @Success      200    {object}  dto.ChatActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/chats/{chatId}/archive [patch]
+// @Router       /sessions/{sessionId}/chats/{chatId}/archive [patch]
 func (h *ChatHandler) ArchiveChat(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.ArchiveChatRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -40,7 +40,7 @@ func (h *ChatHandler) ArchiveChat(c *gin.Context) {
 		return
 	}
 
-	if err := h.whatsappService.ArchiveChat(c.Request.Context(), name, req.Phone, req.Archive); err != nil {
+	if err := h.whatsappService.ArchiveChat(c.Request.Context(), sessionId, req.Phone, req.Archive); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -62,16 +62,16 @@ func (h *ChatHandler) ArchiveChat(c *gin.Context) {
 // @Tags         chat
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                   true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.DeleteMessageRequest true  "Delete data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/chats/{chatId}/messages/{messageId} [delete]
+// @Router       /sessions/{sessionId}/chats/{chatId}/messages/{messageId} [delete]
 func (h *ChatHandler) DeleteMessage(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.DeleteMessageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -79,7 +79,7 @@ func (h *ChatHandler) DeleteMessage(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.whatsappService.DeleteMessage(c.Request.Context(), name, req.Phone, req.MessageID, req.ForMe)
+	resp, err := h.whatsappService.DeleteMessage(c.Request.Context(), sessionId, req.Phone, req.MessageID, req.ForMe)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -98,16 +98,16 @@ func (h *ChatHandler) DeleteMessage(c *gin.Context) {
 // @Tags         chat
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                 true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.EditMessageRequest true  "Edit data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/chats/{chatId}/messages/{messageId} [patch]
+// @Router       /sessions/{sessionId}/chats/{chatId}/messages/{messageId} [patch]
 func (h *ChatHandler) EditMessage(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.EditMessageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -115,7 +115,7 @@ func (h *ChatHandler) EditMessage(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.whatsappService.EditMessage(c.Request.Context(), name, req.Phone, req.MessageID, req.NewText)
+	resp, err := h.whatsappService.EditMessage(c.Request.Context(), sessionId, req.Phone, req.MessageID, req.NewText)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -134,15 +134,15 @@ func (h *ChatHandler) EditMessage(c *gin.Context) {
 // @Tags         chat
 // @Accept       json
 // @Produce      json
-// @Param        name path string true "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body body dto.DisappearingRequest true "Timer data"
 // @Success      200 {object} object
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/chats/{chatId}/settings/disappearing [patch]
+// @Router       /sessions/{sessionId}/chats/{chatId}/settings/disappearing [patch]
 func (h *ChatHandler) SetDisappearingTimer(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.DisappearingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -155,7 +155,7 @@ func (h *ChatHandler) SetDisappearingTimer(c *gin.Context) {
 		return
 	}
 
-	if err := h.whatsappService.SetDisappearingTimer(c.Request.Context(), name, req.Phone, timer); err != nil {
+	if err := h.whatsappService.SetDisappearingTimer(c.Request.Context(), sessionId, req.Phone, timer); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -169,7 +169,7 @@ func (h *ChatHandler) SetDisappearingTimer(c *gin.Context) {
 // @Tags         chat
 // @Accept       json
 // @Produce      json
-// @Param        name path string true "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        chatId path string true "Chat JID"
 // @Param        messageId path string true "Message ID"
 // @Param        body body dto.RequestUnavailableMessageRequest false "Optional sender JID for group messages"
@@ -177,16 +177,16 @@ func (h *ChatHandler) SetDisappearingTimer(c *gin.Context) {
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/chats/{chatId}/messages/{messageId}/request [post]
+// @Router       /sessions/{sessionId}/chats/{chatId}/messages/{messageId}/request [post]
 func (h *ChatHandler) RequestUnavailableMessage(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 	chatID := c.Param("chatId")
 	messageID := c.Param("messageId")
 
 	var req dto.RequestUnavailableMessageRequest
 	_ = c.ShouldBindJSON(&req)
 
-	resp, err := h.whatsappService.RequestUnavailableMessage(c.Request.Context(), name, chatID, req.SenderJID, messageID)
+	resp, err := h.whatsappService.RequestUnavailableMessage(c.Request.Context(), sessionId, chatID, req.SenderJID, messageID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return

@@ -1,161 +1,6 @@
 basePath: /
 definitions:
-  ArchiveChatRequest:
-    properties:
-      archive:
-        example: true
-        type: boolean
-      phone:
-        example: "5511999999999"
-        type: string
-    required:
-    - phone
-    type: object
-  AvatarResponse:
-    properties:
-      id:
-        example: abc123
-        type: string
-      url:
-        example: https://...
-        type: string
-    type: object
-  BlocklistActionResponse:
-    properties:
-      action:
-        example: block
-        type: string
-      phone:
-        example: "5511999999999"
-        type: string
-    type: object
-  BlocklistRequest:
-    properties:
-      action:
-        description: block or unblock
-        example: block
-        type: string
-      phone:
-        example: "5511999999999"
-        type: string
-    required:
-    - action
-    - phone
-    type: object
-  BlocklistResponse:
-    properties:
-      jids:
-        items:
-          type: string
-        type: array
-    type: object
-  BusinessProfileResponse:
-    properties:
-      profile: {}
-    type: object
-  ButtonDTO:
-    properties:
-      buttonId:
-        example: btn1
-        type: string
-      displayText:
-        example: Click me
-        type: string
-    required:
-    - buttonId
-    - displayText
-    type: object
-  CarouselCardDTO:
-    properties:
-      body:
-        example: Amazing product
-        type: string
-      buttons:
-        items:
-          $ref: '#/definitions/NativeFlowButtonDTO'
-        minItems: 1
-        type: array
-      footer:
-        example: Only $9.99
-        type: string
-      header:
-        $ref: '#/definitions/CarouselCardHeaderDTO'
-    required:
-    - body
-    - buttons
-    - header
-    type: object
-  CarouselCardHeaderDTO:
-    properties:
-      image:
-        example: base64_encoded_image
-        type: string
-      mimetype:
-        example: image/jpeg
-        type: string
-      title:
-        example: Product 1
-        type: string
-      video:
-        example: base64_encoded_video
-        type: string
-    type: object
-  ChatActionResponse:
-    properties:
-      status:
-        example: archived
-        type: string
-    type: object
-  ChatPresenceRequest:
-    properties:
-      media:
-        example: ""
-        type: string
-      phone:
-        example: "5511999999999"
-        type: string
-      state:
-        example: composing
-        type: string
-    required:
-    - phone
-    - state
-    type: object
-  ChatPresenceResponse:
-    properties:
-      state:
-        example: composing
-        type: string
-    type: object
-  CheckPhoneRequest:
-    properties:
-      phones:
-        example:
-        - "5511999999999"
-        - "5511888888888"
-        items:
-          type: string
-        type: array
-    required:
-    - phones
-    type: object
-  CheckPhoneResult:
-    properties:
-      isRegistered:
-        example: true
-        type: boolean
-      jid:
-        example: 5511999999999@s.whatsapp.net
-        type: string
-      phone:
-        example: "5511999999999"
-        type: string
-    type: object
-  CommunityResponse:
-    properties:
-      groups: {}
-    type: object
-  Config:
+  core.Config:
     properties:
       account:
         type: integer
@@ -212,7 +57,255 @@ definitions:
       webhookUrl:
         type: string
     type: object
-  ContactInfoRequest:
+  core.SkipDetails:
+    properties:
+      alreadySynced:
+        type: integer
+      emptyContent:
+        type: integer
+      groups:
+        type: integer
+      lidContacts:
+        type: integer
+      newsletters:
+        type: integer
+      oldMessages:
+        type: integer
+      protocol:
+        type: integer
+      reactions:
+        type: integer
+      statusBroadcast:
+        type: integer
+    type: object
+  core.SyncStats:
+    properties:
+      contactsErrors:
+        type: integer
+      contactsImported:
+        type: integer
+      contactsSkipped:
+        type: integer
+      conversationsUsed:
+        type: integer
+      errors:
+        type: integer
+      messagesErrors:
+        type: integer
+      messagesImported:
+        type: integer
+      messagesSkipped:
+        type: integer
+      skippedDetails:
+        allOf:
+        - $ref: '#/definitions/core.SkipDetails'
+        description: Detailed skip reasons
+    type: object
+  core.SyncStatus:
+    properties:
+      endedAt:
+        type: string
+      error:
+        type: string
+      sessionId:
+        type: string
+      startedAt:
+        type: string
+      stats:
+        $ref: '#/definitions/core.SyncStats'
+      status:
+        description: idle, running, completed, failed
+        type: string
+      type:
+        description: contacts, messages, all
+        type: string
+    type: object
+  dto.ArchiveChatRequest:
+    properties:
+      archive:
+        example: true
+        type: boolean
+      phone:
+        example: "5511999999999"
+        type: string
+    required:
+    - phone
+    type: object
+  dto.AvatarResponse:
+    properties:
+      id:
+        example: abc123
+        type: string
+      url:
+        example: https://...
+        type: string
+    type: object
+  dto.BlocklistActionResponse:
+    properties:
+      action:
+        example: block
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+    type: object
+  dto.BlocklistRequest:
+    properties:
+      action:
+        description: block or unblock
+        example: block
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+    required:
+    - action
+    - phone
+    type: object
+  dto.BlocklistResponse:
+    properties:
+      jids:
+        items:
+          type: string
+        type: array
+    type: object
+  dto.BusinessProfileResponse:
+    properties:
+      profile: {}
+    type: object
+  dto.ButtonDTO:
+    properties:
+      buttonId:
+        example: btn1
+        type: string
+      displayText:
+        example: Click me
+        type: string
+    required:
+    - buttonId
+    - displayText
+    type: object
+  dto.CarouselCardDTO:
+    properties:
+      body:
+        example: Amazing product
+        type: string
+      buttons:
+        items:
+          $ref: '#/definitions/dto.NativeFlowButtonDTO'
+        minItems: 1
+        type: array
+      footer:
+        example: Only $9.99
+        type: string
+      header:
+        $ref: '#/definitions/dto.CarouselCardHeaderDTO'
+    required:
+    - body
+    - buttons
+    - header
+    type: object
+  dto.CarouselCardHeaderDTO:
+    properties:
+      image:
+        example: base64_encoded_image
+        type: string
+      mimetype:
+        example: image/jpeg
+        type: string
+      title:
+        example: Product 1
+        type: string
+      video:
+        example: base64_encoded_video
+        type: string
+    type: object
+  dto.ChatActionResponse:
+    properties:
+      status:
+        example: archived
+        type: string
+    type: object
+  dto.ChatPresenceRequest:
+    properties:
+      media:
+        example: ""
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+      state:
+        example: composing
+        type: string
+    required:
+    - phone
+    - state
+    type: object
+  dto.ChatPresenceResponse:
+    properties:
+      state:
+        example: composing
+        type: string
+    type: object
+  dto.ChatResponse:
+    properties:
+      conversationTimestamp:
+        example: 1699999999
+        type: integer
+      ephemeralExpiration:
+        example: 86400
+        type: integer
+      jid:
+        example: 5511999999999@s.whatsapp.net
+        type: string
+      locked:
+        example: false
+        type: boolean
+      markedAsUnread:
+        example: false
+        type: boolean
+      name:
+        example: John Doe
+        type: string
+      readOnly:
+        example: false
+        type: boolean
+      suspended:
+        example: false
+        type: boolean
+      unreadCount:
+        example: 5
+        type: integer
+    type: object
+  dto.CheckPhoneRequest:
+    properties:
+      phones:
+        example:
+        - "5511999999999"
+        - "5511888888888"
+        items:
+          type: string
+        type: array
+    required:
+    - phones
+    type: object
+  dto.CheckPhoneResult:
+    properties:
+      isRegistered:
+        example: true
+        type: boolean
+      jid:
+        example: 5511999999999@s.whatsapp.net
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+    type: object
+  dto.CommunityResponse:
+    properties:
+      groups: {}
+    type: object
+  dto.ContactInfoRequest:
     properties:
       phones:
         items:
@@ -221,13 +314,13 @@ definitions:
     required:
     - phones
     type: object
-  ContactInfoResponse:
+  dto.ContactInfoResponse:
     properties:
       users:
         additionalProperties: true
         type: object
     type: object
-  CreateGroupRequest:
+  dto.CreateGroupRequest:
     properties:
       name:
         example: My Group
@@ -240,7 +333,7 @@ definitions:
     - name
     - participants
     type: object
-  CreateNewsletterRequest:
+  dto.CreateNewsletterRequest:
     properties:
       description:
         example: Channel description
@@ -254,7 +347,7 @@ definitions:
     required:
     - name
     type: object
-  CreateSessionRequest:
+  dto.CreateSessionRequest:
     properties:
       name:
         example: my-session
@@ -262,7 +355,7 @@ definitions:
     required:
     - name
     type: object
-  DefaultDisappearingRequest:
+  dto.DefaultDisappearingRequest:
     properties:
       timer:
         description: 24h, 7d, 90d, or off
@@ -271,7 +364,7 @@ definitions:
     required:
     - timer
     type: object
-  DeleteMessageRequest:
+  dto.DeleteMessageRequest:
     properties:
       forMe:
         example: false
@@ -286,7 +379,7 @@ definitions:
     - messageId
     - phone
     type: object
-  DisappearingRequest:
+  dto.DisappearingRequest:
     properties:
       phone:
         example: "5511999999999"
@@ -299,7 +392,7 @@ definitions:
     - phone
     - timer
     type: object
-  EditMessageRequest:
+  dto.EditMessageRequest:
     properties:
       messageId:
         example: ABCD1234
@@ -315,47 +408,20 @@ definitions:
     - newText
     - phone
     type: object
-  ErrorResponse:
+  dto.ErrorResponse:
     properties:
       error:
+        example: session not found
         type: string
     type: object
-  EventsResponse:
-    properties:
-      all:
-        items:
-          type: string
-        type: array
-      categories:
-        additionalProperties:
-          items:
-            type: string
-          type: array
-        type: object
-    type: object
-  GetWebhookResponse:
-    properties:
-      enabled:
-        type: boolean
-      events:
-        items:
-          type: string
-        type: array
-      id:
-        type: string
-      sessionId:
-        type: string
-      url:
-        type: string
-    type: object
-  GroupActionResponse:
+  dto.GroupActionResponse:
     properties:
       data: {}
       groupId:
         example: 123456789@g.us
         type: string
     type: object
-  GroupAnnounceRequest:
+  dto.GroupAnnounceRequest:
     properties:
       announce:
         example: true
@@ -366,7 +432,7 @@ definitions:
     required:
     - groupId
     type: object
-  GroupApprovalRequest:
+  dto.GroupApprovalRequest:
     properties:
       approvalMode:
         example: true
@@ -377,7 +443,7 @@ definitions:
     required:
     - groupId
     type: object
-  GroupInviteLinkResponse:
+  dto.GroupInviteLinkResponse:
     properties:
       groupId:
         example: 123456789@g.us
@@ -386,7 +452,7 @@ definitions:
         example: https://chat.whatsapp.com/...
         type: string
     type: object
-  GroupLockedRequest:
+  dto.GroupLockedRequest:
     properties:
       groupId:
         example: 123456789@g.us
@@ -397,7 +463,7 @@ definitions:
     required:
     - groupId
     type: object
-  GroupMemberAddModeRequest:
+  dto.GroupMemberAddModeRequest:
     properties:
       groupId:
         example: 123456789@g.us
@@ -410,7 +476,7 @@ definitions:
     - groupId
     - mode
     type: object
-  GroupParticipantsRequest:
+  dto.GroupParticipantsRequest:
     properties:
       groupId:
         type: string
@@ -422,7 +488,7 @@ definitions:
     - groupId
     - participants
     type: object
-  GroupPictureRequest:
+  dto.GroupPictureRequest:
     properties:
       groupId:
         example: 123456789@g.us
@@ -434,7 +500,7 @@ definitions:
     - groupId
     - image
     type: object
-  GroupRequestActionBodyRequest:
+  dto.GroupRequestActionBodyRequest:
     properties:
       action:
         description: approve or reject
@@ -448,14 +514,14 @@ definitions:
     - action
     - participants
     type: object
-  GroupRequestParticipantsResponse:
+  dto.GroupRequestParticipantsResponse:
     properties:
       groupId:
         example: 123456789@g.us
         type: string
       participants: {}
     type: object
-  GroupUpdateRequest:
+  dto.GroupUpdateRequest:
     properties:
       groupId:
         example: 123456789@g.us
@@ -467,14 +533,29 @@ definitions:
     - groupId
     - value
     type: object
-  JoinGroupRequest:
+  dto.HistorySyncRequest:
+    properties:
+      count:
+        example: 100
+        type: integer
+    type: object
+  dto.JoinGroupRequest:
     properties:
       inviteLink:
         type: string
     required:
     - inviteLink
     type: object
-  LinkGroupRequest:
+  dto.LIDResponse:
+    properties:
+      lid:
+        example: 123456789:0@lid
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+    type: object
+  dto.LinkGroupRequest:
     properties:
       childGroupId:
         example: 987654321@g.us
@@ -486,7 +567,7 @@ definitions:
     - childGroupId
     - parentGroupId
     type: object
-  ListRowDTO:
+  dto.ListRowDTO:
     properties:
       description:
         example: Description of option 1
@@ -501,11 +582,11 @@ definitions:
     - rowId
     - title
     type: object
-  ListSectionDTO:
+  dto.ListSectionDTO:
     properties:
       rows:
         items:
-          $ref: '#/definitions/ListRowDTO'
+          $ref: '#/definitions/dto.ListRowDTO'
         minItems: 1
         type: array
       title:
@@ -515,7 +596,7 @@ definitions:
     - rows
     - title
     type: object
-  MarkReadRequest:
+  dto.MarkReadRequest:
     properties:
       messageIds:
         items:
@@ -528,7 +609,7 @@ definitions:
     - messageIds
     - phone
     type: object
-  MediaResponse:
+  dto.MediaResponse:
     properties:
       caption:
         example: Check this out!
@@ -579,8 +660,17 @@ definitions:
         example: 1920
         type: integer
     type: object
-  MessageResponse:
+  dto.MessageOnlyResponse:
     properties:
+      message:
+        example: operation completed
+        type: string
+    type: object
+  dto.MessageResponse:
+    properties:
+      id:
+        example: ABCD1234
+        type: string
       message:
         example: operation completed
         type: string
@@ -588,7 +678,7 @@ definitions:
         example: connected
         type: string
     type: object
-  NativeFlowButtonDTO:
+  dto.NativeFlowButtonDTO:
     properties:
       name:
         example: quick_reply
@@ -600,7 +690,7 @@ definitions:
     - name
     - params
     type: object
-  NewsletterActionRequest:
+  dto.NewsletterActionRequest:
     properties:
       newsletterJid:
         example: 123456789@newsletter
@@ -608,7 +698,15 @@ definitions:
     required:
     - newsletterJid
     type: object
-  NewsletterMuteRequest:
+  dto.NewsletterLiveResponse:
+    properties:
+      duration:
+        example: 24h0m0s
+        type: string
+    type: object
+  dto.NewsletterMarkViewedRequest:
+    type: object
+  dto.NewsletterMuteRequest:
     properties:
       mute:
         example: true
@@ -619,7 +717,7 @@ definitions:
     required:
     - newsletterJid
     type: object
-  NewsletterReactionRequest:
+  dto.NewsletterReactionRequest:
     properties:
       messageId:
         example: ABCD1234
@@ -638,11 +736,11 @@ definitions:
     - reaction
     - serverId
     type: object
-  NewsletterResponse:
+  dto.NewsletterResponse:
     properties:
       data: {}
     type: object
-  PairPhoneRequest:
+  dto.PairPhoneRequest:
     properties:
       phone:
         example: "5511999999999"
@@ -650,33 +748,44 @@ definitions:
     required:
     - phone
     type: object
-  PairPhoneResponse:
+  dto.PairPhoneResponse:
     properties:
       code:
         example: ABCD-EFGH
         type: string
     type: object
-  PresenceResponse:
+  dto.PastParticipantResponse:
+    properties:
+      leaveReason:
+        example: LEFT
+        type: string
+      leaveTimestamp:
+        type: string
+      userJid:
+        example: 5511999999999@s.whatsapp.net
+        type: string
+    type: object
+  dto.PresenceResponse:
     properties:
       status:
         example: available
         type: string
     type: object
-  PrivacySettingsResponse:
+  dto.PrivacySettingsResponse:
     properties:
       settings: {}
     type: object
-  ProfileInfoResponse:
+  dto.ProfileInfoResponse:
     properties:
       profile: {}
     type: object
-  QRLinkResponse:
+  dto.QRLinkResponse:
     properties:
       link:
         example: https://wa.me/qr/...
         type: string
     type: object
-  QRResponse:
+  dto.QRResponse:
     properties:
       qr:
         example: data:image/png;base64,...
@@ -685,7 +794,7 @@ definitions:
         example: connecting
         type: string
     type: object
-  RejectCallRequest:
+  dto.RejectCallRequest:
     properties:
       callFrom:
         example: "5511999999999"
@@ -697,7 +806,13 @@ definitions:
     - callFrom
     - callId
     type: object
-  SendAudioRequest:
+  dto.RequestUnavailableMessageRequest:
+    properties:
+      senderJid:
+        example: 5511999999999@s.whatsapp.net
+        type: string
+    type: object
+  dto.SendAudioRequest:
     properties:
       audio:
         example: base64_encoded_audio
@@ -715,11 +830,11 @@ definitions:
     - audio
     - phone
     type: object
-  SendButtonsRequest:
+  dto.SendButtonsRequest:
     properties:
       buttons:
         items:
-          $ref: '#/definitions/ButtonDTO'
+          $ref: '#/definitions/dto.ButtonDTO'
         maxItems: 3
         minItems: 1
         type: array
@@ -740,14 +855,14 @@ definitions:
     - contentText
     - phone
     type: object
-  SendCarouselRequest:
+  dto.SendCarouselRequest:
     properties:
       body:
         example: Browse our catalog
         type: string
       cards:
         items:
-          $ref: '#/definitions/CarouselCardDTO'
+          $ref: '#/definitions/dto.CarouselCardDTO'
         minItems: 1
         type: array
       footer:
@@ -763,7 +878,7 @@ definitions:
     - cards
     - phone
     type: object
-  SendContactRequest:
+  dto.SendContactRequest:
     properties:
       contactName:
         example: John Doe
@@ -779,7 +894,7 @@ definitions:
     - contactPhone
     - phone
     type: object
-  SendDocumentRequest:
+  dto.SendDocumentRequest:
     properties:
       document:
         example: base64_encoded_document
@@ -798,7 +913,7 @@ definitions:
     - filename
     - phone
     type: object
-  SendGroupMessageRequest:
+  dto.SendGroupMessageRequest:
     properties:
       groupId:
         example: 123456789@g.us
@@ -810,7 +925,7 @@ definitions:
     - groupId
     - text
     type: object
-  SendImageRequest:
+  dto.SendImageRequest:
     properties:
       caption:
         example: Image caption
@@ -828,14 +943,14 @@ definitions:
     - image
     - phone
     type: object
-  SendInteractiveRequest:
+  dto.SendInteractiveRequest:
     properties:
       body:
         example: Message body text
         type: string
       buttons:
         items:
-          $ref: '#/definitions/NativeFlowButtonDTO'
+          $ref: '#/definitions/dto.NativeFlowButtonDTO'
         minItems: 1
         type: array
       footer:
@@ -852,7 +967,7 @@ definitions:
     - buttons
     - phone
     type: object
-  SendListRequest:
+  dto.SendListRequest:
     properties:
       buttonText:
         example: Open Menu
@@ -868,7 +983,7 @@ definitions:
         type: string
       sections:
         items:
-          $ref: '#/definitions/ListSectionDTO'
+          $ref: '#/definitions/dto.ListSectionDTO'
         minItems: 1
         type: array
       title:
@@ -881,7 +996,7 @@ definitions:
     - sections
     - title
     type: object
-  SendLocationRequest:
+  dto.SendLocationRequest:
     properties:
       address:
         example: Street Address
@@ -903,7 +1018,7 @@ definitions:
     - longitude
     - phone
     type: object
-  SendPollRequest:
+  dto.SendPollRequest:
     properties:
       name:
         example: What's your favorite color?
@@ -927,7 +1042,7 @@ definitions:
     - options
     - phone
     type: object
-  SendPollVoteRequest:
+  dto.SendPollVoteRequest:
     properties:
       phone:
         example: "5511999999999"
@@ -946,7 +1061,7 @@ definitions:
     - pollMessageId
     - selectedOptions
     type: object
-  SendReactionRequest:
+  dto.SendReactionRequest:
     properties:
       emoji:
         example: "\U0001F44D"
@@ -962,7 +1077,7 @@ definitions:
     - messageId
     - phone
     type: object
-  SendResponse:
+  dto.SendResponse:
     properties:
       messageId:
         example: ABCD1234
@@ -971,7 +1086,7 @@ definitions:
         example: 1699999999
         type: integer
     type: object
-  SendStatusRequest:
+  dto.SendStatusRequest:
     properties:
       caption:
         example: Status caption
@@ -989,7 +1104,7 @@ definitions:
         example: base64_encoded_video
         type: string
     type: object
-  SendStickerRequest:
+  dto.SendStickerRequest:
     properties:
       mimetype:
         example: image/webp
@@ -1004,11 +1119,11 @@ definitions:
     - phone
     - sticker
     type: object
-  SendTemplateRequest:
+  dto.SendTemplateRequest:
     properties:
       buttons:
         items:
-          $ref: '#/definitions/TemplateButtonDTO'
+          $ref: '#/definitions/dto.TemplateButtonDTO'
         minItems: 1
         type: array
       content:
@@ -1043,7 +1158,7 @@ definitions:
     - content
     - phone
     type: object
-  SendTextRequest:
+  dto.SendTextRequest:
     properties:
       phone:
         example: "5511999999999"
@@ -1055,7 +1170,7 @@ definitions:
     - phone
     - text
     type: object
-  SendVideoRequest:
+  dto.SendVideoRequest:
     properties:
       caption:
         example: Video caption
@@ -1073,7 +1188,7 @@ definitions:
     - phone
     - video
     type: object
-  SessionResponse:
+  dto.SessionResponse:
     properties:
       createdAt:
         example: "2025-11-29T14:18:15.324706Z"
@@ -1097,7 +1212,195 @@ definitions:
         example: "2025-11-29T14:18:15.324706Z"
         type: string
     type: object
-  SetConfigRequest:
+  dto.SetNameResponse:
+    properties:
+      name:
+        example: John Doe
+        type: string
+    type: object
+  dto.SetPictureResponse:
+    properties:
+      pictureId:
+        example: abc123
+        type: string
+    type: object
+  dto.SetPresenceRequest:
+    properties:
+      available:
+        example: true
+        type: boolean
+    type: object
+  dto.SetPrivacyRequest:
+    properties:
+      setting:
+        description: last_seen, online, profile, status, read_receipts, group_add,
+          call_add
+        example: last_seen
+        type: string
+      value:
+        description: all, contacts, contact_blacklist, match_last_seen, known, none
+        example: contacts
+        type: string
+    required:
+    - setting
+    - value
+    type: object
+  dto.SetProfilePictureRequest:
+    properties:
+      image:
+        example: base64_encoded_image
+        type: string
+    required:
+    - image
+    type: object
+  dto.SetPushNameRequest:
+    properties:
+      name:
+        example: John Doe
+        type: string
+    required:
+    - name
+    type: object
+  dto.SetStatusRequest:
+    properties:
+      status:
+        example: Hey there! I'm using ZPWoot
+        type: string
+    required:
+    - status
+    type: object
+  dto.SetStatusResponse:
+    properties:
+      status:
+        example: My new status
+        type: string
+    type: object
+  dto.StatusPrivacyResponse:
+    properties:
+      privacy: {}
+    type: object
+  dto.StickerResponse:
+    properties:
+      directPath:
+        type: string
+      fileSize:
+        example: 12345
+        type: integer
+      height:
+        example: 512
+        type: integer
+      isAvatar:
+        example: false
+        type: boolean
+      isLottie:
+        example: false
+        type: boolean
+      lastUsedAt:
+        type: string
+      mimeType:
+        example: image/webp
+        type: string
+      weight:
+        example: 1.5
+        type: number
+      width:
+        example: 512
+        type: integer
+    type: object
+  dto.SubscribePresenceRequest:
+    properties:
+      phone:
+        example: "5511999999999"
+        type: string
+    required:
+    - phone
+    type: object
+  dto.SyncProgressResponse:
+    properties:
+      completedAt:
+        type: string
+      errors:
+        example: 0
+        type: integer
+      processedChats:
+        example: 35
+        type: integer
+      processedChunks:
+        example: 7
+        type: integer
+      processedMessages:
+        example: 750
+        type: integer
+      progress:
+        example: 75
+        type: integer
+      startedAt:
+        type: string
+      status:
+        example: in_progress
+        type: string
+      syncType:
+        example: INITIAL_BOOTSTRAP
+        type: string
+      totalChats:
+        example: 50
+        type: integer
+      totalChunks:
+        example: 10
+        type: integer
+      totalMessages:
+        example: 1000
+        type: integer
+    type: object
+  dto.TemplateButtonDTO:
+    properties:
+      callButton:
+        $ref: '#/definitions/dto.TemplateCallButtonDTO'
+      index:
+        example: 0
+        type: integer
+      quickReply:
+        $ref: '#/definitions/dto.TemplateQuickReplyDTO'
+      urlButton:
+        $ref: '#/definitions/dto.TemplateURLButtonDTO'
+    type: object
+  dto.TemplateCallButtonDTO:
+    properties:
+      displayText:
+        example: Call Us
+        type: string
+      phoneNumber:
+        example: "+1234567890"
+        type: string
+    required:
+    - displayText
+    - phoneNumber
+    type: object
+  dto.TemplateQuickReplyDTO:
+    properties:
+      displayText:
+        example: Option 1
+        type: string
+      id:
+        example: opt1
+        type: string
+    required:
+    - displayText
+    - id
+    type: object
+  dto.TemplateURLButtonDTO:
+    properties:
+      displayText:
+        example: Visit Site
+        type: string
+      url:
+        example: https://example.com
+        type: string
+    required:
+    - displayText
+    - url
+    type: object
+  handler.SetConfigRequest:
     properties:
       account:
         type: integer
@@ -1153,70 +1456,45 @@ definitions:
       url:
         type: string
     type: object
-  SetNameResponse:
+  webhook.ErrorResponse:
     properties:
-      name:
-        example: John Doe
+      error:
         type: string
     type: object
-  SetPictureResponse:
+  webhook.EventsResponse:
     properties:
-      pictureId:
-        example: abc123
-        type: string
+      all:
+        items:
+          type: string
+        type: array
+      categories:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+        type: object
     type: object
-  SetPresenceRequest:
+  webhook.GetWebhookResponse:
     properties:
-      available:
-        example: true
+      enabled:
         type: boolean
+      events:
+        items:
+          type: string
+        type: array
+      id:
+        type: string
+      sessionId:
+        type: string
+      url:
+        type: string
     type: object
-  SetPrivacyRequest:
+  webhook.MessageResponse:
     properties:
-      setting:
-        description: last_seen, online, profile, status, read_receipts, group_add,
-          call_add
-        example: last_seen
-        type: string
-      value:
-        description: all, contacts, contact_blacklist, match_last_seen, known, none
-        example: contacts
-        type: string
-    required:
-    - setting
-    - value
-    type: object
-  SetProfilePictureRequest:
-    properties:
-      image:
-        example: base64_encoded_image
-        type: string
-    required:
-    - image
-    type: object
-  SetPushNameRequest:
-    properties:
-      name:
-        example: John Doe
-        type: string
-    required:
-    - name
-    type: object
-  SetStatusRequest:
-    properties:
-      status:
-        example: Hey there! I'm using ZPWoot
-        type: string
-    required:
-    - status
-    type: object
-  SetStatusResponse:
-    properties:
-      status:
-        example: My new status
+      message:
         type: string
     type: object
-  SetWebhookRequest:
+  webhook.SetWebhookRequest:
     properties:
       enabled:
         type: boolean
@@ -1228,129 +1506,6 @@ definitions:
         type: string
       url:
         type: string
-    type: object
-  SkipDetails:
-    properties:
-      alreadySynced:
-        type: integer
-      emptyContent:
-        type: integer
-      groups:
-        type: integer
-      lidContacts:
-        type: integer
-      newsletters:
-        type: integer
-      oldMessages:
-        type: integer
-      protocol:
-        type: integer
-      reactions:
-        type: integer
-      statusBroadcast:
-        type: integer
-    type: object
-  StatusPrivacyResponse:
-    properties:
-      privacy: {}
-    type: object
-  SubscribePresenceRequest:
-    properties:
-      phone:
-        example: "5511999999999"
-        type: string
-    required:
-    - phone
-    type: object
-  SyncStats:
-    properties:
-      contactsErrors:
-        type: integer
-      contactsImported:
-        type: integer
-      contactsSkipped:
-        type: integer
-      conversationsUsed:
-        type: integer
-      errors:
-        type: integer
-      messagesErrors:
-        type: integer
-      messagesImported:
-        type: integer
-      messagesSkipped:
-        type: integer
-      skippedDetails:
-        allOf:
-        - $ref: '#/definitions/SkipDetails'
-        description: Detailed skip reasons
-    type: object
-  SyncStatus:
-    properties:
-      endedAt:
-        type: string
-      error:
-        type: string
-      sessionId:
-        type: string
-      startedAt:
-        type: string
-      stats:
-        $ref: '#/definitions/SyncStats'
-      status:
-        description: idle, running, completed, failed
-        type: string
-      type:
-        description: contacts, messages, all
-        type: string
-    type: object
-  TemplateButtonDTO:
-    properties:
-      callButton:
-        $ref: '#/definitions/TemplateCallButtonDTO'
-      index:
-        example: 0
-        type: integer
-      quickReply:
-        $ref: '#/definitions/TemplateQuickReplyDTO'
-      urlButton:
-        $ref: '#/definitions/TemplateURLButtonDTO'
-    type: object
-  TemplateCallButtonDTO:
-    properties:
-      displayText:
-        example: Call Us
-        type: string
-      phoneNumber:
-        example: "+1234567890"
-        type: string
-    required:
-    - displayText
-    - phoneNumber
-    type: object
-  TemplateQuickReplyDTO:
-    properties:
-      displayText:
-        example: Option 1
-        type: string
-      id:
-        example: opt1
-        type: string
-    required:
-    - displayText
-    - id
-    type: object
-  TemplateURLButtonDTO:
-    properties:
-      displayText:
-        example: Visit Site
-        type: string
-      url:
-        example: https://example.com
-        type: string
-    required:
-    - displayText
-    - url
     type: object
 info:
   contact: {}
@@ -1389,7 +1544,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/EventsResponse'
+            $ref: '#/definitions/webhook.EventsResponse'
       security:
       - ApiKeyAuth: []
       summary: List available webhook events
@@ -1407,12 +1562,12 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/SessionResponse'
+              $ref: '#/definitions/dto.SessionResponse'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Fetch all sessions
@@ -1428,26 +1583,26 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/CreateSessionRequest'
+          $ref: '#/definitions/dto.CreateSessionRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/SessionResponse'
+            $ref: '#/definitions/dto.SessionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create a new session
@@ -1477,41 +1632,11 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/MediaResponse'
+              $ref: '#/definitions/dto.MediaResponse'
             type: array
       security:
       - ApiKeyAuth: []
       summary: List all media for session
-      tags:
-      - media
-  /sessions/{id}/media/{msgId}:
-    get:
-      description: Get media information for a specific message
-      parameters:
-      - description: Session ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Message ID
-        in: path
-        name: msgId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/MediaResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Get media by message ID
       tags:
       - media
   /sessions/{id}/media/pending:
@@ -1534,7 +1659,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/MediaResponse'
+              $ref: '#/definitions/dto.MediaResponse'
             type: array
       security:
       - ApiKeyAuth: []
@@ -1565,351 +1690,12 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Process pending media downloads
       tags:
       - media
-  /sessions/{name}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete an existing WhatsApp session
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/MessageResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Delete a session
-      tags:
-      - sessions
-    get:
-      consumes:
-      - application/json
-      description: Get information about a WhatsApp session
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SessionResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Get session info
-      tags:
-      - sessions
-  /sessions/{name}/calls/reject:
-    post:
-      consumes:
-      - application/json
-      description: Reject an incoming WhatsApp call
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Call data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/RejectCallRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Reject incoming call
-      tags:
-      - call
-  /sessions/{name}/chats/{chatId}/archive:
-    patch:
-      consumes:
-      - application/json
-      description: Archive or unarchive a WhatsApp chat
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Archive data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/ArchiveChatRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/ChatActionResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Archive or unarchive a chat
-      tags:
-      - chat
-  /sessions/{name}/chats/{chatId}/messages/{messageId}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete a message from a chat
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Delete data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/DeleteMessageRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SendResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Delete a message
-      tags:
-      - chat
-    patch:
-      consumes:
-      - application/json
-      description: Edit a previously sent message
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Edit data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/EditMessageRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SendResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Edit a message
-      tags:
-      - chat
-  /sessions/{name}/chats/{chatId}/read:
-    post:
-      consumes:
-      - application/json
-      description: Mark messages as read in a chat
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Messages to mark
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/MarkReadRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Mark messages as read
-      tags:
-      - contact
-  /sessions/{name}/chats/{chatId}/settings/disappearing:
-    patch:
-      consumes:
-      - application/json
-      description: Set the disappearing messages timer for a chat
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Timer data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/DisappearingRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Set disappearing messages timer
-      tags:
-      - chat
-  /sessions/{name}/chats/{chatId}/typing:
-    post:
-      consumes:
-      - application/json
-      description: Set typing or recording presence in a chat
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Chat presence data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/ChatPresenceRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/ChatPresenceResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Set chat presence (typing/recording)
-      tags:
-      - contact
   /sessions/{name}/chatwoot:
     delete:
       description: Remove Chatwoot integration configuration for a session
@@ -1952,7 +1738,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/Config'
+            $ref: '#/definitions/core.Config'
         "404":
           description: Not Found
           schema:
@@ -2002,14 +1788,14 @@ paths:
         name: config
         required: true
         schema:
-          $ref: '#/definitions/SetConfigRequest'
+          $ref: '#/definitions/handler.SetConfigRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/Config'
+            $ref: '#/definitions/core.Config'
         "400":
           description: Bad Request
           schema:
@@ -2044,7 +1830,7 @@ paths:
         "202":
           description: Accepted
           schema:
-            $ref: '#/definitions/SyncStatus'
+            $ref: '#/definitions/core.SyncStatus'
         "400":
           description: Bad Request
           schema:
@@ -2076,7 +1862,7 @@ paths:
         "202":
           description: Accepted
           schema:
-            $ref: '#/definitions/SyncStatus'
+            $ref: '#/definitions/core.SyncStatus'
         "400":
           description: Bad Request
           schema:
@@ -2111,7 +1897,7 @@ paths:
         "202":
           description: Accepted
           schema:
-            $ref: '#/definitions/SyncStatus'
+            $ref: '#/definitions/core.SyncStatus'
         "400":
           description: Bad Request
           schema:
@@ -2142,7 +1928,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SyncStatus'
+            $ref: '#/definitions/core.SyncStatus'
         "404":
           description: Not Found
           schema:
@@ -2153,13 +1939,571 @@ paths:
       summary: Get sync status
       tags:
       - Chatwoot
-  /sessions/{name}/communities/{communityId}/groups:
-    get:
-      description: Get list of subgroups in a community
+  /sessions/{name}/webhooks:
+    delete:
+      description: Delete the webhook configuration for a session
       parameters:
       - description: Session name
         in: path
         name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/webhook.MessageResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/webhook.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete webhook
+      tags:
+      - webhook
+    get:
+      description: Get the webhook configuration for a session
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/webhook.GetWebhookResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/webhook.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get webhook
+      tags:
+      - webhook
+    post:
+      consumes:
+      - application/json
+      description: Set or update the webhook configuration for a session (one webhook
+        per session)
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Webhook configuration
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/webhook.SetWebhookRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/webhook.GetWebhookResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/webhook.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/webhook.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set webhook
+      tags:
+      - webhook
+    put:
+      consumes:
+      - application/json
+      description: Update an existing webhook configuration for a session
+      parameters:
+      - description: Session name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Webhook configuration
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/webhook.SetWebhookRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/webhook.GetWebhookResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/webhook.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/webhook.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update webhook
+      tags:
+      - webhook
+  /sessions/{sessionId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing WhatsApp session
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a session
+      tags:
+      - sessions
+    get:
+      consumes:
+      - application/json
+      description: Get information about a WhatsApp session
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get session info
+      tags:
+      - sessions
+  /sessions/{sessionId}/calls/reject:
+    post:
+      consumes:
+      - application/json
+      description: Reject an incoming WhatsApp call
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Call data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RejectCallRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Reject incoming call
+      tags:
+      - call
+  /sessions/{sessionId}/chats/{chatId}/archive:
+    patch:
+      consumes:
+      - application/json
+      description: Archive or unarchive a WhatsApp chat
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Archive data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ArchiveChatRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ChatActionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Archive or unarchive a chat
+      tags:
+      - chat
+  /sessions/{sessionId}/chats/{chatId}/messages/{messageId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a message from a chat
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Delete data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.DeleteMessageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a message
+      tags:
+      - chat
+    patch:
+      consumes:
+      - application/json
+      description: Edit a previously sent message
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Edit data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.EditMessageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Edit a message
+      tags:
+      - chat
+  /sessions/{sessionId}/chats/{chatId}/messages/{messageId}/request:
+    post:
+      consumes:
+      - application/json
+      description: Request WhatsApp to resend an unavailable message from phone storage
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Chat JID
+        in: path
+        name: chatId
+        required: true
+        type: string
+      - description: Message ID
+        in: path
+        name: messageId
+        required: true
+        type: string
+      - description: Optional sender JID for group messages
+        in: body
+        name: body
+        schema:
+          $ref: '#/definitions/dto.RequestUnavailableMessageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Request unavailable message
+      tags:
+      - chat
+  /sessions/{sessionId}/chats/{chatId}/presence:
+    post:
+      consumes:
+      - application/json
+      description: Set typing or recording presence in a chat
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Chat JID
+        in: path
+        name: chatId
+        required: true
+        type: string
+      - description: Chat presence data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ChatPresenceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ChatPresenceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set chat presence (typing/recording)
+      tags:
+      - presence
+  /sessions/{sessionId}/chats/{chatId}/read:
+    post:
+      consumes:
+      - application/json
+      description: Mark messages as read in a chat
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Chat JID
+        in: path
+        name: chatId
+        required: true
+        type: string
+      - description: Messages to mark
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.MarkReadRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Mark messages as read
+      tags:
+      - presence
+  /sessions/{sessionId}/chats/{chatId}/settings/disappearing:
+    patch:
+      consumes:
+      - application/json
+      description: Set the disappearing messages timer for a chat
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Timer data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.DisappearingRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set disappearing messages timer
+      tags:
+      - chat
+  /sessions/{sessionId}/chats/{chatId}/typing:
+    post:
+      consumes:
+      - application/json
+      description: Set typing or recording presence in a chat
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Chat presence data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ChatPresenceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ChatPresenceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set chat presence (typing/recording)
+      tags:
+      - contact
+  /sessions/{sessionId}/communities/{communityId}/groups:
+    get:
+      description: Get list of subgroups in a community
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
         required: true
         type: string
       - description: Community ID
@@ -2173,11 +2517,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/CommunityResponse'
+            $ref: '#/definitions/dto.CommunityResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get community subgroups
@@ -2188,9 +2532,9 @@ paths:
       - application/json
       description: Link a group to a community as a subgroup
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Link data
@@ -2198,7 +2542,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/LinkGroupRequest'
+          $ref: '#/definitions/dto.LinkGroupRequest'
       produces:
       - application/json
       responses:
@@ -2209,25 +2553,25 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Link group to community
       tags:
       - community
-  /sessions/{name}/communities/{communityId}/groups/{groupId}:
+  /sessions/{sessionId}/communities/{communityId}/groups/{groupId}:
     delete:
       consumes:
       - application/json
       description: Unlink a group from a community
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Unlink data
@@ -2235,7 +2579,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/LinkGroupRequest'
+          $ref: '#/definitions/dto.LinkGroupRequest'
       produces:
       - application/json
       responses:
@@ -2246,26 +2590,26 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Unlink group from community
       tags:
       - community
-  /sessions/{name}/connect:
+  /sessions/{sessionId}/connect:
     post:
       consumes:
       - application/json
       description: Connect a WhatsApp session. If not authenticated, returns QR code
         endpoint
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       produces:
@@ -2274,29 +2618,29 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MessageResponse'
+            $ref: '#/definitions/dto.MessageResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Connect session
       tags:
       - sessions
-  /sessions/{name}/contacts:
+  /sessions/{sessionId}/contacts:
     get:
       consumes:
       - application/json
       description: Get all contacts from WhatsApp
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       produces:
@@ -2311,25 +2655,25 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get all contacts
       tags:
       - contact
-  /sessions/{name}/contacts/{phone}:
+  /sessions/{sessionId}/contacts/{phone}:
     get:
       consumes:
       - application/json
       description: Get information about WhatsApp contacts
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Phone numbers
@@ -2337,40 +2681,40 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/ContactInfoRequest'
+          $ref: '#/definitions/dto.ContactInfoRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ContactInfoResponse'
+            $ref: '#/definitions/dto.ContactInfoResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get contact information
       tags:
       - contact
-  /sessions/{name}/contacts/{phone}/avatar:
+  /sessions/{sessionId}/contacts/{phone}/avatar:
     get:
       consumes:
       - application/json
       description: Get profile picture URL for a contact
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Phone number
@@ -2384,27 +2728,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/AvatarResponse'
+            $ref: '#/definitions/dto.AvatarResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get contact avatar
       tags:
       - contact
-  /sessions/{name}/contacts/{phone}/business:
+  /sessions/{sessionId}/contacts/{phone}/business:
     get:
       description: Get business profile of a contact
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Phone number
@@ -2418,25 +2762,59 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/BusinessProfileResponse'
+            $ref: '#/definitions/dto.BusinessProfileResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get business profile
       tags:
       - contact
-  /sessions/{name}/contacts/{phone}/presence/subscribe:
+  /sessions/{sessionId}/contacts/{phone}/lid:
+    get:
+      description: Get the Linked ID (LID) for a contact
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Phone number or JID
+        in: path
+        name: phone
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LIDResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get contact LID
+      tags:
+      - contact
+  /sessions/{sessionId}/contacts/{phone}/presence/subscribe:
     post:
       consumes:
       - application/json
       description: Subscribe to receive presence updates from a contact
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Subscribe data
@@ -2444,7 +2822,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SubscribePresenceRequest'
+          $ref: '#/definitions/dto.SubscribePresenceRequest'
       produces:
       - application/json
       responses:
@@ -2455,23 +2833,23 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Subscribe to presence updates
       tags:
       - contact
-  /sessions/{name}/contacts/blocklist:
+  /sessions/{sessionId}/contacts/blocklist:
     get:
       description: Get list of blocked contacts
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       produces:
@@ -2480,11 +2858,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/BlocklistResponse'
+            $ref: '#/definitions/dto.BlocklistResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get blocked contacts
@@ -2495,9 +2873,9 @@ paths:
       - application/json
       description: Block or unblock a contact
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Block action
@@ -2505,36 +2883,36 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/BlocklistRequest'
+          $ref: '#/definitions/dto.BlocklistRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/BlocklistActionResponse'
+            $ref: '#/definitions/dto.BlocklistActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Block or unblock contact
       tags:
       - contact
-  /sessions/{name}/contacts/check:
+  /sessions/{sessionId}/contacts/check:
     post:
       consumes:
       - application/json
       description: Check if phone numbers are registered on WhatsApp
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Phone numbers
@@ -2542,7 +2920,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/CheckPhoneRequest'
+          $ref: '#/definitions/dto.CheckPhoneRequest'
       produces:
       - application/json
       responses:
@@ -2550,34 +2928,34 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/CheckPhoneResult'
+              $ref: '#/definitions/dto.CheckPhoneResult'
             type: array
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Check if phones are registered on WhatsApp
       tags:
       - contact
-  /sessions/{name}/disconnect:
+  /sessions/{sessionId}/disconnect:
     post:
       consumes:
       - application/json
       description: Disconnect from WhatsApp but keep credentials (can auto-reconnect)
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       produces:
@@ -2586,33 +2964,33 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MessageResponse'
+            $ref: '#/definitions/dto.MessageResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Disconnect session
       tags:
       - sessions
-  /sessions/{name}/groups:
+  /sessions/{sessionId}/groups:
     get:
       consumes:
       - application/json
       description: Get list of groups the session is part of
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       produces:
@@ -2621,15 +2999,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/dto.GroupActionResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get joined groups
@@ -2640,9 +3018,9 @@ paths:
       - application/json
       description: Create a new WhatsApp group with participants
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Group data
@@ -2650,40 +3028,40 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/CreateGroupRequest'
+          $ref: '#/definitions/dto.CreateGroupRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create a new group
       tags:
       - groups
-  /sessions/{name}/groups/{groupId}:
+  /sessions/{sessionId}/groups/{groupId}:
     get:
       consumes:
       - application/json
       description: Get information about a WhatsApp group
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Group ID
@@ -2697,33 +3075,33 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get group info
       tags:
       - groups
-  /sessions/{name}/groups/{groupId}/description:
+  /sessions/{sessionId}/groups/{groupId}/description:
     patch:
       consumes:
       - application/json
       description: Update the description/topic of a WhatsApp group
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: New description
@@ -2731,40 +3109,40 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupUpdateRequest'
+          $ref: '#/definitions/dto.GroupUpdateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update group description
       tags:
       - groups
-  /sessions/{name}/groups/{groupId}/invite:
+  /sessions/{sessionId}/groups/{groupId}/invite:
     get:
       consumes:
       - application/json
       description: Get the invite link for a WhatsApp group
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Group ID
@@ -2782,29 +3160,29 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupInviteLinkResponse'
+            $ref: '#/definitions/dto.GroupInviteLinkResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get group invite link
       tags:
       - groups
-  /sessions/{name}/groups/{groupId}/membership:
+  /sessions/{sessionId}/groups/{groupId}/membership:
     delete:
       consumes:
       - application/json
       description: Leave a WhatsApp group
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Group ID
@@ -2818,29 +3196,29 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/dto.GroupActionResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Leave group
       tags:
       - groups
-  /sessions/{name}/groups/{groupId}/messages:
+  /sessions/{sessionId}/groups/{groupId}/messages:
     post:
       consumes:
       - application/json
       description: Send a text message to a WhatsApp group
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Message data
@@ -2848,40 +3226,40 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendGroupMessageRequest'
+          $ref: '#/definitions/dto.SendGroupMessageRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send message to group
       tags:
       - groups
-  /sessions/{name}/groups/{groupId}/name:
+  /sessions/{sessionId}/groups/{groupId}/name:
     patch:
       consumes:
       - application/json
       description: Update the name of a WhatsApp group
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: New name
@@ -2889,40 +3267,40 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupUpdateRequest'
+          $ref: '#/definitions/dto.GroupUpdateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Update group name
       tags:
       - groups
-  /sessions/{name}/groups/{groupId}/participants:
+  /sessions/{sessionId}/groups/{groupId}/participants:
     delete:
       consumes:
       - application/json
       description: Remove participants from a WhatsApp group
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Participants
@@ -2930,26 +3308,26 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupParticipantsRequest'
+          $ref: '#/definitions/dto.GroupParticipantsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Remove participants from group
@@ -2960,9 +3338,9 @@ paths:
       - application/json
       description: Add participants to a WhatsApp group
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Participants
@@ -2970,40 +3348,40 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupParticipantsRequest'
+          $ref: '#/definitions/dto.GroupParticipantsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Add participants to group
       tags:
       - groups
-  /sessions/{name}/groups/{groupId}/participants/demote:
+  /sessions/{sessionId}/groups/{groupId}/participants/demote:
     patch:
       consumes:
       - application/json
       description: Demote participants from admin in a WhatsApp group
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Participants
@@ -3011,40 +3389,40 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupParticipantsRequest'
+          $ref: '#/definitions/dto.GroupParticipantsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Demote participants from admin
       tags:
       - groups
-  /sessions/{name}/groups/{groupId}/participants/promote:
+  /sessions/{sessionId}/groups/{groupId}/participants/promote:
     patch:
       consumes:
       - application/json
       description: Promote participants to admin in a WhatsApp group
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Participants
@@ -3052,75 +3430,38 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupParticipantsRequest'
+          $ref: '#/definitions/dto.GroupParticipantsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Promote participants to admin
       tags:
       - groups
-  /sessions/{name}/groups/{groupId}/picture:
-    put:
-      consumes:
-      - application/json
-      description: Set the group profile picture
+  /sessions/{sessionId}/groups/{groupId}/picture:
+    delete:
+      description: Remove the group profile picture
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
-        required: true
-        type: string
-      - description: Picture data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/GroupPictureRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/SetPictureResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Set group picture
-      tags:
-      - groups
-  /sessions/{name}/groups/{groupId}/requests:
-    get:
-      description: Get list of pending join requests for a group
-      parameters:
-      - description: Session name
-        in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Group ID
@@ -3134,11 +3475,81 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupRequestParticipantsResponse'
+            $ref: '#/definitions/dto.MessageOnlyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete group picture
+      tags:
+      - groups
+    put:
+      consumes:
+      - application/json
+      description: Set the group profile picture
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Picture data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GroupPictureRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SetPictureResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set group picture
+      tags:
+      - groups
+  /sessions/{sessionId}/groups/{groupId}/requests:
+    get:
+      description: Get list of pending join requests for a group
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: groupId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GroupRequestParticipantsResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get pending join requests
@@ -3149,9 +3560,9 @@ paths:
       - application/json
       description: Approve or reject pending join requests
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Group ID
@@ -3164,36 +3575,36 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupRequestActionBodyRequest'
+          $ref: '#/definitions/dto.GroupRequestActionBodyRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Approve or reject join requests
       tags:
       - groups
-  /sessions/{name}/groups/{groupId}/settings/announce:
+  /sessions/{sessionId}/groups/{groupId}/settings/announce:
     patch:
       consumes:
       - application/json
       description: Set whether only admins can send messages
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Announce setting
@@ -3201,7 +3612,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupAnnounceRequest'
+          $ref: '#/definitions/dto.GroupAnnounceRequest'
       produces:
       - application/json
       responses:
@@ -3212,25 +3623,25 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Set group announce mode
       tags:
       - groups
-  /sessions/{name}/groups/{groupId}/settings/approval:
+  /sessions/{sessionId}/groups/{groupId}/settings/approval:
     patch:
       consumes:
       - application/json
       description: Set whether join requests need admin approval
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Approval setting
@@ -3238,7 +3649,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupApprovalRequest'
+          $ref: '#/definitions/dto.GroupApprovalRequest'
       produces:
       - application/json
       responses:
@@ -3249,25 +3660,25 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Set group join approval mode
       tags:
       - groups
-  /sessions/{name}/groups/{groupId}/settings/locked:
+  /sessions/{sessionId}/groups/{groupId}/settings/locked:
     patch:
       consumes:
       - application/json
       description: Set whether only admins can edit group info
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Locked setting
@@ -3275,7 +3686,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupLockedRequest'
+          $ref: '#/definitions/dto.GroupLockedRequest'
       produces:
       - application/json
       responses:
@@ -3286,25 +3697,25 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Set group locked mode
       tags:
       - groups
-  /sessions/{name}/groups/{groupId}/settings/memberadd:
+  /sessions/{sessionId}/groups/{groupId}/settings/memberadd:
     patch:
       consumes:
       - application/json
       description: Set whether only admins or all members can add participants
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Member add mode
@@ -3312,7 +3723,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupMemberAddModeRequest'
+          $ref: '#/definitions/dto.GroupMemberAddModeRequest'
       produces:
       - application/json
       responses:
@@ -3323,23 +3734,23 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Set who can add members
       tags:
       - groups
-  /sessions/{name}/groups/info/link:
+  /sessions/{sessionId}/groups/info/link:
     get:
       description: Get group information using an invite link
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Invite link or code
@@ -3353,29 +3764,29 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get group info from invite link
       tags:
       - groups
-  /sessions/{name}/groups/join:
+  /sessions/{sessionId}/groups/join:
     post:
       consumes:
       - application/json
       description: Join a WhatsApp group using an invite link
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Invite link
@@ -3383,41 +3794,43 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/JoinGroupRequest'
+          $ref: '#/definitions/dto.JoinGroupRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Join group via link
       tags:
       - groups
-  /sessions/{name}/logout:
-    post:
-      consumes:
-      - application/json
-      description: Logout from WhatsApp and clear credentials (requires new QR scan
-        to reconnect)
+  /sessions/{sessionId}/history/chats/{chatId}:
+    get:
+      description: Get detailed chat information from history sync data
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
+        required: true
+        type: string
+      - description: Chat JID
+        in: path
+        name: chatId
         required: true
         type: string
       produces:
@@ -3426,33 +3839,269 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MessageResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ChatResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get chat info
+      tags:
+      - history
+  /sessions/{sessionId}/history/chats/unread:
+    get:
+      description: Get list of chats with unread messages from history sync data
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.ChatResponse'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get unread chats
+      tags:
+      - history
+  /sessions/{sessionId}/history/groups/{groupId}/participants/past:
+    get:
+      description: Get past participants of a group from history sync data
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Group JID
+        in: path
+        name: groupId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.PastParticipantResponse'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get group past participants
+      tags:
+      - history
+  /sessions/{sessionId}/history/progress:
+    get:
+      description: Get the current progress of history sync operations
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.SyncProgressResponse'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get history sync progress
+      tags:
+      - history
+  /sessions/{sessionId}/history/stickers:
+    get:
+      description: Get most used stickers from history sync data
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - default: 20
+        description: Number of stickers to return
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.StickerResponse'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get top stickers
+      tags:
+      - history
+  /sessions/{sessionId}/history/sync:
+    post:
+      consumes:
+      - application/json
+      description: Request WhatsApp to send history sync data from the phone
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Sync options
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/dto.HistorySyncRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Request history sync
+      tags:
+      - history
+  /sessions/{sessionId}/logout:
+    post:
+      consumes:
+      - application/json
+      description: Logout from WhatsApp and clear credentials (requires new QR scan
+        to reconnect)
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MessageResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Logout session
       tags:
       - sessions
-  /sessions/{name}/messages/audio:
+  /sessions/{sessionId}/media/{messageId}:
+    get:
+      description: Get media information for a specific message
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Message ID
+        in: path
+        name: messageId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MediaResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get media by message ID
+      tags:
+      - media
+  /sessions/{sessionId}/messages/audio:
     post:
       consumes:
       - application/json
       description: Send an audio to a phone number (base64 encoded)
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Audio data
@@ -3460,40 +4109,40 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendAudioRequest'
+          $ref: '#/definitions/dto.SendAudioRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send audio message
       tags:
       - messages
-  /sessions/{name}/messages/buttons:
+  /sessions/{sessionId}/messages/buttons:
     post:
       consumes:
       - application/json
       description: Send a message with buttons (max 3 buttons)
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Buttons data
@@ -3501,41 +4150,41 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendButtonsRequest'
+          $ref: '#/definitions/dto.SendButtonsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send buttons message
       tags:
       - messages
-  /sessions/{name}/messages/carousel:
+  /sessions/{sessionId}/messages/carousel:
     post:
       consumes:
       - application/json
       description: Send an interactive carousel message with multiple cards, each
         with image/video and buttons
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Carousel data
@@ -3543,40 +4192,40 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendCarouselRequest'
+          $ref: '#/definitions/dto.SendCarouselRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send carousel message
       tags:
       - messages
-  /sessions/{name}/messages/contact:
+  /sessions/{sessionId}/messages/contact:
     post:
       consumes:
       - application/json
       description: Send a contact card to a phone number
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Contact data
@@ -3584,40 +4233,40 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendContactRequest'
+          $ref: '#/definitions/dto.SendContactRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send contact message
       tags:
       - messages
-  /sessions/{name}/messages/document:
+  /sessions/{sessionId}/messages/document:
     post:
       consumes:
       - application/json
       description: Send a document to a phone number (base64 encoded)
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Document data
@@ -3625,40 +4274,40 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendDocumentRequest'
+          $ref: '#/definitions/dto.SendDocumentRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send document message
       tags:
       - messages
-  /sessions/{name}/messages/image:
+  /sessions/{sessionId}/messages/image:
     post:
       consumes:
       - application/json
       description: Send an image to a phone number (base64 encoded)
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Image data
@@ -3666,41 +4315,41 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendImageRequest'
+          $ref: '#/definitions/dto.SendImageRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send image message
       tags:
       - messages
-  /sessions/{name}/messages/interactive:
+  /sessions/{sessionId}/messages/interactive:
     post:
       consumes:
       - application/json
       description: Send an interactive message with buttons (quick_reply, cta_url,
         cta_call, cta_copy)
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Interactive data
@@ -3708,40 +4357,40 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendInteractiveRequest'
+          $ref: '#/definitions/dto.SendInteractiveRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send interactive message with native flow buttons
       tags:
       - messages
-  /sessions/{name}/messages/list:
+  /sessions/{sessionId}/messages/list:
     post:
       consumes:
       - application/json
       description: Send a message with a selectable list
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: List data
@@ -3749,40 +4398,40 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendListRequest'
+          $ref: '#/definitions/dto.SendListRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send list message
       tags:
       - messages
-  /sessions/{name}/messages/location:
+  /sessions/{sessionId}/messages/location:
     post:
       consumes:
       - application/json
       description: Send a location to a phone number
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Location data
@@ -3790,40 +4439,40 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendLocationRequest'
+          $ref: '#/definitions/dto.SendLocationRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send location message
       tags:
       - messages
-  /sessions/{name}/messages/poll:
+  /sessions/{sessionId}/messages/poll:
     post:
       consumes:
       - application/json
       description: Send a poll to a phone number
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Poll data
@@ -3831,40 +4480,40 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendPollRequest'
+          $ref: '#/definitions/dto.SendPollRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send poll message
       tags:
       - messages
-  /sessions/{name}/messages/poll/vote:
+  /sessions/{sessionId}/messages/poll/vote:
     post:
       consumes:
       - application/json
       description: Vote for options in an existing poll
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Vote data
@@ -3872,40 +4521,40 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendPollVoteRequest'
+          $ref: '#/definitions/dto.SendPollVoteRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Vote in a poll
       tags:
       - messages
-  /sessions/{name}/messages/reaction:
+  /sessions/{sessionId}/messages/reaction:
     post:
       consumes:
       - application/json
       description: Send a reaction emoji to a message
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Reaction data
@@ -3913,40 +4562,40 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendReactionRequest'
+          $ref: '#/definitions/dto.SendReactionRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send reaction to message
       tags:
       - messages
-  /sessions/{name}/messages/sticker:
+  /sessions/{sessionId}/messages/sticker:
     post:
       consumes:
       - application/json
       description: Send a sticker to a phone number (base64 encoded webp)
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Sticker data
@@ -3954,41 +4603,41 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendStickerRequest'
+          $ref: '#/definitions/dto.SendStickerRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send sticker message
       tags:
       - messages
-  /sessions/{name}/messages/template:
+  /sessions/{sessionId}/messages/template:
     post:
       consumes:
       - application/json
       description: Send a message with template buttons (URL, Call, QuickReply). Works
         on Web and Mobile.
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Template data
@@ -3996,40 +4645,40 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendTemplateRequest'
+          $ref: '#/definitions/dto.SendTemplateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send template message
       tags:
       - messages
-  /sessions/{name}/messages/text:
+  /sessions/{sessionId}/messages/text:
     post:
       consumes:
       - application/json
       description: Send a text message to a phone number
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Message data
@@ -4037,40 +4686,40 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendTextRequest'
+          $ref: '#/definitions/dto.SendTextRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send text message
       tags:
       - messages
-  /sessions/{name}/messages/video:
+  /sessions/{sessionId}/messages/video:
     post:
       consumes:
       - application/json
       description: Send a video to a phone number (base64 encoded)
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Video data
@@ -4078,38 +4727,38 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendVideoRequest'
+          $ref: '#/definitions/dto.SendVideoRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Send video message
       tags:
       - messages
-  /sessions/{name}/newsletters:
+  /sessions/{sessionId}/newsletters:
     get:
       description: Get list of newsletters the session is subscribed to
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       produces:
@@ -4124,7 +4773,7 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: List subscribed newsletters
@@ -4135,9 +4784,9 @@ paths:
       - application/json
       description: Create a new WhatsApp newsletter/channel
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Newsletter data
@@ -4145,34 +4794,34 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/CreateNewsletterRequest'
+          $ref: '#/definitions/dto.CreateNewsletterRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/NewsletterResponse'
+            $ref: '#/definitions/dto.NewsletterResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Create a newsletter/channel
       tags:
       - newsletter
-  /sessions/{name}/newsletters/{newsletterId}:
+  /sessions/{sessionId}/newsletters/{newsletterId}:
     get:
       description: Get information about a WhatsApp newsletter
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Newsletter JID
@@ -4186,25 +4835,25 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/NewsletterResponse'
+            $ref: '#/definitions/dto.NewsletterResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get newsletter info
       tags:
       - newsletter
-  /sessions/{name}/newsletters/{newsletterId}/follow:
+  /sessions/{sessionId}/newsletters/{newsletterId}/follow:
     delete:
       consumes:
       - application/json
       description: Unfollow/unsubscribe from a WhatsApp newsletter
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Newsletter JID
@@ -4212,7 +4861,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/NewsletterActionRequest'
+          $ref: '#/definitions/dto.NewsletterActionRequest'
       produces:
       - application/json
       responses:
@@ -4223,11 +4872,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Unfollow a newsletter
@@ -4238,9 +4887,9 @@ paths:
       - application/json
       description: Follow/subscribe to a WhatsApp newsletter
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Newsletter JID
@@ -4248,7 +4897,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/NewsletterActionRequest'
+          $ref: '#/definitions/dto.NewsletterActionRequest'
       produces:
       - application/json
       responses:
@@ -4259,23 +4908,23 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Follow a newsletter
       tags:
       - newsletter
-  /sessions/{name}/newsletters/{newsletterId}/messages:
+  /sessions/{sessionId}/newsletters/{newsletterId}/messages:
     get:
       description: Get messages from a WhatsApp newsletter
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Newsletter JID
@@ -4298,25 +4947,25 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/NewsletterResponse'
+            $ref: '#/definitions/dto.NewsletterResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get newsletter messages
       tags:
       - newsletter
-  /sessions/{name}/newsletters/{newsletterId}/mute:
+  /sessions/{sessionId}/newsletters/{newsletterId}/mute:
     patch:
       consumes:
       - application/json
       description: Toggle mute status of a newsletter
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Mute data
@@ -4324,7 +4973,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/NewsletterMuteRequest'
+          $ref: '#/definitions/dto.NewsletterMuteRequest'
       produces:
       - application/json
       responses:
@@ -4335,25 +4984,25 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Mute/unmute newsletter
       tags:
       - newsletter
-  /sessions/{name}/newsletters/{newsletterId}/reactions:
+  /sessions/{sessionId}/newsletters/{newsletterId}/reactions:
     post:
       consumes:
       - application/json
       description: Send a reaction to a newsletter message
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Reaction data
@@ -4361,7 +5010,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/NewsletterReactionRequest'
+          $ref: '#/definitions/dto.NewsletterReactionRequest'
       produces:
       - application/json
       responses:
@@ -4372,25 +5021,97 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: React to newsletter message
       tags:
       - newsletter
-  /sessions/{name}/pair/phone:
+  /sessions/{sessionId}/newsletters/{newsletterId}/subscribe-live:
+    post:
+      description: Subscribe to receive live updates from a newsletter
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Newsletter JID
+        in: path
+        name: newsletterId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.NewsletterLiveResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Subscribe to live updates
+      tags:
+      - newsletter
+  /sessions/{sessionId}/newsletters/{newsletterId}/viewed:
+    post:
+      consumes:
+      - application/json
+      description: Mark newsletter messages as viewed
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Newsletter JID
+        in: path
+        name: newsletterId
+        required: true
+        type: string
+      - description: Server IDs to mark
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.NewsletterMarkViewedRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Mark newsletter messages as viewed
+      tags:
+      - newsletter
+  /sessions/{sessionId}/pair/phone:
     post:
       consumes:
       - application/json
       description: Pair WhatsApp session using phone number instead of QR code
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Phone data
@@ -4398,36 +5119,36 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/PairPhoneRequest'
+          $ref: '#/definitions/dto.PairPhoneRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/PairPhoneResponse'
+            $ref: '#/definitions/dto.PairPhoneResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Pair using phone number
       tags:
       - sessions
-  /sessions/{name}/presence:
+  /sessions/{sessionId}/presence:
     put:
       consumes:
       - application/json
       description: Set online/offline presence status
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Presence data
@@ -4435,40 +5156,82 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SetPresenceRequest'
+          $ref: '#/definitions/dto.SetPresenceRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/PresenceResponse'
+            $ref: '#/definitions/dto.PresenceResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Set online presence
       tags:
-      - contact
-  /sessions/{name}/profile:
+      - presence
+  /sessions/{sessionId}/presence/subscribe/{phone}:
+    post:
+      consumes:
+      - application/json
+      description: Subscribe to receive presence updates from a contact
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Phone number
+        in: path
+        name: phone
+        required: true
+        type: string
+      - description: Subscribe data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SubscribePresenceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Subscribe to contact presence
+      tags:
+      - presence
+  /sessions/{sessionId}/profile:
     get:
       consumes:
       - application/json
       description: Get own WhatsApp profile information
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       produces:
@@ -4477,29 +5240,29 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ProfileInfoResponse'
+            $ref: '#/definitions/dto.ProfileInfoResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get own profile info
       tags:
       - profile
-  /sessions/{name}/profile/disappearing:
+  /sessions/{sessionId}/profile/disappearing:
     patch:
       consumes:
       - application/json
       description: Set the default disappearing messages timer for new chats
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Timer data
@@ -4507,7 +5270,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/DefaultDisappearingRequest'
+          $ref: '#/definitions/dto.DefaultDisappearingRequest'
       produces:
       - application/json
       responses:
@@ -4518,25 +5281,25 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Set default disappearing timer
       tags:
       - profile
-  /sessions/{name}/profile/name:
+  /sessions/{sessionId}/profile/name:
     patch:
       consumes:
       - application/json
       description: Set WhatsApp display name (push name)
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Name data
@@ -4544,40 +5307,40 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SetPushNameRequest'
+          $ref: '#/definitions/dto.SetPushNameRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SetNameResponse'
+            $ref: '#/definitions/dto.SetNameResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Set display name
       tags:
       - profile
-  /sessions/{name}/profile/picture:
+  /sessions/{sessionId}/profile/picture:
     delete:
       consumes:
       - application/json
       description: Remove WhatsApp profile picture
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       produces:
@@ -4590,11 +5353,11 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Delete profile picture
@@ -4605,9 +5368,9 @@ paths:
       - application/json
       description: Set WhatsApp profile picture
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Image data
@@ -4615,40 +5378,40 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SetProfilePictureRequest'
+          $ref: '#/definitions/dto.SetProfilePictureRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SetPictureResponse'
+            $ref: '#/definitions/dto.SetPictureResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Set profile picture
       tags:
       - profile
-  /sessions/{name}/profile/privacy:
+  /sessions/{sessionId}/profile/privacy:
     get:
       consumes:
       - application/json
       description: Get WhatsApp privacy settings
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       produces:
@@ -4657,15 +5420,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/PrivacySettingsResponse'
+            $ref: '#/definitions/dto.PrivacySettingsResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get privacy settings
@@ -4676,9 +5439,9 @@ paths:
       - application/json
       description: Set WhatsApp privacy settings
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Privacy settings
@@ -4686,7 +5449,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SetPrivacyRequest'
+          $ref: '#/definitions/dto.SetPrivacyRequest'
       produces:
       - application/json
       responses:
@@ -4697,29 +5460,29 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Set privacy settings
       tags:
       - profile
-  /sessions/{name}/profile/status:
+  /sessions/{sessionId}/profile/status:
     patch:
       consumes:
       - application/json
       description: Set WhatsApp status/about message
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Status data
@@ -4727,40 +5490,40 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SetStatusRequest'
+          $ref: '#/definitions/dto.SetStatusRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SetStatusResponse'
+            $ref: '#/definitions/dto.SetStatusResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Set status message
       tags:
       - profile
-  /sessions/{name}/qr:
+  /sessions/{sessionId}/qr:
     get:
       consumes:
       - application/json
       description: Get QR code for WhatsApp authentication
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - default: json
@@ -4774,27 +5537,27 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/QRResponse'
+            $ref: '#/definitions/dto.QRResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get QR code
       tags:
       - sessions
-  /sessions/{name}/qrlink:
+  /sessions/{sessionId}/qrlink:
     get:
       description: Get QR link for adding contact
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Revoke existing link
@@ -4807,25 +5570,25 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/QRLinkResponse'
+            $ref: '#/definitions/dto.QRLinkResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get contact QR link
       tags:
       - contact
-  /sessions/{name}/restart:
+  /sessions/{sessionId}/restart:
     post:
       consumes:
       - application/json
       description: Disconnect and reconnect a WhatsApp session
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       produces:
@@ -4834,29 +5597,29 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MessageResponse'
+            $ref: '#/definitions/dto.MessageResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Restart session
       tags:
       - sessions
-  /sessions/{name}/stories:
+  /sessions/{sessionId}/stories:
     post:
       consumes:
       - application/json
       description: Post a text or media story (status update visible to contacts)
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       - description: Story data
@@ -4864,34 +5627,34 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendStatusRequest'
+          $ref: '#/definitions/dto.SendStatusRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Post a story
       tags:
       - status
-  /sessions/{name}/stories/privacy:
+  /sessions/{sessionId}/stories/privacy:
     get:
       description: Get who can see your status updates
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
-        name: name
+        name: sessionId
         required: true
         type: string
       produces:
@@ -4900,78 +5663,16 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/StatusPrivacyResponse'
+            $ref: '#/definitions/dto.StatusPrivacyResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/dto.ErrorResponse'
       security:
       - ApiKeyAuth: []
       summary: Get status privacy settings
       tags:
       - status
-  /sessions/{name}/webhooks:
-    get:
-      description: Get the webhook configuration for a session
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/GetWebhookResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Get webhook
-      tags:
-      - webhook
-    post:
-      consumes:
-      - application/json
-      description: Set or update the webhook configuration for a session (one webhook
-        per session)
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Webhook configuration
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/SetWebhookRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/GetWebhookResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Set webhook
-      tags:
-      - webhook
 securityDefinitions:
   ApiKeyAuth:
     in: header

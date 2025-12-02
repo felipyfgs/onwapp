@@ -34,23 +34,23 @@ func NewHistoryHandler(
 // @Tags history
 // @Accept json
 // @Produce json
-// @Param name path string true "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param request body dto.HistorySyncRequest false "Sync options"
 // @Success 200 {object} dto.MessageResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 404 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
 // @Security ApiKeyAuth
-// @Router /sessions/{name}/history/sync [post]
+// @Router       /sessions/{sessionId}/history/sync [post]
 func (h *HistoryHandler) RequestHistorySync(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.HistorySyncRequest
 	_ = c.ShouldBindJSON(&req)
 
-	resp, err := h.whatsappService.RequestHistorySync(c.Request.Context(), name, req.Count)
+	resp, err := h.whatsappService.RequestHistorySync(c.Request.Context(), sessionId, req.Count)
 	if err != nil {
-		if err.Error() == "session "+name+" not found" || err.Error() == "session not found" {
+		if err.Error() == "session "+sessionId+" not found" || err.Error() == "session not found" {
 			c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
@@ -69,16 +69,16 @@ func (h *HistoryHandler) RequestHistorySync(c *gin.Context) {
 // @Description Get the current progress of history sync operations
 // @Tags history
 // @Produce json
-// @Param name path string true "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Success 200 {array} dto.SyncProgressResponse
 // @Failure 404 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
 // @Security ApiKeyAuth
-// @Router /sessions/{name}/history/progress [get]
+// @Router       /sessions/{sessionId}/history/progress [get]
 func (h *HistoryHandler) GetSyncProgress(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
-	session, err := h.sessionService.Get(name)
+	session, err := h.sessionService.Get(sessionId)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "session not found"})
 		return
@@ -119,16 +119,16 @@ func (h *HistoryHandler) GetSyncProgress(c *gin.Context) {
 // @Description Get list of chats with unread messages from history sync data
 // @Tags history
 // @Produce json
-// @Param name path string true "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Success 200 {array} dto.ChatResponse
 // @Failure 404 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
 // @Security ApiKeyAuth
-// @Router /sessions/{name}/history/chats/unread [get]
+// @Router       /sessions/{sessionId}/history/chats/unread [get]
 func (h *HistoryHandler) GetUnreadChats(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
-	session, err := h.sessionService.Get(name)
+	session, err := h.sessionService.Get(sessionId)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "session not found"})
 		return
@@ -160,18 +160,18 @@ func (h *HistoryHandler) GetUnreadChats(c *gin.Context) {
 // @Description Get detailed chat information from history sync data
 // @Tags history
 // @Produce json
-// @Param name path string true "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param chatId path string true "Chat JID"
 // @Success 200 {object} dto.ChatResponse
 // @Failure 404 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
 // @Security ApiKeyAuth
-// @Router /sessions/{name}/history/chats/{chatId} [get]
+// @Router       /sessions/{sessionId}/history/chats/{chatId} [get]
 func (h *HistoryHandler) GetChatInfo(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 	chatID := c.Param("chatId")
 
-	session, err := h.sessionService.Get(name)
+	session, err := h.sessionService.Get(sessionId)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "session not found"})
 		return
@@ -205,18 +205,18 @@ func (h *HistoryHandler) GetChatInfo(c *gin.Context) {
 // @Description Get past participants of a group from history sync data
 // @Tags history
 // @Produce json
-// @Param name path string true "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param groupId path string true "Group JID"
 // @Success 200 {array} dto.PastParticipantResponse
 // @Failure 404 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
 // @Security ApiKeyAuth
-// @Router /sessions/{name}/history/groups/{groupId}/participants/past [get]
+// @Router       /sessions/{sessionId}/history/groups/{groupId}/participants/past [get]
 func (h *HistoryHandler) GetGroupPastParticipants(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 	groupID := c.Param("groupId")
 
-	session, err := h.sessionService.Get(name)
+	session, err := h.sessionService.Get(sessionId)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "session not found"})
 		return
@@ -249,15 +249,15 @@ func (h *HistoryHandler) GetGroupPastParticipants(c *gin.Context) {
 // @Description Get most used stickers from history sync data
 // @Tags history
 // @Produce json
-// @Param name path string true "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param limit query int false "Number of stickers to return" default(20)
 // @Success 200 {array} dto.StickerResponse
 // @Failure 404 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
 // @Security ApiKeyAuth
-// @Router /sessions/{name}/history/stickers [get]
+// @Router       /sessions/{sessionId}/history/stickers [get]
 func (h *HistoryHandler) GetTopStickers(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 	limit := 20
 	if l := c.Query("limit"); l != "" {
 		if parsed, err := parseInt(l); err == nil && parsed > 0 {
@@ -265,7 +265,7 @@ func (h *HistoryHandler) GetTopStickers(c *gin.Context) {
 		}
 	}
 
-	session, err := h.sessionService.Get(name)
+	session, err := h.sessionService.Get(sessionId)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "session not found"})
 		return

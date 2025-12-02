@@ -24,15 +24,15 @@ func NewNewsletterHandler(whatsappService *service.WhatsAppService) *NewsletterH
 // @Tags         newsletter
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                     true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.CreateNewsletterRequest true  "Newsletter data"
 // @Success      200    {object}  dto.NewsletterResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/newsletters [post]
+// @Router       /sessions/{sessionId}/newsletters [post]
 func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.CreateNewsletterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -40,7 +40,7 @@ func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
 		return
 	}
 
-	newsletter, err := h.whatsappService.CreateNewsletter(c.Request.Context(), name, req.Name, req.Description)
+	newsletter, err := h.whatsappService.CreateNewsletter(c.Request.Context(), sessionId, req.Name, req.Description)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -58,15 +58,15 @@ func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
 // @Tags         newsletter
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                     true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.NewsletterActionRequest true  "Newsletter JID"
 // @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/newsletters/{newsletterId}/follow [post]
+// @Router       /sessions/{sessionId}/newsletters/{newsletterId}/follow [post]
 func (h *NewsletterHandler) FollowNewsletter(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.NewsletterActionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -74,7 +74,7 @@ func (h *NewsletterHandler) FollowNewsletter(c *gin.Context) {
 		return
 	}
 
-	if err := h.whatsappService.FollowNewsletter(c.Request.Context(), name, req.NewsletterJID); err != nil {
+	if err := h.whatsappService.FollowNewsletter(c.Request.Context(), sessionId, req.NewsletterJID); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -88,15 +88,15 @@ func (h *NewsletterHandler) FollowNewsletter(c *gin.Context) {
 // @Tags         newsletter
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                     true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.NewsletterActionRequest true  "Newsletter JID"
 // @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/newsletters/{newsletterId}/follow [delete]
+// @Router       /sessions/{sessionId}/newsletters/{newsletterId}/follow [delete]
 func (h *NewsletterHandler) UnfollowNewsletter(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.NewsletterActionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -104,7 +104,7 @@ func (h *NewsletterHandler) UnfollowNewsletter(c *gin.Context) {
 		return
 	}
 
-	if err := h.whatsappService.UnfollowNewsletter(c.Request.Context(), name, req.NewsletterJID); err != nil {
+	if err := h.whatsappService.UnfollowNewsletter(c.Request.Context(), sessionId, req.NewsletterJID); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -117,17 +117,17 @@ func (h *NewsletterHandler) UnfollowNewsletter(c *gin.Context) {
 // @Description  Get information about a WhatsApp newsletter
 // @Tags         newsletter
 // @Produce      json
-// @Param        name          path      string  true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        newsletterId  path      string  true  "Newsletter JID"
 // @Success      200           {object}  dto.NewsletterResponse
 // @Failure      500           {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/newsletters/{newsletterId} [get]
+// @Router       /sessions/{sessionId}/newsletters/{newsletterId} [get]
 func (h *NewsletterHandler) GetNewsletterInfo(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 	newsletterID := c.Param("newsletterId")
 
-	info, err := h.whatsappService.GetNewsletterInfo(c.Request.Context(), name, newsletterID)
+	info, err := h.whatsappService.GetNewsletterInfo(c.Request.Context(), sessionId, newsletterID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -144,15 +144,15 @@ func (h *NewsletterHandler) GetNewsletterInfo(c *gin.Context) {
 // @Description  Get list of newsletters the session is subscribed to
 // @Tags         newsletter
 // @Produce      json
-// @Param        name   path      string  true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Success      200    {array}   object
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/newsletters [get]
+// @Router       /sessions/{sessionId}/newsletters [get]
 func (h *NewsletterHandler) GetSubscribedNewsletters(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
-	newsletters, err := h.whatsappService.GetSubscribedNewsletters(c.Request.Context(), name)
+	newsletters, err := h.whatsappService.GetSubscribedNewsletters(c.Request.Context(), sessionId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -166,16 +166,16 @@ func (h *NewsletterHandler) GetSubscribedNewsletters(c *gin.Context) {
 // @Description  Get messages from a WhatsApp newsletter
 // @Tags         newsletter
 // @Produce      json
-// @Param        name          path      string  true   "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        newsletterId  path      string  true   "Newsletter JID"
 // @Param        count         query     int     false  "Number of messages" default(50)
 // @Param        before        query     int     false  "Before server ID"
 // @Success      200           {object}  dto.NewsletterResponse
 // @Failure      500           {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/newsletters/{newsletterId}/messages [get]
+// @Router       /sessions/{sessionId}/newsletters/{newsletterId}/messages [get]
 func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 	newsletterID := c.Param("newsletterId")
 
 	count := 50
@@ -188,7 +188,7 @@ func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
 	var before types.MessageServerID
 	// TODO: Parse before parameter if provided for pagination
 
-	messages, err := h.whatsappService.GetNewsletterMessages(c.Request.Context(), name, newsletterID, count, before)
+	messages, err := h.whatsappService.GetNewsletterMessages(c.Request.Context(), sessionId, newsletterID, count, before)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -206,15 +206,15 @@ func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
 // @Tags         newsletter
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                        true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.NewsletterReactionRequest true  "Reaction data"
 // @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/newsletters/{newsletterId}/reactions [post]
+// @Router       /sessions/{sessionId}/newsletters/{newsletterId}/reactions [post]
 func (h *NewsletterHandler) NewsletterSendReaction(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.NewsletterReactionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -225,7 +225,7 @@ func (h *NewsletterHandler) NewsletterSendReaction(c *gin.Context) {
 	serverID := types.MessageServerID(req.ServerID)
 	messageID := types.MessageID(req.MessageID)
 
-	if err := h.whatsappService.NewsletterSendReaction(c.Request.Context(), name, req.NewsletterJID, serverID, req.Reaction, messageID); err != nil {
+	if err := h.whatsappService.NewsletterSendReaction(c.Request.Context(), sessionId, req.NewsletterJID, serverID, req.Reaction, messageID); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -239,15 +239,15 @@ func (h *NewsletterHandler) NewsletterSendReaction(c *gin.Context) {
 // @Tags         newsletter
 // @Accept       json
 // @Produce      json
-// @Param        name   path      string                   true  "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        body   body      dto.NewsletterMuteRequest true  "Mute data"
 // @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/newsletters/{newsletterId}/mute [patch]
+// @Router       /sessions/{sessionId}/newsletters/{newsletterId}/mute [patch]
 func (h *NewsletterHandler) NewsletterToggleMute(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 
 	var req dto.NewsletterMuteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -255,7 +255,7 @@ func (h *NewsletterHandler) NewsletterToggleMute(c *gin.Context) {
 		return
 	}
 
-	if err := h.whatsappService.NewsletterToggleMute(c.Request.Context(), name, req.NewsletterJID, req.Mute); err != nil {
+	if err := h.whatsappService.NewsletterToggleMute(c.Request.Context(), sessionId, req.NewsletterJID, req.Mute); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -269,16 +269,16 @@ func (h *NewsletterHandler) NewsletterToggleMute(c *gin.Context) {
 // @Tags         newsletter
 // @Accept       json
 // @Produce      json
-// @Param        name path string true "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        newsletterId path string true "Newsletter JID"
 // @Param        body body dto.NewsletterMarkViewedRequest true "Server IDs to mark"
 // @Success      200 {object} object
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/newsletters/{newsletterId}/viewed [post]
+// @Router       /sessions/{sessionId}/newsletters/{newsletterId}/viewed [post]
 func (h *NewsletterHandler) NewsletterMarkViewed(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 	newsletterID := c.Param("newsletterId")
 
 	var req dto.NewsletterMarkViewedRequest
@@ -292,7 +292,7 @@ func (h *NewsletterHandler) NewsletterMarkViewed(c *gin.Context) {
 		serverIDs[i] = types.MessageServerID(id)
 	}
 
-	if err := h.whatsappService.NewsletterMarkViewed(c.Request.Context(), name, newsletterID, serverIDs); err != nil {
+	if err := h.whatsappService.NewsletterMarkViewed(c.Request.Context(), sessionId, newsletterID, serverIDs); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -305,17 +305,17 @@ func (h *NewsletterHandler) NewsletterMarkViewed(c *gin.Context) {
 // @Description  Subscribe to receive live updates from a newsletter
 // @Tags         newsletter
 // @Produce      json
-// @Param        name path string true "Session name"
+// @Param        sessionId   path      string  true  "Session ID"
 // @Param        newsletterId path string true "Newsletter JID"
 // @Success      200 {object} dto.NewsletterLiveResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     ApiKeyAuth
-// @Router       /sessions/{name}/newsletters/{newsletterId}/subscribe-live [post]
+// @Router       /sessions/{sessionId}/newsletters/{newsletterId}/subscribe-live [post]
 func (h *NewsletterHandler) NewsletterSubscribeLiveUpdates(c *gin.Context) {
-	name := c.Param("name")
+	sessionId := c.Param("sessionId")
 	newsletterID := c.Param("newsletterId")
 
-	duration, err := h.whatsappService.NewsletterSubscribeLiveUpdates(c.Request.Context(), name, newsletterID)
+	duration, err := h.whatsappService.NewsletterSubscribeLiveUpdates(c.Request.Context(), sessionId, newsletterID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
