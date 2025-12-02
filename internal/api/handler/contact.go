@@ -417,3 +417,36 @@ func (h *ContactHandler) GetBusinessProfile(c *gin.Context) {
 		Profile: profile,
 	})
 }
+
+// GetContactLID godoc
+// @Summary      Get contact LID
+// @Description  Get the Linked ID (LID) for a contact
+// @Tags         contact
+// @Produce      json
+// @Param        name   path      string  true  "Session name"
+// @Param        phone  path      string  true  "Phone number or JID"
+// @Success      200    {object}  dto.LIDResponse
+// @Failure      404    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /sessions/{name}/contacts/{phone}/lid [get]
+func (h *ContactHandler) GetContactLID(c *gin.Context) {
+	name := c.Param("name")
+	phone := c.Param("phone")
+
+	lid, err := h.whatsappService.GetContactLID(c.Request.Context(), name, phone)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	if lid == "" {
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "LID not found for this contact"})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.LIDResponse{
+		Phone: phone,
+		LID:   lid,
+	})
+}

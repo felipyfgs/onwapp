@@ -262,3 +262,66 @@ func (h *NewsletterHandler) NewsletterToggleMute(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{})
 }
+
+// NewsletterMarkViewed godoc
+// @Summary      Mark newsletter messages as viewed
+// @Description  Mark newsletter messages as viewed
+// @Tags         newsletter
+// @Accept       json
+// @Produce      json
+// @Param        name path string true "Session name"
+// @Param        newsletterId path string true "Newsletter JID"
+// @Param        body body dto.NewsletterMarkViewedRequest true "Server IDs to mark"
+// @Success      200 {object} object
+// @Failure      400 {object} dto.ErrorResponse
+// @Failure      500 {object} dto.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /sessions/{name}/newsletters/{newsletterId}/viewed [post]
+func (h *NewsletterHandler) NewsletterMarkViewed(c *gin.Context) {
+	name := c.Param("name")
+	newsletterID := c.Param("newsletterId")
+
+	var req dto.NewsletterMarkViewedRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	serverIDs := make([]types.MessageServerID, len(req.ServerIDs))
+	for i, id := range req.ServerIDs {
+		serverIDs[i] = types.MessageServerID(id)
+	}
+
+	if err := h.whatsappService.NewsletterMarkViewed(c.Request.Context(), name, newsletterID, serverIDs); err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "messages marked as viewed"})
+}
+
+// NewsletterSubscribeLiveUpdates godoc
+// @Summary      Subscribe to live updates
+// @Description  Subscribe to receive live updates from a newsletter
+// @Tags         newsletter
+// @Produce      json
+// @Param        name path string true "Session name"
+// @Param        newsletterId path string true "Newsletter JID"
+// @Success      200 {object} dto.NewsletterLiveResponse
+// @Failure      500 {object} dto.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /sessions/{name}/newsletters/{newsletterId}/subscribe-live [post]
+func (h *NewsletterHandler) NewsletterSubscribeLiveUpdates(c *gin.Context) {
+	name := c.Param("name")
+	newsletterID := c.Param("newsletterId")
+
+	duration, err := h.whatsappService.NewsletterSubscribeLiveUpdates(c.Request.Context(), name, newsletterID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.NewsletterLiveResponse{
+		Duration: duration.String(),
+	})
+}

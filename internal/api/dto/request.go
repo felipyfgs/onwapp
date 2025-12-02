@@ -274,6 +274,10 @@ type NewsletterMuteRequest struct {
 	Mute          bool   `json:"mute" example:"true"`
 }
 
+type NewsletterMarkViewedRequest struct {
+	ServerIDs []int `json:"serverIds" binding:"required" example:"[1,2,3]"`
+}
+
 // Contact subscribe request
 
 type SubscribePresenceRequest struct {
@@ -291,6 +295,18 @@ type RejectCallRequest struct {
 
 type PairPhoneRequest struct {
 	Phone string `json:"phone" binding:"required" example:"5511999999999"`
+}
+
+// History sync request
+
+type HistorySyncRequest struct {
+	Count int `json:"count" example:"100"`
+}
+
+// Request unavailable message
+
+type RequestUnavailableMessageRequest struct {
+	SenderJID string `json:"senderJid" example:"5511999999999@s.whatsapp.net"`
 }
 
 // Status/Story request

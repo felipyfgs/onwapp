@@ -1,5 +1,7 @@
 package dto
 
+import "time"
+
 // ErrorResponse is the only envelope - used for errors
 type ErrorResponse struct {
 	Error string `json:"error" example:"session not found"`
@@ -32,8 +34,9 @@ type PairPhoneResponse struct {
 }
 
 type MessageResponse struct {
-	Message string `json:"message" example:"operation completed"`
-	Status  string `json:"status,omitempty" example:"connected"`
+	Message string  `json:"message" example:"operation completed"`
+	Status  string  `json:"status,omitempty" example:"connected"`
+	ID      *string `json:"id,omitempty" example:"ABCD1234"`
 }
 
 // Send message response
@@ -180,20 +183,80 @@ type CommunityResponse struct {
 // Media responses
 
 type MediaResponse struct {
-	ID          string `json:"id" example:"uuid"`
-	SessionID   string `json:"sessionId" example:"uuid"`
-	MsgID       string `json:"msgId" example:"ABCD1234"`
-	MediaType   string `json:"mediaType" example:"image"`
-	MimeType    string `json:"mimeType,omitempty" example:"image/jpeg"`
-	FileSize    int64  `json:"fileSize,omitempty" example:"12345"`
-	FileName    string `json:"fileName,omitempty" example:"photo.jpg"`
-	StorageURL  string `json:"storageUrl,omitempty" example:"https://s3.example.com/media/photo.jpg"`
-	Downloaded  bool   `json:"downloaded" example:"true"`
-	ChatJID     string `json:"chatJid,omitempty" example:"5511999999999@s.whatsapp.net"`
-	FromMe      bool   `json:"fromMe,omitempty" example:"false"`
-	Caption     string `json:"caption,omitempty" example:"Check this out!"`
-	Width       int    `json:"width,omitempty" example:"1920"`
-	Height      int    `json:"height,omitempty" example:"1080"`
-	Duration    int    `json:"duration,omitempty" example:"30"`
-	CreatedAt   string `json:"createdAt" example:"2025-01-01T00:00:00Z"`
+	ID         string `json:"id" example:"uuid"`
+	SessionID  string `json:"sessionId" example:"uuid"`
+	MsgID      string `json:"msgId" example:"ABCD1234"`
+	MediaType  string `json:"mediaType" example:"image"`
+	MimeType   string `json:"mimeType,omitempty" example:"image/jpeg"`
+	FileSize   int64  `json:"fileSize,omitempty" example:"12345"`
+	FileName   string `json:"fileName,omitempty" example:"photo.jpg"`
+	StorageURL string `json:"storageUrl,omitempty" example:"https://s3.example.com/media/photo.jpg"`
+	Downloaded bool   `json:"downloaded" example:"true"`
+	ChatJID    string `json:"chatJid,omitempty" example:"5511999999999@s.whatsapp.net"`
+	FromMe     bool   `json:"fromMe,omitempty" example:"false"`
+	Caption    string `json:"caption,omitempty" example:"Check this out!"`
+	Width      int    `json:"width,omitempty" example:"1920"`
+	Height     int    `json:"height,omitempty" example:"1080"`
+	Duration   int    `json:"duration,omitempty" example:"30"`
+	CreatedAt  string `json:"createdAt" example:"2025-01-01T00:00:00Z"`
+}
+
+// History sync responses
+
+type SyncProgressResponse struct {
+	SyncType          string     `json:"syncType" example:"INITIAL_BOOTSTRAP"`
+	Status            string     `json:"status" example:"in_progress"`
+	Progress          int        `json:"progress" example:"75"`
+	TotalChunks       int        `json:"totalChunks,omitempty" example:"10"`
+	ProcessedChunks   int        `json:"processedChunks,omitempty" example:"7"`
+	TotalMessages     int        `json:"totalMessages,omitempty" example:"1000"`
+	ProcessedMessages int        `json:"processedMessages,omitempty" example:"750"`
+	TotalChats        int        `json:"totalChats,omitempty" example:"50"`
+	ProcessedChats    int        `json:"processedChats,omitempty" example:"35"`
+	Errors            int        `json:"errors,omitempty" example:"0"`
+	StartedAt         *time.Time `json:"startedAt,omitempty"`
+	CompletedAt       *time.Time `json:"completedAt,omitempty"`
+}
+
+type ChatResponse struct {
+	JID                 string `json:"jid" example:"5511999999999@s.whatsapp.net"`
+	Name                string `json:"name,omitempty" example:"John Doe"`
+	UnreadCount         int    `json:"unreadCount,omitempty" example:"5"`
+	MarkedAsUnread      bool   `json:"markedAsUnread,omitempty" example:"false"`
+	EphemeralExpiration int    `json:"ephemeralExpiration,omitempty" example:"86400"`
+	ConversationTS      int64  `json:"conversationTimestamp,omitempty" example:"1699999999"`
+	ReadOnly            bool   `json:"readOnly,omitempty" example:"false"`
+	Suspended           bool   `json:"suspended,omitempty" example:"false"`
+	Locked              bool   `json:"locked,omitempty" example:"false"`
+}
+
+type PastParticipantResponse struct {
+	UserJID        string    `json:"userJid" example:"5511999999999@s.whatsapp.net"`
+	LeaveReason    string    `json:"leaveReason" example:"LEFT"`
+	LeaveTimestamp time.Time `json:"leaveTimestamp"`
+}
+
+type StickerResponse struct {
+	DirectPath string     `json:"directPath,omitempty"`
+	MimeType   string     `json:"mimeType,omitempty" example:"image/webp"`
+	FileSize   int        `json:"fileSize,omitempty" example:"12345"`
+	Width      int        `json:"width,omitempty" example:"512"`
+	Height     int        `json:"height,omitempty" example:"512"`
+	IsLottie   bool       `json:"isLottie,omitempty" example:"false"`
+	IsAvatar   bool       `json:"isAvatar,omitempty" example:"false"`
+	Weight     float32    `json:"weight,omitempty" example:"1.5"`
+	LastUsedAt *time.Time `json:"lastUsedAt,omitempty"`
+}
+
+// Newsletter extra responses
+
+type NewsletterLiveResponse struct {
+	Duration string `json:"duration" example:"24h0m0s"`
+}
+
+// Contact extra responses
+
+type LIDResponse struct {
+	Phone string `json:"phone" example:"5511999999999"`
+	LID   string `json:"lid" example:"123456789:0@lid"`
 }

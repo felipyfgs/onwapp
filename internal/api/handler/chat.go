@@ -162,3 +162,39 @@ func (h *ChatHandler) SetDisappearingTimer(c *gin.Context) {
 
 	c.JSON(http.StatusOK, dto.MessageOnlyResponse{Message: "timer set to " + req.Timer})
 }
+
+// RequestUnavailableMessage godoc
+// @Summary      Request unavailable message
+// @Description  Request WhatsApp to resend an unavailable message from phone storage
+// @Tags         chat
+// @Accept       json
+// @Produce      json
+// @Param        name path string true "Session name"
+// @Param        chatId path string true "Chat JID"
+// @Param        messageId path string true "Message ID"
+// @Param        body body dto.RequestUnavailableMessageRequest false "Optional sender JID for group messages"
+// @Success      200 {object} dto.MessageResponse
+// @Failure      400 {object} dto.ErrorResponse
+// @Failure      500 {object} dto.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /sessions/{name}/chats/{chatId}/messages/{messageId}/request [post]
+func (h *ChatHandler) RequestUnavailableMessage(c *gin.Context) {
+	name := c.Param("name")
+	chatID := c.Param("chatId")
+	messageID := c.Param("messageId")
+
+	var req dto.RequestUnavailableMessageRequest
+	_ = c.ShouldBindJSON(&req)
+
+	resp, err := h.whatsappService.RequestUnavailableMessage(c.Request.Context(), name, chatID, req.SenderJID, messageID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	id := resp.ID
+	c.JSON(http.StatusOK, dto.MessageResponse{
+		Message: "unavailable message request sent",
+		ID:      &id,
+	})
+}

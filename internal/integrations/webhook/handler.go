@@ -139,6 +139,111 @@ func (h *Handler) SetWebhook(c *gin.Context) {
 	})
 }
 
+// UpdateWebhook godoc
+// @Summary Update webhook
+// @Description Update an existing webhook configuration for a session
+// @Tags webhook
+// @Accept json
+// @Produce json
+// @Param name path string true "Session name"
+// @Param request body SetWebhookRequest true "Webhook configuration"
+// @Success 200 {object} GetWebhookResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Security ApiKeyAuth
+// @Router /sessions/{name}/webhooks [put]
+func (h *Handler) UpdateWebhook(c *gin.Context) {
+	name := c.Param("name")
+
+	var req SetWebhookRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	if req.URL != "" {
+		parsedURL, err := url.ParseRequestURI(req.URL)
+		if err != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") {
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "invalid webhook URL: must be a valid http or https URL"})
+			return
+		}
+	}
+
+	session, err := h.sessionService.Get(name)
+	if err != nil || session == nil {
+		c.JSON(http.StatusNotFound, ErrorResponse{Error: "session not found"})
+		return
+	}
+
+	// Check if webhook exists
+	existing, err := h.service.GetBySession(c.Request.Context(), session.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		return
+	}
+	if existing == nil {
+		c.JSON(http.StatusNotFound, ErrorResponse{Error: "webhook not found for this session"})
+		return
+	}
+
+	webhook, err := h.service.Set(c.Request.Context(), session.ID, req.URL, req.Events, req.Enabled, req.Secret)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, GetWebhookResponse{
+		ID:        webhook.ID,
+		SessionID: webhook.SessionID,
+		URL:       webhook.URL,
+		Events:    webhook.Events,
+		Enabled:   webhook.Enabled,
+	})
+}
+
+// DeleteWebhook godoc
+// @Summary Delete webhook
+// @Description Delete the webhook configuration for a session
+// @Tags webhook
+// @Produce json
+// @Param name path string true "Session name"
+// @Success 200 {object} MessageResponse
+// @Failure 404 {object} ErrorResponse
+// @Security ApiKeyAuth
+// @Router /sessions/{name}/webhooks [delete]
+func (h *Handler) DeleteWebhook(c *gin.Context) {
+	name := c.Param("name")
+
+	session, err := h.sessionService.Get(name)
+	if err != nil || session == nil {
+		c.JSON(http.StatusNotFound, ErrorResponse{Error: "session not found"})
+		return
+	}
+
+	// Check if webhook exists
+	existing, err := h.service.GetBySession(c.Request.Context(), session.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		return
+	}
+	if existing == nil {
+		c.JSON(http.StatusNotFound, ErrorResponse{Error: "webhook not found for this session"})
+		return
+	}
+
+	if err := h.service.Delete(c.Request.Context(), session.ID); err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, MessageResponse{Message: "webhook deleted"})
+}
+
+// MessageResponse represents a success message response
+type MessageResponse struct {
+	Message string `json:"message"`
+}
+
 // GetEvents godoc
 // @Summary List available webhook events
 // @Description Get a list of all available webhook event types organized by category

@@ -18,6 +18,8 @@ import (
 type WebhookHandlerInterface interface {
 	GetWebhook(c *gin.Context)
 	SetWebhook(c *gin.Context)
+	UpdateWebhook(c *gin.Context)
+	DeleteWebhook(c *gin.Context)
 	GetEvents(c *gin.Context)
 }
 
@@ -34,6 +36,7 @@ type Handlers struct {
 	Call       *handler.CallHandler
 	Community  *handler.CommunityHandler
 	Media      *handler.MediaHandler
+	History    *handler.HistoryHandler
 }
 
 type Config struct {
@@ -133,6 +136,7 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 		sessions.GET("/:name/contacts/:phone", h.Contact.GetContactInfo)
 		sessions.GET("/:name/contacts/:phone/avatar", h.Contact.GetAvatar)
 		sessions.GET("/:name/contacts/:phone/business", h.Contact.GetBusinessProfile)
+		sessions.GET("/:name/contacts/:phone/lid", h.Contact.GetContactLID)
 		sessions.GET("/:name/contacts/blocklist", h.Contact.GetBlocklist)
 		sessions.PUT("/:name/contacts/blocklist", h.Contact.UpdateBlocklist)
 		sessions.POST("/:name/contacts/:phone/presence/subscribe", h.Contact.SubscribePresence)
@@ -150,6 +154,7 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 		sessions.PATCH("/:name/groups/:groupId/name", h.Group.UpdateGroupName)
 		sessions.PATCH("/:name/groups/:groupId/description", h.Group.UpdateGroupTopic)
 		sessions.PUT("/:name/groups/:groupId/picture", h.Group.SetGroupPicture)
+		sessions.DELETE("/:name/groups/:groupId/picture", h.Group.DeleteGroupPicture)
 		sessions.POST("/:name/groups/:groupId/participants", h.Group.AddParticipants)
 		sessions.DELETE("/:name/groups/:groupId/participants", h.Group.RemoveParticipants)
 		sessions.PATCH("/:name/groups/:groupId/participants/promote", h.Group.PromoteParticipants)
@@ -180,6 +185,7 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 		sessions.PATCH("/:name/chats/:chatId/settings/disappearing", h.Chat.SetDisappearingTimer)
 		sessions.PATCH("/:name/chats/:chatId/messages/:messageId", h.Chat.EditMessage)
 		sessions.DELETE("/:name/chats/:chatId/messages/:messageId", h.Chat.DeleteMessage)
+		sessions.POST("/:name/chats/:chatId/messages/:messageId/request", h.Chat.RequestUnavailableMessage)
 
 		// ═══════════════════════════════════════════════════════════════════════
 		// 8. MESSAGES - Send & Receive
@@ -220,6 +226,8 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 			sessions.GET("/:name/newsletters/:newsletterId/messages", h.Newsletter.GetNewsletterMessages)
 			sessions.POST("/:name/newsletters/:newsletterId/reactions", h.Newsletter.NewsletterSendReaction)
 			sessions.PATCH("/:name/newsletters/:newsletterId/mute", h.Newsletter.NewsletterToggleMute)
+			sessions.POST("/:name/newsletters/:newsletterId/viewed", h.Newsletter.NewsletterMarkViewed)
+			sessions.POST("/:name/newsletters/:newsletterId/subscribe-live", h.Newsletter.NewsletterSubscribeLiveUpdates)
 		}
 
 		// ═══════════════════════════════════════════════════════════════════════
@@ -233,10 +241,24 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 		}
 
 		// ═══════════════════════════════════════════════════════════════════════
-		// 12. WEBHOOKS - Integrations
+		// 12. HISTORY SYNC - Historical Data
+		// ═══════════════════════════════════════════════════════════════════════
+		if h.History != nil {
+			sessions.POST("/:name/history/sync", h.History.RequestHistorySync)
+			sessions.GET("/:name/history/progress", h.History.GetSyncProgress)
+			sessions.GET("/:name/history/chats/unread", h.History.GetUnreadChats)
+			sessions.GET("/:name/history/chats/:chatId", h.History.GetChatInfo)
+			sessions.GET("/:name/history/groups/:groupId/participants/past", h.History.GetGroupPastParticipants)
+			sessions.GET("/:name/history/stickers", h.History.GetTopStickers)
+		}
+
+		// ═══════════════════════════════════════════════════════════════════════
+		// 13. WEBHOOKS - Integrations
 		// ═══════════════════════════════════════════════════════════════════════
 		sessions.GET("/:name/webhooks", h.Webhook.GetWebhook)
 		sessions.POST("/:name/webhooks", h.Webhook.SetWebhook)
+		sessions.PUT("/:name/webhooks", h.Webhook.UpdateWebhook)
+		sessions.DELETE("/:name/webhooks", h.Webhook.DeleteWebhook)
 	}
 
 	return r

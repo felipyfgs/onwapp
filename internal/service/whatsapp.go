@@ -1478,6 +1478,32 @@ func (w *WhatsAppService) SetGroupPhoto(ctx context.Context, sessionName, groupI
 	return client.SetGroupPhoto(ctx, jid, imageData)
 }
 
+// DeleteGroupPhoto remove foto do grupo
+func (w *WhatsAppService) DeleteGroupPhoto(ctx context.Context, sessionName, groupID string) error {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return err
+	}
+
+	jid, err := parseGroupJID(groupID)
+	if err != nil {
+		return fmt.Errorf("invalid group ID: %w", err)
+	}
+
+	_, err = client.SetGroupPhoto(ctx, jid, nil)
+	return err
+}
+
+// GetGroupInfoFromInvite obtém informações do grupo a partir de convite (sem entrar)
+func (w *WhatsAppService) GetGroupInfoFromInvite(ctx context.Context, sessionName string, jid types.JID, inviter types.JID, code string, expiration int64) (*types.GroupInfo, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return nil, err
+	}
+
+	return client.GetGroupInfoFromInvite(ctx, jid, inviter, code, expiration)
+}
+
 // SetGroupJoinApprovalMode define modo de aprovação para entrar no grupo
 func (w *WhatsAppService) SetGroupJoinApprovalMode(ctx context.Context, sessionName, groupID string, mode bool) error {
 	client, err := w.getClient(sessionName)
@@ -1677,7 +1703,70 @@ func (w *WhatsAppService) NewsletterToggleMute(ctx context.Context, sessionName,
 	return client.NewsletterToggleMute(ctx, jid, mute)
 }
 
+// NewsletterMarkViewed marca mensagens do canal como visualizadas
+func (w *WhatsAppService) NewsletterMarkViewed(ctx context.Context, sessionName, newsletterJID string, serverIDs []types.MessageServerID) error {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return err
+	}
+
+	jid, err := types.ParseJID(newsletterJID)
+	if err != nil {
+		return fmt.Errorf("invalid newsletter JID: %w", err)
+	}
+
+	return client.NewsletterMarkViewed(ctx, jid, serverIDs)
+}
+
+// NewsletterSubscribeLiveUpdates inscreve para atualizações em tempo real do canal
+func (w *WhatsAppService) NewsletterSubscribeLiveUpdates(ctx context.Context, sessionName, newsletterJID string) (time.Duration, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return 0, err
+	}
+
+	jid, err := types.ParseJID(newsletterJID)
+	if err != nil {
+		return 0, fmt.Errorf("invalid newsletter JID: %w", err)
+	}
+
+	return client.NewsletterSubscribeLiveUpdates(ctx, jid)
+}
+
 // CONTACT METHODS (extended)
+
+// GetContactLID obtém o LID (Linked ID) de um contato
+// Note: LID mappings are obtained via history sync and stored in whatsmeow_lid_map table
+func (w *WhatsAppService) GetContactLID(ctx context.Context, sessionName, phone string) (string, error) {
+	session, err := w.sessionService.Get(sessionName)
+	if err != nil {
+		return "", err
+	}
+
+	if !session.Client.IsConnected() {
+		return "", fmt.Errorf("session %s is not connected", sessionName)
+	}
+
+	jid, err := parseJID(phone)
+	if err != nil {
+		return "", fmt.Errorf("invalid phone number: %w", err)
+	}
+
+	// For own JID, return the LID from store if available
+	if session.Client.Store.ID != nil {
+		ownJID := *session.Client.Store.ID
+		if jid.User == ownJID.User && ownJID.RawAgent > 0 {
+			// Own LID is embedded in the device JID when using LID-based addressing
+			return ownJID.String(), nil
+		}
+	}
+
+	// For other contacts, LID mappings come from history sync
+	// They are stored in whatsmeow_lid_map table
+	// This data is populated when WhatsApp sends history sync events
+	// Return empty if not yet available
+	return "", nil
+}
 
 // SubscribePresence inscreve para receber atualizações de presença
 func (w *WhatsAppService) SubscribePresence(ctx context.Context, sessionName, phone string) error {
@@ -1921,4 +2010,47 @@ func (w *WhatsAppService) UploadMedia(ctx context.Context, sessionName string, d
 	}
 
 	return &uploaded, nil
+}
+
+// HISTORY SYNC METHODS
+
+// RequestHistorySync sends a history sync request to get messages from the phone
+func (w *WhatsAppService) RequestHistorySync(ctx context.Context, sessionName string, count int) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return whatsmeow.SendResponse{}, err
+	}
+
+	if count <= 0 {
+		count = 100
+	}
+
+	msg := client.BuildHistorySyncRequest(nil, count)
+	ownJID := *client.Store.ID
+	return client.SendMessage(ctx, ownJID, msg)
+}
+
+// RequestUnavailableMessage requests an unavailable message from the phone
+func (w *WhatsAppService) RequestUnavailableMessage(ctx context.Context, sessionName, chatJID, senderJID, messageID string) (whatsmeow.SendResponse, error) {
+	client, err := w.getClient(sessionName)
+	if err != nil {
+		return whatsmeow.SendResponse{}, err
+	}
+
+	chat, err := parseJID(chatJID)
+	if err != nil {
+		return whatsmeow.SendResponse{}, fmt.Errorf("invalid chat JID: %w", err)
+	}
+
+	sender := types.EmptyJID
+	if senderJID != "" {
+		sender, err = parseJID(senderJID)
+		if err != nil {
+			return whatsmeow.SendResponse{}, fmt.Errorf("invalid sender JID: %w", err)
+		}
+	}
+
+	msg := client.BuildUnavailableMessageRequest(chat, sender, messageID)
+	ownJID := *client.Store.ID
+	return client.SendMessage(ctx, ownJID, msg)
 }

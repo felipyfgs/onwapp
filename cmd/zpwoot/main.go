@@ -230,6 +230,9 @@ func main() {
 		mediaHandler = handler.NewMediaHandler(database, mediaService, sessionService)
 	}
 
+	// Initialize History handler
+	historyHandler := handler.NewHistoryHandler(sessionService, whatsappService, historySyncService)
+
 	handlers := &router.Handlers{
 		Session:    handler.NewSessionHandler(sessionService, whatsappService),
 		Message:    handler.NewMessageHandler(whatsappService),
@@ -243,6 +246,7 @@ func main() {
 		Call:       handler.NewCallHandler(whatsappService),
 		Community:  handler.NewCommunityHandler(whatsappService),
 		Media:      mediaHandler,
+		History:    historyHandler,
 	}
 
 	r := router.SetupWithConfig(&router.Config{

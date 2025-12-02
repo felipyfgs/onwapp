@@ -556,6 +556,31 @@ func (h *GroupHandler) SetGroupPicture(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SetPictureResponse{PictureID: pictureID})
 }
 
+// DeleteGroupPicture godoc
+// @Summary      Delete group picture
+// @Description  Remove the group profile picture
+// @Tags         groups
+// @Produce      json
+// @Param        name path string true "Session name"
+// @Param        groupId path string true "Group ID"
+// @Success      200 {object} dto.MessageOnlyResponse
+// @Failure      400 {object} dto.ErrorResponse
+// @Failure      500 {object} dto.ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /sessions/{name}/groups/{groupId}/picture [delete]
+func (h *GroupHandler) DeleteGroupPicture(c *gin.Context) {
+	name := c.Param("name")
+	groupID := c.Param("groupId")
+
+	groupID = strings.TrimSuffix(groupID, "@g.us")
+	if err := h.whatsappService.DeleteGroupPhoto(c.Request.Context(), name, groupID); err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.MessageOnlyResponse{Message: "group picture deleted"})
+}
+
 // SetGroupApprovalMode godoc
 // @Summary      Set group join approval mode
 // @Description  Set whether join requests need admin approval
