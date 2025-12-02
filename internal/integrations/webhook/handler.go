@@ -49,15 +49,15 @@ type ErrorResponse struct {
 // GetWebhook godoc
 // @Summary Get webhook
 // @Description Get the webhook configuration for a session
-// @Tags webhook
+// @Tags         webhook
 // @Produce json
-// @Param name path string true "Session name"
+// @Param sessionId path string true "Session ID"
 // @Success 200 {object} GetWebhookResponse
 // @Failure 404 {object} ErrorResponse
 // @Security ApiKeyAuth
-// @Router /sessions/{name}/webhooks [get]
+// @Router /sessions/{sessionId}/webhooks [get]
 func (h *Handler) GetWebhook(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("sessionId")
 
 	session, err := h.sessionService.Get(name)
 	if err != nil || session == nil {
@@ -91,18 +91,18 @@ func (h *Handler) GetWebhook(c *gin.Context) {
 // SetWebhook godoc
 // @Summary Set webhook
 // @Description Set or update the webhook configuration for a session (one webhook per session)
-// @Tags webhook
+// @Tags         webhook
 // @Accept json
 // @Produce json
-// @Param name path string true "Session name"
+// @Param sessionId path string true "Session ID"
 // @Param request body SetWebhookRequest true "Webhook configuration"
 // @Success 200 {object} GetWebhookResponse
 // @Failure 400 {object} ErrorResponse
 // @Failure 404 {object} ErrorResponse
 // @Security ApiKeyAuth
-// @Router /sessions/{name}/webhooks [post]
+// @Router /sessions/{sessionId}/webhooks [post]
 func (h *Handler) SetWebhook(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("sessionId")
 
 	var req SetWebhookRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -142,18 +142,18 @@ func (h *Handler) SetWebhook(c *gin.Context) {
 // UpdateWebhook godoc
 // @Summary Update webhook
 // @Description Update an existing webhook configuration for a session
-// @Tags webhook
+// @Tags         webhook
 // @Accept json
 // @Produce json
-// @Param name path string true "Session name"
+// @Param sessionId path string true "Session ID"
 // @Param request body SetWebhookRequest true "Webhook configuration"
 // @Success 200 {object} GetWebhookResponse
 // @Failure 400 {object} ErrorResponse
 // @Failure 404 {object} ErrorResponse
 // @Security ApiKeyAuth
-// @Router /sessions/{name}/webhooks [put]
+// @Router /sessions/{sessionId}/webhooks [put]
 func (h *Handler) UpdateWebhook(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("sessionId")
 
 	var req SetWebhookRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -204,15 +204,15 @@ func (h *Handler) UpdateWebhook(c *gin.Context) {
 // DeleteWebhook godoc
 // @Summary Delete webhook
 // @Description Delete the webhook configuration for a session
-// @Tags webhook
+// @Tags         webhook
 // @Produce json
-// @Param name path string true "Session name"
+// @Param sessionId path string true "Session ID"
 // @Success 200 {object} MessageResponse
 // @Failure 404 {object} ErrorResponse
 // @Security ApiKeyAuth
-// @Router /sessions/{name}/webhooks [delete]
+// @Router /sessions/{sessionId}/webhooks [delete]
 func (h *Handler) DeleteWebhook(c *gin.Context) {
-	name := c.Param("name")
+	name := c.Param("sessionId")
 
 	session, err := h.sessionService.Get(name)
 	if err != nil || session == nil {
@@ -247,7 +247,7 @@ type MessageResponse struct {
 // GetEvents godoc
 // @Summary List available webhook events
 // @Description Get a list of all available webhook event types organized by category
-// @Tags webhook
+// @Tags         webhook
 // @Produce json
 // @Success 200 {object} EventsResponse
 // @Security ApiKeyAuth

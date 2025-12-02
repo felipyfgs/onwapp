@@ -1534,7 +1534,7 @@ paths:
             type: object
       summary: Receive Chatwoot webhook
       tags:
-      - Chatwoot
+      - chatwoot
   /events:
     get:
       description: Get a list of all available webhook event types organized by category
@@ -1696,128 +1696,6 @@ paths:
       summary: Process pending media downloads
       tags:
       - media
-  /sessions/{name}/webhooks:
-    delete:
-      description: Delete the webhook configuration for a session
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/webhook.MessageResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/webhook.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Delete webhook
-      tags:
-      - webhook
-    get:
-      description: Get the webhook configuration for a session
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/webhook.GetWebhookResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/webhook.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Get webhook
-      tags:
-      - webhook
-    post:
-      consumes:
-      - application/json
-      description: Set or update the webhook configuration for a session (one webhook
-        per session)
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Webhook configuration
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/webhook.SetWebhookRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/webhook.GetWebhookResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/webhook.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/webhook.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Set webhook
-      tags:
-      - webhook
-    put:
-      consumes:
-      - application/json
-      description: Update an existing webhook configuration for a session
-      parameters:
-      - description: Session name
-        in: path
-        name: name
-        required: true
-        type: string
-      - description: Webhook configuration
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/webhook.SetWebhookRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/webhook.GetWebhookResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/webhook.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/webhook.ErrorResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Update webhook
-      tags:
-      - webhook
   /sessions/{sessionId}:
     delete:
       consumes:
@@ -2239,7 +2117,7 @@ paths:
       - ApiKeyAuth: []
       summary: Delete Chatwoot configuration
       tags:
-      - Chatwoot
+      - chatwoot
   /sessions/{sessionId}/chatwoot/find:
     get:
       description: Get Chatwoot integration configuration for a session
@@ -2265,7 +2143,7 @@ paths:
       - ApiKeyAuth: []
       summary: Get Chatwoot configuration
       tags:
-      - Chatwoot
+      - chatwoot
   /sessions/{sessionId}/chatwoot/reset:
     post:
       description: Delete all Chatwoot contacts, conversations and messages (except
@@ -2288,7 +2166,7 @@ paths:
       - ApiKeyAuth: []
       summary: Reset Chatwoot data for testing
       tags:
-      - Chatwoot
+      - chatwoot
   /sessions/{sessionId}/chatwoot/set:
     post:
       consumes:
@@ -2327,7 +2205,7 @@ paths:
       - ApiKeyAuth: []
       summary: Set Chatwoot configuration
       tags:
-      - Chatwoot
+      - chatwoot
   /sessions/{sessionId}/chatwoot/sync:
     post:
       description: Start async synchronization of all contacts and messages to Chatwoot
@@ -2362,7 +2240,7 @@ paths:
       - ApiKeyAuth: []
       summary: Full sync to Chatwoot (async)
       tags:
-      - Chatwoot
+      - chatwoot
   /sessions/{sessionId}/chatwoot/sync/contacts:
     post:
       description: Start async synchronization of contacts from message history to
@@ -2394,7 +2272,7 @@ paths:
       - ApiKeyAuth: []
       summary: Sync contacts to Chatwoot (async)
       tags:
-      - Chatwoot
+      - chatwoot
   /sessions/{sessionId}/chatwoot/sync/messages:
     post:
       description: Start async synchronization of message history to Chatwoot
@@ -2429,7 +2307,7 @@ paths:
       - ApiKeyAuth: []
       summary: Sync messages to Chatwoot (async)
       tags:
-      - Chatwoot
+      - chatwoot
   /sessions/{sessionId}/chatwoot/sync/status:
     get:
       description: Get the current sync status for a session
@@ -2455,7 +2333,7 @@ paths:
       - ApiKeyAuth: []
       summary: Get sync status
       tags:
-      - Chatwoot
+      - chatwoot
   /sessions/{sessionId}/communities/{communityId}/groups:
     get:
       description: Get list of subgroups in a community
@@ -5632,6 +5510,128 @@ paths:
       summary: Get status privacy settings
       tags:
       - status
+  /sessions/{sessionId}/webhooks:
+    delete:
+      description: Delete the webhook configuration for a session
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/webhook.MessageResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/webhook.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete webhook
+      tags:
+      - webhook
+    get:
+      description: Get the webhook configuration for a session
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/webhook.GetWebhookResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/webhook.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get webhook
+      tags:
+      - webhook
+    post:
+      consumes:
+      - application/json
+      description: Set or update the webhook configuration for a session (one webhook
+        per session)
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Webhook configuration
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/webhook.SetWebhookRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/webhook.GetWebhookResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/webhook.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/webhook.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set webhook
+      tags:
+      - webhook
+    put:
+      consumes:
+      - application/json
+      description: Update an existing webhook configuration for a session
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Webhook configuration
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/webhook.SetWebhookRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/webhook.GetWebhookResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/webhook.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/webhook.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update webhook
+      tags:
+      - webhook
 securityDefinitions:
   ApiKeyAuth:
     in: header
@@ -5639,29 +5639,33 @@ securityDefinitions:
     type: apiKey
 swagger: "2.0"
 tags:
-- description: Authentication & Connection management
+- description: Session lifecycle & connection management
   name: sessions
 - description: Account identity & settings
   name: profile
-- description: Presence & Stories
-  name: status
-- description: Social network core
+- description: Online status & typing indicators
+  name: presence
+- description: Contacts & user management
   name: contact
-- description: Contact collections
+- description: Group management & participants
   name: groups
-- description: Group collections
+- description: Community & linked groups
   name: community
-- description: Conversations
+- description: Conversations & message operations
   name: chat
-- description: Send & receive messages
+- description: Send text, media & interactive messages
   name: messages
-- description: Voice/Video calls
-  name: call
-- description: Broadcast channels
-  name: newsletter
-- description: File storage
+- description: File storage & downloads
   name: media
-- description: Integrations
+- description: Channels & broadcasts
+  name: newsletter
+- description: Stories & status updates
+  name: status
+- description: Voice & video calls
+  name: call
+- description: History sync & offline data
+  name: history
+- description: Webhook integrations
   name: webhook
 - description: Chatwoot integration
   name: chatwoot

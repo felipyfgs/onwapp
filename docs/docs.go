@@ -25,7 +25,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Chatwoot"
+                    "chatwoot"
                 ],
                 "summary": "Receive Chatwoot webhook",
                 "parameters": [
@@ -299,196 +299,6 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/sessions/{name}/webhooks": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Get the webhook configuration for a session",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "webhook"
-                ],
-                "summary": "Get webhook",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session name",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/webhook.GetWebhookResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/webhook.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Update an existing webhook configuration for a session",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "webhook"
-                ],
-                "summary": "Update webhook",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session name",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Webhook configuration",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/webhook.SetWebhookRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/webhook.GetWebhookResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/webhook.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/webhook.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Set or update the webhook configuration for a session (one webhook per session)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "webhook"
-                ],
-                "summary": "Set webhook",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session name",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Webhook configuration",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/webhook.SetWebhookRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/webhook.GetWebhookResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/webhook.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/webhook.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Delete the webhook configuration for a session",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "webhook"
-                ],
-                "summary": "Delete webhook",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session name",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/webhook.MessageResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/webhook.ErrorResponse"
                         }
                     }
                 }
@@ -1121,7 +931,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Chatwoot"
+                    "chatwoot"
                 ],
                 "summary": "Delete Chatwoot configuration",
                 "parameters": [
@@ -1163,7 +973,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Chatwoot"
+                    "chatwoot"
                 ],
                 "summary": "Get Chatwoot configuration",
                 "parameters": [
@@ -1204,7 +1014,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Chatwoot"
+                    "chatwoot"
                 ],
                 "summary": "Reset Chatwoot data for testing",
                 "parameters": [
@@ -1242,7 +1052,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Chatwoot"
+                    "chatwoot"
                 ],
                 "summary": "Set Chatwoot configuration",
                 "parameters": [
@@ -1299,7 +1109,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Chatwoot"
+                    "chatwoot"
                 ],
                 "summary": "Full sync to Chatwoot (async)",
                 "parameters": [
@@ -1353,7 +1163,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Chatwoot"
+                    "chatwoot"
                 ],
                 "summary": "Sync contacts to Chatwoot (async)",
                 "parameters": [
@@ -1401,7 +1211,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Chatwoot"
+                    "chatwoot"
                 ],
                 "summary": "Sync messages to Chatwoot (async)",
                 "parameters": [
@@ -1455,7 +1265,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Chatwoot"
+                    "chatwoot"
                 ],
                 "summary": "Get sync status",
                 "parameters": [
@@ -6439,6 +6249,196 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/sessions/{sessionId}/webhooks": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get the webhook configuration for a session",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "webhook"
+                ],
+                "summary": "Get webhook",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/webhook.GetWebhookResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/webhook.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update an existing webhook configuration for a session",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "webhook"
+                ],
+                "summary": "Update webhook",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Webhook configuration",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/webhook.SetWebhookRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/webhook.GetWebhookResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/webhook.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/webhook.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Set or update the webhook configuration for a session (one webhook per session)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "webhook"
+                ],
+                "summary": "Set webhook",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Webhook configuration",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/webhook.SetWebhookRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/webhook.GetWebhookResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/webhook.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/webhook.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Delete the webhook configuration for a session",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "webhook"
+                ],
+                "summary": "Delete webhook",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/webhook.MessageResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/webhook.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -8604,7 +8604,7 @@ const docTemplate = `{
     },
     "tags": [
         {
-            "description": "Authentication \u0026 Connection management",
+            "description": "Session lifecycle \u0026 connection management",
             "name": "sessions"
         },
         {
@@ -8612,43 +8612,51 @@ const docTemplate = `{
             "name": "profile"
         },
         {
-            "description": "Presence \u0026 Stories",
-            "name": "status"
+            "description": "Online status \u0026 typing indicators",
+            "name": "presence"
         },
         {
-            "description": "Social network core",
+            "description": "Contacts \u0026 user management",
             "name": "contact"
         },
         {
-            "description": "Contact collections",
+            "description": "Group management \u0026 participants",
             "name": "groups"
         },
         {
-            "description": "Group collections",
+            "description": "Community \u0026 linked groups",
             "name": "community"
         },
         {
-            "description": "Conversations",
+            "description": "Conversations \u0026 message operations",
             "name": "chat"
         },
         {
-            "description": "Send \u0026 receive messages",
+            "description": "Send text, media \u0026 interactive messages",
             "name": "messages"
         },
         {
-            "description": "Voice/Video calls",
-            "name": "call"
-        },
-        {
-            "description": "Broadcast channels",
-            "name": "newsletter"
-        },
-        {
-            "description": "File storage",
+            "description": "File storage \u0026 downloads",
             "name": "media"
         },
         {
-            "description": "Integrations",
+            "description": "Channels \u0026 broadcasts",
+            "name": "newsletter"
+        },
+        {
+            "description": "Stories \u0026 status updates",
+            "name": "status"
+        },
+        {
+            "description": "Voice \u0026 video calls",
+            "name": "call"
+        },
+        {
+            "description": "History sync \u0026 offline data",
+            "name": "history"
+        },
+        {
+            "description": "Webhook integrations",
             "name": "webhook"
         },
         {

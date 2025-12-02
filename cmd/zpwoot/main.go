@@ -35,29 +35,33 @@ import (
 // @name apikey
 
 // @tag.name sessions
-// @tag.description Authentication & Connection management
+// @tag.description Session lifecycle & connection management
 // @tag.name profile
 // @tag.description Account identity & settings
-// @tag.name status
-// @tag.description Presence & Stories
+// @tag.name presence
+// @tag.description Online status & typing indicators
 // @tag.name contact
-// @tag.description Social network core
+// @tag.description Contacts & user management
 // @tag.name groups
-// @tag.description Contact collections
+// @tag.description Group management & participants
 // @tag.name community
-// @tag.description Group collections
+// @tag.description Community & linked groups
 // @tag.name chat
-// @tag.description Conversations
+// @tag.description Conversations & message operations
 // @tag.name messages
-// @tag.description Send & receive messages
-// @tag.name call
-// @tag.description Voice/Video calls
-// @tag.name newsletter
-// @tag.description Broadcast channels
+// @tag.description Send text, media & interactive messages
 // @tag.name media
-// @tag.description File storage
+// @tag.description File storage & downloads
+// @tag.name newsletter
+// @tag.description Channels & broadcasts
+// @tag.name status
+// @tag.description Stories & status updates
+// @tag.name call
+// @tag.description Voice & video calls
+// @tag.name history
+// @tag.description History sync & offline data
 // @tag.name webhook
-// @tag.description Integrations
+// @tag.description Webhook integrations
 // @tag.name chatwoot
 // @tag.description Chatwoot integration
 

@@ -31,7 +31,7 @@ func NewHistoryHandler(
 // RequestHistorySync godoc
 // @Summary Request history sync
 // @Description Request WhatsApp to send history sync data from the phone
-// @Tags history
+// @Tags         history
 // @Accept json
 // @Produce json
 // @Param        sessionId   path      string  true  "Session ID"
@@ -67,7 +67,7 @@ func (h *HistoryHandler) RequestHistorySync(c *gin.Context) {
 // GetSyncProgress godoc
 // @Summary Get history sync progress
 // @Description Get the current progress of history sync operations
-// @Tags history
+// @Tags         history
 // @Produce json
 // @Param        sessionId   path      string  true  "Session ID"
 // @Success 200 {array} dto.SyncProgressResponse
@@ -117,7 +117,7 @@ func (h *HistoryHandler) GetSyncProgress(c *gin.Context) {
 // GetUnreadChats godoc
 // @Summary Get unread chats
 // @Description Get list of chats with unread messages from history sync data
-// @Tags history
+// @Tags         history
 // @Produce json
 // @Param        sessionId   path      string  true  "Session ID"
 // @Success 200 {array} dto.ChatResponse
@@ -158,7 +158,7 @@ func (h *HistoryHandler) GetUnreadChats(c *gin.Context) {
 // GetChatInfo godoc
 // @Summary Get chat info
 // @Description Get detailed chat information from history sync data
-// @Tags history
+// @Tags         history
 // @Produce json
 // @Param        sessionId   path      string  true  "Session ID"
 // @Param chatId path string true "Chat JID"
@@ -203,7 +203,7 @@ func (h *HistoryHandler) GetChatInfo(c *gin.Context) {
 // GetGroupPastParticipants godoc
 // @Summary Get group past participants
 // @Description Get past participants of a group from history sync data
-// @Tags history
+// @Tags         history
 // @Produce json
 // @Param        sessionId   path      string  true  "Session ID"
 // @Param groupId path string true "Group JID"
@@ -247,7 +247,7 @@ func (h *HistoryHandler) GetGroupPastParticipants(c *gin.Context) {
 // GetTopStickers godoc
 // @Summary Get top stickers
 // @Description Get most used stickers from history sync data
-// @Tags history
+// @Tags         history
 // @Produce json
 // @Param        sessionId   path      string  true  "Session ID"
 // @Param limit query int false "Number of stickers to return" default(20)

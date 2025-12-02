@@ -52,10 +52,10 @@ func (h *Handler) SetQueueProducer(producer *queue.Producer) {
 // CONFIG ENDPOINTS
 // =============================================================================
 
-// SetConfig handles POST /sessions/:name/chatwoot/set
+// SetConfig handles POST /sessions/:sessionId/chatwoot/set
 // @Summary Set Chatwoot configuration
 // @Description Configure Chatwoot integration for a session
-// @Tags Chatwoot
+// @Tags         chatwoot
 // @Accept json
 // @Produce json
 // @Param sessionId path string true "Session name"
@@ -121,10 +121,10 @@ func (h *Handler) SetConfig(c *gin.Context) {
 	c.JSON(http.StatusOK, cfg)
 }
 
-// GetConfig handles GET /sessions/:name/chatwoot/find
+// GetConfig handles GET /sessions/:sessionId/chatwoot/find
 // @Summary Get Chatwoot configuration
 // @Description Get Chatwoot integration configuration for a session
-// @Tags Chatwoot
+// @Tags         chatwoot
 // @Produce json
 // @Param sessionId path string true "Session name"
 // @Success 200 {object} core.Config
@@ -149,10 +149,10 @@ func (h *Handler) GetConfig(c *gin.Context) {
 	c.JSON(http.StatusOK, cfg)
 }
 
-// DeleteConfig handles DELETE /sessions/:name/chatwoot
+// DeleteConfig handles DELETE /sessions/:sessionId/chatwoot
 // @Summary Delete Chatwoot configuration
 // @Description Remove Chatwoot integration configuration for a session
-// @Tags Chatwoot
+// @Tags         chatwoot
 // @Produce json
 // @Param sessionId path string true "Session name"
 // @Success 200 {object} map[string]interface{}
@@ -180,10 +180,10 @@ func (h *Handler) DeleteConfig(c *gin.Context) {
 // WEBHOOK ENDPOINT
 // =============================================================================
 
-// ReceiveWebhook handles POST /chatwoot/webhook/:name
+// ReceiveWebhook handles POST /chatwoot/webhook/:sessionId
 // @Summary Receive Chatwoot webhook
 // @Description Receive webhook events from Chatwoot
-// @Tags Chatwoot
+// @Tags         chatwoot
 // @Accept json
 // @Produce json
 // @Param sessionId path string true "Session name"
@@ -519,14 +519,14 @@ func (h *Handler) enqueueToWhatsApp(ctx context.Context, session *model.Session,
 }
 
 // SendToWhatsAppFromQueue processes a message from the queue and sends it to WhatsApp
-func (h *Handler) SendToWhatsAppFromQueue(ctx context.Context, sessionID, sessionId string, data *queue.CWToWAMessage) error {
-	session, err := h.sessionService.Get(sessionId)
+func (h *Handler) SendToWhatsAppFromQueue(ctx context.Context, sessionID string, data *queue.CWToWAMessage) error {
+	session, err := h.sessionService.Get(sessionID)
 	if err != nil || session == nil {
-		return fmt.Errorf("session not found: %s", sessionId)
+		return fmt.Errorf("session not found: %s", sessionID)
 	}
 
 	if session.Status != model.StatusConnected {
-		return fmt.Errorf("session not connected: %s", sessionId)
+		return fmt.Errorf("session not connected: %s", sessionID)
 	}
 
 	var quotedMsg *core.QuotedMessageInfo
@@ -593,10 +593,10 @@ func downloadMedia(url string) ([]byte, string, error) {
 // SYNC ENDPOINTS
 // =============================================================================
 
-// SyncContacts handles POST /sessions/:name/chatwoot/sync/contacts
+// SyncContacts handles POST /sessions/:sessionId/chatwoot/sync/contacts
 // @Summary Sync contacts to Chatwoot (async)
 // @Description Start async synchronization of contacts from message history to Chatwoot
-// @Tags Chatwoot
+// @Tags         chatwoot
 // @Produce json
 // @Param sessionId path string true "Session name"
 // @Success 202 {object} core.SyncStatus
@@ -608,10 +608,10 @@ func (h *Handler) SyncContacts(c *gin.Context) {
 	h.handleSync(c, "contacts")
 }
 
-// SyncMessages handles POST /sessions/:name/chatwoot/sync/messages
+// SyncMessages handles POST /sessions/:sessionId/chatwoot/sync/messages
 // @Summary Sync messages to Chatwoot (async)
 // @Description Start async synchronization of message history to Chatwoot
-// @Tags Chatwoot
+// @Tags         chatwoot
 // @Produce json
 // @Param sessionId path string true "Session name"
 // @Param days query int false "Limit to last N days"
@@ -624,10 +624,10 @@ func (h *Handler) SyncMessages(c *gin.Context) {
 	h.handleSync(c, "messages")
 }
 
-// SyncAll handles POST /sessions/:name/chatwoot/sync
+// SyncAll handles POST /sessions/:sessionId/chatwoot/sync
 // @Summary Full sync to Chatwoot (async)
 // @Description Start async synchronization of all contacts and messages to Chatwoot
-// @Tags Chatwoot
+// @Tags         chatwoot
 // @Produce json
 // @Param sessionId path string true "Session name"
 // @Param days query int false "Limit to last N days"
@@ -684,10 +684,10 @@ func (h *Handler) handleSync(c *gin.Context, syncType string) {
 	c.JSON(http.StatusAccepted, status)
 }
 
-// GetSyncStatusHandler handles GET /sessions/:name/chatwoot/sync/status
+// GetSyncStatusHandler handles GET /sessions/:sessionId/chatwoot/sync/status
 // @Summary Get sync status
 // @Description Get the current sync status for a session
-// @Tags Chatwoot
+// @Tags         chatwoot
 // @Produce json
 // @Param sessionId path string true "Session name"
 // @Success 200 {object} core.SyncStatus
@@ -706,10 +706,10 @@ func (h *Handler) GetSyncStatusHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, status)
 }
 
-// ResetChatwoot handles POST /sessions/:name/chatwoot/reset
+// ResetChatwoot handles POST /sessions/:sessionId/chatwoot/reset
 // @Summary Reset Chatwoot data for testing
 // @Description Delete all Chatwoot contacts, conversations and messages (except bot)
-// @Tags Chatwoot
+// @Tags         chatwoot
 // @Produce json
 // @Security ApiKeyAuth
 // @Param sessionId path string true "Session name"

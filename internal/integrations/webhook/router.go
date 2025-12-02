@@ -13,6 +13,6 @@ func RegisterRoutes(r *gin.Engine, handler *Handler, apiKey string) {
 
 // RegisterRoutesOnGroup registers Webhook routes on an existing sessions group
 func RegisterRoutesOnGroup(sessionsGroup *gin.RouterGroup, handler *Handler) {
-	sessionsGroup.GET("/:name/webhooks", handler.GetWebhook)
-	sessionsGroup.POST("/:name/webhooks", handler.SetWebhook)
+	sessionsGroup.GET("/:sessionId/webhooks", handler.GetWebhook)
+	sessionsGroup.POST("/:sessionId/webhooks", handler.SetWebhook)
 }

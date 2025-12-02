@@ -185,7 +185,7 @@ func RegisterQueueHandlers(queueSvc *queue.Service, chatwootSvc *Service) {
 			Str("targetMsgId", data.TargetMsgID).
 			Msg("Processing reaction from queue")
 
-		return chatwootSvc.ProcessReactionFromQueue(ctx, msg.SessionID, msg.SessionId, &data)
+		return chatwootSvc.ProcessReactionFromQueue(ctx, msg.SessionID, &data)
 	})
 
 	// Handler for message deletions
@@ -200,7 +200,7 @@ func RegisterQueueHandlers(queueSvc *queue.Service, chatwootSvc *Service) {
 			Str("deletedMsgId", data.DeletedMsgID).
 			Msg("Processing message deletion from queue")
 
-		return chatwootSvc.ProcessDeleteFromQueue(ctx, msg.SessionID, msg.SessionId, &data)
+		return chatwootSvc.ProcessDeleteFromQueue(ctx, msg.SessionID, &data)
 	})
 
 	logger.Info().Msg("Registered WhatsApp -> Chatwoot queue handlers")
@@ -236,7 +236,7 @@ func RegisterCWToWAQueueHandlers(queueSvc *queue.Service, handler CWToWAHandler)
 			Int("cwMsgId", data.ChatwootMsgID).
 			Msg("Processing Chatwoot->WhatsApp message from queue")
 
-		return handler.SendToWhatsAppFromQueue(ctx, msg.SessionID, msg.SessionId, &data)
+		return handler.SendToWhatsAppFromQueue(ctx, msg.SessionID, &data)
 	})
 
 	// Handler for sending media to WhatsApp
@@ -264,7 +264,7 @@ func RegisterCWToWAQueueHandlers(queueSvc *queue.Service, handler CWToWAHandler)
 			Int("attachments", len(data.Attachments)).
 			Msg("Processing Chatwoot->WhatsApp media from queue")
 
-		return handler.SendToWhatsAppFromQueue(ctx, msg.SessionID, msg.SessionId, &data)
+		return handler.SendToWhatsAppFromQueue(ctx, msg.SessionID, &data)
 	})
 
 	logger.Info().Msg("Registered Chatwoot -> WhatsApp queue handlers")
@@ -272,7 +272,7 @@ func RegisterCWToWAQueueHandlers(queueSvc *queue.Service, handler CWToWAHandler)
 
 // CWToWAHandler interface for handling Chatwoot -> WhatsApp messages
 type CWToWAHandler interface {
-	SendToWhatsAppFromQueue(ctx context.Context, sessionID, sessionId string, data *queue.CWToWAMessage) error
+	SendToWhatsAppFromQueue(ctx context.Context, sessionID string, data *queue.CWToWAMessage) error
 }
 
 // QuotedMessageFromQueue converts queue QuotedInfo to core QuotedMessageInfo
