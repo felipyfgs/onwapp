@@ -309,13 +309,14 @@ func (s *SessionService) startClientWithQR(session *model.Session) {
 
 func (s *SessionService) setupEventHandler(session *model.Session) {
 	session.Client.AddEventHandler(func(evt interface{}) {
-		// Call external handlers (like Chatwoot) FIRST so they can create messages
+		// First, save message to database so UpdateCwFields can work
+		s.eventService.HandleEvent(session, evt)
+
+		// Then call external handlers (like Chatwoot) to create message in Chatwoot
+		// They can now UpdateCwFields because message exists in DB
 		for _, handler := range s.externalHandlers {
 			handler(session, evt)
 		}
-		// Then handle internal events (including webhook dispatch)
-		// This allows webhook to include Chatwoot IDs that were just created
-		s.eventService.HandleEvent(session, evt)
 	})
 }
 
@@ -324,8 +325,8 @@ func (s *SessionService) AddEventHandler(handler EventHandler) {
 	s.externalHandlers = append(s.externalHandlers, handler)
 }
 
-// EmitSyntheticEvent emits a synthetic event to all external handlers.
-// Used to notify integrations (like Chatwoot) about messages sent via API.
+// EmitSyntheticEvent emits a synthetic event for messages sent via API.
+// Saves message to database first, then notifies external handlers (like Chatwoot).
 func (s *SessionService) EmitSyntheticEvent(sessionName string, evt interface{}) {
 	session, err := s.Get(sessionName)
 	if err != nil {
@@ -333,6 +334,10 @@ func (s *SessionService) EmitSyntheticEvent(sessionName string, evt interface{})
 		return
 	}
 
+	// First, save message to database so UpdateCwFields can work
+	s.eventService.HandleEvent(session, evt)
+
+	// Then call external handlers (like Chatwoot) to create message in Chatwoot
 	for _, handler := range s.externalHandlers {
 		handler(session, evt)
 	}
