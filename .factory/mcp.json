@@ -5,16 +5,20 @@
       "command": "npx",
       "args": ["-y", "@upstash/context7-mcp"]
     },
-    "zpwoot-db": {
+    "zpwoot-db-dev": {
       "type": "stdio",
       "command": "npx",
       "args": ["-y", "mcp-postgres-server"],
       "env": {
-        "PG_HOST": "localhost",
-        "PG_PORT": "5432",
-        "PG_USER": "zpwoot",
-        "PG_PASSWORD": "zpwoot123",
-        "PG_DATABASE": "zpwoot"
+        "DATABASE_URL": "postgres://zpwoot:zpwoot123@localhost:5434/zpwoot"
+      }
+    },
+    "zpwoot-db-prod": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "mcp-postgres-server"],
+      "env": {
+        "DATABASE_URL": "postgres://zpwoot:zpwoot123@localhost:5432/zpwoot"
       }
     },
     "chatwoot-db": {
@@ -22,11 +26,7 @@
       "command": "npx",
       "args": ["-y", "mcp-postgres-server"],
       "env": {
-        "PG_HOST": "localhost",
-        "PG_PORT": "5433",
-        "PG_USER": "postgres",
-        "PG_PASSWORD": "postgres",
-        "PG_DATABASE": "chatwoot"
+        "DATABASE_URL": "postgres://postgres:postgres@localhost:5433/chatwoot"
       }
     },
     "github": {

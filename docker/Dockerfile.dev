@@ -1,0 +1,29 @@
+# Build stage - use Go 1.23 with auto toolchain to download Go 1.24 if needed
+FROM golang:1.23-alpine AS builder
+
+RUN apk add --no-cache git
+
+WORKDIR /app
+
+# Allow auto-download of required Go toolchain
+ENV GOTOOLCHAIN=auto
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+RUN CGO_ENABLED=0 GOOS=linux go build -o zpwoot ./cmd/zpwoot
+
+# Runtime stage
+FROM alpine:latest
+
+RUN apk add --no-cache ca-certificates tzdata
+
+WORKDIR /app
+
+COPY --from=builder /app/zpwoot .
+
+EXPOSE 3000
+
+ENTRYPOINT ["./zpwoot"]

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types/events"
@@ -90,12 +91,19 @@ func (h *EventHandler) handleMessage(ctx context.Context, session *model.Session
 
 // enqueueMessage serializes and enqueues a WhatsApp message for async processing
 func (h *EventHandler) enqueueMessage(ctx context.Context, session *model.Session, evt *events.Message) {
-	// Serialize the raw protobuf message
+	// Serialize the raw protobuf message for Chatwoot processing
 	rawEvent, err := proto.Marshal(evt.Message)
 	if err != nil {
 		logger.Warn().Err(err).Str("messageId", evt.Info.ID).Msg("Failed to serialize message for queue, falling back to direct processing")
 		h.processDirectly(ctx, session, evt)
 		return
+	}
+
+	// Serialize the full event JSON for webhook payload
+	fullEventJSON, err := json.Marshal(evt)
+	if err != nil {
+		logger.Warn().Err(err).Str("messageId", evt.Info.ID).Msg("Failed to serialize full event JSON")
+		fullEventJSON = nil
 	}
 
 	isGroup := evt.Info.Chat.Server == "g.us"
@@ -113,6 +121,7 @@ func (h *EventHandler) enqueueMessage(ctx context.Context, session *model.Sessio
 		IsGroup:       isGroup,
 		ParticipantID: participantID,
 		RawEvent:      rawEvent,
+		FullEventJSON: fullEventJSON,
 	}
 
 	// Extract content for logging/debugging

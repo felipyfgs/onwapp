@@ -84,6 +84,8 @@ services:
     networks:
       - infraNet
     environment:
+      # Timezone
+      - TZ=America/Sao_Paulo
       # Database
       - DATABASE_URL=postgres://zpwoot:zpwoot123@zpwoot_postgres:5432/zpwoot?sslmode=disable
       # Server

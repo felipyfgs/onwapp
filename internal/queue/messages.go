@@ -45,16 +45,17 @@ type MediaInfo struct {
 
 // WAToCWMessage - dados específicos WhatsApp -> Chatwoot
 type WAToCWMessage struct {
-	MessageID     string     `json:"message_id"`
-	ChatJID       string     `json:"chat_jid"`
-	SenderJID     string     `json:"sender_jid"`
-	PushName      string     `json:"push_name"`
-	Content       string     `json:"content"`
-	IsFromMe      bool       `json:"is_from_me"`
-	IsGroup       bool       `json:"is_group"`
-	ParticipantID string     `json:"participant_id,omitempty"`
-	MediaInfo     *MediaInfo `json:"media_info,omitempty"`
-	RawEvent      []byte     `json:"raw_event"` // Protobuf serialized message (base64 encoded in JSON)
+	MessageID     string          `json:"message_id"`
+	ChatJID       string          `json:"chat_jid"`
+	SenderJID     string          `json:"sender_jid"`
+	PushName      string          `json:"push_name"`
+	Content       string          `json:"content"`
+	IsFromMe      bool            `json:"is_from_me"`
+	IsGroup       bool            `json:"is_group"`
+	ParticipantID string          `json:"participant_id,omitempty"`
+	MediaInfo     *MediaInfo      `json:"media_info,omitempty"`
+	RawEvent      []byte          `json:"raw_event"`      // Protobuf serialized message for Chatwoot processing
+	FullEventJSON json.RawMessage `json:"full_event_json"` // Complete event JSON for webhook payload
 }
 
 // WAToCWReceiptMessage - dados de recibo (read/delivered)

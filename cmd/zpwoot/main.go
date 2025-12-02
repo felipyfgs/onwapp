@@ -129,6 +129,21 @@ func main() {
 	// Connect webhook sender to Chatwoot service (for dispatching webhooks with CW IDs after message processing)
 	chatwootService.SetWebhookSender(chatwoot.NewWebhookSenderAdapter(webhookService))
 	chatwootService.SetMediaDownloader(whatsappService.DownloadMedia) // Enable media upload to Chatwoot
+
+	// Configure webhook skip checker: skip message webhooks from EventService when Chatwoot is enabled
+	// (Chatwoot service will send its own webhook with enriched data including CW IDs)
+	sessionService.SetWebhookSkipChecker(func(sessionID string, event string) bool {
+		// Only skip message events - other events (session, presence, etc.) should still be sent by EventService
+		if event != "message.received" && event != "message.sent" {
+			return false
+		}
+		// Check if Chatwoot is enabled for this session
+		cfg, err := chatwootRepo.GetEnabledBySessionID(ctx, sessionID)
+		if err != nil || cfg == nil {
+			return false // Chatwoot not enabled, don't skip
+		}
+		return true // Chatwoot is enabled, skip (Chatwoot service will send the webhook)
+	})
 	// Set profile picture fetcher for contact management
 	chatwootService.SetProfilePictureFetcher(func(ctx context.Context, sessionName string, jid string) (string, error) {
 		pic, err := whatsappService.GetProfilePicture(ctx, sessionName, jid)

@@ -10,16 +10,16 @@ services:
     ports:
       - '5434:5432'
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-zpwoot}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-zpwoot123}
-      POSTGRES_DB: ${POSTGRES_DB:-zpwoot}
+      POSTGRES_USER: zpwoot
+      POSTGRES_PASSWORD: zpwoot123
+      POSTGRES_DB: zpwoot
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data_dev:/var/lib/postgresql/data
     networks:
       - zpwoot-network-dev
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-zpwoot} -d ${POSTGRES_DB:-zpwoot}']
+      test: ['CMD-SHELL', 'pg_isready -U zpwoot -d zpwoot']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -35,11 +35,11 @@ services:
       CONNECTIONS: con1
       LABEL_con1: zpwoot PostgreSQL Dev
       SERVER_con1: postgres-dev
-      USER_con1: ${POSTGRES_USER:-zpwoot}
-      PASSWORD_con1: ${POSTGRES_PASSWORD:-zpwoot123}
+      USER_con1: zpwoot
+      PASSWORD_con1: zpwoot123
       PORT_con1: 5432
       ENGINE_con1: postgres@dbgate-plugin-postgres
-      DATABASE_con1: ${POSTGRES_DB:-zpwoot}
+      DATABASE_con1: zpwoot
     depends_on:
       postgres-dev:
         condition: service_healthy
@@ -100,8 +100,8 @@ services:
       - '9002:9000'
       - '9003:9001'
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-zpwoot}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-zpwoot123}
+      MINIO_ROOT_USER: zpwoot
+      MINIO_ROOT_PASSWORD: zpwoot123
     volumes:
       - minio_data_dev:/data
     networks:
@@ -109,7 +109,9 @@ services:
 
   # ZPWoot API
   api-dev:
-    image: onwapp/zpwoot:latest
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev
     container_name: zpwoot-api-dev
     restart: unless-stopped
     ports:
@@ -117,16 +119,16 @@ services:
     environment:
       DATABASE_URL: postgres://zpwoot:zpwoot123@postgres-dev:5432/zpwoot?sslmode=disable
       PORT: '3000'
-      API_KEY: ${API_KEY:-dev-api-key-12345}
-      SERVER_URL: ${SERVER_URL:-http://localhost:3003}
+      API_KEY: dev-api-key-12345
+      SERVER_URL: http://localhost:3003
       LOG_LEVEL: debug
       LOG_FORMAT: console
       MINIO_ENDPOINT: minio-dev:9000
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-zpwoot}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-zpwoot123}
+      MINIO_ACCESS_KEY: zpwoot
+      MINIO_SECRET_KEY: zpwoot123
       MINIO_BUCKET: zpwoot-media
       MINIO_USE_SSL: 'false'
-      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9002}
+      MINIO_PUBLIC_URL: http://localhost:9002
       NATS_ENABLED: 'true'
       NATS_URL: nats://nats-dev:4222
       NATS_STREAM_PREFIX: ZPWOOT_DEV

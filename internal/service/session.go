@@ -312,6 +312,12 @@ func (s *SessionService) SetHistorySyncService(historySyncService *HistorySyncSe
 	s.eventService.SetHistorySyncService(historySyncService)
 }
 
+// SetWebhookSkipChecker sets the function that determines if webhook should be skipped
+// for certain session/event combinations (e.g., when Chatwoot handles message webhooks)
+func (s *SessionService) SetWebhookSkipChecker(checker WebhookSkipChecker) {
+	s.eventService.SetWebhookSkipChecker(checker)
+}
+
 func (s *SessionService) Logout(ctx context.Context, name string) error {
 	session, err := s.Get(name)
 	if err != nil {

@@ -60,6 +60,63 @@ func (s *Service) Send(ctx context.Context, sessionID, sessionName, event string
 	s.SendWithChatwoot(ctx, sessionID, sessionName, event, rawEvent, nil)
 }
 
+// SendWithPreserializedJSON sends webhook using pre-serialized JSON (most performant)
+// Avoids re-serialization when JSON is already available (e.g., from queue processing)
+func (s *Service) SendWithPreserializedJSON(ctx context.Context, sessionID, sessionName, event string, eventJSON []byte, cwInfo *ChatwootInfo) {
+	wh, err := s.repo.GetEnabledBySession(ctx, sessionID)
+	if err != nil {
+		logger.Error().Err(err).Str("sessionId", sessionID).Msg("Failed to get webhook")
+		return
+	}
+
+	if wh == nil || wh.URL == "" {
+		return
+	}
+
+	if !s.shouldSendEvent(wh.Events, event) {
+		return
+	}
+
+	// Parse existing JSON and inject metadata (single parse, single serialize)
+	var payload map[string]interface{}
+	if len(eventJSON) > 0 {
+		if err := json.Unmarshal(eventJSON, &payload); err != nil {
+			payload = make(map[string]interface{})
+		}
+	} else {
+		payload = make(map[string]interface{})
+	}
+
+	// Inject metadata
+	payload["event"] = event
+	payload["sessionId"] = sessionID
+	payload["sessionName"] = sessionName
+
+	// Add Chatwoot metadata
+	if cwInfo != nil {
+		if cwInfo.Account > 0 {
+			payload["chatwootAccount"] = cwInfo.Account
+		}
+		if cwInfo.InboxID > 0 {
+			payload["chatwootInboxId"] = cwInfo.InboxID
+		}
+		if cwInfo.ConversationID > 0 {
+			payload["chatwootConversationId"] = cwInfo.ConversationID
+		}
+		if cwInfo.MessageID > 0 {
+			payload["chatwootMessageId"] = cwInfo.MessageID
+		}
+	}
+
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to marshal webhook payload")
+		return
+	}
+
+	go s.sendWebhook(*wh, jsonPayload)
+}
+
 // SendWithChatwoot sends a webhook notification with Chatwoot IDs included
 func (s *Service) SendWithChatwoot(ctx context.Context, sessionID, sessionName, event string, rawEvent interface{}, cwInfo *ChatwootInfo) {
 	wh, err := s.repo.GetEnabledBySession(ctx, sessionID)

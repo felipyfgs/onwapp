@@ -22,6 +22,7 @@ type MediaDownloader func(ctx context.Context, sessionName string, msg *waE2E.Me
 // WebhookSender is an interface for sending webhooks with Chatwoot info
 type WebhookSender interface {
 	SendWithChatwoot(ctx context.Context, sessionID, sessionName, event string, rawEvent interface{}, cwInfo *ChatwootInfo)
+	SendWithPreserializedJSON(ctx context.Context, sessionID, sessionName, event string, eventJSON []byte, cwInfo *ChatwootInfo)
 }
 
 // ChatwootInfo contains Chatwoot metadata for webhook

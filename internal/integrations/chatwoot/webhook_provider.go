@@ -83,3 +83,17 @@ func (a *WebhookSenderAdapter) SendWithChatwoot(ctx context.Context, sessionID, 
 	}
 	a.webhookService.SendWithChatwoot(ctx, sessionID, sessionName, event, rawEvent, webhookInfo)
 }
+
+// SendWithPreserializedJSON implements cwservice.WebhookSender interface (optimized path)
+func (a *WebhookSenderAdapter) SendWithPreserializedJSON(ctx context.Context, sessionID, sessionName, event string, eventJSON []byte, cwInfo *cwservice.ChatwootInfo) {
+	var webhookInfo *webhook.ChatwootInfo
+	if cwInfo != nil {
+		webhookInfo = &webhook.ChatwootInfo{
+			Account:        cwInfo.Account,
+			InboxID:        cwInfo.InboxID,
+			ConversationID: cwInfo.ConversationID,
+			MessageID:      cwInfo.MessageID,
+		}
+	}
+	a.webhookService.SendWithPreserializedJSON(ctx, sessionID, sessionName, event, eventJSON, webhookInfo)
+}

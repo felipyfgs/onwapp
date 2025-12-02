@@ -24,8 +24,7 @@ docker-compose*.yml
 Dockerfile*
 .dockerignore
 
-# Documentation
-docs/
+# Documentation (keep docs/ for swagger)
 *.md
 LICENSE*
 

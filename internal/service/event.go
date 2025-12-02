@@ -20,11 +20,16 @@ import (
 	"zpwoot/internal/model"
 )
 
+// WebhookSkipChecker checks if webhook should be skipped for a session/event
+// (used when Chatwoot or other integrations will send their own webhook with enriched data)
+type WebhookSkipChecker func(sessionID string, event string) bool
+
 type EventService struct {
 	database           *db.Database
 	webhookService     WebhookSender
 	mediaService       *MediaService
 	historySyncService *HistorySyncService
+	webhookSkipChecker WebhookSkipChecker
 }
 
 func NewEventService(database *db.Database, webhookService WebhookSender) *EventService {
@@ -42,6 +47,12 @@ func (s *EventService) SetMediaService(mediaService *MediaService) {
 // SetHistorySyncService sets the history sync service for processing sync data
 func (s *EventService) SetHistorySyncService(historySyncService *HistorySyncService) {
 	s.historySyncService = historySyncService
+}
+
+// SetWebhookSkipChecker sets the function that determines if webhook should be skipped
+// This is used when integrations like Chatwoot will send their own webhook with enriched data
+func (s *EventService) SetWebhookSkipChecker(checker WebhookSkipChecker) {
+	s.webhookSkipChecker = checker
 }
 
 func (s *EventService) HandleEvent(session *model.Session, evt interface{}) {
@@ -1704,9 +1715,16 @@ func (s *EventService) handleLabelAssociationChat(ctx context.Context, session *
 // Helper
 
 func (s *EventService) sendWebhook(ctx context.Context, session *model.Session, event string, rawEvent interface{}) {
-	if s.webhookService != nil {
-		s.webhookService.Send(ctx, session.ID, session.Name, event, rawEvent)
+	if s.webhookService == nil {
+		return
 	}
+
+	// Check if webhook should be skipped (e.g., Chatwoot will send its own enriched webhook)
+	if s.webhookSkipChecker != nil && s.webhookSkipChecker(session.ID, event) {
+		return
+	}
+
+	s.webhookService.Send(ctx, session.ID, session.Name, event, rawEvent)
 }
 
 func (s *EventService) saveHistorySyncToJSON(sessionName string, e *events.HistorySync, syncType string, chunkOrder uint32) {

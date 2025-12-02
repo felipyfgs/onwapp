@@ -1,9 +1,9 @@
 {
   "enabled": true,
   "url": "https://chat.yourdomain.com",
-  "token": "Zsrf9CAfEmPfq1i2wt8cb2aT",
+  "token": "wBU5GPN1D67gTWBVc3fh7LCy",
   "account": 1,
-  "inbox": "my-session",
+  "inbox": "WhatsApp",
   "signAgent": false,
   "signSeparator": "\n",
   "autoReopen": true,

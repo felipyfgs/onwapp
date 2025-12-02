@@ -21,15 +21,30 @@ import (
 // INCOMING MESSAGE PROCESSING (WhatsApp -> Chatwoot)
 // =============================================================================
 
-// ProcessIncomingMessage processes a WhatsApp message and sends to Chatwoot
+// ProcessIncomingMessage processes a WhatsApp message and sends to Chatwoot (includes webhook)
 func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Session, evt *events.Message) error {
-	cfg, err := s.repo.GetEnabledBySessionID(ctx, session.ID)
+	cwMsgID, cwConvID, cfg, err := s.processIncomingMessageInternal(ctx, session, evt)
+	if err != nil {
+		return err
+	}
+
+	// Send webhook with Chatwoot IDs
+	if cfg != nil && cwMsgID > 0 {
+		s.sendWebhookWithChatwootIds(ctx, session, cfg, evt, cwMsgID, cwConvID)
+	}
+
+	return nil
+}
+
+// processIncomingMessageInternal processes a WhatsApp message and returns Chatwoot IDs (no webhook)
+func (s *Service) processIncomingMessageInternal(ctx context.Context, session *model.Session, evt *events.Message) (cwMsgID int, cwConvID int, cfg *core.Config, err error) {
+	cfg, err = s.repo.GetEnabledBySessionID(ctx, session.ID)
 	if err != nil {
 		logger.Debug().Err(err).Str("sessionId", session.ID).Msg("Chatwoot: error getting config")
-		return nil
+		return 0, 0, nil, nil
 	}
 	if cfg == nil {
-		return nil
+		return 0, 0, nil, nil
 	}
 
 	remoteJid := evt.Info.Chat.String()
@@ -46,14 +61,14 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 	}
 
 	if s.ShouldIgnoreJid(cfg, remoteJid) {
-		return nil
+		return 0, 0, nil, nil
 	}
 
 	c := client.NewClient(cfg.URL, cfg.Token, cfg.Account)
 
 	if cfg.InboxID == 0 {
 		if err := s.InitInbox(ctx, cfg); err != nil {
-			return fmt.Errorf("failed to init inbox: %w", err)
+			return 0, 0, nil, fmt.Errorf("failed to init inbox: %w", err)
 		}
 	}
 
@@ -86,18 +101,18 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 		session.Name,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to get/create conversation: %w", err)
+		return 0, 0, nil, fmt.Errorf("failed to get/create conversation: %w", err)
 	}
 
 	sourceID := fmt.Sprintf("WAID:%s", evt.Info.ID)
 
 	if util.IsMediaMessage(evt.Message) && s.mediaDownloader != nil {
-		return s.processIncomingMediaMessage(ctx, session, evt, c, convID, sourceID, cfg)
+		return s.processIncomingMediaMessageInternal(ctx, session, evt, c, convID, sourceID, cfg)
 	}
 
 	content := s.extractMessageContent(evt)
 	if content == "" {
-		return nil
+		return 0, 0, nil, nil
 	}
 
 	if isGroup && participantJid != "" && !evt.Info.IsFromMe {
@@ -122,26 +137,24 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 		if core.IsNotFoundError(err) {
 			s.HandleConversationNotFound(ctx, session.ID, convID)
 		}
-		return fmt.Errorf("failed to create message in chatwoot: %w", err)
+		return 0, 0, nil, fmt.Errorf("failed to create message in chatwoot: %w", err)
 	}
 
 	if cwMsg != nil && s.database != nil {
 		if err := s.database.Messages.UpdateCwFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, convID, sourceID); err != nil {
 			logger.Debug().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update message fields")
 		}
-
-		// Send webhook with Chatwoot IDs after they are saved
-		s.sendWebhookWithChatwootIds(ctx, session, cfg, evt, cwMsg.ID, convID)
+		return cwMsg.ID, convID, cfg, nil
 	}
 
-	return nil
+	return 0, convID, cfg, nil
 }
 
-// processIncomingMediaMessage handles media messages (images, videos, documents, etc.)
-func (s *Service) processIncomingMediaMessage(ctx context.Context, session *model.Session, evt *events.Message, c *client.Client, conversationID int, sourceID string, cfg *core.Config) error {
+// processIncomingMediaMessageInternal handles media messages and returns Chatwoot IDs (no webhook)
+func (s *Service) processIncomingMediaMessageInternal(ctx context.Context, session *model.Session, evt *events.Message, c *client.Client, conversationID int, sourceID string, cfg *core.Config) (cwMsgID int, cwConvID int, retCfg *core.Config, err error) {
 	mediaInfo := util.GetMediaInfo(evt.Message)
 	if mediaInfo == nil {
-		return fmt.Errorf("failed to get media info")
+		return 0, 0, nil, fmt.Errorf("failed to get media info")
 	}
 
 	var contentAttributes map[string]interface{}
@@ -169,8 +182,14 @@ func (s *Service) processIncomingMediaMessage(ctx context.Context, session *mode
 			SourceID:          sourceID,
 			ContentAttributes: contentAttributes,
 		}
-		_, err := c.CreateMessage(ctx, conversationID, msgReq)
-		return err
+		cwMsg, err := c.CreateMessage(ctx, conversationID, msgReq)
+		if err != nil {
+			return 0, conversationID, cfg, err
+		}
+		if cwMsg != nil {
+			return cwMsg.ID, conversationID, cfg, nil
+		}
+		return 0, conversationID, cfg, nil
 	}
 
 	content := mediaInfo.Caption
@@ -179,25 +198,28 @@ func (s *Service) processIncomingMediaMessage(ctx context.Context, session *mode
 		if core.IsNotFoundError(err) {
 			s.HandleConversationNotFound(ctx, session.ID, conversationID)
 		}
-		return fmt.Errorf("failed to upload media to chatwoot: %w", err)
+		return 0, 0, nil, fmt.Errorf("failed to upload media to chatwoot: %w", err)
 	}
 
 	if cwMsg != nil && s.database != nil {
 		if err := s.database.Messages.UpdateCwFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, conversationID, sourceID); err != nil {
 			logger.Debug().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update media message fields")
 		}
-
-		// Send webhook with Chatwoot IDs after they are saved
-		s.sendWebhookWithChatwootIds(ctx, session, cfg, evt, cwMsg.ID, conversationID)
+		return cwMsg.ID, conversationID, cfg, nil
 	}
 
-	return nil
+	return 0, conversationID, cfg, nil
 }
 
 // sendWebhookWithChatwootIds sends a webhook notification with Chatwoot message and conversation IDs
 func (s *Service) sendWebhookWithChatwootIds(ctx context.Context, session *model.Session, cfg *core.Config, evt *events.Message, cwMsgID, cwConvID int) {
 	if s.webhookSender == nil {
 		return
+	}
+
+	event := "message.received"
+	if evt.Info.IsFromMe {
+		event = "message.sent"
 	}
 
 	cwInfo := &ChatwootInfo{
@@ -207,26 +229,57 @@ func (s *Service) sendWebhookWithChatwootIds(ctx context.Context, session *model
 		MessageID:      cwMsgID,
 	}
 
+	s.webhookSender.SendWithChatwoot(ctx, session.ID, session.Name, event, evt, cwInfo)
+}
+
+// sendWebhookWithPreserializedJSON sends webhook using pre-serialized JSON (optimized for queue processing)
+func (s *Service) sendWebhookWithPreserializedJSON(ctx context.Context, session *model.Session, cfg *core.Config, isFromMe bool, fullEventJSON []byte, cwMsgID, cwConvID int) {
+	if s.webhookSender == nil || len(fullEventJSON) == 0 {
+		return
+	}
+
 	event := "message.received"
-	if evt.Info.IsFromMe {
+	if isFromMe {
 		event = "message.sent"
 	}
 
-	s.webhookSender.SendWithChatwoot(ctx, session.ID, session.Name, event, evt, cwInfo)
+	cwInfo := &ChatwootInfo{
+		Account:        cfg.Account,
+		InboxID:        cfg.InboxID,
+		ConversationID: cwConvID,
+		MessageID:      cwMsgID,
+	}
+
+	s.webhookSender.SendWithPreserializedJSON(ctx, session.ID, session.Name, event, fullEventJSON, cwInfo)
 }
 
 // =============================================================================
 // OUTGOING MESSAGE PROCESSING (WhatsApp direct -> Chatwoot)
 // =============================================================================
 
-// ProcessOutgoingMessage processes outgoing messages sent directly from WhatsApp
+// ProcessOutgoingMessage processes outgoing messages sent directly from WhatsApp (includes webhook)
 func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Session, evt *events.Message) error {
-	cfg, err := s.repo.GetEnabledBySessionID(ctx, session.ID)
+	cwMsgID, cwConvID, cfg, err := s.processOutgoingMessageInternal(ctx, session, evt)
 	if err != nil {
-		return nil
+		return err
+	}
+
+	// Send webhook with Chatwoot IDs
+	if cfg != nil && cwMsgID > 0 {
+		s.sendWebhookWithChatwootIds(ctx, session, cfg, evt, cwMsgID, cwConvID)
+	}
+
+	return nil
+}
+
+// processOutgoingMessageInternal processes outgoing messages and returns Chatwoot IDs (no webhook)
+func (s *Service) processOutgoingMessageInternal(ctx context.Context, session *model.Session, evt *events.Message) (cwMsgID int, cwConvID int, cfg *core.Config, err error) {
+	cfg, err = s.repo.GetEnabledBySessionID(ctx, session.ID)
+	if err != nil {
+		return 0, 0, nil, nil
 	}
 	if cfg == nil {
-		return nil
+		return 0, 0, nil, nil
 	}
 
 	remoteJid := evt.Info.Chat.String()
@@ -239,7 +292,7 @@ func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Ses
 	}
 
 	if s.ShouldIgnoreJid(cfg, remoteJid) {
-		return nil
+		return 0, 0, nil, nil
 	}
 
 	sourceID := fmt.Sprintf("WAID:%s", evt.Info.ID)
@@ -247,7 +300,7 @@ func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Ses
 	if s.database != nil {
 		existingMsg, _ := s.database.Messages.GetByMsgId(ctx, session.ID, evt.Info.ID)
 		if existingMsg != nil && existingMsg.CwMsgId != nil && *existingMsg.CwMsgId > 0 {
-			return nil
+			return 0, 0, nil, nil
 		}
 	}
 
@@ -255,7 +308,7 @@ func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Ses
 
 	if cfg.InboxID == 0 {
 		if err := s.InitInbox(ctx, cfg); err != nil {
-			return fmt.Errorf("failed to init inbox: %w", err)
+			return 0, 0, nil, fmt.Errorf("failed to init inbox: %w", err)
 		}
 	}
 
@@ -264,22 +317,22 @@ func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Ses
 
 	contact, err := c.GetOrCreateContactWithMerge(ctx, cfg.InboxID, phoneNumber, remoteJid, phoneNumber, "", isGroup, cfg.MergeBrPhones)
 	if err != nil {
-		return fmt.Errorf("failed to get/create contact: %w", err)
+		return 0, 0, nil, fmt.Errorf("failed to get/create contact: %w", err)
 	}
 
 	conv, err := c.GetOrCreateConversation(ctx, contact.ID, cfg.InboxID, "open", cfg.AutoReopen)
 	if err != nil {
-		return fmt.Errorf("failed to get/create conversation: %w", err)
+		return 0, 0, nil, fmt.Errorf("failed to get/create conversation: %w", err)
 	}
 
 	// Handle media messages (audio, image, video, document, sticker)
 	if util.IsMediaMessage(evt.Message) && s.mediaDownloader != nil {
-		return s.processOutgoingMediaMessage(ctx, session, evt, c, conv.ID, sourceID, cfg)
+		return s.processOutgoingMediaMessageInternal(ctx, session, evt, c, conv.ID, sourceID, cfg)
 	}
 
 	content := s.extractMessageContent(evt)
 	if content == "" {
-		return nil
+		return 0, 0, nil, nil
 	}
 
 	msgReq := &client.CreateMessageRequest{
@@ -300,26 +353,24 @@ func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Ses
 		if core.IsNotFoundError(err) {
 			s.HandleConversationNotFound(ctx, session.ID, conv.ID)
 		}
-		return fmt.Errorf("failed to create outgoing message in chatwoot: %w", err)
+		return 0, 0, nil, fmt.Errorf("failed to create outgoing message in chatwoot: %w", err)
 	}
 
 	if cwMsg != nil && s.database != nil {
 		if err := s.database.Messages.UpdateCwFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, conv.ID, sourceID); err != nil {
 			logger.Debug().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update outgoing message fields")
 		}
-
-		// Send webhook with Chatwoot IDs after they are saved
-		s.sendWebhookWithChatwootIds(ctx, session, cfg, evt, cwMsg.ID, conv.ID)
+		return cwMsg.ID, conv.ID, cfg, nil
 	}
 
-	return nil
+	return 0, conv.ID, cfg, nil
 }
 
-// processOutgoingMediaMessage handles outgoing media messages (images, videos, audio, documents, etc.)
-func (s *Service) processOutgoingMediaMessage(ctx context.Context, session *model.Session, evt *events.Message, c *client.Client, conversationID int, sourceID string, cfg *core.Config) error {
+// processOutgoingMediaMessageInternal handles outgoing media messages and returns Chatwoot IDs (no webhook)
+func (s *Service) processOutgoingMediaMessageInternal(ctx context.Context, session *model.Session, evt *events.Message, c *client.Client, conversationID int, sourceID string, cfg *core.Config) (cwMsgID int, cwConvID int, retCfg *core.Config, err error) {
 	mediaInfo := util.GetMediaInfo(evt.Message)
 	if mediaInfo == nil {
-		return fmt.Errorf("failed to get media info")
+		return 0, 0, nil, fmt.Errorf("failed to get media info")
 	}
 
 	var contentAttributes map[string]interface{}
@@ -347,8 +398,14 @@ func (s *Service) processOutgoingMediaMessage(ctx context.Context, session *mode
 			SourceID:          sourceID,
 			ContentAttributes: contentAttributes,
 		}
-		_, err := c.CreateMessage(ctx, conversationID, msgReq)
-		return err
+		cwMsg, err := c.CreateMessage(ctx, conversationID, msgReq)
+		if err != nil {
+			return 0, conversationID, cfg, err
+		}
+		if cwMsg != nil {
+			return cwMsg.ID, conversationID, cfg, nil
+		}
+		return 0, conversationID, cfg, nil
 	}
 
 	content := mediaInfo.Caption
@@ -357,19 +414,17 @@ func (s *Service) processOutgoingMediaMessage(ctx context.Context, session *mode
 		if core.IsNotFoundError(err) {
 			s.HandleConversationNotFound(ctx, session.ID, conversationID)
 		}
-		return fmt.Errorf("failed to upload outgoing media to chatwoot: %w", err)
+		return 0, 0, nil, fmt.Errorf("failed to upload outgoing media to chatwoot: %w", err)
 	}
 
 	if cwMsg != nil && s.database != nil {
 		if err := s.database.Messages.UpdateCwFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, conversationID, sourceID); err != nil {
 			logger.Debug().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update outgoing media message fields")
 		}
-
-		// Send webhook with Chatwoot IDs after they are saved
-		s.sendWebhookWithChatwootIds(ctx, session, cfg, evt, cwMsg.ID, conversationID)
+		return cwMsg.ID, conversationID, cfg, nil
 	}
 
-	return nil
+	return 0, conversationID, cfg, nil
 }
 
 // =============================================================================

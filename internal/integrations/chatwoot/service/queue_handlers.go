@@ -37,7 +37,7 @@ func (s *Service) ProcessIncomingFromQueue(ctx context.Context, sessionID, sessi
 
 	senderJID, _ := types.ParseJID(data.SenderJID)
 
-	// Reconstruct the event
+	// Reconstruct the event for Chatwoot processing
 	evt := &events.Message{
 		Info: types.MessageInfo{
 			MessageSource: types.MessageSource{
@@ -52,7 +52,18 @@ func (s *Service) ProcessIncomingFromQueue(ctx context.Context, sessionID, sessi
 		Message: msg,
 	}
 
-	return s.ProcessIncomingMessage(ctx, session, evt)
+	// Process for Chatwoot and get IDs
+	cwMsgID, cwConvID, cfg, err := s.processIncomingMessageInternal(ctx, session, evt)
+	if err != nil {
+		return err
+	}
+
+	// Send webhook with pre-serialized JSON (no re-serialization needed)
+	if cfg != nil && cwMsgID > 0 {
+		s.sendWebhookWithPreserializedJSON(ctx, session, cfg, data.IsFromMe, data.FullEventJSON, cwMsgID, cwConvID)
+	}
+
+	return nil
 }
 
 // ProcessOutgoingFromQueue processes an outgoing message from the queue
@@ -76,7 +87,7 @@ func (s *Service) ProcessOutgoingFromQueue(ctx context.Context, sessionID, sessi
 
 	senderJID, _ := types.ParseJID(data.SenderJID)
 
-	// Reconstruct the event
+	// Reconstruct the event for Chatwoot processing
 	evt := &events.Message{
 		Info: types.MessageInfo{
 			MessageSource: types.MessageSource{
@@ -91,7 +102,18 @@ func (s *Service) ProcessOutgoingFromQueue(ctx context.Context, sessionID, sessi
 		Message: msg,
 	}
 
-	return s.ProcessOutgoingMessage(ctx, session, evt)
+	// Process for Chatwoot and get IDs
+	cwMsgID, cwConvID, cfg, err := s.processOutgoingMessageInternal(ctx, session, evt)
+	if err != nil {
+		return err
+	}
+
+	// Send webhook with pre-serialized JSON (no re-serialization needed)
+	if cfg != nil && cwMsgID > 0 {
+		s.sendWebhookWithPreserializedJSON(ctx, session, cfg, data.IsFromMe, data.FullEventJSON, cwMsgID, cwConvID)
+	}
+
+	return nil
 }
 
 // ProcessReactionFromQueue processes a reaction message from the queue
