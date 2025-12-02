@@ -29,7 +29,7 @@ type QueueMessage struct {
 	ID          string          `json:"id"`
 	Type        MessageType     `json:"type"`
 	SessionID   string          `json:"session_id"`
-	SessionName string          `json:"session_name"`
+	SessionId string          `json:"session_id"`
 	Timestamp   time.Time       `json:"timestamp"`
 	Retries     int             `json:"retries"`
 	Data        json.RawMessage `json:"data"`

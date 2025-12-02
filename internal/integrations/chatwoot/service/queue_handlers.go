@@ -154,7 +154,7 @@ func RegisterQueueHandlers(queueSvc *queue.Service, chatwootSvc *Service) {
 			Str("messageId", data.MessageID).
 			Msg("Processing incoming message from queue")
 
-		return chatwootSvc.ProcessIncomingFromQueue(ctx, msg.SessionID, msg.SessionName, &data)
+		return chatwootSvc.ProcessIncomingFromQueue(ctx, msg.SessionID, msg.SessionId, &data)
 	})
 
 	// Handler for outgoing messages sent directly from WhatsApp
@@ -169,7 +169,7 @@ func RegisterQueueHandlers(queueSvc *queue.Service, chatwootSvc *Service) {
 			Str("messageId", data.MessageID).
 			Msg("Processing outgoing message from queue")
 
-		return chatwootSvc.ProcessOutgoingFromQueue(ctx, msg.SessionID, msg.SessionName, &data)
+		return chatwootSvc.ProcessOutgoingFromQueue(ctx, msg.SessionID, msg.SessionId, &data)
 	})
 
 	// Handler for reactions
@@ -185,7 +185,7 @@ func RegisterQueueHandlers(queueSvc *queue.Service, chatwootSvc *Service) {
 			Str("targetMsgId", data.TargetMsgID).
 			Msg("Processing reaction from queue")
 
-		return chatwootSvc.ProcessReactionFromQueue(ctx, msg.SessionID, msg.SessionName, &data)
+		return chatwootSvc.ProcessReactionFromQueue(ctx, msg.SessionID, msg.SessionId, &data)
 	})
 
 	// Handler for message deletions
@@ -200,7 +200,7 @@ func RegisterQueueHandlers(queueSvc *queue.Service, chatwootSvc *Service) {
 			Str("deletedMsgId", data.DeletedMsgID).
 			Msg("Processing message deletion from queue")
 
-		return chatwootSvc.ProcessDeleteFromQueue(ctx, msg.SessionID, msg.SessionName, &data)
+		return chatwootSvc.ProcessDeleteFromQueue(ctx, msg.SessionID, msg.SessionId, &data)
 	})
 
 	logger.Info().Msg("Registered WhatsApp -> Chatwoot queue handlers")
@@ -236,7 +236,7 @@ func RegisterCWToWAQueueHandlers(queueSvc *queue.Service, handler CWToWAHandler)
 			Int("cwMsgId", data.ChatwootMsgID).
 			Msg("Processing Chatwoot->WhatsApp message from queue")
 
-		return handler.SendToWhatsAppFromQueue(ctx, msg.SessionID, msg.SessionName, &data)
+		return handler.SendToWhatsAppFromQueue(ctx, msg.SessionID, msg.SessionId, &data)
 	})
 
 	// Handler for sending media to WhatsApp
@@ -264,7 +264,7 @@ func RegisterCWToWAQueueHandlers(queueSvc *queue.Service, handler CWToWAHandler)
 			Int("attachments", len(data.Attachments)).
 			Msg("Processing Chatwoot->WhatsApp media from queue")
 
-		return handler.SendToWhatsAppFromQueue(ctx, msg.SessionID, msg.SessionName, &data)
+		return handler.SendToWhatsAppFromQueue(ctx, msg.SessionID, msg.SessionId, &data)
 	})
 
 	logger.Info().Msg("Registered Chatwoot -> WhatsApp queue handlers")
