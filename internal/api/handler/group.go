@@ -521,12 +521,14 @@ func (h *GroupHandler) SetGroupLocked(c *gin.Context) {
 
 // SetGroupPicture godoc
 // @Summary      Set group picture
-// @Description  Set the group profile picture
+// @Description  Set the group profile picture (supports JSON with base64/URL or multipart/form-data)
 // @Tags         groups
-// @Accept       json
+// @Accept       json,mpfd
 // @Produce      json
 // @Param        sessionId   path      string  true  "Session ID"
-// @Param        body body dto.GroupPictureRequest true "Picture data"
+// @Param        body body dto.GroupPictureRequest false "Picture data (JSON)"
+// @Param        groupId  formData  string  false  "Group ID (form-data)"
+// @Param        file  formData  file  false  "Image file (form-data)"
 // @Success      200 {object} dto.SetPictureResponse
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
@@ -535,18 +537,33 @@ func (h *GroupHandler) SetGroupLocked(c *gin.Context) {
 func (h *GroupHandler) SetGroupPicture(c *gin.Context) {
 	sessionId := c.Param("sessionId")
 
-	var req dto.GroupPictureRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-		return
+	var groupID string
+	var imageData []byte
+	var ok bool
+
+	if IsMultipartRequest(c) {
+		groupID = c.PostForm("groupId")
+		if groupID == "" {
+			groupID = c.Param("groupId")
+		}
+		imageData, _, ok = GetMediaFromForm(c, "file")
+		if !ok {
+			return
+		}
+	} else {
+		var req dto.GroupPictureRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+			return
+		}
+		groupID = req.GroupID
+		imageData, _, ok = GetMediaData(c, req.Image, "image")
+		if !ok {
+			return
+		}
 	}
 
-	imageData, ok := DecodeBase64(c, req.Image, "image")
-	if !ok {
-		return
-	}
-
-	groupID := strings.TrimSuffix(req.GroupID, "@g.us")
+	groupID = strings.TrimSuffix(groupID, "@g.us")
 	pictureID, err := h.whatsappService.SetGroupPhoto(c.Request.Context(), sessionId, groupID, imageData)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})

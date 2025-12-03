@@ -367,11 +367,14 @@ type NativeFlowButtonDTO struct {
 }
 
 type SendInteractiveRequest struct {
-	Phone   string                `json:"phone" binding:"required" example:"5511999999999"`
-	Title   string                `json:"title" example:"Interactive Title"`
-	Body    string                `json:"body" binding:"required" example:"Message body text"`
-	Footer  string                `json:"footer" example:"Footer text"`
-	Buttons []NativeFlowButtonDTO `json:"buttons" binding:"required,min=1"`
+	Phone    string                `json:"phone" binding:"required" example:"5511999999999"`
+	Title    string                `json:"title" example:"Interactive Title"`
+	Body     string                `json:"body" binding:"required" example:"Message body text"`
+	Footer   string                `json:"footer" example:"Footer text"`
+	Buttons  []NativeFlowButtonDTO `json:"buttons" binding:"required,min=1"`
+	Image    string                `json:"image,omitempty" example:"URL or base64 encoded image"`
+	Video    string                `json:"video,omitempty" example:"URL or base64 encoded video"`
+	MimeType string                `json:"mimetype,omitempty" example:"image/jpeg"`
 }
 
 // Template message requests
@@ -415,8 +418,8 @@ type SendTemplateRequest struct {
 
 type CarouselCardHeaderDTO struct {
 	Title    string `json:"title" example:"Product 1"`
-	Image    string `json:"image,omitempty" example:"base64_encoded_image"`
-	Video    string `json:"video,omitempty" example:"base64_encoded_video"`
+	Image    string `json:"image,omitempty" example:"base64_encoded_image_or_url"`
+	Video    string `json:"video,omitempty" example:"base64_encoded_video_or_url"`
 	MimeType string `json:"mimetype,omitempty" example:"image/jpeg"`
 }
 

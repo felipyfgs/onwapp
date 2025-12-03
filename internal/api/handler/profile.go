@@ -109,12 +109,13 @@ func (h *ProfileHandler) SetPushName(c *gin.Context) {
 
 // SetProfilePicture godoc
 // @Summary      Set profile picture
-// @Description  Set WhatsApp profile picture
+// @Description  Set WhatsApp profile picture (supports JSON with base64/URL or multipart/form-data)
 // @Tags         profile
-// @Accept       json
+// @Accept       json,mpfd
 // @Produce      json
 // @Param        sessionId   path      string  true  "Session ID"
-// @Param        body   body      dto.SetProfilePictureRequest  true  "Image data"
+// @Param        body   body      dto.SetProfilePictureRequest  false  "Image data (JSON)"
+// @Param        file  formData  file  false  "Image file (form-data)"
 // @Success      200    {object}  dto.SetPictureResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
@@ -124,15 +125,24 @@ func (h *ProfileHandler) SetPushName(c *gin.Context) {
 func (h *ProfileHandler) SetProfilePicture(c *gin.Context) {
 	sessionId := c.Param("sessionId")
 
-	var req dto.SetProfilePictureRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-		return
-	}
+	var imageData []byte
+	var ok bool
 
-	imageData, ok := DecodeBase64(c, req.Image, "image")
-	if !ok {
-		return
+	if IsMultipartRequest(c) {
+		imageData, _, ok = GetMediaFromForm(c, "file")
+		if !ok {
+			return
+		}
+	} else {
+		var req dto.SetProfilePictureRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+			return
+		}
+		imageData, _, ok = GetMediaData(c, req.Image, "image")
+		if !ok {
+			return
+		}
 	}
 
 	pictureID, err := h.whatsappService.SetProfilePicture(c.Request.Context(), sessionId, imageData)

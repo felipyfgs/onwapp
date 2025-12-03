@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/base64"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -22,12 +21,14 @@ func NewStatusHandler(whatsappService *service.WhatsAppService) *StatusHandler {
 
 // SendStory godoc
 // @Summary      Post a story
-// @Description  Post a text or media story (status update visible to contacts)
+// @Description  Post a text or media story (status update visible to contacts). Supports JSON with base64/URL or multipart/form-data.
 // @Tags         status
-// @Accept       json
+// @Accept       json,mpfd
 // @Produce      json
 // @Param        sessionId   path      string  true  "Session ID"
-// @Param        body   body      dto.SendStatusRequest true  "Story data"
+// @Param        body   body      dto.SendStatusRequest false  "Story data (JSON)"
+// @Param        text  formData  string  false  "Text content (form-data)"
+// @Param        file  formData  file  false  "Image file (form-data)"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
@@ -36,24 +37,35 @@ func NewStatusHandler(whatsappService *service.WhatsAppService) *StatusHandler {
 func (h *StatusHandler) SendStory(c *gin.Context) {
 	sessionId := c.Param("sessionId")
 
-	var req dto.SendStatusRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-		return
+	var text, image string
+	var imageData []byte
+
+	if IsMultipartRequest(c) {
+		text = c.PostForm("text")
+		if file, _, err := c.Request.FormFile("file"); err == nil {
+			defer file.Close()
+			// Image from form-data - not yet fully supported
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "image status requires upload - use text status for now"})
+			return
+		}
+	} else {
+		var req dto.SendStatusRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+			return
+		}
+		text = req.Text
+		image = req.Image
 	}
 
 	var msg *waE2E.Message
 
-	if req.Text != "" {
+	if text != "" {
 		msg = &waE2E.Message{
-			Conversation: proto.String(req.Text),
+			Conversation: proto.String(text),
 		}
-	} else if req.Image != "" {
-		imageData, err := base64.StdEncoding.DecodeString(req.Image)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 image"})
-			return
-		}
+	} else if image != "" {
+		imageData, _, _ = GetMediaData(c, image, "image")
 		_ = imageData
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "image status requires upload - use text status for now"})
 		return

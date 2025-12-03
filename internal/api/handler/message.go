@@ -59,12 +59,15 @@ func (h *MessageHandler) SendText(c *gin.Context) {
 
 // SendImage godoc
 // @Summary      Send image message
-// @Description  Send an image to a phone number (base64 encoded)
+// @Description  Send an image to a phone number (supports JSON with base64/URL or multipart/form-data)
 // @Tags         messages
-// @Accept       json
+// @Accept       json,mpfd
 // @Produce      json
 // @Param        sessionId   path      string  true  "Session ID"
-// @Param        body   body      dto.SendImageRequest true  "Image data"
+// @Param        body   body      dto.SendImageRequest false  "Image data (JSON)"
+// @Param        phone  formData  string  false  "Phone number (form-data)"
+// @Param        caption  formData  string  false  "Caption (form-data)"
+// @Param        file  formData  file  false  "Image file (form-data)"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
@@ -74,20 +77,47 @@ func (h *MessageHandler) SendText(c *gin.Context) {
 func (h *MessageHandler) SendImage(c *gin.Context) {
 	sessionId := c.Param("sessionId")
 
-	var req dto.SendImageRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+	var phone, caption, mimeType string
+	var imageData []byte
+	var detectedMime string
+	var ok bool
+
+	if IsMultipartRequest(c) {
+		phone = c.PostForm("phone")
+		caption = c.PostForm("caption")
+		mimeType = c.PostForm("mimeType")
+		imageData, detectedMime, ok = GetMediaFromForm(c, "file")
+		if !ok {
+			return
+		}
+	} else {
+		var req dto.SendImageRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+			return
+		}
+		phone = req.Phone
+		caption = req.Caption
+		mimeType = req.MimeType
+		imageData, detectedMime, ok = GetMediaData(c, req.Image, "image")
+		if !ok {
+			return
+		}
+	}
+
+	if phone == "" {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "phone is required"})
 		return
 	}
 
-	imageData, ok := DecodeBase64(c, req.Image, "image")
-	if !ok {
-		return
+	if mimeType == "" {
+		mimeType = detectedMime
+	}
+	if mimeType == "" {
+		mimeType = "image/jpeg"
 	}
 
-	mimeType := GetMimeTypeOrDefault(req.MimeType, "image/jpeg")
-
-	resp, err := h.whatsappService.SendImage(c.Request.Context(), sessionId, req.Phone, imageData, req.Caption, mimeType)
+	resp, err := h.whatsappService.SendImage(c.Request.Context(), sessionId, phone, imageData, caption, mimeType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -102,12 +132,15 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 
 // SendAudio godoc
 // @Summary      Send audio message
-// @Description  Send an audio to a phone number (base64 encoded)
+// @Description  Send an audio to a phone number (supports JSON with base64/URL or multipart/form-data)
 // @Tags         messages
-// @Accept       json
+// @Accept       json,mpfd
 // @Produce      json
 // @Param        sessionId   path      string  true  "Session ID"
-// @Param        body   body      dto.SendAudioRequest true  "Audio data"
+// @Param        body   body      dto.SendAudioRequest false  "Audio data (JSON)"
+// @Param        phone  formData  string  false  "Phone number (form-data)"
+// @Param        ptt  formData  bool  false  "Push to talk (form-data)"
+// @Param        file  formData  file  false  "Audio file (form-data)"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
@@ -117,20 +150,48 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 func (h *MessageHandler) SendAudio(c *gin.Context) {
 	sessionId := c.Param("sessionId")
 
-	var req dto.SendAudioRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+	var phone, mimeType string
+	var ptt bool
+	var audioData []byte
+	var detectedMime string
+	var ok bool
+
+	if IsMultipartRequest(c) {
+		phone = c.PostForm("phone")
+		mimeType = c.PostForm("mimeType")
+		ptt = c.PostForm("ptt") == "true"
+		audioData, detectedMime, ok = GetMediaFromForm(c, "file")
+		if !ok {
+			return
+		}
+	} else {
+		var req dto.SendAudioRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+			return
+		}
+		phone = req.Phone
+		mimeType = req.MimeType
+		ptt = req.PTT
+		audioData, detectedMime, ok = GetMediaData(c, req.Audio, "audio")
+		if !ok {
+			return
+		}
+	}
+
+	if phone == "" {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "phone is required"})
 		return
 	}
 
-	audioData, ok := DecodeBase64(c, req.Audio, "audio")
-	if !ok {
-		return
+	if mimeType == "" {
+		mimeType = detectedMime
+	}
+	if mimeType == "" {
+		mimeType = "audio/ogg; codecs=opus"
 	}
 
-	mimeType := GetMimeTypeOrDefault(req.MimeType, "audio/ogg; codecs=opus")
-
-	resp, err := h.whatsappService.SendAudio(c.Request.Context(), sessionId, req.Phone, audioData, mimeType, req.PTT)
+	resp, err := h.whatsappService.SendAudio(c.Request.Context(), sessionId, phone, audioData, mimeType, ptt)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -145,12 +206,15 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 
 // SendVideo godoc
 // @Summary      Send video message
-// @Description  Send a video to a phone number (base64 encoded)
+// @Description  Send a video to a phone number (supports JSON with base64/URL or multipart/form-data)
 // @Tags         messages
-// @Accept       json
+// @Accept       json,mpfd
 // @Produce      json
 // @Param        sessionId   path      string  true  "Session ID"
-// @Param        body   body      dto.SendVideoRequest true  "Video data"
+// @Param        body   body      dto.SendVideoRequest false  "Video data (JSON)"
+// @Param        phone  formData  string  false  "Phone number (form-data)"
+// @Param        caption  formData  string  false  "Caption (form-data)"
+// @Param        file  formData  file  false  "Video file (form-data)"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
@@ -160,20 +224,47 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 func (h *MessageHandler) SendVideo(c *gin.Context) {
 	sessionId := c.Param("sessionId")
 
-	var req dto.SendVideoRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+	var phone, caption, mimeType string
+	var videoData []byte
+	var detectedMime string
+	var ok bool
+
+	if IsMultipartRequest(c) {
+		phone = c.PostForm("phone")
+		caption = c.PostForm("caption")
+		mimeType = c.PostForm("mimeType")
+		videoData, detectedMime, ok = GetMediaFromForm(c, "file")
+		if !ok {
+			return
+		}
+	} else {
+		var req dto.SendVideoRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+			return
+		}
+		phone = req.Phone
+		caption = req.Caption
+		mimeType = req.MimeType
+		videoData, detectedMime, ok = GetMediaData(c, req.Video, "video")
+		if !ok {
+			return
+		}
+	}
+
+	if phone == "" {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "phone is required"})
 		return
 	}
 
-	videoData, ok := DecodeBase64(c, req.Video, "video")
-	if !ok {
-		return
+	if mimeType == "" {
+		mimeType = detectedMime
+	}
+	if mimeType == "" {
+		mimeType = "video/mp4"
 	}
 
-	mimeType := GetMimeTypeOrDefault(req.MimeType, "video/mp4")
-
-	resp, err := h.whatsappService.SendVideo(c.Request.Context(), sessionId, req.Phone, videoData, req.Caption, mimeType)
+	resp, err := h.whatsappService.SendVideo(c.Request.Context(), sessionId, phone, videoData, caption, mimeType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -188,12 +279,15 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 
 // SendDocument godoc
 // @Summary      Send document message
-// @Description  Send a document to a phone number (base64 encoded)
+// @Description  Send a document to a phone number (supports JSON with base64/URL or multipart/form-data)
 // @Tags         messages
-// @Accept       json
+// @Accept       json,mpfd
 // @Produce      json
 // @Param        sessionId   path      string  true  "Session ID"
-// @Param        body   body      dto.SendDocumentRequest true  "Document data"
+// @Param        body   body      dto.SendDocumentRequest false  "Document data (JSON)"
+// @Param        phone  formData  string  false  "Phone number (form-data)"
+// @Param        filename  formData  string  false  "Filename (form-data)"
+// @Param        file  formData  file  false  "Document file (form-data)"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
@@ -203,20 +297,47 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 func (h *MessageHandler) SendDocument(c *gin.Context) {
 	sessionId := c.Param("sessionId")
 
-	var req dto.SendDocumentRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+	var phone, filename, mimeType string
+	var docData []byte
+	var detectedMime string
+	var ok bool
+
+	if IsMultipartRequest(c) {
+		phone = c.PostForm("phone")
+		filename = c.PostForm("filename")
+		mimeType = c.PostForm("mimeType")
+		docData, detectedMime, ok = GetMediaFromForm(c, "file")
+		if !ok {
+			return
+		}
+	} else {
+		var req dto.SendDocumentRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+			return
+		}
+		phone = req.Phone
+		filename = req.Filename
+		mimeType = req.MimeType
+		docData, detectedMime, ok = GetMediaData(c, req.Document, "document")
+		if !ok {
+			return
+		}
+	}
+
+	if phone == "" {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "phone is required"})
 		return
 	}
 
-	docData, ok := DecodeBase64(c, req.Document, "document")
-	if !ok {
-		return
+	if mimeType == "" {
+		mimeType = detectedMime
+	}
+	if mimeType == "" {
+		mimeType = "application/octet-stream"
 	}
 
-	mimeType := GetMimeTypeOrDefault(req.MimeType, "application/octet-stream")
-
-	resp, err := h.whatsappService.SendDocument(c.Request.Context(), sessionId, req.Phone, docData, req.Filename, mimeType)
+	resp, err := h.whatsappService.SendDocument(c.Request.Context(), sessionId, phone, docData, filename, mimeType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -231,12 +352,14 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 
 // SendSticker godoc
 // @Summary      Send sticker message
-// @Description  Send a sticker to a phone number (base64 encoded webp)
+// @Description  Send a sticker to a phone number (supports JSON with base64/URL or multipart/form-data)
 // @Tags         messages
-// @Accept       json
+// @Accept       json,mpfd
 // @Produce      json
 // @Param        sessionId   path      string  true  "Session ID"
-// @Param        body   body      dto.SendStickerRequest true  "Sticker data"
+// @Param        body   body      dto.SendStickerRequest false  "Sticker data (JSON)"
+// @Param        phone  formData  string  false  "Phone number (form-data)"
+// @Param        file  formData  file  false  "Sticker file (form-data)"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
@@ -246,20 +369,45 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 func (h *MessageHandler) SendSticker(c *gin.Context) {
 	sessionId := c.Param("sessionId")
 
-	var req dto.SendStickerRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+	var phone, mimeType string
+	var stickerData []byte
+	var detectedMime string
+	var ok bool
+
+	if IsMultipartRequest(c) {
+		phone = c.PostForm("phone")
+		mimeType = c.PostForm("mimeType")
+		stickerData, detectedMime, ok = GetMediaFromForm(c, "file")
+		if !ok {
+			return
+		}
+	} else {
+		var req dto.SendStickerRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+			return
+		}
+		phone = req.Phone
+		mimeType = req.MimeType
+		stickerData, detectedMime, ok = GetMediaData(c, req.Sticker, "sticker")
+		if !ok {
+			return
+		}
+	}
+
+	if phone == "" {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "phone is required"})
 		return
 	}
 
-	stickerData, ok := DecodeBase64(c, req.Sticker, "sticker")
-	if !ok {
-		return
+	if mimeType == "" {
+		mimeType = detectedMime
+	}
+	if mimeType == "" {
+		mimeType = "image/webp"
 	}
 
-	mimeType := GetMimeTypeOrDefault(req.MimeType, "image/webp")
-
-	resp, err := h.whatsappService.SendSticker(c.Request.Context(), sessionId, req.Phone, stickerData, mimeType)
+	resp, err := h.whatsappService.SendSticker(c.Request.Context(), sessionId, phone, stickerData, mimeType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -565,7 +713,7 @@ func (h *MessageHandler) SendList(c *gin.Context) {
 
 // SendInteractive godoc
 // @Summary      Send interactive message with native flow buttons
-// @Description  Send an interactive message with buttons (quick_reply, cta_url, cta_call, cta_copy)
+// @Description  Send an interactive message with buttons (quick_reply, cta_url, cta_call, cta_copy). Supports optional image/video header.
 // @Tags         messages
 // @Accept       json
 // @Produce      json
@@ -599,6 +747,64 @@ func (h *MessageHandler) SendInteractive(c *gin.Context) {
 		Body:    req.Body,
 		Footer:  req.Footer,
 		Buttons: buttons,
+	}
+
+	// Handle optional image (supports URL or base64)
+	if req.Image != "" {
+		imageData, detectedMime, ok := GetMediaData(c, req.Image, "image")
+		if !ok {
+			return
+		}
+		uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), sessionId, imageData, whatsmeow.MediaImage)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to upload image: " + err.Error()})
+			return
+		}
+		mimeType := req.MimeType
+		if mimeType == "" {
+			mimeType = detectedMime
+		}
+		if mimeType == "" {
+			mimeType = "image/jpeg"
+		}
+		params.ImageMessage = &waE2E.ImageMessage{
+			URL:           proto.String(uploaded.URL),
+			DirectPath:    proto.String(uploaded.DirectPath),
+			MediaKey:      uploaded.MediaKey,
+			FileEncSHA256: uploaded.FileEncSHA256,
+			FileSHA256:    uploaded.FileSHA256,
+			FileLength:    proto.Uint64(uint64(len(imageData))),
+			Mimetype:      proto.String(mimeType),
+		}
+	}
+
+	// Handle optional video (supports URL or base64)
+	if req.Video != "" {
+		videoData, detectedMime, ok := GetMediaData(c, req.Video, "video")
+		if !ok {
+			return
+		}
+		uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), sessionId, videoData, whatsmeow.MediaVideo)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to upload video: " + err.Error()})
+			return
+		}
+		mimeType := req.MimeType
+		if mimeType == "" {
+			mimeType = detectedMime
+		}
+		if mimeType == "" {
+			mimeType = "video/mp4"
+		}
+		params.VideoMessage = &waE2E.VideoMessage{
+			URL:           proto.String(uploaded.URL),
+			DirectPath:    proto.String(uploaded.DirectPath),
+			MediaKey:      uploaded.MediaKey,
+			FileEncSHA256: uploaded.FileEncSHA256,
+			FileSHA256:    uploaded.FileSHA256,
+			FileLength:    proto.Uint64(uint64(len(videoData))),
+			Mimetype:      proto.String(mimeType),
+		}
 	}
 
 	resp, err := h.whatsappService.SendNativeFlowMessage(c.Request.Context(), sessionId, req.Phone, params)
@@ -668,11 +874,10 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 		Buttons: buttons,
 	}
 
-	// Handle optional image
+	// Handle optional image (supports URL or base64)
 	if req.Image != "" {
-		imageData, err := base64.StdEncoding.DecodeString(req.Image)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 image"})
+		imageData, detectedMime, ok := GetMediaData(c, req.Image, "image")
+		if !ok {
 			return
 		}
 		uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), sessionId, imageData, whatsmeow.MediaImage)
@@ -681,6 +886,9 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 			return
 		}
 		mimeType := req.MimeType
+		if mimeType == "" {
+			mimeType = detectedMime
+		}
 		if mimeType == "" {
 			mimeType = "image/jpeg"
 		}
@@ -695,11 +903,10 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 		}
 	}
 
-	// Handle optional video
+	// Handle optional video (supports URL or base64)
 	if req.Video != "" {
-		videoData, err := base64.StdEncoding.DecodeString(req.Video)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 video"})
+		videoData, detectedMime, ok := GetMediaData(c, req.Video, "video")
+		if !ok {
 			return
 		}
 		uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), sessionId, videoData, whatsmeow.MediaVideo)
@@ -708,6 +915,9 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 			return
 		}
 		mimeType := req.MimeType
+		if mimeType == "" {
+			mimeType = detectedMime
+		}
 		if mimeType == "" {
 			mimeType = "video/mp4"
 		}
@@ -722,11 +932,10 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 		}
 	}
 
-	// Handle optional document
+	// Handle optional document (supports URL or base64)
 	if req.Document != "" {
-		docData, err := base64.StdEncoding.DecodeString(req.Document)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 document"})
+		docData, detectedMime, ok := GetMediaData(c, req.Document, "document")
+		if !ok {
 			return
 		}
 		uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), sessionId, docData, whatsmeow.MediaDocument)
@@ -735,6 +944,9 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 			return
 		}
 		mimeType := req.MimeType
+		if mimeType == "" {
+			mimeType = detectedMime
+		}
 		if mimeType == "" {
 			mimeType = "application/pdf"
 		}
@@ -800,19 +1012,37 @@ func (h *MessageHandler) SendCarousel(c *gin.Context) {
 			Title: card.Header.Title,
 		}
 
-		// Handle card image
+		// Handle card image (supports URL or base64)
 		if card.Header.Image != "" {
-			imageData, err := base64.StdEncoding.DecodeString(card.Header.Image)
-			if err != nil {
-				c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 image in card"})
-				return
+			var imageData []byte
+			var downloadErr error
+			mimeType := card.Header.MimeType
+
+			if IsURL(card.Header.Image) {
+				// Download from URL
+				var detectedMime string
+				imageData, detectedMime, downloadErr = DownloadFromURL(card.Header.Image)
+				if downloadErr != nil {
+					c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "failed to download image from URL: " + downloadErr.Error()})
+					return
+				}
+				if mimeType == "" {
+					mimeType = detectedMime
+				}
+			} else {
+				// Decode base64
+				imageData, downloadErr = base64.StdEncoding.DecodeString(card.Header.Image)
+				if downloadErr != nil {
+					c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 image in card"})
+					return
+				}
 			}
+
 			uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), sessionId, imageData, whatsmeow.MediaImage)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to upload card image: " + err.Error()})
 				return
 			}
-			mimeType := card.Header.MimeType
 			if mimeType == "" {
 				mimeType = "image/jpeg"
 			}
@@ -827,19 +1057,37 @@ func (h *MessageHandler) SendCarousel(c *gin.Context) {
 			}
 		}
 
-		// Handle card video
+		// Handle card video (supports URL or base64)
 		if card.Header.Video != "" {
-			videoData, err := base64.StdEncoding.DecodeString(card.Header.Video)
-			if err != nil {
-				c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 video in card"})
-				return
+			var videoData []byte
+			var downloadErr error
+			mimeType := card.Header.MimeType
+
+			if IsURL(card.Header.Video) {
+				// Download from URL
+				var detectedMime string
+				videoData, detectedMime, downloadErr = DownloadFromURL(card.Header.Video)
+				if downloadErr != nil {
+					c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "failed to download video from URL: " + downloadErr.Error()})
+					return
+				}
+				if mimeType == "" {
+					mimeType = detectedMime
+				}
+			} else {
+				// Decode base64
+				videoData, downloadErr = base64.StdEncoding.DecodeString(card.Header.Video)
+				if downloadErr != nil {
+					c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 video in card"})
+					return
+				}
 			}
+
 			uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), sessionId, videoData, whatsmeow.MediaVideo)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to upload card video: " + err.Error()})
 				return
 			}
-			mimeType := card.Header.MimeType
 			if mimeType == "" {
 				mimeType = "video/mp4"
 			}
