@@ -787,31 +787,31 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 
 	// Batch save messages
 	if len(allMessages) > 0 {
-		// Enrich messages with pushNames from whatsmeow_contacts
-		if session.Client != nil && session.Client.Store != nil && session.Client.Store.ID != nil {
-			deviceJID := session.Client.Store.ID.String()
-
-			// Collect unique senderJIDs that need pushName lookup
-			var jidsToLookup []string
-			jidSet := make(map[string]bool)
-			for _, msg := range allMessages {
-				if msg.PushName == "" && msg.SenderJID != "" && !jidSet[msg.SenderJID] {
-					jidsToLookup = append(jidsToLookup, msg.SenderJID)
-					jidSet[msg.SenderJID] = true
-				}
-			}
-
-			// Batch lookup pushNames
-			if len(jidsToLookup) > 0 {
-				pushNames := s.database.Contacts.GetPushNameBatch(ctx, deviceJID, jidsToLookup)
-
+		// Enrich messages with pushNames using whatsmeow's native ContactStore
+		if session.Client != nil && session.Client.Store != nil && session.Client.Store.Contacts != nil {
+			// Get all contacts from whatsmeow's store (cached in memory)
+			allContacts, err := session.Client.Store.Contacts.GetAllContacts(ctx)
+			if err == nil && len(allContacts) > 0 {
 				// Apply pushNames to messages
 				enriched := 0
 				for _, msg := range allMessages {
 					if msg.PushName == "" && msg.SenderJID != "" {
-						if name, ok := pushNames[msg.SenderJID]; ok && name != "" {
-							msg.PushName = name
-							enriched++
+						senderJID, err := types.ParseJID(msg.SenderJID)
+						if err != nil {
+							continue
+						}
+						if contact, ok := allContacts[senderJID]; ok {
+							name := contact.PushName
+							if name == "" {
+								name = contact.FullName
+							}
+							if name == "" {
+								name = contact.FirstName
+							}
+							if name != "" {
+								msg.PushName = name
+								enriched++
+							}
 						}
 					}
 				}
@@ -820,7 +820,7 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 					logger.Debug().
 						Int("enriched", enriched).
 						Int("total", len(allMessages)).
-						Msg("Enriched messages with pushNames from contacts")
+						Msg("Enriched messages with pushNames from whatsmeow contacts")
 				}
 			}
 		}
@@ -1157,31 +1157,37 @@ func (s *EventService) handlePushNameSync(ctx context.Context, session *model.Se
 	}
 
 	// Also try to update via LID -> Phone mapping for messages with LID senderJid
-	if len(phoneToName) > 0 {
-		// Get phone numbers from the pushname JIDs
-		var phones []string
+	// Uses whatsmeow's native LID store
+	if len(phoneToName) > 0 && session.Client != nil && session.Client.Store != nil && session.Client.Store.LIDs != nil {
+		// Convert phone JIDs to types.JID for whatsmeow lookup
+		var pnJIDs []types.JID
 		for phoneJID := range phoneToName {
-			phone := strings.TrimSuffix(phoneJID, "@s.whatsapp.net")
-			phones = append(phones, phone)
+			if pn, err := types.ParseJID(phoneJID); err == nil {
+				pnJIDs = append(pnJIDs, pn)
+			}
 		}
 
-		if len(phones) > 0 {
-			// Find LIDs that map to these phones using repository
-			lidToPhone, err := s.database.Contacts.GetLIDToPhoneMappings(ctx, phones)
-			if err == nil && len(lidToPhone) > 0 {
+		if len(pnJIDs) > 0 {
+			// Use whatsmeow's native method to get LID mappings
+			pnToLID, err := session.Client.Store.LIDs.GetManyLIDsForPNs(ctx, pnJIDs)
+			if err == nil && len(pnToLID) > 0 {
 				// Update messages where senderJid is a LID that maps to a phone with pushName
 				var updated int64
-				for lid, phone := range lidToPhone {
-					phoneJID := phone + "@s.whatsapp.net"
+				for pn, lid := range pnToLID {
+					if lid.IsEmpty() {
+						continue
+					}
+					phoneJID := pn.String()
 					if name, ok := phoneToName[phoneJID]; ok && name != "" {
-						affected, err := s.database.Messages.UpdatePushNameByLIDPattern(ctx, session.ID, lid+"%@lid", name)
+						lidNum := lid.User
+						affected, err := s.database.Messages.UpdatePushNameByLIDPattern(ctx, session.ID, lidNum+"%@lid", name)
 						if err == nil {
 							updated += affected
 						}
 					}
 				}
 				if updated > 0 {
-					logger.Debug().Int64("updated", updated).Msg("Updated LID messages with pushNames via phone mapping")
+					logger.Debug().Int64("updated", updated).Msg("Updated LID messages with pushNames via whatsmeow LID store")
 				}
 			}
 		}

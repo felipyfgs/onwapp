@@ -30,7 +30,6 @@ type Database struct {
 	Chats          *repository.ChatRepository
 	Stickers       *repository.StickerRepository
 	HistorySync    *repository.HistorySyncRepository
-	Contacts       *repository.ContactRepository
 }
 
 func New(ctx context.Context, databaseURL string) (*Database, error) {
@@ -75,7 +74,6 @@ func New(ctx context.Context, databaseURL string) (*Database, error) {
 		Chats:          repository.NewChatRepository(pool),
 		Stickers:       repository.NewStickerRepository(pool),
 		HistorySync:    repository.NewHistorySyncRepository(pool),
-		Contacts:       repository.NewContactRepository(pool),
 	}, nil
 }
 

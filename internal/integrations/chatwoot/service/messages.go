@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
@@ -16,6 +17,35 @@ import (
 	"zpwoot/internal/logger"
 	"zpwoot/internal/model"
 )
+
+// resolveLIDToStandardJID converts a @lid JID to @s.whatsapp.net JID
+// Uses WhatsApp client's native LID store (Client.Store.LIDs.GetPNForLID)
+func resolveLIDToStandardJID(ctx context.Context, waClient *whatsmeow.Client, jid string) string {
+	if !util.IsLIDJID(jid) {
+		return jid
+	}
+
+	if waClient == nil || waClient.Store == nil || waClient.Store.LIDs == nil {
+		return jid
+	}
+
+	lidJID, err := types.ParseJID(jid)
+	if err != nil {
+		return jid
+	}
+
+	pnJID, err := waClient.Store.LIDs.GetPNForLID(ctx, lidJID)
+	if err != nil || pnJID.IsEmpty() {
+		return jid
+	}
+
+	convertedJID := pnJID.String()
+	logger.Debug().
+		Str("original", jid).
+		Str("converted", convertedJID).
+		Msg("Chatwoot: resolved LID via WhatsApp client store")
+	return convertedJID
+}
 
 // =============================================================================
 // INCOMING MESSAGE PROCESSING (WhatsApp -> Chatwoot)
@@ -57,16 +87,8 @@ func (s *Service) processIncomingMessageInternal(ctx context.Context, session *m
 
 	remoteJid := evt.Info.Chat.String()
 
-	if util.IsLIDJID(remoteJid) && s.database != nil && s.database.Contacts != nil {
-		convertedJid := util.ConvertLIDToStandardJID(ctx, s.database.Contacts, remoteJid)
-		if convertedJid != remoteJid {
-			logger.Debug().
-				Str("original", remoteJid).
-				Str("converted", convertedJid).
-				Msg("Chatwoot: converted LID to standard JID")
-			remoteJid = convertedJid
-		}
-	}
+	// Resolve LID to standard JID using WhatsApp client's native store
+	remoteJid = resolveLIDToStandardJID(ctx, session.Client, remoteJid)
 
 	if s.ShouldIgnoreJid(cfg, remoteJid) {
 		return 0, 0, nil, nil
@@ -86,12 +108,29 @@ func (s *Service) processIncomingMessageInternal(ctx context.Context, session *m
 		participantJid = evt.Info.Sender.String()
 	}
 
-	// Create contact name fetcher that queries WhatsApp contacts database
+	// Create contact name fetcher using whatsmeow's native ContactStore
 	var contactNameFetcher ContactNameFetcher
-	if s.database != nil && s.database.Contacts != nil && session.Device != nil && session.Device.ID != nil {
-		deviceJID := session.Device.ID.String()
+	if session.Client != nil && session.Client.Store != nil && session.Client.Store.Contacts != nil {
 		contactNameFetcher = func(ctx context.Context, jid string) string {
-			return s.database.Contacts.GetBestContactName(ctx, deviceJID, jid)
+			parsedJID, err := types.ParseJID(jid)
+			if err != nil {
+				return ""
+			}
+			contact, err := session.Client.Store.Contacts.GetContact(ctx, parsedJID)
+			if err != nil || !contact.Found {
+				return ""
+			}
+			// Return best available name: FullName > FirstName > PushName > BusinessName
+			if contact.FullName != "" {
+				return contact.FullName
+			}
+			if contact.FirstName != "" {
+				return contact.FirstName
+			}
+			if contact.PushName != "" {
+				return contact.PushName
+			}
+			return contact.BusinessName
 		}
 	}
 
@@ -305,12 +344,8 @@ func (s *Service) processOutgoingMessageInternal(ctx context.Context, session *m
 
 	remoteJid := evt.Info.Chat.String()
 
-	if util.IsLIDJID(remoteJid) && s.database != nil && s.database.Contacts != nil {
-		convertedJid := util.ConvertLIDToStandardJID(ctx, s.database.Contacts, remoteJid)
-		if convertedJid != remoteJid {
-			remoteJid = convertedJid
-		}
-	}
+	// Resolve LID to standard JID using WhatsApp client's native store
+	remoteJid = resolveLIDToStandardJID(ctx, session.Client, remoteJid)
 
 	if s.ShouldIgnoreJid(cfg, remoteJid) {
 		return 0, 0, nil, nil

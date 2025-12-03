@@ -8,6 +8,7 @@ import (
 	"go.mau.fi/whatsmeow/types/events"
 	"google.golang.org/protobuf/proto"
 
+	"zpwoot/internal/integrations/chatwoot/util"
 	"zpwoot/internal/logger"
 	"zpwoot/internal/model"
 	"zpwoot/internal/queue"
@@ -120,6 +121,12 @@ func (h *EventHandler) enqueueMessage(ctx context.Context, session *model.Sessio
 		fullEventJSON = nil
 	}
 
+	// Resolve LID to standard JID before enqueueing (queue handlers don't have access to WhatsApp client)
+	chatJID := evt.Info.Chat.String()
+	if util.IsLIDJID(chatJID) {
+		chatJID = resolveLIDToStandardJID(ctx, session.Client, chatJID)
+	}
+
 	isGroup := evt.Info.Chat.Server == "g.us"
 	participantID := ""
 	if isGroup && evt.Info.Sender.String() != "" {
@@ -129,7 +136,7 @@ func (h *EventHandler) enqueueMessage(ctx context.Context, session *model.Sessio
 	queueMsg := &queue.WAToCWMessage{
 		MessageID:     evt.Info.ID,
 		SessionName:   session.Session,
-		ChatJID:       evt.Info.Chat.String(),
+		ChatJID:       chatJID, // Use resolved JID
 		SenderJID:     evt.Info.Sender.String(),
 		PushName:      evt.Info.PushName,
 		IsFromMe:      evt.Info.IsFromMe,

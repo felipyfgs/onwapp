@@ -673,7 +673,10 @@ func (h *Handler) handleSync(c *gin.Context, syncType string) {
 		sessionId: sessionId,
 	}
 
-	dbSync, err := cwsync.NewChatwootDBSync(cfg, h.database.Messages, contactsAdapter, h.database.Media, session.ID, h.database.Contacts)
+	// Use whatsmeow's native LID resolver instead of database queries
+	lidResolver := &whatsappLIDResolver{session: session}
+
+	dbSync, err := cwsync.NewChatwootDBSync(cfg, h.database.Messages, contactsAdapter, h.database.Media, session.ID, lidResolver)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to connect to chatwoot db: " + err.Error()})
 		return
@@ -740,7 +743,10 @@ func (h *Handler) ResetChatwoot(c *gin.Context) {
 		return
 	}
 
-	dbSync, err := cwsync.NewChatwootDBSync(cfg, nil, nil, nil, session.ID, h.database.Contacts)
+	// Use whatsmeow's native LID resolver instead of database queries
+	lidResolver := &whatsappLIDResolver{session: session}
+
+	dbSync, err := cwsync.NewChatwootDBSync(cfg, nil, nil, nil, session.ID, lidResolver)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to connect to database: " + err.Error()})
 		return
@@ -854,6 +860,27 @@ func (a *whatsappContactsAdapter) GetAllGroupNames(ctx context.Context) (map[str
 		}
 	}
 	return result, nil
+}
+
+// whatsappLIDResolver implements util.LIDResolver using whatsmeow's native LID store
+type whatsappLIDResolver struct {
+	session *model.Session
+}
+
+func (r *whatsappLIDResolver) ResolveLIDToPhone(ctx context.Context, lidNumber string) string {
+	if r.session == nil || r.session.Client == nil || r.session.Client.Store == nil || r.session.Client.Store.LIDs == nil {
+		return ""
+	}
+
+	// Create LID JID from number
+	lidJID := types.JID{User: lidNumber, Server: types.HiddenUserServer}
+
+	pnJID, err := r.session.Client.Store.LIDs.GetPNForLID(ctx, lidJID)
+	if err != nil || pnJID.IsEmpty() {
+		return ""
+	}
+
+	return pnJID.User
 }
 
 // =============================================================================
