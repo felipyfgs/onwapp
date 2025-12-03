@@ -415,3 +415,38 @@ func (r *MessageRepository) UpdatePushNamesBatch(ctx context.Context, sessionID 
 	}
 	return total, nil
 }
+
+// GetUnreadIncomingByChat returns incoming messages (fromMe=false) that haven't been marked as read yet
+// This is used to send read receipts to WhatsApp when agent responds in Chatwoot
+func (r *MessageRepository) GetUnreadIncomingByChat(ctx context.Context, sessionID, chatJID string, limit int) ([]model.Message, error) {
+	rows, err := r.pool.Query(ctx,
+		`SELECT `+messageSelectFields+` FROM "zpMessages" 
+		WHERE "sessionId" = $1 AND "chatJid" = $2 AND "fromMe" = false AND "readAt" IS NULL
+		ORDER BY "timestamp" DESC LIMIT $3`,
+		sessionID, chatJID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	return r.scanMessages(rows)
+}
+
+// MarkAsReadByAgent marks incoming messages as read (sets readAt timestamp)
+// This is called when we send read receipts to WhatsApp
+func (r *MessageRepository) MarkAsReadByAgent(ctx context.Context, sessionID string, msgIds []string) (int64, error) {
+	if len(msgIds) == 0 {
+		return 0, nil
+	}
+
+	now := time.Now()
+	result, err := r.pool.Exec(ctx, `
+		UPDATE "zpMessages" 
+		SET "readAt" = $1
+		WHERE "sessionId" = $2::uuid AND "msgId" = ANY($3) AND "fromMe" = false AND "readAt" IS NULL`,
+		now, sessionID, msgIds)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}

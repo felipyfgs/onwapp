@@ -215,27 +215,33 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 		return
 	}
 
+	// Ignore message_updated events (except deletions) - same as Evolution API
+	// Chatwoot sends these in bulk when messages are viewed/read, causing spam
+	if payload.Event == "message_updated" {
+		if payload.ContentAttrs != nil {
+			if deleted, ok := payload.ContentAttrs["deleted"].(bool); ok && deleted {
+				// Handle deletion
+				deleteCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+				go func() {
+					defer cancel()
+					if err := h.handleMessageDeleted(deleteCtx, session, payload); err != nil {
+						logger.Warn().Err(err).Str("session", sessionId).Msg("Chatwoot: failed to delete message from WhatsApp")
+					}
+				}()
+				c.JSON(http.StatusOK, gin.H{"message": "ok"})
+				return
+			}
+		}
+		// Ignore all other message_updated events silently (like Evolution API)
+		c.JSON(http.StatusOK, gin.H{"message": "ignored"})
+		return
+	}
+
 	logger.Debug().
 		Str("session", sessionId).
 		Str("event", payload.Event).
 		Int("msgId", payload.ID).
 		Msg("Chatwoot: webhook received")
-
-	if payload.Event == "message_updated" && payload.ContentAttrs != nil {
-		if deleted, ok := payload.ContentAttrs["deleted"].(bool); ok && deleted {
-			// Use a separate context with longer timeout for deletion
-			// HTTP context may timeout before all messages are deleted
-			deleteCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-			go func() {
-				defer cancel()
-				if err := h.handleMessageDeleted(deleteCtx, session, payload); err != nil {
-					logger.Warn().Err(err).Str("session", sessionId).Msg("Chatwoot: failed to delete message from WhatsApp")
-				}
-			}()
-			c.JSON(http.StatusOK, gin.H{"message": "ok"})
-			return
-		}
-	}
 
 	isOutgoing := payload.MessageType == "outgoing" || payload.MessageType == "1"
 
@@ -335,6 +341,9 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 	// when emitSentMessageEvent triggers the Chatwoot event handler
 	cwservice.MarkPendingSentFromChatwoot(session.ID, chatJid, chatwootMsgID)
 	defer cwservice.ClearPendingSentFromChatwoot(session.ID, chatJid, chatwootMsgID)
+
+	// Mark incoming messages as read in WhatsApp when agent responds (like Evolution API)
+	h.markMessagesAsRead(ctx, session, chatJid)
 
 	var quoted *service.QuotedMessage
 	if quotedMsg != nil {
@@ -845,4 +854,55 @@ func (a *whatsappContactsAdapter) GetAllGroupNames(ctx context.Context) (map[str
 		}
 	}
 	return result, nil
+}
+
+// =============================================================================
+// READ RECEIPTS
+// =============================================================================
+
+// markMessagesAsRead sends read receipts to WhatsApp for unread incoming messages
+// This is called when agent responds in Chatwoot (like Evolution API MESSAGE_READ feature)
+func (h *Handler) markMessagesAsRead(ctx context.Context, session *model.Session, chatJid string) {
+	if h.database == nil {
+		return
+	}
+
+	// Get unread incoming messages from this chat (limit 50 to avoid huge batches)
+	unreadMsgs, err := h.database.Messages.GetUnreadIncomingByChat(ctx, session.ID, chatJid, 50)
+	if err != nil {
+		logger.Debug().Err(err).Str("session", session.Session).Str("chatJid", chatJid).Msg("Chatwoot: failed to get unread messages")
+		return
+	}
+
+	if len(unreadMsgs) == 0 {
+		return
+	}
+
+	// Extract message IDs and phone number
+	msgIds := make([]string, len(unreadMsgs))
+	for i, msg := range unreadMsgs {
+		msgIds[i] = msg.MsgId
+	}
+
+	// Extract phone from JID (remove @s.whatsapp.net or @g.us)
+	phone := strings.Split(chatJid, "@")[0]
+
+	// Send read receipt to WhatsApp
+	if err := h.whatsappSvc.MarkRead(ctx, session.Session, phone, msgIds); err != nil {
+		logger.Debug().Err(err).Str("session", session.Session).Str("chatJid", chatJid).Int("count", len(msgIds)).Msg("Chatwoot: failed to send read receipts to WhatsApp")
+		return
+	}
+
+	// Mark messages as read in database
+	affected, err := h.database.Messages.MarkAsReadByAgent(ctx, session.ID, msgIds)
+	if err != nil {
+		logger.Debug().Err(err).Str("session", session.Session).Msg("Chatwoot: failed to mark messages as read in database")
+		return
+	}
+
+	logger.Debug().
+		Str("session", session.Session).
+		Str("chatJid", chatJid).
+		Int64("marked", affected).
+		Msg("Chatwoot: marked messages as read in WhatsApp")
 }
