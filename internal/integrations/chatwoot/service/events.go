@@ -128,6 +128,7 @@ func (h *EventHandler) enqueueMessage(ctx context.Context, session *model.Sessio
 
 	queueMsg := &queue.WAToCWMessage{
 		MessageID:     evt.Info.ID,
+		SessionName:   session.Session,
 		ChatJID:       evt.Info.Chat.String(),
 		SenderJID:     evt.Info.Sender.String(),
 		PushName:      evt.Info.PushName,

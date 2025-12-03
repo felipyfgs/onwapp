@@ -18,9 +18,14 @@ import (
 
 // ProcessIncomingFromQueue processes an incoming message from the queue
 func (s *Service) ProcessIncomingFromQueue(ctx context.Context, sessionID string, data *queue.WAToCWMessage) error {
+	sessionName := data.SessionName
+	if sessionName == "" {
+		sessionName = sessionID // Fallback to sessionID if SessionName is not set
+	}
+
 	session := &model.Session{
 		ID:      sessionID,
-		Session: sessionID,
+		Session: sessionName,
 	}
 
 	// Deserialize the raw protobuf message
@@ -68,9 +73,14 @@ func (s *Service) ProcessIncomingFromQueue(ctx context.Context, sessionID string
 
 // ProcessOutgoingFromQueue processes an outgoing message from the queue
 func (s *Service) ProcessOutgoingFromQueue(ctx context.Context, sessionID string, data *queue.WAToCWMessage) error {
+	sessionName := data.SessionName
+	if sessionName == "" {
+		sessionName = sessionID // Fallback to sessionID if SessionName is not set
+	}
+
 	session := &model.Session{
 		ID:      sessionID,
-		Session: sessionID,
+		Session: sessionName,
 	}
 
 	// Deserialize the raw protobuf message

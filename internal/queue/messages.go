@@ -45,6 +45,7 @@ type MediaInfo struct {
 // WAToCWMessage - dados específicos WhatsApp -> Chatwoot
 type WAToCWMessage struct {
 	MessageID     string          `json:"message_id"`
+	SessionName   string          `json:"session_name"` // Session name (used for media download)
 	ChatJID       string          `json:"chat_jid"`
 	SenderJID     string          `json:"sender_jid"`
 	PushName      string          `json:"push_name"`
@@ -53,7 +54,7 @@ type WAToCWMessage struct {
 	IsGroup       bool            `json:"is_group"`
 	ParticipantID string          `json:"participant_id,omitempty"`
 	MediaInfo     *MediaInfo      `json:"media_info,omitempty"`
-	RawEvent      []byte          `json:"raw_event"`      // Protobuf serialized message for Chatwoot processing
+	RawEvent      []byte          `json:"raw_event"`       // Protobuf serialized message for Chatwoot processing
 	FullEventJSON json.RawMessage `json:"full_event_json"` // Complete event JSON for webhook payload
 }
 
