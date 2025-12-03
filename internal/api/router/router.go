@@ -70,6 +70,23 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 	// ─────────────────────────────────────────────────────────────────────────────
 	// Health & Docs
 	// ─────────────────────────────────────────────────────────────────────────────
+	// Root endpoint - same as health
+	r.GET("/", func(c *gin.Context) {
+		status := "healthy"
+		dbStatus := "connected"
+		if cfg.Database != nil {
+			if err := cfg.Database.Pool.Ping(c.Request.Context()); err != nil {
+				dbStatus = "disconnected"
+				status = "degraded"
+			}
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"status":   status,
+			"version":  version.Short(),
+			"database": dbStatus,
+			"time":     time.Now().UTC().Format(time.RFC3339),
+		})
+	})
 	r.GET("/health", func(c *gin.Context) {
 		status := "healthy"
 		dbStatus := "connected"
