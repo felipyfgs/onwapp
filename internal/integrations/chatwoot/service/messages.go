@@ -49,11 +49,11 @@ func (s *Service) processIncomingMessageInternal(ctx context.Context, session *m
 
 	// Prevent duplicate processing with in-memory lock
 	cacheKey := fmt.Sprintf("in:%d:%s", cfg.InboxID, evt.Info.ID)
-	if !msgProcessingCache.tryAcquire(cacheKey) {
+	if !TryAcquireMsgProcessing(cacheKey) {
 		logger.Debug().Str("msgId", evt.Info.ID).Int("inboxId", cfg.InboxID).Msg("Chatwoot: skipping duplicate incoming processing")
 		return 0, 0, nil, nil
 	}
-	defer msgProcessingCache.release(cacheKey)
+	defer ReleaseMsgProcessing(cacheKey)
 
 	remoteJid := evt.Info.Chat.String()
 
@@ -127,10 +127,12 @@ func (s *Service) processIncomingMessageInternal(ctx context.Context, session *m
 		content = s.contactManager.FormatGroupMessage(content, participantJid, evt.Info.PushName)
 	}
 
+	msgTimestamp := evt.Info.Timestamp
 	msgReq := &client.CreateMessageRequest{
 		Content:     content,
 		MessageType: "incoming",
 		SourceID:    sourceID,
+		CreatedAt:   &msgTimestamp,
 	}
 
 	if replyInfo := s.extractReplyInfo(ctx, session.ID, evt); replyInfo != nil {
@@ -184,11 +186,13 @@ func (s *Service) processIncomingMediaMessageInternal(ctx context.Context, sessi
 		if mediaInfo.Caption != "" {
 			content = mediaInfo.Caption
 		}
+		msgTimestamp := evt.Info.Timestamp
 		msgReq := &client.CreateMessageRequest{
 			Content:           content,
 			MessageType:       "incoming",
 			SourceID:          sourceID,
 			ContentAttributes: contentAttributes,
+			CreatedAt:         &msgTimestamp,
 		}
 		cwMsg, err := c.CreateMessage(ctx, conversationID, msgReq)
 		if err != nil {
@@ -201,7 +205,8 @@ func (s *Service) processIncomingMediaMessageInternal(ctx context.Context, sessi
 	}
 
 	content := mediaInfo.Caption
-	cwMsg, err := c.CreateMessageWithAttachmentAndMime(ctx, conversationID, content, "incoming", bytes.NewReader(mediaData), mediaInfo.Filename, mediaInfo.MimeType, contentAttributes)
+	msgTimestamp := evt.Info.Timestamp
+	cwMsg, err := c.CreateMessageWithAttachmentAndMimeAndTime(ctx, conversationID, content, "incoming", bytes.NewReader(mediaData), mediaInfo.Filename, mediaInfo.MimeType, contentAttributes, &msgTimestamp)
 	if err != nil {
 		if core.IsNotFoundError(err) {
 			s.HandleConversationNotFound(ctx, session.ID, conversationID)
@@ -292,11 +297,11 @@ func (s *Service) processOutgoingMessageInternal(ctx context.Context, session *m
 
 	// Prevent duplicate processing with in-memory lock
 	cacheKey := fmt.Sprintf("out:%d:%s", cfg.InboxID, evt.Info.ID)
-	if !msgProcessingCache.tryAcquire(cacheKey) {
+	if !TryAcquireMsgProcessing(cacheKey) {
 		logger.Debug().Str("msgId", evt.Info.ID).Int("inboxId", cfg.InboxID).Msg("Chatwoot: skipping duplicate outgoing processing")
 		return 0, 0, nil, nil
 	}
-	defer msgProcessingCache.release(cacheKey)
+	defer ReleaseMsgProcessing(cacheKey)
 
 	remoteJid := evt.Info.Chat.String()
 
@@ -351,10 +356,12 @@ func (s *Service) processOutgoingMessageInternal(ctx context.Context, session *m
 		return 0, 0, nil, nil
 	}
 
+	msgTimestamp := evt.Info.Timestamp
 	msgReq := &client.CreateMessageRequest{
 		Content:     content,
 		MessageType: "outgoing",
 		SourceID:    sourceID,
+		CreatedAt:   &msgTimestamp,
 	}
 
 	if replyInfo := s.extractReplyInfo(ctx, session.ID, evt); replyInfo != nil {
@@ -408,11 +415,13 @@ func (s *Service) processOutgoingMediaMessageInternal(ctx context.Context, sessi
 		if mediaInfo.Caption != "" {
 			content = mediaInfo.Caption
 		}
+		msgTimestamp := evt.Info.Timestamp
 		msgReq := &client.CreateMessageRequest{
 			Content:           content,
 			MessageType:       "outgoing",
 			SourceID:          sourceID,
 			ContentAttributes: contentAttributes,
+			CreatedAt:         &msgTimestamp,
 		}
 		cwMsg, err := c.CreateMessage(ctx, conversationID, msgReq)
 		if err != nil {
@@ -425,7 +434,8 @@ func (s *Service) processOutgoingMediaMessageInternal(ctx context.Context, sessi
 	}
 
 	content := mediaInfo.Caption
-	cwMsg, err := c.CreateMessageWithAttachmentAndMime(ctx, conversationID, content, "outgoing", bytes.NewReader(mediaData), mediaInfo.Filename, mediaInfo.MimeType, contentAttributes)
+	msgTimestamp := evt.Info.Timestamp
+	cwMsg, err := c.CreateMessageWithAttachmentAndMimeAndTime(ctx, conversationID, content, "outgoing", bytes.NewReader(mediaData), mediaInfo.Filename, mediaInfo.MimeType, contentAttributes, &msgTimestamp)
 	if err != nil {
 		if core.IsNotFoundError(err) {
 			s.HandleConversationNotFound(ctx, session.ID, conversationID)
@@ -672,56 +682,122 @@ func (s *Service) extractMessageContent(evt *events.Message) string {
 	return ""
 }
 
+// contextExtractor extracts ContextInfo from a message type
+type contextExtractor func(*waE2E.Message) *waE2E.ContextInfo
+
+// contextExtractors defines all message types that can have ContextInfo
+var contextExtractors = []contextExtractor{
+	func(m *waE2E.Message) *waE2E.ContextInfo {
+		if ext := m.GetExtendedTextMessage(); ext != nil {
+			return ext.GetContextInfo()
+		}
+		return nil
+	},
+	func(m *waE2E.Message) *waE2E.ContextInfo {
+		if img := m.GetImageMessage(); img != nil {
+			return img.GetContextInfo()
+		}
+		return nil
+	},
+	func(m *waE2E.Message) *waE2E.ContextInfo {
+		if vid := m.GetVideoMessage(); vid != nil {
+			return vid.GetContextInfo()
+		}
+		return nil
+	},
+	func(m *waE2E.Message) *waE2E.ContextInfo {
+		if aud := m.GetAudioMessage(); aud != nil {
+			return aud.GetContextInfo()
+		}
+		return nil
+	},
+	func(m *waE2E.Message) *waE2E.ContextInfo {
+		if doc := m.GetDocumentMessage(); doc != nil {
+			return doc.GetContextInfo()
+		}
+		return nil
+	},
+	func(m *waE2E.Message) *waE2E.ContextInfo {
+		if stk := m.GetStickerMessage(); stk != nil {
+			return stk.GetContextInfo()
+		}
+		return nil
+	},
+	func(m *waE2E.Message) *waE2E.ContextInfo {
+		if contact := m.GetContactMessage(); contact != nil {
+			return contact.GetContextInfo()
+		}
+		return nil
+	},
+	func(m *waE2E.Message) *waE2E.ContextInfo {
+		if contacts := m.GetContactsArrayMessage(); contacts != nil {
+			return contacts.GetContextInfo()
+		}
+		return nil
+	},
+}
+
 // extractReplyInfo extracts reply/quote information from a WhatsApp message
 func (s *Service) extractReplyInfo(ctx context.Context, sessionID string, evt *events.Message) *core.ReplyInfo {
-	if s.database == nil {
-		return nil
-	}
-
-	msg := evt.Message
-	if msg == nil {
+	if s.database == nil || evt.Message == nil {
 		return nil
 	}
 
 	var stanzaID string
+	var foundExtractor string
 
-	if ext := msg.GetExtendedTextMessage(); ext != nil {
-		if ctx := ext.GetContextInfo(); ctx != nil {
-			stanzaID = ctx.GetStanzaID()
-		}
-	}
-	if stanzaID == "" {
-		if img := msg.GetImageMessage(); img != nil {
-			if ctx := img.GetContextInfo(); ctx != nil {
-				stanzaID = ctx.GetStanzaID()
+	// Debug: Check each extractor explicitly for contact messages
+	if contact := evt.Message.GetContactMessage(); contact != nil {
+		if ctxInfo := contact.GetContextInfo(); ctxInfo != nil {
+			logger.Debug().
+				Str("messageId", evt.Info.ID).
+				Str("stanzaId", ctxInfo.GetStanzaID()).
+				Str("participant", ctxInfo.GetParticipant()).
+				Bool("hasContextInfo", true).
+				Msg("ContactMessage ContextInfo details")
+			if id := ctxInfo.GetStanzaID(); id != "" {
+				stanzaID = id
+				foundExtractor = "ContactMessage"
 			}
+		} else {
+			logger.Debug().
+				Str("messageId", evt.Info.ID).
+				Bool("hasContextInfo", false).
+				Msg("ContactMessage has no ContextInfo")
 		}
 	}
-	if stanzaID == "" {
-		if vid := msg.GetVideoMessage(); vid != nil {
-			if ctx := vid.GetContextInfo(); ctx != nil {
-				stanzaID = ctx.GetStanzaID()
+
+	if contacts := evt.Message.GetContactsArrayMessage(); contacts != nil {
+		if ctxInfo := contacts.GetContextInfo(); ctxInfo != nil {
+			logger.Debug().
+				Str("messageId", evt.Info.ID).
+				Str("stanzaId", ctxInfo.GetStanzaID()).
+				Str("participant", ctxInfo.GetParticipant()).
+				Bool("hasContextInfo", true).
+				Msg("ContactsArrayMessage ContextInfo details")
+			if stanzaID == "" {
+				if id := ctxInfo.GetStanzaID(); id != "" {
+					stanzaID = id
+					foundExtractor = "ContactsArrayMessage"
+				}
 			}
+		} else {
+			logger.Debug().
+				Str("messageId", evt.Info.ID).
+				Bool("hasContextInfo", false).
+				Msg("ContactsArrayMessage has no ContextInfo")
 		}
 	}
+
+	// If not found in contact messages, try other extractors
 	if stanzaID == "" {
-		if aud := msg.GetAudioMessage(); aud != nil {
-			if ctx := aud.GetContextInfo(); ctx != nil {
-				stanzaID = ctx.GetStanzaID()
-			}
-		}
-	}
-	if stanzaID == "" {
-		if doc := msg.GetDocumentMessage(); doc != nil {
-			if ctx := doc.GetContextInfo(); ctx != nil {
-				stanzaID = ctx.GetStanzaID()
-			}
-		}
-	}
-	if stanzaID == "" {
-		if stk := msg.GetStickerMessage(); stk != nil {
-			if ctx := stk.GetContextInfo(); ctx != nil {
-				stanzaID = ctx.GetStanzaID()
+		for i, extract := range contextExtractors {
+			if ctxInfo := extract(evt.Message); ctxInfo != nil {
+				if id := ctxInfo.GetStanzaID(); id != "" {
+					stanzaID = id
+					foundExtractor = fmt.Sprintf("extractor[%d]", i)
+					break
+				}
 			}
 		}
 	}
@@ -730,14 +806,44 @@ func (s *Service) extractReplyInfo(ctx context.Context, sessionID string, evt *e
 		return nil
 	}
 
+	logger.Debug().
+		Str("messageId", evt.Info.ID).
+		Str("stanzaId", stanzaID).
+		Str("extractor", foundExtractor).
+		Msg("Found quote StanzaID")
+
 	originalMsg, err := s.database.Messages.GetByMsgId(ctx, sessionID, stanzaID)
-	if err != nil || originalMsg == nil {
+	if err != nil {
+		logger.Debug().
+			Err(err).
+			Str("messageId", evt.Info.ID).
+			Str("stanzaId", stanzaID).
+			Msg("Failed to get original message for quote")
+		return nil
+	}
+
+	if originalMsg == nil {
+		logger.Debug().
+			Str("messageId", evt.Info.ID).
+			Str("stanzaId", stanzaID).
+			Msg("Original message not found in database")
 		return nil
 	}
 
 	if originalMsg.CwMsgId == nil || *originalMsg.CwMsgId == 0 {
+		logger.Debug().
+			Str("messageId", evt.Info.ID).
+			Str("stanzaId", stanzaID).
+			Str("originalMsgId", originalMsg.MsgId).
+			Msg("Original message has no CwMsgId yet (race condition?)")
 		return nil
 	}
+
+	logger.Debug().
+		Str("messageId", evt.Info.ID).
+		Str("stanzaId", stanzaID).
+		Int("cwMsgId", *originalMsg.CwMsgId).
+		Msg("Quote info extracted successfully")
 
 	return &core.ReplyInfo{
 		CwMsgId:           *originalMsg.CwMsgId,
@@ -754,11 +860,10 @@ func formatContactMessage(contact *waE2E.ContactMessage) string {
 	name := contact.GetDisplayName()
 	vcard := contact.GetVcard()
 
-	phones := parseVCardPhones(vcard)
-	emails := parseVCardEmails(vcard)
-	org := parseVCardOrg(vcard)
+	phones := util.ParseVCardPhones(vcard)
+	emails := util.ParseVCardEmails(vcard)
+	org := util.ParseVCardOrg(vcard)
 
-	// Debug: log parsed values
 	logger.Debug().
 		Str("name", name).
 		Strs("phones", phones).
@@ -804,100 +909,4 @@ func formatContactsArrayMessage(contacts *waE2E.ContactsArrayMessage) string {
 	}
 
 	return sb.String()
-}
-
-// normalizeVCardLines normalizes vCard line endings and splits into lines
-func normalizeVCardLines(vcard string) []string {
-	// Handle literal \n strings (common in some WhatsApp vCards)
-	vcard = strings.ReplaceAll(vcard, "\\n", "\n")
-	// Normalize CRLF and CR to LF
-	vcard = strings.ReplaceAll(vcard, "\r\n", "\n")
-	vcard = strings.ReplaceAll(vcard, "\r", "\n")
-	return strings.Split(vcard, "\n")
-}
-
-// parseVCardPhones extracts phone numbers from vCard
-func parseVCardPhones(vcard string) []string {
-	if vcard == "" {
-		return nil
-	}
-
-	var phones []string
-	lines := normalizeVCardLines(vcard)
-
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		upperLine := strings.ToUpper(line)
-
-		if strings.HasPrefix(upperLine, "TEL") || strings.Contains(upperLine, ".TEL") {
-			// Handle various TEL formats:
-			// TEL:+5511999999999
-			// TEL;type=CELL:+5511999999999
-			// TEL;TYPE=CELL;TYPE=VOICE;WAID=5511999999999:+5511999999999
-			// item1.TEL:+5511999999999
-			// item1.TEL;waid=5511999999999:+55 11 99999-9999
-			parts := strings.SplitN(line, ":", 2)
-			if len(parts) == 2 {
-				phone := strings.TrimSpace(parts[1])
-				if phone != "" {
-					phones = append(phones, phone)
-				}
-			}
-		}
-	}
-
-	return phones
-}
-
-// parseVCardEmails extracts email addresses from vCard
-func parseVCardEmails(vcard string) []string {
-	if vcard == "" {
-		return nil
-	}
-
-	var emails []string
-	lines := normalizeVCardLines(vcard)
-
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		upperLine := strings.ToUpper(line)
-
-		if strings.HasPrefix(upperLine, "EMAIL") || strings.Contains(upperLine, ".EMAIL") {
-			parts := strings.SplitN(line, ":", 2)
-			if len(parts) == 2 {
-				email := strings.TrimSpace(parts[1])
-				if email != "" {
-					emails = append(emails, email)
-				}
-			}
-		}
-	}
-
-	return emails
-}
-
-// parseVCardOrg extracts organization from vCard
-func parseVCardOrg(vcard string) string {
-	if vcard == "" {
-		return ""
-	}
-
-	lines := normalizeVCardLines(vcard)
-
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		upperLine := strings.ToUpper(line)
-
-		if strings.HasPrefix(upperLine, "ORG") || strings.Contains(upperLine, ".ORG") {
-			parts := strings.SplitN(line, ":", 2)
-			if len(parts) == 2 {
-				org := strings.TrimSpace(parts[1])
-				// Remove trailing semicolons (vCard format allows ORG:Company;Department)
-				org = strings.TrimSuffix(org, ";")
-				return org
-			}
-		}
-	}
-
-	return ""
 }

@@ -92,6 +92,12 @@ func (s *MessageSyncer) Sync(ctx context.Context, daysLimit int) (*core.SyncStat
 		return stats, err
 	}
 
+	// Fix conversation created_at to match oldest message
+	// This is needed because Chatwoot UI ignores messages with created_at before conversation creation
+	if fixed, err := s.repo.FixConversationCreatedAt(ctx); err == nil && fixed > 0 {
+		logger.Debug().Int("fixed", fixed).Msg("Chatwoot sync: fixed conversation created_at timestamps")
+	}
+
 	logger.Info().Int("imported", stats.MessagesImported).Msg("Chatwoot sync: messages completed")
 	return stats, nil
 }

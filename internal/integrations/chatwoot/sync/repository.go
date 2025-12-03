@@ -145,6 +145,23 @@ func (r *Repository) UpsertContactsBatch(ctx context.Context, contacts []Contact
 		values = append(values, fmt.Sprintf("($%d, $%d, $%d)", idx, idx+1, idx+2))
 	}
 
+	// Step 1: Update identifier for existing contacts matched by phone_number
+	// This prevents creating duplicate contacts when identifier differs but phone is the same
+	updateQuery := fmt.Sprintf(`
+		WITH phone_data AS (
+			SELECT phone_number, identifier FROM (VALUES %s) AS t (name, phone_number, identifier)
+		)
+		UPDATE contacts c
+		SET identifier = p.identifier, updated_at = NOW()
+		FROM phone_data p
+		WHERE c.account_id = $1
+			AND c.phone_number = p.phone_number
+			AND (c.identifier IS NULL OR c.identifier = '' OR c.identifier != p.identifier)
+	`, strings.Join(values, ", "))
+
+	_, _ = r.db.ExecContext(ctx, updateQuery, args...)
+
+	// Step 2: Now do the upsert - existing contacts will match by identifier
 	query := fmt.Sprintf(`
 		INSERT INTO contacts (name, phone_number, account_id, identifier, created_at, updated_at)
 		SELECT name, phone_number, $1, identifier, NOW(), NOW()
@@ -221,6 +238,26 @@ func (r *Repository) CreateContactsAndConversations(ctx context.Context, phoneDa
 }
 
 func (r *Repository) upsertContactsWithTimestamp(ctx context.Context, values []string, args []interface{}) error {
+	// Step 1: Update identifier for existing contacts matched by phone_number (non-groups only)
+	// This prevents creating duplicate contacts when identifier differs but phone is the same
+	updateQuery := fmt.Sprintf(`
+		WITH phone_data AS (
+			SELECT phone_number, identifier, is_group FROM (
+				VALUES %s
+			) AS t (phone_number, created_at, last_activity_at, contact_name, identifier, is_group)
+		)
+		UPDATE contacts c
+		SET identifier = p.identifier, updated_at = NOW()
+		FROM phone_data p
+		WHERE c.account_id = $1
+			AND NOT p.is_group
+			AND c.phone_number = p.phone_number
+			AND (c.identifier IS NULL OR c.identifier = '' OR c.identifier != p.identifier)
+	`, strings.Join(values, ", "))
+
+	_, _ = r.db.ExecContext(ctx, updateQuery, args...)
+
+	// Step 2: Now do the upsert - existing contacts will match by identifier
 	query := fmt.Sprintf(`
 		WITH phone_data AS (
 			SELECT phone_number, created_at, last_activity_at, contact_name, identifier, is_group FROM (
@@ -244,15 +281,24 @@ func (r *Repository) upsertContactsWithTimestamp(ctx context.Context, values []s
 }
 
 func (r *Repository) createContactInboxes(ctx context.Context, values []string, args []interface{}) error {
+	// Only create contact_inbox if none exists for that contact+inbox combination
 	query := fmt.Sprintf(`
 		WITH phone_data AS (
 			SELECT identifier FROM (VALUES %s) AS t (phone_number, created_at, last_activity_at, contact_name, identifier)
+		),
+		contacts_needing_inbox AS (
+			SELECT c.id as contact_id
+			FROM contacts c
+			WHERE c.account_id = $1::integer 
+				AND c.identifier IN (SELECT identifier FROM phone_data)
+				AND NOT EXISTS (
+					SELECT 1 FROM contact_inboxes ci 
+					WHERE ci.contact_id = c.id AND ci.inbox_id = $2::integer
+				)
 		)
 		INSERT INTO contact_inboxes (contact_id, inbox_id, source_id, created_at, updated_at)
-		SELECT c.id, $2::integer, gen_random_uuid(), NOW(), NOW()
-		FROM contacts c
-		WHERE c.account_id = $1::integer AND c.identifier IN (SELECT identifier FROM phone_data)
-		AND NOT EXISTS (SELECT 1 FROM contact_inboxes ci WHERE ci.contact_id = c.id AND ci.inbox_id = $2::integer)
+		SELECT contact_id, $2::integer, gen_random_uuid(), NOW(), NOW()
+		FROM contacts_needing_inbox
 		ON CONFLICT DO NOTHING
 	`, strings.Join(values, ", "))
 
@@ -264,16 +310,27 @@ func (r *Repository) createContactInboxes(ctx context.Context, values []string, 
 }
 
 func (r *Repository) createConversations(ctx context.Context, values []string, args []interface{}) error {
+	// Only create conversation if none exists for that contact in that inbox
+	// This checks by contact_id + inbox_id, NOT just contact_inbox_id
 	query := fmt.Sprintf(`
 		WITH phone_data AS (
 			SELECT identifier FROM (VALUES %s) AS t (phone_number, created_at, last_activity_at, contact_name, identifier)
+		),
+		contacts_needing_conv AS (
+			SELECT DISTINCT ON (c.id) c.id as contact_id, ci.id as contact_inbox_id
+			FROM contacts c
+			JOIN contact_inboxes ci ON ci.contact_id = c.id AND ci.inbox_id = $2::integer
+			WHERE c.account_id = $1::integer 
+				AND c.identifier IN (SELECT identifier FROM phone_data)
+				AND NOT EXISTS (
+					SELECT 1 FROM conversations conv 
+					WHERE conv.contact_id = c.id AND conv.inbox_id = $2::integer
+				)
+			ORDER BY c.id, ci.created_at ASC
 		)
 		INSERT INTO conversations (account_id, inbox_id, status, contact_id, contact_inbox_id, uuid, last_activity_at, created_at, updated_at)
-		SELECT $1::integer, $2::integer, 0, ci.contact_id, ci.id, gen_random_uuid(), NOW(), NOW(), NOW()
-		FROM contact_inboxes ci
-		JOIN contacts c ON c.id = ci.contact_id
-		WHERE ci.inbox_id = $2::integer AND c.account_id = $1::integer AND c.identifier IN (SELECT identifier FROM phone_data)
-		AND NOT EXISTS (SELECT 1 FROM conversations con WHERE con.contact_inbox_id = ci.id)
+		SELECT $1::integer, $2::integer, 0, contact_id, contact_inbox_id, gen_random_uuid(), NOW(), NOW(), NOW()
+		FROM contacts_needing_conv
 		ON CONFLICT DO NOTHING
 	`, strings.Join(values, ", "))
 
@@ -287,15 +344,23 @@ func (r *Repository) createConversations(ctx context.Context, values []string, a
 func (r *Repository) queryFKs(ctx context.Context, values []string, args []interface{}) (map[string]*core.ChatFKs, error) {
 	result := make(map[string]*core.ChatFKs)
 
+	// Query existing conversations by contact_id + inbox_id
+	// If multiple conversations exist, prefer the one with most messages (or oldest)
 	query := fmt.Sprintf(`
 		WITH phone_data AS (
 			SELECT phone_number, identifier FROM (VALUES %s) AS t (phone_number, created_at, last_activity_at, contact_name, identifier)
+		),
+		contact_convs AS (
+			SELECT DISTINCT ON (c.id) 
+				pd.phone_number,
+				c.id AS contact_id, 
+				conv.id AS conversation_id
+			FROM phone_data pd
+			JOIN contacts c ON c.identifier = pd.identifier AND c.account_id = $1::integer
+			JOIN conversations conv ON conv.contact_id = c.id AND conv.inbox_id = $2::integer
+			ORDER BY c.id, conv.created_at ASC
 		)
-		SELECT pd.phone_number, c.id AS contact_id, conv.id AS conversation_id
-		FROM phone_data pd
-		JOIN contacts c ON c.identifier = pd.identifier AND c.account_id = $1::integer
-		JOIN contact_inboxes ci ON ci.contact_id = c.id AND ci.inbox_id = $2::integer
-		JOIN conversations conv ON conv.contact_inbox_id = ci.id
+		SELECT phone_number, contact_id, conversation_id FROM contact_convs
 	`, strings.Join(values, ", "))
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
@@ -368,6 +433,44 @@ func (r *Repository) UpdateConversationTimestamps(ctx context.Context, timestamp
 	for convID, ts := range timestamps {
 		_ = r.UpdateConversationTimestamp(ctx, convID, ts)
 	}
+}
+
+// FixConversationCreatedAt updates conversation and contact_inbox created_at to match oldest message
+// This is needed because Chatwoot UI ignores messages with created_at before conversation/contact_inbox creation
+func (r *Repository) FixConversationCreatedAt(ctx context.Context) (int, error) {
+	// Fix conversations
+	result, err := r.db.ExecContext(ctx, `
+		UPDATE conversations c
+		SET created_at = (
+			SELECT MIN(m.created_at) 
+			FROM messages m 
+			WHERE m.conversation_id = c.id
+		)
+		WHERE c.account_id = $1
+			AND c.inbox_id = $2
+			AND EXISTS (
+				SELECT 1 FROM messages m 
+				WHERE m.conversation_id = c.id 
+				AND m.created_at < c.created_at
+			)
+	`, r.accountID, r.inboxID)
+	if err != nil {
+		return 0, wrapErr("fix conversation created_at", err)
+	}
+	rows, _ := result.RowsAffected()
+
+	// Fix contact_inboxes to match conversation created_at
+	_, _ = r.db.ExecContext(ctx, `
+		UPDATE contact_inboxes ci
+		SET created_at = c.created_at
+		FROM conversations c
+		WHERE c.contact_inbox_id = ci.id
+			AND c.account_id = $1
+			AND c.inbox_id = $2
+			AND ci.created_at > c.created_at
+	`, r.accountID, r.inboxID)
+
+	return int(rows), nil
 }
 
 // DeleteMessages deletes messages for the account

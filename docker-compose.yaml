@@ -11,6 +11,7 @@ services:
     ports:
       - '5432:5432'
     environment:
+      TZ: America/Sao_Paulo
       POSTGRES_USER: ${POSTGRES_USER:-zpwoot}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-zpwoot123}
       POSTGRES_DB: ${POSTGRES_DB:-zpwoot}
@@ -33,6 +34,8 @@ services:
     ports:
       - '4222:4222'
       - '8222:8222'
+    environment:
+      TZ: America/Sao_Paulo
     command:
       - "--http_port=8222"
       - "--js"
@@ -52,6 +55,7 @@ services:
       - '9000:9000'
       - '9001:9001'
     environment:
+      TZ: America/Sao_Paulo
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-zpwoot}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-zpwoot123}
     volumes:
@@ -67,6 +71,7 @@ services:
     ports:
       - '3100:3000'
     environment:
+      TZ: America/Sao_Paulo
       CONNECTIONS: con1
       LABEL_con1: zpwoot PostgreSQL Dev
       SERVER_con1: dev_postgres
@@ -89,9 +94,10 @@ services:
     ports:
       - '8090:8080'
     environment:
-      - LOG_LEVEL=debug
-      - AUTO_CREATE_SESSIONS=true
-      - MAX_REQUESTS=512
+      TZ: America/Sao_Paulo
+      LOG_LEVEL: debug
+      AUTO_CREATE_SESSIONS: "true"
+      MAX_REQUESTS: "512"
     networks:
       - zpwoot-dev-network
 

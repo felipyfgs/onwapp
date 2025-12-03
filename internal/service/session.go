@@ -171,6 +171,19 @@ func (s *SessionService) Get(sessionId string) (*model.Session, error) {
 	return session, nil
 }
 
+// GetByID finds a session by its UUID (session.ID field)
+func (s *SessionService) GetByID(id string) (*model.Session, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	for _, session := range s.sessions {
+		if session.ID == id {
+			return session, nil
+		}
+	}
+	return nil, fmt.Errorf("session with ID %s not found", id)
+}
+
 func (s *SessionService) Delete(ctx context.Context, sessionId string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

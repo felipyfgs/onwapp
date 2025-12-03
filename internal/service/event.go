@@ -640,15 +640,19 @@ func (s *EventService) handleHistorySync(ctx context.Context, session *model.Ses
 		return
 	}
 
-	// Process conversations and their messages
-	var allMessages []*model.Message
-	var allMedias []*model.Media
+	// Pre-calculate total messages for efficient slice allocation
 	totalMsgs := 0
+	for _, conv := range conversations {
+		totalMsgs += len(conv.GetMessages())
+	}
+
+	// Pre-allocate slices to avoid repeated allocations during append
+	allMessages := make([]*model.Message, 0, totalMsgs)
+	allMedias := make([]*model.Media, 0, totalMsgs/4) // ~25% of messages have media
 
 	for _, conv := range conversations {
 		chatJID := conv.GetID()
 		msgs := conv.GetMessages()
-		totalMsgs += len(msgs)
 
 		for _, histMsg := range msgs {
 			webMsg := histMsg.GetMessage()
@@ -982,9 +986,19 @@ func (s *EventService) extractMessageTypeAndContent(msg *waE2E.Message) (string,
 		return "location", fmt.Sprintf("%.6f,%.6f", loc.GetDegreesLatitude(), loc.GetDegreesLongitude())
 	}
 
-	// Contato
+	// Contato único
 	if contact := msg.GetContactMessage(); contact != nil {
 		return "contact", contact.GetDisplayName()
+	}
+
+	// Múltiplos contatos (ContactsArrayMessage)
+	if contacts := msg.GetContactsArrayMessage(); contacts != nil {
+		contactList := contacts.GetContacts()
+		if len(contactList) > 0 {
+			// Return first contact name as content, full list will be formatted by Chatwoot service
+			return "contacts", contactList[0].GetDisplayName()
+		}
+		return "contacts", ""
 	}
 
 	// Reação
@@ -1083,9 +1097,9 @@ func (s *EventService) handlePushNameSync(ctx context.Context, session *model.Se
 		Int("count", len(pushnames)).
 		Msg("Push name sync received")
 
-	// Build maps for bulk update
-	phoneToName := make(map[string]string) // phone@s.whatsapp.net -> pushName
-	lidToName := make(map[string]string)   // lid@lid -> pushName
+	// Pre-allocate maps with estimated capacity
+	phoneToName := make(map[string]string, len(pushnames)) // phone@s.whatsapp.net -> pushName
+	lidToName := make(map[string]string, len(pushnames)/4) // lid@lid -> pushName (less common)
 
 	for _, pn := range pushnames {
 		jid := pn.GetID()

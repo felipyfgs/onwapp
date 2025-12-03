@@ -805,6 +805,7 @@ type CreateMessageRequest struct {
 	Private           bool                   `json:"private,omitempty"`
 	ContentAttributes map[string]interface{} `json:"content_attributes,omitempty"`
 	SourceID          string                 `json:"source_id,omitempty"`
+	CreatedAt         *time.Time             `json:"created_at,omitempty"`
 }
 
 // CreateMessage creates a new message in a conversation
@@ -837,6 +838,11 @@ func (c *Client) CreateMessageWithAttachment(ctx context.Context, conversationID
 
 // CreateMessageWithAttachmentAndMime creates a message with an attachment and specific MIME type
 func (c *Client) CreateMessageWithAttachmentAndMime(ctx context.Context, conversationID int, content, messageType string, attachment io.Reader, filename, mimeType string, contentAttributes map[string]interface{}) (*core.Message, error) {
+	return c.CreateMessageWithAttachmentAndMimeAndTime(ctx, conversationID, content, messageType, attachment, filename, mimeType, contentAttributes, nil)
+}
+
+// CreateMessageWithAttachmentAndMimeAndTime creates a message with an attachment, MIME type, and custom timestamp
+func (c *Client) CreateMessageWithAttachmentAndMimeAndTime(ctx context.Context, conversationID int, content, messageType string, attachment io.Reader, filename, mimeType string, contentAttributes map[string]interface{}, createdAt *time.Time) (*core.Message, error) {
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
 
@@ -844,6 +850,10 @@ func (c *Client) CreateMessageWithAttachmentAndMime(ctx context.Context, convers
 		_ = writer.WriteField("content", content)
 	}
 	_ = writer.WriteField("message_type", messageType)
+
+	if createdAt != nil {
+		_ = writer.WriteField("created_at", createdAt.Format(time.RFC3339))
+	}
 
 	if contentAttributes != nil {
 		attrsJSON, err := json.Marshal(contentAttributes)

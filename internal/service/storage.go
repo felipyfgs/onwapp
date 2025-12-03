@@ -215,31 +215,34 @@ func (s *StorageService) GetPresignedURL(ctx context.Context, key string, expiry
 	return url.String(), nil
 }
 
+// contentTypeExtensions maps content type prefixes to file extensions - O(1) lookup
+var contentTypeExtensions = map[string]string{
+	"image/jpeg":      ".jpg",
+	"image/png":       ".png",
+	"image/gif":       ".gif",
+	"image/webp":      ".webp",
+	"video/mp4":       ".mp4",
+	"video/3gpp":      ".3gp",
+	"audio/ogg":       ".ogg",
+	"audio/mpeg":      ".mp3",
+	"audio/aac":       ".aac",
+	"application/pdf": ".pdf",
+}
+
 func getExtensionFromContentType(contentType string) string {
-	switch {
-	case strings.HasPrefix(contentType, "image/jpeg"):
-		return ".jpg"
-	case strings.HasPrefix(contentType, "image/png"):
-		return ".png"
-	case strings.HasPrefix(contentType, "image/gif"):
-		return ".gif"
-	case strings.HasPrefix(contentType, "image/webp"):
-		return ".webp"
-	case strings.HasPrefix(contentType, "video/mp4"):
-		return ".mp4"
-	case strings.HasPrefix(contentType, "video/3gpp"):
-		return ".3gp"
-	case strings.HasPrefix(contentType, "audio/ogg"):
-		return ".ogg"
-	case strings.HasPrefix(contentType, "audio/mpeg"):
-		return ".mp3"
-	case strings.HasPrefix(contentType, "audio/aac"):
-		return ".aac"
-	case strings.HasPrefix(contentType, "application/pdf"):
-		return ".pdf"
-	case strings.HasPrefix(contentType, "application/"):
-		return path.Ext(contentType)
-	default:
-		return ""
+	// Direct lookup for exact matches
+	if ext, ok := contentTypeExtensions[contentType]; ok {
+		return ext
 	}
+	// Check prefixes for types with parameters (e.g., "image/jpeg; charset=utf-8")
+	for prefix, ext := range contentTypeExtensions {
+		if strings.HasPrefix(contentType, prefix) {
+			return ext
+		}
+	}
+	// Fallback for generic application types
+	if strings.HasPrefix(contentType, "application/") {
+		return path.Ext(contentType)
+	}
+	return ""
 }

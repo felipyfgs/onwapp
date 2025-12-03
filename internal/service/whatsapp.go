@@ -144,6 +144,21 @@ type QuotedMessage struct {
 	IsFromMe  bool   // Whether the quoted message was from us
 }
 
+// buildQuoteContext creates a ContextInfo for quoted messages - reduces code duplication
+func buildQuoteContext(quoted *QuotedMessage) *waE2E.ContextInfo {
+	if quoted == nil {
+		return nil
+	}
+	ctx := &waE2E.ContextInfo{
+		StanzaID:      proto.String(quoted.MessageID),
+		QuotedMessage: &waE2E.Message{Conversation: proto.String("")},
+	}
+	if quoted.SenderJID != "" {
+		ctx.Participant = proto.String(quoted.SenderJID)
+	}
+	return ctx
+}
+
 // SendTextWithQuote sends a text message with a quoted message reference
 func (w *WhatsAppService) SendTextWithQuote(ctx context.Context, sessionId, phone, text string, quoted *QuotedMessage) (whatsmeow.SendResponse, error) {
 	if quoted == nil {
@@ -160,19 +175,10 @@ func (w *WhatsAppService) SendTextWithQuote(ctx context.Context, sessionId, phon
 		return whatsmeow.SendResponse{}, fmt.Errorf("invalid phone number: %w", err)
 	}
 
-	var quotedParticipant *string
-	if quoted.SenderJID != "" {
-		quotedParticipant = proto.String(quoted.SenderJID)
-	}
-
 	msg := &waE2E.Message{
 		ExtendedTextMessage: &waE2E.ExtendedTextMessage{
-			Text: proto.String(text),
-			ContextInfo: &waE2E.ContextInfo{
-				StanzaID:      proto.String(quoted.MessageID),
-				Participant:   quotedParticipant,
-				QuotedMessage: &waE2E.Message{Conversation: proto.String("")},
-			},
+			Text:        proto.String(text),
+			ContextInfo: buildQuoteContext(quoted),
 		},
 	}
 
@@ -200,11 +206,6 @@ func (w *WhatsAppService) SendImageWithQuote(ctx context.Context, sessionId, pho
 		return whatsmeow.SendResponse{}, fmt.Errorf("failed to upload image: %w", err)
 	}
 
-	var quotedParticipant *string
-	if quoted.SenderJID != "" {
-		quotedParticipant = proto.String(quoted.SenderJID)
-	}
-
 	msg := &waE2E.Message{
 		ImageMessage: &waE2E.ImageMessage{
 			URL:           proto.String(uploaded.URL),
@@ -215,11 +216,7 @@ func (w *WhatsAppService) SendImageWithQuote(ctx context.Context, sessionId, pho
 			FileSHA256:    uploaded.FileSHA256,
 			FileLength:    proto.Uint64(uint64(len(imageData))),
 			Caption:       proto.String(caption),
-			ContextInfo: &waE2E.ContextInfo{
-				StanzaID:      proto.String(quoted.MessageID),
-				Participant:   quotedParticipant,
-				QuotedMessage: &waE2E.Message{Conversation: proto.String("")},
-			},
+			ContextInfo:   buildQuoteContext(quoted),
 		},
 	}
 
@@ -289,11 +286,6 @@ func (w *WhatsAppService) SendDocumentWithQuote(ctx context.Context, sessionId, 
 		return whatsmeow.SendResponse{}, fmt.Errorf("failed to upload document: %w", err)
 	}
 
-	var quotedParticipant *string
-	if quoted.SenderJID != "" {
-		quotedParticipant = proto.String(quoted.SenderJID)
-	}
-
 	msg := &waE2E.Message{
 		DocumentMessage: &waE2E.DocumentMessage{
 			URL:           proto.String(uploaded.URL),
@@ -304,11 +296,7 @@ func (w *WhatsAppService) SendDocumentWithQuote(ctx context.Context, sessionId, 
 			FileSHA256:    uploaded.FileSHA256,
 			FileLength:    proto.Uint64(uint64(len(docData))),
 			FileName:      proto.String(filename),
-			ContextInfo: &waE2E.ContextInfo{
-				StanzaID:      proto.String(quoted.MessageID),
-				Participant:   quotedParticipant,
-				QuotedMessage: &waE2E.Message{Conversation: proto.String("")},
-			},
+			ContextInfo:   buildQuoteContext(quoted),
 		},
 	}
 
@@ -375,11 +363,6 @@ func (w *WhatsAppService) SendAudioWithQuote(ctx context.Context, sessionId, pho
 		return whatsmeow.SendResponse{}, fmt.Errorf("failed to upload audio: %w", err)
 	}
 
-	var quotedParticipant *string
-	if quoted.SenderJID != "" {
-		quotedParticipant = proto.String(quoted.SenderJID)
-	}
-
 	msg := &waE2E.Message{
 		AudioMessage: &waE2E.AudioMessage{
 			URL:           proto.String(uploaded.URL),
@@ -390,11 +373,7 @@ func (w *WhatsAppService) SendAudioWithQuote(ctx context.Context, sessionId, pho
 			FileSHA256:    uploaded.FileSHA256,
 			FileLength:    proto.Uint64(uint64(len(audioData))),
 			PTT:           proto.Bool(ptt),
-			ContextInfo: &waE2E.ContextInfo{
-				StanzaID:      proto.String(quoted.MessageID),
-				Participant:   quotedParticipant,
-				QuotedMessage: &waE2E.Message{Conversation: proto.String("")},
-			},
+			ContextInfo:   buildQuoteContext(quoted),
 		},
 	}
 
@@ -461,11 +440,6 @@ func (w *WhatsAppService) SendVideoWithQuote(ctx context.Context, sessionId, pho
 		return whatsmeow.SendResponse{}, fmt.Errorf("failed to upload video: %w", err)
 	}
 
-	var quotedParticipant *string
-	if quoted.SenderJID != "" {
-		quotedParticipant = proto.String(quoted.SenderJID)
-	}
-
 	msg := &waE2E.Message{
 		VideoMessage: &waE2E.VideoMessage{
 			URL:           proto.String(uploaded.URL),
@@ -476,11 +450,7 @@ func (w *WhatsAppService) SendVideoWithQuote(ctx context.Context, sessionId, pho
 			FileSHA256:    uploaded.FileSHA256,
 			FileLength:    proto.Uint64(uint64(len(videoData))),
 			Caption:       proto.String(caption),
-			ContextInfo: &waE2E.ContextInfo{
-				StanzaID:      proto.String(quoted.MessageID),
-				Participant:   quotedParticipant,
-				QuotedMessage: &waE2E.Message{Conversation: proto.String("")},
-			},
+			ContextInfo:   buildQuoteContext(quoted),
 		},
 	}
 

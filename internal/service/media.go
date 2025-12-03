@@ -480,38 +480,36 @@ func (s *MediaService) ProcessHistorySyncMedia(ctx context.Context, client *what
 	}()
 }
 
+// waMediaTypes maps media type strings to whatsmeow.MediaType - O(1) lookup
+var waMediaTypes = map[string]whatsmeow.MediaType{
+	"image":    whatsmeow.MediaImage,
+	"video":    whatsmeow.MediaVideo,
+	"audio":    whatsmeow.MediaAudio,
+	"document": whatsmeow.MediaDocument,
+	"sticker":  whatsmeow.MediaImage,
+}
+
+// defaultContentTypes maps media type strings to MIME types - O(1) lookup
+var defaultContentTypes = map[string]string{
+	"image":    "image/jpeg",
+	"video":    "video/mp4",
+	"audio":    "audio/ogg",
+	"document": "application/octet-stream",
+	"sticker":  "image/webp",
+}
+
 func getWhatsmeowMediaType(mediaType string) whatsmeow.MediaType {
-	switch mediaType {
-	case "image":
-		return whatsmeow.MediaImage
-	case "video":
-		return whatsmeow.MediaVideo
-	case "audio":
-		return whatsmeow.MediaAudio
-	case "document":
-		return whatsmeow.MediaDocument
-	case "sticker":
-		return whatsmeow.MediaImage
-	default:
-		return whatsmeow.MediaDocument
+	if mt, ok := waMediaTypes[mediaType]; ok {
+		return mt
 	}
+	return whatsmeow.MediaDocument
 }
 
 func getDefaultContentType(mediaType string) string {
-	switch mediaType {
-	case "image":
-		return "image/jpeg"
-	case "video":
-		return "video/mp4"
-	case "audio":
-		return "audio/ogg"
-	case "document":
-		return "application/octet-stream"
-	case "sticker":
-		return "image/webp"
-	default:
-		return "application/octet-stream"
+	if ct, ok := defaultContentTypes[mediaType]; ok {
+		return ct
 	}
+	return "application/octet-stream"
 }
 
 // SentMediaInfo holds information about sent media for storage

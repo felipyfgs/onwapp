@@ -520,7 +520,7 @@ func (h *Handler) enqueueToWhatsApp(ctx context.Context, session *model.Session,
 
 // SendToWhatsAppFromQueue processes a message from the queue and sends it to WhatsApp
 func (h *Handler) SendToWhatsAppFromQueue(ctx context.Context, sessionID string, data *queue.CWToWAMessage) error {
-	session, err := h.sessionService.Get(sessionID)
+	session, err := h.sessionService.GetByID(sessionID)
 	if err != nil || session == nil {
 		return fmt.Errorf("session not found: %s", sessionID)
 	}
@@ -610,11 +610,11 @@ func (h *Handler) SyncContacts(c *gin.Context) {
 
 // SyncMessages handles POST /sessions/:sessionId/chatwoot/sync/messages
 // @Summary Sync messages to Chatwoot (async)
-// @Description Start async synchronization of message history to Chatwoot
+// @Description Start async synchronization of message history to Chatwoot. By default imports ALL messages. Use ?days=N to limit.
 // @Tags         chatwoot
 // @Produce json
 // @Param sessionId path string true "Session name"
-// @Param days query int false "Limit to last N days"
+// @Param days query int false "Limit to last N days (default: 0 = all messages)"
 // @Success 202 {object} core.SyncStatus
 // @Failure 400 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
@@ -626,11 +626,11 @@ func (h *Handler) SyncMessages(c *gin.Context) {
 
 // SyncAll handles POST /sessions/:sessionId/chatwoot/sync
 // @Summary Full sync to Chatwoot (async)
-// @Description Start async synchronization of all contacts and messages to Chatwoot
+// @Description Start async synchronization of all contacts and messages to Chatwoot. By default imports ALL messages. Use ?days=N to limit.
 // @Tags         chatwoot
 // @Produce json
 // @Param sessionId path string true "Session name"
-// @Param days query int false "Limit to last N days"
+// @Param days query int false "Limit to last N days (default: 0 = all messages)"
 // @Success 202 {object} core.SyncStatus
 // @Failure 400 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
@@ -670,7 +670,9 @@ func (h *Handler) handleSync(c *gin.Context, syncType string) {
 		return
 	}
 
-	daysLimit := cfg.SyncDays
+	// Default: import ALL messages (daysLimit=0)
+	// Use ?days=N to limit to last N days
+	daysLimit := 0
 	if days := c.Query("days"); days != "" {
 		_, _ = fmt.Sscanf(days, "%d", &daysLimit)
 	}
