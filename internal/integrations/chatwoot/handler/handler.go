@@ -831,3 +831,18 @@ func (a *whatsappContactsAdapter) GetGroupName(ctx context.Context, groupJID str
 	}
 	return info.Name, nil
 }
+
+func (a *whatsappContactsAdapter) GetAllGroupNames(ctx context.Context) (map[string]string, error) {
+	groups, err := a.whatsappSvc.GetJoinedGroups(ctx, a.sessionId)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]string, len(groups))
+	for _, g := range groups {
+		if g != nil && g.JID.String() != "" {
+			result[g.JID.String()] = g.Name
+		}
+	}
+	return result, nil
+}

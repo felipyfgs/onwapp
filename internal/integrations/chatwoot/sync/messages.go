@@ -80,13 +80,14 @@ func (s *MessageSyncer) Sync(ctx context.Context, daysLimit int) (*core.SyncStat
 
 	messagesByChat := s.groupMessagesByChat(filteredMessages)
 	waContactsCache := s.loadContactsCache(ctx)
+	groupNamesCache := s.loadGroupNamesCache(ctx)
 
-	chatCache, err := s.createContactsAndConversations(ctx, messagesByChat, waContactsCache, stats)
+	chatCache, err := s.createContactsAndConversations(ctx, messagesByChat, waContactsCache, groupNamesCache, stats)
 	if err != nil {
 		return stats, err
 	}
 
-	s.updateContactAvatars(ctx, chatCache)
+	// Avatar updates are handled in background by AvatarUpdater after sync completes
 
 	if err := s.insertMessagesInBatches(ctx, filteredMessages, existingSourceIDs, chatCache, userID, userType, stats); err != nil {
 		return stats, err
@@ -96,6 +97,12 @@ func (s *MessageSyncer) Sync(ctx context.Context, daysLimit int) (*core.SyncStat
 	// This is needed because Chatwoot UI ignores messages with created_at before conversation creation
 	if fixed, err := s.repo.FixConversationCreatedAt(ctx); err == nil && fixed > 0 {
 		logger.Debug().Int("fixed", fixed).Msg("Chatwoot sync: fixed conversation created_at timestamps")
+	}
+
+	// Touch all inbox conversations to invalidate Chatwoot cache
+	// This ensures conversations appear in the UI after direct DB inserts
+	if err := s.repo.TouchInboxConversations(ctx); err != nil {
+		logger.Warn().Err(err).Msg("Chatwoot sync: failed to touch inbox conversations")
 	}
 
 	logger.Info().Int("imported", stats.MessagesImported).Msg("Chatwoot sync: messages completed")
@@ -147,10 +154,10 @@ func (s *MessageSyncer) shouldSkipMessage(msg *model.Message, daysLimit int, cut
 		return true
 	}
 
-	if msg.CwMsgId != nil && *msg.CwMsgId > 0 {
-		stats.MessagesSkipped++
-		return true
-	}
+	// NOTE: We don't check msg.CwMsgId here because the message may have been
+	// deleted in Chatwoot (e.g., conversation reset). The existingSourceIDs check
+	// above is the source of truth - if the message doesn't exist in Chatwoot,
+	// we should re-sync it regardless of the local cwMsgId.
 
 	if daysLimit > 0 && msg.Timestamp.Before(cutoffTime) {
 		stats.MessagesSkipped++
@@ -208,14 +215,31 @@ func (s *MessageSyncer) loadContactsCache(ctx context.Context) map[string]*core.
 	return cache
 }
 
+// loadGroupNamesCache loads all group names in a single call (avoids N+1 queries)
+func (s *MessageSyncer) loadGroupNamesCache(ctx context.Context) map[string]string {
+	cache := make(map[string]string)
+	if s.contactsGetter == nil {
+		return cache
+	}
+
+	groups, err := s.contactsGetter.GetAllGroupNames(ctx)
+	if err != nil {
+		logger.Debug().Err(err).Msg("Chatwoot sync: failed to load group names cache")
+		return cache
+	}
+
+	return groups
+}
+
 // createContactsAndConversations creates contacts and conversations in batch
 func (s *MessageSyncer) createContactsAndConversations(
 	ctx context.Context,
 	messagesByChat map[string][]model.Message,
 	waContactsCache map[string]*core.ContactNameInfo,
+	groupNamesCache map[string]string,
 	stats *core.SyncStats,
 ) (map[string]*core.ChatFKs, error) {
-	phoneDataList := s.buildPhoneDataList(ctx, messagesByChat, waContactsCache)
+	phoneDataList := s.buildPhoneDataList(messagesByChat, waContactsCache, groupNamesCache)
 
 	logger.Debug().Int("chats", len(phoneDataList)).Msg("Chatwoot sync: creating contacts/conversations")
 
@@ -247,9 +271,9 @@ func (s *MessageSyncer) createContactsAndConversations(
 
 // buildPhoneDataList builds the phone data list for batch creation
 func (s *MessageSyncer) buildPhoneDataList(
-	ctx context.Context,
 	messagesByChat map[string][]model.Message,
 	waContactsCache map[string]*core.ContactNameInfo,
+	groupNamesCache map[string]string,
 ) []core.PhoneTimestamp {
 	var phoneDataList []core.PhoneTimestamp
 
@@ -260,7 +284,7 @@ func (s *MessageSyncer) buildPhoneDataList(
 			continue
 		}
 
-		contactName := s.getContactName(ctx, chatJID, phone, isGroup, chatMessages, waContactsCache)
+		contactName := s.getContactName(chatJID, phone, isGroup, chatMessages, waContactsCache, groupNamesCache)
 
 		var firstTS, lastTS int64
 		if len(chatMessages) > 0 {
@@ -289,22 +313,20 @@ func (s *MessageSyncer) buildPhoneDataList(
 	return phoneDataList
 }
 
-// getContactName gets the best contact name for a chat
+// getContactName gets the best contact name for a chat using cached data
 func (s *MessageSyncer) getContactName(
-	ctx context.Context,
 	chatJID, phone string,
 	isGroup bool,
 	chatMessages []model.Message,
 	waContactsCache map[string]*core.ContactNameInfo,
+	groupNamesCache map[string]string,
 ) string {
 	if isGroup {
-		contactName := phone + " (GROUP)"
-		if s.contactsGetter != nil {
-			if groupName, err := s.contactsGetter.GetGroupName(ctx, chatJID); err == nil && groupName != "" {
-				contactName = groupName
-			}
+		// Use cached group name (loaded in bulk at start of sync)
+		if groupName, ok := groupNamesCache[chatJID]; ok && groupName != "" {
+			return groupName
 		}
-		return contactName
+		return phone + " (GROUP)"
 	}
 
 	nameInfo := waContactsCache[chatJID]
@@ -320,28 +342,6 @@ func (s *MessageSyncer) getContactName(
 		}
 	}
 	return util.GetBestContactName(nameInfo, phone)
-}
-
-// updateContactAvatars updates avatars for contacts
-func (s *MessageSyncer) updateContactAvatars(ctx context.Context, chatCache map[string]*core.ChatFKs) {
-	if s.contactsGetter == nil || len(chatCache) == 0 {
-		return
-	}
-
-	for jid, fks := range chatCache {
-		if fks == nil {
-			continue
-		}
-
-		avatarURL, err := s.contactsGetter.GetProfilePictureURL(ctx, jid)
-		if err != nil || avatarURL == "" {
-			continue
-		}
-
-		_, _ = s.client.UpdateContactSilent404(ctx, fks.ContactID, map[string]interface{}{
-			"avatar_url": avatarURL,
-		})
-	}
 }
 
 // insertMessagesInBatches inserts messages in batches
@@ -391,7 +391,7 @@ func (s *MessageSyncer) insertMessagesInBatches(
 	return nil
 }
 
-// insertMessageBatch inserts a batch of messages
+// insertMessageBatch inserts a batch of messages using bulk INSERT for text messages
 func (s *MessageSyncer) insertMessageBatch(
 	ctx context.Context,
 	messages []model.Message,
@@ -405,6 +405,9 @@ func (s *MessageSyncer) insertMessageBatch(
 
 	totalImported := 0
 	uploader := client.NewMediaUploader(s.client)
+
+	// Collect text messages for bulk insert
+	var textMessages []MessageInsertData
 
 	for _, msg := range messages {
 		fks := chatCache[msg.ChatJID]
@@ -423,13 +426,86 @@ func (s *MessageSyncer) insertMessageBatch(
 
 		senderPrefix := s.buildSenderPrefix(ctx, &msg)
 
+		// Media messages still need individual API calls for upload
 		if s.insertMediaMessage(ctx, &msg, fks, senderPrefix, uploader) {
 			totalImported++
 			continue
 		}
 
-		if s.insertTextMessage(ctx, &msg, fks, senderPrefix, msgType, senderType, senderID) {
-			totalImported++
+		// Prepare text message for bulk insert
+		content := GetMessageContent(&msg)
+		if content == "" {
+			continue
+		}
+		if senderPrefix != "" {
+			content = senderPrefix + content
+		}
+
+		// Extract quoted message ID for later resolution
+		var inReplyToExternalID string
+		if quotedID := ExtractQuotedID(&msg); quotedID != "" {
+			inReplyToExternalID = "WAID:" + quotedID
+		}
+
+		textMessages = append(textMessages, MessageInsertData{
+			Content:             content,
+			ConversationID:      fks.ConversationID,
+			MessageType:         msgType,
+			SenderType:          senderType,
+			SenderID:            senderID,
+			SourceID:            "WAID:" + msg.MsgId,
+			Timestamp:           msg.Timestamp,
+			InReplyToExternalID: inReplyToExternalID,
+		})
+	}
+
+	// Bulk insert text messages
+	if len(textMessages) > 0 {
+		inserted, err := s.repo.InsertMessagesBatch(ctx, textMessages)
+		if err != nil {
+			logger.Warn().Err(err).Int("count", len(textMessages)).Msg("Chatwoot sync: bulk insert failed")
+		} else {
+			totalImported += inserted
+
+			// Step 1: Get the Chatwoot IDs for inserted messages
+			sourceIDs := make([]string, len(textMessages))
+			for i, msg := range textMessages {
+				sourceIDs[i] = msg.SourceID
+			}
+			cwMsgIDs, err := s.repo.GetInsertedMessageIDs(ctx, sourceIDs)
+			if err != nil {
+				logger.Warn().Err(err).Msg("Chatwoot sync: failed to get inserted message IDs")
+			}
+
+			// Step 2: Update zpMessages with Chatwoot IDs
+			if len(cwMsgIDs) > 0 && s.msgRepo != nil {
+				for _, msg := range textMessages {
+					if cwID, ok := cwMsgIDs[msg.SourceID]; ok {
+						// Extract msgId from source_id (remove "WAID:" prefix)
+						msgId := msg.SourceID
+						if len(msgId) > 5 && msgId[:5] == "WAID:" {
+							msgId = msgId[5:]
+						}
+						_ = s.msgRepo.UpdateCwFields(ctx, s.sessionID, msgId, cwID, msg.ConversationID, msg.SourceID)
+					}
+				}
+			}
+
+			// Step 3: Resolve quoted message references
+			quotedRefs := make(map[string]string)
+			for _, msg := range textMessages {
+				if msg.InReplyToExternalID != "" {
+					quotedRefs[msg.SourceID] = msg.InReplyToExternalID
+				}
+			}
+			if len(quotedRefs) > 0 && len(cwMsgIDs) > 0 {
+				resolved, err := s.repo.ResolveQuotedMessages(ctx, quotedRefs)
+				if err != nil {
+					logger.Warn().Err(err).Msg("Chatwoot sync: failed to resolve quoted messages")
+				} else if resolved > 0 {
+					logger.Debug().Int("resolved", resolved).Msg("Chatwoot sync: resolved quoted message references")
+				}
+			}
 		}
 	}
 
@@ -558,39 +634,7 @@ func (s *MessageSyncer) insertMediaMessage(
 	return true
 }
 
-// insertTextMessage inserts a text message
-func (s *MessageSyncer) insertTextMessage(
-	ctx context.Context,
-	msg *model.Message,
-	fks *core.ChatFKs,
-	senderPrefix string,
-	msgType int,
-	senderType string,
-	senderID int,
-) bool {
-	content := GetMessageContent(msg)
-	if content == "" {
-		return false
-	}
-
-	if senderPrefix != "" {
-		content = senderPrefix + content
-	}
-
-	err := s.repo.InsertMessage(ctx, MessageInsertData{
-		Content:        content,
-		ConversationID: fks.ConversationID,
-		MessageType:    msgType,
-		SenderType:     senderType,
-		SenderID:       senderID,
-		SourceID:       "WAID:" + msg.MsgId,
-		Timestamp:      msg.Timestamp,
-	})
-
-	return err == nil
-}
-
-// updateConversationTimestamps updates last_activity_at for conversations
+// updateConversationTimestamps updates last_activity_at for conversations using batch update
 func (s *MessageSyncer) updateConversationTimestamps(ctx context.Context, messages []model.Message, chatCache map[string]*core.ChatFKs) {
 	convTimestamps := make(map[int]time.Time)
 
@@ -602,5 +646,5 @@ func (s *MessageSyncer) updateConversationTimestamps(ctx context.Context, messag
 		}
 	}
 
-	s.repo.UpdateConversationTimestamps(ctx, convTimestamps)
+	_ = s.repo.UpdateConversationTimestampsBatch(ctx, convTimestamps)
 }

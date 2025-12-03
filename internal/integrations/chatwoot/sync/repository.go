@@ -397,13 +397,154 @@ func (r *Repository) InsertMessage(ctx context.Context, msg MessageInsertData) e
 
 // MessageInsertData holds data for message insertion
 type MessageInsertData struct {
-	Content        string
-	ConversationID int
-	MessageType    int
-	SenderType     string
-	SenderID       int
-	SourceID       string
-	Timestamp      time.Time
+	Content             string
+	ConversationID      int
+	MessageType         int
+	SenderType          string
+	SenderID            int
+	SourceID            string
+	Timestamp           time.Time
+	InReplyToExternalID string // "WAID:stanzaID" for quoted messages
+}
+
+// InsertMessagesBatch inserts multiple messages in a single query (bulk INSERT)
+// Note: Chatwoot's messages table doesn't have a UNIQUE constraint on source_id,
+// so we filter duplicates beforehand using GetExistingSourceIDs
+func (r *Repository) InsertMessagesBatch(ctx context.Context, messages []MessageInsertData) (int, error) {
+	if len(messages) == 0 {
+		return 0, nil
+	}
+
+	var values []string
+	args := []interface{}{r.accountID, r.inboxID}
+
+	for _, msg := range messages {
+		idx := len(args) + 1
+		args = append(args, msg.Content, msg.ConversationID, msg.MessageType, msg.SenderType, msg.SenderID, msg.SourceID, msg.Timestamp)
+		values = append(values, fmt.Sprintf("($%d, $%d, $1, $2, $%d, $%d, FALSE, 0, $%d, $%d, $%d, $%d, $%d, NULL, NULL)",
+			idx, idx, idx+1, idx+2, idx+3, idx+4, idx+5, idx+6, idx+6))
+	}
+
+	query := fmt.Sprintf(`
+		INSERT INTO messages (content, processed_message_content, account_id, inbox_id, conversation_id, 
+			message_type, private, content_type, sender_type, sender_id, source_id, created_at, updated_at,
+			content_attributes, external_source_ids)
+		VALUES %s
+	`, strings.Join(values, ", "))
+
+	result, err := r.db.ExecContext(ctx, query, args...)
+	if err != nil {
+		return 0, wrapErr("insert messages batch", err)
+	}
+
+	rows, _ := result.RowsAffected()
+	return int(rows), nil
+}
+
+// GetInsertedMessageIDs returns a map of source_id -> chatwoot_id for the given source IDs
+func (r *Repository) GetInsertedMessageIDs(ctx context.Context, sourceIDs []string) (map[string]int, error) {
+	if len(sourceIDs) == 0 {
+		return nil, nil
+	}
+
+	// Build placeholders for IN clause
+	placeholders := make([]string, len(sourceIDs))
+	args := make([]interface{}, len(sourceIDs)+1)
+	args[0] = r.inboxID
+	for i, sid := range sourceIDs {
+		placeholders[i] = fmt.Sprintf("$%d", i+2)
+		args[i+1] = sid
+	}
+
+	query := fmt.Sprintf(`
+		SELECT id, source_id FROM messages 
+		WHERE inbox_id = $1 AND source_id IN (%s)
+	`, strings.Join(placeholders, ", "))
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, wrapErr("get inserted message IDs", err)
+	}
+	defer rows.Close()
+
+	result := make(map[string]int)
+	for rows.Next() {
+		var id int
+		var sourceID string
+		if err := rows.Scan(&id, &sourceID); err != nil {
+			continue
+		}
+		result[sourceID] = id
+	}
+	return result, rows.Err()
+}
+
+// ResolveQuotedMessages updates content_attributes for messages with quoted references
+// It resolves in_reply_to_external_id to find the actual message ID
+func (r *Repository) ResolveQuotedMessages(ctx context.Context, quotedRefs map[string]string) (int, error) {
+	if len(quotedRefs) == 0 {
+		return 0, nil
+	}
+
+	// quotedRefs is map[source_id]quoted_source_id
+	// We need to update messages where source_id matches and set content_attributes
+	// with both in_reply_to (resolved message.id) and in_reply_to_external_id
+
+	var totalUpdated int
+	for sourceID, quotedSourceID := range quotedRefs {
+		// Find the quoted message ID
+		var quotedMsgID int
+		err := r.db.QueryRowContext(ctx,
+			`SELECT id FROM messages WHERE source_id = $1 AND inbox_id = $2 LIMIT 1`,
+			quotedSourceID, r.inboxID).Scan(&quotedMsgID)
+		if err != nil {
+			// Quoted message not found, skip
+			continue
+		}
+
+		// Update the message with resolved content_attributes
+		// Chatwoot stores content_attributes as a JSON string (not object), so we need to double-encode
+		innerJSON := fmt.Sprintf(`{"in_reply_to":%d,"in_reply_to_external_id":null}`, quotedMsgID)
+		result, err := r.db.ExecContext(ctx,
+			`UPDATE messages SET content_attributes = to_json($1::text) WHERE source_id = $2 AND inbox_id = $3`,
+			innerJSON, sourceID, r.inboxID)
+		if err != nil {
+			continue
+		}
+		affected, _ := result.RowsAffected()
+		totalUpdated += int(affected)
+	}
+
+	return totalUpdated, nil
+}
+
+// UpdateConversationTimestampsBatch updates timestamps for multiple conversations in a single query
+func (r *Repository) UpdateConversationTimestampsBatch(ctx context.Context, timestamps map[int]time.Time) error {
+	if len(timestamps) == 0 {
+		return nil
+	}
+
+	var values []string
+	var args []interface{}
+
+	for convID, ts := range timestamps {
+		idx := len(args) + 1
+		args = append(args, convID, ts)
+		values = append(values, fmt.Sprintf("($%d::integer, $%d::timestamp)", idx, idx+1))
+	}
+
+	query := fmt.Sprintf(`
+		UPDATE conversations c
+		SET last_activity_at = v.ts, updated_at = v.ts
+		FROM (VALUES %s) AS v(id, ts)
+		WHERE c.id = v.id AND (c.last_activity_at IS NULL OR c.last_activity_at < v.ts)
+	`, strings.Join(values, ", "))
+
+	_, err := r.db.ExecContext(ctx, query, args...)
+	if err != nil {
+		return wrapErr("update conversation timestamps batch", err)
+	}
+	return nil
 }
 
 // UpdateMessageTimestamp updates the timestamp of a message
@@ -428,6 +569,17 @@ func (r *Repository) UpdateConversationTimestamp(ctx context.Context, conversati
 	return nil
 }
 
+// TouchInboxConversations updates updated_at on all inbox conversations to invalidate Chatwoot cache
+func (r *Repository) TouchInboxConversations(ctx context.Context) error {
+	_, err := r.db.ExecContext(ctx,
+		`UPDATE conversations SET updated_at = NOW() WHERE inbox_id = $1`,
+		r.inboxID)
+	if err != nil {
+		return wrapErr("touch inbox conversations", err)
+	}
+	return nil
+}
+
 // UpdateConversationTimestamps updates timestamps for multiple conversations (best-effort)
 func (r *Repository) UpdateConversationTimestamps(ctx context.Context, timestamps map[int]time.Time) {
 	for convID, ts := range timestamps {
@@ -437,22 +589,24 @@ func (r *Repository) UpdateConversationTimestamps(ctx context.Context, timestamp
 
 // FixConversationCreatedAt updates conversation and contact_inbox created_at to match oldest message
 // This is needed because Chatwoot UI ignores messages with created_at before conversation/contact_inbox creation
+// Uses CTE for better performance (avoids correlated subquery per row)
 func (r *Repository) FixConversationCreatedAt(ctx context.Context) (int, error) {
-	// Fix conversations
+	// Fix conversations using CTE (more efficient than correlated subquery)
 	result, err := r.db.ExecContext(ctx, `
-		UPDATE conversations c
-		SET created_at = (
-			SELECT MIN(m.created_at) 
-			FROM messages m 
-			WHERE m.conversation_id = c.id
+		WITH oldest_messages AS (
+			SELECT m.conversation_id, MIN(m.created_at) as oldest_at
+			FROM messages m
+			JOIN conversations c ON c.id = m.conversation_id
+			WHERE c.account_id = $1 AND c.inbox_id = $2
+			GROUP BY m.conversation_id
 		)
-		WHERE c.account_id = $1
+		UPDATE conversations c
+		SET created_at = om.oldest_at
+		FROM oldest_messages om
+		WHERE c.id = om.conversation_id
+			AND c.account_id = $1
 			AND c.inbox_id = $2
-			AND EXISTS (
-				SELECT 1 FROM messages m 
-				WHERE m.conversation_id = c.id 
-				AND m.created_at < c.created_at
-			)
+			AND om.oldest_at < c.created_at
 	`, r.accountID, r.inboxID)
 	if err != nil {
 		return 0, wrapErr("fix conversation created_at", err)

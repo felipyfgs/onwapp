@@ -57,9 +57,10 @@ func (s *ContactSyncer) Sync(ctx context.Context, daysLimit int) (*core.SyncStat
 	return stats, nil
 }
 
-// filterValidContacts filters out invalid contacts
+// filterValidContacts filters out invalid contacts and deduplicates by JID
 func (s *ContactSyncer) filterValidContacts(ctx context.Context, contacts []core.WhatsAppContact, stats *core.SyncStats) []core.WhatsAppContact {
 	valid := make([]core.WhatsAppContact, 0, len(contacts)/2)
+	seen := make(map[string]bool)
 
 	for _, c := range contacts {
 		if s.shouldSkipContact(c.JID) {
@@ -81,6 +82,13 @@ func (s *ContactSyncer) filterValidContacts(ctx context.Context, contacts []core
 			stats.ContactsSkipped++
 			continue
 		}
+
+		// Deduplicate by JID (can happen after LID conversion)
+		if seen[c.JID] {
+			stats.ContactsSkipped++
+			continue
+		}
+		seen[c.JID] = true
 
 		valid = append(valid, c)
 	}

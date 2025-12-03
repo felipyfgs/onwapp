@@ -18,6 +18,7 @@ import (
 // MessageRepository interface for accessing message data
 type MessageRepository interface {
 	GetBySession(ctx context.Context, sessionID string, limit, offset int) ([]model.Message, error)
+	UpdateCwFields(ctx context.Context, sessionID, msgId string, cwMsgId, cwConvId int, cwSourceId string) error
 }
 
 // ContactsGetter interface for getting WhatsApp contacts
@@ -25,6 +26,7 @@ type ContactsGetter interface {
 	GetAllContacts(ctx context.Context) ([]core.WhatsAppContact, error)
 	GetProfilePictureURL(ctx context.Context, jid string) (string, error)
 	GetGroupName(ctx context.Context, groupJID string) (string, error)
+	GetAllGroupNames(ctx context.Context) (map[string]string, error)
 }
 
 // MediaGetter interface for getting media info by message ID
