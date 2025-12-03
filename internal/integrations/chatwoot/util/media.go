@@ -1,6 +1,7 @@
 package util
 
 import (
+	"net/url"
 	"path"
 	"strings"
 
@@ -123,13 +124,13 @@ func GetMediaTypeFromURL(url string) string {
 }
 
 // ExtractFilenameFromURL extracts the filename from a URL
-func ExtractFilenameFromURL(url string) string {
-	if url == "" {
+func ExtractFilenameFromURL(urlStr string) string {
+	if urlStr == "" {
 		return ""
 	}
 
 	// Remove query string
-	urlPath := strings.Split(url, "?")[0]
+	urlPath := strings.Split(urlStr, "?")[0]
 
 	// Get the base name
 	filename := path.Base(urlPath)
@@ -144,7 +145,13 @@ func ExtractFilenameFromURL(url string) string {
 		return ""
 	}
 
-	return filename
+	// Decode URL-encoded characters (e.g., %20 -> space)
+	decoded, err := url.PathUnescape(filename)
+	if err != nil {
+		return filename
+	}
+
+	return decoded
 }
 
 // FileTypeMap maps media types to Chatwoot file_type strings
