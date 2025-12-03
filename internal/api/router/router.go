@@ -12,6 +12,7 @@ import (
 	"zpwoot/internal/api/middleware"
 	"zpwoot/internal/db"
 	"zpwoot/internal/logger"
+	"zpwoot/internal/version"
 )
 
 // WebhookHandlerInterface defines the methods required for webhook handling
@@ -80,6 +81,7 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 		}
 		c.JSON(http.StatusOK, gin.H{
 			"status":   status,
+			"version":  version.Short(),
 			"database": dbStatus,
 			"time":     time.Now().UTC().Format(time.RFC3339),
 		})
