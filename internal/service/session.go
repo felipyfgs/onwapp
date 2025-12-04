@@ -127,7 +127,7 @@ func (s *SessionService) reconnectSession(session *model.Session) {
 	logger.Info().Str("session", session.Session).Msg("Session auto-reconnected successfully")
 }
 
-func (s *SessionService) Create(ctx context.Context, sessionId string) (*model.Session, error) {
+func (s *SessionService) Create(ctx context.Context, sessionId string, apiKey string) (*model.Session, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -136,7 +136,7 @@ func (s *SessionService) Create(ctx context.Context, sessionId string) (*model.S
 	}
 
 	// Save to database and get record
-	rec, err := s.database.Sessions.Create(ctx, sessionId)
+	rec, err := s.database.Sessions.Create(ctx, sessionId, apiKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to save session to database: %w", err)
 	}
@@ -150,6 +150,7 @@ func (s *SessionService) Create(ctx context.Context, sessionId string) (*model.S
 		Session:   rec.Session,
 		DeviceJID: rec.DeviceJID,
 		Phone:     rec.Phone,
+		ApiKey:    rec.ApiKey,
 		Client:    client,
 		Device:    device,
 		Status:    model.StatusDisconnected,

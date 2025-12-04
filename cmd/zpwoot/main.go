@@ -27,13 +27,14 @@ import (
 
 // @title           ZPWoot WhatsApp API
 // @version         0.1.0
-// @description     WhatsApp API with Chatwoot Integration
+// @description     WhatsApp API with Chatwoot Integration. Supports two authentication levels: Global API key (full access) and Session API key (session-specific access).
 
 // @BasePath  /
 
-// @securityDefinitions.apikey ApiKeyAuth
+// @securityDefinitions.apikey Authorization
 // @in header
-// @name apikey
+// @name Authorization
+// @description API key for authentication. Use global key for full access or session-specific key for restricted access.
 
 // @tag.name sessions
 // @tag.description Session lifecycle & connection management
@@ -255,16 +256,26 @@ func main() {
 		Webhook:    webhookHandler,
 	}
 
+	// Create session lookup function for session-level API keys
+	sessionLookup := func(ctx context.Context, apiKey string) (string, bool) {
+		session, err := database.Sessions.GetByApiKey(ctx, apiKey)
+		if err != nil || session == nil {
+			return "", false
+		}
+		return session.Session, true
+	}
+
 	r := router.SetupWithConfig(&router.Config{
 		Handlers:        handlers,
 		APIKey:          cfg.APIKey,
+		SessionLookup:   sessionLookup,
 		Database:        database,
 		RateLimitPerMin: 100,
 		AllowedOrigins:  []string{"*"},
 	})
 
 	// Register Chatwoot routes
-	chatwoot.RegisterRoutes(r, chatwootHandler, cfg.APIKey)
+	chatwoot.RegisterRoutes(r, chatwootHandler, cfg.APIKey, sessionLookup)
 
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,

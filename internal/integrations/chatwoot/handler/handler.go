@@ -64,7 +64,7 @@ func (h *Handler) SetQueueProducer(producer *queue.Producer) {
 // @Success 200 {object} core.Config
 // @Failure 400 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
-// @Security ApiKeyAuth
+// @Security Authorization
 // @Router /sessions/{sessionId}/chatwoot/set [post]
 func (h *Handler) SetConfig(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -130,7 +130,7 @@ func (h *Handler) SetConfig(c *gin.Context) {
 // @Param sessionId path string true "Session name"
 // @Success 200 {object} core.Config
 // @Failure 404 {object} map[string]interface{}
-// @Security ApiKeyAuth
+// @Security Authorization
 // @Router /sessions/{sessionId}/chatwoot/find [get]
 func (h *Handler) GetConfig(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -158,7 +158,7 @@ func (h *Handler) GetConfig(c *gin.Context) {
 // @Param sessionId path string true "Session name"
 // @Success 200 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
-// @Security ApiKeyAuth
+// @Security Authorization
 // @Router /sessions/{sessionId}/chatwoot [delete]
 func (h *Handler) DeleteConfig(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -612,7 +612,7 @@ func downloadMedia(url string) ([]byte, string, error) {
 // @Success 202 {object} core.SyncStatus
 // @Failure 400 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
-// @Security ApiKeyAuth
+// @Security Authorization
 // @Router /sessions/{sessionId}/chatwoot/sync/contacts [post]
 func (h *Handler) SyncContacts(c *gin.Context) {
 	h.handleSync(c, "contacts")
@@ -628,7 +628,7 @@ func (h *Handler) SyncContacts(c *gin.Context) {
 // @Success 202 {object} core.SyncStatus
 // @Failure 400 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
-// @Security ApiKeyAuth
+// @Security Authorization
 // @Router /sessions/{sessionId}/chatwoot/sync/messages [post]
 func (h *Handler) SyncMessages(c *gin.Context) {
 	h.handleSync(c, "messages")
@@ -644,7 +644,7 @@ func (h *Handler) SyncMessages(c *gin.Context) {
 // @Success 202 {object} core.SyncStatus
 // @Failure 400 {object} map[string]interface{}
 // @Failure 404 {object} map[string]interface{}
-// @Security ApiKeyAuth
+// @Security Authorization
 // @Router /sessions/{sessionId}/chatwoot/sync [post]
 func (h *Handler) SyncAll(c *gin.Context) {
 	h.handleSync(c, "all")
@@ -707,7 +707,7 @@ func (h *Handler) handleSync(c *gin.Context, syncType string) {
 // @Param sessionId path string true "Session name"
 // @Success 200 {object} core.SyncStatus
 // @Failure 404 {object} map[string]interface{}
-// @Security ApiKeyAuth
+// @Security Authorization
 // @Router /sessions/{sessionId}/chatwoot/sync/status [get]
 func (h *Handler) GetSyncStatusHandler(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -726,7 +726,7 @@ func (h *Handler) GetSyncStatusHandler(c *gin.Context) {
 // @Description Delete all Chatwoot contacts, conversations and messages (except bot)
 // @Tags         chatwoot
 // @Produce json
-// @Security ApiKeyAuth
+// @Security Authorization
 // @Param sessionId path string true "Session name"
 // @Success 200 {object} map[string]interface{}
 // @Router /sessions/{sessionId}/chatwoot/reset [post]

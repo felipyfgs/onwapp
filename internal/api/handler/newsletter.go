@@ -29,7 +29,7 @@ func NewNewsletterHandler(wpp *wpp.Service) *NewsletterHandler {
 // @Success      200    {object}  dto.NewsletterResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/newsletters [post]
 func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -63,7 +63,7 @@ func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
 // @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/newsletters/{newsletterId}/follow [post]
 func (h *NewsletterHandler) FollowNewsletter(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -93,7 +93,7 @@ func (h *NewsletterHandler) FollowNewsletter(c *gin.Context) {
 // @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/newsletters/{newsletterId}/follow [delete]
 func (h *NewsletterHandler) UnfollowNewsletter(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -121,7 +121,7 @@ func (h *NewsletterHandler) UnfollowNewsletter(c *gin.Context) {
 // @Param        newsletterId  path      string  true  "Newsletter JID"
 // @Success      200           {object}  dto.NewsletterResponse
 // @Failure      500           {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/newsletters/{newsletterId} [get]
 func (h *NewsletterHandler) GetNewsletterInfo(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -147,7 +147,7 @@ func (h *NewsletterHandler) GetNewsletterInfo(c *gin.Context) {
 // @Param        sessionId   path      string  true  "Session ID"
 // @Success      200    {array}   object
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/newsletters [get]
 func (h *NewsletterHandler) GetSubscribedNewsletters(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -172,7 +172,7 @@ func (h *NewsletterHandler) GetSubscribedNewsletters(c *gin.Context) {
 // @Param        before        query     int     false  "Before server ID"
 // @Success      200           {object}  dto.NewsletterResponse
 // @Failure      500           {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/newsletters/{newsletterId}/messages [get]
 func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -211,7 +211,7 @@ func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
 // @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/newsletters/{newsletterId}/reactions [post]
 func (h *NewsletterHandler) NewsletterSendReaction(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -244,7 +244,7 @@ func (h *NewsletterHandler) NewsletterSendReaction(c *gin.Context) {
 // @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/newsletters/{newsletterId}/mute [patch]
 func (h *NewsletterHandler) NewsletterToggleMute(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -275,7 +275,7 @@ func (h *NewsletterHandler) NewsletterToggleMute(c *gin.Context) {
 // @Success      200 {object} object
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/newsletters/{newsletterId}/viewed [post]
 func (h *NewsletterHandler) NewsletterMarkViewed(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -309,7 +309,7 @@ func (h *NewsletterHandler) NewsletterMarkViewed(c *gin.Context) {
 // @Param        newsletterId path string true "Newsletter JID"
 // @Success      200 {object} dto.NewsletterLiveResponse
 // @Failure      500 {object} dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/newsletters/{newsletterId}/subscribe-live [post]
 func (h *NewsletterHandler) NewsletterSubscribeLiveUpdates(c *gin.Context) {
 	sessionId := c.Param("sessionId")

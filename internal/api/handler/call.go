@@ -28,7 +28,7 @@ func NewCallHandler(wpp *wpp.Service) *CallHandler {
 // @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/calls/reject [post]
 func (h *CallHandler) RejectCall(c *gin.Context) {
 	sessionId := c.Param("sessionId")

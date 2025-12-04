@@ -70,8 +70,8 @@ func NewHandler(svc *Service, sessionSvc *zpservice.SessionService, wppSvc *wpp.
 }
 
 // RegisterRoutes registers Chatwoot HTTP routes
-func RegisterRoutes(r *gin.Engine, h *Handler, apiKey string) {
-	handler.RegisterRoutes(r, h, apiKey)
+func RegisterRoutes(r *gin.Engine, h *Handler, apiKey string, sessionLookup handler.SessionKeyLookup) {
+	handler.RegisterRoutes(r, h, apiKey, sessionLookup)
 }
 
 // GetSyncStatus returns the current sync status for a session

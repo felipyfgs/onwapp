@@ -29,7 +29,7 @@ func NewContactHandler(wpp *wpp.Service) *ContactHandler {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/contacts/check [post]
 func (h *ContactHandler) CheckPhone(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -70,7 +70,7 @@ func (h *ContactHandler) CheckPhone(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/contacts/{phone} [get]
 func (h *ContactHandler) GetContactInfo(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -113,7 +113,7 @@ func (h *ContactHandler) GetContactInfo(c *gin.Context) {
 // @Success      200    {object}  dto.AvatarResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/contacts/{phone}/avatar [get]
 func (h *ContactHandler) GetAvatar(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -150,7 +150,7 @@ func (h *ContactHandler) GetAvatar(c *gin.Context) {
 // @Success      200    {array}   object
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/contacts [get]
 func (h *ContactHandler) GetContacts(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -172,7 +172,7 @@ func (h *ContactHandler) GetContacts(c *gin.Context) {
 // @Param        sessionId   path      string  true  "Session ID"
 // @Success      200    {object}  dto.BlocklistResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/contacts/blocklist [get]
 func (h *ContactHandler) GetBlocklist(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -205,7 +205,7 @@ func (h *ContactHandler) GetBlocklist(c *gin.Context) {
 // @Success      200    {object}  dto.BlocklistActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/contacts/blocklist [put]
 func (h *ContactHandler) UpdateBlocklist(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -241,7 +241,7 @@ func (h *ContactHandler) UpdateBlocklist(c *gin.Context) {
 // @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/contacts/{phone}/presence/subscribe [post]
 func (h *ContactHandler) SubscribePresence(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -269,7 +269,7 @@ func (h *ContactHandler) SubscribePresence(c *gin.Context) {
 // @Param        revoke query     bool    false  "Revoke existing link"
 // @Success      200    {object}  dto.QRLinkResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/qrlink [get]
 func (h *ContactHandler) GetContactQRLink(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -296,7 +296,7 @@ func (h *ContactHandler) GetContactQRLink(c *gin.Context) {
 // @Param        phone  path      string  true  "Phone number"
 // @Success      200    {object}  dto.BusinessProfileResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/contacts/{phone}/business [get]
 func (h *ContactHandler) GetBusinessProfile(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -324,7 +324,7 @@ func (h *ContactHandler) GetBusinessProfile(c *gin.Context) {
 // @Success      200    {object}  dto.LIDResponse
 // @Failure      404    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/contacts/{phone}/lid [get]
 func (h *ContactHandler) GetContactLID(c *gin.Context) {
 	sessionId := c.Param("sessionId")

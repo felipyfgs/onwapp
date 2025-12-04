@@ -28,7 +28,7 @@ func NewProfileHandler(wpp *wpp.Service) *ProfileHandler {
 // @Success      200    {object}  dto.ProfileInfoResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/profile [get]
 func (h *ProfileHandler) GetProfile(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -57,7 +57,7 @@ func (h *ProfileHandler) GetProfile(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/profile/status [patch]
 func (h *ProfileHandler) SetStatus(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -88,7 +88,7 @@ func (h *ProfileHandler) SetStatus(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/profile/name [patch]
 func (h *ProfileHandler) SetPushName(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -120,7 +120,7 @@ func (h *ProfileHandler) SetPushName(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/profile/picture [put]
 func (h *ProfileHandler) SetProfilePicture(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -164,7 +164,7 @@ func (h *ProfileHandler) SetProfilePicture(c *gin.Context) {
 // @Success      200    {object}  object
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/profile/picture [delete]
 func (h *ProfileHandler) DeleteProfilePicture(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -187,7 +187,7 @@ func (h *ProfileHandler) DeleteProfilePicture(c *gin.Context) {
 // @Success      200    {object}  dto.PrivacySettingsResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/profile/privacy [get]
 func (h *ProfileHandler) GetPrivacySettings(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -216,7 +216,7 @@ func (h *ProfileHandler) GetPrivacySettings(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/profile/privacy [put]
 func (h *ProfileHandler) SetPrivacySettings(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -253,7 +253,7 @@ func (h *ProfileHandler) SetPrivacySettings(c *gin.Context) {
 // @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/profile/disappearing [patch]
 func (h *ProfileHandler) SetDefaultDisappearingTimer(c *gin.Context) {
 	sessionId := c.Param("sessionId")

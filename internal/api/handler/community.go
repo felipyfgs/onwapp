@@ -29,7 +29,7 @@ func NewCommunityHandler(wpp *wpp.Service) *CommunityHandler {
 // @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/communities/{communityId}/groups [post]
 func (h *CommunityHandler) LinkGroup(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -62,7 +62,7 @@ func (h *CommunityHandler) LinkGroup(c *gin.Context) {
 // @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/communities/{communityId}/groups/{groupId} [delete]
 func (h *CommunityHandler) UnlinkGroup(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -93,7 +93,7 @@ func (h *CommunityHandler) UnlinkGroup(c *gin.Context) {
 // @Param        communityId  path      string  true  "Community ID"
 // @Success      200          {object}  dto.CommunityResponse
 // @Failure      500          {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/communities/{communityId}/groups [get]
 func (h *CommunityHandler) GetSubGroups(c *gin.Context) {
 	sessionId := c.Param("sessionId")

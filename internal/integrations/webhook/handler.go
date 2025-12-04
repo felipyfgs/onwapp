@@ -54,7 +54,7 @@ type ErrorResponse struct {
 // @Param sessionId path string true "Session ID"
 // @Success 200 {object} GetWebhookResponse
 // @Failure 404 {object} ErrorResponse
-// @Security ApiKeyAuth
+// @Security Authorization
 // @Router /sessions/{sessionId}/webhooks [get]
 func (h *Handler) GetWebhook(c *gin.Context) {
 	name := c.Param("sessionId")
@@ -99,7 +99,7 @@ func (h *Handler) GetWebhook(c *gin.Context) {
 // @Success 200 {object} GetWebhookResponse
 // @Failure 400 {object} ErrorResponse
 // @Failure 404 {object} ErrorResponse
-// @Security ApiKeyAuth
+// @Security Authorization
 // @Router /sessions/{sessionId}/webhooks [post]
 func (h *Handler) SetWebhook(c *gin.Context) {
 	name := c.Param("sessionId")
@@ -150,7 +150,7 @@ func (h *Handler) SetWebhook(c *gin.Context) {
 // @Success 200 {object} GetWebhookResponse
 // @Failure 400 {object} ErrorResponse
 // @Failure 404 {object} ErrorResponse
-// @Security ApiKeyAuth
+// @Security Authorization
 // @Router /sessions/{sessionId}/webhooks [put]
 func (h *Handler) UpdateWebhook(c *gin.Context) {
 	name := c.Param("sessionId")
@@ -209,7 +209,7 @@ func (h *Handler) UpdateWebhook(c *gin.Context) {
 // @Param sessionId path string true "Session ID"
 // @Success 200 {object} MessageResponse
 // @Failure 404 {object} ErrorResponse
-// @Security ApiKeyAuth
+// @Security Authorization
 // @Router /sessions/{sessionId}/webhooks [delete]
 func (h *Handler) DeleteWebhook(c *gin.Context) {
 	name := c.Param("sessionId")
@@ -250,7 +250,7 @@ type MessageResponse struct {
 // @Tags         webhook
 // @Produce json
 // @Success 200 {object} EventsResponse
-// @Security ApiKeyAuth
+// @Security Authorization
 // @Router /events [get]
 func (h *Handler) GetEvents(c *gin.Context) {
 	categories := make(map[string][]string)

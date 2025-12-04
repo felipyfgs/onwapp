@@ -6,14 +6,17 @@ import (
 	"zpwoot/internal/api/middleware"
 )
 
+// SessionKeyLookup is re-exported from middleware
+type SessionKeyLookup = middleware.SessionKeyLookup
+
 // RegisterRoutes registers Chatwoot routes
-func RegisterRoutes(r *gin.Engine, handler *Handler, apiKey string) {
+func RegisterRoutes(r *gin.Engine, handler *Handler, apiKey string, sessionLookup SessionKeyLookup) {
 	// Chatwoot webhook endpoint (no auth - Chatwoot sends webhooks)
 	r.POST("/chatwoot/webhook/:sessionId", handler.ReceiveWebhook)
 
 	// Protected routes under /sessions/:sessionId/chatwoot
 	sessions := r.Group("/sessions")
-	sessions.Use(middleware.Auth(apiKey))
+	sessions.Use(middleware.Auth(apiKey, sessionLookup))
 	{
 		sessions.POST("/:sessionId/chatwoot/set", handler.SetConfig)
 		sessions.GET("/:sessionId/chatwoot/find", handler.GetConfig)

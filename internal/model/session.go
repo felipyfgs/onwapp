@@ -36,6 +36,7 @@ type SessionRecord struct {
 	DeviceJID string
 	Phone     string
 	Status    string
+	ApiKey    string // Session-specific API key (optional)
 	CreatedAt *time.Time
 	UpdatedAt *time.Time
 }
@@ -45,6 +46,7 @@ type Session struct {
 	Session   string // Session identifier (used in API routes)
 	DeviceJID string
 	Phone     string
+	ApiKey    string // Session-specific API key (optional)
 	Client    *whatsmeow.Client
 	Device    *store.Device
 	Status    SessionStatus

@@ -41,7 +41,7 @@ func NewHistoryHandler(
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 404 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Security ApiKeyAuth
+// @Security Authorization
 // @Router       /sessions/{sessionId}/history/sync [post]
 func (h *HistoryHandler) RequestHistorySync(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -74,7 +74,7 @@ func (h *HistoryHandler) RequestHistorySync(c *gin.Context) {
 // @Success 200 {array} dto.SyncProgressResponse
 // @Failure 404 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Security ApiKeyAuth
+// @Security Authorization
 // @Router       /sessions/{sessionId}/history/progress [get]
 func (h *HistoryHandler) GetSyncProgress(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -124,7 +124,7 @@ func (h *HistoryHandler) GetSyncProgress(c *gin.Context) {
 // @Success 200 {array} dto.ChatResponse
 // @Failure 404 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Security ApiKeyAuth
+// @Security Authorization
 // @Router       /sessions/{sessionId}/history/chats/unread [get]
 func (h *HistoryHandler) GetUnreadChats(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -166,7 +166,7 @@ func (h *HistoryHandler) GetUnreadChats(c *gin.Context) {
 // @Success 200 {object} dto.ChatResponse
 // @Failure 404 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Security ApiKeyAuth
+// @Security Authorization
 // @Router       /sessions/{sessionId}/history/chats/{chatId} [get]
 func (h *HistoryHandler) GetChatInfo(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -211,7 +211,7 @@ func (h *HistoryHandler) GetChatInfo(c *gin.Context) {
 // @Success 200 {array} dto.PastParticipantResponse
 // @Failure 404 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Security ApiKeyAuth
+// @Security Authorization
 // @Router       /sessions/{sessionId}/history/groups/{groupId}/participants/past [get]
 func (h *HistoryHandler) GetGroupPastParticipants(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -255,7 +255,7 @@ func (h *HistoryHandler) GetGroupPastParticipants(c *gin.Context) {
 // @Success 200 {array} dto.StickerResponse
 // @Failure 404 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
-// @Security ApiKeyAuth
+// @Security Authorization
 // @Router       /sessions/{sessionId}/history/stickers [get]
 func (h *HistoryHandler) GetTopStickers(c *gin.Context) {
 	sessionId := c.Param("sessionId")

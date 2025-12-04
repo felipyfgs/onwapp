@@ -57,12 +57,12 @@ func (f LogFormat) String() string {
 }
 
 type Config struct {
-	DatabaseURL string
-	Port        string
-	LogLevel    LogLevel
-	LogFormat   LogFormat
-	APIKey      string
-	ServerURL   string
+	DatabaseURL  string
+	Port         string
+	LogLevel     LogLevel
+	LogFormat    LogFormat
+	GlobalAPIKey string // Global API key for admin access to all sessions
+	ServerURL    string
 
 	// MinIO configuration
 	MinioEndpoint  string
@@ -94,12 +94,12 @@ func Load() *Config {
 	}
 
 	return &Config{
-		DatabaseURL: getEnv("DATABASE_URL", "postgres://zpwoot:zpwoot123@localhost:5432/zpwoot?sslmode=disable"),
-		Port:        port,
-		LogLevel:    LogLevel(getEnv("LOG_LEVEL", "info")),
-		LogFormat:   LogFormat(getEnv("LOG_FORMAT", "console")),
-		APIKey:      getEnv("API_KEY", ""),
-		ServerURL:   serverURL,
+		DatabaseURL:  getEnv("DATABASE_URL", "postgres://zpwoot:zpwoot123@localhost:5432/zpwoot?sslmode=disable"),
+		Port:         port,
+		LogLevel:     LogLevel(getEnv("LOG_LEVEL", "info")),
+		LogFormat:    LogFormat(getEnv("LOG_FORMAT", "console")),
+		GlobalAPIKey: getEnv("GLOBAL_API_KEY", ""),
+		ServerURL:    serverURL,
 
 		MinioEndpoint:  getEnv("MINIO_ENDPOINT", "localhost:9000"),
 		MinioAccessKey: getEnv("MINIO_ACCESS_KEY", "zpwoot"),

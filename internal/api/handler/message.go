@@ -33,7 +33,7 @@ func NewMessageHandler(wpp *wpp.Service) *MessageHandler {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/messages/text [post]
 func (h *MessageHandler) SendText(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -72,7 +72,7 @@ func (h *MessageHandler) SendText(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/messages/image [post]
 func (h *MessageHandler) SendImage(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -145,7 +145,7 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/messages/audio [post]
 func (h *MessageHandler) SendAudio(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -219,7 +219,7 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/messages/video [post]
 func (h *MessageHandler) SendVideo(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -292,7 +292,7 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/messages/document [post]
 func (h *MessageHandler) SendDocument(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -364,7 +364,7 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/messages/sticker [post]
 func (h *MessageHandler) SendSticker(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -432,7 +432,7 @@ func (h *MessageHandler) SendSticker(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/messages/location [post]
 func (h *MessageHandler) SendLocation(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -468,7 +468,7 @@ func (h *MessageHandler) SendLocation(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/messages/contact [post]
 func (h *MessageHandler) SendContact(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -504,7 +504,7 @@ func (h *MessageHandler) SendContact(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/messages/reaction [post]
 func (h *MessageHandler) SendReaction(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -540,7 +540,7 @@ func (h *MessageHandler) SendReaction(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/messages/poll [post]
 func (h *MessageHandler) SendPoll(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -576,7 +576,7 @@ func (h *MessageHandler) SendPoll(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/messages/poll/vote [post]
 func (h *MessageHandler) SendPollVote(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -612,7 +612,7 @@ func (h *MessageHandler) SendPollVote(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/messages/buttons [post]
 func (h *MessageHandler) SendButtons(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -663,7 +663,7 @@ func (h *MessageHandler) SendButtons(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/messages/list [post]
 func (h *MessageHandler) SendList(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -723,7 +723,7 @@ func (h *MessageHandler) SendList(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/messages/interactive [post]
 func (h *MessageHandler) SendInteractive(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -832,7 +832,7 @@ func (h *MessageHandler) SendInteractive(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/messages/template [post]
 func (h *MessageHandler) SendTemplate(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -987,7 +987,7 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/messages/carousel [post]
 func (h *MessageHandler) SendCarousel(c *gin.Context) {
 	sessionId := c.Param("sessionId")

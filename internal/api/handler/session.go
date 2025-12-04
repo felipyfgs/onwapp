@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"crypto/rand"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 
@@ -13,6 +15,15 @@ import (
 	"zpwoot/internal/service"
 	"zpwoot/internal/service/wpp"
 )
+
+// generateAPIKey generates a random 32-byte hex API key
+func generateAPIKey() string {
+	bytes := make([]byte, 32)
+	if _, err := rand.Read(bytes); err != nil {
+		return ""
+	}
+	return hex.EncodeToString(bytes)
+}
 
 type SessionHandler struct {
 	sessionService *service.SessionService
@@ -35,6 +46,9 @@ func sessionToResponse(sess *model.Session) dto.SessionResponse {
 	if sess.Phone != "" {
 		resp.Phone = &sess.Phone
 	}
+	if sess.ApiKey != "" {
+		resp.ApiKey = &sess.ApiKey
+	}
 	if sess.CreatedAt != nil {
 		resp.CreatedAt = sess.CreatedAt.Format("2006-01-02T15:04:05.999999Z07:00")
 	}
@@ -52,7 +66,7 @@ func sessionToResponse(sess *model.Session) dto.SessionResponse {
 // @Produce      json
 // @Success      200    {array}   dto.SessionResponse
 // @Failure      401    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions [get]
 func (h *SessionHandler) Fetch(c *gin.Context) {
 	sessions := h.sessionService.List()
@@ -80,7 +94,7 @@ func (h *SessionHandler) Fetch(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      409    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions [post]
 func (h *SessionHandler) Create(c *gin.Context) {
 	var req dto.CreateSessionRequest
@@ -89,7 +103,13 @@ func (h *SessionHandler) Create(c *gin.Context) {
 		return
 	}
 
-	session, err := h.sessionService.Create(c.Request.Context(), req.Session)
+	// Use provided API key or generate a new one
+	apiKey := req.ApiKey
+	if apiKey == "" {
+		apiKey = generateAPIKey()
+	}
+
+	session, err := h.sessionService.Create(c.Request.Context(), req.Session, apiKey)
 	if err != nil {
 		c.JSON(http.StatusConflict, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -108,7 +128,7 @@ func (h *SessionHandler) Create(c *gin.Context) {
 // @Success      200    {object}  dto.MessageResponse
 // @Failure      404    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId} [delete]
 func (h *SessionHandler) Delete(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -131,7 +151,7 @@ func (h *SessionHandler) Delete(c *gin.Context) {
 // @Success      200    {object}  dto.SessionResponse
 // @Failure      404    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId} [get]
 func (h *SessionHandler) Info(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -155,7 +175,7 @@ func (h *SessionHandler) Info(c *gin.Context) {
 // @Success      200    {object}  dto.MessageResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/connect [post]
 func (h *SessionHandler) Connect(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -195,7 +215,7 @@ func (h *SessionHandler) Connect(c *gin.Context) {
 // @Failure      404    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/disconnect [post]
 func (h *SessionHandler) Disconnect(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -223,7 +243,7 @@ func (h *SessionHandler) Disconnect(c *gin.Context) {
 // @Failure      404    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/logout [post]
 func (h *SessionHandler) Logout(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -250,7 +270,7 @@ func (h *SessionHandler) Logout(c *gin.Context) {
 // @Success      200    {object}  dto.MessageResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/restart [post]
 func (h *SessionHandler) Restart(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -278,7 +298,7 @@ func (h *SessionHandler) Restart(c *gin.Context) {
 // @Success      200     {object}  dto.QRResponse
 // @Failure      404     {object}  dto.ErrorResponse
 // @Failure      401     {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/qr [get]
 func (h *SessionHandler) QR(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -328,7 +348,7 @@ func (h *SessionHandler) QR(c *gin.Context) {
 // @Success      200    {object}  dto.PairPhoneResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/pair/phone [post]
 func (h *SessionHandler) PairPhone(c *gin.Context) {
 	sessionId := c.Param("sessionId")

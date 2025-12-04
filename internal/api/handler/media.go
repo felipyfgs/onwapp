@@ -34,7 +34,7 @@ func NewMediaHandler(database *db.Database, mediaService *service.MediaService, 
 // @Param        messageId   path     string  true  "Message ID"
 // @Success      200  {object}  dto.MediaResponse
 // @Failure      404  {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/media/{messageId} [get]
 func (h *MediaHandler) GetMedia(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -68,7 +68,7 @@ func (h *MediaHandler) GetMedia(c *gin.Context) {
 // @Param        id     path     string  true   "Session ID"
 // @Param        limit  query    int     false  "Limit (default: 100)"
 // @Success      200  {array}   dto.MediaResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{id}/media/pending [get]
 func (h *MediaHandler) ListPendingMedia(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -107,7 +107,7 @@ func (h *MediaHandler) ListPendingMedia(c *gin.Context) {
 // @Param        batchSize  query    int     false  "Batch size (default: 10)"
 // @Success      200  {object}  map[string]interface{}
 // @Failure      400  {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{id}/media/process [post]
 func (h *MediaHandler) ProcessPendingMedia(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -153,7 +153,7 @@ func (h *MediaHandler) ProcessPendingMedia(c *gin.Context) {
 // @Param        limit   query    int     false  "Limit (default: 100)"
 // @Param        offset  query    int     false  "Offset (default: 0)"
 // @Success      200  {array}   dto.MediaResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{id}/media [get]
 func (h *MediaHandler) ListMedia(c *gin.Context) {
 	sessionId := c.Param("sessionId")

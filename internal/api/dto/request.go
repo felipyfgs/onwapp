@@ -2,8 +2,12 @@ package dto
 
 // Session requests
 
+// CreateSessionRequest is the request to create a new WhatsApp session
 type CreateSessionRequest struct {
+	// Session name/identifier (unique)
 	Session string `json:"session" binding:"required" example:"my-session"`
+	// Optional API key for session-level authentication. If not provided, one will be generated automatically.
+	ApiKey string `json:"apiKey,omitempty" example:"my-custom-api-key"`
 }
 
 // Message requests

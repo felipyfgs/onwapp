@@ -12,20 +12,35 @@ type SessionRepository struct {
 	pool *pgxpool.Pool
 }
 
-const sessionSelectFields = `"id", "session", COALESCE("deviceJid", ''), COALESCE("phone", ''), COALESCE("status", 'disconnected'), "createdAt", "updatedAt"`
+const sessionSelectFields = `"id", "session", COALESCE("deviceJid", ''), COALESCE("phone", ''), COALESCE("status", 'disconnected'), COALESCE("apiKey", ''), "createdAt", "updatedAt"`
 
 func NewSessionRepository(pool *pgxpool.Pool) *SessionRepository {
 	return &SessionRepository{pool: pool}
 }
 
-func (r *SessionRepository) Create(ctx context.Context, sessionId string) (*model.SessionRecord, error) {
+func (r *SessionRepository) Create(ctx context.Context, sessionId string, apiKey string) (*model.SessionRecord, error) {
 	var s model.SessionRecord
-	err := r.pool.QueryRow(ctx, `
-		INSERT INTO "zpSessions" ("session") 
-		VALUES ($1) 
-		ON CONFLICT ("session") DO UPDATE SET "updatedAt" = CURRENT_TIMESTAMP 
-		RETURNING `+sessionSelectFields, sessionId).
-		Scan(&s.ID, &s.Session, &s.DeviceJID, &s.Phone, &s.Status, &s.CreatedAt, &s.UpdatedAt)
+	var query string
+	var args []interface{}
+
+	if apiKey != "" {
+		query = `
+			INSERT INTO "zpSessions" ("session", "apiKey") 
+			VALUES ($1, $2) 
+			ON CONFLICT ("session") DO UPDATE SET "updatedAt" = CURRENT_TIMESTAMP 
+			RETURNING ` + sessionSelectFields
+		args = []interface{}{sessionId, apiKey}
+	} else {
+		query = `
+			INSERT INTO "zpSessions" ("session") 
+			VALUES ($1) 
+			ON CONFLICT ("session") DO UPDATE SET "updatedAt" = CURRENT_TIMESTAMP 
+			RETURNING ` + sessionSelectFields
+		args = []interface{}{sessionId}
+	}
+
+	err := r.pool.QueryRow(ctx, query, args...).
+		Scan(&s.ID, &s.Session, &s.DeviceJID, &s.Phone, &s.Status, &s.ApiKey, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +50,7 @@ func (r *SessionRepository) Create(ctx context.Context, sessionId string) (*mode
 func (r *SessionRepository) GetByID(ctx context.Context, id string) (*model.SessionRecord, error) {
 	var s model.SessionRecord
 	err := r.pool.QueryRow(ctx, `SELECT `+sessionSelectFields+` FROM "zpSessions" WHERE "id" = $1`, id).
-		Scan(&s.ID, &s.Session, &s.DeviceJID, &s.Phone, &s.Status, &s.CreatedAt, &s.UpdatedAt)
+		Scan(&s.ID, &s.Session, &s.DeviceJID, &s.Phone, &s.Status, &s.ApiKey, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +60,17 @@ func (r *SessionRepository) GetByID(ctx context.Context, id string) (*model.Sess
 func (r *SessionRepository) GetBySessionId(ctx context.Context, sessionId string) (*model.SessionRecord, error) {
 	var s model.SessionRecord
 	err := r.pool.QueryRow(ctx, `SELECT `+sessionSelectFields+` FROM "zpSessions" WHERE "session" = $1`, sessionId).
-		Scan(&s.ID, &s.Session, &s.DeviceJID, &s.Phone, &s.Status, &s.CreatedAt, &s.UpdatedAt)
+		Scan(&s.ID, &s.Session, &s.DeviceJID, &s.Phone, &s.Status, &s.ApiKey, &s.CreatedAt, &s.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &s, nil
+}
+
+func (r *SessionRepository) GetByApiKey(ctx context.Context, apiKey string) (*model.SessionRecord, error) {
+	var s model.SessionRecord
+	err := r.pool.QueryRow(ctx, `SELECT `+sessionSelectFields+` FROM "zpSessions" WHERE "apiKey" = $1`, apiKey).
+		Scan(&s.ID, &s.Session, &s.DeviceJID, &s.Phone, &s.Status, &s.ApiKey, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +138,7 @@ func scanSessions(rows interface {
 	var sessions []model.SessionRecord
 	for rows.Next() {
 		var s model.SessionRecord
-		if err := rows.Scan(&s.ID, &s.Session, &s.DeviceJID, &s.Phone, &s.Status, &s.CreatedAt, &s.UpdatedAt); err != nil {
+		if err := rows.Scan(&s.ID, &s.Session, &s.DeviceJID, &s.Phone, &s.Status, &s.ApiKey, &s.CreatedAt, &s.UpdatedAt); err != nil {
 			return nil, err
 		}
 		sessions = append(sessions, s)

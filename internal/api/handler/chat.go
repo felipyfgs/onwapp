@@ -29,7 +29,7 @@ func NewChatHandler(wpp *wpp.Service) *ChatHandler {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/chats/{chatId}/archive [patch]
 func (h *ChatHandler) ArchiveChat(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -68,7 +68,7 @@ func (h *ChatHandler) ArchiveChat(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/chats/{chatId}/messages/{messageId} [delete]
 func (h *ChatHandler) DeleteMessage(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -104,7 +104,7 @@ func (h *ChatHandler) DeleteMessage(c *gin.Context) {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/chats/{chatId}/messages/{messageId} [patch]
 func (h *ChatHandler) EditMessage(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -139,7 +139,7 @@ func (h *ChatHandler) EditMessage(c *gin.Context) {
 // @Success      200 {object} object
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/chats/{chatId}/settings/disappearing [patch]
 func (h *ChatHandler) SetDisappearingTimer(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -176,7 +176,7 @@ func (h *ChatHandler) SetDisappearingTimer(c *gin.Context) {
 // @Success      200 {object} dto.MessageResponse
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/chats/{chatId}/messages/{messageId}/request [post]
 func (h *ChatHandler) RequestUnavailableMessage(c *gin.Context) {
 	sessionId := c.Param("sessionId")

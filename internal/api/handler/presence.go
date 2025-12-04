@@ -29,7 +29,7 @@ func NewPresenceHandler(wpp *wpp.Service) *PresenceHandler {
 // @Failure      400         {object}  dto.ErrorResponse
 // @Failure      401         {object}  dto.ErrorResponse
 // @Failure      500         {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/presence [put]
 func (h *PresenceHandler) SetPresence(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -68,7 +68,7 @@ func (h *PresenceHandler) SetPresence(c *gin.Context) {
 // @Failure      400         {object}  dto.ErrorResponse
 // @Failure      401         {object}  dto.ErrorResponse
 // @Failure      500         {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/chats/{chatId}/presence [post]
 func (h *PresenceHandler) SetChatPresence(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -102,7 +102,7 @@ func (h *PresenceHandler) SetChatPresence(c *gin.Context) {
 // @Failure      400         {object}  dto.ErrorResponse
 // @Failure      401         {object}  dto.ErrorResponse
 // @Failure      500         {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/chats/{chatId}/read [post]
 func (h *PresenceHandler) MarkRead(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -133,7 +133,7 @@ func (h *PresenceHandler) MarkRead(c *gin.Context) {
 // @Success      200         {object}  object
 // @Failure      400         {object}  dto.ErrorResponse
 // @Failure      500         {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/presence/subscribe/{phone} [post]
 func (h *PresenceHandler) SubscribePresence(c *gin.Context) {
 	sessionId := c.Param("sessionId")

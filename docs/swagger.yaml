@@ -1,6 +1,113 @@
 basePath: /
 definitions:
-  ArchiveChatRequest:
+  internal_integrations_chatwoot_handler.SetConfigRequest:
+    properties:
+      account:
+        type: integer
+      autoCreate:
+        type: boolean
+      autoReopen:
+        description: |-
+          AutoReopen configures Chatwoot inbox settings for conversation management.
+          When true: sets lock_to_single_conversation=true and allow_messages_after_resolved=true
+          This means Chatwoot will automatically reopen resolved conversations when new messages arrive.
+          When false: creates new conversations for each interaction (default Chatwoot behavior).
+        type: boolean
+      chatwootDbHost:
+        type: string
+      chatwootDbName:
+        type: string
+      chatwootDbPass:
+        type: string
+      chatwootDbPort:
+        type: integer
+      chatwootDbUser:
+        type: string
+      enabled:
+        type: boolean
+      ignoreChats:
+        items:
+          type: string
+        type: array
+      inbox:
+        type: string
+      logo:
+        type: string
+      mergeBrPhones:
+        type: boolean
+      number:
+        type: string
+      organization:
+        type: string
+      signAgent:
+        type: boolean
+      signSeparator:
+        type: string
+      startPending:
+        type: boolean
+      syncContacts:
+        type: boolean
+      syncDays:
+        type: integer
+      syncMessages:
+        type: boolean
+      token:
+        type: string
+      url:
+        type: string
+    type: object
+  internal_integrations_webhook.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  internal_integrations_webhook.EventsResponse:
+    properties:
+      all:
+        items:
+          type: string
+        type: array
+      categories:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+        type: object
+    type: object
+  internal_integrations_webhook.GetWebhookResponse:
+    properties:
+      enabled:
+        type: boolean
+      events:
+        items:
+          type: string
+        type: array
+      id:
+        type: string
+      sessionId:
+        type: string
+      url:
+        type: string
+    type: object
+  internal_integrations_webhook.MessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  internal_integrations_webhook.SetWebhookRequest:
+    properties:
+      enabled:
+        type: boolean
+      events:
+        items:
+          type: string
+        type: array
+      secret:
+        type: string
+      url:
+        type: string
+    type: object
+  zpwoot_internal_api_dto.ArchiveChatRequest:
     properties:
       archive:
         example: true
@@ -11,7 +118,7 @@ definitions:
     required:
     - phone
     type: object
-  AvatarResponse:
+  zpwoot_internal_api_dto.AvatarResponse:
     properties:
       id:
         example: abc123
@@ -20,7 +127,7 @@ definitions:
         example: https://...
         type: string
     type: object
-  BlocklistActionResponse:
+  zpwoot_internal_api_dto.BlocklistActionResponse:
     properties:
       action:
         example: block
@@ -29,7 +136,7 @@ definitions:
         example: "5511999999999"
         type: string
     type: object
-  BlocklistRequest:
+  zpwoot_internal_api_dto.BlocklistRequest:
     properties:
       action:
         description: block or unblock
@@ -42,18 +149,18 @@ definitions:
     - action
     - phone
     type: object
-  BlocklistResponse:
+  zpwoot_internal_api_dto.BlocklistResponse:
     properties:
       jids:
         items:
           type: string
         type: array
     type: object
-  BusinessProfileResponse:
+  zpwoot_internal_api_dto.BusinessProfileResponse:
     properties:
       profile: {}
     type: object
-  ButtonDTO:
+  zpwoot_internal_api_dto.ButtonDTO:
     properties:
       buttonId:
         example: btn1
@@ -65,30 +172,30 @@ definitions:
     - buttonId
     - displayText
     type: object
-  CarouselCardDTO:
+  zpwoot_internal_api_dto.CarouselCardDTO:
     properties:
       body:
         example: Amazing product
         type: string
       buttons:
         items:
-          $ref: '#/definitions/NativeFlowButtonDTO'
+          $ref: '#/definitions/zpwoot_internal_api_dto.NativeFlowButtonDTO'
         minItems: 1
         type: array
       footer:
         example: Only $9.99
         type: string
       header:
-        $ref: '#/definitions/CarouselCardHeaderDTO'
+        $ref: '#/definitions/zpwoot_internal_api_dto.CarouselCardHeaderDTO'
     required:
     - body
     - buttons
     - header
     type: object
-  CarouselCardHeaderDTO:
+  zpwoot_internal_api_dto.CarouselCardHeaderDTO:
     properties:
       image:
-        example: base64_encoded_image
+        example: base64_encoded_image_or_url
         type: string
       mimetype:
         example: image/jpeg
@@ -97,16 +204,16 @@ definitions:
         example: Product 1
         type: string
       video:
-        example: base64_encoded_video
+        example: base64_encoded_video_or_url
         type: string
     type: object
-  ChatActionResponse:
+  zpwoot_internal_api_dto.ChatActionResponse:
     properties:
       status:
         example: archived
         type: string
     type: object
-  ChatPresenceRequest:
+  zpwoot_internal_api_dto.ChatPresenceRequest:
     properties:
       media:
         example: ""
@@ -121,13 +228,13 @@ definitions:
     - phone
     - state
     type: object
-  ChatPresenceResponse:
+  zpwoot_internal_api_dto.ChatPresenceResponse:
     properties:
       state:
         example: composing
         type: string
     type: object
-  ChatResponse:
+  zpwoot_internal_api_dto.ChatResponse:
     properties:
       conversationTimestamp:
         example: 1699999999
@@ -157,7 +264,7 @@ definitions:
         example: 5
         type: integer
     type: object
-  CheckPhoneRequest:
+  zpwoot_internal_api_dto.CheckPhoneRequest:
     properties:
       phones:
         example:
@@ -169,7 +276,7 @@ definitions:
     required:
     - phones
     type: object
-  CheckPhoneResult:
+  zpwoot_internal_api_dto.CheckPhoneResult:
     properties:
       isRegistered:
         example: true
@@ -181,11 +288,1144 @@ definitions:
         example: "5511999999999"
         type: string
     type: object
-  CommunityResponse:
+  zpwoot_internal_api_dto.CommunityResponse:
     properties:
       groups: {}
     type: object
-  Config:
+  zpwoot_internal_api_dto.ContactInfoRequest:
+    properties:
+      phones:
+        items:
+          type: string
+        type: array
+    required:
+    - phones
+    type: object
+  zpwoot_internal_api_dto.ContactInfoResponse:
+    properties:
+      users:
+        additionalProperties: true
+        type: object
+    type: object
+  zpwoot_internal_api_dto.CreateGroupRequest:
+    properties:
+      name:
+        example: My Group
+        type: string
+      participants:
+        items:
+          type: string
+        type: array
+    required:
+    - name
+    - participants
+    type: object
+  zpwoot_internal_api_dto.CreateNewsletterRequest:
+    properties:
+      description:
+        example: Channel description
+        type: string
+      name:
+        example: My Channel
+        type: string
+      picture:
+        example: base64_encoded_image
+        type: string
+    required:
+    - name
+    type: object
+  zpwoot_internal_api_dto.CreateSessionRequest:
+    properties:
+      apiKey:
+        description: Optional API key for session-level authentication. If not provided,
+          one will be generated automatically.
+        example: my-custom-api-key
+        type: string
+      session:
+        description: Session name/identifier (unique)
+        example: my-session
+        type: string
+    required:
+    - session
+    type: object
+  zpwoot_internal_api_dto.DefaultDisappearingRequest:
+    properties:
+      timer:
+        description: 24h, 7d, 90d, or off
+        example: 24h
+        type: string
+    required:
+    - timer
+    type: object
+  zpwoot_internal_api_dto.DeleteMessageRequest:
+    properties:
+      forMe:
+        example: false
+        type: boolean
+      messageId:
+        example: ABCD1234
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+    required:
+    - messageId
+    - phone
+    type: object
+  zpwoot_internal_api_dto.DisappearingRequest:
+    properties:
+      phone:
+        example: "5511999999999"
+        type: string
+      timer:
+        description: 24h, 7d, 90d, or off
+        example: 24h
+        type: string
+    required:
+    - phone
+    - timer
+    type: object
+  zpwoot_internal_api_dto.EditMessageRequest:
+    properties:
+      messageId:
+        example: ABCD1234
+        type: string
+      newText:
+        example: Edited message
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+    required:
+    - messageId
+    - newText
+    - phone
+    type: object
+  zpwoot_internal_api_dto.ErrorResponse:
+    properties:
+      error:
+        example: session not found
+        type: string
+    type: object
+  zpwoot_internal_api_dto.GroupActionResponse:
+    properties:
+      data: {}
+      groupId:
+        example: 123456789@g.us
+        type: string
+    type: object
+  zpwoot_internal_api_dto.GroupAnnounceRequest:
+    properties:
+      announce:
+        example: true
+        type: boolean
+      groupId:
+        example: 123456789@g.us
+        type: string
+    required:
+    - groupId
+    type: object
+  zpwoot_internal_api_dto.GroupApprovalRequest:
+    properties:
+      approvalMode:
+        example: true
+        type: boolean
+      groupId:
+        example: 123456789@g.us
+        type: string
+    required:
+    - groupId
+    type: object
+  zpwoot_internal_api_dto.GroupInviteLinkResponse:
+    properties:
+      groupId:
+        example: 123456789@g.us
+        type: string
+      link:
+        example: https://chat.whatsapp.com/...
+        type: string
+    type: object
+  zpwoot_internal_api_dto.GroupLockedRequest:
+    properties:
+      groupId:
+        example: 123456789@g.us
+        type: string
+      locked:
+        example: true
+        type: boolean
+    required:
+    - groupId
+    type: object
+  zpwoot_internal_api_dto.GroupMemberAddModeRequest:
+    properties:
+      groupId:
+        example: 123456789@g.us
+        type: string
+      mode:
+        description: admin_add or all_member_add
+        example: admin_add
+        type: string
+    required:
+    - groupId
+    - mode
+    type: object
+  zpwoot_internal_api_dto.GroupParticipantsRequest:
+    properties:
+      groupId:
+        type: string
+      participants:
+        items:
+          type: string
+        type: array
+    required:
+    - groupId
+    - participants
+    type: object
+  zpwoot_internal_api_dto.GroupPictureRequest:
+    properties:
+      groupId:
+        example: 123456789@g.us
+        type: string
+      image:
+        example: base64_encoded_image
+        type: string
+    required:
+    - groupId
+    - image
+    type: object
+  zpwoot_internal_api_dto.GroupRequestActionBodyRequest:
+    properties:
+      action:
+        description: approve or reject
+        example: approve
+        type: string
+      participants:
+        items:
+          type: string
+        type: array
+    required:
+    - action
+    - participants
+    type: object
+  zpwoot_internal_api_dto.GroupRequestParticipantsResponse:
+    properties:
+      groupId:
+        example: 123456789@g.us
+        type: string
+      participants: {}
+    type: object
+  zpwoot_internal_api_dto.GroupUpdateRequest:
+    properties:
+      groupId:
+        example: 123456789@g.us
+        type: string
+      value:
+        example: New Name
+        type: string
+    required:
+    - groupId
+    - value
+    type: object
+  zpwoot_internal_api_dto.HistorySyncRequest:
+    properties:
+      count:
+        example: 100
+        type: integer
+    type: object
+  zpwoot_internal_api_dto.JoinGroupRequest:
+    properties:
+      inviteLink:
+        type: string
+    required:
+    - inviteLink
+    type: object
+  zpwoot_internal_api_dto.LIDResponse:
+    properties:
+      lid:
+        example: 123456789:0@lid
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+    type: object
+  zpwoot_internal_api_dto.LinkGroupRequest:
+    properties:
+      childGroupId:
+        example: 987654321@g.us
+        type: string
+      parentGroupId:
+        example: 123456789@g.us
+        type: string
+    required:
+    - childGroupId
+    - parentGroupId
+    type: object
+  zpwoot_internal_api_dto.ListRowDTO:
+    properties:
+      description:
+        example: Description of option 1
+        type: string
+      rowId:
+        example: row1
+        type: string
+      title:
+        example: Option 1
+        type: string
+    required:
+    - rowId
+    - title
+    type: object
+  zpwoot_internal_api_dto.ListSectionDTO:
+    properties:
+      rows:
+        items:
+          $ref: '#/definitions/zpwoot_internal_api_dto.ListRowDTO'
+        minItems: 1
+        type: array
+      title:
+        example: Section 1
+        type: string
+    required:
+    - rows
+    - title
+    type: object
+  zpwoot_internal_api_dto.MarkReadRequest:
+    properties:
+      messageIds:
+        items:
+          type: string
+        type: array
+      phone:
+        example: "5511999999999"
+        type: string
+    required:
+    - messageIds
+    - phone
+    type: object
+  zpwoot_internal_api_dto.MediaResponse:
+    properties:
+      caption:
+        example: Check this out!
+        type: string
+      chatJid:
+        example: 5511999999999@s.whatsapp.net
+        type: string
+      createdAt:
+        example: "2025-01-01T00:00:00Z"
+        type: string
+      downloaded:
+        example: true
+        type: boolean
+      duration:
+        example: 30
+        type: integer
+      fileName:
+        example: photo.jpg
+        type: string
+      fileSize:
+        example: 12345
+        type: integer
+      fromMe:
+        example: false
+        type: boolean
+      height:
+        example: 1080
+        type: integer
+      id:
+        example: uuid
+        type: string
+      mediaType:
+        example: image
+        type: string
+      mimeType:
+        example: image/jpeg
+        type: string
+      msgId:
+        example: ABCD1234
+        type: string
+      sessionId:
+        example: uuid
+        type: string
+      storageUrl:
+        example: https://s3.example.com/media/photo.jpg
+        type: string
+      width:
+        example: 1920
+        type: integer
+    type: object
+  zpwoot_internal_api_dto.MessageOnlyResponse:
+    properties:
+      message:
+        example: operation completed
+        type: string
+    type: object
+  zpwoot_internal_api_dto.MessageResponse:
+    properties:
+      id:
+        example: ABCD1234
+        type: string
+      message:
+        example: operation completed
+        type: string
+      status:
+        example: connected
+        type: string
+    type: object
+  zpwoot_internal_api_dto.NativeFlowButtonDTO:
+    properties:
+      name:
+        example: quick_reply
+        type: string
+      params:
+        additionalProperties: true
+        type: object
+    required:
+    - name
+    - params
+    type: object
+  zpwoot_internal_api_dto.NewsletterActionRequest:
+    properties:
+      newsletterJid:
+        example: 123456789@newsletter
+        type: string
+    required:
+    - newsletterJid
+    type: object
+  zpwoot_internal_api_dto.NewsletterLiveResponse:
+    properties:
+      duration:
+        example: 24h0m0s
+        type: string
+    type: object
+  zpwoot_internal_api_dto.NewsletterMarkViewedRequest:
+    properties:
+      serverIds:
+        example:
+        - 1
+        - 2
+        - 3
+        items:
+          type: integer
+        type: array
+    required:
+    - serverIds
+    type: object
+  zpwoot_internal_api_dto.NewsletterMuteRequest:
+    properties:
+      mute:
+        example: true
+        type: boolean
+      newsletterJid:
+        example: 123456789@newsletter
+        type: string
+    required:
+    - newsletterJid
+    type: object
+  zpwoot_internal_api_dto.NewsletterReactionRequest:
+    properties:
+      messageId:
+        example: ABCD1234
+        type: string
+      newsletterJid:
+        example: 123456789@newsletter
+        type: string
+      reaction:
+        example: "\U0001F44D"
+        type: string
+      serverId:
+        example: 123
+        type: integer
+    required:
+    - newsletterJid
+    - reaction
+    - serverId
+    type: object
+  zpwoot_internal_api_dto.NewsletterResponse:
+    properties:
+      data: {}
+    type: object
+  zpwoot_internal_api_dto.PairPhoneRequest:
+    properties:
+      phone:
+        example: "5511999999999"
+        type: string
+    required:
+    - phone
+    type: object
+  zpwoot_internal_api_dto.PairPhoneResponse:
+    properties:
+      code:
+        example: ABCD-EFGH
+        type: string
+    type: object
+  zpwoot_internal_api_dto.PastParticipantResponse:
+    properties:
+      leaveReason:
+        example: LEFT
+        type: string
+      leaveTimestamp:
+        type: string
+      userJid:
+        example: 5511999999999@s.whatsapp.net
+        type: string
+    type: object
+  zpwoot_internal_api_dto.PresenceResponse:
+    properties:
+      status:
+        example: available
+        type: string
+    type: object
+  zpwoot_internal_api_dto.PrivacySettingsResponse:
+    properties:
+      settings: {}
+    type: object
+  zpwoot_internal_api_dto.ProfileInfoResponse:
+    properties:
+      profile: {}
+    type: object
+  zpwoot_internal_api_dto.QRLinkResponse:
+    properties:
+      link:
+        example: https://wa.me/qr/...
+        type: string
+    type: object
+  zpwoot_internal_api_dto.QRResponse:
+    properties:
+      qr:
+        example: data:image/png;base64,...
+        type: string
+      status:
+        example: connecting
+        type: string
+    type: object
+  zpwoot_internal_api_dto.RejectCallRequest:
+    properties:
+      callFrom:
+        example: "5511999999999"
+        type: string
+      callId:
+        example: CALL123
+        type: string
+    required:
+    - callFrom
+    - callId
+    type: object
+  zpwoot_internal_api_dto.RequestUnavailableMessageRequest:
+    properties:
+      senderJid:
+        example: 5511999999999@s.whatsapp.net
+        type: string
+    type: object
+  zpwoot_internal_api_dto.SendAudioRequest:
+    properties:
+      audio:
+        example: base64_encoded_audio
+        type: string
+      mimetype:
+        example: audio/ogg; codecs=opus
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+      ptt:
+        example: true
+        type: boolean
+    required:
+    - audio
+    - phone
+    type: object
+  zpwoot_internal_api_dto.SendButtonsRequest:
+    properties:
+      buttons:
+        items:
+          $ref: '#/definitions/zpwoot_internal_api_dto.ButtonDTO'
+        maxItems: 3
+        minItems: 1
+        type: array
+      contentText:
+        example: Choose an option
+        type: string
+      footerText:
+        example: Footer text
+        type: string
+      headerText:
+        example: Header text
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+    required:
+    - buttons
+    - contentText
+    - phone
+    type: object
+  zpwoot_internal_api_dto.SendCarouselRequest:
+    properties:
+      body:
+        example: Browse our catalog
+        type: string
+      cards:
+        items:
+          $ref: '#/definitions/zpwoot_internal_api_dto.CarouselCardDTO'
+        minItems: 1
+        type: array
+      footer:
+        example: Powered by ZPWoot
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+      title:
+        example: Check out our products!
+        type: string
+    required:
+    - cards
+    - phone
+    type: object
+  zpwoot_internal_api_dto.SendContactRequest:
+    properties:
+      contactName:
+        example: John Doe
+        type: string
+      contactPhone:
+        example: "5511888888888"
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+    required:
+    - contactName
+    - contactPhone
+    - phone
+    type: object
+  zpwoot_internal_api_dto.SendDocumentRequest:
+    properties:
+      document:
+        example: base64_encoded_document
+        type: string
+      filename:
+        example: document.pdf
+        type: string
+      mimetype:
+        example: application/pdf
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+    required:
+    - document
+    - filename
+    - phone
+    type: object
+  zpwoot_internal_api_dto.SendGroupMessageRequest:
+    properties:
+      groupId:
+        example: 123456789@g.us
+        type: string
+      text:
+        example: Hello Group!
+        type: string
+    required:
+    - groupId
+    - text
+    type: object
+  zpwoot_internal_api_dto.SendImageRequest:
+    properties:
+      caption:
+        example: Image caption
+        type: string
+      image:
+        example: base64_encoded_image
+        type: string
+      mimetype:
+        example: image/jpeg
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+    required:
+    - image
+    - phone
+    type: object
+  zpwoot_internal_api_dto.SendInteractiveRequest:
+    properties:
+      body:
+        example: Message body text
+        type: string
+      buttons:
+        items:
+          $ref: '#/definitions/zpwoot_internal_api_dto.NativeFlowButtonDTO'
+        minItems: 1
+        type: array
+      footer:
+        example: Footer text
+        type: string
+      image:
+        example: URL or base64 encoded image
+        type: string
+      mimetype:
+        example: image/jpeg
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+      title:
+        example: Interactive Title
+        type: string
+      video:
+        example: URL or base64 encoded video
+        type: string
+    required:
+    - body
+    - buttons
+    - phone
+    type: object
+  zpwoot_internal_api_dto.SendListRequest:
+    properties:
+      buttonText:
+        example: Open Menu
+        type: string
+      description:
+        example: Please select an option
+        type: string
+      footerText:
+        example: Footer text
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+      sections:
+        items:
+          $ref: '#/definitions/zpwoot_internal_api_dto.ListSectionDTO'
+        minItems: 1
+        type: array
+      title:
+        example: Menu Title
+        type: string
+    required:
+    - buttonText
+    - description
+    - phone
+    - sections
+    - title
+    type: object
+  zpwoot_internal_api_dto.SendLocationRequest:
+    properties:
+      address:
+        example: Street Address
+        type: string
+      latitude:
+        example: -23.5505
+        type: number
+      longitude:
+        example: -46.6333
+        type: number
+      name:
+        example: Location Name
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+    required:
+    - latitude
+    - longitude
+    - phone
+    type: object
+  zpwoot_internal_api_dto.SendPollRequest:
+    properties:
+      name:
+        example: What's your favorite color?
+        type: string
+      options:
+        example:
+        - Red
+        - Blue
+        - Green
+        items:
+          type: string
+        type: array
+      phone:
+        example: "5511999999999"
+        type: string
+      selectableCount:
+        example: 1
+        type: integer
+    required:
+    - name
+    - options
+    - phone
+    type: object
+  zpwoot_internal_api_dto.SendPollVoteRequest:
+    properties:
+      phone:
+        example: "5511999999999"
+        type: string
+      pollMessageId:
+        example: ABCD1234
+        type: string
+      selectedOptions:
+        example:
+        - Red
+        items:
+          type: string
+        type: array
+    required:
+    - phone
+    - pollMessageId
+    - selectedOptions
+    type: object
+  zpwoot_internal_api_dto.SendReactionRequest:
+    properties:
+      emoji:
+        example: "\U0001F44D"
+        type: string
+      messageId:
+        example: ABCD1234
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+    required:
+    - emoji
+    - messageId
+    - phone
+    type: object
+  zpwoot_internal_api_dto.SendResponse:
+    properties:
+      messageId:
+        example: ABCD1234
+        type: string
+      timestamp:
+        example: 1699999999
+        type: integer
+    type: object
+  zpwoot_internal_api_dto.SendStatusRequest:
+    properties:
+      caption:
+        example: Status caption
+        type: string
+      image:
+        example: base64_encoded_image
+        type: string
+      mimetype:
+        example: image/jpeg
+        type: string
+      text:
+        example: My status update
+        type: string
+      video:
+        example: base64_encoded_video
+        type: string
+    type: object
+  zpwoot_internal_api_dto.SendStickerRequest:
+    properties:
+      mimetype:
+        example: image/webp
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+      sticker:
+        example: base64_encoded_sticker
+        type: string
+    required:
+    - phone
+    - sticker
+    type: object
+  zpwoot_internal_api_dto.SendTemplateRequest:
+    properties:
+      buttons:
+        items:
+          $ref: '#/definitions/zpwoot_internal_api_dto.TemplateButtonDTO'
+        minItems: 1
+        type: array
+      content:
+        example: Please choose an option below
+        type: string
+      document:
+        example: base64_encoded_document
+        type: string
+      filename:
+        example: document.pdf
+        type: string
+      footer:
+        example: Powered by ZPWoot
+        type: string
+      image:
+        example: base64_encoded_image
+        type: string
+      mimetype:
+        example: image/jpeg
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+      title:
+        example: Welcome!
+        type: string
+      video:
+        example: base64_encoded_video
+        type: string
+    required:
+    - buttons
+    - content
+    - phone
+    type: object
+  zpwoot_internal_api_dto.SendTextRequest:
+    properties:
+      phone:
+        example: "5511999999999"
+        type: string
+      text:
+        example: Hello World
+        type: string
+    required:
+    - phone
+    - text
+    type: object
+  zpwoot_internal_api_dto.SendVideoRequest:
+    properties:
+      caption:
+        example: Video caption
+        type: string
+      mimetype:
+        example: video/mp4
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+      video:
+        example: base64_encoded_video
+        type: string
+    required:
+    - phone
+    - video
+    type: object
+  zpwoot_internal_api_dto.SessionResponse:
+    properties:
+      apiKey:
+        description: Session-specific API key for authentication (use in Authorization
+          header)
+        example: a1b2c3d4e5f6...
+        type: string
+      createdAt:
+        description: Session creation timestamp
+        example: "2025-11-29T14:18:15.324706Z"
+        type: string
+      deviceJid:
+        description: WhatsApp device JID after connection
+        example: 5511999999999@s.whatsapp.net
+        type: string
+      id:
+        description: Unique session UUID (database primary key)
+        example: ce270f0c-c3d6-41ad-b481-1587f813c3b1
+        type: string
+      phone:
+        description: Phone number associated with the session
+        example: "5511999999999"
+        type: string
+      session:
+        description: Session name/identifier (used in API routes)
+        example: my-session
+        type: string
+      status:
+        description: 'Connection status: disconnected, connecting, connected'
+        example: connected
+        type: string
+      updatedAt:
+        description: Last update timestamp
+        example: "2025-11-29T14:18:15.324706Z"
+        type: string
+    type: object
+  zpwoot_internal_api_dto.SetNameResponse:
+    properties:
+      name:
+        example: John Doe
+        type: string
+    type: object
+  zpwoot_internal_api_dto.SetPictureResponse:
+    properties:
+      pictureId:
+        example: abc123
+        type: string
+    type: object
+  zpwoot_internal_api_dto.SetPresenceRequest:
+    properties:
+      available:
+        example: true
+        type: boolean
+    type: object
+  zpwoot_internal_api_dto.SetPrivacyRequest:
+    properties:
+      setting:
+        description: last_seen, online, profile, status, read_receipts, group_add,
+          call_add
+        example: last_seen
+        type: string
+      value:
+        description: all, contacts, contact_blacklist, match_last_seen, known, none
+        example: contacts
+        type: string
+    required:
+    - setting
+    - value
+    type: object
+  zpwoot_internal_api_dto.SetProfilePictureRequest:
+    properties:
+      image:
+        example: base64_encoded_image
+        type: string
+    required:
+    - image
+    type: object
+  zpwoot_internal_api_dto.SetPushNameRequest:
+    properties:
+      name:
+        example: John Doe
+        type: string
+    required:
+    - name
+    type: object
+  zpwoot_internal_api_dto.SetStatusRequest:
+    properties:
+      status:
+        example: Hey there! I'm using ZPWoot
+        type: string
+    required:
+    - status
+    type: object
+  zpwoot_internal_api_dto.SetStatusResponse:
+    properties:
+      status:
+        example: My new status
+        type: string
+    type: object
+  zpwoot_internal_api_dto.StatusPrivacyResponse:
+    properties:
+      privacy: {}
+    type: object
+  zpwoot_internal_api_dto.StickerResponse:
+    properties:
+      directPath:
+        type: string
+      fileSize:
+        example: 12345
+        type: integer
+      height:
+        example: 512
+        type: integer
+      isAvatar:
+        example: false
+        type: boolean
+      isLottie:
+        example: false
+        type: boolean
+      lastUsedAt:
+        type: string
+      mimeType:
+        example: image/webp
+        type: string
+      weight:
+        example: 1.5
+        type: number
+      width:
+        example: 512
+        type: integer
+    type: object
+  zpwoot_internal_api_dto.SubscribePresenceRequest:
+    properties:
+      phone:
+        example: "5511999999999"
+        type: string
+    required:
+    - phone
+    type: object
+  zpwoot_internal_api_dto.SyncProgressResponse:
+    properties:
+      completedAt:
+        type: string
+      errors:
+        example: 0
+        type: integer
+      processedChats:
+        example: 35
+        type: integer
+      processedChunks:
+        example: 7
+        type: integer
+      processedMessages:
+        example: 750
+        type: integer
+      progress:
+        example: 75
+        type: integer
+      startedAt:
+        type: string
+      status:
+        example: in_progress
+        type: string
+      syncType:
+        example: INITIAL_BOOTSTRAP
+        type: string
+      totalChats:
+        example: 50
+        type: integer
+      totalChunks:
+        example: 10
+        type: integer
+      totalMessages:
+        example: 1000
+        type: integer
+    type: object
+  zpwoot_internal_api_dto.TemplateButtonDTO:
+    properties:
+      callButton:
+        $ref: '#/definitions/zpwoot_internal_api_dto.TemplateCallButtonDTO'
+      index:
+        example: 0
+        type: integer
+      quickReply:
+        $ref: '#/definitions/zpwoot_internal_api_dto.TemplateQuickReplyDTO'
+      urlButton:
+        $ref: '#/definitions/zpwoot_internal_api_dto.TemplateURLButtonDTO'
+    type: object
+  zpwoot_internal_api_dto.TemplateCallButtonDTO:
+    properties:
+      displayText:
+        example: Call Us
+        type: string
+      phoneNumber:
+        example: "+1234567890"
+        type: string
+    required:
+    - displayText
+    - phoneNumber
+    type: object
+  zpwoot_internal_api_dto.TemplateQuickReplyDTO:
+    properties:
+      displayText:
+        example: Option 1
+        type: string
+      id:
+        example: opt1
+        type: string
+    required:
+    - displayText
+    - id
+    type: object
+  zpwoot_internal_api_dto.TemplateURLButtonDTO:
+    properties:
+      displayText:
+        example: Visit Site
+        type: string
+      url:
+        example: https://example.com
+        type: string
+    required:
+    - displayText
+    - url
+    type: object
+  zpwoot_internal_integrations_chatwoot_core.Config:
     properties:
       account:
         type: integer
@@ -242,1077 +1482,7 @@ definitions:
       webhookUrl:
         type: string
     type: object
-  ContactInfoRequest:
-    properties:
-      phones:
-        items:
-          type: string
-        type: array
-    required:
-    - phones
-    type: object
-  ContactInfoResponse:
-    properties:
-      users:
-        additionalProperties: true
-        type: object
-    type: object
-  CreateGroupRequest:
-    properties:
-      name:
-        example: My Group
-        type: string
-      participants:
-        items:
-          type: string
-        type: array
-    required:
-    - name
-    - participants
-    type: object
-  CreateNewsletterRequest:
-    properties:
-      description:
-        example: Channel description
-        type: string
-      name:
-        example: My Channel
-        type: string
-      picture:
-        example: base64_encoded_image
-        type: string
-    required:
-    - name
-    type: object
-  CreateSessionRequest:
-    properties:
-      session:
-        example: my-session
-        type: string
-    required:
-    - session
-    type: object
-  DefaultDisappearingRequest:
-    properties:
-      timer:
-        description: 24h, 7d, 90d, or off
-        example: 24h
-        type: string
-    required:
-    - timer
-    type: object
-  DeleteMessageRequest:
-    properties:
-      forMe:
-        example: false
-        type: boolean
-      messageId:
-        example: ABCD1234
-        type: string
-      phone:
-        example: "5511999999999"
-        type: string
-    required:
-    - messageId
-    - phone
-    type: object
-  DisappearingRequest:
-    properties:
-      phone:
-        example: "5511999999999"
-        type: string
-      timer:
-        description: 24h, 7d, 90d, or off
-        example: 24h
-        type: string
-    required:
-    - phone
-    - timer
-    type: object
-  EditMessageRequest:
-    properties:
-      messageId:
-        example: ABCD1234
-        type: string
-      newText:
-        example: Edited message
-        type: string
-      phone:
-        example: "5511999999999"
-        type: string
-    required:
-    - messageId
-    - newText
-    - phone
-    type: object
-  ErrorResponse:
-    properties:
-      error:
-        type: string
-    type: object
-  EventsResponse:
-    properties:
-      all:
-        items:
-          type: string
-        type: array
-      categories:
-        additionalProperties:
-          items:
-            type: string
-          type: array
-        type: object
-    type: object
-  GetWebhookResponse:
-    properties:
-      enabled:
-        type: boolean
-      events:
-        items:
-          type: string
-        type: array
-      id:
-        type: string
-      sessionId:
-        type: string
-      url:
-        type: string
-    type: object
-  GroupActionResponse:
-    properties:
-      data: {}
-      groupId:
-        example: 123456789@g.us
-        type: string
-    type: object
-  GroupAnnounceRequest:
-    properties:
-      announce:
-        example: true
-        type: boolean
-      groupId:
-        example: 123456789@g.us
-        type: string
-    required:
-    - groupId
-    type: object
-  GroupApprovalRequest:
-    properties:
-      approvalMode:
-        example: true
-        type: boolean
-      groupId:
-        example: 123456789@g.us
-        type: string
-    required:
-    - groupId
-    type: object
-  GroupInviteLinkResponse:
-    properties:
-      groupId:
-        example: 123456789@g.us
-        type: string
-      link:
-        example: https://chat.whatsapp.com/...
-        type: string
-    type: object
-  GroupLockedRequest:
-    properties:
-      groupId:
-        example: 123456789@g.us
-        type: string
-      locked:
-        example: true
-        type: boolean
-    required:
-    - groupId
-    type: object
-  GroupMemberAddModeRequest:
-    properties:
-      groupId:
-        example: 123456789@g.us
-        type: string
-      mode:
-        description: admin_add or all_member_add
-        example: admin_add
-        type: string
-    required:
-    - groupId
-    - mode
-    type: object
-  GroupParticipantsRequest:
-    properties:
-      groupId:
-        type: string
-      participants:
-        items:
-          type: string
-        type: array
-    required:
-    - groupId
-    - participants
-    type: object
-  GroupPictureRequest:
-    properties:
-      groupId:
-        example: 123456789@g.us
-        type: string
-      image:
-        example: base64_encoded_image
-        type: string
-    required:
-    - groupId
-    - image
-    type: object
-  GroupRequestActionBodyRequest:
-    properties:
-      action:
-        description: approve or reject
-        example: approve
-        type: string
-      participants:
-        items:
-          type: string
-        type: array
-    required:
-    - action
-    - participants
-    type: object
-  GroupRequestParticipantsResponse:
-    properties:
-      groupId:
-        example: 123456789@g.us
-        type: string
-      participants: {}
-    type: object
-  GroupUpdateRequest:
-    properties:
-      groupId:
-        example: 123456789@g.us
-        type: string
-      value:
-        example: New Name
-        type: string
-    required:
-    - groupId
-    - value
-    type: object
-  HistorySyncRequest:
-    properties:
-      count:
-        example: 100
-        type: integer
-    type: object
-  JoinGroupRequest:
-    properties:
-      inviteLink:
-        type: string
-    required:
-    - inviteLink
-    type: object
-  LIDResponse:
-    properties:
-      lid:
-        example: 123456789:0@lid
-        type: string
-      phone:
-        example: "5511999999999"
-        type: string
-    type: object
-  LinkGroupRequest:
-    properties:
-      childGroupId:
-        example: 987654321@g.us
-        type: string
-      parentGroupId:
-        example: 123456789@g.us
-        type: string
-    required:
-    - childGroupId
-    - parentGroupId
-    type: object
-  ListRowDTO:
-    properties:
-      description:
-        example: Description of option 1
-        type: string
-      rowId:
-        example: row1
-        type: string
-      title:
-        example: Option 1
-        type: string
-    required:
-    - rowId
-    - title
-    type: object
-  ListSectionDTO:
-    properties:
-      rows:
-        items:
-          $ref: '#/definitions/ListRowDTO'
-        minItems: 1
-        type: array
-      title:
-        example: Section 1
-        type: string
-    required:
-    - rows
-    - title
-    type: object
-  MarkReadRequest:
-    properties:
-      messageIds:
-        items:
-          type: string
-        type: array
-      phone:
-        example: "5511999999999"
-        type: string
-    required:
-    - messageIds
-    - phone
-    type: object
-  MediaResponse:
-    properties:
-      caption:
-        example: Check this out!
-        type: string
-      chatJid:
-        example: 5511999999999@s.whatsapp.net
-        type: string
-      createdAt:
-        example: "2025-01-01T00:00:00Z"
-        type: string
-      downloaded:
-        example: true
-        type: boolean
-      duration:
-        example: 30
-        type: integer
-      fileName:
-        example: photo.jpg
-        type: string
-      fileSize:
-        example: 12345
-        type: integer
-      fromMe:
-        example: false
-        type: boolean
-      height:
-        example: 1080
-        type: integer
-      id:
-        example: uuid
-        type: string
-      mediaType:
-        example: image
-        type: string
-      mimeType:
-        example: image/jpeg
-        type: string
-      msgId:
-        example: ABCD1234
-        type: string
-      sessionId:
-        example: uuid
-        type: string
-      storageUrl:
-        example: https://s3.example.com/media/photo.jpg
-        type: string
-      width:
-        example: 1920
-        type: integer
-    type: object
-  MessageOnlyResponse:
-    properties:
-      message:
-        example: operation completed
-        type: string
-    type: object
-  MessageResponse:
-    properties:
-      message:
-        type: string
-    type: object
-  NativeFlowButtonDTO:
-    properties:
-      name:
-        example: quick_reply
-        type: string
-      params:
-        additionalProperties: true
-        type: object
-    required:
-    - name
-    - params
-    type: object
-  NewsletterActionRequest:
-    properties:
-      newsletterJid:
-        example: 123456789@newsletter
-        type: string
-    required:
-    - newsletterJid
-    type: object
-  NewsletterLiveResponse:
-    properties:
-      duration:
-        example: 24h0m0s
-        type: string
-    type: object
-  NewsletterMarkViewedRequest:
-    properties:
-      serverIds:
-        example:
-        - 1
-        - 2
-        - 3
-        items:
-          type: integer
-        type: array
-    required:
-    - serverIds
-    type: object
-  NewsletterMuteRequest:
-    properties:
-      mute:
-        example: true
-        type: boolean
-      newsletterJid:
-        example: 123456789@newsletter
-        type: string
-    required:
-    - newsletterJid
-    type: object
-  NewsletterReactionRequest:
-    properties:
-      messageId:
-        example: ABCD1234
-        type: string
-      newsletterJid:
-        example: 123456789@newsletter
-        type: string
-      reaction:
-        example: "\U0001F44D"
-        type: string
-      serverId:
-        example: 123
-        type: integer
-    required:
-    - newsletterJid
-    - reaction
-    - serverId
-    type: object
-  NewsletterResponse:
-    properties:
-      data: {}
-    type: object
-  PairPhoneRequest:
-    properties:
-      phone:
-        example: "5511999999999"
-        type: string
-    required:
-    - phone
-    type: object
-  PairPhoneResponse:
-    properties:
-      code:
-        example: ABCD-EFGH
-        type: string
-    type: object
-  PastParticipantResponse:
-    properties:
-      leaveReason:
-        example: LEFT
-        type: string
-      leaveTimestamp:
-        type: string
-      userJid:
-        example: 5511999999999@s.whatsapp.net
-        type: string
-    type: object
-  PresenceResponse:
-    properties:
-      status:
-        example: available
-        type: string
-    type: object
-  PrivacySettingsResponse:
-    properties:
-      settings: {}
-    type: object
-  ProfileInfoResponse:
-    properties:
-      profile: {}
-    type: object
-  QRLinkResponse:
-    properties:
-      link:
-        example: https://wa.me/qr/...
-        type: string
-    type: object
-  QRResponse:
-    properties:
-      qr:
-        example: data:image/png;base64,...
-        type: string
-      status:
-        example: connecting
-        type: string
-    type: object
-  RejectCallRequest:
-    properties:
-      callFrom:
-        example: "5511999999999"
-        type: string
-      callId:
-        example: CALL123
-        type: string
-    required:
-    - callFrom
-    - callId
-    type: object
-  RequestUnavailableMessageRequest:
-    properties:
-      senderJid:
-        example: 5511999999999@s.whatsapp.net
-        type: string
-    type: object
-  SendAudioRequest:
-    properties:
-      audio:
-        example: base64_encoded_audio
-        type: string
-      mimetype:
-        example: audio/ogg; codecs=opus
-        type: string
-      phone:
-        example: "5511999999999"
-        type: string
-      ptt:
-        example: true
-        type: boolean
-    required:
-    - audio
-    - phone
-    type: object
-  SendButtonsRequest:
-    properties:
-      buttons:
-        items:
-          $ref: '#/definitions/ButtonDTO'
-        maxItems: 3
-        minItems: 1
-        type: array
-      contentText:
-        example: Choose an option
-        type: string
-      footerText:
-        example: Footer text
-        type: string
-      headerText:
-        example: Header text
-        type: string
-      phone:
-        example: "5511999999999"
-        type: string
-    required:
-    - buttons
-    - contentText
-    - phone
-    type: object
-  SendCarouselRequest:
-    properties:
-      body:
-        example: Browse our catalog
-        type: string
-      cards:
-        items:
-          $ref: '#/definitions/CarouselCardDTO'
-        minItems: 1
-        type: array
-      footer:
-        example: Powered by ZPWoot
-        type: string
-      phone:
-        example: "5511999999999"
-        type: string
-      title:
-        example: Check out our products!
-        type: string
-    required:
-    - cards
-    - phone
-    type: object
-  SendContactRequest:
-    properties:
-      contactName:
-        example: John Doe
-        type: string
-      contactPhone:
-        example: "5511888888888"
-        type: string
-      phone:
-        example: "5511999999999"
-        type: string
-    required:
-    - contactName
-    - contactPhone
-    - phone
-    type: object
-  SendDocumentRequest:
-    properties:
-      document:
-        example: base64_encoded_document
-        type: string
-      filename:
-        example: document.pdf
-        type: string
-      mimetype:
-        example: application/pdf
-        type: string
-      phone:
-        example: "5511999999999"
-        type: string
-    required:
-    - document
-    - filename
-    - phone
-    type: object
-  SendGroupMessageRequest:
-    properties:
-      groupId:
-        example: 123456789@g.us
-        type: string
-      text:
-        example: Hello Group!
-        type: string
-    required:
-    - groupId
-    - text
-    type: object
-  SendImageRequest:
-    properties:
-      caption:
-        example: Image caption
-        type: string
-      image:
-        example: base64_encoded_image
-        type: string
-      mimetype:
-        example: image/jpeg
-        type: string
-      phone:
-        example: "5511999999999"
-        type: string
-    required:
-    - image
-    - phone
-    type: object
-  SendInteractiveRequest:
-    properties:
-      body:
-        example: Message body text
-        type: string
-      buttons:
-        items:
-          $ref: '#/definitions/NativeFlowButtonDTO'
-        minItems: 1
-        type: array
-      footer:
-        example: Footer text
-        type: string
-      phone:
-        example: "5511999999999"
-        type: string
-      title:
-        example: Interactive Title
-        type: string
-    required:
-    - body
-    - buttons
-    - phone
-    type: object
-  SendListRequest:
-    properties:
-      buttonText:
-        example: Open Menu
-        type: string
-      description:
-        example: Please select an option
-        type: string
-      footerText:
-        example: Footer text
-        type: string
-      phone:
-        example: "5511999999999"
-        type: string
-      sections:
-        items:
-          $ref: '#/definitions/ListSectionDTO'
-        minItems: 1
-        type: array
-      title:
-        example: Menu Title
-        type: string
-    required:
-    - buttonText
-    - description
-    - phone
-    - sections
-    - title
-    type: object
-  SendLocationRequest:
-    properties:
-      address:
-        example: Street Address
-        type: string
-      latitude:
-        example: -23.5505
-        type: number
-      longitude:
-        example: -46.6333
-        type: number
-      name:
-        example: Location Name
-        type: string
-      phone:
-        example: "5511999999999"
-        type: string
-    required:
-    - latitude
-    - longitude
-    - phone
-    type: object
-  SendPollRequest:
-    properties:
-      name:
-        example: What's your favorite color?
-        type: string
-      options:
-        example:
-        - Red
-        - Blue
-        - Green
-        items:
-          type: string
-        type: array
-      phone:
-        example: "5511999999999"
-        type: string
-      selectableCount:
-        example: 1
-        type: integer
-    required:
-    - name
-    - options
-    - phone
-    type: object
-  SendPollVoteRequest:
-    properties:
-      phone:
-        example: "5511999999999"
-        type: string
-      pollMessageId:
-        example: ABCD1234
-        type: string
-      selectedOptions:
-        example:
-        - Red
-        items:
-          type: string
-        type: array
-    required:
-    - phone
-    - pollMessageId
-    - selectedOptions
-    type: object
-  SendReactionRequest:
-    properties:
-      emoji:
-        example: "\U0001F44D"
-        type: string
-      messageId:
-        example: ABCD1234
-        type: string
-      phone:
-        example: "5511999999999"
-        type: string
-    required:
-    - emoji
-    - messageId
-    - phone
-    type: object
-  SendResponse:
-    properties:
-      messageId:
-        example: ABCD1234
-        type: string
-      timestamp:
-        example: 1699999999
-        type: integer
-    type: object
-  SendStatusRequest:
-    properties:
-      caption:
-        example: Status caption
-        type: string
-      image:
-        example: base64_encoded_image
-        type: string
-      mimetype:
-        example: image/jpeg
-        type: string
-      text:
-        example: My status update
-        type: string
-      video:
-        example: base64_encoded_video
-        type: string
-    type: object
-  SendStickerRequest:
-    properties:
-      mimetype:
-        example: image/webp
-        type: string
-      phone:
-        example: "5511999999999"
-        type: string
-      sticker:
-        example: base64_encoded_sticker
-        type: string
-    required:
-    - phone
-    - sticker
-    type: object
-  SendTemplateRequest:
-    properties:
-      buttons:
-        items:
-          $ref: '#/definitions/TemplateButtonDTO'
-        minItems: 1
-        type: array
-      content:
-        example: Please choose an option below
-        type: string
-      document:
-        example: base64_encoded_document
-        type: string
-      filename:
-        example: document.pdf
-        type: string
-      footer:
-        example: Powered by ZPWoot
-        type: string
-      image:
-        example: base64_encoded_image
-        type: string
-      mimetype:
-        example: image/jpeg
-        type: string
-      phone:
-        example: "5511999999999"
-        type: string
-      title:
-        example: Welcome!
-        type: string
-      video:
-        example: base64_encoded_video
-        type: string
-    required:
-    - buttons
-    - content
-    - phone
-    type: object
-  SendTextRequest:
-    properties:
-      phone:
-        example: "5511999999999"
-        type: string
-      text:
-        example: Hello World
-        type: string
-    required:
-    - phone
-    - text
-    type: object
-  SendVideoRequest:
-    properties:
-      caption:
-        example: Video caption
-        type: string
-      mimetype:
-        example: video/mp4
-        type: string
-      phone:
-        example: "5511999999999"
-        type: string
-      video:
-        example: base64_encoded_video
-        type: string
-    required:
-    - phone
-    - video
-    type: object
-  SessionResponse:
-    properties:
-      createdAt:
-        example: "2025-11-29T14:18:15.324706Z"
-        type: string
-      deviceJid:
-        example: 5511999999999@s.whatsapp.net
-        type: string
-      id:
-        example: ce270f0c-c3d6-41ad-b481-1587f813c3b1
-        type: string
-      phone:
-        example: "5511999999999"
-        type: string
-      session:
-        example: my-session
-        type: string
-      status:
-        example: connected
-        type: string
-      updatedAt:
-        example: "2025-11-29T14:18:15.324706Z"
-        type: string
-    type: object
-  SetConfigRequest:
-    properties:
-      account:
-        type: integer
-      autoCreate:
-        type: boolean
-      autoReopen:
-        description: |-
-          AutoReopen configures Chatwoot inbox settings for conversation management.
-          When true: sets lock_to_single_conversation=true and allow_messages_after_resolved=true
-          This means Chatwoot will automatically reopen resolved conversations when new messages arrive.
-          When false: creates new conversations for each interaction (default Chatwoot behavior).
-        type: boolean
-      chatwootDbHost:
-        type: string
-      chatwootDbName:
-        type: string
-      chatwootDbPass:
-        type: string
-      chatwootDbPort:
-        type: integer
-      chatwootDbUser:
-        type: string
-      enabled:
-        type: boolean
-      ignoreChats:
-        items:
-          type: string
-        type: array
-      inbox:
-        type: string
-      logo:
-        type: string
-      mergeBrPhones:
-        type: boolean
-      number:
-        type: string
-      organization:
-        type: string
-      signAgent:
-        type: boolean
-      signSeparator:
-        type: string
-      startPending:
-        type: boolean
-      syncContacts:
-        type: boolean
-      syncDays:
-        type: integer
-      syncMessages:
-        type: boolean
-      token:
-        type: string
-      url:
-        type: string
-    type: object
-  SetNameResponse:
-    properties:
-      name:
-        example: John Doe
-        type: string
-    type: object
-  SetPictureResponse:
-    properties:
-      pictureId:
-        example: abc123
-        type: string
-    type: object
-  SetPresenceRequest:
-    properties:
-      available:
-        example: true
-        type: boolean
-    type: object
-  SetPrivacyRequest:
-    properties:
-      setting:
-        description: last_seen, online, profile, status, read_receipts, group_add,
-          call_add
-        example: last_seen
-        type: string
-      value:
-        description: all, contacts, contact_blacklist, match_last_seen, known, none
-        example: contacts
-        type: string
-    required:
-    - setting
-    - value
-    type: object
-  SetProfilePictureRequest:
-    properties:
-      image:
-        example: base64_encoded_image
-        type: string
-    required:
-    - image
-    type: object
-  SetPushNameRequest:
-    properties:
-      name:
-        example: John Doe
-        type: string
-    required:
-    - name
-    type: object
-  SetStatusRequest:
-    properties:
-      status:
-        example: Hey there! I'm using ZPWoot
-        type: string
-    required:
-    - status
-    type: object
-  SetStatusResponse:
-    properties:
-      status:
-        example: My new status
-        type: string
-    type: object
-  SetWebhookRequest:
-    properties:
-      enabled:
-        type: boolean
-      events:
-        items:
-          type: string
-        type: array
-      secret:
-        type: string
-      url:
-        type: string
-    type: object
-  SkipDetails:
+  zpwoot_internal_integrations_chatwoot_core.SkipDetails:
     properties:
       alreadySynced:
         type: integer
@@ -1333,84 +1503,7 @@ definitions:
       statusBroadcast:
         type: integer
     type: object
-  StatusPrivacyResponse:
-    properties:
-      privacy: {}
-    type: object
-  StickerResponse:
-    properties:
-      directPath:
-        type: string
-      fileSize:
-        example: 12345
-        type: integer
-      height:
-        example: 512
-        type: integer
-      isAvatar:
-        example: false
-        type: boolean
-      isLottie:
-        example: false
-        type: boolean
-      lastUsedAt:
-        type: string
-      mimeType:
-        example: image/webp
-        type: string
-      weight:
-        example: 1.5
-        type: number
-      width:
-        example: 512
-        type: integer
-    type: object
-  SubscribePresenceRequest:
-    properties:
-      phone:
-        example: "5511999999999"
-        type: string
-    required:
-    - phone
-    type: object
-  SyncProgressResponse:
-    properties:
-      completedAt:
-        type: string
-      errors:
-        example: 0
-        type: integer
-      processedChats:
-        example: 35
-        type: integer
-      processedChunks:
-        example: 7
-        type: integer
-      processedMessages:
-        example: 750
-        type: integer
-      progress:
-        example: 75
-        type: integer
-      startedAt:
-        type: string
-      status:
-        example: in_progress
-        type: string
-      syncType:
-        example: INITIAL_BOOTSTRAP
-        type: string
-      totalChats:
-        example: 50
-        type: integer
-      totalChunks:
-        example: 10
-        type: integer
-      totalMessages:
-        example: 1000
-        type: integer
-    type: object
-  SyncStats:
+  zpwoot_internal_integrations_chatwoot_core.SyncStats:
     properties:
       contactsErrors:
         type: integer
@@ -1430,10 +1523,10 @@ definitions:
         type: integer
       skippedDetails:
         allOf:
-        - $ref: '#/definitions/SkipDetails'
+        - $ref: '#/definitions/zpwoot_internal_integrations_chatwoot_core.SkipDetails'
         description: Detailed skip reasons
     type: object
-  SyncStatus:
+  zpwoot_internal_integrations_chatwoot_core.SyncStatus:
     properties:
       endedAt:
         type: string
@@ -1444,7 +1537,7 @@ definitions:
       startedAt:
         type: string
       stats:
-        $ref: '#/definitions/SyncStats'
+        $ref: '#/definitions/zpwoot_internal_integrations_chatwoot_core.SyncStats'
       status:
         description: idle, running, completed, failed
         type: string
@@ -1452,57 +1545,10 @@ definitions:
         description: contacts, messages, all
         type: string
     type: object
-  TemplateButtonDTO:
-    properties:
-      callButton:
-        $ref: '#/definitions/TemplateCallButtonDTO'
-      index:
-        example: 0
-        type: integer
-      quickReply:
-        $ref: '#/definitions/TemplateQuickReplyDTO'
-      urlButton:
-        $ref: '#/definitions/TemplateURLButtonDTO'
-    type: object
-  TemplateCallButtonDTO:
-    properties:
-      displayText:
-        example: Call Us
-        type: string
-      phoneNumber:
-        example: "+1234567890"
-        type: string
-    required:
-    - displayText
-    - phoneNumber
-    type: object
-  TemplateQuickReplyDTO:
-    properties:
-      displayText:
-        example: Option 1
-        type: string
-      id:
-        example: opt1
-        type: string
-    required:
-    - displayText
-    - id
-    type: object
-  TemplateURLButtonDTO:
-    properties:
-      displayText:
-        example: Visit Site
-        type: string
-      url:
-        example: https://example.com
-        type: string
-    required:
-    - displayText
-    - url
-    type: object
 info:
   contact: {}
-  description: WhatsApp API with Chatwoot Integration
+  description: 'WhatsApp API with Chatwoot Integration. Supports two authentication
+    levels: Global API key (full access) and Session API key (session-specific access).'
   title: ZPWoot WhatsApp API
   version: 0.1.0
 paths:
@@ -1537,9 +1583,9 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/EventsResponse'
+            $ref: '#/definitions/internal_integrations_webhook.EventsResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: List available webhook events
       tags:
       - webhook
@@ -1555,14 +1601,14 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/SessionResponse'
+              $ref: '#/definitions/zpwoot_internal_api_dto.SessionResponse'
             type: array
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Fetch all sessions
       tags:
       - sessions
@@ -1576,28 +1622,28 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/CreateSessionRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.CreateSessionRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/SessionResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.SessionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Create a new session
       tags:
       - sessions
@@ -1625,10 +1671,10 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/MediaResponse'
+              $ref: '#/definitions/zpwoot_internal_api_dto.MediaResponse'
             type: array
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: List all media for session
       tags:
       - media
@@ -1652,10 +1698,10 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/MediaResponse'
+              $ref: '#/definitions/zpwoot_internal_api_dto.MediaResponse'
             type: array
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: List pending media downloads
       tags:
       - media
@@ -1683,9 +1729,9 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Process pending media downloads
       tags:
       - media
@@ -1706,17 +1752,17 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MessageResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.MessageResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Delete a session
       tags:
       - sessions
@@ -1736,17 +1782,17 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SessionResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.SessionResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get session info
       tags:
       - sessions
@@ -1766,7 +1812,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/RejectCallRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.RejectCallRequest'
       produces:
       - application/json
       responses:
@@ -1777,13 +1823,13 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Reject incoming call
       tags:
       - call
@@ -1803,28 +1849,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/ArchiveChatRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.ArchiveChatRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ChatActionResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ChatActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Archive or unarchive a chat
       tags:
       - chat
@@ -1844,28 +1890,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/DeleteMessageRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.DeleteMessageRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Delete a message
       tags:
       - chat
@@ -1884,28 +1930,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/EditMessageRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.EditMessageRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Edit a message
       tags:
       - chat
@@ -1934,24 +1980,24 @@ paths:
         in: body
         name: body
         schema:
-          $ref: '#/definitions/RequestUnavailableMessageRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.RequestUnavailableMessageRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MessageResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Request unavailable message
       tags:
       - chat
@@ -1976,28 +2022,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/ChatPresenceRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.ChatPresenceRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ChatPresenceResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ChatPresenceResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Set chat presence (typing/recording)
       tags:
       - presence
@@ -2022,7 +2068,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/MarkReadRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.MarkReadRequest'
       produces:
       - application/json
       responses:
@@ -2033,17 +2079,17 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Mark messages as read
       tags:
       - presence
@@ -2063,7 +2109,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/DisappearingRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.DisappearingRequest'
       produces:
       - application/json
       responses:
@@ -2074,13 +2120,13 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Set disappearing messages timer
       tags:
       - chat
@@ -2107,7 +2153,7 @@ paths:
             additionalProperties: true
             type: object
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Delete Chatwoot configuration
       tags:
       - chatwoot
@@ -2126,14 +2172,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/Config'
+            $ref: '#/definitions/zpwoot_internal_integrations_chatwoot_core.Config'
         "404":
           description: Not Found
           schema:
             additionalProperties: true
             type: object
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get Chatwoot configuration
       tags:
       - chatwoot
@@ -2156,7 +2202,7 @@ paths:
             additionalProperties: true
             type: object
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Reset Chatwoot data for testing
       tags:
       - chatwoot
@@ -2176,14 +2222,14 @@ paths:
         name: config
         required: true
         schema:
-          $ref: '#/definitions/SetConfigRequest'
+          $ref: '#/definitions/internal_integrations_chatwoot_handler.SetConfigRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/Config'
+            $ref: '#/definitions/zpwoot_internal_integrations_chatwoot_core.Config'
         "400":
           description: Bad Request
           schema:
@@ -2195,20 +2241,21 @@ paths:
             additionalProperties: true
             type: object
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Set Chatwoot configuration
       tags:
       - chatwoot
   /sessions/{sessionId}/chatwoot/sync:
     post:
-      description: Start async synchronization of all contacts and messages to Chatwoot
+      description: Start async synchronization of all contacts and messages to Chatwoot.
+        By default imports ALL messages. Use ?days=N to limit.
       parameters:
       - description: Session name
         in: path
         name: sessionId
         required: true
         type: string
-      - description: Limit to last N days
+      - description: 'Limit to last N days (default: 0 = all messages)'
         in: query
         name: days
         type: integer
@@ -2218,7 +2265,7 @@ paths:
         "202":
           description: Accepted
           schema:
-            $ref: '#/definitions/SyncStatus'
+            $ref: '#/definitions/zpwoot_internal_integrations_chatwoot_core.SyncStatus'
         "400":
           description: Bad Request
           schema:
@@ -2230,7 +2277,7 @@ paths:
             additionalProperties: true
             type: object
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Full sync to Chatwoot (async)
       tags:
       - chatwoot
@@ -2250,7 +2297,7 @@ paths:
         "202":
           description: Accepted
           schema:
-            $ref: '#/definitions/SyncStatus'
+            $ref: '#/definitions/zpwoot_internal_integrations_chatwoot_core.SyncStatus'
         "400":
           description: Bad Request
           schema:
@@ -2262,20 +2309,21 @@ paths:
             additionalProperties: true
             type: object
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Sync contacts to Chatwoot (async)
       tags:
       - chatwoot
   /sessions/{sessionId}/chatwoot/sync/messages:
     post:
-      description: Start async synchronization of message history to Chatwoot
+      description: Start async synchronization of message history to Chatwoot. By
+        default imports ALL messages. Use ?days=N to limit.
       parameters:
       - description: Session name
         in: path
         name: sessionId
         required: true
         type: string
-      - description: Limit to last N days
+      - description: 'Limit to last N days (default: 0 = all messages)'
         in: query
         name: days
         type: integer
@@ -2285,7 +2333,7 @@ paths:
         "202":
           description: Accepted
           schema:
-            $ref: '#/definitions/SyncStatus'
+            $ref: '#/definitions/zpwoot_internal_integrations_chatwoot_core.SyncStatus'
         "400":
           description: Bad Request
           schema:
@@ -2297,7 +2345,7 @@ paths:
             additionalProperties: true
             type: object
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Sync messages to Chatwoot (async)
       tags:
       - chatwoot
@@ -2316,14 +2364,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SyncStatus'
+            $ref: '#/definitions/zpwoot_internal_integrations_chatwoot_core.SyncStatus'
         "404":
           description: Not Found
           schema:
             additionalProperties: true
             type: object
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get sync status
       tags:
       - chatwoot
@@ -2347,13 +2395,13 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/CommunityResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.CommunityResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get community subgroups
       tags:
       - community
@@ -2372,7 +2420,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/LinkGroupRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.LinkGroupRequest'
       produces:
       - application/json
       responses:
@@ -2383,13 +2431,13 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Link group to community
       tags:
       - community
@@ -2409,7 +2457,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/LinkGroupRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.LinkGroupRequest'
       produces:
       - application/json
       responses:
@@ -2420,13 +2468,13 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Unlink group from community
       tags:
       - community
@@ -2448,17 +2496,17 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MessageResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.MessageResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Connect session
       tags:
       - sessions
@@ -2485,13 +2533,13 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get all contacts
       tags:
       - contact
@@ -2511,28 +2559,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/ContactInfoRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.ContactInfoRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ContactInfoResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ContactInfoResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get contact information
       tags:
       - contact
@@ -2558,17 +2606,17 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/AvatarResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.AvatarResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get contact avatar
       tags:
       - contact
@@ -2592,13 +2640,13 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/BusinessProfileResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.BusinessProfileResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get business profile
       tags:
       - contact
@@ -2622,17 +2670,17 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/LIDResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.LIDResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get contact LID
       tags:
       - contact
@@ -2652,7 +2700,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SubscribePresenceRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.SubscribePresenceRequest'
       produces:
       - application/json
       responses:
@@ -2663,13 +2711,13 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Subscribe to presence updates
       tags:
       - contact
@@ -2688,13 +2736,13 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/BlocklistResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.BlocklistResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get blocked contacts
       tags:
       - contact
@@ -2713,24 +2761,24 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/BlocklistRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.BlocklistRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/BlocklistActionResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.BlocklistActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Block or unblock contact
       tags:
       - contact
@@ -2750,7 +2798,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/CheckPhoneRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.CheckPhoneRequest'
       produces:
       - application/json
       responses:
@@ -2758,22 +2806,22 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/CheckPhoneResult'
+              $ref: '#/definitions/zpwoot_internal_api_dto.CheckPhoneResult'
             type: array
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Check if phones are registered on WhatsApp
       tags:
       - contact
@@ -2794,21 +2842,21 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MessageResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.MessageResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Disconnect session
       tags:
       - sessions
@@ -2829,17 +2877,17 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.GroupActionResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get joined groups
       tags:
       - groups
@@ -2858,28 +2906,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/CreateGroupRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.CreateGroupRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Create a new group
       tags:
       - groups
@@ -2905,21 +2953,21 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get group info
       tags:
       - groups
@@ -2939,28 +2987,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupUpdateRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.GroupUpdateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Update group description
       tags:
       - groups
@@ -2990,17 +3038,17 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupInviteLinkResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.GroupInviteLinkResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get group invite link
       tags:
       - groups
@@ -3026,17 +3074,17 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.GroupActionResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Leave group
       tags:
       - groups
@@ -3056,28 +3104,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendGroupMessageRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.SendGroupMessageRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Send message to group
       tags:
       - groups
@@ -3097,28 +3145,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupUpdateRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.GroupUpdateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Update group name
       tags:
       - groups
@@ -3138,28 +3186,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupParticipantsRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.GroupParticipantsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Remove participants from group
       tags:
       - groups
@@ -3178,28 +3226,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupParticipantsRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.GroupParticipantsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Add participants to group
       tags:
       - groups
@@ -3219,28 +3267,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupParticipantsRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.GroupParticipantsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Demote participants from admin
       tags:
       - groups
@@ -3260,28 +3308,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupParticipantsRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.GroupParticipantsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Promote participants to admin
       tags:
       - groups
@@ -3305,53 +3353,62 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MessageOnlyResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.MessageOnlyResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Delete group picture
       tags:
       - groups
     put:
       consumes:
       - application/json
-      description: Set the group profile picture
+      - multipart/form-data
+      description: Set the group profile picture (supports JSON with base64/URL or
+        multipart/form-data)
       parameters:
       - description: Session ID
         in: path
         name: sessionId
         required: true
         type: string
-      - description: Picture data
+      - description: Picture data (JSON)
         in: body
         name: body
-        required: true
         schema:
-          $ref: '#/definitions/GroupPictureRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.GroupPictureRequest'
+      - description: Group ID (form-data)
+        in: formData
+        name: groupId
+        type: string
+      - description: Image file (form-data)
+        in: formData
+        name: file
+        type: file
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SetPictureResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.SetPictureResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Set group picture
       tags:
       - groups
@@ -3375,13 +3432,13 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupRequestParticipantsResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.GroupRequestParticipantsResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get pending join requests
       tags:
       - groups
@@ -3405,24 +3462,24 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupRequestActionBodyRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.GroupRequestActionBodyRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Approve or reject join requests
       tags:
       - groups
@@ -3442,7 +3499,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupAnnounceRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.GroupAnnounceRequest'
       produces:
       - application/json
       responses:
@@ -3453,13 +3510,13 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Set group announce mode
       tags:
       - groups
@@ -3479,7 +3536,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupApprovalRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.GroupApprovalRequest'
       produces:
       - application/json
       responses:
@@ -3490,13 +3547,13 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Set group join approval mode
       tags:
       - groups
@@ -3516,7 +3573,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupLockedRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.GroupLockedRequest'
       produces:
       - application/json
       responses:
@@ -3527,13 +3584,13 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Set group locked mode
       tags:
       - groups
@@ -3553,7 +3610,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/GroupMemberAddModeRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.GroupMemberAddModeRequest'
       produces:
       - application/json
       responses:
@@ -3564,13 +3621,13 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Set who can add members
       tags:
       - groups
@@ -3594,17 +3651,17 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get group info from invite link
       tags:
       - groups
@@ -3624,28 +3681,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/JoinGroupRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.JoinGroupRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GroupActionResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.GroupActionResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Join group via link
       tags:
       - groups
@@ -3669,17 +3726,17 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ChatResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ChatResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get chat info
       tags:
       - history
@@ -3699,18 +3756,18 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/ChatResponse'
+              $ref: '#/definitions/zpwoot_internal_api_dto.ChatResponse'
             type: array
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get unread chats
       tags:
       - history
@@ -3735,18 +3792,18 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/PastParticipantResponse'
+              $ref: '#/definitions/zpwoot_internal_api_dto.PastParticipantResponse'
             type: array
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get group past participants
       tags:
       - history
@@ -3766,18 +3823,18 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/SyncProgressResponse'
+              $ref: '#/definitions/zpwoot_internal_api_dto.SyncProgressResponse'
             type: array
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get history sync progress
       tags:
       - history
@@ -3802,18 +3859,18 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/StickerResponse'
+              $ref: '#/definitions/zpwoot_internal_api_dto.StickerResponse'
             type: array
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get top stickers
       tags:
       - history
@@ -3832,28 +3889,28 @@ paths:
         in: body
         name: request
         schema:
-          $ref: '#/definitions/HistorySyncRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.HistorySyncRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MessageResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.MessageResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Request history sync
       tags:
       - history
@@ -3875,21 +3932,21 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MessageResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.MessageResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Logout session
       tags:
       - sessions
@@ -3913,13 +3970,13 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MediaResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.MediaResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get media by message ID
       tags:
       - media
@@ -3927,40 +3984,53 @@ paths:
     post:
       consumes:
       - application/json
-      description: Send an audio to a phone number (base64 encoded)
+      - multipart/form-data
+      description: Send an audio to a phone number (supports JSON with base64/URL
+        or multipart/form-data)
       parameters:
       - description: Session ID
         in: path
         name: sessionId
         required: true
         type: string
-      - description: Audio data
+      - description: Audio data (JSON)
         in: body
         name: body
-        required: true
         schema:
-          $ref: '#/definitions/SendAudioRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.SendAudioRequest'
+      - description: Phone number (form-data)
+        in: formData
+        name: phone
+        type: string
+      - description: Push to talk (form-data)
+        in: formData
+        name: ptt
+        type: boolean
+      - description: Audio file (form-data)
+        in: formData
+        name: file
+        type: file
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Send audio message
       tags:
       - messages
@@ -3980,28 +4050,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendButtonsRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.SendButtonsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Send buttons message
       tags:
       - messages
@@ -4022,28 +4092,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendCarouselRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.SendCarouselRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Send carousel message
       tags:
       - messages
@@ -4063,28 +4133,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendContactRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.SendContactRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Send contact message
       tags:
       - messages
@@ -4092,40 +4162,53 @@ paths:
     post:
       consumes:
       - application/json
-      description: Send a document to a phone number (base64 encoded)
+      - multipart/form-data
+      description: Send a document to a phone number (supports JSON with base64/URL
+        or multipart/form-data)
       parameters:
       - description: Session ID
         in: path
         name: sessionId
         required: true
         type: string
-      - description: Document data
+      - description: Document data (JSON)
         in: body
         name: body
-        required: true
         schema:
-          $ref: '#/definitions/SendDocumentRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.SendDocumentRequest'
+      - description: Phone number (form-data)
+        in: formData
+        name: phone
+        type: string
+      - description: Filename (form-data)
+        in: formData
+        name: filename
+        type: string
+      - description: Document file (form-data)
+        in: formData
+        name: file
+        type: file
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Send document message
       tags:
       - messages
@@ -4133,40 +4216,53 @@ paths:
     post:
       consumes:
       - application/json
-      description: Send an image to a phone number (base64 encoded)
+      - multipart/form-data
+      description: Send an image to a phone number (supports JSON with base64/URL
+        or multipart/form-data)
       parameters:
       - description: Session ID
         in: path
         name: sessionId
         required: true
         type: string
-      - description: Image data
+      - description: Image data (JSON)
         in: body
         name: body
-        required: true
         schema:
-          $ref: '#/definitions/SendImageRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.SendImageRequest'
+      - description: Phone number (form-data)
+        in: formData
+        name: phone
+        type: string
+      - description: Caption (form-data)
+        in: formData
+        name: caption
+        type: string
+      - description: Image file (form-data)
+        in: formData
+        name: file
+        type: file
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Send image message
       tags:
       - messages
@@ -4175,7 +4271,7 @@ paths:
       consumes:
       - application/json
       description: Send an interactive message with buttons (quick_reply, cta_url,
-        cta_call, cta_copy)
+        cta_call, cta_copy). Supports optional image/video header.
       parameters:
       - description: Session ID
         in: path
@@ -4187,28 +4283,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendInteractiveRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.SendInteractiveRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Send interactive message with native flow buttons
       tags:
       - messages
@@ -4228,28 +4324,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendListRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.SendListRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Send list message
       tags:
       - messages
@@ -4269,28 +4365,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendLocationRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.SendLocationRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Send location message
       tags:
       - messages
@@ -4310,28 +4406,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendPollRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.SendPollRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Send poll message
       tags:
       - messages
@@ -4351,28 +4447,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendPollVoteRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.SendPollVoteRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Vote in a poll
       tags:
       - messages
@@ -4392,28 +4488,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendReactionRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.SendReactionRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Send reaction to message
       tags:
       - messages
@@ -4421,40 +4517,49 @@ paths:
     post:
       consumes:
       - application/json
-      description: Send a sticker to a phone number (base64 encoded webp)
+      - multipart/form-data
+      description: Send a sticker to a phone number (supports JSON with base64/URL
+        or multipart/form-data)
       parameters:
       - description: Session ID
         in: path
         name: sessionId
         required: true
         type: string
-      - description: Sticker data
+      - description: Sticker data (JSON)
         in: body
         name: body
-        required: true
         schema:
-          $ref: '#/definitions/SendStickerRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.SendStickerRequest'
+      - description: Phone number (form-data)
+        in: formData
+        name: phone
+        type: string
+      - description: Sticker file (form-data)
+        in: formData
+        name: file
+        type: file
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Send sticker message
       tags:
       - messages
@@ -4475,28 +4580,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendTemplateRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.SendTemplateRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Send template message
       tags:
       - messages
@@ -4516,28 +4621,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SendTextRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.SendTextRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Send text message
       tags:
       - messages
@@ -4545,40 +4650,53 @@ paths:
     post:
       consumes:
       - application/json
-      description: Send a video to a phone number (base64 encoded)
+      - multipart/form-data
+      description: Send a video to a phone number (supports JSON with base64/URL or
+        multipart/form-data)
       parameters:
       - description: Session ID
         in: path
         name: sessionId
         required: true
         type: string
-      - description: Video data
+      - description: Video data (JSON)
         in: body
         name: body
-        required: true
         schema:
-          $ref: '#/definitions/SendVideoRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.SendVideoRequest'
+      - description: Phone number (form-data)
+        in: formData
+        name: phone
+        type: string
+      - description: Caption (form-data)
+        in: formData
+        name: caption
+        type: string
+      - description: Video file (form-data)
+        in: formData
+        name: file
+        type: file
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Send video message
       tags:
       - messages
@@ -4603,9 +4721,9 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: List subscribed newsletters
       tags:
       - newsletter
@@ -4624,24 +4742,24 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/CreateNewsletterRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.CreateNewsletterRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/NewsletterResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.NewsletterResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Create a newsletter/channel
       tags:
       - newsletter
@@ -4665,13 +4783,13 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/NewsletterResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.NewsletterResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get newsletter info
       tags:
       - newsletter
@@ -4691,7 +4809,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/NewsletterActionRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.NewsletterActionRequest'
       produces:
       - application/json
       responses:
@@ -4702,13 +4820,13 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Unfollow a newsletter
       tags:
       - newsletter
@@ -4727,7 +4845,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/NewsletterActionRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.NewsletterActionRequest'
       produces:
       - application/json
       responses:
@@ -4738,13 +4856,13 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Follow a newsletter
       tags:
       - newsletter
@@ -4777,13 +4895,13 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/NewsletterResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.NewsletterResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get newsletter messages
       tags:
       - newsletter
@@ -4803,7 +4921,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/NewsletterMuteRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.NewsletterMuteRequest'
       produces:
       - application/json
       responses:
@@ -4814,13 +4932,13 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Mute/unmute newsletter
       tags:
       - newsletter
@@ -4840,7 +4958,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/NewsletterReactionRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.NewsletterReactionRequest'
       produces:
       - application/json
       responses:
@@ -4851,13 +4969,13 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: React to newsletter message
       tags:
       - newsletter
@@ -4881,13 +4999,13 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/NewsletterLiveResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.NewsletterLiveResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Subscribe to live updates
       tags:
       - newsletter
@@ -4912,7 +5030,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/NewsletterMarkViewedRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.NewsletterMarkViewedRequest'
       produces:
       - application/json
       responses:
@@ -4923,13 +5041,13 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Mark newsletter messages as viewed
       tags:
       - newsletter
@@ -4949,24 +5067,24 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/PairPhoneRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.PairPhoneRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/PairPhoneResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.PairPhoneResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Pair using phone number
       tags:
       - sessions
@@ -4986,28 +5104,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SetPresenceRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.SetPresenceRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/PresenceResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.PresenceResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Set online presence
       tags:
       - presence
@@ -5032,7 +5150,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SubscribePresenceRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.SubscribePresenceRequest'
       produces:
       - application/json
       responses:
@@ -5043,13 +5161,13 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Subscribe to contact presence
       tags:
       - presence
@@ -5070,17 +5188,17 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/ProfileInfoResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ProfileInfoResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get own profile info
       tags:
       - profile
@@ -5100,7 +5218,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/DefaultDisappearingRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.DefaultDisappearingRequest'
       produces:
       - application/json
       responses:
@@ -5111,13 +5229,13 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Set default disappearing timer
       tags:
       - profile
@@ -5137,28 +5255,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SetPushNameRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.SetPushNameRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SetNameResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.SetNameResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Set display name
       tags:
       - profile
@@ -5183,53 +5301,58 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Delete profile picture
       tags:
       - profile
     put:
       consumes:
       - application/json
-      description: Set WhatsApp profile picture
+      - multipart/form-data
+      description: Set WhatsApp profile picture (supports JSON with base64/URL or
+        multipart/form-data)
       parameters:
       - description: Session ID
         in: path
         name: sessionId
         required: true
         type: string
-      - description: Image data
+      - description: Image data (JSON)
         in: body
         name: body
-        required: true
         schema:
-          $ref: '#/definitions/SetProfilePictureRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.SetProfilePictureRequest'
+      - description: Image file (form-data)
+        in: formData
+        name: file
+        type: file
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SetPictureResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.SetPictureResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Set profile picture
       tags:
       - profile
@@ -5250,17 +5373,17 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/PrivacySettingsResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.PrivacySettingsResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get privacy settings
       tags:
       - profile
@@ -5279,7 +5402,7 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SetPrivacyRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.SetPrivacyRequest'
       produces:
       - application/json
       responses:
@@ -5290,17 +5413,17 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Set privacy settings
       tags:
       - profile
@@ -5320,28 +5443,28 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/SetStatusRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.SetStatusRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SetStatusResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.SetStatusResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Set status message
       tags:
       - profile
@@ -5367,17 +5490,17 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/QRResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.QRResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get QR code
       tags:
       - sessions
@@ -5400,13 +5523,13 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/QRLinkResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.QRLinkResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get contact QR link
       tags:
       - contact
@@ -5427,17 +5550,17 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MessageResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.MessageResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Restart session
       tags:
       - sessions
@@ -5445,36 +5568,45 @@ paths:
     post:
       consumes:
       - application/json
-      description: Post a text or media story (status update visible to contacts)
+      - multipart/form-data
+      description: Post a text or media story (status update visible to contacts).
+        Supports JSON with base64/URL or multipart/form-data.
       parameters:
       - description: Session ID
         in: path
         name: sessionId
         required: true
         type: string
-      - description: Story data
+      - description: Story data (JSON)
         in: body
         name: body
-        required: true
         schema:
-          $ref: '#/definitions/SendStatusRequest'
+          $ref: '#/definitions/zpwoot_internal_api_dto.SendStatusRequest'
+      - description: Text content (form-data)
+        in: formData
+        name: text
+        type: string
+      - description: Image file (form-data)
+        in: formData
+        name: file
+        type: file
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/SendResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.SendResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Post a story
       tags:
       - status
@@ -5493,13 +5625,13 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/StatusPrivacyResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.StatusPrivacyResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/zpwoot_internal_api_dto.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get status privacy settings
       tags:
       - status
@@ -5518,13 +5650,13 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/MessageResponse'
+            $ref: '#/definitions/internal_integrations_webhook.MessageResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_integrations_webhook.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Delete webhook
       tags:
       - webhook
@@ -5542,13 +5674,13 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GetWebhookResponse'
+            $ref: '#/definitions/internal_integrations_webhook.GetWebhookResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_integrations_webhook.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Get webhook
       tags:
       - webhook
@@ -5568,24 +5700,24 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/SetWebhookRequest'
+          $ref: '#/definitions/internal_integrations_webhook.SetWebhookRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GetWebhookResponse'
+            $ref: '#/definitions/internal_integrations_webhook.GetWebhookResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_integrations_webhook.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_integrations_webhook.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Set webhook
       tags:
       - webhook
@@ -5604,31 +5736,33 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/SetWebhookRequest'
+          $ref: '#/definitions/internal_integrations_webhook.SetWebhookRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/GetWebhookResponse'
+            $ref: '#/definitions/internal_integrations_webhook.GetWebhookResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_integrations_webhook.ErrorResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/ErrorResponse'
+            $ref: '#/definitions/internal_integrations_webhook.ErrorResponse'
       security:
-      - ApiKeyAuth: []
+      - Authorization: []
       summary: Update webhook
       tags:
       - webhook
 securityDefinitions:
-  ApiKeyAuth:
+  Authorization:
+    description: API key for authentication. Use global key for full access or session-specific
+      key for restricted access.
     in: header
-    name: apikey
+    name: Authorization
     type: apiKey
 swagger: "2.0"
 tags:

@@ -14,14 +14,24 @@ type MessageOnlyResponse struct {
 
 // Session responses
 
+// SessionResponse represents a WhatsApp session with connection info and authentication
 type SessionResponse struct {
-	ID        string  `json:"id" example:"ce270f0c-c3d6-41ad-b481-1587f813c3b1"`
-	Session   string  `json:"session" example:"my-session"`
+	// Unique session UUID (database primary key)
+	ID string `json:"id" example:"ce270f0c-c3d6-41ad-b481-1587f813c3b1"`
+	// Session name/identifier (used in API routes)
+	Session string `json:"session" example:"my-session"`
+	// WhatsApp device JID after connection
 	DeviceJID *string `json:"deviceJid,omitempty" example:"5511999999999@s.whatsapp.net"`
-	Phone     *string `json:"phone,omitempty" example:"5511999999999"`
-	Status    string  `json:"status" example:"connected"`
-	CreatedAt string  `json:"createdAt" example:"2025-11-29T14:18:15.324706Z"`
-	UpdatedAt string  `json:"updatedAt" example:"2025-11-29T14:18:15.324706Z"`
+	// Phone number associated with the session
+	Phone *string `json:"phone,omitempty" example:"5511999999999"`
+	// Connection status: disconnected, connecting, connected
+	Status string `json:"status" example:"connected"`
+	// Session-specific API key for authentication (use in Authorization header)
+	ApiKey *string `json:"apiKey,omitempty" example:"a1b2c3d4e5f6..."`
+	// Session creation timestamp
+	CreatedAt string `json:"createdAt" example:"2025-11-29T14:18:15.324706Z"`
+	// Last update timestamp
+	UpdatedAt string `json:"updatedAt" example:"2025-11-29T14:18:15.324706Z"`
 }
 
 type QRResponse struct {

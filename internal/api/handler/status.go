@@ -32,7 +32,7 @@ func NewStatusHandler(wpp *wpp.Service) *StatusHandler {
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/stories [post]
 func (h *StatusHandler) SendStory(c *gin.Context) {
 	sessionId := c.Param("sessionId")
@@ -95,7 +95,7 @@ func (h *StatusHandler) SendStory(c *gin.Context) {
 // @Param        sessionId   path      string  true  "Session ID"
 // @Success      200    {object}  dto.StatusPrivacyResponse
 // @Failure      500    {object}  dto.ErrorResponse
-// @Security     ApiKeyAuth
+// @Security     Authorization
 // @Router       /sessions/{sessionId}/stories/privacy [get]
 func (h *StatusHandler) GetStatusPrivacy(c *gin.Context) {
 	sessionId := c.Param("sessionId")

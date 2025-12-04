@@ -52,7 +52,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get a list of all available webhook event types organized by category",
@@ -67,7 +67,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/EventsResponse"
+                            "$ref": "#/definitions/internal_integrations_webhook.EventsResponse"
                         }
                     }
                 }
@@ -77,7 +77,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get a list of all WhatsApp sessions",
@@ -97,14 +97,14 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/SessionResponse"
+                                "$ref": "#/definitions/zpwoot_internal_api_dto.SessionResponse"
                             }
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -112,7 +112,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Create a new WhatsApp session with the given name",
@@ -133,7 +133,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateSessionRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.CreateSessionRequest"
                         }
                     }
                 ],
@@ -141,25 +141,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/SessionResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SessionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -169,7 +169,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get list of all media files for a session",
@@ -207,7 +207,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/MediaResponse"
+                                "$ref": "#/definitions/zpwoot_internal_api_dto.MediaResponse"
                             }
                         }
                     }
@@ -218,7 +218,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get list of media files pending download",
@@ -250,7 +250,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/MediaResponse"
+                                "$ref": "#/definitions/zpwoot_internal_api_dto.MediaResponse"
                             }
                         }
                     }
@@ -261,7 +261,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Download pending media from WhatsApp and upload to storage",
@@ -298,7 +298,7 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -308,7 +308,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get information about a WhatsApp session",
@@ -335,19 +335,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SessionResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SessionResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -355,7 +355,7 @@ const docTemplate = `{
             "delete": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Delete an existing WhatsApp session",
@@ -382,19 +382,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MessageResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.MessageResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -404,7 +404,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Reject an incoming WhatsApp call",
@@ -432,7 +432,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/RejectCallRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.RejectCallRequest"
                         }
                     }
                 ],
@@ -446,13 +446,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -462,7 +462,7 @@ const docTemplate = `{
             "patch": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Archive or unarchive a WhatsApp chat",
@@ -490,7 +490,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ArchiveChatRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ArchiveChatRequest"
                         }
                     }
                 ],
@@ -498,25 +498,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ChatActionResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ChatActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -526,7 +526,7 @@ const docTemplate = `{
             "delete": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Delete a message from a chat",
@@ -554,7 +554,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/DeleteMessageRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.DeleteMessageRequest"
                         }
                     }
                 ],
@@ -562,25 +562,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -588,7 +588,7 @@ const docTemplate = `{
             "patch": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Edit a previously sent message",
@@ -616,7 +616,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/EditMessageRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.EditMessageRequest"
                         }
                     }
                 ],
@@ -624,25 +624,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -652,7 +652,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Request WhatsApp to resend an unavailable message from phone storage",
@@ -693,7 +693,7 @@ const docTemplate = `{
                         "name": "body",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/RequestUnavailableMessageRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.RequestUnavailableMessageRequest"
                         }
                     }
                 ],
@@ -701,19 +701,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MessageResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -723,7 +723,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Set typing or recording presence in a chat",
@@ -758,7 +758,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ChatPresenceRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ChatPresenceRequest"
                         }
                     }
                 ],
@@ -766,25 +766,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ChatPresenceResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ChatPresenceResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -794,7 +794,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Mark messages as read in a chat",
@@ -829,7 +829,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/MarkReadRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.MarkReadRequest"
                         }
                     }
                 ],
@@ -843,19 +843,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -865,7 +865,7 @@ const docTemplate = `{
             "patch": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Set the disappearing messages timer for a chat",
@@ -893,7 +893,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/DisappearingRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.DisappearingRequest"
                         }
                     }
                 ],
@@ -907,13 +907,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -923,7 +923,7 @@ const docTemplate = `{
             "delete": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Remove Chatwoot integration configuration for a session",
@@ -965,7 +965,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get Chatwoot integration configuration for a session",
@@ -989,7 +989,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/Config"
+                            "$ref": "#/definitions/zpwoot_internal_integrations_chatwoot_core.Config"
                         }
                     },
                     "404": {
@@ -1006,7 +1006,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Delete all Chatwoot contacts, conversations and messages (except bot)",
@@ -1041,7 +1041,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Configure Chatwoot integration for a session",
@@ -1069,7 +1069,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SetConfigRequest"
+                            "$ref": "#/definitions/internal_integrations_chatwoot_handler.SetConfigRequest"
                         }
                     }
                 ],
@@ -1077,7 +1077,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/Config"
+                            "$ref": "#/definitions/zpwoot_internal_integrations_chatwoot_core.Config"
                         }
                     },
                     "400": {
@@ -1101,10 +1101,10 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
-                "description": "Start async synchronization of all contacts and messages to Chatwoot",
+                "description": "Start async synchronization of all contacts and messages to Chatwoot. By default imports ALL messages. Use ?days=N to limit.",
                 "produces": [
                     "application/json"
                 ],
@@ -1122,7 +1122,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "Limit to last N days",
+                        "description": "Limit to last N days (default: 0 = all messages)",
                         "name": "days",
                         "in": "query"
                     }
@@ -1131,7 +1131,7 @@ const docTemplate = `{
                     "202": {
                         "description": "Accepted",
                         "schema": {
-                            "$ref": "#/definitions/SyncStatus"
+                            "$ref": "#/definitions/zpwoot_internal_integrations_chatwoot_core.SyncStatus"
                         }
                     },
                     "400": {
@@ -1155,7 +1155,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Start async synchronization of contacts from message history to Chatwoot",
@@ -1179,7 +1179,7 @@ const docTemplate = `{
                     "202": {
                         "description": "Accepted",
                         "schema": {
-                            "$ref": "#/definitions/SyncStatus"
+                            "$ref": "#/definitions/zpwoot_internal_integrations_chatwoot_core.SyncStatus"
                         }
                     },
                     "400": {
@@ -1203,10 +1203,10 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
-                "description": "Start async synchronization of message history to Chatwoot",
+                "description": "Start async synchronization of message history to Chatwoot. By default imports ALL messages. Use ?days=N to limit.",
                 "produces": [
                     "application/json"
                 ],
@@ -1224,7 +1224,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "Limit to last N days",
+                        "description": "Limit to last N days (default: 0 = all messages)",
                         "name": "days",
                         "in": "query"
                     }
@@ -1233,7 +1233,7 @@ const docTemplate = `{
                     "202": {
                         "description": "Accepted",
                         "schema": {
-                            "$ref": "#/definitions/SyncStatus"
+                            "$ref": "#/definitions/zpwoot_internal_integrations_chatwoot_core.SyncStatus"
                         }
                     },
                     "400": {
@@ -1257,7 +1257,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get the current sync status for a session",
@@ -1281,7 +1281,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SyncStatus"
+                            "$ref": "#/definitions/zpwoot_internal_integrations_chatwoot_core.SyncStatus"
                         }
                     },
                     "404": {
@@ -1298,7 +1298,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get list of subgroups in a community",
@@ -1329,13 +1329,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/CommunityResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.CommunityResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -1343,7 +1343,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Link a group to a community as a subgroup",
@@ -1371,7 +1371,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/LinkGroupRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.LinkGroupRequest"
                         }
                     }
                 ],
@@ -1385,13 +1385,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -1401,7 +1401,7 @@ const docTemplate = `{
             "delete": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Unlink a group from a community",
@@ -1429,7 +1429,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/LinkGroupRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.LinkGroupRequest"
                         }
                     }
                 ],
@@ -1443,13 +1443,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -1459,7 +1459,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Connect a WhatsApp session. If not authenticated, returns QR code endpoint",
@@ -1486,19 +1486,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MessageResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.MessageResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -1508,7 +1508,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get all contacts from WhatsApp",
@@ -1544,13 +1544,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -1560,7 +1560,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get list of blocked contacts",
@@ -1584,13 +1584,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/BlocklistResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.BlocklistResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -1598,7 +1598,7 @@ const docTemplate = `{
             "put": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Block or unblock a contact",
@@ -1626,7 +1626,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/BlocklistRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.BlocklistRequest"
                         }
                     }
                 ],
@@ -1634,19 +1634,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/BlocklistActionResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.BlocklistActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -1656,7 +1656,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Check if phone numbers are registered on WhatsApp",
@@ -1684,7 +1684,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CheckPhoneRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.CheckPhoneRequest"
                         }
                     }
                 ],
@@ -1694,26 +1694,26 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/CheckPhoneResult"
+                                "$ref": "#/definitions/zpwoot_internal_api_dto.CheckPhoneResult"
                             }
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -1723,7 +1723,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get information about WhatsApp contacts",
@@ -1751,7 +1751,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ContactInfoRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ContactInfoRequest"
                         }
                     }
                 ],
@@ -1759,25 +1759,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ContactInfoResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ContactInfoResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -1787,7 +1787,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get profile picture URL for a contact",
@@ -1821,19 +1821,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/AvatarResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.AvatarResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -1843,7 +1843,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get business profile of a contact",
@@ -1874,13 +1874,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/BusinessProfileResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.BusinessProfileResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -1890,7 +1890,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get the Linked ID (LID) for a contact",
@@ -1921,19 +1921,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/LIDResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.LIDResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -1943,7 +1943,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Subscribe to receive presence updates from a contact",
@@ -1971,7 +1971,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SubscribePresenceRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SubscribePresenceRequest"
                         }
                     }
                 ],
@@ -1985,13 +1985,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -2001,7 +2001,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Disconnect from WhatsApp but keep credentials (can auto-reconnect)",
@@ -2028,25 +2028,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MessageResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.MessageResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -2056,7 +2056,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get list of groups the session is part of",
@@ -2083,19 +2083,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupActionResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -2103,7 +2103,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Create a new WhatsApp group with participants",
@@ -2131,7 +2131,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateGroupRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.CreateGroupRequest"
                         }
                     }
                 ],
@@ -2139,25 +2139,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -2167,7 +2167,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get group information using an invite link",
@@ -2198,19 +2198,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -2220,7 +2220,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Join a WhatsApp group using an invite link",
@@ -2248,7 +2248,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/JoinGroupRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.JoinGroupRequest"
                         }
                     }
                 ],
@@ -2256,25 +2256,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -2284,7 +2284,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get information about a WhatsApp group",
@@ -2318,25 +2318,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -2346,7 +2346,7 @@ const docTemplate = `{
             "patch": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Update the description/topic of a WhatsApp group",
@@ -2374,7 +2374,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupUpdateRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupUpdateRequest"
                         }
                     }
                 ],
@@ -2382,25 +2382,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -2410,7 +2410,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get the invite link for a WhatsApp group",
@@ -2450,19 +2450,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupInviteLinkResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupInviteLinkResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -2472,7 +2472,7 @@ const docTemplate = `{
             "delete": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Leave a WhatsApp group",
@@ -2506,19 +2506,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupActionResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -2528,7 +2528,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Send a text message to a WhatsApp group",
@@ -2556,7 +2556,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendGroupMessageRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendGroupMessageRequest"
                         }
                     }
                 ],
@@ -2564,25 +2564,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -2592,7 +2592,7 @@ const docTemplate = `{
             "patch": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Update the name of a WhatsApp group",
@@ -2620,7 +2620,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupUpdateRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupUpdateRequest"
                         }
                     }
                 ],
@@ -2628,25 +2628,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -2656,7 +2656,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Add participants to a WhatsApp group",
@@ -2684,7 +2684,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupParticipantsRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupParticipantsRequest"
                         }
                     }
                 ],
@@ -2692,25 +2692,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -2718,7 +2718,7 @@ const docTemplate = `{
             "delete": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Remove participants from a WhatsApp group",
@@ -2746,7 +2746,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupParticipantsRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupParticipantsRequest"
                         }
                     }
                 ],
@@ -2754,25 +2754,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -2782,7 +2782,7 @@ const docTemplate = `{
             "patch": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Demote participants from admin in a WhatsApp group",
@@ -2810,7 +2810,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupParticipantsRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupParticipantsRequest"
                         }
                     }
                 ],
@@ -2818,25 +2818,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -2846,7 +2846,7 @@ const docTemplate = `{
             "patch": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Promote participants to admin in a WhatsApp group",
@@ -2874,7 +2874,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupParticipantsRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupParticipantsRequest"
                         }
                     }
                 ],
@@ -2882,25 +2882,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -2910,12 +2910,13 @@ const docTemplate = `{
             "put": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
-                "description": "Set the group profile picture",
+                "description": "Set the group profile picture (supports JSON with base64/URL or multipart/form-data)",
                 "consumes": [
-                    "application/json"
+                    "application/json",
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -2933,32 +2934,43 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Picture data",
+                        "description": "Picture data (JSON)",
                         "name": "body",
                         "in": "body",
-                        "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupPictureRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupPictureRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID (form-data)",
+                        "name": "groupId",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Image file (form-data)",
+                        "name": "file",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SetPictureResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SetPictureResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -2966,7 +2978,7 @@ const docTemplate = `{
             "delete": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Remove the group profile picture",
@@ -2997,19 +3009,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MessageOnlyResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.MessageOnlyResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -3019,7 +3031,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get list of pending join requests for a group",
@@ -3050,13 +3062,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupRequestParticipantsResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupRequestParticipantsResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -3064,7 +3076,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Approve or reject pending join requests",
@@ -3099,7 +3111,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupRequestActionBodyRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupRequestActionBodyRequest"
                         }
                     }
                 ],
@@ -3107,19 +3119,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GroupActionResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupActionResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -3129,7 +3141,7 @@ const docTemplate = `{
             "patch": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Set whether only admins can send messages",
@@ -3157,7 +3169,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupAnnounceRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupAnnounceRequest"
                         }
                     }
                 ],
@@ -3171,13 +3183,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -3187,7 +3199,7 @@ const docTemplate = `{
             "patch": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Set whether join requests need admin approval",
@@ -3215,7 +3227,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupApprovalRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupApprovalRequest"
                         }
                     }
                 ],
@@ -3229,13 +3241,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -3245,7 +3257,7 @@ const docTemplate = `{
             "patch": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Set whether only admins can edit group info",
@@ -3273,7 +3285,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupLockedRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupLockedRequest"
                         }
                     }
                 ],
@@ -3287,13 +3299,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -3303,7 +3315,7 @@ const docTemplate = `{
             "patch": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Set whether only admins or all members can add participants",
@@ -3331,7 +3343,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/GroupMemberAddModeRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.GroupMemberAddModeRequest"
                         }
                     }
                 ],
@@ -3345,13 +3357,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -3361,7 +3373,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get list of chats with unread messages from history sync data",
@@ -3387,20 +3399,20 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/ChatResponse"
+                                "$ref": "#/definitions/zpwoot_internal_api_dto.ChatResponse"
                             }
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -3410,7 +3422,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get detailed chat information from history sync data",
@@ -3441,19 +3453,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ChatResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ChatResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -3463,7 +3475,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get past participants of a group from history sync data",
@@ -3496,20 +3508,20 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/PastParticipantResponse"
+                                "$ref": "#/definitions/zpwoot_internal_api_dto.PastParticipantResponse"
                             }
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -3519,7 +3531,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get the current progress of history sync operations",
@@ -3545,20 +3557,20 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/SyncProgressResponse"
+                                "$ref": "#/definitions/zpwoot_internal_api_dto.SyncProgressResponse"
                             }
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -3568,7 +3580,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get most used stickers from history sync data",
@@ -3601,20 +3613,20 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/StickerResponse"
+                                "$ref": "#/definitions/zpwoot_internal_api_dto.StickerResponse"
                             }
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -3624,7 +3636,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Request WhatsApp to send history sync data from the phone",
@@ -3651,7 +3663,7 @@ const docTemplate = `{
                         "name": "request",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/HistorySyncRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.HistorySyncRequest"
                         }
                     }
                 ],
@@ -3659,25 +3671,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MessageResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -3687,7 +3699,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Logout from WhatsApp and clear credentials (requires new QR scan to reconnect)",
@@ -3714,25 +3726,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MessageResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.MessageResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -3742,7 +3754,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get media information for a specific message",
@@ -3773,13 +3785,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MediaResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.MediaResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -3789,12 +3801,13 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
-                "description": "Send an audio to a phone number (base64 encoded)",
+                "description": "Send an audio to a phone number (supports JSON with base64/URL or multipart/form-data)",
                 "consumes": [
-                    "application/json"
+                    "application/json",
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -3812,38 +3825,55 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Audio data",
+                        "description": "Audio data (JSON)",
                         "name": "body",
                         "in": "body",
-                        "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendAudioRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendAudioRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Phone number (form-data)",
+                        "name": "phone",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Push to talk (form-data)",
+                        "name": "ptt",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Audio file (form-data)",
+                        "name": "file",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -3853,7 +3883,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Send a message with buttons (max 3 buttons)",
@@ -3881,7 +3911,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendButtonsRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendButtonsRequest"
                         }
                     }
                 ],
@@ -3889,25 +3919,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -3917,7 +3947,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Send an interactive carousel message with multiple cards, each with image/video and buttons",
@@ -3945,7 +3975,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendCarouselRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendCarouselRequest"
                         }
                     }
                 ],
@@ -3953,25 +3983,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -3981,7 +4011,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Send a contact card to a phone number",
@@ -4009,7 +4039,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendContactRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendContactRequest"
                         }
                     }
                 ],
@@ -4017,25 +4047,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -4045,12 +4075,13 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
-                "description": "Send a document to a phone number (base64 encoded)",
+                "description": "Send a document to a phone number (supports JSON with base64/URL or multipart/form-data)",
                 "consumes": [
-                    "application/json"
+                    "application/json",
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -4068,38 +4099,55 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Document data",
+                        "description": "Document data (JSON)",
                         "name": "body",
                         "in": "body",
-                        "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendDocumentRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendDocumentRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Phone number (form-data)",
+                        "name": "phone",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filename (form-data)",
+                        "name": "filename",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Document file (form-data)",
+                        "name": "file",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -4109,12 +4157,13 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
-                "description": "Send an image to a phone number (base64 encoded)",
+                "description": "Send an image to a phone number (supports JSON with base64/URL or multipart/form-data)",
                 "consumes": [
-                    "application/json"
+                    "application/json",
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -4132,38 +4181,55 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Image data",
+                        "description": "Image data (JSON)",
                         "name": "body",
                         "in": "body",
-                        "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendImageRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendImageRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Phone number (form-data)",
+                        "name": "phone",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Caption (form-data)",
+                        "name": "caption",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Image file (form-data)",
+                        "name": "file",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -4173,10 +4239,10 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
-                "description": "Send an interactive message with buttons (quick_reply, cta_url, cta_call, cta_copy)",
+                "description": "Send an interactive message with buttons (quick_reply, cta_url, cta_call, cta_copy). Supports optional image/video header.",
                 "consumes": [
                     "application/json"
                 ],
@@ -4201,7 +4267,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendInteractiveRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendInteractiveRequest"
                         }
                     }
                 ],
@@ -4209,25 +4275,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -4237,7 +4303,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Send a message with a selectable list",
@@ -4265,7 +4331,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendListRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendListRequest"
                         }
                     }
                 ],
@@ -4273,25 +4339,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -4301,7 +4367,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Send a location to a phone number",
@@ -4329,7 +4395,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendLocationRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendLocationRequest"
                         }
                     }
                 ],
@@ -4337,25 +4403,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -4365,7 +4431,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Send a poll to a phone number",
@@ -4393,7 +4459,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendPollRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendPollRequest"
                         }
                     }
                 ],
@@ -4401,25 +4467,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -4429,7 +4495,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Vote for options in an existing poll",
@@ -4457,7 +4523,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendPollVoteRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendPollVoteRequest"
                         }
                     }
                 ],
@@ -4465,25 +4531,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -4493,7 +4559,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Send a reaction emoji to a message",
@@ -4521,7 +4587,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendReactionRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendReactionRequest"
                         }
                     }
                 ],
@@ -4529,25 +4595,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -4557,12 +4623,13 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
-                "description": "Send a sticker to a phone number (base64 encoded webp)",
+                "description": "Send a sticker to a phone number (supports JSON with base64/URL or multipart/form-data)",
                 "consumes": [
-                    "application/json"
+                    "application/json",
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -4580,38 +4647,49 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Sticker data",
+                        "description": "Sticker data (JSON)",
                         "name": "body",
                         "in": "body",
-                        "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendStickerRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendStickerRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Phone number (form-data)",
+                        "name": "phone",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Sticker file (form-data)",
+                        "name": "file",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -4621,7 +4699,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Send a message with template buttons (URL, Call, QuickReply). Works on Web and Mobile.",
@@ -4649,7 +4727,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendTemplateRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendTemplateRequest"
                         }
                     }
                 ],
@@ -4657,25 +4735,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -4685,7 +4763,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Send a text message to a phone number",
@@ -4713,7 +4791,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendTextRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendTextRequest"
                         }
                     }
                 ],
@@ -4721,25 +4799,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -4749,12 +4827,13 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
-                "description": "Send a video to a phone number (base64 encoded)",
+                "description": "Send a video to a phone number (supports JSON with base64/URL or multipart/form-data)",
                 "consumes": [
-                    "application/json"
+                    "application/json",
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -4772,38 +4851,55 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Video data",
+                        "description": "Video data (JSON)",
                         "name": "body",
                         "in": "body",
-                        "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendVideoRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendVideoRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Phone number (form-data)",
+                        "name": "phone",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Caption (form-data)",
+                        "name": "caption",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Video file (form-data)",
+                        "name": "file",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -4813,7 +4909,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get list of newsletters the session is subscribed to",
@@ -4846,7 +4942,7 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -4854,7 +4950,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Create a new WhatsApp newsletter/channel",
@@ -4882,7 +4978,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/CreateNewsletterRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.CreateNewsletterRequest"
                         }
                     }
                 ],
@@ -4890,19 +4986,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/NewsletterResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.NewsletterResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -4912,7 +5008,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get information about a WhatsApp newsletter",
@@ -4943,13 +5039,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/NewsletterResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.NewsletterResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -4959,7 +5055,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Follow/subscribe to a WhatsApp newsletter",
@@ -4987,7 +5083,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/NewsletterActionRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.NewsletterActionRequest"
                         }
                     }
                 ],
@@ -5001,13 +5097,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -5015,7 +5111,7 @@ const docTemplate = `{
             "delete": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Unfollow/unsubscribe from a WhatsApp newsletter",
@@ -5043,7 +5139,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/NewsletterActionRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.NewsletterActionRequest"
                         }
                     }
                 ],
@@ -5057,13 +5153,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -5073,7 +5169,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get messages from a WhatsApp newsletter",
@@ -5117,13 +5213,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/NewsletterResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.NewsletterResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -5133,7 +5229,7 @@ const docTemplate = `{
             "patch": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Toggle mute status of a newsletter",
@@ -5161,7 +5257,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/NewsletterMuteRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.NewsletterMuteRequest"
                         }
                     }
                 ],
@@ -5175,13 +5271,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -5191,7 +5287,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Send a reaction to a newsletter message",
@@ -5219,7 +5315,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/NewsletterReactionRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.NewsletterReactionRequest"
                         }
                     }
                 ],
@@ -5233,13 +5329,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -5249,7 +5345,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Subscribe to receive live updates from a newsletter",
@@ -5280,13 +5376,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/NewsletterLiveResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.NewsletterLiveResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -5296,7 +5392,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Mark newsletter messages as viewed",
@@ -5331,7 +5427,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/NewsletterMarkViewedRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.NewsletterMarkViewedRequest"
                         }
                     }
                 ],
@@ -5345,13 +5441,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -5361,7 +5457,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Pair WhatsApp session using phone number instead of QR code",
@@ -5389,7 +5485,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/PairPhoneRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.PairPhoneRequest"
                         }
                     }
                 ],
@@ -5397,19 +5493,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/PairPhoneResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.PairPhoneResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -5419,7 +5515,7 @@ const docTemplate = `{
             "put": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Set online/offline presence status",
@@ -5447,7 +5543,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SetPresenceRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SetPresenceRequest"
                         }
                     }
                 ],
@@ -5455,25 +5551,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/PresenceResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.PresenceResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -5483,7 +5579,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Subscribe to receive presence updates from a contact",
@@ -5518,7 +5614,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SubscribePresenceRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SubscribePresenceRequest"
                         }
                     }
                 ],
@@ -5532,13 +5628,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -5548,7 +5644,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get own WhatsApp profile information",
@@ -5575,19 +5671,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/ProfileInfoResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ProfileInfoResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -5597,7 +5693,7 @@ const docTemplate = `{
             "patch": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Set the default disappearing messages timer for new chats",
@@ -5625,7 +5721,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/DefaultDisappearingRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.DefaultDisappearingRequest"
                         }
                     }
                 ],
@@ -5639,13 +5735,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -5655,7 +5751,7 @@ const docTemplate = `{
             "patch": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Set WhatsApp display name (push name)",
@@ -5683,7 +5779,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SetPushNameRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SetPushNameRequest"
                         }
                     }
                 ],
@@ -5691,25 +5787,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SetNameResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SetNameResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -5719,12 +5815,13 @@ const docTemplate = `{
             "put": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
-                "description": "Set WhatsApp profile picture",
+                "description": "Set WhatsApp profile picture (supports JSON with base64/URL or multipart/form-data)",
                 "consumes": [
-                    "application/json"
+                    "application/json",
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -5742,38 +5839,43 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Image data",
+                        "description": "Image data (JSON)",
                         "name": "body",
                         "in": "body",
-                        "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SetProfilePictureRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SetProfilePictureRequest"
                         }
+                    },
+                    {
+                        "type": "file",
+                        "description": "Image file (form-data)",
+                        "name": "file",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SetPictureResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SetPictureResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -5781,7 +5883,7 @@ const docTemplate = `{
             "delete": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Remove WhatsApp profile picture",
@@ -5814,13 +5916,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -5830,7 +5932,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get WhatsApp privacy settings",
@@ -5857,19 +5959,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/PrivacySettingsResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.PrivacySettingsResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -5877,7 +5979,7 @@ const docTemplate = `{
             "put": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Set WhatsApp privacy settings",
@@ -5905,7 +6007,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SetPrivacyRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SetPrivacyRequest"
                         }
                     }
                 ],
@@ -5919,19 +6021,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -5941,7 +6043,7 @@ const docTemplate = `{
             "patch": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Set WhatsApp status/about message",
@@ -5969,7 +6071,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SetStatusRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SetStatusRequest"
                         }
                     }
                 ],
@@ -5977,25 +6079,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SetStatusResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SetStatusResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -6005,7 +6107,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get QR code for WhatsApp authentication",
@@ -6039,19 +6141,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/QRResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.QRResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -6061,7 +6163,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get QR link for adding contact",
@@ -6091,13 +6193,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/QRLinkResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.QRLinkResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -6107,7 +6209,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Disconnect and reconnect a WhatsApp session",
@@ -6134,19 +6236,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MessageResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.MessageResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -6156,12 +6258,13 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
-                "description": "Post a text or media story (status update visible to contacts)",
+                "description": "Post a text or media story (status update visible to contacts). Supports JSON with base64/URL or multipart/form-data.",
                 "consumes": [
-                    "application/json"
+                    "application/json",
+                    "multipart/form-data"
                 ],
                 "produces": [
                     "application/json"
@@ -6179,32 +6282,43 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Story data",
+                        "description": "Story data (JSON)",
                         "name": "body",
                         "in": "body",
-                        "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SendStatusRequest"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendStatusRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "Text content (form-data)",
+                        "name": "text",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "file",
+                        "description": "Image file (form-data)",
+                        "name": "file",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/SendResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.SendResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -6214,7 +6328,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get who can see your status updates",
@@ -6238,13 +6352,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/StatusPrivacyResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.StatusPrivacyResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/zpwoot_internal_api_dto.ErrorResponse"
                         }
                     }
                 }
@@ -6254,7 +6368,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Get the webhook configuration for a session",
@@ -6278,13 +6392,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GetWebhookResponse"
+                            "$ref": "#/definitions/internal_integrations_webhook.GetWebhookResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_integrations_webhook.ErrorResponse"
                         }
                     }
                 }
@@ -6292,7 +6406,7 @@ const docTemplate = `{
             "put": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Update an existing webhook configuration for a session",
@@ -6320,7 +6434,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SetWebhookRequest"
+                            "$ref": "#/definitions/internal_integrations_webhook.SetWebhookRequest"
                         }
                     }
                 ],
@@ -6328,19 +6442,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GetWebhookResponse"
+                            "$ref": "#/definitions/internal_integrations_webhook.GetWebhookResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_integrations_webhook.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_integrations_webhook.ErrorResponse"
                         }
                     }
                 }
@@ -6348,7 +6462,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Set or update the webhook configuration for a session (one webhook per session)",
@@ -6376,7 +6490,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/SetWebhookRequest"
+                            "$ref": "#/definitions/internal_integrations_webhook.SetWebhookRequest"
                         }
                     }
                 ],
@@ -6384,19 +6498,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/GetWebhookResponse"
+                            "$ref": "#/definitions/internal_integrations_webhook.GetWebhookResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_integrations_webhook.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_integrations_webhook.ErrorResponse"
                         }
                     }
                 }
@@ -6404,7 +6518,7 @@ const docTemplate = `{
             "delete": {
                 "security": [
                     {
-                        "ApiKeyAuth": []
+                        "Authorization": []
                     }
                 ],
                 "description": "Delete the webhook configuration for a session",
@@ -6428,13 +6542,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/MessageResponse"
+                            "$ref": "#/definitions/internal_integrations_webhook.MessageResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
+                            "$ref": "#/definitions/internal_integrations_webhook.ErrorResponse"
                         }
                     }
                 }
@@ -6442,7 +6556,164 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "ArchiveChatRequest": {
+        "internal_integrations_chatwoot_handler.SetConfigRequest": {
+            "type": "object",
+            "properties": {
+                "account": {
+                    "type": "integer"
+                },
+                "autoCreate": {
+                    "type": "boolean"
+                },
+                "autoReopen": {
+                    "description": "AutoReopen configures Chatwoot inbox settings for conversation management.\nWhen true: sets lock_to_single_conversation=true and allow_messages_after_resolved=true\nThis means Chatwoot will automatically reopen resolved conversations when new messages arrive.\nWhen false: creates new conversations for each interaction (default Chatwoot behavior).",
+                    "type": "boolean"
+                },
+                "chatwootDbHost": {
+                    "type": "string"
+                },
+                "chatwootDbName": {
+                    "type": "string"
+                },
+                "chatwootDbPass": {
+                    "type": "string"
+                },
+                "chatwootDbPort": {
+                    "type": "integer"
+                },
+                "chatwootDbUser": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "ignoreChats": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "inbox": {
+                    "type": "string"
+                },
+                "logo": {
+                    "type": "string"
+                },
+                "mergeBrPhones": {
+                    "type": "boolean"
+                },
+                "number": {
+                    "type": "string"
+                },
+                "organization": {
+                    "type": "string"
+                },
+                "signAgent": {
+                    "type": "boolean"
+                },
+                "signSeparator": {
+                    "type": "string"
+                },
+                "startPending": {
+                    "type": "boolean"
+                },
+                "syncContacts": {
+                    "type": "boolean"
+                },
+                "syncDays": {
+                    "type": "integer"
+                },
+                "syncMessages": {
+                    "type": "boolean"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_integrations_webhook.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_integrations_webhook.EventsResponse": {
+            "type": "object",
+            "properties": {
+                "all": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "categories": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "internal_integrations_webhook.GetWebhookResponse": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "sessionId": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_integrations_webhook.MessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_integrations_webhook.SetWebhookRequest": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "secret": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.ArchiveChatRequest": {
             "type": "object",
             "required": [
                 "phone"
@@ -6458,7 +6729,7 @@ const docTemplate = `{
                 }
             }
         },
-        "AvatarResponse": {
+        "zpwoot_internal_api_dto.AvatarResponse": {
             "type": "object",
             "properties": {
                 "id": {
@@ -6471,7 +6742,7 @@ const docTemplate = `{
                 }
             }
         },
-        "BlocklistActionResponse": {
+        "zpwoot_internal_api_dto.BlocklistActionResponse": {
             "type": "object",
             "properties": {
                 "action": {
@@ -6484,7 +6755,7 @@ const docTemplate = `{
                 }
             }
         },
-        "BlocklistRequest": {
+        "zpwoot_internal_api_dto.BlocklistRequest": {
             "type": "object",
             "required": [
                 "action",
@@ -6502,7 +6773,7 @@ const docTemplate = `{
                 }
             }
         },
-        "BlocklistResponse": {
+        "zpwoot_internal_api_dto.BlocklistResponse": {
             "type": "object",
             "properties": {
                 "jids": {
@@ -6513,13 +6784,13 @@ const docTemplate = `{
                 }
             }
         },
-        "BusinessProfileResponse": {
+        "zpwoot_internal_api_dto.BusinessProfileResponse": {
             "type": "object",
             "properties": {
                 "profile": {}
             }
         },
-        "ButtonDTO": {
+        "zpwoot_internal_api_dto.ButtonDTO": {
             "type": "object",
             "required": [
                 "buttonId",
@@ -6536,7 +6807,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CarouselCardDTO": {
+        "zpwoot_internal_api_dto.CarouselCardDTO": {
             "type": "object",
             "required": [
                 "body",
@@ -6552,7 +6823,7 @@ const docTemplate = `{
                     "type": "array",
                     "minItems": 1,
                     "items": {
-                        "$ref": "#/definitions/NativeFlowButtonDTO"
+                        "$ref": "#/definitions/zpwoot_internal_api_dto.NativeFlowButtonDTO"
                     }
                 },
                 "footer": {
@@ -6560,16 +6831,16 @@ const docTemplate = `{
                     "example": "Only $9.99"
                 },
                 "header": {
-                    "$ref": "#/definitions/CarouselCardHeaderDTO"
+                    "$ref": "#/definitions/zpwoot_internal_api_dto.CarouselCardHeaderDTO"
                 }
             }
         },
-        "CarouselCardHeaderDTO": {
+        "zpwoot_internal_api_dto.CarouselCardHeaderDTO": {
             "type": "object",
             "properties": {
                 "image": {
                     "type": "string",
-                    "example": "base64_encoded_image"
+                    "example": "base64_encoded_image_or_url"
                 },
                 "mimetype": {
                     "type": "string",
@@ -6581,11 +6852,11 @@ const docTemplate = `{
                 },
                 "video": {
                     "type": "string",
-                    "example": "base64_encoded_video"
+                    "example": "base64_encoded_video_or_url"
                 }
             }
         },
-        "ChatActionResponse": {
+        "zpwoot_internal_api_dto.ChatActionResponse": {
             "type": "object",
             "properties": {
                 "status": {
@@ -6594,7 +6865,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ChatPresenceRequest": {
+        "zpwoot_internal_api_dto.ChatPresenceRequest": {
             "type": "object",
             "required": [
                 "phone",
@@ -6615,7 +6886,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ChatPresenceResponse": {
+        "zpwoot_internal_api_dto.ChatPresenceResponse": {
             "type": "object",
             "properties": {
                 "state": {
@@ -6624,7 +6895,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ChatResponse": {
+        "zpwoot_internal_api_dto.ChatResponse": {
             "type": "object",
             "properties": {
                 "conversationTimestamp": {
@@ -6665,7 +6936,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CheckPhoneRequest": {
+        "zpwoot_internal_api_dto.CheckPhoneRequest": {
             "type": "object",
             "required": [
                 "phones"
@@ -6683,7 +6954,7 @@ const docTemplate = `{
                 }
             }
         },
-        "CheckPhoneResult": {
+        "zpwoot_internal_api_dto.CheckPhoneResult": {
             "type": "object",
             "properties": {
                 "isRegistered": {
@@ -6700,13 +6971,1607 @@ const docTemplate = `{
                 }
             }
         },
-        "CommunityResponse": {
+        "zpwoot_internal_api_dto.CommunityResponse": {
             "type": "object",
             "properties": {
                 "groups": {}
             }
         },
-        "Config": {
+        "zpwoot_internal_api_dto.ContactInfoRequest": {
+            "type": "object",
+            "required": [
+                "phones"
+            ],
+            "properties": {
+                "phones": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.ContactInfoResponse": {
+            "type": "object",
+            "properties": {
+                "users": {
+                    "type": "object",
+                    "additionalProperties": true
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.CreateGroupRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "participants"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "My Group"
+                },
+                "participants": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.CreateNewsletterRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Channel description"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "My Channel"
+                },
+                "picture": {
+                    "type": "string",
+                    "example": "base64_encoded_image"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.CreateSessionRequest": {
+            "type": "object",
+            "required": [
+                "session"
+            ],
+            "properties": {
+                "apiKey": {
+                    "description": "Optional API key for session-level authentication. If not provided, one will be generated automatically.",
+                    "type": "string",
+                    "example": "my-custom-api-key"
+                },
+                "session": {
+                    "description": "Session name/identifier (unique)",
+                    "type": "string",
+                    "example": "my-session"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.DefaultDisappearingRequest": {
+            "type": "object",
+            "required": [
+                "timer"
+            ],
+            "properties": {
+                "timer": {
+                    "description": "24h, 7d, 90d, or off",
+                    "type": "string",
+                    "example": "24h"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.DeleteMessageRequest": {
+            "type": "object",
+            "required": [
+                "messageId",
+                "phone"
+            ],
+            "properties": {
+                "forMe": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "messageId": {
+                    "type": "string",
+                    "example": "ABCD1234"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.DisappearingRequest": {
+            "type": "object",
+            "required": [
+                "phone",
+                "timer"
+            ],
+            "properties": {
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "timer": {
+                    "description": "24h, 7d, 90d, or off",
+                    "type": "string",
+                    "example": "24h"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.EditMessageRequest": {
+            "type": "object",
+            "required": [
+                "messageId",
+                "newText",
+                "phone"
+            ],
+            "properties": {
+                "messageId": {
+                    "type": "string",
+                    "example": "ABCD1234"
+                },
+                "newText": {
+                    "type": "string",
+                    "example": "Edited message"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "session not found"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.GroupActionResponse": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "groupId": {
+                    "type": "string",
+                    "example": "123456789@g.us"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.GroupAnnounceRequest": {
+            "type": "object",
+            "required": [
+                "groupId"
+            ],
+            "properties": {
+                "announce": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "groupId": {
+                    "type": "string",
+                    "example": "123456789@g.us"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.GroupApprovalRequest": {
+            "type": "object",
+            "required": [
+                "groupId"
+            ],
+            "properties": {
+                "approvalMode": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "groupId": {
+                    "type": "string",
+                    "example": "123456789@g.us"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.GroupInviteLinkResponse": {
+            "type": "object",
+            "properties": {
+                "groupId": {
+                    "type": "string",
+                    "example": "123456789@g.us"
+                },
+                "link": {
+                    "type": "string",
+                    "example": "https://chat.whatsapp.com/..."
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.GroupLockedRequest": {
+            "type": "object",
+            "required": [
+                "groupId"
+            ],
+            "properties": {
+                "groupId": {
+                    "type": "string",
+                    "example": "123456789@g.us"
+                },
+                "locked": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.GroupMemberAddModeRequest": {
+            "type": "object",
+            "required": [
+                "groupId",
+                "mode"
+            ],
+            "properties": {
+                "groupId": {
+                    "type": "string",
+                    "example": "123456789@g.us"
+                },
+                "mode": {
+                    "description": "admin_add or all_member_add",
+                    "type": "string",
+                    "example": "admin_add"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.GroupParticipantsRequest": {
+            "type": "object",
+            "required": [
+                "groupId",
+                "participants"
+            ],
+            "properties": {
+                "groupId": {
+                    "type": "string"
+                },
+                "participants": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.GroupPictureRequest": {
+            "type": "object",
+            "required": [
+                "groupId",
+                "image"
+            ],
+            "properties": {
+                "groupId": {
+                    "type": "string",
+                    "example": "123456789@g.us"
+                },
+                "image": {
+                    "type": "string",
+                    "example": "base64_encoded_image"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.GroupRequestActionBodyRequest": {
+            "type": "object",
+            "required": [
+                "action",
+                "participants"
+            ],
+            "properties": {
+                "action": {
+                    "description": "approve or reject",
+                    "type": "string",
+                    "example": "approve"
+                },
+                "participants": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.GroupRequestParticipantsResponse": {
+            "type": "object",
+            "properties": {
+                "groupId": {
+                    "type": "string",
+                    "example": "123456789@g.us"
+                },
+                "participants": {}
+            }
+        },
+        "zpwoot_internal_api_dto.GroupUpdateRequest": {
+            "type": "object",
+            "required": [
+                "groupId",
+                "value"
+            ],
+            "properties": {
+                "groupId": {
+                    "type": "string",
+                    "example": "123456789@g.us"
+                },
+                "value": {
+                    "type": "string",
+                    "example": "New Name"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.HistorySyncRequest": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 100
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.JoinGroupRequest": {
+            "type": "object",
+            "required": [
+                "inviteLink"
+            ],
+            "properties": {
+                "inviteLink": {
+                    "type": "string"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.LIDResponse": {
+            "type": "object",
+            "properties": {
+                "lid": {
+                    "type": "string",
+                    "example": "123456789:0@lid"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.LinkGroupRequest": {
+            "type": "object",
+            "required": [
+                "childGroupId",
+                "parentGroupId"
+            ],
+            "properties": {
+                "childGroupId": {
+                    "type": "string",
+                    "example": "987654321@g.us"
+                },
+                "parentGroupId": {
+                    "type": "string",
+                    "example": "123456789@g.us"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.ListRowDTO": {
+            "type": "object",
+            "required": [
+                "rowId",
+                "title"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Description of option 1"
+                },
+                "rowId": {
+                    "type": "string",
+                    "example": "row1"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Option 1"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.ListSectionDTO": {
+            "type": "object",
+            "required": [
+                "rows",
+                "title"
+            ],
+            "properties": {
+                "rows": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/zpwoot_internal_api_dto.ListRowDTO"
+                    }
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Section 1"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.MarkReadRequest": {
+            "type": "object",
+            "required": [
+                "messageIds",
+                "phone"
+            ],
+            "properties": {
+                "messageIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.MediaResponse": {
+            "type": "object",
+            "properties": {
+                "caption": {
+                    "type": "string",
+                    "example": "Check this out!"
+                },
+                "chatJid": {
+                    "type": "string",
+                    "example": "5511999999999@s.whatsapp.net"
+                },
+                "createdAt": {
+                    "type": "string",
+                    "example": "2025-01-01T00:00:00Z"
+                },
+                "downloaded": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "duration": {
+                    "type": "integer",
+                    "example": 30
+                },
+                "fileName": {
+                    "type": "string",
+                    "example": "photo.jpg"
+                },
+                "fileSize": {
+                    "type": "integer",
+                    "example": 12345
+                },
+                "fromMe": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "height": {
+                    "type": "integer",
+                    "example": 1080
+                },
+                "id": {
+                    "type": "string",
+                    "example": "uuid"
+                },
+                "mediaType": {
+                    "type": "string",
+                    "example": "image"
+                },
+                "mimeType": {
+                    "type": "string",
+                    "example": "image/jpeg"
+                },
+                "msgId": {
+                    "type": "string",
+                    "example": "ABCD1234"
+                },
+                "sessionId": {
+                    "type": "string",
+                    "example": "uuid"
+                },
+                "storageUrl": {
+                    "type": "string",
+                    "example": "https://s3.example.com/media/photo.jpg"
+                },
+                "width": {
+                    "type": "integer",
+                    "example": 1920
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.MessageOnlyResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "operation completed"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.MessageResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "ABCD1234"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "operation completed"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "connected"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.NativeFlowButtonDTO": {
+            "type": "object",
+            "required": [
+                "name",
+                "params"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "quick_reply"
+                },
+                "params": {
+                    "type": "object",
+                    "additionalProperties": true
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.NewsletterActionRequest": {
+            "type": "object",
+            "required": [
+                "newsletterJid"
+            ],
+            "properties": {
+                "newsletterJid": {
+                    "type": "string",
+                    "example": "123456789@newsletter"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.NewsletterLiveResponse": {
+            "type": "object",
+            "properties": {
+                "duration": {
+                    "type": "string",
+                    "example": "24h0m0s"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.NewsletterMarkViewedRequest": {
+            "type": "object",
+            "required": [
+                "serverIds"
+            ],
+            "properties": {
+                "serverIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "example": [
+                        1,
+                        2,
+                        3
+                    ]
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.NewsletterMuteRequest": {
+            "type": "object",
+            "required": [
+                "newsletterJid"
+            ],
+            "properties": {
+                "mute": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "newsletterJid": {
+                    "type": "string",
+                    "example": "123456789@newsletter"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.NewsletterReactionRequest": {
+            "type": "object",
+            "required": [
+                "newsletterJid",
+                "reaction",
+                "serverId"
+            ],
+            "properties": {
+                "messageId": {
+                    "type": "string",
+                    "example": "ABCD1234"
+                },
+                "newsletterJid": {
+                    "type": "string",
+                    "example": "123456789@newsletter"
+                },
+                "reaction": {
+                    "type": "string",
+                    "example": "👍"
+                },
+                "serverId": {
+                    "type": "integer",
+                    "example": 123
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.NewsletterResponse": {
+            "type": "object",
+            "properties": {
+                "data": {}
+            }
+        },
+        "zpwoot_internal_api_dto.PairPhoneRequest": {
+            "type": "object",
+            "required": [
+                "phone"
+            ],
+            "properties": {
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.PairPhoneResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "ABCD-EFGH"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.PastParticipantResponse": {
+            "type": "object",
+            "properties": {
+                "leaveReason": {
+                    "type": "string",
+                    "example": "LEFT"
+                },
+                "leaveTimestamp": {
+                    "type": "string"
+                },
+                "userJid": {
+                    "type": "string",
+                    "example": "5511999999999@s.whatsapp.net"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.PresenceResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "example": "available"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.PrivacySettingsResponse": {
+            "type": "object",
+            "properties": {
+                "settings": {}
+            }
+        },
+        "zpwoot_internal_api_dto.ProfileInfoResponse": {
+            "type": "object",
+            "properties": {
+                "profile": {}
+            }
+        },
+        "zpwoot_internal_api_dto.QRLinkResponse": {
+            "type": "object",
+            "properties": {
+                "link": {
+                    "type": "string",
+                    "example": "https://wa.me/qr/..."
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.QRResponse": {
+            "type": "object",
+            "properties": {
+                "qr": {
+                    "type": "string",
+                    "example": "data:image/png;base64,..."
+                },
+                "status": {
+                    "type": "string",
+                    "example": "connecting"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.RejectCallRequest": {
+            "type": "object",
+            "required": [
+                "callFrom",
+                "callId"
+            ],
+            "properties": {
+                "callFrom": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "callId": {
+                    "type": "string",
+                    "example": "CALL123"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.RequestUnavailableMessageRequest": {
+            "type": "object",
+            "properties": {
+                "senderJid": {
+                    "type": "string",
+                    "example": "5511999999999@s.whatsapp.net"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SendAudioRequest": {
+            "type": "object",
+            "required": [
+                "audio",
+                "phone"
+            ],
+            "properties": {
+                "audio": {
+                    "type": "string",
+                    "example": "base64_encoded_audio"
+                },
+                "mimetype": {
+                    "type": "string",
+                    "example": "audio/ogg; codecs=opus"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "ptt": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SendButtonsRequest": {
+            "type": "object",
+            "required": [
+                "buttons",
+                "contentText",
+                "phone"
+            ],
+            "properties": {
+                "buttons": {
+                    "type": "array",
+                    "maxItems": 3,
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/zpwoot_internal_api_dto.ButtonDTO"
+                    }
+                },
+                "contentText": {
+                    "type": "string",
+                    "example": "Choose an option"
+                },
+                "footerText": {
+                    "type": "string",
+                    "example": "Footer text"
+                },
+                "headerText": {
+                    "type": "string",
+                    "example": "Header text"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SendCarouselRequest": {
+            "type": "object",
+            "required": [
+                "cards",
+                "phone"
+            ],
+            "properties": {
+                "body": {
+                    "type": "string",
+                    "example": "Browse our catalog"
+                },
+                "cards": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/zpwoot_internal_api_dto.CarouselCardDTO"
+                    }
+                },
+                "footer": {
+                    "type": "string",
+                    "example": "Powered by ZPWoot"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Check out our products!"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SendContactRequest": {
+            "type": "object",
+            "required": [
+                "contactName",
+                "contactPhone",
+                "phone"
+            ],
+            "properties": {
+                "contactName": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
+                "contactPhone": {
+                    "type": "string",
+                    "example": "5511888888888"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SendDocumentRequest": {
+            "type": "object",
+            "required": [
+                "document",
+                "filename",
+                "phone"
+            ],
+            "properties": {
+                "document": {
+                    "type": "string",
+                    "example": "base64_encoded_document"
+                },
+                "filename": {
+                    "type": "string",
+                    "example": "document.pdf"
+                },
+                "mimetype": {
+                    "type": "string",
+                    "example": "application/pdf"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SendGroupMessageRequest": {
+            "type": "object",
+            "required": [
+                "groupId",
+                "text"
+            ],
+            "properties": {
+                "groupId": {
+                    "type": "string",
+                    "example": "123456789@g.us"
+                },
+                "text": {
+                    "type": "string",
+                    "example": "Hello Group!"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SendImageRequest": {
+            "type": "object",
+            "required": [
+                "image",
+                "phone"
+            ],
+            "properties": {
+                "caption": {
+                    "type": "string",
+                    "example": "Image caption"
+                },
+                "image": {
+                    "type": "string",
+                    "example": "base64_encoded_image"
+                },
+                "mimetype": {
+                    "type": "string",
+                    "example": "image/jpeg"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SendInteractiveRequest": {
+            "type": "object",
+            "required": [
+                "body",
+                "buttons",
+                "phone"
+            ],
+            "properties": {
+                "body": {
+                    "type": "string",
+                    "example": "Message body text"
+                },
+                "buttons": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/zpwoot_internal_api_dto.NativeFlowButtonDTO"
+                    }
+                },
+                "footer": {
+                    "type": "string",
+                    "example": "Footer text"
+                },
+                "image": {
+                    "type": "string",
+                    "example": "URL or base64 encoded image"
+                },
+                "mimetype": {
+                    "type": "string",
+                    "example": "image/jpeg"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Interactive Title"
+                },
+                "video": {
+                    "type": "string",
+                    "example": "URL or base64 encoded video"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SendListRequest": {
+            "type": "object",
+            "required": [
+                "buttonText",
+                "description",
+                "phone",
+                "sections",
+                "title"
+            ],
+            "properties": {
+                "buttonText": {
+                    "type": "string",
+                    "example": "Open Menu"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Please select an option"
+                },
+                "footerText": {
+                    "type": "string",
+                    "example": "Footer text"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "sections": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/zpwoot_internal_api_dto.ListSectionDTO"
+                    }
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Menu Title"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SendLocationRequest": {
+            "type": "object",
+            "required": [
+                "latitude",
+                "longitude",
+                "phone"
+            ],
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "example": "Street Address"
+                },
+                "latitude": {
+                    "type": "number",
+                    "example": -23.5505
+                },
+                "longitude": {
+                    "type": "number",
+                    "example": -46.6333
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Location Name"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SendPollRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "options",
+                "phone"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "What's your favorite color?"
+                },
+                "options": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "Red",
+                        "Blue",
+                        "Green"
+                    ]
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "selectableCount": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SendPollVoteRequest": {
+            "type": "object",
+            "required": [
+                "phone",
+                "pollMessageId",
+                "selectedOptions"
+            ],
+            "properties": {
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "pollMessageId": {
+                    "type": "string",
+                    "example": "ABCD1234"
+                },
+                "selectedOptions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "Red"
+                    ]
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SendReactionRequest": {
+            "type": "object",
+            "required": [
+                "emoji",
+                "messageId",
+                "phone"
+            ],
+            "properties": {
+                "emoji": {
+                    "type": "string",
+                    "example": "👍"
+                },
+                "messageId": {
+                    "type": "string",
+                    "example": "ABCD1234"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SendResponse": {
+            "type": "object",
+            "properties": {
+                "messageId": {
+                    "type": "string",
+                    "example": "ABCD1234"
+                },
+                "timestamp": {
+                    "type": "integer",
+                    "example": 1699999999
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SendStatusRequest": {
+            "type": "object",
+            "properties": {
+                "caption": {
+                    "type": "string",
+                    "example": "Status caption"
+                },
+                "image": {
+                    "type": "string",
+                    "example": "base64_encoded_image"
+                },
+                "mimetype": {
+                    "type": "string",
+                    "example": "image/jpeg"
+                },
+                "text": {
+                    "type": "string",
+                    "example": "My status update"
+                },
+                "video": {
+                    "type": "string",
+                    "example": "base64_encoded_video"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SendStickerRequest": {
+            "type": "object",
+            "required": [
+                "phone",
+                "sticker"
+            ],
+            "properties": {
+                "mimetype": {
+                    "type": "string",
+                    "example": "image/webp"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "sticker": {
+                    "type": "string",
+                    "example": "base64_encoded_sticker"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SendTemplateRequest": {
+            "type": "object",
+            "required": [
+                "buttons",
+                "content",
+                "phone"
+            ],
+            "properties": {
+                "buttons": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/zpwoot_internal_api_dto.TemplateButtonDTO"
+                    }
+                },
+                "content": {
+                    "type": "string",
+                    "example": "Please choose an option below"
+                },
+                "document": {
+                    "type": "string",
+                    "example": "base64_encoded_document"
+                },
+                "filename": {
+                    "type": "string",
+                    "example": "document.pdf"
+                },
+                "footer": {
+                    "type": "string",
+                    "example": "Powered by ZPWoot"
+                },
+                "image": {
+                    "type": "string",
+                    "example": "base64_encoded_image"
+                },
+                "mimetype": {
+                    "type": "string",
+                    "example": "image/jpeg"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Welcome!"
+                },
+                "video": {
+                    "type": "string",
+                    "example": "base64_encoded_video"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SendTextRequest": {
+            "type": "object",
+            "required": [
+                "phone",
+                "text"
+            ],
+            "properties": {
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "text": {
+                    "type": "string",
+                    "example": "Hello World"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SendVideoRequest": {
+            "type": "object",
+            "required": [
+                "phone",
+                "video"
+            ],
+            "properties": {
+                "caption": {
+                    "type": "string",
+                    "example": "Video caption"
+                },
+                "mimetype": {
+                    "type": "string",
+                    "example": "video/mp4"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "video": {
+                    "type": "string",
+                    "example": "base64_encoded_video"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SessionResponse": {
+            "type": "object",
+            "properties": {
+                "apiKey": {
+                    "description": "Session-specific API key for authentication (use in Authorization header)",
+                    "type": "string",
+                    "example": "a1b2c3d4e5f6..."
+                },
+                "createdAt": {
+                    "description": "Session creation timestamp",
+                    "type": "string",
+                    "example": "2025-11-29T14:18:15.324706Z"
+                },
+                "deviceJid": {
+                    "description": "WhatsApp device JID after connection",
+                    "type": "string",
+                    "example": "5511999999999@s.whatsapp.net"
+                },
+                "id": {
+                    "description": "Unique session UUID (database primary key)",
+                    "type": "string",
+                    "example": "ce270f0c-c3d6-41ad-b481-1587f813c3b1"
+                },
+                "phone": {
+                    "description": "Phone number associated with the session",
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "session": {
+                    "description": "Session name/identifier (used in API routes)",
+                    "type": "string",
+                    "example": "my-session"
+                },
+                "status": {
+                    "description": "Connection status: disconnected, connecting, connected",
+                    "type": "string",
+                    "example": "connected"
+                },
+                "updatedAt": {
+                    "description": "Last update timestamp",
+                    "type": "string",
+                    "example": "2025-11-29T14:18:15.324706Z"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SetNameResponse": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "John Doe"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SetPictureResponse": {
+            "type": "object",
+            "properties": {
+                "pictureId": {
+                    "type": "string",
+                    "example": "abc123"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SetPresenceRequest": {
+            "type": "object",
+            "properties": {
+                "available": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SetPrivacyRequest": {
+            "type": "object",
+            "required": [
+                "setting",
+                "value"
+            ],
+            "properties": {
+                "setting": {
+                    "description": "last_seen, online, profile, status, read_receipts, group_add, call_add",
+                    "type": "string",
+                    "example": "last_seen"
+                },
+                "value": {
+                    "description": "all, contacts, contact_blacklist, match_last_seen, known, none",
+                    "type": "string",
+                    "example": "contacts"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SetProfilePictureRequest": {
+            "type": "object",
+            "required": [
+                "image"
+            ],
+            "properties": {
+                "image": {
+                    "type": "string",
+                    "example": "base64_encoded_image"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SetPushNameRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "John Doe"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SetStatusRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "example": "Hey there! I'm using ZPWoot"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SetStatusResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "example": "My new status"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.StatusPrivacyResponse": {
+            "type": "object",
+            "properties": {
+                "privacy": {}
+            }
+        },
+        "zpwoot_internal_api_dto.StickerResponse": {
+            "type": "object",
+            "properties": {
+                "directPath": {
+                    "type": "string"
+                },
+                "fileSize": {
+                    "type": "integer",
+                    "example": 12345
+                },
+                "height": {
+                    "type": "integer",
+                    "example": 512
+                },
+                "isAvatar": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "isLottie": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "lastUsedAt": {
+                    "type": "string"
+                },
+                "mimeType": {
+                    "type": "string",
+                    "example": "image/webp"
+                },
+                "weight": {
+                    "type": "number",
+                    "example": 1.5
+                },
+                "width": {
+                    "type": "integer",
+                    "example": 512
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SubscribePresenceRequest": {
+            "type": "object",
+            "required": [
+                "phone"
+            ],
+            "properties": {
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.SyncProgressResponse": {
+            "type": "object",
+            "properties": {
+                "completedAt": {
+                    "type": "string"
+                },
+                "errors": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "processedChats": {
+                    "type": "integer",
+                    "example": 35
+                },
+                "processedChunks": {
+                    "type": "integer",
+                    "example": 7
+                },
+                "processedMessages": {
+                    "type": "integer",
+                    "example": 750
+                },
+                "progress": {
+                    "type": "integer",
+                    "example": 75
+                },
+                "startedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "in_progress"
+                },
+                "syncType": {
+                    "type": "string",
+                    "example": "INITIAL_BOOTSTRAP"
+                },
+                "totalChats": {
+                    "type": "integer",
+                    "example": 50
+                },
+                "totalChunks": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "totalMessages": {
+                    "type": "integer",
+                    "example": 1000
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.TemplateButtonDTO": {
+            "type": "object",
+            "properties": {
+                "callButton": {
+                    "$ref": "#/definitions/zpwoot_internal_api_dto.TemplateCallButtonDTO"
+                },
+                "index": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "quickReply": {
+                    "$ref": "#/definitions/zpwoot_internal_api_dto.TemplateQuickReplyDTO"
+                },
+                "urlButton": {
+                    "$ref": "#/definitions/zpwoot_internal_api_dto.TemplateURLButtonDTO"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.TemplateCallButtonDTO": {
+            "type": "object",
+            "required": [
+                "displayText",
+                "phoneNumber"
+            ],
+            "properties": {
+                "displayText": {
+                    "type": "string",
+                    "example": "Call Us"
+                },
+                "phoneNumber": {
+                    "type": "string",
+                    "example": "+1234567890"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.TemplateQuickReplyDTO": {
+            "type": "object",
+            "required": [
+                "displayText",
+                "id"
+            ],
+            "properties": {
+                "displayText": {
+                    "type": "string",
+                    "example": "Option 1"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "opt1"
+                }
+            }
+        },
+        "zpwoot_internal_api_dto.TemplateURLButtonDTO": {
+            "type": "object",
+            "required": [
+                "displayText",
+                "url"
+            ],
+            "properties": {
+                "displayText": {
+                    "type": "string",
+                    "example": "Visit Site"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://example.com"
+                }
+            }
+        },
+        "zpwoot_internal_integrations_chatwoot_core.Config": {
             "type": "object",
             "properties": {
                 "account": {
@@ -6792,1525 +8657,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ContactInfoRequest": {
-            "type": "object",
-            "required": [
-                "phones"
-            ],
-            "properties": {
-                "phones": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "ContactInfoResponse": {
-            "type": "object",
-            "properties": {
-                "users": {
-                    "type": "object",
-                    "additionalProperties": true
-                }
-            }
-        },
-        "CreateGroupRequest": {
-            "type": "object",
-            "required": [
-                "name",
-                "participants"
-            ],
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "example": "My Group"
-                },
-                "participants": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "CreateNewsletterRequest": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "example": "Channel description"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "My Channel"
-                },
-                "picture": {
-                    "type": "string",
-                    "example": "base64_encoded_image"
-                }
-            }
-        },
-        "CreateSessionRequest": {
-            "type": "object",
-            "required": [
-                "session"
-            ],
-            "properties": {
-                "session": {
-                    "type": "string",
-                    "example": "my-session"
-                }
-            }
-        },
-        "DefaultDisappearingRequest": {
-            "type": "object",
-            "required": [
-                "timer"
-            ],
-            "properties": {
-                "timer": {
-                    "description": "24h, 7d, 90d, or off",
-                    "type": "string",
-                    "example": "24h"
-                }
-            }
-        },
-        "DeleteMessageRequest": {
-            "type": "object",
-            "required": [
-                "messageId",
-                "phone"
-            ],
-            "properties": {
-                "forMe": {
-                    "type": "boolean",
-                    "example": false
-                },
-                "messageId": {
-                    "type": "string",
-                    "example": "ABCD1234"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                }
-            }
-        },
-        "DisappearingRequest": {
-            "type": "object",
-            "required": [
-                "phone",
-                "timer"
-            ],
-            "properties": {
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "timer": {
-                    "description": "24h, 7d, 90d, or off",
-                    "type": "string",
-                    "example": "24h"
-                }
-            }
-        },
-        "EditMessageRequest": {
-            "type": "object",
-            "required": [
-                "messageId",
-                "newText",
-                "phone"
-            ],
-            "properties": {
-                "messageId": {
-                    "type": "string",
-                    "example": "ABCD1234"
-                },
-                "newText": {
-                    "type": "string",
-                    "example": "Edited message"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                }
-            }
-        },
-        "ErrorResponse": {
-            "type": "object",
-            "properties": {
-                "error": {
-                    "type": "string"
-                }
-            }
-        },
-        "EventsResponse": {
-            "type": "object",
-            "properties": {
-                "all": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "categories": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "GetWebhookResponse": {
-            "type": "object",
-            "properties": {
-                "enabled": {
-                    "type": "boolean"
-                },
-                "events": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "id": {
-                    "type": "string"
-                },
-                "sessionId": {
-                    "type": "string"
-                },
-                "url": {
-                    "type": "string"
-                }
-            }
-        },
-        "GroupActionResponse": {
-            "type": "object",
-            "properties": {
-                "data": {},
-                "groupId": {
-                    "type": "string",
-                    "example": "123456789@g.us"
-                }
-            }
-        },
-        "GroupAnnounceRequest": {
-            "type": "object",
-            "required": [
-                "groupId"
-            ],
-            "properties": {
-                "announce": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "groupId": {
-                    "type": "string",
-                    "example": "123456789@g.us"
-                }
-            }
-        },
-        "GroupApprovalRequest": {
-            "type": "object",
-            "required": [
-                "groupId"
-            ],
-            "properties": {
-                "approvalMode": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "groupId": {
-                    "type": "string",
-                    "example": "123456789@g.us"
-                }
-            }
-        },
-        "GroupInviteLinkResponse": {
-            "type": "object",
-            "properties": {
-                "groupId": {
-                    "type": "string",
-                    "example": "123456789@g.us"
-                },
-                "link": {
-                    "type": "string",
-                    "example": "https://chat.whatsapp.com/..."
-                }
-            }
-        },
-        "GroupLockedRequest": {
-            "type": "object",
-            "required": [
-                "groupId"
-            ],
-            "properties": {
-                "groupId": {
-                    "type": "string",
-                    "example": "123456789@g.us"
-                },
-                "locked": {
-                    "type": "boolean",
-                    "example": true
-                }
-            }
-        },
-        "GroupMemberAddModeRequest": {
-            "type": "object",
-            "required": [
-                "groupId",
-                "mode"
-            ],
-            "properties": {
-                "groupId": {
-                    "type": "string",
-                    "example": "123456789@g.us"
-                },
-                "mode": {
-                    "description": "admin_add or all_member_add",
-                    "type": "string",
-                    "example": "admin_add"
-                }
-            }
-        },
-        "GroupParticipantsRequest": {
-            "type": "object",
-            "required": [
-                "groupId",
-                "participants"
-            ],
-            "properties": {
-                "groupId": {
-                    "type": "string"
-                },
-                "participants": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "GroupPictureRequest": {
-            "type": "object",
-            "required": [
-                "groupId",
-                "image"
-            ],
-            "properties": {
-                "groupId": {
-                    "type": "string",
-                    "example": "123456789@g.us"
-                },
-                "image": {
-                    "type": "string",
-                    "example": "base64_encoded_image"
-                }
-            }
-        },
-        "GroupRequestActionBodyRequest": {
-            "type": "object",
-            "required": [
-                "action",
-                "participants"
-            ],
-            "properties": {
-                "action": {
-                    "description": "approve or reject",
-                    "type": "string",
-                    "example": "approve"
-                },
-                "participants": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "GroupRequestParticipantsResponse": {
-            "type": "object",
-            "properties": {
-                "groupId": {
-                    "type": "string",
-                    "example": "123456789@g.us"
-                },
-                "participants": {}
-            }
-        },
-        "GroupUpdateRequest": {
-            "type": "object",
-            "required": [
-                "groupId",
-                "value"
-            ],
-            "properties": {
-                "groupId": {
-                    "type": "string",
-                    "example": "123456789@g.us"
-                },
-                "value": {
-                    "type": "string",
-                    "example": "New Name"
-                }
-            }
-        },
-        "HistorySyncRequest": {
-            "type": "object",
-            "properties": {
-                "count": {
-                    "type": "integer",
-                    "example": 100
-                }
-            }
-        },
-        "JoinGroupRequest": {
-            "type": "object",
-            "required": [
-                "inviteLink"
-            ],
-            "properties": {
-                "inviteLink": {
-                    "type": "string"
-                }
-            }
-        },
-        "LIDResponse": {
-            "type": "object",
-            "properties": {
-                "lid": {
-                    "type": "string",
-                    "example": "123456789:0@lid"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                }
-            }
-        },
-        "LinkGroupRequest": {
-            "type": "object",
-            "required": [
-                "childGroupId",
-                "parentGroupId"
-            ],
-            "properties": {
-                "childGroupId": {
-                    "type": "string",
-                    "example": "987654321@g.us"
-                },
-                "parentGroupId": {
-                    "type": "string",
-                    "example": "123456789@g.us"
-                }
-            }
-        },
-        "ListRowDTO": {
-            "type": "object",
-            "required": [
-                "rowId",
-                "title"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "example": "Description of option 1"
-                },
-                "rowId": {
-                    "type": "string",
-                    "example": "row1"
-                },
-                "title": {
-                    "type": "string",
-                    "example": "Option 1"
-                }
-            }
-        },
-        "ListSectionDTO": {
-            "type": "object",
-            "required": [
-                "rows",
-                "title"
-            ],
-            "properties": {
-                "rows": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "$ref": "#/definitions/ListRowDTO"
-                    }
-                },
-                "title": {
-                    "type": "string",
-                    "example": "Section 1"
-                }
-            }
-        },
-        "MarkReadRequest": {
-            "type": "object",
-            "required": [
-                "messageIds",
-                "phone"
-            ],
-            "properties": {
-                "messageIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                }
-            }
-        },
-        "MediaResponse": {
-            "type": "object",
-            "properties": {
-                "caption": {
-                    "type": "string",
-                    "example": "Check this out!"
-                },
-                "chatJid": {
-                    "type": "string",
-                    "example": "5511999999999@s.whatsapp.net"
-                },
-                "createdAt": {
-                    "type": "string",
-                    "example": "2025-01-01T00:00:00Z"
-                },
-                "downloaded": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "duration": {
-                    "type": "integer",
-                    "example": 30
-                },
-                "fileName": {
-                    "type": "string",
-                    "example": "photo.jpg"
-                },
-                "fileSize": {
-                    "type": "integer",
-                    "example": 12345
-                },
-                "fromMe": {
-                    "type": "boolean",
-                    "example": false
-                },
-                "height": {
-                    "type": "integer",
-                    "example": 1080
-                },
-                "id": {
-                    "type": "string",
-                    "example": "uuid"
-                },
-                "mediaType": {
-                    "type": "string",
-                    "example": "image"
-                },
-                "mimeType": {
-                    "type": "string",
-                    "example": "image/jpeg"
-                },
-                "msgId": {
-                    "type": "string",
-                    "example": "ABCD1234"
-                },
-                "sessionId": {
-                    "type": "string",
-                    "example": "uuid"
-                },
-                "storageUrl": {
-                    "type": "string",
-                    "example": "https://s3.example.com/media/photo.jpg"
-                },
-                "width": {
-                    "type": "integer",
-                    "example": 1920
-                }
-            }
-        },
-        "MessageOnlyResponse": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string",
-                    "example": "operation completed"
-                }
-            }
-        },
-        "MessageResponse": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                }
-            }
-        },
-        "NativeFlowButtonDTO": {
-            "type": "object",
-            "required": [
-                "name",
-                "params"
-            ],
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "example": "quick_reply"
-                },
-                "params": {
-                    "type": "object",
-                    "additionalProperties": true
-                }
-            }
-        },
-        "NewsletterActionRequest": {
-            "type": "object",
-            "required": [
-                "newsletterJid"
-            ],
-            "properties": {
-                "newsletterJid": {
-                    "type": "string",
-                    "example": "123456789@newsletter"
-                }
-            }
-        },
-        "NewsletterLiveResponse": {
-            "type": "object",
-            "properties": {
-                "duration": {
-                    "type": "string",
-                    "example": "24h0m0s"
-                }
-            }
-        },
-        "NewsletterMarkViewedRequest": {
-            "type": "object",
-            "required": [
-                "serverIds"
-            ],
-            "properties": {
-                "serverIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    },
-                    "example": [
-                        1,
-                        2,
-                        3
-                    ]
-                }
-            }
-        },
-        "NewsletterMuteRequest": {
-            "type": "object",
-            "required": [
-                "newsletterJid"
-            ],
-            "properties": {
-                "mute": {
-                    "type": "boolean",
-                    "example": true
-                },
-                "newsletterJid": {
-                    "type": "string",
-                    "example": "123456789@newsletter"
-                }
-            }
-        },
-        "NewsletterReactionRequest": {
-            "type": "object",
-            "required": [
-                "newsletterJid",
-                "reaction",
-                "serverId"
-            ],
-            "properties": {
-                "messageId": {
-                    "type": "string",
-                    "example": "ABCD1234"
-                },
-                "newsletterJid": {
-                    "type": "string",
-                    "example": "123456789@newsletter"
-                },
-                "reaction": {
-                    "type": "string",
-                    "example": "👍"
-                },
-                "serverId": {
-                    "type": "integer",
-                    "example": 123
-                }
-            }
-        },
-        "NewsletterResponse": {
-            "type": "object",
-            "properties": {
-                "data": {}
-            }
-        },
-        "PairPhoneRequest": {
-            "type": "object",
-            "required": [
-                "phone"
-            ],
-            "properties": {
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                }
-            }
-        },
-        "PairPhoneResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string",
-                    "example": "ABCD-EFGH"
-                }
-            }
-        },
-        "PastParticipantResponse": {
-            "type": "object",
-            "properties": {
-                "leaveReason": {
-                    "type": "string",
-                    "example": "LEFT"
-                },
-                "leaveTimestamp": {
-                    "type": "string"
-                },
-                "userJid": {
-                    "type": "string",
-                    "example": "5511999999999@s.whatsapp.net"
-                }
-            }
-        },
-        "PresenceResponse": {
-            "type": "object",
-            "properties": {
-                "status": {
-                    "type": "string",
-                    "example": "available"
-                }
-            }
-        },
-        "PrivacySettingsResponse": {
-            "type": "object",
-            "properties": {
-                "settings": {}
-            }
-        },
-        "ProfileInfoResponse": {
-            "type": "object",
-            "properties": {
-                "profile": {}
-            }
-        },
-        "QRLinkResponse": {
-            "type": "object",
-            "properties": {
-                "link": {
-                    "type": "string",
-                    "example": "https://wa.me/qr/..."
-                }
-            }
-        },
-        "QRResponse": {
-            "type": "object",
-            "properties": {
-                "qr": {
-                    "type": "string",
-                    "example": "data:image/png;base64,..."
-                },
-                "status": {
-                    "type": "string",
-                    "example": "connecting"
-                }
-            }
-        },
-        "RejectCallRequest": {
-            "type": "object",
-            "required": [
-                "callFrom",
-                "callId"
-            ],
-            "properties": {
-                "callFrom": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "callId": {
-                    "type": "string",
-                    "example": "CALL123"
-                }
-            }
-        },
-        "RequestUnavailableMessageRequest": {
-            "type": "object",
-            "properties": {
-                "senderJid": {
-                    "type": "string",
-                    "example": "5511999999999@s.whatsapp.net"
-                }
-            }
-        },
-        "SendAudioRequest": {
-            "type": "object",
-            "required": [
-                "audio",
-                "phone"
-            ],
-            "properties": {
-                "audio": {
-                    "type": "string",
-                    "example": "base64_encoded_audio"
-                },
-                "mimetype": {
-                    "type": "string",
-                    "example": "audio/ogg; codecs=opus"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "ptt": {
-                    "type": "boolean",
-                    "example": true
-                }
-            }
-        },
-        "SendButtonsRequest": {
-            "type": "object",
-            "required": [
-                "buttons",
-                "contentText",
-                "phone"
-            ],
-            "properties": {
-                "buttons": {
-                    "type": "array",
-                    "maxItems": 3,
-                    "minItems": 1,
-                    "items": {
-                        "$ref": "#/definitions/ButtonDTO"
-                    }
-                },
-                "contentText": {
-                    "type": "string",
-                    "example": "Choose an option"
-                },
-                "footerText": {
-                    "type": "string",
-                    "example": "Footer text"
-                },
-                "headerText": {
-                    "type": "string",
-                    "example": "Header text"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                }
-            }
-        },
-        "SendCarouselRequest": {
-            "type": "object",
-            "required": [
-                "cards",
-                "phone"
-            ],
-            "properties": {
-                "body": {
-                    "type": "string",
-                    "example": "Browse our catalog"
-                },
-                "cards": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "$ref": "#/definitions/CarouselCardDTO"
-                    }
-                },
-                "footer": {
-                    "type": "string",
-                    "example": "Powered by ZPWoot"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "title": {
-                    "type": "string",
-                    "example": "Check out our products!"
-                }
-            }
-        },
-        "SendContactRequest": {
-            "type": "object",
-            "required": [
-                "contactName",
-                "contactPhone",
-                "phone"
-            ],
-            "properties": {
-                "contactName": {
-                    "type": "string",
-                    "example": "John Doe"
-                },
-                "contactPhone": {
-                    "type": "string",
-                    "example": "5511888888888"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                }
-            }
-        },
-        "SendDocumentRequest": {
-            "type": "object",
-            "required": [
-                "document",
-                "filename",
-                "phone"
-            ],
-            "properties": {
-                "document": {
-                    "type": "string",
-                    "example": "base64_encoded_document"
-                },
-                "filename": {
-                    "type": "string",
-                    "example": "document.pdf"
-                },
-                "mimetype": {
-                    "type": "string",
-                    "example": "application/pdf"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                }
-            }
-        },
-        "SendGroupMessageRequest": {
-            "type": "object",
-            "required": [
-                "groupId",
-                "text"
-            ],
-            "properties": {
-                "groupId": {
-                    "type": "string",
-                    "example": "123456789@g.us"
-                },
-                "text": {
-                    "type": "string",
-                    "example": "Hello Group!"
-                }
-            }
-        },
-        "SendImageRequest": {
-            "type": "object",
-            "required": [
-                "image",
-                "phone"
-            ],
-            "properties": {
-                "caption": {
-                    "type": "string",
-                    "example": "Image caption"
-                },
-                "image": {
-                    "type": "string",
-                    "example": "base64_encoded_image"
-                },
-                "mimetype": {
-                    "type": "string",
-                    "example": "image/jpeg"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                }
-            }
-        },
-        "SendInteractiveRequest": {
-            "type": "object",
-            "required": [
-                "body",
-                "buttons",
-                "phone"
-            ],
-            "properties": {
-                "body": {
-                    "type": "string",
-                    "example": "Message body text"
-                },
-                "buttons": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "$ref": "#/definitions/NativeFlowButtonDTO"
-                    }
-                },
-                "footer": {
-                    "type": "string",
-                    "example": "Footer text"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "title": {
-                    "type": "string",
-                    "example": "Interactive Title"
-                }
-            }
-        },
-        "SendListRequest": {
-            "type": "object",
-            "required": [
-                "buttonText",
-                "description",
-                "phone",
-                "sections",
-                "title"
-            ],
-            "properties": {
-                "buttonText": {
-                    "type": "string",
-                    "example": "Open Menu"
-                },
-                "description": {
-                    "type": "string",
-                    "example": "Please select an option"
-                },
-                "footerText": {
-                    "type": "string",
-                    "example": "Footer text"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "sections": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "$ref": "#/definitions/ListSectionDTO"
-                    }
-                },
-                "title": {
-                    "type": "string",
-                    "example": "Menu Title"
-                }
-            }
-        },
-        "SendLocationRequest": {
-            "type": "object",
-            "required": [
-                "latitude",
-                "longitude",
-                "phone"
-            ],
-            "properties": {
-                "address": {
-                    "type": "string",
-                    "example": "Street Address"
-                },
-                "latitude": {
-                    "type": "number",
-                    "example": -23.5505
-                },
-                "longitude": {
-                    "type": "number",
-                    "example": -46.6333
-                },
-                "name": {
-                    "type": "string",
-                    "example": "Location Name"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                }
-            }
-        },
-        "SendPollRequest": {
-            "type": "object",
-            "required": [
-                "name",
-                "options",
-                "phone"
-            ],
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "example": "What's your favorite color?"
-                },
-                "options": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "Red",
-                        "Blue",
-                        "Green"
-                    ]
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "selectableCount": {
-                    "type": "integer",
-                    "example": 1
-                }
-            }
-        },
-        "SendPollVoteRequest": {
-            "type": "object",
-            "required": [
-                "phone",
-                "pollMessageId",
-                "selectedOptions"
-            ],
-            "properties": {
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "pollMessageId": {
-                    "type": "string",
-                    "example": "ABCD1234"
-                },
-                "selectedOptions": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "Red"
-                    ]
-                }
-            }
-        },
-        "SendReactionRequest": {
-            "type": "object",
-            "required": [
-                "emoji",
-                "messageId",
-                "phone"
-            ],
-            "properties": {
-                "emoji": {
-                    "type": "string",
-                    "example": "👍"
-                },
-                "messageId": {
-                    "type": "string",
-                    "example": "ABCD1234"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                }
-            }
-        },
-        "SendResponse": {
-            "type": "object",
-            "properties": {
-                "messageId": {
-                    "type": "string",
-                    "example": "ABCD1234"
-                },
-                "timestamp": {
-                    "type": "integer",
-                    "example": 1699999999
-                }
-            }
-        },
-        "SendStatusRequest": {
-            "type": "object",
-            "properties": {
-                "caption": {
-                    "type": "string",
-                    "example": "Status caption"
-                },
-                "image": {
-                    "type": "string",
-                    "example": "base64_encoded_image"
-                },
-                "mimetype": {
-                    "type": "string",
-                    "example": "image/jpeg"
-                },
-                "text": {
-                    "type": "string",
-                    "example": "My status update"
-                },
-                "video": {
-                    "type": "string",
-                    "example": "base64_encoded_video"
-                }
-            }
-        },
-        "SendStickerRequest": {
-            "type": "object",
-            "required": [
-                "phone",
-                "sticker"
-            ],
-            "properties": {
-                "mimetype": {
-                    "type": "string",
-                    "example": "image/webp"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "sticker": {
-                    "type": "string",
-                    "example": "base64_encoded_sticker"
-                }
-            }
-        },
-        "SendTemplateRequest": {
-            "type": "object",
-            "required": [
-                "buttons",
-                "content",
-                "phone"
-            ],
-            "properties": {
-                "buttons": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {
-                        "$ref": "#/definitions/TemplateButtonDTO"
-                    }
-                },
-                "content": {
-                    "type": "string",
-                    "example": "Please choose an option below"
-                },
-                "document": {
-                    "type": "string",
-                    "example": "base64_encoded_document"
-                },
-                "filename": {
-                    "type": "string",
-                    "example": "document.pdf"
-                },
-                "footer": {
-                    "type": "string",
-                    "example": "Powered by ZPWoot"
-                },
-                "image": {
-                    "type": "string",
-                    "example": "base64_encoded_image"
-                },
-                "mimetype": {
-                    "type": "string",
-                    "example": "image/jpeg"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "title": {
-                    "type": "string",
-                    "example": "Welcome!"
-                },
-                "video": {
-                    "type": "string",
-                    "example": "base64_encoded_video"
-                }
-            }
-        },
-        "SendTextRequest": {
-            "type": "object",
-            "required": [
-                "phone",
-                "text"
-            ],
-            "properties": {
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "text": {
-                    "type": "string",
-                    "example": "Hello World"
-                }
-            }
-        },
-        "SendVideoRequest": {
-            "type": "object",
-            "required": [
-                "phone",
-                "video"
-            ],
-            "properties": {
-                "caption": {
-                    "type": "string",
-                    "example": "Video caption"
-                },
-                "mimetype": {
-                    "type": "string",
-                    "example": "video/mp4"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "video": {
-                    "type": "string",
-                    "example": "base64_encoded_video"
-                }
-            }
-        },
-        "SessionResponse": {
-            "type": "object",
-            "properties": {
-                "createdAt": {
-                    "type": "string",
-                    "example": "2025-11-29T14:18:15.324706Z"
-                },
-                "deviceJid": {
-                    "type": "string",
-                    "example": "5511999999999@s.whatsapp.net"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "ce270f0c-c3d6-41ad-b481-1587f813c3b1"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "session": {
-                    "type": "string",
-                    "example": "my-session"
-                },
-                "status": {
-                    "type": "string",
-                    "example": "connected"
-                },
-                "updatedAt": {
-                    "type": "string",
-                    "example": "2025-11-29T14:18:15.324706Z"
-                }
-            }
-        },
-        "SetConfigRequest": {
-            "type": "object",
-            "properties": {
-                "account": {
-                    "type": "integer"
-                },
-                "autoCreate": {
-                    "type": "boolean"
-                },
-                "autoReopen": {
-                    "description": "AutoReopen configures Chatwoot inbox settings for conversation management.\nWhen true: sets lock_to_single_conversation=true and allow_messages_after_resolved=true\nThis means Chatwoot will automatically reopen resolved conversations when new messages arrive.\nWhen false: creates new conversations for each interaction (default Chatwoot behavior).",
-                    "type": "boolean"
-                },
-                "chatwootDbHost": {
-                    "type": "string"
-                },
-                "chatwootDbName": {
-                    "type": "string"
-                },
-                "chatwootDbPass": {
-                    "type": "string"
-                },
-                "chatwootDbPort": {
-                    "type": "integer"
-                },
-                "chatwootDbUser": {
-                    "type": "string"
-                },
-                "enabled": {
-                    "type": "boolean"
-                },
-                "ignoreChats": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "inbox": {
-                    "type": "string"
-                },
-                "logo": {
-                    "type": "string"
-                },
-                "mergeBrPhones": {
-                    "type": "boolean"
-                },
-                "number": {
-                    "type": "string"
-                },
-                "organization": {
-                    "type": "string"
-                },
-                "signAgent": {
-                    "type": "boolean"
-                },
-                "signSeparator": {
-                    "type": "string"
-                },
-                "startPending": {
-                    "type": "boolean"
-                },
-                "syncContacts": {
-                    "type": "boolean"
-                },
-                "syncDays": {
-                    "type": "integer"
-                },
-                "syncMessages": {
-                    "type": "boolean"
-                },
-                "token": {
-                    "type": "string"
-                },
-                "url": {
-                    "type": "string"
-                }
-            }
-        },
-        "SetNameResponse": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "example": "John Doe"
-                }
-            }
-        },
-        "SetPictureResponse": {
-            "type": "object",
-            "properties": {
-                "pictureId": {
-                    "type": "string",
-                    "example": "abc123"
-                }
-            }
-        },
-        "SetPresenceRequest": {
-            "type": "object",
-            "properties": {
-                "available": {
-                    "type": "boolean",
-                    "example": true
-                }
-            }
-        },
-        "SetPrivacyRequest": {
-            "type": "object",
-            "required": [
-                "setting",
-                "value"
-            ],
-            "properties": {
-                "setting": {
-                    "description": "last_seen, online, profile, status, read_receipts, group_add, call_add",
-                    "type": "string",
-                    "example": "last_seen"
-                },
-                "value": {
-                    "description": "all, contacts, contact_blacklist, match_last_seen, known, none",
-                    "type": "string",
-                    "example": "contacts"
-                }
-            }
-        },
-        "SetProfilePictureRequest": {
-            "type": "object",
-            "required": [
-                "image"
-            ],
-            "properties": {
-                "image": {
-                    "type": "string",
-                    "example": "base64_encoded_image"
-                }
-            }
-        },
-        "SetPushNameRequest": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "example": "John Doe"
-                }
-            }
-        },
-        "SetStatusRequest": {
-            "type": "object",
-            "required": [
-                "status"
-            ],
-            "properties": {
-                "status": {
-                    "type": "string",
-                    "example": "Hey there! I'm using ZPWoot"
-                }
-            }
-        },
-        "SetStatusResponse": {
-            "type": "object",
-            "properties": {
-                "status": {
-                    "type": "string",
-                    "example": "My new status"
-                }
-            }
-        },
-        "SetWebhookRequest": {
-            "type": "object",
-            "properties": {
-                "enabled": {
-                    "type": "boolean"
-                },
-                "events": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "secret": {
-                    "type": "string"
-                },
-                "url": {
-                    "type": "string"
-                }
-            }
-        },
-        "SkipDetails": {
+        "zpwoot_internal_integrations_chatwoot_core.SkipDetails": {
             "type": "object",
             "properties": {
                 "alreadySynced": {
@@ -8342,115 +8689,7 @@ const docTemplate = `{
                 }
             }
         },
-        "StatusPrivacyResponse": {
-            "type": "object",
-            "properties": {
-                "privacy": {}
-            }
-        },
-        "StickerResponse": {
-            "type": "object",
-            "properties": {
-                "directPath": {
-                    "type": "string"
-                },
-                "fileSize": {
-                    "type": "integer",
-                    "example": 12345
-                },
-                "height": {
-                    "type": "integer",
-                    "example": 512
-                },
-                "isAvatar": {
-                    "type": "boolean",
-                    "example": false
-                },
-                "isLottie": {
-                    "type": "boolean",
-                    "example": false
-                },
-                "lastUsedAt": {
-                    "type": "string"
-                },
-                "mimeType": {
-                    "type": "string",
-                    "example": "image/webp"
-                },
-                "weight": {
-                    "type": "number",
-                    "example": 1.5
-                },
-                "width": {
-                    "type": "integer",
-                    "example": 512
-                }
-            }
-        },
-        "SubscribePresenceRequest": {
-            "type": "object",
-            "required": [
-                "phone"
-            ],
-            "properties": {
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                }
-            }
-        },
-        "SyncProgressResponse": {
-            "type": "object",
-            "properties": {
-                "completedAt": {
-                    "type": "string"
-                },
-                "errors": {
-                    "type": "integer",
-                    "example": 0
-                },
-                "processedChats": {
-                    "type": "integer",
-                    "example": 35
-                },
-                "processedChunks": {
-                    "type": "integer",
-                    "example": 7
-                },
-                "processedMessages": {
-                    "type": "integer",
-                    "example": 750
-                },
-                "progress": {
-                    "type": "integer",
-                    "example": 75
-                },
-                "startedAt": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "string",
-                    "example": "in_progress"
-                },
-                "syncType": {
-                    "type": "string",
-                    "example": "INITIAL_BOOTSTRAP"
-                },
-                "totalChats": {
-                    "type": "integer",
-                    "example": 50
-                },
-                "totalChunks": {
-                    "type": "integer",
-                    "example": 10
-                },
-                "totalMessages": {
-                    "type": "integer",
-                    "example": 1000
-                }
-            }
-        },
-        "SyncStats": {
+        "zpwoot_internal_integrations_chatwoot_core.SyncStats": {
             "type": "object",
             "properties": {
                 "contactsErrors": {
@@ -8481,13 +8720,13 @@ const docTemplate = `{
                     "description": "Detailed skip reasons",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/SkipDetails"
+                            "$ref": "#/definitions/zpwoot_internal_integrations_chatwoot_core.SkipDetails"
                         }
                     ]
                 }
             }
         },
-        "SyncStatus": {
+        "zpwoot_internal_integrations_chatwoot_core.SyncStatus": {
             "type": "object",
             "properties": {
                 "endedAt": {
@@ -8503,7 +8742,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "stats": {
-                    "$ref": "#/definitions/SyncStats"
+                    "$ref": "#/definitions/zpwoot_internal_integrations_chatwoot_core.SyncStats"
                 },
                 "status": {
                     "description": "idle, running, completed, failed",
@@ -8514,81 +8753,13 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
-        },
-        "TemplateButtonDTO": {
-            "type": "object",
-            "properties": {
-                "callButton": {
-                    "$ref": "#/definitions/TemplateCallButtonDTO"
-                },
-                "index": {
-                    "type": "integer",
-                    "example": 0
-                },
-                "quickReply": {
-                    "$ref": "#/definitions/TemplateQuickReplyDTO"
-                },
-                "urlButton": {
-                    "$ref": "#/definitions/TemplateURLButtonDTO"
-                }
-            }
-        },
-        "TemplateCallButtonDTO": {
-            "type": "object",
-            "required": [
-                "displayText",
-                "phoneNumber"
-            ],
-            "properties": {
-                "displayText": {
-                    "type": "string",
-                    "example": "Call Us"
-                },
-                "phoneNumber": {
-                    "type": "string",
-                    "example": "+1234567890"
-                }
-            }
-        },
-        "TemplateQuickReplyDTO": {
-            "type": "object",
-            "required": [
-                "displayText",
-                "id"
-            ],
-            "properties": {
-                "displayText": {
-                    "type": "string",
-                    "example": "Option 1"
-                },
-                "id": {
-                    "type": "string",
-                    "example": "opt1"
-                }
-            }
-        },
-        "TemplateURLButtonDTO": {
-            "type": "object",
-            "required": [
-                "displayText",
-                "url"
-            ],
-            "properties": {
-                "displayText": {
-                    "type": "string",
-                    "example": "Visit Site"
-                },
-                "url": {
-                    "type": "string",
-                    "example": "https://example.com"
-                }
-            }
         }
     },
     "securityDefinitions": {
-        "ApiKeyAuth": {
+        "Authorization": {
+            "description": "API key for authentication. Use global key for full access or session-specific key for restricted access.",
             "type": "apiKey",
-            "name": "apikey",
+            "name": "Authorization",
             "in": "header"
         }
     },
@@ -8666,7 +8837,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "ZPWoot WhatsApp API",
-	Description:      "WhatsApp API with Chatwoot Integration",
+	Description:      "WhatsApp API with Chatwoot Integration. Supports two authentication levels: Global API key (full access) and Session API key (session-specific access).",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",
