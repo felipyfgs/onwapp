@@ -14,6 +14,7 @@ import (
 	"zpwoot/internal/integrations/chatwoot/sync"
 	"zpwoot/internal/queue"
 	zpservice "zpwoot/internal/service"
+	"zpwoot/internal/service/wpp"
 )
 
 // =============================================================================
@@ -64,8 +65,8 @@ func NewEventHandler(svc *Service) *EventHandler {
 }
 
 // NewHandler creates a new Chatwoot HTTP handler
-func NewHandler(svc *Service, sessionSvc *zpservice.SessionService, whatsappSvc *zpservice.WhatsAppService, database *db.Database) *Handler {
-	return handler.NewHandler(svc, sessionSvc, whatsappSvc, database)
+func NewHandler(svc *Service, sessionSvc *zpservice.SessionService, wppSvc *wpp.Service, database *db.Database) *Handler {
+	return handler.NewHandler(svc, sessionSvc, wppSvc, database)
 }
 
 // RegisterRoutes registers Chatwoot HTTP routes

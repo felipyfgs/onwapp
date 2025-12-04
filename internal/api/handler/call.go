@@ -6,15 +6,15 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"zpwoot/internal/api/dto"
-	"zpwoot/internal/service"
+	"zpwoot/internal/service/wpp"
 )
 
 type CallHandler struct {
-	whatsappService *service.WhatsAppService
+	wpp *wpp.Service
 }
 
-func NewCallHandler(whatsappService *service.WhatsAppService) *CallHandler {
-	return &CallHandler{whatsappService: whatsappService}
+func NewCallHandler(wpp *wpp.Service) *CallHandler {
+	return &CallHandler{wpp: wpp}
 }
 
 // RejectCall godoc
@@ -39,7 +39,7 @@ func (h *CallHandler) RejectCall(c *gin.Context) {
 		return
 	}
 
-	if err := h.whatsappService.RejectCall(c.Request.Context(), sessionId, req.CallFrom, req.CallID); err != nil {
+	if err := h.wpp.RejectCall(c.Request.Context(), sessionId, req.CallFrom, req.CallID); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}

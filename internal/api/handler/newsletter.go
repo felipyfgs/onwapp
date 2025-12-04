@@ -7,15 +7,15 @@ import (
 	"go.mau.fi/whatsmeow/types"
 
 	"zpwoot/internal/api/dto"
-	"zpwoot/internal/service"
+	"zpwoot/internal/service/wpp"
 )
 
 type NewsletterHandler struct {
-	whatsappService *service.WhatsAppService
+	wpp *wpp.Service
 }
 
-func NewNewsletterHandler(whatsappService *service.WhatsAppService) *NewsletterHandler {
-	return &NewsletterHandler{whatsappService: whatsappService}
+func NewNewsletterHandler(wpp *wpp.Service) *NewsletterHandler {
+	return &NewsletterHandler{wpp: wpp}
 }
 
 // CreateNewsletter godoc
@@ -40,7 +40,7 @@ func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
 		return
 	}
 
-	newsletter, err := h.whatsappService.CreateNewsletter(c.Request.Context(), sessionId, req.Name, req.Description)
+	newsletter, err := h.wpp.CreateNewsletter(c.Request.Context(), sessionId, req.Name, req.Description)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -74,7 +74,7 @@ func (h *NewsletterHandler) FollowNewsletter(c *gin.Context) {
 		return
 	}
 
-	if err := h.whatsappService.FollowNewsletter(c.Request.Context(), sessionId, req.NewsletterJID); err != nil {
+	if err := h.wpp.FollowNewsletter(c.Request.Context(), sessionId, req.NewsletterJID); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -104,7 +104,7 @@ func (h *NewsletterHandler) UnfollowNewsletter(c *gin.Context) {
 		return
 	}
 
-	if err := h.whatsappService.UnfollowNewsletter(c.Request.Context(), sessionId, req.NewsletterJID); err != nil {
+	if err := h.wpp.UnfollowNewsletter(c.Request.Context(), sessionId, req.NewsletterJID); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -127,7 +127,7 @@ func (h *NewsletterHandler) GetNewsletterInfo(c *gin.Context) {
 	sessionId := c.Param("sessionId")
 	newsletterID := c.Param("newsletterId")
 
-	info, err := h.whatsappService.GetNewsletterInfo(c.Request.Context(), sessionId, newsletterID)
+	info, err := h.wpp.GetNewsletterInfo(c.Request.Context(), sessionId, newsletterID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -152,7 +152,7 @@ func (h *NewsletterHandler) GetNewsletterInfo(c *gin.Context) {
 func (h *NewsletterHandler) GetSubscribedNewsletters(c *gin.Context) {
 	sessionId := c.Param("sessionId")
 
-	newsletters, err := h.whatsappService.GetSubscribedNewsletters(c.Request.Context(), sessionId)
+	newsletters, err := h.wpp.GetSubscribedNewsletters(c.Request.Context(), sessionId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -188,7 +188,7 @@ func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
 	var before types.MessageServerID
 	// TODO: Parse before parameter if provided for pagination
 
-	messages, err := h.whatsappService.GetNewsletterMessages(c.Request.Context(), sessionId, newsletterID, count, before)
+	messages, err := h.wpp.GetNewsletterMessages(c.Request.Context(), sessionId, newsletterID, count, before)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -225,7 +225,7 @@ func (h *NewsletterHandler) NewsletterSendReaction(c *gin.Context) {
 	serverID := types.MessageServerID(req.ServerID)
 	messageID := types.MessageID(req.MessageID)
 
-	if err := h.whatsappService.NewsletterSendReaction(c.Request.Context(), sessionId, req.NewsletterJID, serverID, req.Reaction, messageID); err != nil {
+	if err := h.wpp.NewsletterSendReaction(c.Request.Context(), sessionId, req.NewsletterJID, serverID, req.Reaction, messageID); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -255,7 +255,7 @@ func (h *NewsletterHandler) NewsletterToggleMute(c *gin.Context) {
 		return
 	}
 
-	if err := h.whatsappService.NewsletterToggleMute(c.Request.Context(), sessionId, req.NewsletterJID, req.Mute); err != nil {
+	if err := h.wpp.NewsletterToggleMute(c.Request.Context(), sessionId, req.NewsletterJID, req.Mute); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -292,7 +292,7 @@ func (h *NewsletterHandler) NewsletterMarkViewed(c *gin.Context) {
 		serverIDs[i] = types.MessageServerID(id)
 	}
 
-	if err := h.whatsappService.NewsletterMarkViewed(c.Request.Context(), sessionId, newsletterID, serverIDs); err != nil {
+	if err := h.wpp.NewsletterMarkViewed(c.Request.Context(), sessionId, newsletterID, serverIDs); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -315,7 +315,7 @@ func (h *NewsletterHandler) NewsletterSubscribeLiveUpdates(c *gin.Context) {
 	sessionId := c.Param("sessionId")
 	newsletterID := c.Param("newsletterId")
 
-	duration, err := h.whatsappService.NewsletterSubscribeLiveUpdates(c.Request.Context(), sessionId, newsletterID)
+	duration, err := h.wpp.NewsletterSubscribeLiveUpdates(c.Request.Context(), sessionId, newsletterID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return

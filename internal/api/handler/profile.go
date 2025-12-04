@@ -7,15 +7,15 @@ import (
 	"go.mau.fi/whatsmeow/types"
 
 	"zpwoot/internal/api/dto"
-	"zpwoot/internal/service"
+	"zpwoot/internal/service/wpp"
 )
 
 type ProfileHandler struct {
-	whatsappService *service.WhatsAppService
+	wpp *wpp.Service
 }
 
-func NewProfileHandler(whatsappService *service.WhatsAppService) *ProfileHandler {
-	return &ProfileHandler{whatsappService: whatsappService}
+func NewProfileHandler(wpp *wpp.Service) *ProfileHandler {
+	return &ProfileHandler{wpp: wpp}
 }
 
 // GetProfile godoc
@@ -33,7 +33,7 @@ func NewProfileHandler(whatsappService *service.WhatsAppService) *ProfileHandler
 func (h *ProfileHandler) GetProfile(c *gin.Context) {
 	sessionId := c.Param("sessionId")
 
-	profile, err := h.whatsappService.GetOwnProfile(c.Request.Context(), sessionId)
+	profile, err := h.wpp.GetOwnProfile(c.Request.Context(), sessionId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -68,7 +68,7 @@ func (h *ProfileHandler) SetStatus(c *gin.Context) {
 		return
 	}
 
-	if err := h.whatsappService.SetStatusMessage(c.Request.Context(), sessionId, req.Status); err != nil {
+	if err := h.wpp.SetStatusMessage(c.Request.Context(), sessionId, req.Status); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -99,7 +99,7 @@ func (h *ProfileHandler) SetPushName(c *gin.Context) {
 		return
 	}
 
-	if err := h.whatsappService.SetPushName(c.Request.Context(), sessionId, req.Name); err != nil {
+	if err := h.wpp.SetPushName(c.Request.Context(), sessionId, req.Name); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -145,7 +145,7 @@ func (h *ProfileHandler) SetProfilePicture(c *gin.Context) {
 		}
 	}
 
-	pictureID, err := h.whatsappService.SetProfilePicture(c.Request.Context(), sessionId, imageData)
+	pictureID, err := h.wpp.SetProfilePicture(c.Request.Context(), sessionId, imageData)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -169,7 +169,7 @@ func (h *ProfileHandler) SetProfilePicture(c *gin.Context) {
 func (h *ProfileHandler) DeleteProfilePicture(c *gin.Context) {
 	sessionId := c.Param("sessionId")
 
-	if err := h.whatsappService.DeleteProfilePicture(c.Request.Context(), sessionId); err != nil {
+	if err := h.wpp.DeleteProfilePicture(c.Request.Context(), sessionId); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -192,7 +192,7 @@ func (h *ProfileHandler) DeleteProfilePicture(c *gin.Context) {
 func (h *ProfileHandler) GetPrivacySettings(c *gin.Context) {
 	sessionId := c.Param("sessionId")
 
-	settings, err := h.whatsappService.GetPrivacySettings(c.Request.Context(), sessionId)
+	settings, err := h.wpp.GetPrivacySettings(c.Request.Context(), sessionId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -230,7 +230,7 @@ func (h *ProfileHandler) SetPrivacySettings(c *gin.Context) {
 	settingType := types.PrivacySettingType(req.Setting)
 	value := types.PrivacySetting(req.Value)
 
-	settings, err := h.whatsappService.SetPrivacySettings(c.Request.Context(), sessionId, settingType, value)
+	settings, err := h.wpp.SetPrivacySettings(c.Request.Context(), sessionId, settingType, value)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -269,7 +269,7 @@ func (h *ProfileHandler) SetDefaultDisappearingTimer(c *gin.Context) {
 		return
 	}
 
-	if err := h.whatsappService.SetDefaultDisappearingTimer(c.Request.Context(), sessionId, timer); err != nil {
+	if err := h.wpp.SetDefaultDisappearingTimer(c.Request.Context(), sessionId, timer); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}

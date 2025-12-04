@@ -20,24 +20,25 @@ import (
 	"zpwoot/internal/model"
 	"zpwoot/internal/queue"
 	"zpwoot/internal/service"
+	"zpwoot/internal/service/wpp"
 )
 
 // Handler handles HTTP requests for Chatwoot integration
 type Handler struct {
 	service           *cwservice.Service
 	sessionService    *service.SessionService
-	whatsappSvc       *service.WhatsAppService
+	wpp               *wpp.Service
 	database          *db.Database
 	botCommandHandler *cwservice.BotCommandHandler
 	queueProducer     *queue.Producer
 }
 
 // NewHandler creates a new Chatwoot handler
-func NewHandler(svc *cwservice.Service, sessionSvc *service.SessionService, whatsappSvc *service.WhatsAppService, database *db.Database) *Handler {
+func NewHandler(svc *cwservice.Service, sessionSvc *service.SessionService, wppSvc *wpp.Service, database *db.Database) *Handler {
 	return &Handler{
 		service:           svc,
 		sessionService:    sessionSvc,
-		whatsappSvc:       whatsappSvc,
+		wpp:               wppSvc,
 		database:          database,
 		botCommandHandler: cwservice.NewBotCommandHandler(svc, sessionSvc),
 	}
@@ -345,9 +346,9 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 	// Mark incoming messages as read in WhatsApp when agent responds (like Evolution API)
 	h.markMessagesAsRead(ctx, session, chatJid)
 
-	var quoted *service.QuotedMessage
+	var quoted *wpp.QuotedMessage
 	if quotedMsg != nil {
-		quoted = &service.QuotedMessage{
+		quoted = &wpp.QuotedMessage{
 			MessageID: quotedMsg.MsgId,
 			ChatJID:   quotedMsg.ChatJID,
 			SenderJID: quotedMsg.SenderJID,
@@ -381,7 +382,7 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 			mediaType := util.GetMediaTypeFromURL(att.DataURL)
 			switch mediaType {
 			case "image":
-				resp, err := h.whatsappSvc.SendImageWithQuote(ctx, session.Session, recipient, mediaData, content, mimeType, quoted)
+				resp, err := h.wpp.SendImage(ctx, session.Session, recipient, mediaData, content, mimeType, quoted)
 				if err != nil {
 					logger.Warn().Err(err).Msg("Chatwoot: failed to send image")
 				} else {
@@ -390,7 +391,7 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 				content = ""
 				quoted = nil
 			case "video":
-				resp, err := h.whatsappSvc.SendVideoWithQuote(ctx, session.Session, recipient, mediaData, content, mimeType, quoted)
+				resp, err := h.wpp.SendVideo(ctx, session.Session, recipient, mediaData, content, mimeType, quoted)
 				if err != nil {
 					logger.Warn().Err(err).Msg("Chatwoot: failed to send video")
 				} else {
@@ -399,7 +400,7 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 				content = ""
 				quoted = nil
 			case "audio":
-				resp, err := h.whatsappSvc.SendAudioWithQuote(ctx, session.Session, recipient, mediaData, mimeType, true, quoted)
+				resp, err := h.wpp.SendAudio(ctx, session.Session, recipient, mediaData, mimeType, true, quoted)
 				if err != nil {
 					logger.Warn().Err(err).Msg("Chatwoot: failed to send audio")
 				} else {
@@ -419,7 +420,7 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 				if filename == "" {
 					filename = "document"
 				}
-				resp, err := h.whatsappSvc.SendDocumentWithQuote(ctx, session.Session, recipient, mediaData, filename, mimeType, quoted)
+				resp, err := h.wpp.SendDocument(ctx, session.Session, recipient, mediaData, filename, mimeType, quoted)
 				if err != nil {
 					logger.Warn().Err(err).Msg("Chatwoot: failed to send document")
 				} else {
@@ -432,7 +433,7 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 	}
 
 	if content != "" {
-		resp, err := h.whatsappSvc.SendTextWithQuote(ctx, session.Session, recipient, content, quoted)
+		resp, err := h.wpp.SendTextQuoted(ctx, session.Session, recipient, content, quoted)
 		if err != nil {
 			return err
 		}
@@ -562,7 +563,7 @@ func (h *Handler) handleMessageDeleted(ctx context.Context, session *model.Sessi
 
 	var deleteErrors []error
 	for _, msg := range messages {
-		if _, err := h.whatsappSvc.DeleteMessage(ctx, session.Session, msg.ChatJID, msg.MsgId, msg.FromMe); err != nil {
+		if _, err := h.wpp.DeleteMessage(ctx, session.Session, msg.ChatJID, msg.MsgId, msg.FromMe); err != nil {
 			logger.Warn().Err(err).Str("messageId", msg.MsgId).Msg("Chatwoot: failed to delete from WhatsApp")
 			deleteErrors = append(deleteErrors, err)
 			continue
@@ -669,7 +670,7 @@ func (h *Handler) handleSync(c *gin.Context, syncType string) {
 	}
 
 	contactsAdapter := &whatsappContactsAdapter{
-		whatsappSvc: h.whatsappSvc,
+		wpp:       h.wpp,
 		sessionId: sessionId,
 	}
 
@@ -781,12 +782,12 @@ func (h *Handler) ResetChatwoot(c *gin.Context) {
 // =============================================================================
 
 type whatsappContactsAdapter struct {
-	whatsappSvc *service.WhatsAppService
+	wpp       *wpp.Service
 	sessionId string
 }
 
 func (a *whatsappContactsAdapter) GetAllContacts(ctx context.Context) ([]core.WhatsAppContact, error) {
-	contactsMap, err := a.whatsappSvc.GetContacts(ctx, a.sessionId)
+	contactsMap, err := a.wpp.GetContacts(ctx, a.sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -818,13 +819,13 @@ func (a *whatsappContactsAdapter) GetProfilePictureURL(ctx context.Context, jid 
 	var err error
 
 	if util.IsGroupJID(jid) {
-		pic, err = a.whatsappSvc.GetGroupProfilePicture(ctx, a.sessionId, jid)
+		pic, err = a.wpp.GetGroupPicture(ctx, a.sessionId, jid)
 	} else {
 		phone := util.ExtractPhoneFromJID(jid)
 		if phone == "" {
 			return "", nil
 		}
-		pic, err = a.whatsappSvc.GetProfilePicture(ctx, a.sessionId, phone)
+		pic, err = a.wpp.GetProfilePicture(ctx, a.sessionId, phone)
 	}
 
 	if err != nil {
@@ -837,7 +838,7 @@ func (a *whatsappContactsAdapter) GetProfilePictureURL(ctx context.Context, jid 
 }
 
 func (a *whatsappContactsAdapter) GetGroupName(ctx context.Context, groupJID string) (string, error) {
-	info, err := a.whatsappSvc.GetGroupInfo(ctx, a.sessionId, groupJID)
+	info, err := a.wpp.GetGroupInfo(ctx, a.sessionId, groupJID)
 	if err != nil {
 		return "", err
 	}
@@ -848,7 +849,7 @@ func (a *whatsappContactsAdapter) GetGroupName(ctx context.Context, groupJID str
 }
 
 func (a *whatsappContactsAdapter) GetAllGroupNames(ctx context.Context) (map[string]string, error) {
-	groups, err := a.whatsappSvc.GetJoinedGroups(ctx, a.sessionId)
+	groups, err := a.wpp.GetJoinedGroups(ctx, a.sessionId)
 	if err != nil {
 		return nil, err
 	}
@@ -915,7 +916,7 @@ func (h *Handler) markMessagesAsRead(ctx context.Context, session *model.Session
 	phone := strings.Split(chatJid, "@")[0]
 
 	// Send read receipt to WhatsApp
-	if err := h.whatsappSvc.MarkRead(ctx, session.Session, phone, msgIds); err != nil {
+	if err := h.wpp.MarkRead(ctx, session.Session, phone, msgIds); err != nil {
 		logger.Debug().Err(err).Str("session", session.Session).Str("chatJid", chatJid).Int("count", len(msgIds)).Msg("Chatwoot: failed to send read receipts to WhatsApp")
 		return
 	}

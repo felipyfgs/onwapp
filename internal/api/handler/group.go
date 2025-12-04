@@ -9,15 +9,15 @@ import (
 	"go.mau.fi/whatsmeow/types"
 
 	"zpwoot/internal/api/dto"
-	"zpwoot/internal/service"
+	"zpwoot/internal/service/wpp"
 )
 
 type GroupHandler struct {
-	whatsappService *service.WhatsAppService
+	wpp *wpp.Service
 }
 
-func NewGroupHandler(whatsappService *service.WhatsAppService) *GroupHandler {
-	return &GroupHandler{whatsappService: whatsappService}
+func NewGroupHandler(wpp *wpp.Service) *GroupHandler {
+	return &GroupHandler{wpp: wpp}
 }
 
 // CreateGroup godoc
@@ -43,7 +43,7 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 		return
 	}
 
-	info, err := h.whatsappService.CreateGroup(c.Request.Context(), sessionId, req.Name, req.Participants)
+	info, err := h.wpp.CreateGroup(c.Request.Context(), sessionId, req.Name, req.Participants)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -74,7 +74,7 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 	sessionId := c.Param("sessionId")
 	groupID := c.Param("groupId")
 
-	info, err := h.whatsappService.GetGroupInfo(c.Request.Context(), sessionId, groupID)
+	info, err := h.wpp.GetGroupInfo(c.Request.Context(), sessionId, groupID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -102,7 +102,7 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 func (h *GroupHandler) GetJoinedGroups(c *gin.Context) {
 	sessionId := c.Param("sessionId")
 
-	groups, err := h.whatsappService.GetJoinedGroups(c.Request.Context(), sessionId)
+	groups, err := h.wpp.GetJoinedGroups(c.Request.Context(), sessionId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -131,7 +131,7 @@ func (h *GroupHandler) LeaveGroup(c *gin.Context) {
 	sessionId := c.Param("sessionId")
 	groupID := c.Param("groupId")
 
-	if err := h.whatsappService.LeaveGroup(c.Request.Context(), sessionId, groupID); err != nil {
+	if err := h.wpp.LeaveGroup(c.Request.Context(), sessionId, groupID); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -165,7 +165,7 @@ func (h *GroupHandler) UpdateGroupName(c *gin.Context) {
 		return
 	}
 
-	if err := h.whatsappService.UpdateGroupName(c.Request.Context(), sessionId, req.GroupID, req.Value); err != nil {
+	if err := h.wpp.SetGroupName(c.Request.Context(), sessionId, req.GroupID, req.Value); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -199,7 +199,7 @@ func (h *GroupHandler) UpdateGroupTopic(c *gin.Context) {
 		return
 	}
 
-	if err := h.whatsappService.UpdateGroupTopic(c.Request.Context(), sessionId, req.GroupID, req.Value); err != nil {
+	if err := h.wpp.SetGroupTopic(c.Request.Context(), sessionId, req.GroupID, req.Value); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -233,7 +233,7 @@ func (h *GroupHandler) AddParticipants(c *gin.Context) {
 		return
 	}
 
-	result, err := h.whatsappService.AddGroupParticipants(c.Request.Context(), sessionId, req.GroupID, req.Participants)
+	result, err := h.wpp.AddParticipants(c.Request.Context(), sessionId, req.GroupID, req.Participants)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -269,7 +269,7 @@ func (h *GroupHandler) RemoveParticipants(c *gin.Context) {
 		return
 	}
 
-	result, err := h.whatsappService.RemoveGroupParticipants(c.Request.Context(), sessionId, req.GroupID, req.Participants)
+	result, err := h.wpp.RemoveParticipants(c.Request.Context(), sessionId, req.GroupID, req.Participants)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -305,7 +305,7 @@ func (h *GroupHandler) PromoteParticipants(c *gin.Context) {
 		return
 	}
 
-	result, err := h.whatsappService.PromoteGroupParticipants(c.Request.Context(), sessionId, req.GroupID, req.Participants)
+	result, err := h.wpp.PromoteParticipants(c.Request.Context(), sessionId, req.GroupID, req.Participants)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -341,7 +341,7 @@ func (h *GroupHandler) DemoteParticipants(c *gin.Context) {
 		return
 	}
 
-	result, err := h.whatsappService.DemoteGroupParticipants(c.Request.Context(), sessionId, req.GroupID, req.Participants)
+	result, err := h.wpp.DemoteParticipants(c.Request.Context(), sessionId, req.GroupID, req.Participants)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -373,7 +373,7 @@ func (h *GroupHandler) GetInviteLink(c *gin.Context) {
 	groupID := c.Param("groupId")
 	reset := c.Query("reset") == "true"
 
-	link, err := h.whatsappService.GetGroupInviteLink(c.Request.Context(), sessionId, groupID, reset)
+	link, err := h.wpp.GetInviteLink(c.Request.Context(), sessionId, groupID, reset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -409,7 +409,7 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 		return
 	}
 
-	jid, err := h.whatsappService.JoinGroupWithLink(c.Request.Context(), sessionId, req.InviteLink)
+	jid, err := h.wpp.JoinWithLink(c.Request.Context(), sessionId, req.InviteLink)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -444,7 +444,7 @@ func (h *GroupHandler) SendGroupMessage(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.whatsappService.SendGroupMessage(c.Request.Context(), sessionId, req.GroupID, req.Text)
+	resp, err := h.wpp.SendText(c.Request.Context(), sessionId, req.GroupID, req.Text)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -480,7 +480,7 @@ func (h *GroupHandler) SetGroupAnnounce(c *gin.Context) {
 	}
 
 	groupID := strings.TrimSuffix(req.GroupID, "@g.us")
-	if err := h.whatsappService.SetGroupAnnounce(c.Request.Context(), sessionId, groupID, req.Announce); err != nil {
+	if err := h.wpp.SetGroupAnnounce(c.Request.Context(), sessionId, groupID, req.Announce); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -511,7 +511,7 @@ func (h *GroupHandler) SetGroupLocked(c *gin.Context) {
 	}
 
 	groupID := strings.TrimSuffix(req.GroupID, "@g.us")
-	if err := h.whatsappService.SetGroupLocked(c.Request.Context(), sessionId, groupID, req.Locked); err != nil {
+	if err := h.wpp.SetGroupLocked(c.Request.Context(), sessionId, groupID, req.Locked); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -564,7 +564,7 @@ func (h *GroupHandler) SetGroupPicture(c *gin.Context) {
 	}
 
 	groupID = strings.TrimSuffix(groupID, "@g.us")
-	pictureID, err := h.whatsappService.SetGroupPhoto(c.Request.Context(), sessionId, groupID, imageData)
+	pictureID, err := h.wpp.SetGroupPhoto(c.Request.Context(), sessionId, groupID, imageData)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -590,7 +590,7 @@ func (h *GroupHandler) DeleteGroupPicture(c *gin.Context) {
 	groupID := c.Param("groupId")
 
 	groupID = strings.TrimSuffix(groupID, "@g.us")
-	if err := h.whatsappService.DeleteGroupPhoto(c.Request.Context(), sessionId, groupID); err != nil {
+	if err := h.wpp.DeleteGroupPhoto(c.Request.Context(), sessionId, groupID); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -621,7 +621,7 @@ func (h *GroupHandler) SetGroupApprovalMode(c *gin.Context) {
 	}
 
 	groupID := strings.TrimSuffix(req.GroupID, "@g.us")
-	if err := h.whatsappService.SetGroupJoinApprovalMode(c.Request.Context(), sessionId, groupID, req.ApprovalMode); err != nil {
+	if err := h.wpp.SetJoinApprovalMode(c.Request.Context(), sessionId, groupID, req.ApprovalMode); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -663,7 +663,7 @@ func (h *GroupHandler) SetGroupMemberAddMode(c *gin.Context) {
 	}
 
 	groupID := strings.TrimSuffix(req.GroupID, "@g.us")
-	if err := h.whatsappService.SetGroupMemberAddMode(c.Request.Context(), sessionId, groupID, mode); err != nil {
+	if err := h.wpp.SetMemberAddMode(c.Request.Context(), sessionId, groupID, mode); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -686,7 +686,7 @@ func (h *GroupHandler) GetGroupRequestParticipants(c *gin.Context) {
 	sessionId := c.Param("sessionId")
 	groupID := strings.TrimSuffix(c.Param("groupId"), "@g.us")
 
-	requests, err := h.whatsappService.GetGroupRequestParticipants(c.Request.Context(), sessionId, groupID)
+	requests, err := h.wpp.GetJoinRequests(c.Request.Context(), sessionId, groupID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -733,7 +733,7 @@ func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
 		return
 	}
 
-	result, err := h.whatsappService.UpdateGroupRequestParticipants(c.Request.Context(), sessionId, groupID, req.Participants, action)
+	result, err := h.wpp.UpdateJoinRequests(c.Request.Context(), sessionId, groupID, req.Participants, action)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -776,7 +776,7 @@ func (h *GroupHandler) GetGroupInfoFromLink(c *gin.Context) {
 		}
 	}
 
-	info, err := h.whatsappService.GetGroupInfoFromLink(c.Request.Context(), sessionId, code)
+	info, err := h.wpp.GetGroupInfoFromLink(c.Request.Context(), sessionId, code)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return

@@ -11,15 +11,16 @@ import (
 	"zpwoot/internal/api/dto"
 	"zpwoot/internal/model"
 	"zpwoot/internal/service"
+	"zpwoot/internal/service/wpp"
 )
 
 type SessionHandler struct {
-	sessionService  *service.SessionService
-	whatsappService *service.WhatsAppService
+	sessionService *service.SessionService
+	wpp            *wpp.Service
 }
 
-func NewSessionHandler(sessionService *service.SessionService, whatsappService *service.WhatsAppService) *SessionHandler {
-	return &SessionHandler{sessionService: sessionService, whatsappService: whatsappService}
+func NewSessionHandler(sessionService *service.SessionService, wpp *wpp.Service) *SessionHandler {
+	return &SessionHandler{sessionService: sessionService, wpp: wpp}
 }
 
 func sessionToResponse(sess *model.Session) dto.SessionResponse {
@@ -338,7 +339,7 @@ func (h *SessionHandler) PairPhone(c *gin.Context) {
 		return
 	}
 
-	code, err := h.whatsappService.PairPhone(c.Request.Context(), sessionId, req.Phone)
+	code, err := h.wpp.PairPhone(c.Request.Context(), sessionId, req.Phone)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return

@@ -8,15 +8,15 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"zpwoot/internal/api/dto"
-	"zpwoot/internal/service"
+	"zpwoot/internal/service/wpp"
 )
 
 type StatusHandler struct {
-	whatsappService *service.WhatsAppService
+	wpp *wpp.Service
 }
 
-func NewStatusHandler(whatsappService *service.WhatsAppService) *StatusHandler {
-	return &StatusHandler{whatsappService: whatsappService}
+func NewStatusHandler(wpp *wpp.Service) *StatusHandler {
+	return &StatusHandler{wpp: wpp}
 }
 
 // SendStory godoc
@@ -74,7 +74,7 @@ func (h *StatusHandler) SendStory(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.whatsappService.SendStatus(c.Request.Context(), sessionId, msg)
+	resp, err := h.wpp.SendStatus(c.Request.Context(), sessionId, msg)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -100,7 +100,7 @@ func (h *StatusHandler) SendStory(c *gin.Context) {
 func (h *StatusHandler) GetStatusPrivacy(c *gin.Context) {
 	sessionId := c.Param("sessionId")
 
-	privacy, err := h.whatsappService.GetStatusPrivacy(c.Request.Context(), sessionId)
+	privacy, err := h.wpp.GetStatusPrivacy(c.Request.Context(), sessionId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return

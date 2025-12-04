@@ -8,22 +8,23 @@ import (
 
 	"zpwoot/internal/api/dto"
 	"zpwoot/internal/service"
+	"zpwoot/internal/service/wpp"
 )
 
 type HistoryHandler struct {
 	sessionService     *service.SessionService
-	whatsappService    *service.WhatsAppService
+	wpp                *wpp.Service
 	historySyncService *service.HistorySyncService
 }
 
 func NewHistoryHandler(
 	sessionService *service.SessionService,
-	whatsappService *service.WhatsAppService,
+	wppSvc *wpp.Service,
 	historySyncService *service.HistorySyncService,
 ) *HistoryHandler {
 	return &HistoryHandler{
 		sessionService:     sessionService,
-		whatsappService:    whatsappService,
+		wpp:                wppSvc,
 		historySyncService: historySyncService,
 	}
 }
@@ -48,7 +49,7 @@ func (h *HistoryHandler) RequestHistorySync(c *gin.Context) {
 	var req dto.HistorySyncRequest
 	_ = c.ShouldBindJSON(&req)
 
-	resp, err := h.whatsappService.RequestHistorySync(c.Request.Context(), sessionId, req.Count)
+	resp, err := h.wpp.RequestHistorySync(c.Request.Context(), sessionId, req.Count)
 	if err != nil {
 		if err.Error() == "session "+sessionId+" not found" || err.Error() == "session not found" {
 			c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: err.Error()})

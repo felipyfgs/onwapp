@@ -10,15 +10,15 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"zpwoot/internal/api/dto"
-	"zpwoot/internal/service"
+	"zpwoot/internal/service/wpp"
 )
 
 type MessageHandler struct {
-	whatsappService *service.WhatsAppService
+	wpp *wpp.Service
 }
 
-func NewMessageHandler(whatsappService *service.WhatsAppService) *MessageHandler {
-	return &MessageHandler{whatsappService: whatsappService}
+func NewMessageHandler(wpp *wpp.Service) *MessageHandler {
+	return &MessageHandler{wpp: wpp}
 }
 
 // SendText godoc
@@ -44,7 +44,7 @@ func (h *MessageHandler) SendText(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.whatsappService.SendText(c.Request.Context(), sessionId, req.Phone, req.Text)
+	resp, err := h.wpp.SendText(c.Request.Context(), sessionId, req.Phone, req.Text)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -117,7 +117,7 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 		mimeType = "image/jpeg"
 	}
 
-	resp, err := h.whatsappService.SendImage(c.Request.Context(), sessionId, phone, imageData, caption, mimeType)
+	resp, err := h.wpp.SendImage(c.Request.Context(), sessionId, phone, imageData, caption, mimeType, nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -191,7 +191,7 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 		mimeType = "audio/ogg; codecs=opus"
 	}
 
-	resp, err := h.whatsappService.SendAudio(c.Request.Context(), sessionId, phone, audioData, mimeType, ptt)
+	resp, err := h.wpp.SendAudio(c.Request.Context(), sessionId, phone, audioData, mimeType, ptt, nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -264,7 +264,7 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 		mimeType = "video/mp4"
 	}
 
-	resp, err := h.whatsappService.SendVideo(c.Request.Context(), sessionId, phone, videoData, caption, mimeType)
+	resp, err := h.wpp.SendVideo(c.Request.Context(), sessionId, phone, videoData, caption, mimeType, nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -337,7 +337,7 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 		mimeType = "application/octet-stream"
 	}
 
-	resp, err := h.whatsappService.SendDocument(c.Request.Context(), sessionId, phone, docData, filename, mimeType)
+	resp, err := h.wpp.SendDocument(c.Request.Context(), sessionId, phone, docData, filename, mimeType, nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -407,7 +407,7 @@ func (h *MessageHandler) SendSticker(c *gin.Context) {
 		mimeType = "image/webp"
 	}
 
-	resp, err := h.whatsappService.SendSticker(c.Request.Context(), sessionId, phone, stickerData, mimeType)
+	resp, err := h.wpp.SendSticker(c.Request.Context(), sessionId, phone, stickerData, mimeType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -443,7 +443,7 @@ func (h *MessageHandler) SendLocation(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.whatsappService.SendLocation(c.Request.Context(), sessionId, req.Phone, req.Latitude, req.Longitude, req.Name, req.Address)
+	resp, err := h.wpp.SendLocation(c.Request.Context(), sessionId, req.Phone, req.Latitude, req.Longitude, req.Name, req.Address)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -479,7 +479,7 @@ func (h *MessageHandler) SendContact(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.whatsappService.SendContact(c.Request.Context(), sessionId, req.Phone, req.ContactName, req.ContactPhone)
+	resp, err := h.wpp.SendContact(c.Request.Context(), sessionId, req.Phone, req.ContactName, req.ContactPhone)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -515,7 +515,7 @@ func (h *MessageHandler) SendReaction(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.whatsappService.SendReaction(c.Request.Context(), sessionId, req.Phone, req.MessageID, req.Emoji)
+	resp, err := h.wpp.SendReaction(c.Request.Context(), sessionId, req.Phone, req.MessageID, req.Emoji)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -551,7 +551,7 @@ func (h *MessageHandler) SendPoll(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.whatsappService.SendPoll(c.Request.Context(), sessionId, req.Phone, req.Name, req.Options, req.SelectableCount)
+	resp, err := h.wpp.SendPoll(c.Request.Context(), sessionId, req.Phone, req.Name, req.Options, req.SelectableCount)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -587,7 +587,7 @@ func (h *MessageHandler) SendPollVote(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.whatsappService.SendPollVote(c.Request.Context(), sessionId, req.Phone, req.PollMessageID, req.SelectedOptions)
+	resp, err := h.wpp.SendPollVote(c.Request.Context(), sessionId, req.Phone, req.PollMessageID, req.SelectedOptions)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -638,7 +638,7 @@ func (h *MessageHandler) SendButtons(c *gin.Context) {
 		Buttons:     buttons,
 	}
 
-	resp, err := h.whatsappService.SendButtonsMessage(c.Request.Context(), sessionId, req.Phone, params)
+	resp, err := h.wpp.SendButtons(c.Request.Context(), sessionId, req.Phone, params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -698,7 +698,7 @@ func (h *MessageHandler) SendList(c *gin.Context) {
 		Sections:    sections,
 	}
 
-	resp, err := h.whatsappService.SendListMessage(c.Request.Context(), sessionId, req.Phone, params)
+	resp, err := h.wpp.SendList(c.Request.Context(), sessionId, req.Phone, params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -755,7 +755,7 @@ func (h *MessageHandler) SendInteractive(c *gin.Context) {
 		if !ok {
 			return
 		}
-		uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), sessionId, imageData, whatsmeow.MediaImage)
+		uploaded, err := h.wpp.UploadMedia(c.Request.Context(), sessionId, imageData, whatsmeow.MediaImage)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to upload image: " + err.Error()})
 			return
@@ -784,7 +784,7 @@ func (h *MessageHandler) SendInteractive(c *gin.Context) {
 		if !ok {
 			return
 		}
-		uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), sessionId, videoData, whatsmeow.MediaVideo)
+		uploaded, err := h.wpp.UploadMedia(c.Request.Context(), sessionId, videoData, whatsmeow.MediaVideo)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to upload video: " + err.Error()})
 			return
@@ -807,7 +807,7 @@ func (h *MessageHandler) SendInteractive(c *gin.Context) {
 		}
 	}
 
-	resp, err := h.whatsappService.SendNativeFlowMessage(c.Request.Context(), sessionId, req.Phone, params)
+	resp, err := h.wpp.SendNativeFlow(c.Request.Context(), sessionId, req.Phone, params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -880,7 +880,7 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 		if !ok {
 			return
 		}
-		uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), sessionId, imageData, whatsmeow.MediaImage)
+		uploaded, err := h.wpp.UploadMedia(c.Request.Context(), sessionId, imageData, whatsmeow.MediaImage)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to upload image: " + err.Error()})
 			return
@@ -909,7 +909,7 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 		if !ok {
 			return
 		}
-		uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), sessionId, videoData, whatsmeow.MediaVideo)
+		uploaded, err := h.wpp.UploadMedia(c.Request.Context(), sessionId, videoData, whatsmeow.MediaVideo)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to upload video: " + err.Error()})
 			return
@@ -938,7 +938,7 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 		if !ok {
 			return
 		}
-		uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), sessionId, docData, whatsmeow.MediaDocument)
+		uploaded, err := h.wpp.UploadMedia(c.Request.Context(), sessionId, docData, whatsmeow.MediaDocument)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to upload document: " + err.Error()})
 			return
@@ -962,7 +962,7 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 		}
 	}
 
-	resp, err := h.whatsappService.SendTemplateMessage(c.Request.Context(), sessionId, req.Phone, params)
+	resp, err := h.wpp.SendTemplate(c.Request.Context(), sessionId, req.Phone, params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -1038,7 +1038,7 @@ func (h *MessageHandler) SendCarousel(c *gin.Context) {
 				}
 			}
 
-			uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), sessionId, imageData, whatsmeow.MediaImage)
+			uploaded, err := h.wpp.UploadMedia(c.Request.Context(), sessionId, imageData, whatsmeow.MediaImage)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to upload card image: " + err.Error()})
 				return
@@ -1083,7 +1083,7 @@ func (h *MessageHandler) SendCarousel(c *gin.Context) {
 				}
 			}
 
-			uploaded, err := h.whatsappService.UploadMedia(c.Request.Context(), sessionId, videoData, whatsmeow.MediaVideo)
+			uploaded, err := h.wpp.UploadMedia(c.Request.Context(), sessionId, videoData, whatsmeow.MediaVideo)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to upload card video: " + err.Error()})
 				return
@@ -1117,7 +1117,7 @@ func (h *MessageHandler) SendCarousel(c *gin.Context) {
 		Cards:  cards,
 	}
 
-	resp, err := h.whatsappService.SendCarouselMessage(c.Request.Context(), sessionId, req.Phone, params)
+	resp, err := h.wpp.SendCarousel(c.Request.Context(), sessionId, req.Phone, params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return

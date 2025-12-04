@@ -19,6 +19,7 @@ import (
 	"zpwoot/internal/logger"
 	"zpwoot/internal/queue"
 	"zpwoot/internal/service"
+	"zpwoot/internal/service/wpp"
 	"zpwoot/internal/version"
 
 	_ "zpwoot/docs"
@@ -117,7 +118,7 @@ func main() {
 	webhookRepo := webhook.NewRepository(database.Pool)
 	webhookService := webhook.NewService(webhookRepo)
 	sessionService := service.NewSessionService(database.Container, database, webhookService)
-	whatsappService := service.NewWhatsAppService(sessionService)
+	wppService := wpp.New(sessionService)
 
 	// Set media service for automatic media download to storage
 	if mediaService != nil {
@@ -159,7 +160,7 @@ func main() {
 	webhookService.SetChatwootProvider(chatwoot.NewWebhookProvider(chatwootRepo, database))
 	// Connect webhook sender to Chatwoot service (for dispatching webhooks with CW IDs after message processing)
 	chatwootService.SetWebhookSender(chatwoot.NewWebhookSenderAdapter(webhookService))
-	chatwootService.SetMediaDownloader(whatsappService.DownloadMedia) // Enable media upload to Chatwoot
+	chatwootService.SetMediaDownloader(wppService.DownloadMedia) // Enable media upload to Chatwoot
 
 	// Configure webhook skip checker: skip message webhooks from EventService when Chatwoot is enabled
 	// (Chatwoot service will send its own webhook with enriched data including CW IDs)
@@ -177,7 +178,7 @@ func main() {
 	})
 	// Set profile picture fetcher for contact management
 	chatwootService.SetProfilePictureFetcher(func(ctx context.Context, sessionName string, jid string) (string, error) {
-		pic, err := whatsappService.GetProfilePicture(ctx, sessionName, jid)
+		pic, err := wppService.GetProfilePicture(ctx, sessionName, jid)
 		if err != nil {
 			return "", err
 		}
@@ -188,7 +189,7 @@ func main() {
 	})
 	// Set group info fetcher for getting real group names
 	chatwootService.SetGroupInfoFetcher(func(ctx context.Context, sessionName string, groupJid string) (string, error) {
-		info, err := whatsappService.GetGroupInfo(ctx, sessionName, groupJid)
+		info, err := wppService.GetGroupInfo(ctx, sessionName, groupJid)
 		if err != nil {
 			return "", err
 		}
@@ -198,7 +199,7 @@ func main() {
 		return "", nil
 	})
 	chatwootEventHandler := chatwoot.NewEventHandler(chatwootService)
-	chatwootHandler := chatwoot.NewHandler(chatwootService, sessionService, whatsappService, database)
+	chatwootHandler := chatwoot.NewHandler(chatwootService, sessionService, wppService, database)
 
 	// Set queue producer on Chatwoot handlers if queue is enabled
 	if queueService != nil && queueService.IsEnabled() {
@@ -235,21 +236,21 @@ func main() {
 	}
 
 	// Initialize History handler
-	historyHandler := handler.NewHistoryHandler(sessionService, whatsappService, historySyncService)
+	historyHandler := handler.NewHistoryHandler(sessionService, wppService, historySyncService)
 
 	handlers := &router.Handlers{
-		Session:    handler.NewSessionHandler(sessionService, whatsappService),
-		Profile:    handler.NewProfileHandler(whatsappService),
-		Presence:   handler.NewPresenceHandler(whatsappService),
-		Contact:    handler.NewContactHandler(whatsappService),
-		Group:      handler.NewGroupHandler(whatsappService),
-		Community:  handler.NewCommunityHandler(whatsappService),
-		Chat:       handler.NewChatHandler(whatsappService),
-		Message:    handler.NewMessageHandler(whatsappService),
+		Session:    handler.NewSessionHandler(sessionService, wppService),
+		Profile:    handler.NewProfileHandler(wppService),
+		Presence:   handler.NewPresenceHandler(wppService),
+		Contact:    handler.NewContactHandler(wppService),
+		Group:      handler.NewGroupHandler(wppService),
+		Community:  handler.NewCommunityHandler(wppService),
+		Chat:       handler.NewChatHandler(wppService),
+		Message:    handler.NewMessageHandler(wppService),
 		Media:      mediaHandler,
-		Newsletter: handler.NewNewsletterHandler(whatsappService),
-		Status:     handler.NewStatusHandler(whatsappService),
-		Call:       handler.NewCallHandler(whatsappService),
+		Newsletter: handler.NewNewsletterHandler(wppService),
+		Status:     handler.NewStatusHandler(wppService),
+		Call:       handler.NewCallHandler(wppService),
 		History:    historyHandler,
 		Webhook:    webhookHandler,
 	}

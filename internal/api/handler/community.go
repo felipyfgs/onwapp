@@ -7,15 +7,15 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"zpwoot/internal/api/dto"
-	"zpwoot/internal/service"
+	"zpwoot/internal/service/wpp"
 )
 
 type CommunityHandler struct {
-	whatsappService *service.WhatsAppService
+	wpp *wpp.Service
 }
 
-func NewCommunityHandler(whatsappService *service.WhatsAppService) *CommunityHandler {
-	return &CommunityHandler{whatsappService: whatsappService}
+func NewCommunityHandler(wpp *wpp.Service) *CommunityHandler {
+	return &CommunityHandler{wpp: wpp}
 }
 
 // LinkGroup godoc
@@ -43,7 +43,7 @@ func (h *CommunityHandler) LinkGroup(c *gin.Context) {
 	parentID := strings.TrimSuffix(req.ParentGroupID, "@g.us")
 	childID := strings.TrimSuffix(req.ChildGroupID, "@g.us")
 
-	if err := h.whatsappService.LinkGroup(c.Request.Context(), sessionId, parentID, childID); err != nil {
+	if err := h.wpp.LinkGroup(c.Request.Context(), sessionId, parentID, childID); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -76,7 +76,7 @@ func (h *CommunityHandler) UnlinkGroup(c *gin.Context) {
 	parentID := strings.TrimSuffix(req.ParentGroupID, "@g.us")
 	childID := strings.TrimSuffix(req.ChildGroupID, "@g.us")
 
-	if err := h.whatsappService.UnlinkGroup(c.Request.Context(), sessionId, parentID, childID); err != nil {
+	if err := h.wpp.UnlinkGroup(c.Request.Context(), sessionId, parentID, childID); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -99,7 +99,7 @@ func (h *CommunityHandler) GetSubGroups(c *gin.Context) {
 	sessionId := c.Param("sessionId")
 	communityID := strings.TrimSuffix(c.Param("communityId"), "@g.us")
 
-	groups, err := h.whatsappService.GetSubGroups(c.Request.Context(), sessionId, communityID)
+	groups, err := h.wpp.GetSubGroups(c.Request.Context(), sessionId, communityID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return

@@ -6,15 +6,15 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"zpwoot/internal/api/dto"
-	"zpwoot/internal/service"
+	"zpwoot/internal/service/wpp"
 )
 
 type ContactHandler struct {
-	whatsappService *service.WhatsAppService
+	wpp *wpp.Service
 }
 
-func NewContactHandler(whatsappService *service.WhatsAppService) *ContactHandler {
-	return &ContactHandler{whatsappService: whatsappService}
+func NewContactHandler(wpp *wpp.Service) *ContactHandler {
+	return &ContactHandler{wpp: wpp}
 }
 
 // CheckPhone godoc
@@ -40,7 +40,7 @@ func (h *ContactHandler) CheckPhone(c *gin.Context) {
 		return
 	}
 
-	results, err := h.whatsappService.CheckPhoneRegistered(c.Request.Context(), sessionId, req.Phones)
+	results, err := h.wpp.CheckPhoneRegistered(c.Request.Context(), sessionId, req.Phones)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -81,7 +81,7 @@ func (h *ContactHandler) GetContactInfo(c *gin.Context) {
 		return
 	}
 
-	info, err := h.whatsappService.GetUserInfo(c.Request.Context(), sessionId, req.Phones)
+	info, err := h.wpp.GetUserInfo(c.Request.Context(), sessionId, req.Phones)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -119,7 +119,7 @@ func (h *ContactHandler) GetAvatar(c *gin.Context) {
 	sessionId := c.Param("sessionId")
 	phone := c.Param("phone")
 
-	pic, err := h.whatsappService.GetProfilePicture(c.Request.Context(), sessionId, phone)
+	pic, err := h.wpp.GetProfilePicture(c.Request.Context(), sessionId, phone)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -155,7 +155,7 @@ func (h *ContactHandler) GetAvatar(c *gin.Context) {
 func (h *ContactHandler) GetContacts(c *gin.Context) {
 	sessionId := c.Param("sessionId")
 
-	contacts, err := h.whatsappService.GetContacts(c.Request.Context(), sessionId)
+	contacts, err := h.wpp.GetContacts(c.Request.Context(), sessionId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -177,7 +177,7 @@ func (h *ContactHandler) GetContacts(c *gin.Context) {
 func (h *ContactHandler) GetBlocklist(c *gin.Context) {
 	sessionId := c.Param("sessionId")
 
-	blocklist, err := h.whatsappService.GetBlocklist(c.Request.Context(), sessionId)
+	blocklist, err := h.wpp.GetBlocklist(c.Request.Context(), sessionId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -217,7 +217,7 @@ func (h *ContactHandler) UpdateBlocklist(c *gin.Context) {
 	}
 
 	block := req.Action == "block"
-	_, err := h.whatsappService.UpdateBlocklist(c.Request.Context(), sessionId, req.Phone, block)
+	_, err := h.wpp.UpdateBlocklist(c.Request.Context(), sessionId, req.Phone, block)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -252,7 +252,7 @@ func (h *ContactHandler) SubscribePresence(c *gin.Context) {
 		return
 	}
 
-	if err := h.whatsappService.SubscribePresence(c.Request.Context(), sessionId, req.Phone); err != nil {
+	if err := h.wpp.SubscribePresence(c.Request.Context(), sessionId, req.Phone); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -275,7 +275,7 @@ func (h *ContactHandler) GetContactQRLink(c *gin.Context) {
 	sessionId := c.Param("sessionId")
 	revoke := c.Query("revoke") == "true"
 
-	link, err := h.whatsappService.GetContactQRLink(c.Request.Context(), sessionId, revoke)
+	link, err := h.wpp.GetContactQRLink(c.Request.Context(), sessionId, revoke)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -302,7 +302,7 @@ func (h *ContactHandler) GetBusinessProfile(c *gin.Context) {
 	sessionId := c.Param("sessionId")
 	phone := c.Param("phone")
 
-	profile, err := h.whatsappService.GetBusinessProfile(c.Request.Context(), sessionId, phone)
+	profile, err := h.wpp.GetBusinessProfile(c.Request.Context(), sessionId, phone)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -330,7 +330,7 @@ func (h *ContactHandler) GetContactLID(c *gin.Context) {
 	sessionId := c.Param("sessionId")
 	phone := c.Param("phone")
 
-	lid, err := h.whatsappService.GetContactLID(c.Request.Context(), sessionId, phone)
+	lid, err := h.wpp.GetContactLID(c.Request.Context(), sessionId, phone)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return

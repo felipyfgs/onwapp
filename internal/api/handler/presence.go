@@ -6,15 +6,15 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"zpwoot/internal/api/dto"
-	"zpwoot/internal/service"
+	"zpwoot/internal/service/wpp"
 )
 
 type PresenceHandler struct {
-	whatsappService *service.WhatsAppService
+	wpp *wpp.Service
 }
 
-func NewPresenceHandler(whatsappService *service.WhatsAppService) *PresenceHandler {
-	return &PresenceHandler{whatsappService: whatsappService}
+func NewPresenceHandler(wpp *wpp.Service) *PresenceHandler {
+	return &PresenceHandler{wpp: wpp}
 }
 
 // SetPresence godoc
@@ -40,7 +40,7 @@ func (h *PresenceHandler) SetPresence(c *gin.Context) {
 		return
 	}
 
-	if err := h.whatsappService.SendPresence(c.Request.Context(), sessionId, req.Available); err != nil {
+	if err := h.wpp.SendPresence(c.Request.Context(), sessionId, req.Available); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -79,7 +79,7 @@ func (h *PresenceHandler) SetChatPresence(c *gin.Context) {
 		return
 	}
 
-	if err := h.whatsappService.SendChatPresenceRaw(c.Request.Context(), sessionId, req.Phone, req.State, req.Media); err != nil {
+	if err := h.wpp.SendChatPresenceRaw(c.Request.Context(), sessionId, req.Phone, req.State, req.Media); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -113,7 +113,7 @@ func (h *PresenceHandler) MarkRead(c *gin.Context) {
 		return
 	}
 
-	if err := h.whatsappService.MarkRead(c.Request.Context(), sessionId, req.Phone, req.MessageIDs); err != nil {
+	if err := h.wpp.MarkRead(c.Request.Context(), sessionId, req.Phone, req.MessageIDs); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -144,7 +144,7 @@ func (h *PresenceHandler) SubscribePresence(c *gin.Context) {
 		return
 	}
 
-	if err := h.whatsappService.SubscribePresence(c.Request.Context(), sessionId, req.Phone); err != nil {
+	if err := h.wpp.SubscribePresence(c.Request.Context(), sessionId, req.Phone); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}

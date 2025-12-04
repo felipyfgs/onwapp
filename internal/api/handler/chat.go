@@ -6,15 +6,15 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"zpwoot/internal/api/dto"
-	"zpwoot/internal/service"
+	"zpwoot/internal/service/wpp"
 )
 
 type ChatHandler struct {
-	whatsappService *service.WhatsAppService
+	wpp *wpp.Service
 }
 
-func NewChatHandler(whatsappService *service.WhatsAppService) *ChatHandler {
-	return &ChatHandler{whatsappService: whatsappService}
+func NewChatHandler(wpp *wpp.Service) *ChatHandler {
+	return &ChatHandler{wpp: wpp}
 }
 
 // ArchiveChat godoc
@@ -40,7 +40,7 @@ func (h *ChatHandler) ArchiveChat(c *gin.Context) {
 		return
 	}
 
-	if err := h.whatsappService.ArchiveChat(c.Request.Context(), sessionId, req.Phone, req.Archive); err != nil {
+	if err := h.wpp.ArchiveChat(c.Request.Context(), sessionId, req.Phone, req.Archive); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -79,7 +79,7 @@ func (h *ChatHandler) DeleteMessage(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.whatsappService.DeleteMessage(c.Request.Context(), sessionId, req.Phone, req.MessageID, req.ForMe)
+	resp, err := h.wpp.DeleteMessage(c.Request.Context(), sessionId, req.Phone, req.MessageID, req.ForMe)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -115,7 +115,7 @@ func (h *ChatHandler) EditMessage(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.whatsappService.EditMessage(c.Request.Context(), sessionId, req.Phone, req.MessageID, req.NewText)
+	resp, err := h.wpp.EditMessage(c.Request.Context(), sessionId, req.Phone, req.MessageID, req.NewText)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -155,7 +155,7 @@ func (h *ChatHandler) SetDisappearingTimer(c *gin.Context) {
 		return
 	}
 
-	if err := h.whatsappService.SetDisappearingTimer(c.Request.Context(), sessionId, req.Phone, timer); err != nil {
+	if err := h.wpp.SetDisappearingTimer(c.Request.Context(), sessionId, req.Phone, timer); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -186,7 +186,7 @@ func (h *ChatHandler) RequestUnavailableMessage(c *gin.Context) {
 	var req dto.RequestUnavailableMessageRequest
 	_ = c.ShouldBindJSON(&req)
 
-	resp, err := h.whatsappService.RequestUnavailableMessage(c.Request.Context(), sessionId, chatID, req.SenderJID, messageID)
+	resp, err := h.wpp.RequestUnavailableMessage(c.Request.Context(), sessionId, chatID, req.SenderJID, messageID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
