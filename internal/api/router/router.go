@@ -43,17 +43,17 @@ type Handlers struct {
 
 type Config struct {
 	Handlers        *Handlers
-	APIKey          string
+	GlobalAPIKey    string
 	SessionLookup   middleware.SessionKeyLookup
 	Database        *db.Database
 	RateLimitPerMin int
 	AllowedOrigins  []string
 }
 
-func Setup(handlers *Handlers, apiKey string) *gin.Engine {
+func Setup(handlers *Handlers, globalAPIKey string) *gin.Engine {
 	return SetupWithConfig(&Config{
 		Handlers:        handlers,
-		APIKey:          apiKey,
+		GlobalAPIKey:    globalAPIKey,
 		RateLimitPerMin: 100,
 		AllowedOrigins:  []string{"*"},
 	})
@@ -105,13 +105,13 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 		})
 	})
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	r.GET("/events", middleware.Auth(cfg.APIKey, cfg.SessionLookup), h.Webhook.GetEvents)
+	r.GET("/events", middleware.Auth(cfg.GlobalAPIKey, cfg.SessionLookup), h.Webhook.GetEvents)
 
 	// ─────────────────────────────────────────────────────────────────────────────
 	// API Routes (organized by whatsmeow pattern)
 	// ─────────────────────────────────────────────────────────────────────────────
 	sessions := r.Group("/sessions")
-	sessions.Use(middleware.Auth(cfg.APIKey, cfg.SessionLookup))
+	sessions.Use(middleware.Auth(cfg.GlobalAPIKey, cfg.SessionLookup))
 	{
 		// ═══════════════════════════════════════════════════════════════════════
 		// 1. CONNECTION - Session lifecycle
