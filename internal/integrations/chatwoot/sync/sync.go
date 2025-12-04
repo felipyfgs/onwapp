@@ -239,3 +239,8 @@ func (s *ChatwootDBSync) ResolveAllConversations(ctx context.Context) (int, erro
 func (s *ChatwootDBSync) GetOpenConversationsCount(ctx context.Context) (int, error) {
 	return s.repo.GetOpenConversationsCount(ctx)
 }
+
+// GetSyncOverview returns comprehensive sync statistics
+func (s *ChatwootDBSync) GetSyncOverview(ctx context.Context) (*SyncOverview, error) {
+	return s.repo.GetSyncOverview(ctx)
+}

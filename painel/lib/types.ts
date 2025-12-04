@@ -53,6 +53,7 @@ export interface ChatwootConfig {
   syncContacts: boolean
   syncMessages: boolean
   syncDays?: number
+  importAsResolved?: boolean
   mergeBrPhones: boolean
   ignoreChats?: string[]
   autoCreate: boolean

@@ -258,19 +258,20 @@ export default function WebhookPage({ params }: { params: Promise<{ name: string
 
                   return (
                     <AccordionItem key={category} value={category}>
-                      <AccordionTrigger className="hover:no-underline">
-                        <div className="flex items-center gap-3">
-                          <Checkbox
-                            checked={allSelected}
-                            onCheckedChange={() => toggleCategory(categoryEvents)}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                          <span>{categoryLabels[category] || category}</span>
-                          <Badge variant={allSelected ? 'default' : 'secondary'} className="ml-2">
-                            {selectedInCategory}/{categoryEvents.length}
-                          </Badge>
-                        </div>
-                      </AccordionTrigger>
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          checked={allSelected}
+                          onCheckedChange={() => toggleCategory(categoryEvents)}
+                        />
+                        <AccordionTrigger className="hover:no-underline flex-1 py-4">
+                          <div className="flex items-center gap-2">
+                            <span>{categoryLabels[category] || category}</span>
+                            <Badge variant={allSelected ? 'default' : 'secondary'}>
+                              {selectedInCategory}/{categoryEvents.length}
+                            </Badge>
+                          </div>
+                        </AccordionTrigger>
+                      </div>
                       <AccordionContent>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pl-8 pt-2">
                           {categoryEvents.map((event) => (

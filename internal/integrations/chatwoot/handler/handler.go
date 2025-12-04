@@ -869,6 +869,60 @@ func (h *Handler) GetConversationsStats(c *gin.Context) {
 	})
 }
 
+// GetSyncOverview handles GET /sessions/:sessionId/chatwoot/overview
+// @Summary Get sync overview statistics
+// @Description Get comprehensive statistics: contacts, conversations, messages
+// @Tags         chatwoot
+// @Produce json
+// @Security Authorization
+// @Param sessionId path string true "Session name"
+// @Success 200 {object} cwsync.SyncOverview
+// @Router /sessions/{sessionId}/chatwoot/overview [get]
+func (h *Handler) GetSyncOverview(c *gin.Context) {
+	sessionId := c.Param("sessionId")
+	session, err := h.sessionService.Get(sessionId)
+	if err != nil || session == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
+		return
+	}
+
+	cfg, err := h.service.GetConfig(c.Request.Context(), session.ID)
+	if err != nil || cfg == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "chatwoot not configured"})
+		return
+	}
+
+	lidResolver := &whatsappLIDResolver{session: session}
+
+	dbSync, err := cwsync.NewChatwootDBSync(cfg, nil, nil, nil, session.ID, lidResolver)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to connect to database: " + err.Error()})
+		return
+	}
+	defer dbSync.Close()
+
+	// Get Chatwoot overview
+	overview, err := dbSync.GetSyncOverview(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Get WhatsApp contacts count
+	contactsAdapter := &whatsappContactsAdapter{
+		wpp:       h.wpp,
+		sessionId: sessionId,
+	}
+	waContacts, _ := contactsAdapter.GetAllContacts(c.Request.Context())
+
+	c.JSON(http.StatusOK, gin.H{
+		"whatsapp": gin.H{
+			"contacts": len(waContacts),
+		},
+		"chatwoot": overview,
+	})
+}
+
 // =============================================================================
 // ADAPTERS
 // =============================================================================

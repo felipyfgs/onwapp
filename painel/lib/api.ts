@@ -288,3 +288,38 @@ export async function getChatwootSyncStatus(sessionName: string): Promise<SyncSt
 export async function resetChatwoot(sessionName: string): Promise<{ message: string; deleted: { contacts: number; conversations: number; messages: number } }> {
   return apiRequest(`/sessions/${sessionName}/chatwoot/reset`, { method: 'POST' })
 }
+
+export async function resolveAllConversations(sessionName: string): Promise<{ message: string; resolved: number }> {
+  return apiRequest(`/sessions/${sessionName}/chatwoot/resolve-all`, { method: 'POST' })
+}
+
+export async function getConversationsStats(sessionName: string): Promise<{ open: number }> {
+  return apiRequest(`/sessions/${sessionName}/chatwoot/conversations/stats`)
+}
+
+export interface SyncOverview {
+  whatsapp: {
+    contacts: number
+  }
+  chatwoot: {
+    contacts: {
+      totalChatwoot: number
+      whatsAppSynced: number
+    }
+    conversations: {
+      total: number
+      open: number
+      resolved: number
+      pending: number
+    }
+    messages: {
+      total: number
+      incoming: number
+      outgoing: number
+    }
+  }
+}
+
+export async function getSyncOverview(sessionName: string): Promise<SyncOverview> {
+  return apiRequest(`/sessions/${sessionName}/chatwoot/overview`)
+}

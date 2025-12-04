@@ -49,17 +49,17 @@ export function DeleteSessionDialog({
             </div>
             <AlertDialogTitle>Excluir Sessao</AlertDialogTitle>
           </div>
-          <AlertDialogDescription className="pt-2">
-            Tem certeza que deseja excluir a sessao <code className="rounded bg-muted px-1.5 py-0.5 font-semibold">{sessionName}</code>?
-            <br /><br />
-            Esta acao ira:
-            <ul className="list-disc list-inside mt-2 space-y-1 text-muted-foreground">
-              <li>Desconectar o WhatsApp</li>
-              <li>Remover todas as credenciais</li>
-              <li>Excluir os dados da sessao</li>
-            </ul>
-            <br />
-            <strong className="text-destructive">Esta acao nao pode ser desfeita.</strong>
+          <AlertDialogDescription className="pt-2" asChild>
+            <div className="text-muted-foreground text-sm">
+              Tem certeza que deseja excluir a sessao <code className="rounded bg-muted px-1.5 py-0.5 font-semibold">{sessionName}</code>?
+              <p className="mt-3">Esta acao ira:</p>
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>Desconectar o WhatsApp</li>
+                <li>Remover todas as credenciais</li>
+                <li>Excluir os dados da sessao</li>
+              </ul>
+              <p className="mt-3 text-destructive font-medium">Esta acao nao pode ser desfeita.</p>
+            </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

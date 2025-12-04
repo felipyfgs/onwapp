@@ -38,6 +38,9 @@ import {
   deleteChatwootConfig,
   syncChatwoot,
   getChatwootSyncStatus,
+  resolveAllConversations,
+  getSyncOverview,
+  type SyncOverview,
 } from '@/lib/api'
 import type { ChatwootConfig, SyncStatus } from '@/lib/types'
 
@@ -54,6 +57,7 @@ const defaultConfig: Partial<ChatwootConfig> = {
   syncContacts: true,
   syncMessages: true,
   syncDays: 30,
+  importAsResolved: false,
   mergeBrPhones: false,
   ignoreChats: [],
   chatwootDbHost: '',
@@ -68,9 +72,11 @@ export default function ChatwootPage({ params }: { params: Promise<{ name: strin
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [syncing, setSyncing] = useState<string | null>(null)
+  const [resolving, setResolving] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showTokens, setShowTokens] = useState<Record<string, boolean>>({})
   const [syncStatus, setSyncStatus] = useState<SyncStatus | null>(null)
+  const [overview, setOverview] = useState<SyncOverview | null>(null)
   const [step, setStep] = useState(1)
 
   const [config, setConfig] = useState<Partial<ChatwootConfig>>(defaultConfig)
@@ -84,7 +90,12 @@ export default function ChatwootPage({ params }: { params: Promise<{ name: strin
       ])
       if (configData?.url) {
         setConfig({ ...defaultConfig, ...configData })
-        if (configData.chatwootDbHost) setStep(3)
+        if (configData.chatwootDbHost) {
+          setStep(3)
+          // Fetch conversation stats when on step 3
+          const stats = await getConversationsStats(name).catch(() => null)
+          if (stats) setOpenConversations(stats.open)
+        }
         else if (configData.url) setStep(2)
       }
       if (statusData) setSyncStatus(statusData)
@@ -136,6 +147,19 @@ export default function ChatwootPage({ params }: { params: Promise<{ name: strin
     } catch (e) {
       console.error(e)
       setSyncing(null)
+    }
+  }
+
+  const handleResolveAll = async () => {
+    setResolving(true)
+    try {
+      const result = await resolveAllConversations(name)
+      setOpenConversations(0)
+      alert(`${result.resolved} conversas resolvidas`)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setResolving(false)
     }
   }
 
@@ -410,7 +434,7 @@ export default function ChatwootPage({ params }: { params: Promise<{ name: strin
             )}
 
             {/* Options */}
-            <div className="space-y-3 pt-2">
+            <div className="space-y-4 pt-2">
               <div className="flex items-center gap-4">
                 <Label>Dias:</Label>
                 <Input
@@ -420,6 +444,17 @@ export default function ChatwootPage({ params }: { params: Promise<{ name: strin
                   onChange={(e) => update('syncDays', parseInt(e.target.value) || 0)}
                 />
                 <span className="text-sm text-muted-foreground">0 = todos</span>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Importar como resolvidas</Label>
+                  <p className="text-xs text-muted-foreground">Novas conversas serao criadas com status resolvido</p>
+                </div>
+                <Switch
+                  checked={config.importAsResolved || false}
+                  onCheckedChange={(v) => update('importAsResolved', v)}
+                />
               </div>
             </div>
 
@@ -438,6 +473,20 @@ export default function ChatwootPage({ params }: { params: Promise<{ name: strin
                 Sync Completo
               </Button>
             </div>
+
+            {/* Resolve All */}
+            {openConversations !== null && openConversations > 0 && (
+              <div className="flex items-center justify-between pt-4 border-t">
+                <div>
+                  <p className="text-sm font-medium">{openConversations} conversas abertas</p>
+                  <p className="text-xs text-muted-foreground">Resolver todas de uma vez</p>
+                </div>
+                <Button variant="secondary" onClick={handleResolveAll} disabled={resolving}>
+                  {resolving ? <IconLoader2 className="mr-2 h-4 w-4 animate-spin" /> : <IconCircleCheck className="mr-2 h-4 w-4" />}
+                  Resolver Todas
+                </Button>
+              </div>
+            )}
 
             <div className="flex justify-between pt-4 border-t">
               <Button variant="ghost" onClick={() => setStep(2)}>Voltar</Button>

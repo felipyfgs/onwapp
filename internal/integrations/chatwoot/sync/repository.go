@@ -346,6 +346,124 @@ func (r *Repository) GetContactsWithIdentifierCount(ctx context.Context) (int, e
 	return count, nil
 }
 
+// SyncOverview holds comprehensive sync statistics
+type SyncOverview struct {
+	Contacts      ContactsOverview      `json:"contacts"`
+	Conversations ConversationsOverview `json:"conversations"`
+	Messages      MessagesOverview      `json:"messages"`
+}
+
+type ContactsOverview struct {
+	TotalChatwoot   int `json:"totalChatwoot"`
+	WhatsAppSynced  int `json:"whatsAppSynced"`
+}
+
+type ConversationsOverview struct {
+	Total    int `json:"total"`
+	Open     int `json:"open"`
+	Resolved int `json:"resolved"`
+	Pending  int `json:"pending"`
+}
+
+type MessagesOverview struct {
+	Total    int `json:"total"`
+	Incoming int `json:"incoming"`
+	Outgoing int `json:"outgoing"`
+}
+
+// GetSyncOverview returns comprehensive sync statistics
+func (r *Repository) GetSyncOverview(ctx context.Context) (*SyncOverview, error) {
+	overview := &SyncOverview{}
+
+	// Contacts
+	if err := r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM contacts WHERE account_id = $1
+	`, r.accountID).Scan(&overview.Contacts.TotalChatwoot); err != nil {
+		return nil, wrapErr("get total contacts", err)
+	}
+
+	if err := r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM contacts 
+		WHERE account_id = $1 
+		AND identifier IS NOT NULL 
+		AND identifier != ''
+		AND identifier LIKE '%@s.whatsapp.net'
+	`, r.accountID).Scan(&overview.Contacts.WhatsAppSynced); err != nil {
+		return nil, wrapErr("get whatsapp contacts", err)
+	}
+
+	// Conversations by status (0=open, 1=resolved, 2=pending)
+	if r.inboxID > 0 {
+		if err := r.db.QueryRowContext(ctx, `
+			SELECT 
+				COUNT(*),
+				COUNT(*) FILTER (WHERE status = 0),
+				COUNT(*) FILTER (WHERE status = 1),
+				COUNT(*) FILTER (WHERE status = 2)
+			FROM conversations 
+			WHERE account_id = $1 AND inbox_id = $2
+		`, r.accountID, r.inboxID).Scan(
+			&overview.Conversations.Total,
+			&overview.Conversations.Open,
+			&overview.Conversations.Resolved,
+			&overview.Conversations.Pending,
+		); err != nil {
+			return nil, wrapErr("get conversations stats", err)
+		}
+
+		// Messages
+		if err := r.db.QueryRowContext(ctx, `
+			SELECT 
+				COUNT(*),
+				COUNT(*) FILTER (WHERE message_type = 0),
+				COUNT(*) FILTER (WHERE message_type = 1)
+			FROM messages 
+			WHERE account_id = $1 
+			AND conversation_id IN (SELECT id FROM conversations WHERE inbox_id = $2)
+		`, r.accountID, r.inboxID).Scan(
+			&overview.Messages.Total,
+			&overview.Messages.Incoming,
+			&overview.Messages.Outgoing,
+		); err != nil {
+			return nil, wrapErr("get messages stats", err)
+		}
+	} else {
+		if err := r.db.QueryRowContext(ctx, `
+			SELECT 
+				COUNT(*),
+				COUNT(*) FILTER (WHERE status = 0),
+				COUNT(*) FILTER (WHERE status = 1),
+				COUNT(*) FILTER (WHERE status = 2)
+			FROM conversations 
+			WHERE account_id = $1
+		`, r.accountID).Scan(
+			&overview.Conversations.Total,
+			&overview.Conversations.Open,
+			&overview.Conversations.Resolved,
+			&overview.Conversations.Pending,
+		); err != nil {
+			return nil, wrapErr("get conversations stats", err)
+		}
+
+		if err := r.db.QueryRowContext(ctx, `
+			SELECT 
+				COUNT(*),
+				COUNT(*) FILTER (WHERE message_type = 0),
+				COUNT(*) FILTER (WHERE message_type = 1)
+			FROM messages 
+			WHERE account_id = $1
+		`, r.accountID).Scan(
+			&overview.Messages.Total,
+			&overview.Messages.Incoming,
+			&overview.Messages.Outgoing,
+		); err != nil {
+			return nil, wrapErr("get messages stats", err)
+		}
+	}
+
+	return overview, nil
+}
+
 // ContactInsertData holds data for contact insertion
 type ContactInsertData struct {
 	Name       string
