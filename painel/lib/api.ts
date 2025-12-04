@@ -305,12 +305,18 @@ export interface SyncOverview {
     contacts: {
       totalChatwoot: number
       whatsAppSynced: number
+      groups: number
+      private: number
+      withName: number
+      withoutName: number
     }
     conversations: {
       total: number
       open: number
       resolved: number
       pending: number
+      groupChats: number
+      privateChats: number
     }
     messages: {
       total: number

@@ -35,18 +35,125 @@ func (r *Repository) SetImportAsResolved(resolved bool) {
 	r.importAsResolved = resolved
 }
 
-// CleanOrphanRecords removes orphan contact_inboxes that reference deleted inboxes
-// This prevents 500 errors when Chatwoot tries to render contacts with missing inbox references
-func (r *Repository) CleanOrphanRecords(ctx context.Context) (int, error) {
-	result, err := r.db.ExecContext(ctx, `
-		DELETE FROM contact_inboxes 
-		WHERE inbox_id NOT IN (SELECT id FROM inboxes)
-	`)
+// OrphanCleanupResult holds the result of orphan cleanup
+type OrphanCleanupResult struct {
+	ContactInboxes int `json:"contactInboxes"`
+	Conversations  int `json:"conversations"`
+	Messages       int `json:"messages"`
+}
+
+// OrphanStats holds count of orphan records (for preview before cleanup)
+type OrphanStats struct {
+	ContactInboxes int  `json:"contactInboxes"`
+	Conversations  int  `json:"conversations"`
+	Messages       int  `json:"messages"`
+	InboxExists    bool `json:"inboxExists"`
+}
+
+// GetOrphanStats returns count of orphan records for OUR inbox only (preview before cleanup)
+// This is SCOPED to our inbox_id to avoid affecting other integrations
+func (r *Repository) GetOrphanStats(ctx context.Context) (*OrphanStats, error) {
+	stats := &OrphanStats{}
+
+	// Check if our inbox still exists
+	var exists bool
+	err := r.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM inboxes WHERE id = $1)`, r.inboxID).Scan(&exists)
 	if err != nil {
-		return 0, wrapErr("clean orphan contact_inboxes", err)
+		return nil, wrapErr("check inbox exists", err)
 	}
-	rows, _ := result.RowsAffected()
-	return int(rows), nil
+	stats.InboxExists = exists
+
+	if exists {
+		// Inbox exists, no orphans from our inbox
+		return stats, nil
+	}
+
+	// Count orphan records that were from OUR inbox (now deleted)
+	// We can identify them by inbox_id matching our configured inbox
+
+	// Count orphan contact_inboxes from our inbox
+	err = r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM contact_inboxes WHERE inbox_id = $1
+	`, r.inboxID).Scan(&stats.ContactInboxes)
+	if err != nil {
+		return nil, wrapErr("count orphan contact_inboxes", err)
+	}
+
+	// Count orphan conversations from our inbox
+	err = r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM conversations WHERE inbox_id = $1
+	`, r.inboxID).Scan(&stats.Conversations)
+	if err != nil {
+		return nil, wrapErr("count orphan conversations", err)
+	}
+
+	// Count orphan messages from our inbox conversations
+	err = r.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM messages WHERE conversation_id IN (
+			SELECT id FROM conversations WHERE inbox_id = $1
+		)
+	`, r.inboxID).Scan(&stats.Messages)
+	if err != nil {
+		return nil, wrapErr("count orphan messages", err)
+	}
+
+	return stats, nil
+}
+
+// CleanOurOrphanRecords removes orphan records ONLY from OUR inbox
+// This is safe to call as it won't affect other inboxes in the Chatwoot instance
+// Should only be called when our inbox has been deleted
+func (r *Repository) CleanOurOrphanRecords(ctx context.Context) (*OrphanCleanupResult, error) {
+	result := &OrphanCleanupResult{}
+
+	// First check if inbox exists - if it does, there are no orphans from us
+	var exists bool
+	err := r.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM inboxes WHERE id = $1)`, r.inboxID).Scan(&exists)
+	if err != nil {
+		return nil, wrapErr("check inbox exists", err)
+	}
+
+	if exists {
+		// Inbox exists, nothing to clean
+		return result, nil
+	}
+
+	// Our inbox was deleted - clean up orphan records that belong to it
+	// Order matters due to foreign key constraints: messages -> conversations -> contact_inboxes
+
+	// 1. Delete messages from our inbox's conversations
+	res, err := r.db.ExecContext(ctx, `
+		DELETE FROM messages WHERE conversation_id IN (
+			SELECT id FROM conversations WHERE inbox_id = $1
+		)
+	`, r.inboxID)
+	if err != nil {
+		return nil, wrapErr("clean orphan messages", err)
+	}
+	rows, _ := res.RowsAffected()
+	result.Messages = int(rows)
+
+	// 2. Delete conversations from our inbox
+	res, err = r.db.ExecContext(ctx, `
+		DELETE FROM conversations WHERE inbox_id = $1
+	`, r.inboxID)
+	if err != nil {
+		return nil, wrapErr("clean orphan conversations", err)
+	}
+	rows, _ = res.RowsAffected()
+	result.Conversations = int(rows)
+
+	// 3. Delete contact_inboxes from our inbox
+	res, err = r.db.ExecContext(ctx, `
+		DELETE FROM contact_inboxes WHERE inbox_id = $1
+	`, r.inboxID)
+	if err != nil {
+		return nil, wrapErr("clean orphan contact_inboxes", err)
+	}
+	rows, _ = res.RowsAffected()
+	result.ContactInboxes = int(rows)
+
+	return result, nil
 }
 
 // GetChatwootUser gets the user ID and type from the API token
@@ -79,6 +186,26 @@ func (r *Repository) GetInboxID(ctx context.Context) (int, error) {
 		return 0, wrapErr("get inbox id", err)
 	}
 	return inboxID, nil
+}
+
+// ErrInboxNotFound is returned when the configured inbox doesn't exist
+var ErrInboxNotFound = errors.New("inbox not found - it may have been deleted in Chatwoot")
+
+// ValidateInbox checks if the configured inbox still exists
+func (r *Repository) ValidateInbox(ctx context.Context) error {
+	if r.inboxID == 0 {
+		return errors.New("inbox ID not configured")
+	}
+
+	var exists bool
+	err := r.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM inboxes WHERE id = $1)`, r.inboxID).Scan(&exists)
+	if err != nil {
+		return wrapErr("validate inbox", err)
+	}
+	if !exists {
+		return ErrInboxNotFound
+	}
+	return nil
 }
 
 // GetExistingSourceIDs returns a map of existing source IDs
@@ -354,15 +481,21 @@ type SyncOverview struct {
 }
 
 type ContactsOverview struct {
-	TotalChatwoot   int `json:"totalChatwoot"`
-	WhatsAppSynced  int `json:"whatsAppSynced"`
+	TotalChatwoot  int `json:"totalChatwoot"`
+	WhatsAppSynced int `json:"whatsAppSynced"`
+	Groups         int `json:"groups"`         // Contacts with @g.us identifier (groups)
+	Private        int `json:"private"`        // Contacts with @s.whatsapp.net (private chats)
+	WithName       int `json:"withName"`       // Contacts that have a name (saved in agenda)
+	WithoutName    int `json:"withoutName"`    // Contacts that only have phone number as name
 }
 
 type ConversationsOverview struct {
-	Total    int `json:"total"`
-	Open     int `json:"open"`
-	Resolved int `json:"resolved"`
-	Pending  int `json:"pending"`
+	Total        int `json:"total"`
+	Open         int `json:"open"`
+	Resolved     int `json:"resolved"`
+	Pending      int `json:"pending"`
+	GroupChats   int `json:"groupChats"`   // Conversations with group contacts
+	PrivateChats int `json:"privateChats"` // Conversations with private contacts
 }
 
 type MessagesOverview struct {
@@ -375,31 +508,39 @@ type MessagesOverview struct {
 func (r *Repository) GetSyncOverview(ctx context.Context) (*SyncOverview, error) {
 	overview := &SyncOverview{}
 
-	// Contacts
+	// Contacts - detailed breakdown
 	if err := r.db.QueryRowContext(ctx, `
-		SELECT COUNT(*) FROM contacts WHERE account_id = $1
-	`, r.accountID).Scan(&overview.Contacts.TotalChatwoot); err != nil {
-		return nil, wrapErr("get total contacts", err)
-	}
-
-	if err := r.db.QueryRowContext(ctx, `
-		SELECT COUNT(*) FROM contacts 
-		WHERE account_id = $1 
+		SELECT 
+			COUNT(*),
+			COUNT(*) FILTER (WHERE identifier LIKE '%@s.whatsapp.net'),
+			COUNT(*) FILTER (WHERE identifier LIKE '%@g.us'),
+			COUNT(*) FILTER (WHERE identifier LIKE '%@s.whatsapp.net' AND name IS NOT NULL AND name != '' AND name != phone_number AND name != REPLACE(phone_number, '+', '')),
+			COUNT(*) FILTER (WHERE identifier LIKE '%@s.whatsapp.net' AND (name IS NULL OR name = '' OR name = phone_number OR name = REPLACE(phone_number, '+', '')))
+		FROM contacts 
+		WHERE account_id = $1
 		AND identifier IS NOT NULL 
 		AND identifier != ''
-		AND identifier LIKE '%@s.whatsapp.net'
-	`, r.accountID).Scan(&overview.Contacts.WhatsAppSynced); err != nil {
-		return nil, wrapErr("get whatsapp contacts", err)
+	`, r.accountID).Scan(
+		&overview.Contacts.TotalChatwoot,
+		&overview.Contacts.Private,
+		&overview.Contacts.Groups,
+		&overview.Contacts.WithName,
+		&overview.Contacts.WithoutName,
+	); err != nil {
+		return nil, wrapErr("get contacts stats", err)
 	}
+	overview.Contacts.WhatsAppSynced = overview.Contacts.Private + overview.Contacts.Groups
 
-	// Conversations by status (0=open, 1=resolved, 2=pending)
+	// Conversations by status and type
 	if r.inboxID > 0 {
 		if err := r.db.QueryRowContext(ctx, `
 			SELECT 
 				COUNT(*),
 				COUNT(*) FILTER (WHERE status = 0),
 				COUNT(*) FILTER (WHERE status = 1),
-				COUNT(*) FILTER (WHERE status = 2)
+				COUNT(*) FILTER (WHERE status = 2),
+				COUNT(*) FILTER (WHERE contact_id IN (SELECT id FROM contacts WHERE identifier LIKE '%@g.us')),
+				COUNT(*) FILTER (WHERE contact_id IN (SELECT id FROM contacts WHERE identifier LIKE '%@s.whatsapp.net'))
 			FROM conversations 
 			WHERE account_id = $1 AND inbox_id = $2
 		`, r.accountID, r.inboxID).Scan(
@@ -407,6 +548,8 @@ func (r *Repository) GetSyncOverview(ctx context.Context) (*SyncOverview, error)
 			&overview.Conversations.Open,
 			&overview.Conversations.Resolved,
 			&overview.Conversations.Pending,
+			&overview.Conversations.GroupChats,
+			&overview.Conversations.PrivateChats,
 		); err != nil {
 			return nil, wrapErr("get conversations stats", err)
 		}
@@ -433,7 +576,9 @@ func (r *Repository) GetSyncOverview(ctx context.Context) (*SyncOverview, error)
 				COUNT(*),
 				COUNT(*) FILTER (WHERE status = 0),
 				COUNT(*) FILTER (WHERE status = 1),
-				COUNT(*) FILTER (WHERE status = 2)
+				COUNT(*) FILTER (WHERE status = 2),
+				COUNT(*) FILTER (WHERE contact_id IN (SELECT id FROM contacts WHERE identifier LIKE '%@g.us')),
+				COUNT(*) FILTER (WHERE contact_id IN (SELECT id FROM contacts WHERE identifier LIKE '%@s.whatsapp.net'))
 			FROM conversations 
 			WHERE account_id = $1
 		`, r.accountID).Scan(
@@ -441,6 +586,8 @@ func (r *Repository) GetSyncOverview(ctx context.Context) (*SyncOverview, error)
 			&overview.Conversations.Open,
 			&overview.Conversations.Resolved,
 			&overview.Conversations.Pending,
+			&overview.Conversations.GroupChats,
+			&overview.Conversations.PrivateChats,
 		); err != nil {
 			return nil, wrapErr("get conversations stats", err)
 		}
@@ -1038,4 +1185,165 @@ func (r *Repository) GetOpenConversationsCount(ctx context.Context) (int, error)
 		return 0, wrapErr("get open conversations count", err)
 	}
 	return count, nil
+}
+
+// UpdateMessageTimestampsBatch updates timestamps for multiple messages in a single query
+func (r *Repository) UpdateMessageTimestampsBatch(ctx context.Context, timestamps map[int]time.Time) error {
+	if len(timestamps) == 0 {
+		return nil
+	}
+
+	var values []string
+	var args []interface{}
+
+	for msgID, ts := range timestamps {
+		idx := len(args) + 1
+		args = append(args, msgID, ts)
+		values = append(values, fmt.Sprintf("($%d::integer, $%d::timestamp)", idx, idx+1))
+	}
+
+	query := fmt.Sprintf(`
+		UPDATE messages m
+		SET created_at = v.ts, updated_at = v.ts
+		FROM (VALUES %s) AS v(id, ts)
+		WHERE m.id = v.id
+	`, strings.Join(values, ", "))
+
+	_, err := r.db.ExecContext(ctx, query, args...)
+	if err != nil {
+		return wrapErr("update message timestamps batch", err)
+	}
+	return nil
+}
+
+// CreateContactsAndConversationsOptimized creates contacts, contact_inboxes, and conversations
+// in a single optimized transaction using CTEs
+func (r *Repository) CreateContactsAndConversationsOptimized(ctx context.Context, phoneData []core.PhoneTimestamp) (map[string]*core.ChatFKs, error) {
+	result := make(map[string]*core.ChatFKs)
+	if len(phoneData) == 0 {
+		return result, nil
+	}
+
+	// Build VALUES clause
+	var values []string
+	args := []interface{}{r.accountID, r.inboxID}
+
+	for _, pd := range phoneData {
+		idx := len(args) + 1
+		args = append(args, pd.Phone, pd.Name, pd.Identifier, pd.IsGroup, pd.FirstTS, pd.LastTS)
+		values = append(values, fmt.Sprintf("($%d::text, $%d::text, $%d::text, $%d::boolean, $%d::bigint, $%d::bigint)",
+			idx, idx+1, idx+2, idx+3, idx+4, idx+5))
+	}
+
+	status := 0
+	if r.importAsResolved {
+		status = 1
+	}
+
+	// Single query with CTEs for all operations
+	query := fmt.Sprintf(`
+		WITH phone_data AS (
+			SELECT phone_number, contact_name, identifier, is_group, first_ts, last_ts 
+			FROM (VALUES %s) AS t (phone_number, contact_name, identifier, is_group, first_ts, last_ts)
+		),
+		-- Update existing contacts by phone (non-groups) to set identifier
+		updated_contacts AS (
+			UPDATE contacts c
+			SET identifier = p.identifier, updated_at = NOW()
+			FROM phone_data p
+			WHERE c.account_id = $1
+				AND NOT p.is_group
+				AND c.phone_number = p.phone_number
+				AND (c.identifier IS NULL OR c.identifier = '' OR c.identifier != p.identifier)
+			RETURNING c.id, c.identifier
+		),
+		-- Upsert contacts
+		upserted_contacts AS (
+			INSERT INTO contacts (name, phone_number, account_id, identifier, created_at, updated_at)
+			SELECT 
+				p.contact_name, 
+				CASE WHEN p.is_group THEN NULL ELSE p.phone_number END, 
+				$1, 
+				p.identifier, 
+				to_timestamp(p.first_ts), 
+				to_timestamp(p.last_ts)
+			FROM phone_data AS p
+			ON CONFLICT(identifier, account_id) DO UPDATE SET 
+				updated_at = EXCLUDED.updated_at,
+				name = CASE 
+					WHEN contacts.name = contacts.phone_number 
+						OR contacts.name = REPLACE(contacts.phone_number, '+', '') 
+						OR contacts.name IS NULL 
+						OR contacts.name = ''
+					THEN EXCLUDED.name 
+					ELSE contacts.name 
+				END
+			RETURNING id, identifier
+		),
+		-- Get all contact IDs (both updated and upserted)
+		all_contacts AS (
+			SELECT id, identifier FROM upserted_contacts
+			UNION
+			SELECT id, identifier FROM contacts WHERE account_id = $1 AND identifier IN (SELECT identifier FROM phone_data)
+		),
+		-- Create contact_inboxes for contacts that don't have one
+		new_contact_inboxes AS (
+			INSERT INTO contact_inboxes (contact_id, inbox_id, source_id, created_at, updated_at)
+			SELECT DISTINCT ac.id, $2::integer, gen_random_uuid(), NOW(), NOW()
+			FROM all_contacts ac
+			WHERE NOT EXISTS (
+				SELECT 1 FROM contact_inboxes ci 
+				WHERE ci.contact_id = ac.id AND ci.inbox_id = $2::integer
+			)
+			ON CONFLICT DO NOTHING
+			RETURNING id, contact_id
+		),
+		-- Get all contact_inbox IDs
+		all_contact_inboxes AS (
+			SELECT ci.id, ci.contact_id
+			FROM contact_inboxes ci
+			JOIN all_contacts ac ON ac.id = ci.contact_id
+			WHERE ci.inbox_id = $2::integer
+		),
+		-- Create conversations for contacts that don't have one
+		new_conversations AS (
+			INSERT INTO conversations (account_id, inbox_id, status, contact_id, contact_inbox_id, uuid, last_activity_at, created_at, updated_at)
+			SELECT DISTINCT ON (aci.contact_id) 
+				$1::integer, $2::integer, %d, aci.contact_id, aci.id, gen_random_uuid(), NOW(), NOW(), NOW()
+			FROM all_contact_inboxes aci
+			WHERE NOT EXISTS (
+				SELECT 1 FROM conversations conv 
+				WHERE conv.contact_id = aci.contact_id AND conv.inbox_id = $2::integer
+			)
+			ORDER BY aci.contact_id, aci.id ASC
+			ON CONFLICT DO NOTHING
+			RETURNING id, contact_id
+		)
+		-- Return final mapping: phone -> contact_id, conversation_id
+		SELECT DISTINCT ON (c.id) 
+			pd.phone_number,
+			c.id AS contact_id, 
+			conv.id AS conversation_id
+		FROM phone_data pd
+		JOIN contacts c ON c.identifier = pd.identifier AND c.account_id = $1::integer
+		JOIN conversations conv ON conv.contact_id = c.id AND conv.inbox_id = $2::integer
+		ORDER BY c.id, conv.created_at ASC
+	`, strings.Join(values, ", "), status)
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, wrapErr("create contacts and conversations optimized", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var phone string
+		var contactID, conversationID int
+		if err := rows.Scan(&phone, &contactID, &conversationID); err != nil {
+			return nil, err
+		}
+		result[phone] = &core.ChatFKs{ContactID: contactID, ConversationID: conversationID}
+	}
+
+	return result, rows.Err()
 }

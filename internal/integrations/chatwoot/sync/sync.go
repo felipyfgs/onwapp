@@ -99,12 +99,15 @@ func (s *ChatwootDBSync) Close() error {
 func (s *ChatwootDBSync) SyncAll(ctx context.Context, daysLimit int) (*core.SyncStats, error) {
 	totalStats := &core.SyncStats{}
 
-	// Clean orphan records before sync to prevent 500 errors
-	if cleaned, err := s.repo.CleanOrphanRecords(ctx); err != nil {
-		logger.Warn().Err(err).Msg("Chatwoot sync: failed to clean orphan records")
-	} else if cleaned > 0 {
-		logger.Info().Int("cleaned", cleaned).Msg("Chatwoot sync: cleaned orphan contact_inboxes")
+	// Validate inbox exists before sync to prevent creating orphan records
+	if err := s.repo.ValidateInbox(ctx); err != nil {
+		logger.Error().Err(err).Int("inboxId", s.cfg.InboxID).Msg("Chatwoot sync: inbox validation failed")
+		return nil, err
 	}
+
+	// NOTE: We intentionally do NOT auto-clean orphan records here
+	// The cleanup could affect other inboxes in the same Chatwoot instance
+	// Use the manual cleanup endpoint if needed: POST /sessions/:id/chatwoot/cleanup
 
 	contactStats, err := s.SyncContacts(ctx, daysLimit)
 	if err != nil {
@@ -243,4 +246,14 @@ func (s *ChatwootDBSync) GetOpenConversationsCount(ctx context.Context) (int, er
 // GetSyncOverview returns comprehensive sync statistics
 func (s *ChatwootDBSync) GetSyncOverview(ctx context.Context) (*SyncOverview, error) {
 	return s.repo.GetSyncOverview(ctx)
+}
+
+// GetOrphanStats returns count of orphan records for preview before cleanup
+func (s *ChatwootDBSync) GetOrphanStats(ctx context.Context) (*OrphanStats, error) {
+	return s.repo.GetOrphanStats(ctx)
+}
+
+// CleanOurOrphanRecords removes orphan records ONLY from our inbox
+func (s *ChatwootDBSync) CleanOurOrphanRecords(ctx context.Context) (*OrphanCleanupResult, error) {
+	return s.repo.CleanOurOrphanRecords(ctx)
 }

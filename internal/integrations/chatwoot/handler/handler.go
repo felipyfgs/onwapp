@@ -91,6 +91,7 @@ func (h *Handler) SetConfig(c *gin.Context) {
 		URL:            req.URL,
 		Token:          req.Token,
 		Account:        req.Account,
+		InboxID:        req.InboxID,
 		Inbox:          req.Inbox,
 		SignAgent:      req.SignAgent,
 		SignSeparator:  req.SignSeparator,
@@ -921,6 +922,98 @@ func (h *Handler) GetSyncOverview(c *gin.Context) {
 		},
 		"chatwoot": overview,
 	})
+}
+
+// GetOrphanStats handles GET /sessions/:sessionId/chatwoot/orphans
+// @Summary Get orphan records stats
+// @Description Preview orphan records count before cleanup (scoped to this session's inbox only)
+// @Tags         chatwoot
+// @Produce json
+// @Security Authorization
+// @Param sessionId path string true "Session name"
+// @Success 200 {object} cwsync.OrphanStats
+// @Router /sessions/{sessionId}/chatwoot/orphans [get]
+func (h *Handler) GetOrphanStats(c *gin.Context) {
+	sessionId := c.Param("sessionId")
+	session, err := h.sessionService.Get(sessionId)
+	if err != nil || session == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
+		return
+	}
+
+	cfg, err := h.service.GetConfig(c.Request.Context(), session.ID)
+	if err != nil || cfg == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "chatwoot not configured"})
+		return
+	}
+
+	lidResolver := &whatsappLIDResolver{session: session}
+
+	dbSync, err := cwsync.NewChatwootDBSync(cfg, nil, nil, nil, session.ID, lidResolver)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to connect to database: " + err.Error()})
+		return
+	}
+	defer dbSync.Close()
+
+	stats, err := dbSync.GetOrphanStats(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, stats)
+}
+
+// CleanupOrphans handles POST /sessions/:sessionId/chatwoot/cleanup
+// @Summary Clean orphan records
+// @Description Remove orphan records ONLY from this session's inbox (safe, won't affect other inboxes)
+// @Tags         chatwoot
+// @Produce json
+// @Security Authorization
+// @Param sessionId path string true "Session name"
+// @Success 200 {object} cwsync.OrphanCleanupResult
+// @Router /sessions/{sessionId}/chatwoot/cleanup [post]
+func (h *Handler) CleanupOrphans(c *gin.Context) {
+	sessionId := c.Param("sessionId")
+	session, err := h.sessionService.Get(sessionId)
+	if err != nil || session == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
+		return
+	}
+
+	cfg, err := h.service.GetConfig(c.Request.Context(), session.ID)
+	if err != nil || cfg == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "chatwoot not configured"})
+		return
+	}
+
+	lidResolver := &whatsappLIDResolver{session: session}
+
+	dbSync, err := cwsync.NewChatwootDBSync(cfg, nil, nil, nil, session.ID, lidResolver)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to connect to database: " + err.Error()})
+		return
+	}
+	defer dbSync.Close()
+
+	result, err := dbSync.CleanOurOrphanRecords(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	total := result.Messages + result.Conversations + result.ContactInboxes
+	if total > 0 {
+		logger.Info().
+			Str("session", sessionId).
+			Int("messages", result.Messages).
+			Int("conversations", result.Conversations).
+			Int("contactInboxes", result.ContactInboxes).
+			Msg("Chatwoot: cleaned orphan records for our inbox")
+	}
+
+	c.JSON(http.StatusOK, result)
 }
 
 // =============================================================================

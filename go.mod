@@ -19,6 +19,7 @@ require (
 	github.com/swaggo/gin-swagger v1.6.1
 	github.com/swaggo/swag v1.16.6
 	go.mau.fi/whatsmeow v0.0.0-20251127132918-b9ac3d51d746
+	golang.org/x/time v0.12.0
 	google.golang.org/protobuf v1.36.10
 )
 

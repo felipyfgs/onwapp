@@ -6,6 +6,7 @@ type SetConfigRequest struct {
 	URL           string `json:"url" binding:"required_if=Enabled true"`
 	Token         string `json:"token" binding:"required_if=Enabled true"`
 	Account       int    `json:"account" binding:"required_if=Enabled true"`
+	InboxID       int    `json:"inboxId,omitempty"`
 	Inbox         string `json:"inbox,omitempty"`
 	SignAgent     bool   `json:"signAgent"`
 	SignSeparator string `json:"signSeparator,omitempty"`

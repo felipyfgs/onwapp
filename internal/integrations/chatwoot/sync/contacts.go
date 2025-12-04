@@ -28,7 +28,9 @@ func NewContactSyncer(repo *Repository, contactsGetter ContactsGetter, lidResolv
 
 // Sync synchronizes contacts to Chatwoot
 func (s *ContactSyncer) Sync(ctx context.Context, daysLimit int) (*core.SyncStats, error) {
-	stats := &core.SyncStats{}
+	stats := &core.SyncStats{
+		ContactDetails: &core.ContactSyncDetails{},
+	}
 
 	logger.Debug().Str("sessionId", s.sessionID).Msg("Chatwoot sync: starting contacts")
 
@@ -40,6 +42,8 @@ func (s *ContactSyncer) Sync(ctx context.Context, daysLimit int) (*core.SyncStat
 	if err != nil {
 		return stats, wrapErr("get whatsapp contacts", err)
 	}
+
+	stats.ContactDetails.TotalWhatsApp = len(contacts)
 
 	validContacts := s.filterValidContacts(ctx, contacts, stats)
 	if len(validContacts) == 0 {
@@ -66,9 +70,22 @@ func (s *ContactSyncer) Sync(ctx context.Context, daysLimit int) (*core.SyncStat
 func (s *ContactSyncer) filterValidContacts(ctx context.Context, contacts []core.WhatsAppContact, stats *core.SyncStats) []core.WhatsAppContact {
 	valid := make([]core.WhatsAppContact, 0, len(contacts)/2)
 	seen := make(map[string]bool)
+	details := stats.ContactDetails
 
 	for _, c := range contacts {
-		if s.shouldSkipContact(c.JID) {
+		// Check for groups, status, newsletters
+		if util.IsGroupJID(c.JID) {
+			details.Groups++
+			stats.ContactsSkipped++
+			continue
+		}
+		if util.IsStatusBroadcast(c.JID) {
+			details.StatusBroadcast++
+			stats.ContactsSkipped++
+			continue
+		}
+		if util.IsNewsletter(c.JID) {
+			details.Newsletters++
 			stats.ContactsSkipped++
 			continue
 		}
@@ -77,6 +94,7 @@ func (s *ContactSyncer) filterValidContacts(ctx context.Context, contacts []core
 		if util.IsLIDJID(c.JID) {
 			phone := util.ResolveLIDToPhone(ctx, s.lidResolver, c.JID)
 			if phone == "" {
+				details.LidContacts++
 				stats.ContactsSkipped++
 				continue
 			}
@@ -84,6 +102,7 @@ func (s *ContactSyncer) filterValidContacts(ctx context.Context, contacts []core
 		}
 
 		if util.ExtractPhoneFromJID(c.JID) == "" {
+			details.InvalidPhone++
 			stats.ContactsSkipped++
 			continue
 		}
@@ -93,6 +112,7 @@ func (s *ContactSyncer) filterValidContacts(ctx context.Context, contacts []core
 		// FullName/FirstName indicates the contact is saved in your phone's agenda
 		// BusinessName indicates it's a verified business contact
 		if !s.isContactSaved(c) {
+			details.NotInAgenda++
 			stats.ContactsSkipped++
 			continue
 		}
@@ -103,6 +123,13 @@ func (s *ContactSyncer) filterValidContacts(ctx context.Context, contacts []core
 			continue
 		}
 		seen[c.JID] = true
+
+		// Track type of contact being imported
+		if c.BusinessName != "" {
+			details.BusinessContacts++
+		} else {
+			details.SavedContacts++
+		}
 
 		valid = append(valid, c)
 	}
@@ -135,13 +162,10 @@ func (s *ContactSyncer) isContactSaved(c core.WhatsAppContact) bool {
 	return false
 }
 
-// shouldSkipContact checks if a contact should be skipped
-func (s *ContactSyncer) shouldSkipContact(jid string) bool {
-	return util.IsGroupJID(jid) || util.IsStatusBroadcast(jid) || util.IsNewsletter(jid)
-}
-
 // insertContactsInBatches inserts contacts in batches with accurate stats
 func (s *ContactSyncer) insertContactsInBatches(ctx context.Context, contacts []core.WhatsAppContact, stats *core.SyncStats) error {
+	details := stats.ContactDetails
+
 	for i := 0; i < len(contacts); i += core.ContactBatchSize {
 		end := min(i+core.ContactBatchSize, len(contacts))
 		batch := contacts[i:end]
@@ -153,7 +177,10 @@ func (s *ContactSyncer) insertContactsInBatches(ctx context.Context, contacts []
 			stats.ContactsErrors += len(batch)
 		} else {
 			stats.ContactsImported += result.Inserted
-			stats.ContactsSkipped += result.Skipped + result.Updated // Updated = already existed
+			// Track already existing contacts
+			alreadyExisted := result.Skipped + result.Updated
+			stats.ContactsSkipped += alreadyExisted
+			details.AlreadyExists += alreadyExisted
 		}
 
 		UpdateSyncStats(s.sessionID, stats)

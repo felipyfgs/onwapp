@@ -92,9 +92,9 @@ export default function ChatwootPage({ params }: { params: Promise<{ name: strin
         setConfig({ ...defaultConfig, ...configData })
         if (configData.chatwootDbHost) {
           setStep(3)
-          // Fetch conversation stats when on step 3
-          const stats = await getConversationsStats(name).catch(() => null)
-          if (stats) setOpenConversations(stats.open)
+          // Fetch overview when on step 3
+          const overviewData = await getSyncOverview(name).catch(() => null)
+          if (overviewData) setOverview(overviewData)
         }
         else if (configData.url) setStep(2)
       }
@@ -154,7 +154,9 @@ export default function ChatwootPage({ params }: { params: Promise<{ name: strin
     setResolving(true)
     try {
       const result = await resolveAllConversations(name)
-      setOpenConversations(0)
+      // Refresh overview
+      const overviewData = await getSyncOverview(name).catch(() => null)
+      if (overviewData) setOverview(overviewData)
       alert(`${result.resolved} conversas resolvidas`)
     } catch (e) {
       console.error(e)
@@ -366,137 +368,295 @@ export default function ChatwootPage({ params }: { params: Promise<{ name: strin
 
       {/* Step 3: Sync */}
       {step === 3 && (
-        <Card>
-          <CardHeader className="pb-4">
-            <div className="flex items-center gap-2">
-              <IconCloudUpload className="h-5 w-5 text-primary" />
-              <div>
-                <CardTitle className="text-base">Sincronizacao</CardTitle>
-                <CardDescription>Importe contatos e mensagens para o Chatwoot</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Status */}
-            {syncStatus && syncStatus.status !== 'idle' && (
-              <div className="p-4 rounded-lg border bg-muted/30 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {syncStatus.status === 'running' ? (
-                      <IconLoader2 className="h-4 w-4 animate-spin text-primary" />
-                    ) : syncStatus.status === 'completed' ? (
-                      <IconCircleCheck className="h-4 w-4 text-green-500" />
+        <div className="space-y-4">
+          {/* Overview Cards */}
+          {overview && (
+            <div className="grid gap-4 md:grid-cols-3">
+              {/* Contacts Card */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <IconUsers className="h-4 w-4" />
+                    Contatos no Chatwoot
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-baseline">
+                      <span className="text-muted-foreground text-sm">Total</span>
+                      <span className="font-semibold text-lg">{(overview.chatwoot.contacts.totalChatwoot ?? 0).toLocaleString()}</span>
+                    </div>
+                    {overview.chatwoot.contacts.private !== undefined ? (
+                      <>
+                        <div className="border-t pt-2 space-y-1">
+                          <p className="text-xs text-muted-foreground font-medium mb-1">Privados ({(overview.chatwoot.contacts.private ?? 0).toLocaleString()})</p>
+                          <div className="flex justify-between text-xs pl-2">
+                            <span className="text-green-600">Com nome (agenda)</span>
+                            <span className="text-green-600 font-medium">{(overview.chatwoot.contacts.withName ?? 0).toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between text-xs pl-2">
+                            <span className="text-muted-foreground">Sem nome (participantes)</span>
+                            <span>{(overview.chatwoot.contacts.withoutName ?? 0).toLocaleString()}</span>
+                          </div>
+                        </div>
+                        {(overview.chatwoot.contacts.groups ?? 0) > 0 && (
+                          <div className="flex justify-between text-xs">
+                            <span className="text-blue-600">Grupos</span>
+                            <span className="text-blue-600 font-medium">{(overview.chatwoot.contacts.groups ?? 0).toLocaleString()}</span>
+                          </div>
+                        )}
+                      </>
                     ) : (
-                      <IconCircleCheck className="h-4 w-4 text-destructive" />
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Sincronizados</span>
+                        <span className="text-green-600">{(overview.chatwoot.contacts.whatsAppSynced ?? 0).toLocaleString()}</span>
+                      </div>
                     )}
-                    <span className="text-sm font-medium">
-                      {syncStatus.status === 'running' 
-                        ? 'Sincronizando...' 
-                        : syncStatus.status === 'completed' 
-                        ? 'Ultima sincronizacao' 
-                        : 'Falhou'}
-                    </span>
                   </div>
-                  <Badge variant="outline">
-                    {syncStatus.type === 'all' ? 'Completo' : syncStatus.type === 'contacts' ? 'Contatos' : 'Mensagens'}
-                  </Badge>
-                </div>
-                
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {(syncStatus.type === 'contacts' || syncStatus.type === 'all') && (
-                    <div className="flex items-center gap-3 p-2 rounded bg-background">
-                      <IconUsers className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <p className="font-semibold">{syncStatus.stats.contactsImported}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Contatos {syncStatus.stats.contactsErrors > 0 && `(${syncStatus.stats.contactsErrors} erros)`}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  {(syncStatus.type === 'messages' || syncStatus.type === 'all') && (
-                    <div className="flex items-center gap-3 p-2 rounded bg-background">
-                      <IconMessage className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <p className="font-semibold">{syncStatus.stats.messagesImported}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Mensagens {syncStatus.stats.messagesSkipped > 0 && `(${syncStatus.stats.messagesSkipped} ignoradas)`}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                </CardContent>
+              </Card>
 
-                {syncStatus.error && (
-                  <p className="text-sm text-destructive">{syncStatus.error}</p>
+              {/* Conversations Card */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <IconMessage className="h-4 w-4" />
+                    Conversas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-baseline">
+                      <span className="text-muted-foreground text-sm">Total</span>
+                      <span className="font-semibold text-lg">{(overview.chatwoot.conversations.total ?? 0).toLocaleString()}</span>
+                    </div>
+                    {overview.chatwoot.conversations.privateChats !== undefined && (
+                      <div className="border-t pt-2 space-y-1">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">Privadas</span>
+                          <span>{(overview.chatwoot.conversations.privateChats ?? 0).toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-blue-600">Grupos</span>
+                          <span className="text-blue-600">{(overview.chatwoot.conversations.groupChats ?? 0).toLocaleString()}</span>
+                        </div>
+                      </div>
+                    )}
+                    <div className="border-t pt-2 space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-orange-500">Abertas</span>
+                        <Badge variant={(overview.chatwoot.conversations.open ?? 0) > 0 ? 'default' : 'secondary'} className="h-5">
+                          {overview.chatwoot.conversations.open ?? 0}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-green-600">Resolvidas</span>
+                        <span className="text-green-600">{(overview.chatwoot.conversations.resolved ?? 0).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Messages Card */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <IconCloudUpload className="h-4 w-4" />
+                    Mensagens
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-baseline">
+                      <span className="text-muted-foreground text-sm">Total</span>
+                      <span className="font-semibold text-lg">{(overview.chatwoot.messages.total ?? 0).toLocaleString()}</span>
+                    </div>
+                    <div className="border-t pt-2 space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-green-600">Recebidas</span>
+                        <span className="text-green-600">{(overview.chatwoot.messages.incoming ?? 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-blue-600">Enviadas</span>
+                        <span className="text-blue-600">{(overview.chatwoot.messages.outgoing ?? 0).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Sync Card */}
+          <Card>
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <IconCloudUpload className="h-5 w-5 text-primary" />
+                  <div>
+                    <CardTitle className="text-base">Sincronizacao</CardTitle>
+                    <CardDescription>Importe contatos e mensagens para o Chatwoot</CardDescription>
+                  </div>
+                </div>
+                {overview && overview.chatwoot.conversations.open > 0 && (
+                  <Button variant="secondary" size="sm" onClick={handleResolveAll} disabled={resolving}>
+                    {resolving ? <IconLoader2 className="mr-2 h-4 w-4 animate-spin" /> : <IconCircleCheck className="mr-2 h-4 w-4" />}
+                    Resolver {overview.chatwoot.conversations.open} Abertas
+                  </Button>
                 )}
               </div>
-            )}
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Last Sync Status */}
+              {syncStatus && syncStatus.status !== 'idle' && (
+                <div className="p-4 rounded-lg border bg-muted/30 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {syncStatus.status === 'running' ? (
+                        <IconLoader2 className="h-4 w-4 animate-spin text-primary" />
+                      ) : syncStatus.status === 'completed' ? (
+                        <IconCircleCheck className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <IconCircleCheck className="h-4 w-4 text-destructive" />
+                      )}
+                      <span className="text-sm font-medium">
+                        {syncStatus.status === 'running' 
+                          ? 'Sincronizando...' 
+                          : syncStatus.status === 'completed' 
+                          ? 'Ultima sincronizacao' 
+                          : 'Falhou'}
+                      </span>
+                    </div>
+                    <Badge variant="outline">
+                      {syncStatus.type === 'all' ? 'Completo' : syncStatus.type === 'contacts' ? 'Contatos' : 'Mensagens'}
+                    </Badge>
+                  </div>
+                  
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {(syncStatus.type === 'contacts' || syncStatus.type === 'all') && (
+                      <div className="p-3 rounded bg-background space-y-2">
+                        <div className="flex items-center gap-2">
+                          <IconUsers className="h-5 w-5 text-muted-foreground" />
+                          <p className="font-semibold">{syncStatus.stats.contactsImported} contatos importados</p>
+                        </div>
+                        {syncStatus.stats.contactDetails && (
+                          <div className="text-xs space-y-1 pl-7 text-muted-foreground">
+                            <p>Total WhatsApp: {syncStatus.stats.contactDetails.totalWhatsApp}</p>
+                            {syncStatus.stats.contactDetails.savedContacts > 0 && (
+                              <p className="text-green-600">+ {syncStatus.stats.contactDetails.savedContacts} salvos na agenda</p>
+                            )}
+                            {syncStatus.stats.contactDetails.businessContacts > 0 && (
+                              <p className="text-green-600">+ {syncStatus.stats.contactDetails.businessContacts} contas comerciais</p>
+                            )}
+                            {syncStatus.stats.contactDetails.alreadyExists > 0 && (
+                              <p>• {syncStatus.stats.contactDetails.alreadyExists} ja existiam</p>
+                            )}
+                            {syncStatus.stats.contactDetails.notInAgenda > 0 && (
+                              <p>• {syncStatus.stats.contactDetails.notInAgenda} nao salvos (participantes de grupo)</p>
+                            )}
+                            {syncStatus.stats.contactDetails.groups > 0 && (
+                              <p>• {syncStatus.stats.contactDetails.groups} grupos (ignorados)</p>
+                            )}
+                            {syncStatus.stats.contactDetails.lidContacts > 0 && (
+                              <p>• {syncStatus.stats.contactDetails.lidContacts} LID nao resolvidos</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {(syncStatus.type === 'messages' || syncStatus.type === 'all') && (
+                      <div className="p-3 rounded bg-background space-y-2">
+                        <div className="flex items-center gap-2">
+                          <IconMessage className="h-5 w-5 text-muted-foreground" />
+                          <p className="font-semibold">{syncStatus.stats.messagesImported} mensagens importadas</p>
+                        </div>
+                        {syncStatus.stats.messageDetails && (
+                          <div className="text-xs space-y-1 pl-7 text-muted-foreground">
+                            {syncStatus.stats.messageDetails.textMessages > 0 && (
+                              <p className="text-green-600">+ {syncStatus.stats.messageDetails.textMessages} texto</p>
+                            )}
+                            {syncStatus.stats.messageDetails.mediaMessages > 0 && (
+                              <p className="text-green-600">+ {syncStatus.stats.messageDetails.mediaMessages} midia</p>
+                            )}
+                            {syncStatus.stats.messageDetails.groupMessages > 0 && (
+                              <p className="text-blue-600">• {syncStatus.stats.messageDetails.groupMessages} em grupos</p>
+                            )}
+                            {syncStatus.stats.messageDetails.privateChats > 0 && (
+                              <p>Conversas: {syncStatus.stats.messageDetails.privateChats} privadas, {syncStatus.stats.messageDetails.groupChats} grupos</p>
+                            )}
+                            {syncStatus.stats.messageDetails.alreadySynced > 0 && (
+                              <p>• {syncStatus.stats.messageDetails.alreadySynced} ja sincronizadas</p>
+                            )}
+                            {syncStatus.stats.messageDetails.oldMessages > 0 && (
+                              <p>• {syncStatus.stats.messageDetails.oldMessages} antigas (fora do limite)</p>
+                            )}
+                            {syncStatus.stats.messageDetails.noMedia > 0 && (
+                              <p>• {syncStatus.stats.messageDetails.noMedia} midia nao encontrada</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
-            {/* Options */}
-            <div className="space-y-4 pt-2">
-              <div className="flex items-center gap-4">
-                <Label>Dias:</Label>
-                <Input
-                  type="number"
-                  className="w-20"
-                  value={config.syncDays || ''}
-                  onChange={(e) => update('syncDays', parseInt(e.target.value) || 0)}
-                />
-                <span className="text-sm text-muted-foreground">0 = todos</span>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Importar como resolvidas</Label>
-                  <p className="text-xs text-muted-foreground">Novas conversas serao criadas com status resolvido</p>
+                  {syncStatus.error && (
+                    <p className="text-sm text-destructive">{syncStatus.error}</p>
+                  )}
                 </div>
-                <Switch
-                  checked={config.importAsResolved || false}
-                  onCheckedChange={(v) => update('importAsResolved', v)}
-                />
-              </div>
-            </div>
+              )}
 
-            {/* Actions */}
-            <div className="flex flex-wrap gap-2 pt-4">
-              <Button variant="outline" onClick={() => handleSync('contacts')} disabled={syncing !== null}>
-                <IconUsers className="mr-2 h-4 w-4" />
-                Contatos
-              </Button>
-              <Button variant="outline" onClick={() => handleSync('messages')} disabled={syncing !== null}>
-                <IconMessage className="mr-2 h-4 w-4" />
-                Mensagens
-              </Button>
-              <Button onClick={() => handleSync('all')} disabled={syncing !== null}>
-                {syncing ? <IconLoader2 className="mr-2 h-4 w-4 animate-spin" /> : <IconCheck className="mr-2 h-4 w-4" />}
-                Sync Completo
-              </Button>
-            </div>
-
-            {/* Resolve All */}
-            {openConversations !== null && openConversations > 0 && (
-              <div className="flex items-center justify-between pt-4 border-t">
-                <div>
-                  <p className="text-sm font-medium">{openConversations} conversas abertas</p>
-                  <p className="text-xs text-muted-foreground">Resolver todas de uma vez</p>
+              {/* Options */}
+              <div className="space-y-4 pt-2">
+                <div className="flex items-center gap-4">
+                  <Label>Dias:</Label>
+                  <Input
+                    type="number"
+                    className="w-20"
+                    value={config.syncDays || ''}
+                    onChange={(e) => update('syncDays', parseInt(e.target.value) || 0)}
+                  />
+                  <span className="text-sm text-muted-foreground">0 = todos</span>
                 </div>
-                <Button variant="secondary" onClick={handleResolveAll} disabled={resolving}>
-                  {resolving ? <IconLoader2 className="mr-2 h-4 w-4 animate-spin" /> : <IconCircleCheck className="mr-2 h-4 w-4" />}
-                  Resolver Todas
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Importar como resolvidas</Label>
+                    <p className="text-xs text-muted-foreground">Novas conversas serao criadas com status resolvido</p>
+                  </div>
+                  <Switch
+                    checked={config.importAsResolved || false}
+                    onCheckedChange={(v) => update('importAsResolved', v)}
+                  />
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-wrap gap-2 pt-4">
+                <Button variant="outline" onClick={() => handleSync('contacts')} disabled={syncing !== null}>
+                  <IconUsers className="mr-2 h-4 w-4" />
+                  Contatos
+                </Button>
+                <Button variant="outline" onClick={() => handleSync('messages')} disabled={syncing !== null}>
+                  <IconMessage className="mr-2 h-4 w-4" />
+                  Mensagens
+                </Button>
+                <Button onClick={() => handleSync('all')} disabled={syncing !== null}>
+                  {syncing ? <IconLoader2 className="mr-2 h-4 w-4 animate-spin" /> : <IconCheck className="mr-2 h-4 w-4" />}
+                  Sync Completo
                 </Button>
               </div>
-            )}
 
-            <div className="flex justify-between pt-4 border-t">
-              <Button variant="ghost" onClick={() => setStep(2)}>Voltar</Button>
-              <Button variant="destructive" size="sm" onClick={() => setShowDeleteDialog(true)}>
-                <IconTrash className="mr-2 h-4 w-4" />
-                Excluir
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+              <div className="flex justify-between pt-4 border-t">
+                <Button variant="ghost" onClick={() => setStep(2)}>Voltar</Button>
+                <Button variant="destructive" size="sm" onClick={() => setShowDeleteDialog(true)}>
+                  <IconTrash className="mr-2 h-4 w-4" />
+                  Excluir
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Ignored Chats (collapsible at bottom) */}

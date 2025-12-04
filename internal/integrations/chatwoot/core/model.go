@@ -158,21 +158,52 @@ type SyncStats struct {
 	MessagesErrors    int `json:"messagesErrors"`
 	ConversationsUsed int `json:"conversationsUsed"`
 	Errors            int `json:"errors"`
-	// Detailed skip reasons
-	SkippedDetails *SkipDetails `json:"skippedDetails,omitempty"`
+	// Detailed breakdowns
+	ContactDetails *ContactSyncDetails `json:"contactDetails,omitempty"`
+	MessageDetails *MessageSyncDetails `json:"messageDetails,omitempty"`
 }
 
-// SkipDetails provides detailed breakdown of skipped items
-type SkipDetails struct {
-	AlreadySynced   int `json:"alreadySynced"`
-	StatusBroadcast int `json:"statusBroadcast"`
-	Newsletters     int `json:"newsletters"`
-	Protocol        int `json:"protocol"`
-	Reactions       int `json:"reactions"`
-	Groups          int `json:"groups"`
-	LidContacts     int `json:"lidContacts"`
-	EmptyContent    int `json:"emptyContent"`
-	OldMessages     int `json:"oldMessages"`
+// ContactSyncDetails provides detailed breakdown of contact sync
+type ContactSyncDetails struct {
+	// Imported breakdown
+	SavedContacts    int `json:"savedContacts"`    // Contacts saved in agenda (with FullName/FirstName)
+	BusinessContacts int `json:"businessContacts"` // Business/verified contacts
+
+	// Skipped breakdown
+	AlreadyExists      int `json:"alreadyExists"`      // Contact already in Chatwoot
+	Groups             int `json:"groups"`             // Group JIDs (not synced as contacts)
+	StatusBroadcast    int `json:"statusBroadcast"`    // Status broadcast
+	Newsletters        int `json:"newsletters"`        // Newsletter channels
+	NotInAgenda        int `json:"notInAgenda"`        // Contacts not saved (only PushName)
+	LidContacts        int `json:"lidContacts"`        // LID contacts that couldn't be resolved
+	InvalidPhone       int `json:"invalidPhone"`       // Invalid phone numbers
+
+	// Source info
+	TotalWhatsApp int `json:"totalWhatsApp"` // Total contacts from WhatsApp
+}
+
+// MessageSyncDetails provides detailed breakdown of message sync
+type MessageSyncDetails struct {
+	// Imported breakdown
+	TextMessages  int `json:"textMessages"`  // Regular text messages
+	MediaMessages int `json:"mediaMessages"` // Images, videos, audio, documents
+	GroupMessages int `json:"groupMessages"` // Messages in groups
+
+	// Skipped breakdown
+	AlreadySynced   int `json:"alreadySynced"`   // Already in Chatwoot
+	OldMessages     int `json:"oldMessages"`     // Before date limit
+	StatusBroadcast int `json:"statusBroadcast"` // Status/stories
+	Newsletters     int `json:"newsletters"`     // Newsletter messages
+	Protocol        int `json:"protocol"`        // Protocol messages
+	Reactions       int `json:"reactions"`       // Reaction messages
+	System          int `json:"system"`          // System messages
+	EmptyContent    int `json:"emptyContent"`    // No content
+	NoMedia         int `json:"noMedia"`         // Media not found
+	LidChats        int `json:"lidChats"`        // LID chats not resolved
+
+	// Conversations breakdown
+	PrivateChats int `json:"privateChats"` // 1:1 conversations
+	GroupChats   int `json:"groupChats"`   // Group conversations
 }
 
 // ResetStats tracks reset operation statistics

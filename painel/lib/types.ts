@@ -70,6 +70,37 @@ export interface ChatwootConfig {
   updatedAt?: string
 }
 
+export interface ContactSyncDetails {
+  savedContacts: number
+  businessContacts: number
+  alreadyExists: number
+  groups: number
+  statusBroadcast: number
+  newsletters: number
+  notInAgenda: number
+  lidContacts: number
+  invalidPhone: number
+  totalWhatsApp: number
+}
+
+export interface MessageSyncDetails {
+  textMessages: number
+  mediaMessages: number
+  groupMessages: number
+  alreadySynced: number
+  oldMessages: number
+  statusBroadcast: number
+  newsletters: number
+  protocol: number
+  reactions: number
+  system: number
+  emptyContent: number
+  noMedia: number
+  lidChats: number
+  privateChats: number
+  groupChats: number
+}
+
 export interface SyncStats {
   contactsImported: number
   contactsSkipped: number
@@ -79,6 +110,8 @@ export interface SyncStats {
   messagesErrors: number
   conversationsUsed: number
   errors: number
+  contactDetails?: ContactSyncDetails
+  messageDetails?: MessageSyncDetails
 }
 
 export interface SyncStatus {

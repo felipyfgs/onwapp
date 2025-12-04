@@ -120,6 +120,7 @@ type SetConfigRequest struct {
 	URL           string `json:"url" binding:"required_if=Enabled true"`
 	Token         string `json:"token" binding:"required_if=Enabled true"`
 	Account       int    `json:"account" binding:"required_if=Enabled true"`
+	InboxID       int    `json:"inboxId,omitempty"`
 	Inbox         string `json:"inbox,omitempty"`
 	SignAgent     bool   `json:"signAgent"`
 	SignSeparator string `json:"signSeparator,omitempty"`
@@ -155,6 +156,7 @@ func (s *Service) SetConfig(ctx context.Context, sessionID, sessionId string, re
 		URL:            strings.TrimSuffix(req.URL, "/"),
 		Token:          req.Token,
 		Account:        req.Account,
+		InboxID:        req.InboxID,
 		Inbox:          req.Inbox,
 		SignAgent:      req.SignAgent,
 		SignSeparator:  req.SignSeparator,
@@ -183,9 +185,17 @@ func (s *Service) SetConfig(ctx context.Context, sessionID, sessionId string, re
 		return nil, fmt.Errorf("failed to save chatwoot config: %w", err)
 	}
 
-	if req.Enabled && req.AutoCreate {
-		if err := s.initInboxWithBot(ctx, savedCfg, req.Number, req.Organization, req.Logo); err != nil {
-			logger.Warn().Err(err).Str("session", sessionId).Msg("Failed to auto-create Chatwoot inbox")
+	// Always get/create inbox and resolve ID when enabled
+	if req.Enabled {
+		if err := s.initInbox(ctx, savedCfg); err != nil {
+			logger.Warn().Err(err).Str("session", sessionId).Msg("Failed to init inbox")
+		}
+
+		// AutoCreate only controls bot contact creation
+		if req.AutoCreate {
+			if err := s.createBotContact(ctx, savedCfg, req.Number, req.Organization, req.Logo); err != nil {
+				logger.Warn().Err(err).Str("session", sessionId).Msg("Failed to create bot contact")
+			}
 		}
 	}
 
@@ -224,13 +234,13 @@ func (s *Service) DeleteConfig(ctx context.Context, sessionID string) error {
 // INBOX MANAGEMENT
 // =============================================================================
 
-// InitInbox creates or retrieves the inbox in Chatwoot (without bot contact)
+// InitInbox creates or retrieves the inbox in Chatwoot (public method)
 func (s *Service) InitInbox(ctx context.Context, cfg *core.Config) error {
-	return s.initInboxWithBot(ctx, cfg, "", "", "")
+	return s.initInbox(ctx, cfg)
 }
 
-// initInboxWithBot creates or retrieves the inbox in Chatwoot and creates a bot contact
-func (s *Service) initInboxWithBot(ctx context.Context, cfg *core.Config, number, organization, logo string) error {
+// initInbox gets or creates inbox by name and saves the ID
+func (s *Service) initInbox(ctx context.Context, cfg *core.Config) error {
 	c := client.NewClient(cfg.URL, cfg.Token, cfg.Account)
 
 	inbox, err := c.GetOrCreateInboxWithOptions(ctx, cfg.Inbox, cfg.WebhookURL, cfg.AutoReopen)
@@ -258,12 +268,13 @@ func (s *Service) initInboxWithBot(ctx context.Context, cfg *core.Config, number
 	}
 
 	cfg.InboxID = inbox.ID
-
-	if err := s.initBotContact(ctx, c, inbox.ID, number, organization, logo); err != nil {
-		logger.Warn().Err(err).Msg("Chatwoot: failed to create bot contact")
-	}
-
 	return nil
+}
+
+// createBotContact creates the bot contact (only when AutoCreate=true)
+func (s *Service) createBotContact(ctx context.Context, cfg *core.Config, number, organization, logo string) error {
+	c := client.NewClient(cfg.URL, cfg.Token, cfg.Account)
+	return s.initBotContact(ctx, c, cfg.InboxID, number, organization, logo)
 }
 
 // initBotContact creates a bot contact with number 123456 (Evolution API pattern)
