@@ -112,6 +112,45 @@ type CreateGroupRequest struct {
 	Participants []string `json:"participants" binding:"required"`
 }
 
+type GroupIDRequest struct {
+	GroupID string `json:"groupId" binding:"required" example:"123456789@g.us"`
+}
+
+type GetInviteLinkRequest struct {
+	GroupID string `json:"groupId" binding:"required" example:"123456789@g.us"`
+	Reset   bool   `json:"reset" example:"false"`
+}
+
+// Contact requests (body-based)
+
+type ContactPhoneRequest struct {
+	Phone string `json:"phone" binding:"required" example:"5511999999999"`
+}
+
+// Newsletter requests (body-based)
+
+type NewsletterIDRequest struct {
+	NewsletterJID string `json:"newsletterJid" binding:"required" example:"123456789@newsletter"`
+}
+
+// Media requests (body-based)
+
+type MediaIDRequest struct {
+	MessageID string `json:"messageId" binding:"required" example:"ABCD1234"`
+}
+
+// History requests (body-based)
+
+type ChatIDRequest struct {
+	ChatID string `json:"chatId" binding:"required" example:"5511999999999@s.whatsapp.net"`
+}
+
+// Community requests (body-based)
+
+type CommunityIDRequest struct {
+	CommunityID string `json:"communityId" binding:"required" example:"123456789@g.us"`
+}
+
 type UpdateGroupNameRequest struct {
 	GroupID string `json:"groupId" binding:"required"`
 	Name    string `json:"name" binding:"required"`
@@ -279,7 +318,8 @@ type NewsletterMuteRequest struct {
 }
 
 type NewsletterMarkViewedRequest struct {
-	ServerIDs []int `json:"serverIds" binding:"required" example:"1,2,3"`
+	NewsletterJID string `json:"newsletterJid" binding:"required" example:"123456789@newsletter"`
+	ServerIDs     []int  `json:"serverIds" binding:"required" example:"1,2,3"`
 }
 
 // Contact subscribe request
@@ -310,6 +350,8 @@ type HistorySyncRequest struct {
 // Request unavailable message
 
 type RequestUnavailableMessageRequest struct {
+	ChatID    string `json:"chatId" binding:"required" example:"5511999999999@s.whatsapp.net"`
+	MessageID string `json:"messageId" binding:"required" example:"ABCD1234"`
 	SenderJID string `json:"senderJid" example:"5511999999999@s.whatsapp.net"`
 }
 

@@ -24,15 +24,15 @@ func NewNewsletterHandler(wpp *wpp.Service) *NewsletterHandler {
 // @Tags         newsletter
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.CreateNewsletterRequest true  "Newsletter data"
 // @Success      200    {object}  dto.NewsletterResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/newsletters [post]
+// @Router       /{session}/newsletter/create [post]
 func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.CreateNewsletterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -58,15 +58,15 @@ func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
 // @Tags         newsletter
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.NewsletterActionRequest true  "Newsletter JID"
 // @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/newsletters/{newsletterId}/follow [post]
+// @Router       /{session}/newsletter/follow [post]
 func (h *NewsletterHandler) FollowNewsletter(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.NewsletterActionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -88,15 +88,15 @@ func (h *NewsletterHandler) FollowNewsletter(c *gin.Context) {
 // @Tags         newsletter
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.NewsletterActionRequest true  "Newsletter JID"
 // @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/newsletters/{newsletterId}/follow [delete]
+// @Router       /{session}/newsletter/unfollow [post]
 func (h *NewsletterHandler) UnfollowNewsletter(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.NewsletterActionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -117,24 +117,27 @@ func (h *NewsletterHandler) UnfollowNewsletter(c *gin.Context) {
 // @Description  Get information about a WhatsApp newsletter
 // @Tags         newsletter
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
-// @Param        newsletterId  path      string  true  "Newsletter JID"
+// @Param        session   path      string  true  "Session ID"
+// @Param        newsletterJid  query      string  true  "Newsletter JID"
 // @Success      200           {object}  dto.NewsletterResponse
 // @Failure      500           {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/newsletters/{newsletterId} [get]
+// @Router       /{session}/newsletter/info [get]
 func (h *NewsletterHandler) GetNewsletterInfo(c *gin.Context) {
-	sessionId := c.Param("sessionId")
-	newsletterID := c.Param("newsletterId")
+	sessionId := c.Param("session")
+	newsletterJID := c.Query("newsletterJid")
+	if newsletterJID == "" {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "newsletterJid query parameter is required"})
+		return
+	}
 
-	info, err := h.wpp.GetNewsletterInfo(c.Request.Context(), sessionId, newsletterID)
+	info, err := h.wpp.GetNewsletterInfo(c.Request.Context(), sessionId, newsletterJID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, dto.NewsletterResponse{
-
 		Data: info,
 	})
 }
@@ -144,13 +147,13 @@ func (h *NewsletterHandler) GetNewsletterInfo(c *gin.Context) {
 // @Description  Get list of newsletters the session is subscribed to
 // @Tags         newsletter
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Success      200    {array}   object
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/newsletters [get]
+// @Router       /{session}/newsletter/list [get]
 func (h *NewsletterHandler) GetSubscribedNewsletters(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	newsletters, err := h.wpp.GetSubscribedNewsletters(c.Request.Context(), sessionId)
 	if err != nil {
@@ -166,29 +169,26 @@ func (h *NewsletterHandler) GetSubscribedNewsletters(c *gin.Context) {
 // @Description  Get messages from a WhatsApp newsletter
 // @Tags         newsletter
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
-// @Param        newsletterId  path      string  true   "Newsletter JID"
+// @Param        session   path      string  true  "Session ID"
+// @Param        newsletterJid  query      string  true   "Newsletter JID"
 // @Param        count         query     int     false  "Number of messages" default(50)
 // @Param        before        query     int     false  "Before server ID"
 // @Success      200           {object}  dto.NewsletterResponse
 // @Failure      500           {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/newsletters/{newsletterId}/messages [get]
+// @Router       /{session}/newsletter/messages [get]
 func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
-	sessionId := c.Param("sessionId")
-	newsletterID := c.Param("newsletterId")
-
-	count := 50
-	if c.Query("count") != "" {
-		if _, err := c.GetQuery("count"); err {
-			count = 50
-		}
+	sessionId := c.Param("session")
+	newsletterJID := c.Query("newsletterJid")
+	if newsletterJID == "" {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "newsletterJid query parameter is required"})
+		return
 	}
 
+	count := 50
 	var before types.MessageServerID
-	// TODO: Parse before parameter if provided for pagination
 
-	messages, err := h.wpp.GetNewsletterMessages(c.Request.Context(), sessionId, newsletterID, count, before)
+	messages, err := h.wpp.GetNewsletterMessages(c.Request.Context(), sessionId, newsletterJID, count, before)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -206,15 +206,15 @@ func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
 // @Tags         newsletter
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.NewsletterReactionRequest true  "Reaction data"
 // @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/newsletters/{newsletterId}/reactions [post]
+// @Router       /{session}/newsletter/react [post]
 func (h *NewsletterHandler) NewsletterSendReaction(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.NewsletterReactionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -239,15 +239,15 @@ func (h *NewsletterHandler) NewsletterSendReaction(c *gin.Context) {
 // @Tags         newsletter
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.NewsletterMuteRequest true  "Mute data"
 // @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/newsletters/{newsletterId}/mute [patch]
+// @Router       /{session}/newsletter/mute [patch]
 func (h *NewsletterHandler) NewsletterToggleMute(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.NewsletterMuteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -269,17 +269,16 @@ func (h *NewsletterHandler) NewsletterToggleMute(c *gin.Context) {
 // @Tags         newsletter
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        newsletterId path string true "Newsletter JID"
 // @Param        body body dto.NewsletterMarkViewedRequest true "Server IDs to mark"
 // @Success      200 {object} object
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/newsletters/{newsletterId}/viewed [post]
+// @Router       /{session}/newsletter/viewed [post]
 func (h *NewsletterHandler) NewsletterMarkViewed(c *gin.Context) {
-	sessionId := c.Param("sessionId")
-	newsletterID := c.Param("newsletterId")
+	sessionId := c.Param("session")
 
 	var req dto.NewsletterMarkViewedRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -292,7 +291,7 @@ func (h *NewsletterHandler) NewsletterMarkViewed(c *gin.Context) {
 		serverIDs[i] = types.MessageServerID(id)
 	}
 
-	if err := h.wpp.NewsletterMarkViewed(c.Request.Context(), sessionId, newsletterID, serverIDs); err != nil {
+	if err := h.wpp.NewsletterMarkViewed(c.Request.Context(), sessionId, req.NewsletterJID, serverIDs); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -305,17 +304,22 @@ func (h *NewsletterHandler) NewsletterMarkViewed(c *gin.Context) {
 // @Description  Subscribe to receive live updates from a newsletter
 // @Tags         newsletter
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        newsletterId path string true "Newsletter JID"
 // @Success      200 {object} dto.NewsletterLiveResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/newsletters/{newsletterId}/subscribe-live [post]
+// @Router       /{session}/newsletter/subscribe-live [post]
 func (h *NewsletterHandler) NewsletterSubscribeLiveUpdates(c *gin.Context) {
-	sessionId := c.Param("sessionId")
-	newsletterID := c.Param("newsletterId")
+	sessionId := c.Param("session")
 
-	duration, err := h.wpp.NewsletterSubscribeLiveUpdates(c.Request.Context(), sessionId, newsletterID)
+	var req dto.NewsletterIDRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	duration, err := h.wpp.NewsletterSubscribeLiveUpdates(c.Request.Context(), sessionId, req.NewsletterJID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return

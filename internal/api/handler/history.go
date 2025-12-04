@@ -35,16 +35,16 @@ func NewHistoryHandler(
 // @Tags         history
 // @Accept json
 // @Produce json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param request body dto.HistorySyncRequest false "Sync options"
 // @Success 200 {object} dto.MessageResponse
 // @Failure 400 {object} dto.ErrorResponse
 // @Failure 404 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
 // @Security Authorization
-// @Router       /sessions/{sessionId}/history/sync [post]
+// @Router       /{session}/history/sync [post]
 func (h *HistoryHandler) RequestHistorySync(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.HistorySyncRequest
 	_ = c.ShouldBindJSON(&req)
@@ -70,14 +70,14 @@ func (h *HistoryHandler) RequestHistorySync(c *gin.Context) {
 // @Description Get the current progress of history sync operations
 // @Tags         history
 // @Produce json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Success 200 {array} dto.SyncProgressResponse
 // @Failure 404 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
 // @Security Authorization
-// @Router       /sessions/{sessionId}/history/progress [get]
+// @Router       /{session}/history/progress [get]
 func (h *HistoryHandler) GetSyncProgress(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	session, err := h.sessionService.Get(sessionId)
 	if err != nil {
@@ -120,14 +120,14 @@ func (h *HistoryHandler) GetSyncProgress(c *gin.Context) {
 // @Description Get list of chats with unread messages from history sync data
 // @Tags         history
 // @Produce json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Success 200 {array} dto.ChatResponse
 // @Failure 404 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
 // @Security Authorization
-// @Router       /sessions/{sessionId}/history/chats/unread [get]
+// @Router       /{session}/history/chats/unread [get]
 func (h *HistoryHandler) GetUnreadChats(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	session, err := h.sessionService.Get(sessionId)
 	if err != nil {
@@ -161,16 +161,20 @@ func (h *HistoryHandler) GetUnreadChats(c *gin.Context) {
 // @Description Get detailed chat information from history sync data
 // @Tags         history
 // @Produce json
-// @Param        sessionId   path      string  true  "Session ID"
-// @Param chatId path string true "Chat JID"
+// @Param        session   path      string  true  "Session ID"
+// @Param        chatId  query string true "Chat JID"
 // @Success 200 {object} dto.ChatResponse
 // @Failure 404 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
 // @Security Authorization
-// @Router       /sessions/{sessionId}/history/chats/{chatId} [get]
+// @Router       /{session}/history/chat [get]
 func (h *HistoryHandler) GetChatInfo(c *gin.Context) {
-	sessionId := c.Param("sessionId")
-	chatID := c.Param("chatId")
+	sessionId := c.Param("session")
+	chatID := c.Query("chatId")
+	if chatID == "" {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "chatId query parameter is required"})
+		return
+	}
 
 	session, err := h.sessionService.Get(sessionId)
 	if err != nil {
@@ -206,16 +210,20 @@ func (h *HistoryHandler) GetChatInfo(c *gin.Context) {
 // @Description Get past participants of a group from history sync data
 // @Tags         history
 // @Produce json
-// @Param        sessionId   path      string  true  "Session ID"
-// @Param groupId path string true "Group JID"
+// @Param        session   path      string  true  "Session ID"
+// @Param        groupId  query string true "Group JID"
 // @Success 200 {array} dto.PastParticipantResponse
 // @Failure 404 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
 // @Security Authorization
-// @Router       /sessions/{sessionId}/history/groups/{groupId}/participants/past [get]
+// @Router       /{session}/history/group/participants/past [get]
 func (h *HistoryHandler) GetGroupPastParticipants(c *gin.Context) {
-	sessionId := c.Param("sessionId")
-	groupID := c.Param("groupId")
+	sessionId := c.Param("session")
+	groupID := c.Query("groupId")
+	if groupID == "" {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "groupId query parameter is required"})
+		return
+	}
 
 	session, err := h.sessionService.Get(sessionId)
 	if err != nil {
@@ -250,15 +258,15 @@ func (h *HistoryHandler) GetGroupPastParticipants(c *gin.Context) {
 // @Description Get most used stickers from history sync data
 // @Tags         history
 // @Produce json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param limit query int false "Number of stickers to return" default(20)
 // @Success 200 {array} dto.StickerResponse
 // @Failure 404 {object} dto.ErrorResponse
 // @Failure 500 {object} dto.ErrorResponse
 // @Security Authorization
-// @Router       /sessions/{sessionId}/history/stickers [get]
+// @Router       /{session}/history/stickers [get]
 func (h *HistoryHandler) GetTopStickers(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 	limit := 20
 	if l := c.Query("limit"); l != "" {
 		if parsed, err := parseInt(l); err == nil && parsed > 0 {

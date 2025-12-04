@@ -25,7 +25,7 @@ func NewStatusHandler(wpp *wpp.Service) *StatusHandler {
 // @Tags         status
 // @Accept       json,mpfd
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.SendStatusRequest false  "Story data (JSON)"
 // @Param        text  formData  string  false  "Text content (form-data)"
 // @Param        file  formData  file  false  "Image file (form-data)"
@@ -33,9 +33,9 @@ func NewStatusHandler(wpp *wpp.Service) *StatusHandler {
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/stories [post]
+// @Router       /{session}/status/send [post]
 func (h *StatusHandler) SendStory(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var text, image string
 	var imageData []byte
@@ -92,13 +92,13 @@ func (h *StatusHandler) SendStory(c *gin.Context) {
 // @Description  Get who can see your status updates
 // @Tags         status
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Success      200    {object}  dto.StatusPrivacyResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/stories/privacy [get]
+// @Router       /{session}/status/privacy [get]
 func (h *StatusHandler) GetStatusPrivacy(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	privacy, err := h.wpp.GetStatusPrivacy(c.Request.Context(), sessionId)
 	if err != nil {

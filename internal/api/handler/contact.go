@@ -23,16 +23,16 @@ func NewContactHandler(wpp *wpp.Service) *ContactHandler {
 // @Tags         contact
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.CheckPhoneRequest true  "Phone numbers"
 // @Success      200    {array}   dto.CheckPhoneResult
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/contacts/check [post]
+// @Router       /{session}/contact/check [post]
 func (h *ContactHandler) CheckPhone(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.CheckPhoneRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -64,16 +64,16 @@ func (h *ContactHandler) CheckPhone(c *gin.Context) {
 // @Tags         contact
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.ContactInfoRequest  true  "Phone numbers"
 // @Success      200    {object}  dto.ContactInfoResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/contacts/{phone} [get]
+// @Router       /{session}/contact/info [post]
 func (h *ContactHandler) GetContactInfo(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.ContactInfoRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -108,16 +108,20 @@ func (h *ContactHandler) GetContactInfo(c *gin.Context) {
 // @Tags         contact
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
-// @Param        phone  path      string  true  "Phone number"
+// @Param        session   path      string  true  "Session ID"
+// @Param        phone  query      string  true  "Phone number"
 // @Success      200    {object}  dto.AvatarResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/contacts/{phone}/avatar [get]
+// @Router       /{session}/contact/avatar [get]
 func (h *ContactHandler) GetAvatar(c *gin.Context) {
-	sessionId := c.Param("sessionId")
-	phone := c.Param("phone")
+	sessionId := c.Param("session")
+	phone := c.Query("phone")
+	if phone == "" {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "phone query parameter is required"})
+		return
+	}
 
 	pic, err := h.wpp.GetProfilePicture(c.Request.Context(), sessionId, phone)
 	if err != nil {
@@ -146,14 +150,14 @@ func (h *ContactHandler) GetAvatar(c *gin.Context) {
 // @Tags         contact
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Success      200    {array}   object
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/contacts [get]
+// @Router       /{session}/contact/list [get]
 func (h *ContactHandler) GetContacts(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	contacts, err := h.wpp.GetContacts(c.Request.Context(), sessionId)
 	if err != nil {
@@ -169,13 +173,13 @@ func (h *ContactHandler) GetContacts(c *gin.Context) {
 // @Description  Get list of blocked contacts
 // @Tags         contact
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Success      200    {object}  dto.BlocklistResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/contacts/blocklist [get]
+// @Router       /{session}/contact/blocklist [get]
 func (h *ContactHandler) GetBlocklist(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	blocklist, err := h.wpp.GetBlocklist(c.Request.Context(), sessionId)
 	if err != nil {
@@ -200,15 +204,15 @@ func (h *ContactHandler) GetBlocklist(c *gin.Context) {
 // @Tags         contact
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.BlocklistRequest true  "Block action"
 // @Success      200    {object}  dto.BlocklistActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/contacts/blocklist [put]
+// @Router       /{session}/contact/blocklist [post]
 func (h *ContactHandler) UpdateBlocklist(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.BlocklistRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -236,15 +240,15 @@ func (h *ContactHandler) UpdateBlocklist(c *gin.Context) {
 // @Tags         contact
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.SubscribePresenceRequest true  "Subscribe data"
 // @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/contacts/{phone}/presence/subscribe [post]
+// @Router       /{session}/presence/subscribe [post]
 func (h *ContactHandler) SubscribePresence(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.SubscribePresenceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -265,14 +269,14 @@ func (h *ContactHandler) SubscribePresence(c *gin.Context) {
 // @Description  Get QR link for adding contact
 // @Tags         contact
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        revoke query     bool    false  "Revoke existing link"
 // @Success      200    {object}  dto.QRLinkResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/qrlink [get]
+// @Router       /{session}/contact/qrlink [get]
 func (h *ContactHandler) GetContactQRLink(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 	revoke := c.Query("revoke") == "true"
 
 	link, err := h.wpp.GetContactQRLink(c.Request.Context(), sessionId, revoke)
@@ -292,15 +296,19 @@ func (h *ContactHandler) GetContactQRLink(c *gin.Context) {
 // @Description  Get business profile of a contact
 // @Tags         contact
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
-// @Param        phone  path      string  true  "Phone number"
+// @Param        session   path      string  true  "Session ID"
+// @Param        phone  query      string  true  "Phone number"
 // @Success      200    {object}  dto.BusinessProfileResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/contacts/{phone}/business [get]
+// @Router       /{session}/contact/business [get]
 func (h *ContactHandler) GetBusinessProfile(c *gin.Context) {
-	sessionId := c.Param("sessionId")
-	phone := c.Param("phone")
+	sessionId := c.Param("session")
+	phone := c.Query("phone")
+	if phone == "" {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "phone query parameter is required"})
+		return
+	}
 
 	profile, err := h.wpp.GetBusinessProfile(c.Request.Context(), sessionId, phone)
 	if err != nil {
@@ -309,7 +317,6 @@ func (h *ContactHandler) GetBusinessProfile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.BusinessProfileResponse{
-
 		Profile: profile,
 	})
 }
@@ -319,16 +326,20 @@ func (h *ContactHandler) GetBusinessProfile(c *gin.Context) {
 // @Description  Get the Linked ID (LID) for a contact
 // @Tags         contact
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
-// @Param        phone  path      string  true  "Phone number or JID"
+// @Param        session   path      string  true  "Session ID"
+// @Param        phone  query      string  true  "Phone number or JID"
 // @Success      200    {object}  dto.LIDResponse
 // @Failure      404    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/contacts/{phone}/lid [get]
+// @Router       /{session}/contact/lid [get]
 func (h *ContactHandler) GetContactLID(c *gin.Context) {
-	sessionId := c.Param("sessionId")
-	phone := c.Param("phone")
+	sessionId := c.Param("session")
+	phone := c.Query("phone")
+	if phone == "" {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "phone query parameter is required"})
+		return
+	}
 
 	lid, err := h.wpp.GetContactLID(c.Request.Context(), sessionId, phone)
 	if err != nil {

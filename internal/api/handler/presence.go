@@ -23,16 +23,16 @@ func NewPresenceHandler(wpp *wpp.Service) *PresenceHandler {
 // @Tags         presence
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string                true  "Session ID"
+// @Param        session   path      string                true  "Session ID"
 // @Param        body        body      dto.SetPresenceRequest true  "Presence data"
 // @Success      200         {object}  dto.PresenceResponse
 // @Failure      400         {object}  dto.ErrorResponse
 // @Failure      401         {object}  dto.ErrorResponse
 // @Failure      500         {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/presence [put]
+// @Router       /{session}/presence [post]
 func (h *PresenceHandler) SetPresence(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.SetPresenceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -61,7 +61,7 @@ func (h *PresenceHandler) SetPresence(c *gin.Context) {
 // @Tags         presence
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string                   true  "Session ID"
+// @Param        session   path      string                   true  "Session ID"
 // @Param        chatId      path      string                   true  "Chat JID"
 // @Param        body        body      dto.ChatPresenceRequest  true  "Chat presence data"
 // @Success      200         {object}  dto.ChatPresenceResponse
@@ -69,9 +69,9 @@ func (h *PresenceHandler) SetPresence(c *gin.Context) {
 // @Failure      401         {object}  dto.ErrorResponse
 // @Failure      500         {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/chats/{chatId}/presence [post]
+// @Router       /{session}/chat/presence [post]
 func (h *PresenceHandler) SetChatPresence(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.ChatPresenceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -95,7 +95,7 @@ func (h *PresenceHandler) SetChatPresence(c *gin.Context) {
 // @Tags         presence
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string              true  "Session ID"
+// @Param        session   path      string              true  "Session ID"
 // @Param        chatId      path      string              true  "Chat JID"
 // @Param        body        body      dto.MarkReadRequest true  "Messages to mark"
 // @Success      200         {object}  object
@@ -103,9 +103,9 @@ func (h *PresenceHandler) SetChatPresence(c *gin.Context) {
 // @Failure      401         {object}  dto.ErrorResponse
 // @Failure      500         {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/chats/{chatId}/read [post]
+// @Router       /{session}/chat/markread [post]
 func (h *PresenceHandler) MarkRead(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.MarkReadRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -127,16 +127,16 @@ func (h *PresenceHandler) MarkRead(c *gin.Context) {
 // @Tags         presence
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string                       true  "Session ID"
+// @Param        session   path      string                       true  "Session ID"
 // @Param        phone       path      string                       true  "Phone number"
 // @Param        body        body      dto.SubscribePresenceRequest true  "Subscribe data"
 // @Success      200         {object}  object
 // @Failure      400         {object}  dto.ErrorResponse
 // @Failure      500         {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/presence/subscribe/{phone} [post]
+// @Router       /{session}/presence/subscribe [post]
 func (h *PresenceHandler) SubscribePresence(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.SubscribePresenceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

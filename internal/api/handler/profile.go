@@ -24,14 +24,14 @@ func NewProfileHandler(wpp *wpp.Service) *ProfileHandler {
 // @Tags         profile
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Success      200    {object}  dto.ProfileInfoResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/profile [get]
+// @Router       /{session}/profile [get]
 func (h *ProfileHandler) GetProfile(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	profile, err := h.wpp.GetOwnProfile(c.Request.Context(), sessionId)
 	if err != nil {
@@ -51,16 +51,16 @@ func (h *ProfileHandler) GetProfile(c *gin.Context) {
 // @Tags         profile
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.SetStatusRequest   true  "Status data"
 // @Success      200    {object}  dto.SetStatusResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/profile/status [patch]
+// @Router       /{session}/profile/status [patch]
 func (h *ProfileHandler) SetStatus(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.SetStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -82,16 +82,16 @@ func (h *ProfileHandler) SetStatus(c *gin.Context) {
 // @Tags         profile
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.SetPushNameRequest   true  "Name data"
 // @Success      200    {object}  dto.SetNameResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/profile/name [patch]
+// @Router       /{session}/profile/name [patch]
 func (h *ProfileHandler) SetPushName(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.SetPushNameRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -113,7 +113,7 @@ func (h *ProfileHandler) SetPushName(c *gin.Context) {
 // @Tags         profile
 // @Accept       json,mpfd
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.SetProfilePictureRequest  false  "Image data (JSON)"
 // @Param        file  formData  file  false  "Image file (form-data)"
 // @Success      200    {object}  dto.SetPictureResponse
@@ -121,9 +121,9 @@ func (h *ProfileHandler) SetPushName(c *gin.Context) {
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/profile/picture [put]
+// @Router       /{session}/profile/picture [post]
 func (h *ProfileHandler) SetProfilePicture(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var imageData []byte
 	var ok bool
@@ -160,14 +160,14 @@ func (h *ProfileHandler) SetProfilePicture(c *gin.Context) {
 // @Tags         profile
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Success      200    {object}  object
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/profile/picture [delete]
+// @Router       /{session}/profile/picture/remove [post]
 func (h *ProfileHandler) DeleteProfilePicture(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	if err := h.wpp.DeleteProfilePicture(c.Request.Context(), sessionId); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
@@ -183,14 +183,14 @@ func (h *ProfileHandler) DeleteProfilePicture(c *gin.Context) {
 // @Tags         profile
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Success      200    {object}  dto.PrivacySettingsResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/profile/privacy [get]
+// @Router       /{session}/profile/privacy [get]
 func (h *ProfileHandler) GetPrivacySettings(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	settings, err := h.wpp.GetPrivacySettings(c.Request.Context(), sessionId)
 	if err != nil {
@@ -210,16 +210,16 @@ func (h *ProfileHandler) GetPrivacySettings(c *gin.Context) {
 // @Tags         profile
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.SetPrivacyRequest   true  "Privacy settings"
 // @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/profile/privacy [put]
+// @Router       /{session}/profile/privacy [post]
 func (h *ProfileHandler) SetPrivacySettings(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.SetPrivacyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -248,15 +248,15 @@ func (h *ProfileHandler) SetPrivacySettings(c *gin.Context) {
 // @Tags         profile
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.DefaultDisappearingRequest true  "Timer data"
 // @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/profile/disappearing [patch]
+// @Router       /{session}/profile/disappearing [patch]
 func (h *ProfileHandler) SetDefaultDisappearingTimer(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.DefaultDisappearingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

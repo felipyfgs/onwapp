@@ -24,15 +24,15 @@ func NewCommunityHandler(wpp *wpp.Service) *CommunityHandler {
 // @Tags         community
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.LinkGroupRequest true  "Link data"
 // @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/communities/{communityId}/groups [post]
+// @Router       /{session}/community/link [post]
 func (h *CommunityHandler) LinkGroup(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.LinkGroupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -57,15 +57,15 @@ func (h *CommunityHandler) LinkGroup(c *gin.Context) {
 // @Tags         community
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.LinkGroupRequest true  "Unlink data"
 // @Success      200    {object}  object
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/communities/{communityId}/groups/{groupId} [delete]
+// @Router       /{session}/community/unlink [post]
 func (h *CommunityHandler) UnlinkGroup(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.LinkGroupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -89,16 +89,21 @@ func (h *CommunityHandler) UnlinkGroup(c *gin.Context) {
 // @Description  Get list of subgroups in a community
 // @Tags         community
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
-// @Param        communityId  path      string  true  "Community ID"
+// @Param        session   path      string  true  "Session ID"
+// @Param        communityId  query      string  true  "Community ID"
 // @Success      200          {object}  dto.CommunityResponse
 // @Failure      500          {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/communities/{communityId}/groups [get]
+// @Router       /{session}/community/groups [get]
 func (h *CommunityHandler) GetSubGroups(c *gin.Context) {
-	sessionId := c.Param("sessionId")
-	communityID := strings.TrimSuffix(c.Param("communityId"), "@g.us")
+	sessionId := c.Param("session")
+	communityID := c.Query("communityId")
+	if communityID == "" {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "communityId query parameter is required"})
+		return
+	}
 
+	communityID = strings.TrimSuffix(communityID, "@g.us")
 	groups, err := h.wpp.GetSubGroups(c.Request.Context(), sessionId, communityID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
@@ -106,7 +111,6 @@ func (h *CommunityHandler) GetSubGroups(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.CommunityResponse{
-
 		Groups: groups,
 	})
 }

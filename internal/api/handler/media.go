@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	_ "zpwoot/internal/api/dto" // for swagger
+	"zpwoot/internal/api/dto"
 	"zpwoot/internal/db"
 	"zpwoot/internal/service"
 )
@@ -30,15 +30,19 @@ func NewMediaHandler(database *db.Database, mediaService *service.MediaService, 
 // @Description  Get media information for a specific message
 // @Tags         media
 // @Produce      json
-// @Param        sessionId   path     string  true  "Session ID"
-// @Param        messageId   path     string  true  "Message ID"
+// @Param        session   path     string  true  "Session ID"
+// @Param        messageId  query     string  true  "Message ID"
 // @Success      200  {object}  dto.MediaResponse
 // @Failure      404  {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/media/{messageId} [get]
+// @Router       /{session}/media/download [get]
 func (h *MediaHandler) GetMedia(c *gin.Context) {
-	sessionId := c.Param("sessionId")
-	msgID := c.Param("messageId")
+	sessionId := c.Param("session")
+	messageID := c.Query("messageId")
+	if messageID == "" {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "messageId query parameter is required"})
+		return
+	}
 
 	session, err := h.sessionSvc.Get(sessionId)
 	if err != nil || session == nil {
@@ -46,7 +50,7 @@ func (h *MediaHandler) GetMedia(c *gin.Context) {
 		return
 	}
 
-	media, err := h.database.Media.GetByMsgID(c.Request.Context(), session.ID, msgID)
+	media, err := h.database.Media.GetByMsgID(c.Request.Context(), session.ID, messageID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -65,13 +69,13 @@ func (h *MediaHandler) GetMedia(c *gin.Context) {
 // @Description  Get list of media files pending download
 // @Tags         media
 // @Produce      json
-// @Param        id     path     string  true   "Session ID"
+// @Param        session   path     string  true   "Session ID"
 // @Param        limit  query    int     false  "Limit (default: 100)"
 // @Success      200  {array}   dto.MediaResponse
 // @Security     Authorization
 // @Router       /sessions/{id}/media/pending [get]
 func (h *MediaHandler) ListPendingMedia(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	session, err := h.sessionSvc.Get(sessionId)
 	if err != nil || session == nil {
@@ -110,7 +114,7 @@ func (h *MediaHandler) ListPendingMedia(c *gin.Context) {
 // @Security     Authorization
 // @Router       /sessions/{id}/media/process [post]
 func (h *MediaHandler) ProcessPendingMedia(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	if h.mediaService == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "media service not configured"})
@@ -156,7 +160,7 @@ func (h *MediaHandler) ProcessPendingMedia(c *gin.Context) {
 // @Security     Authorization
 // @Router       /sessions/{id}/media [get]
 func (h *MediaHandler) ListMedia(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	session, err := h.sessionSvc.Get(sessionId)
 	if err != nil || session == nil {

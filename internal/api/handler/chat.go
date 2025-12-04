@@ -23,16 +23,16 @@ func NewChatHandler(wpp *wpp.Service) *ChatHandler {
 // @Tags         chat
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.ArchiveChatRequest true  "Archive data"
 // @Success      200    {object}  dto.ChatActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/chats/{chatId}/archive [patch]
+// @Router       /{session}/chat/archive [patch]
 func (h *ChatHandler) ArchiveChat(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.ArchiveChatRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -62,16 +62,16 @@ func (h *ChatHandler) ArchiveChat(c *gin.Context) {
 // @Tags         chat
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.DeleteMessageRequest true  "Delete data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/chats/{chatId}/messages/{messageId} [delete]
+// @Router       /{session}/message/delete [post]
 func (h *ChatHandler) DeleteMessage(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.DeleteMessageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -98,16 +98,16 @@ func (h *ChatHandler) DeleteMessage(c *gin.Context) {
 // @Tags         chat
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.EditMessageRequest true  "Edit data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/chats/{chatId}/messages/{messageId} [patch]
+// @Router       /{session}/message/edit [post]
 func (h *ChatHandler) EditMessage(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.EditMessageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -134,15 +134,15 @@ func (h *ChatHandler) EditMessage(c *gin.Context) {
 // @Tags         chat
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body body dto.DisappearingRequest true "Timer data"
 // @Success      200 {object} object
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/chats/{chatId}/settings/disappearing [patch]
+// @Router       /{session}/chat/disappearing [patch]
 func (h *ChatHandler) SetDisappearingTimer(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.DisappearingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -169,7 +169,7 @@ func (h *ChatHandler) SetDisappearingTimer(c *gin.Context) {
 // @Tags         chat
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        chatId path string true "Chat JID"
 // @Param        messageId path string true "Message ID"
 // @Param        body body dto.RequestUnavailableMessageRequest false "Optional sender JID for group messages"
@@ -177,16 +177,17 @@ func (h *ChatHandler) SetDisappearingTimer(c *gin.Context) {
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/chats/{chatId}/messages/{messageId}/request [post]
+// @Router       /{session}/message/request-unavailable [post]
 func (h *ChatHandler) RequestUnavailableMessage(c *gin.Context) {
-	sessionId := c.Param("sessionId")
-	chatID := c.Param("chatId")
-	messageID := c.Param("messageId")
+	sessionId := c.Param("session")
 
 	var req dto.RequestUnavailableMessageRequest
-	_ = c.ShouldBindJSON(&req)
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
 
-	resp, err := h.wpp.RequestUnavailableMessage(c.Request.Context(), sessionId, chatID, req.SenderJID, messageID)
+	resp, err := h.wpp.RequestUnavailableMessage(c.Request.Context(), sessionId, req.ChatID, req.SenderJID, req.MessageID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return

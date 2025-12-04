@@ -26,16 +26,16 @@ func NewGroupHandler(wpp *wpp.Service) *GroupHandler {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.CreateGroupRequest  true  "Group data"
 // @Success      200    {object}  dto.GroupActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/groups [post]
+// @Router       /{session}/group/create [post]
 func (h *GroupHandler) CreateGroup(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.CreateGroupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -62,17 +62,21 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
-// @Param        groupId  path      string  true  "Group ID"
+// @Param        session   path      string  true  "Session ID"
+// @Param        groupId  query      string  true  "Group ID"
 // @Success      200      {object}  dto.GroupActionResponse
 // @Failure      400      {object}  dto.ErrorResponse
 // @Failure      401      {object}  dto.ErrorResponse
 // @Failure      500      {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/groups/{groupId} [get]
+// @Router       /{session}/group/info [get]
 func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
-	sessionId := c.Param("sessionId")
-	groupID := c.Param("groupId")
+	sessionId := c.Param("session")
+	groupID := c.Query("groupId")
+	if groupID == "" {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "groupId query parameter is required"})
+		return
+	}
 
 	info, err := h.wpp.GetGroupInfo(c.Request.Context(), sessionId, groupID)
 	if err != nil {
@@ -81,7 +85,6 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-
 		GroupID: groupID,
 		Data:    info,
 	})
@@ -93,14 +96,14 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Success      200    {object}  dto.GroupActionResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/groups [get]
+// @Router       /{session}/group/list [get]
 func (h *GroupHandler) GetJoinedGroups(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	groups, err := h.wpp.GetJoinedGroups(c.Request.Context(), sessionId)
 	if err != nil {
@@ -120,25 +123,29 @@ func (h *GroupHandler) GetJoinedGroups(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
-// @Param        groupId  path      string  true  "Group ID"
+// @Param        session   path      string  true  "Session ID"
+// @Param        groupId  query      string  true  "Group ID"
 // @Success      200      {object}  dto.GroupActionResponse
 // @Failure      401      {object}  dto.ErrorResponse
 // @Failure      500      {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/groups/{groupId}/membership [delete]
+// @Router       /{session}/group/leave [post]
 func (h *GroupHandler) LeaveGroup(c *gin.Context) {
-	sessionId := c.Param("sessionId")
-	groupID := c.Param("groupId")
+	sessionId := c.Param("session")
 
-	if err := h.wpp.LeaveGroup(c.Request.Context(), sessionId, groupID); err != nil {
+	var req dto.GroupIDRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	if err := h.wpp.LeaveGroup(c.Request.Context(), sessionId, req.GroupID); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-
-		GroupID: groupID,
+		GroupID: req.GroupID,
 	})
 }
 
@@ -148,16 +155,16 @@ func (h *GroupHandler) LeaveGroup(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.GroupUpdateRequest  true  "New name"
 // @Success      200    {object}  dto.GroupActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/groups/{groupId}/name [patch]
+// @Router       /{session}/group/name [patch]
 func (h *GroupHandler) UpdateGroupName(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.GroupUpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -182,16 +189,16 @@ func (h *GroupHandler) UpdateGroupName(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.GroupUpdateRequest  true  "New description"
 // @Success      200    {object}  dto.GroupActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/groups/{groupId}/description [patch]
+// @Router       /{session}/group/topic [patch]
 func (h *GroupHandler) UpdateGroupTopic(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.GroupUpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -216,16 +223,16 @@ func (h *GroupHandler) UpdateGroupTopic(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.GroupParticipantsRequest  true  "Participants"
 // @Success      200    {object}  dto.GroupActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/groups/{groupId}/participants [post]
+// @Router       /{session}/group/participants/add [post]
 func (h *GroupHandler) AddParticipants(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.GroupParticipantsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -252,16 +259,16 @@ func (h *GroupHandler) AddParticipants(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.GroupParticipantsRequest  true  "Participants"
 // @Success      200    {object}  dto.GroupActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/groups/{groupId}/participants [delete]
+// @Router       /{session}/group/participants/remove [post]
 func (h *GroupHandler) RemoveParticipants(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.GroupParticipantsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -288,16 +295,16 @@ func (h *GroupHandler) RemoveParticipants(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.GroupParticipantsRequest  true  "Participants"
 // @Success      200    {object}  dto.GroupActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/groups/{groupId}/participants/promote [patch]
+// @Router       /{session}/group/participants/promote [patch]
 func (h *GroupHandler) PromoteParticipants(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.GroupParticipantsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -324,16 +331,16 @@ func (h *GroupHandler) PromoteParticipants(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.GroupParticipantsRequest  true  "Participants"
 // @Success      200    {object}  dto.GroupActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/groups/{groupId}/participants/demote [patch]
+// @Router       /{session}/group/participants/demote [patch]
 func (h *GroupHandler) DemoteParticipants(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.GroupParticipantsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -360,17 +367,21 @@ func (h *GroupHandler) DemoteParticipants(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
-// @Param        groupId  path      string  true   "Group ID"
+// @Param        session   path      string  true  "Session ID"
+// @Param        groupId  query      string  true   "Group ID"
 // @Param        reset    query     bool    false  "Reset link"
 // @Success      200      {object}  dto.GroupInviteLinkResponse
 // @Failure      401      {object}  dto.ErrorResponse
 // @Failure      500      {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/groups/{groupId}/invite [get]
+// @Router       /{session}/group/invitelink [get]
 func (h *GroupHandler) GetInviteLink(c *gin.Context) {
-	sessionId := c.Param("sessionId")
-	groupID := c.Param("groupId")
+	sessionId := c.Param("session")
+	groupID := c.Query("groupId")
+	if groupID == "" {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "groupId query parameter is required"})
+		return
+	}
 	reset := c.Query("reset") == "true"
 
 	link, err := h.wpp.GetInviteLink(c.Request.Context(), sessionId, groupID, reset)
@@ -380,7 +391,6 @@ func (h *GroupHandler) GetInviteLink(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupInviteLinkResponse{
-
 		GroupID: groupID,
 		Link:    link,
 	})
@@ -392,16 +402,16 @@ func (h *GroupHandler) GetInviteLink(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.JoinGroupRequest  true  "Invite link"
 // @Success      200    {object}  dto.GroupActionResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/groups/join [post]
+// @Router       /{session}/group/join [post]
 func (h *GroupHandler) JoinGroup(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.JoinGroupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -427,16 +437,16 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.SendGroupMessageRequest  true  "Message data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/groups/{groupId}/messages [post]
+// @Router       /{session}/group/send/text [post]
 func (h *GroupHandler) SendGroupMessage(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.SendGroupMessageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -463,15 +473,15 @@ func (h *GroupHandler) SendGroupMessage(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body body dto.GroupAnnounceRequest true "Announce setting"
 // @Success      200 {object} object
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/groups/{groupId}/settings/announce [patch]
+// @Router       /{session}/group/announce [patch]
 func (h *GroupHandler) SetGroupAnnounce(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.GroupAnnounceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -494,15 +504,15 @@ func (h *GroupHandler) SetGroupAnnounce(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body body dto.GroupLockedRequest true "Locked setting"
 // @Success      200 {object} object
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/groups/{groupId}/settings/locked [patch]
+// @Router       /{session}/group/locked [patch]
 func (h *GroupHandler) SetGroupLocked(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.GroupLockedRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -525,7 +535,7 @@ func (h *GroupHandler) SetGroupLocked(c *gin.Context) {
 // @Tags         groups
 // @Accept       json,mpfd
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body body dto.GroupPictureRequest false "Picture data (JSON)"
 // @Param        groupId  formData  string  false  "Group ID (form-data)"
 // @Param        file  formData  file  false  "Image file (form-data)"
@@ -533,9 +543,9 @@ func (h *GroupHandler) SetGroupLocked(c *gin.Context) {
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/groups/{groupId}/picture [put]
+// @Router       /{session}/group/photo [post]
 func (h *GroupHandler) SetGroupPicture(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var groupID string
 	var imageData []byte
@@ -543,9 +553,6 @@ func (h *GroupHandler) SetGroupPicture(c *gin.Context) {
 
 	if IsMultipartRequest(c) {
 		groupID = c.PostForm("groupId")
-		if groupID == "" {
-			groupID = c.Param("groupId")
-		}
 		imageData, _, ok = GetMediaFromForm(c, "file")
 		if !ok {
 			return
@@ -578,18 +585,23 @@ func (h *GroupHandler) SetGroupPicture(c *gin.Context) {
 // @Description  Remove the group profile picture
 // @Tags         groups
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        groupId path string true "Group ID"
 // @Success      200 {object} dto.MessageOnlyResponse
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/groups/{groupId}/picture [delete]
+// @Router       /{session}/group/photo/remove [post]
 func (h *GroupHandler) DeleteGroupPicture(c *gin.Context) {
-	sessionId := c.Param("sessionId")
-	groupID := c.Param("groupId")
+	sessionId := c.Param("session")
 
-	groupID = strings.TrimSuffix(groupID, "@g.us")
+	var req dto.GroupIDRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	groupID := strings.TrimSuffix(req.GroupID, "@g.us")
 	if err := h.wpp.DeleteGroupPhoto(c.Request.Context(), sessionId, groupID); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
@@ -604,15 +616,15 @@ func (h *GroupHandler) DeleteGroupPicture(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body body dto.GroupApprovalRequest true "Approval setting"
 // @Success      200 {object} object
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/groups/{groupId}/settings/approval [patch]
+// @Router       /{session}/group/approval [patch]
 func (h *GroupHandler) SetGroupApprovalMode(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.GroupApprovalRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -635,15 +647,15 @@ func (h *GroupHandler) SetGroupApprovalMode(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body body dto.GroupMemberAddModeRequest true "Member add mode"
 // @Success      200 {object} object
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/groups/{groupId}/settings/memberadd [patch]
+// @Router       /{session}/group/memberadd [patch]
 func (h *GroupHandler) SetGroupMemberAddMode(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.GroupMemberAddModeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -676,16 +688,21 @@ func (h *GroupHandler) SetGroupMemberAddMode(c *gin.Context) {
 // @Description  Get list of pending join requests for a group
 // @Tags         groups
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        groupId path string true "Group ID"
 // @Success      200 {object} dto.GroupRequestParticipantsResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/groups/{groupId}/requests [get]
+// @Router       /{session}/group/requests [get]
 func (h *GroupHandler) GetGroupRequestParticipants(c *gin.Context) {
-	sessionId := c.Param("sessionId")
-	groupID := strings.TrimSuffix(c.Param("groupId"), "@g.us")
+	sessionId := c.Param("session")
+	groupID := c.Query("groupId")
+	if groupID == "" {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "groupId query parameter is required"})
+		return
+	}
 
+	groupID = strings.TrimSuffix(groupID, "@g.us")
 	requests, err := h.wpp.GetJoinRequests(c.Request.Context(), sessionId, groupID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
@@ -704,23 +721,24 @@ func (h *GroupHandler) GetGroupRequestParticipants(c *gin.Context) {
 // @Tags         groups
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        groupId path string true "Group ID"
 // @Param        body body dto.GroupRequestActionBodyRequest true "Action data"
 // @Success      200 {object} dto.GroupActionResponse
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/groups/{groupId}/requests [post]
+// @Router       /{session}/group/requests/action [post]
 func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
-	sessionId := c.Param("sessionId")
-	groupID := strings.TrimSuffix(c.Param("groupId"), "@g.us")
+	sessionId := c.Param("session")
 
-	var req dto.GroupRequestActionBodyRequest
+	var req dto.GroupRequestActionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
+
+	groupID := strings.TrimSuffix(req.GroupID, "@g.us")
 
 	var action whatsmeow.ParticipantRequestChange
 	switch req.Action {
@@ -740,7 +758,6 @@ func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
-
 		GroupID: groupID,
 		Data:    result,
 	})
@@ -751,15 +768,15 @@ func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
 // @Description  Get group information using an invite link
 // @Tags         groups
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        link query string true "Invite link or code"
 // @Success      200 {object} dto.GroupActionResponse
 // @Failure      400 {object} dto.ErrorResponse
 // @Failure      500 {object} dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/groups/info/link [get]
+// @Router       /{session}/group/inviteinfo [get]
 func (h *GroupHandler) GetGroupInfoFromLink(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	link := c.Query("link")
 	if link == "" {

@@ -27,16 +27,16 @@ func NewMessageHandler(wpp *wpp.Service) *MessageHandler {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.SendTextRequest true  "Message data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/messages/text [post]
+// @Router       /{session}/message/send/text [post]
 func (h *MessageHandler) SendText(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.SendTextRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -63,7 +63,7 @@ func (h *MessageHandler) SendText(c *gin.Context) {
 // @Tags         messages
 // @Accept       json,mpfd
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.SendImageRequest false  "Image data (JSON)"
 // @Param        phone  formData  string  false  "Phone number (form-data)"
 // @Param        caption  formData  string  false  "Caption (form-data)"
@@ -73,9 +73,9 @@ func (h *MessageHandler) SendText(c *gin.Context) {
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/messages/image [post]
+// @Router       /{session}/message/send/image [post]
 func (h *MessageHandler) SendImage(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var phone, caption, mimeType string
 	var imageData []byte
@@ -136,7 +136,7 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 // @Tags         messages
 // @Accept       json,mpfd
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.SendAudioRequest false  "Audio data (JSON)"
 // @Param        phone  formData  string  false  "Phone number (form-data)"
 // @Param        ptt  formData  bool  false  "Push to talk (form-data)"
@@ -146,9 +146,9 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/messages/audio [post]
+// @Router       /{session}/message/send/audio [post]
 func (h *MessageHandler) SendAudio(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var phone, mimeType string
 	var ptt bool
@@ -210,7 +210,7 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 // @Tags         messages
 // @Accept       json,mpfd
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.SendVideoRequest false  "Video data (JSON)"
 // @Param        phone  formData  string  false  "Phone number (form-data)"
 // @Param        caption  formData  string  false  "Caption (form-data)"
@@ -220,9 +220,9 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/messages/video [post]
+// @Router       /{session}/message/send/video [post]
 func (h *MessageHandler) SendVideo(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var phone, caption, mimeType string
 	var videoData []byte
@@ -283,7 +283,7 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 // @Tags         messages
 // @Accept       json,mpfd
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.SendDocumentRequest false  "Document data (JSON)"
 // @Param        phone  formData  string  false  "Phone number (form-data)"
 // @Param        filename  formData  string  false  "Filename (form-data)"
@@ -293,9 +293,9 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/messages/document [post]
+// @Router       /{session}/message/send/document [post]
 func (h *MessageHandler) SendDocument(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var phone, filename, mimeType string
 	var docData []byte
@@ -356,7 +356,7 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 // @Tags         messages
 // @Accept       json,mpfd
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.SendStickerRequest false  "Sticker data (JSON)"
 // @Param        phone  formData  string  false  "Phone number (form-data)"
 // @Param        file  formData  file  false  "Sticker file (form-data)"
@@ -365,9 +365,9 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/messages/sticker [post]
+// @Router       /{session}/message/send/sticker [post]
 func (h *MessageHandler) SendSticker(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var phone, mimeType string
 	var stickerData []byte
@@ -426,16 +426,16 @@ func (h *MessageHandler) SendSticker(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.SendLocationRequest true  "Location data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/messages/location [post]
+// @Router       /{session}/message/send/location [post]
 func (h *MessageHandler) SendLocation(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.SendLocationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -462,16 +462,16 @@ func (h *MessageHandler) SendLocation(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.SendContactRequest true  "Contact data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/messages/contact [post]
+// @Router       /{session}/message/send/contact [post]
 func (h *MessageHandler) SendContact(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.SendContactRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -498,16 +498,16 @@ func (h *MessageHandler) SendContact(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.SendReactionRequest true  "Reaction data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/messages/reaction [post]
+// @Router       /{session}/message/react [post]
 func (h *MessageHandler) SendReaction(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.SendReactionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -534,16 +534,16 @@ func (h *MessageHandler) SendReaction(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.SendPollRequest true  "Poll data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/messages/poll [post]
+// @Router       /{session}/message/send/poll [post]
 func (h *MessageHandler) SendPoll(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.SendPollRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -570,16 +570,16 @@ func (h *MessageHandler) SendPoll(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.SendPollVoteRequest true  "Vote data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/messages/poll/vote [post]
+// @Router       /{session}/message/poll/vote [post]
 func (h *MessageHandler) SendPollVote(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.SendPollVoteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -606,16 +606,16 @@ func (h *MessageHandler) SendPollVote(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.SendButtonsRequest true  "Buttons data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/messages/buttons [post]
+// @Router       /{session}/message/send/buttons [post]
 func (h *MessageHandler) SendButtons(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.SendButtonsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -657,16 +657,16 @@ func (h *MessageHandler) SendButtons(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.SendListRequest true  "List data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/messages/list [post]
+// @Router       /{session}/message/send/list [post]
 func (h *MessageHandler) SendList(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.SendListRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -717,16 +717,16 @@ func (h *MessageHandler) SendList(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.SendInteractiveRequest true  "Interactive data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/messages/interactive [post]
+// @Router       /{session}/message/send/interactive [post]
 func (h *MessageHandler) SendInteractive(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.SendInteractiveRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -826,16 +826,16 @@ func (h *MessageHandler) SendInteractive(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.SendTemplateRequest  true  "Template data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/messages/template [post]
+// @Router       /{session}/message/send/template [post]
 func (h *MessageHandler) SendTemplate(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.SendTemplateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -981,16 +981,16 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        sessionId   path      string  true  "Session ID"
+// @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.SendCarouselRequest  true  "Carousel data"
 // @Success      200    {object}  dto.SendResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      401    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
-// @Router       /sessions/{sessionId}/messages/carousel [post]
+// @Router       /{session}/message/send/carousel [post]
 func (h *MessageHandler) SendCarousel(c *gin.Context) {
-	sessionId := c.Param("sessionId")
+	sessionId := c.Param("session")
 
 	var req dto.SendCarouselRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
