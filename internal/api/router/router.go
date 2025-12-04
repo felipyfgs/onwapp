@@ -103,6 +103,14 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	r.GET("/events", middleware.Auth(cfg.GlobalAPIKey, cfg.SessionLookup), h.Webhook.GetEvents)
 
+	// Sessions management routes
+	sessions := r.Group("/sessions")
+	sessions.Use(middleware.Auth(cfg.GlobalAPIKey, cfg.SessionLookup))
+	{
+		sessions.GET("", h.Session.Fetch)
+		sessions.POST("", h.Session.Create)
+	}
+
 	// Session routes (wuzapi style: /:session/...)
 	session := r.Group("/:session")
 	session.Use(middleware.Auth(cfg.GlobalAPIKey, cfg.SessionLookup))

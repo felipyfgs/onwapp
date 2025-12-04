@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
@@ -9,8 +10,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/skip2/go-qrcode"
+	"go.mau.fi/whatsmeow"
 
 	"zpwoot/internal/api/dto"
+	"zpwoot/internal/db"
+	"zpwoot/internal/logger"
 	"zpwoot/internal/model"
 	"zpwoot/internal/service"
 	"zpwoot/internal/service/wpp"
@@ -28,10 +32,11 @@ func generateAPIKey() string {
 type SessionHandler struct {
 	sessionService *service.SessionService
 	wpp            *wpp.Service
+	database       *db.Database
 }
 
-func NewSessionHandler(sessionService *service.SessionService, wpp *wpp.Service) *SessionHandler {
-	return &SessionHandler{sessionService: sessionService, wpp: wpp}
+func NewSessionHandler(sessionService *service.SessionService, wpp *wpp.Service, database *db.Database) *SessionHandler {
+	return &SessionHandler{sessionService: sessionService, wpp: wpp, database: database}
 }
 
 func sessionToResponse(sess *model.Session) dto.SessionResponse {
@@ -60,7 +65,7 @@ func sessionToResponse(sess *model.Session) dto.SessionResponse {
 
 // Fetch godoc
 // @Summary      Fetch all sessions
-// @Description  Get a list of all WhatsApp sessions
+// @Description  Get a list of all WhatsApp sessions with profile and stats
 // @Tags         sessions
 // @Accept       json
 // @Produce      json
@@ -77,10 +82,83 @@ func (h *SessionHandler) Fetch(c *gin.Context) {
 		if err != nil {
 			continue
 		}
-		response = append(response, sessionToResponse(sess))
+		resp := sessionToResponse(sess)
+
+		// For connected sessions, fetch additional data
+		if sess.GetStatus() == model.StatusConnected {
+			h.enrichSessionResponse(c.Request.Context(), sess, &resp)
+		}
+
+		response = append(response, resp)
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+// enrichSessionResponse adds profile, avatar and stats to a connected session response
+func (h *SessionHandler) enrichSessionResponse(ctx context.Context, sess *model.Session, resp *dto.SessionResponse) {
+	// Get data from client store
+	if sess.Client != nil && sess.Client.Store != nil && sess.Client.Store.ID != nil {
+		storeID := sess.Client.Store.ID
+		
+		// Set DeviceJID if not already set
+		if resp.DeviceJID == nil {
+			jid := storeID.String()
+			resp.DeviceJID = &jid
+		}
+		
+		// Set Phone if not already set (extract from JID)
+		if resp.Phone == nil && storeID.User != "" {
+			resp.Phone = &storeID.User
+		}
+		
+		// Get push name
+		pushName := sess.Client.Store.PushName
+		if pushName != "" {
+			resp.PushName = &pushName
+		}
+
+		// Get profile picture
+		pic, err := sess.Client.GetProfilePictureInfo(ctx, *storeID, &whatsmeow.GetProfilePictureParams{})
+		if err != nil {
+			logger.Debug().Err(err).Str("session", sess.Session).Msg("Failed to get profile picture")
+		} else if pic != nil && pic.URL != "" {
+			resp.ProfilePicture = &pic.URL
+		}
+	}
+
+	// Get stats from database
+	stats := &dto.SessionStats{}
+
+	if h.database != nil {
+		// Count messages
+		if msgCount, err := h.database.Messages.CountBySession(ctx, sess.ID); err == nil {
+			stats.Messages = msgCount
+		}
+
+		// Count chats
+		if chatCount, err := h.database.Chats.CountBySession(ctx, sess.ID); err == nil {
+			stats.Chats = chatCount
+		}
+	}
+
+	// Count contacts from whatsmeow store
+	if sess.Client != nil && sess.Client.Store != nil {
+		contacts, err := sess.Client.Store.Contacts.GetAllContacts(ctx)
+		if err == nil {
+			stats.Contacts = len(contacts)
+		}
+	}
+
+	// Count groups
+	if sess.Client != nil {
+		groups, err := sess.Client.GetJoinedGroups(ctx)
+		if err == nil {
+			stats.Groups = len(groups)
+		}
+	}
+
+	resp.Stats = stats
 }
 
 // Create godoc

@@ -276,3 +276,9 @@ func (r *ChatRepository) Delete(ctx context.Context, sessionID, chatJID string) 
 	)
 	return err
 }
+
+func (r *ChatRepository) CountBySession(ctx context.Context, sessionID string) (int, error) {
+	var count int
+	err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM "zpChats" WHERE "sessionId" = $1::uuid`, sessionID).Scan(&count)
+	return count, err
+}

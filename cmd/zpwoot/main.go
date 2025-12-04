@@ -240,7 +240,7 @@ func main() {
 	historyHandler := handler.NewHistoryHandler(sessionService, wppService, historySyncService)
 
 	handlers := &router.Handlers{
-		Session:    handler.NewSessionHandler(sessionService, wppService),
+		Session:    handler.NewSessionHandler(sessionService, wppService, database),
 		Profile:    handler.NewProfileHandler(wppService),
 		Presence:   handler.NewPresenceHandler(wppService),
 		Contact:    handler.NewContactHandler(wppService),

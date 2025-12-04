@@ -14,6 +14,18 @@ type MessageOnlyResponse struct {
 
 // Session responses
 
+// SessionStats contains counters for session data
+type SessionStats struct {
+	// Total number of messages
+	Messages int `json:"messages" example:"1234"`
+	// Total number of chats
+	Chats int `json:"chats" example:"42"`
+	// Total number of contacts
+	Contacts int `json:"contacts" example:"156"`
+	// Total number of groups
+	Groups int `json:"groups" example:"12"`
+}
+
 // SessionResponse represents a WhatsApp session with connection info and authentication
 type SessionResponse struct {
 	// Unique session UUID (database primary key)
@@ -28,6 +40,12 @@ type SessionResponse struct {
 	Status string `json:"status" example:"connected"`
 	// Session-specific API key for authentication (use in Authorization header)
 	ApiKey *string `json:"apiKey,omitempty" example:"a1b2c3d4e5f6..."`
+	// WhatsApp push name (display name)
+	PushName *string `json:"pushName,omitempty" example:"John Doe"`
+	// Profile picture URL
+	ProfilePicture *string `json:"profilePicture,omitempty" example:"https://pps.whatsapp.net/..."`
+	// Session statistics (only for connected sessions)
+	Stats *SessionStats `json:"stats,omitempty"`
 	// Session creation timestamp
 	CreatedAt string `json:"createdAt" example:"2025-11-29T14:18:15.324706Z"`
 	// Last update timestamp

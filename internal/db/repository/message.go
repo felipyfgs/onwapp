@@ -450,3 +450,9 @@ func (r *MessageRepository) MarkAsReadByAgent(ctx context.Context, sessionID str
 	}
 	return result.RowsAffected(), nil
 }
+
+func (r *MessageRepository) CountBySession(ctx context.Context, sessionID string) (int, error) {
+	var count int
+	err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM "zpMessages" WHERE "sessionId" = $1::uuid`, sessionID).Scan(&count)
+	return count, err
+}
