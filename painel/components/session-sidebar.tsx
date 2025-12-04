@@ -11,7 +11,7 @@ import {
   IconUsersGroup,
   IconMessage,
   IconPhoto,
-  IconUser,
+  IconSettings,
 } from '@tabler/icons-react'
 
 import {
@@ -37,11 +37,14 @@ export function SessionSidebar({ sessionName }: SessionSidebarProps) {
 
   const mainNav = [
     { title: 'Overview', url: basePath, icon: IconHome },
-    { title: 'Perfil', url: `${basePath}/profile`, icon: IconUser },
     { title: 'Contatos', url: `${basePath}/contacts`, icon: IconUsers },
     { title: 'Grupos', url: `${basePath}/groups`, icon: IconUsersGroup },
     { title: 'Mensagens', url: `${basePath}/messages`, icon: IconMessage },
     { title: 'Midia', url: `${basePath}/media`, icon: IconPhoto },
+  ]
+
+  const settingsNav = [
+    { title: 'Configuracoes', url: `${basePath}/settings`, icon: IconSettings },
   ]
 
   const integrationNav = [
@@ -76,6 +79,23 @@ export function SessionSidebar({ sessionName }: SessionSidebarProps) {
               {mainNav.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={pathname === item.url}>
+                    <Link href={item.url}>
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Configuracoes</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {settingsNav.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild isActive={pathname === item.url || pathname.startsWith(item.url)}>
                     <Link href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>

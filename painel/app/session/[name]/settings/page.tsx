@@ -1,13 +1,24 @@
 'use client'
 
 import { use, useEffect, useState, useCallback } from 'react'
-import { IconRefresh, IconEdit, IconCheck, IconX, IconTrash, IconUpload } from '@tabler/icons-react'
+import {
+  IconRefresh,
+  IconEdit,
+  IconCheck,
+  IconX,
+  IconTrash,
+  IconUpload,
+  IconUser,
+  IconShield,
+  IconClock,
+} from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Switch } from '@/components/ui/switch'
 import {
   getProfile,
   setProfileName,
@@ -16,12 +27,13 @@ import {
   removeProfilePicture,
   getPrivacySettings,
   setPrivacySettings,
+  setDefaultDisappearingTimer,
   type Profile,
   type PrivacySettings
 } from '@/lib/api'
 import { toast } from 'sonner'
 
-export default function ProfilePage({ params }: { params: Promise<{ name: string }> }) {
+export default function SettingsPage({ params }: { params: Promise<{ name: string }> }) {
   const { name } = use(params)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [privacy, setPrivacy] = useState<PrivacySettings | null>(null)
@@ -34,20 +46,21 @@ export default function ProfilePage({ params }: { params: Promise<{ name: string
   const [newName, setNewName] = useState('')
   const [newStatus, setNewStatus] = useState('')
   const [newPictureUrl, setNewPictureUrl] = useState('')
+  const [disappearingTimer, setDisappearingTimer] = useState<string>('0')
 
-  const fetchProfile = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true)
       const [profileRes, privacyRes] = await Promise.all([
-        getProfile(name),
-        getPrivacySettings(name).catch(() => null)
+        getProfile(name).catch(() => ({ profile: null })),
+        getPrivacySettings(name).catch(() => null),
       ])
       setProfile(profileRes.profile)
       setPrivacy(privacyRes)
       setNewName(profileRes.profile?.name || '')
       setNewStatus(profileRes.profile?.status || '')
     } catch (err) {
-      toast.error('Erro ao carregar perfil')
+      toast.error('Erro ao carregar configuracoes')
       console.error(err)
     } finally {
       setLoading(false)
@@ -55,9 +68,10 @@ export default function ProfilePage({ params }: { params: Promise<{ name: string
   }, [name])
 
   useEffect(() => {
-    fetchProfile()
-  }, [fetchProfile])
+    fetchData()
+  }, [fetchData])
 
+  // Profile handlers
   const handleSaveName = async () => {
     if (!newName.trim()) {
       toast.error('Nome nao pode ser vazio')
@@ -126,6 +140,7 @@ export default function ProfilePage({ params }: { params: Promise<{ name: string
     }
   }
 
+  // Privacy handlers
   const handlePrivacyChange = async (key: keyof PrivacySettings, value: string) => {
     try {
       const newSettings = { ...privacy, [key]: value }
@@ -138,13 +153,30 @@ export default function ProfilePage({ params }: { params: Promise<{ name: string
     }
   }
 
+  const handleReadReceiptsToggle = async (enabled: boolean) => {
+    await handlePrivacyChange('readReceipts', enabled ? 'all' : 'none')
+  }
+
+  const handleDisappearingTimer = async (value: string) => {
+    try {
+      const duration = parseInt(value)
+      await setDefaultDisappearingTimer(name, duration)
+      setDisappearingTimer(value)
+      toast.success('Timer atualizado')
+    } catch (err) {
+      toast.error('Erro ao atualizar timer')
+      console.error(err)
+    }
+  }
+
   if (loading) {
     return (
       <div className="space-y-4">
         <div className="h-10 w-48 animate-pulse rounded bg-muted" />
         <div className="grid gap-4 md:grid-cols-2">
-          <div className="h-64 animate-pulse rounded-xl border bg-muted" />
-          <div className="h-64 animate-pulse rounded-xl border bg-muted" />
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-48 animate-pulse rounded-xl border bg-muted" />
+          ))}
         </div>
       </div>
     )
@@ -154,202 +186,202 @@ export default function ProfilePage({ params }: { params: Promise<{ name: string
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold">Perfil</h2>
-          <p className="text-muted-foreground">Gerencie seu perfil do WhatsApp</p>
+          <h2 className="text-2xl font-semibold">Configuracoes</h2>
+          <p className="text-muted-foreground">Gerencie sua sessao do WhatsApp</p>
         </div>
-        <Button onClick={fetchProfile} variant="outline" size="sm">
+        <Button onClick={fetchData} variant="outline" size="sm">
           <IconRefresh className="mr-2 h-4 w-4" />
           Atualizar
         </Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
+        {/* Profile Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Informacoes do Perfil</CardTitle>
-            <CardDescription>Seu nome e status no WhatsApp</CardDescription>
+            <div className="flex items-center gap-2">
+              <IconUser className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <CardTitle className="text-base">Perfil</CardTitle>
+                <CardDescription>Nome, status e foto</CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4">
             <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20">
+              <Avatar className="h-16 w-16">
                 <AvatarImage src={profile?.pictureUrl} />
-                <AvatarFallback className="text-2xl">
+                <AvatarFallback className="text-xl">
                   {profile?.name?.charAt(0) || '?'}
                 </AvatarFallback>
               </Avatar>
-              <div className="space-y-2">
+              <div className="flex-1 space-y-1">
                 <div className="flex gap-2">
                   <Input
-                    placeholder="URL da nova foto"
+                    placeholder="URL da foto"
                     value={newPictureUrl}
                     onChange={(e) => setNewPictureUrl(e.target.value)}
-                    className="w-48"
+                    className="h-8 text-sm"
                   />
-                  <Button size="sm" onClick={handleUpdatePicture} disabled={saving || !newPictureUrl}>
-                    <IconUpload className="h-4 w-4" />
+                  <Button size="sm" variant="outline" onClick={handleUpdatePicture} disabled={saving || !newPictureUrl}>
+                    <IconUpload className="h-3 w-3" />
                   </Button>
                 </div>
-                <Button size="sm" variant="destructive" onClick={handleRemovePicture} disabled={saving}>
-                  <IconTrash className="mr-2 h-4 w-4" />
-                  Remover Foto
+                <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive" onClick={handleRemovePicture} disabled={saving}>
+                  <IconTrash className="mr-1 h-3 w-3" />
+                  Remover
                 </Button>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Nome</Label>
+            <div className="space-y-1">
+              <Label className="text-xs">Nome</Label>
               {editingName ? (
                 <div className="flex gap-2">
                   <Input
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
+                    className="h-8"
                   />
-                  <Button size="sm" onClick={handleSaveName} disabled={saving}>
-                    <IconCheck className="h-4 w-4" />
+                  <Button size="sm" variant="outline" onClick={handleSaveName} disabled={saving}>
+                    <IconCheck className="h-3 w-3" />
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => setEditingName(false)}>
-                    <IconX className="h-4 w-4" />
+                  <Button size="sm" variant="ghost" onClick={() => setEditingName(false)}>
+                    <IconX className="h-3 w-3" />
                   </Button>
                 </div>
               ) : (
-                <div className="flex items-center justify-between rounded-md border px-3 py-2">
+                <div className="flex items-center justify-between rounded-md border px-3 py-1.5 text-sm">
                   <span>{profile?.name || 'Nao definido'}</span>
-                  <Button size="sm" variant="ghost" onClick={() => setEditingName(true)}>
-                    <IconEdit className="h-4 w-4" />
+                  <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => setEditingName(true)}>
+                    <IconEdit className="h-3 w-3" />
                   </Button>
                 </div>
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label>Status</Label>
+            <div className="space-y-1">
+              <Label className="text-xs">Status</Label>
               {editingStatus ? (
                 <div className="flex gap-2">
                   <Input
                     value={newStatus}
                     onChange={(e) => setNewStatus(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSaveStatus()}
-                    placeholder="Seu status..."
+                    className="h-8"
                   />
-                  <Button size="sm" onClick={handleSaveStatus} disabled={saving}>
-                    <IconCheck className="h-4 w-4" />
+                  <Button size="sm" variant="outline" onClick={handleSaveStatus} disabled={saving}>
+                    <IconCheck className="h-3 w-3" />
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => setEditingStatus(false)}>
-                    <IconX className="h-4 w-4" />
+                  <Button size="sm" variant="ghost" onClick={() => setEditingStatus(false)}>
+                    <IconX className="h-3 w-3" />
                   </Button>
                 </div>
               ) : (
-                <div className="flex items-center justify-between rounded-md border px-3 py-2">
+                <div className="flex items-center justify-between rounded-md border px-3 py-1.5 text-sm">
                   <span className="text-muted-foreground">{profile?.status || 'Nao definido'}</span>
-                  <Button size="sm" variant="ghost" onClick={() => setEditingStatus(true)}>
-                    <IconEdit className="h-4 w-4" />
+                  <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => setEditingStatus(true)}>
+                    <IconEdit className="h-3 w-3" />
                   </Button>
                 </div>
               )}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Privacy Card */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <IconShield className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <CardTitle className="text-base">Privacidade</CardTitle>
+                <CardDescription>Controle de visibilidade</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm">Confirmacao de leitura</Label>
+                <p className="text-xs text-muted-foreground">Mostrar quando voce leu mensagens</p>
+              </div>
+              <Switch
+                checked={privacy?.readReceipts === 'all'}
+                onCheckedChange={handleReadReceiptsToggle}
+              />
+            </div>
 
             <div className="space-y-2">
-              <Label>JID</Label>
-              <div className="rounded-md border px-3 py-2 text-sm text-muted-foreground">
-                {profile?.jid || 'Nao disponivel'}
-              </div>
+              <Label className="text-xs">Visto por ultimo</Label>
+              <Select value={privacy?.lastSeen || 'all'} onValueChange={(v) => handlePrivacyChange('lastSeen', v)}>
+                <SelectTrigger className="h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="contacts">Meus contatos</SelectItem>
+                  <SelectItem value="contact_blacklist">Contatos exceto...</SelectItem>
+                  <SelectItem value="none">Ninguem</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs">Foto do perfil</Label>
+              <Select value={privacy?.profile || 'all'} onValueChange={(v) => handlePrivacyChange('profile', v)}>
+                <SelectTrigger className="h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="contacts">Meus contatos</SelectItem>
+                  <SelectItem value="contact_blacklist">Contatos exceto...</SelectItem>
+                  <SelectItem value="none">Ninguem</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs">Adicionar em grupos</Label>
+              <Select value={privacy?.groupAdd || 'all'} onValueChange={(v) => handlePrivacyChange('groupAdd', v)}>
+                <SelectTrigger className="h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="contacts">Meus contatos</SelectItem>
+                  <SelectItem value="contact_blacklist">Contatos exceto...</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
 
+        {/* Disappearing Messages Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Privacidade</CardTitle>
-            <CardDescription>Controle quem pode ver suas informacoes</CardDescription>
+            <div className="flex items-center gap-2">
+              <IconClock className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <CardTitle className="text-base">Mensagens temporarias</CardTitle>
+                <CardDescription>Timer padrao para novas conversas</CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Visto por ultimo</Label>
-              <Select
-                value={privacy?.lastSeen || 'all'}
-                onValueChange={(v) => handlePrivacyChange('lastSeen', v)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="contacts">Meus contatos</SelectItem>
-                  <SelectItem value="contact_blacklist">Contatos exceto...</SelectItem>
-                  <SelectItem value="none">Ninguem</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Foto do perfil</Label>
-              <Select
-                value={privacy?.profile || 'all'}
-                onValueChange={(v) => handlePrivacyChange('profile', v)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="contacts">Meus contatos</SelectItem>
-                  <SelectItem value="contact_blacklist">Contatos exceto...</SelectItem>
-                  <SelectItem value="none">Ninguem</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <Select
-                value={privacy?.status || 'all'}
-                onValueChange={(v) => handlePrivacyChange('status', v)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="contacts">Meus contatos</SelectItem>
-                  <SelectItem value="contact_blacklist">Contatos exceto...</SelectItem>
-                  <SelectItem value="none">Ninguem</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Quem pode me adicionar em grupos</Label>
-              <Select
-                value={privacy?.groupAdd || 'all'}
-                onValueChange={(v) => handlePrivacyChange('groupAdd', v)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="contacts">Meus contatos</SelectItem>
-                  <SelectItem value="contact_blacklist">Contatos exceto...</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Confirmacao de leitura</Label>
-              <Select
-                value={privacy?.readReceipts || 'all'}
-                onValueChange={(v) => handlePrivacyChange('readReceipts', v)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Ativado</SelectItem>
-                  <SelectItem value="none">Desativado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <CardContent>
+            <Select value={disappearingTimer} onValueChange={handleDisappearingTimer}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">Desativado</SelectItem>
+                <SelectItem value="86400">24 horas</SelectItem>
+                <SelectItem value="604800">7 dias</SelectItem>
+                <SelectItem value="7776000">90 dias</SelectItem>
+              </SelectContent>
+            </Select>
           </CardContent>
         </Card>
       </div>

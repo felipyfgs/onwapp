@@ -676,6 +676,13 @@ export async function setPrivacySettings(sessionName: string, settings: PrivacyS
   })
 }
 
+export async function setDefaultDisappearingTimer(sessionName: string, duration: number): Promise<void> {
+  return apiRequest(`/${sessionName}/profile/disappearing`, {
+    method: 'POST',
+    body: JSON.stringify({ duration }),
+  })
+}
+
 // ============================================================================
 // HISTORY API
 // ============================================================================
