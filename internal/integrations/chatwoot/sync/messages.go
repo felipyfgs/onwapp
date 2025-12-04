@@ -407,7 +407,7 @@ func (s *MessageSyncer) insertMessageBatch(
 	uploader := client.NewMediaUploader(s.client)
 
 	// Collect text messages for bulk insert
-	var textMessages []MessageInsertData
+	textMessages := make([]MessageInsertData, 0, len(messages))
 
 	for _, msg := range messages {
 		fks := chatCache[msg.ChatJID]

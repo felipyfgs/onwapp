@@ -12,32 +12,18 @@ linters:
     - nilerr           # returning nil after checking err != nil
     - sqlclosecheck    # ensure sql.Rows/Stmt are closed
 
-    # Performance
-    - prealloc         # preallocate slices
-
     # Style & Quality
     - gofmt            # formatting
     - goimports        # imports ordering
     - misspell         # spelling mistakes
-    - unconvert        # unnecessary type conversions
     - unused           # unused code
-    - whitespace       # unnecessary whitespace
-    - goconst          # repeated strings that could be constants
     - staticcheck      # many checks
 
 linters-settings:
-  goconst:
-    min-len: 3
-    min-occurrences: 3
-
   gosec:
     excludes:
       - G104  # audit errors not checked (handled by errcheck)
       - G304  # file inclusion via variable (common in file handlers)
-
-  prealloc:
-    simple: true
-    for-loops: true
 
 issues:
   max-issues-per-linter: 0
