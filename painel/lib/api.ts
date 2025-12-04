@@ -84,6 +84,17 @@ export async function getSessionQRData(sessionName: string): Promise<QRResponse>
   return apiRequest<QRResponse>(`/${sessionName}/qr`)
 }
 
+export interface PairPhoneResponse {
+  code: string
+}
+
+export async function pairPhone(sessionName: string, phone: string): Promise<PairPhoneResponse> {
+  return apiRequest<PairPhoneResponse>(`/${sessionName}/pairphone`, {
+    method: 'POST',
+    body: JSON.stringify({ phone }),
+  })
+}
+
 export async function getSessionStatus(sessionName: string): Promise<SessionStatus> {
   return apiRequest<SessionStatus>(`/${sessionName}/status`)
 }

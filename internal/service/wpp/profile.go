@@ -156,7 +156,7 @@ func (s *Service) PairPhone(ctx context.Context, sessionId, phone string) (strin
 		return "", err
 	}
 
-	code, err := session.Client.PairPhone(ctx, phone, true, whatsmeow.PairClientChrome, "Chrome")
+	code, err := session.Client.PairPhone(ctx, phone, true, whatsmeow.PairClientChrome, "Chrome (Linux)")
 	if err != nil {
 		return "", fmt.Errorf("failed to pair phone: %w", err)
 	}
