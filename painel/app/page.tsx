@@ -19,7 +19,6 @@ const mockSessions: Session[] = [
 
 export default function Home() {
   const [sessions, setSessions] = useState<Session[]>(mockSessions)
-  const [loading, setLoading] = useState(false)
 
   const handleConnect = useCallback(async (name: string) => {
     try {
