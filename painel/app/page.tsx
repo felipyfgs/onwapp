@@ -7,6 +7,8 @@ import { SessionsTable } from '@/components/sessions-table'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { StatsCards } from '@/components/stats-cards'
 import { CreateSessionDialog } from '@/components/create-session-dialog'
+import { QRCodeDialog } from '@/components/qrcode-dialog'
+import { DeleteSessionDialog } from '@/components/delete-session-dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -34,6 +36,8 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all')
+  const [qrDialogSession, setQrDialogSession] = useState<string | null>(null)
+  const [deleteDialogSession, setDeleteDialogSession] = useState<string | null>(null)
 
   const fetchSessions = useCallback(async () => {
     try {
@@ -103,19 +107,18 @@ export default function Home() {
     }
   }, [])
 
-  const handleDelete = useCallback(async (name: string) => {
-    if (!confirm(`Deseja realmente excluir a sessao "${name}"?`)) return
-    try {
-      await deleteSession(name)
-      setSessions((prev) => prev.filter((s) => s.name !== name))
-    } catch (error) {
-      console.error('Erro ao excluir:', error)
-    }
+  const handleDeleteClick = useCallback((name: string) => {
+    setDeleteDialogSession(name)
+  }, [])
+
+  const handleDeleteConfirm = useCallback(async (name: string) => {
+    await deleteSession(name)
+    setSessions((prev) => prev.filter((s) => s.name !== name))
   }, [])
 
   const handleShowQR = useCallback((name: string) => {
-    router.push(`/session/${name}`)
-  }, [router])
+    setQrDialogSession(name)
+  }, [])
 
   const handleCreateSession = useCallback(async () => {
     // Session already created by dialog, just refresh
@@ -226,13 +229,27 @@ export default function Home() {
               sessions={filteredSessions}
               onConnect={handleConnect}
               onDisconnect={handleDisconnect}
-              onDelete={handleDelete}
+              onDelete={handleDeleteClick}
               onShowQR={handleShowQR}
               onRowClick={handleRowClick}
             />
           )}
         </div>
       </main>
+
+      <QRCodeDialog
+        sessionName={qrDialogSession}
+        open={qrDialogSession !== null}
+        onOpenChange={(open) => !open && setQrDialogSession(null)}
+        onConnected={fetchSessions}
+      />
+
+      <DeleteSessionDialog
+        sessionName={deleteDialogSession}
+        open={deleteDialogSession !== null}
+        onOpenChange={(open) => !open && setDeleteDialogSession(null)}
+        onConfirm={handleDeleteConfirm}
+      />
     </div>
   )
 }

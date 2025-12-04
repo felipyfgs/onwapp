@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/skip2/go-qrcode"
 	"go.mau.fi/whatsmeow"
+	"go.mau.fi/whatsmeow/types"
 
 	"zpwoot/internal/api/dto"
 	"zpwoot/internal/db"
@@ -118,10 +119,11 @@ func (h *SessionHandler) enrichSessionResponse(ctx context.Context, sess *model.
 			resp.PushName = &pushName
 		}
 
-		// Get profile picture
-		pic, err := sess.Client.GetProfilePictureInfo(ctx, *storeID, &whatsmeow.GetProfilePictureParams{})
+		// Get profile picture - use user JID (without device suffix)
+		userJID := types.NewJID(storeID.User, types.DefaultUserServer)
+		pic, err := sess.Client.GetProfilePictureInfo(ctx, userJID, &whatsmeow.GetProfilePictureParams{})
 		if err != nil {
-			logger.Debug().Err(err).Str("session", sess.Session).Msg("Failed to get profile picture")
+			logger.Debug().Err(err).Str("session", sess.Session).Str("jid", userJID.String()).Msg("Failed to get profile picture")
 		} else if pic != nil && pic.URL != "" {
 			resp.ProfilePicture = &pic.URL
 		}

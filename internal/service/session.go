@@ -82,6 +82,7 @@ func (s *SessionService) LoadFromDatabase(ctx context.Context) error {
 			Session:   rec.Session,
 			DeviceJID: rec.DeviceJID,
 			Phone:     rec.Phone,
+			ApiKey:    rec.ApiKey,
 			Client:    client,
 			Device:    device,
 			Status:    model.StatusDisconnected,

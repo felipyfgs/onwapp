@@ -35,7 +35,7 @@ interface SessionsTableProps {
   sessions: Session[]
   onConnect: (name: string) => Promise<void>
   onDisconnect: (name: string) => Promise<void>
-  onDelete: (name: string) => Promise<void>
+  onDelete: (name: string) => void
   onShowQR: (name: string) => void
   onRowClick?: (session: Session) => void
 }
@@ -354,8 +354,7 @@ export function SessionsTable({
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => handleAction(session.name, () => onDelete(session.name))}
-                            disabled={isLoading}
+                            onClick={() => onDelete(session.name)}
                           >
                             <IconTrash className="h-4 w-4" />
                           </Button>

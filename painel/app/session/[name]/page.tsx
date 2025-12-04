@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Card,
-  CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
@@ -16,7 +15,6 @@ import {
   getSessionStatus,
   connectSession,
   disconnectSession,
-  getSessionQR,
 } from '@/lib/api'
 
 interface SessionInfo {
@@ -33,7 +31,6 @@ export default function SessionPage({
   const { name } = use(params)
   const [session, setSession] = useState<SessionInfo | null>(null)
   const [loading, setLoading] = useState(true)
-  const [qrCode, setQrCode] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const fetchSession = useCallback(async () => {
@@ -52,26 +49,9 @@ export default function SessionPage({
     }
   }, [name])
 
-  const fetchQR = useCallback(async () => {
-    try {
-      const data = await getSessionQR(name)
-      setQrCode(data.qr)
-    } catch {
-      setQrCode(null)
-    }
-  }, [name])
-
   useEffect(() => {
     fetchSession()
   }, [fetchSession])
-
-  useEffect(() => {
-    if (session?.status === 'connecting' || session?.status === 'qr_pending') {
-      fetchQR()
-      const interval = setInterval(fetchQR, 5000)
-      return () => clearInterval(interval)
-    }
-  }, [session?.status, fetchQR])
 
   const handleConnect = async () => {
     try {
@@ -184,24 +164,6 @@ export default function SessionPage({
         </Card>
       </div>
 
-      {qrCode && (session?.status === 'connecting' || session?.status === 'qr_pending') && (
-        <Card>
-          <CardHeader>
-            <CardTitle>QR Code</CardTitle>
-            <CardDescription>
-              Escaneie o QR Code com o WhatsApp para conectar
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex justify-center">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={qrCode}
-              alt="QR Code"
-              className="max-w-xs rounded-lg border"
-            />
-          </CardContent>
-        </Card>
-      )}
     </div>
   )
 }
