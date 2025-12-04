@@ -69,14 +69,16 @@ func (r *ChatwootDBRepository) GetExistingSourceIDs(ctx context.Context, message
 			return nil, err
 		}
 
-		for rows.Next() {
-			var sourceID string
-			if err := rows.Scan(&sourceID); err != nil {
-				continue
+		func() {
+			defer rows.Close()
+			for rows.Next() {
+				var sourceID string
+				if err := rows.Scan(&sourceID); err != nil {
+					continue
+				}
+				existing[sourceID] = true
 			}
-			existing[sourceID] = true
-		}
-		rows.Close()
+		}()
 	}
 
 	return existing, nil

@@ -275,7 +275,7 @@ func (s *MessageSyncer) buildPhoneDataList(
 	waContactsCache map[string]*core.ContactNameInfo,
 	groupNamesCache map[string]string,
 ) []core.PhoneTimestamp {
-	var phoneDataList []core.PhoneTimestamp
+	phoneDataList := make([]core.PhoneTimestamp, 0, len(messagesByChat))
 
 	for chatJID, chatMessages := range messagesByChat {
 		isGroup := util.IsGroupJID(chatJID)
@@ -354,7 +354,7 @@ func (s *MessageSyncer) insertMessagesInBatches(
 	userType string,
 	stats *core.SyncStats,
 ) error {
-	var batch []model.Message
+	batch := make([]model.Message, 0, core.MessageBatchSize)
 
 	for _, msg := range messages {
 		if chatCache[msg.ChatJID] == nil {

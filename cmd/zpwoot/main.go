@@ -267,8 +267,9 @@ func main() {
 	chatwoot.RegisterRoutes(r, chatwootHandler, cfg.APIKey)
 
 	srv := &http.Server{
-		Addr:    ":" + cfg.Port,
-		Handler: r,
+		Addr:              ":" + cfg.Port,
+		Handler:           r,
+		ReadHeaderTimeout: 10 * time.Second,
 	}
 
 	// Start server in goroutine

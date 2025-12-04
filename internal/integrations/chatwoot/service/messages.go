@@ -496,7 +496,8 @@ func (s *Service) processOutgoingMediaMessageInternal(ctx context.Context, sessi
 func (s *Service) ProcessReactionMessage(ctx context.Context, session *model.Session, emoji, targetMsgID, remoteJid, senderJid string, isFromMe bool) error {
 	cfg, err := s.repo.GetEnabledBySessionID(ctx, session.ID)
 	if err != nil {
-		return nil // Chatwoot not configured, ignore
+		logger.Debug().Err(err).Str("sessionId", session.ID).Msg("Chatwoot: config not found")
+		return nil
 	}
 	if cfg == nil {
 		return nil
@@ -575,7 +576,8 @@ func (s *Service) ProcessReactionMessage(ctx context.Context, session *model.Ses
 func (s *Service) ProcessReceipt(ctx context.Context, session *model.Session, evt *events.Receipt) error {
 	cfg, err := s.repo.GetEnabledBySessionID(ctx, session.ID)
 	if err != nil {
-		return nil // Chatwoot not configured, ignore
+		logger.Debug().Err(err).Str("sessionId", session.ID).Msg("Chatwoot: config not found")
+		return nil
 	}
 	if cfg == nil {
 		return nil
@@ -596,14 +598,19 @@ func (s *Service) ProcessReceipt(ctx context.Context, session *model.Session, ev
 func (s *Service) HandleMessageRead(ctx context.Context, session *model.Session, messageID string) error {
 	cfg, err := s.repo.GetEnabledBySessionID(ctx, session.ID)
 	if err != nil {
-		return nil // Chatwoot not configured, ignore
+		logger.Debug().Err(err).Str("sessionId", session.ID).Msg("Chatwoot: config not found")
+		return nil
 	}
 	if cfg == nil {
 		return nil
 	}
 
 	msg, err := s.database.Messages.GetByMsgId(ctx, session.ID, messageID)
-	if err != nil || msg == nil || msg.CwConvId == nil || *msg.CwConvId == 0 {
+	if err != nil {
+		logger.Debug().Err(err).Str("messageId", messageID).Msg("Chatwoot: message not found")
+		return nil
+	}
+	if msg == nil || msg.CwConvId == nil || *msg.CwConvId == 0 {
 		return nil
 	}
 
@@ -613,7 +620,11 @@ func (s *Service) HandleMessageRead(ctx context.Context, session *model.Session,
 	}
 
 	inbox, err := c.GetInbox(ctx, cfg.InboxID)
-	if err != nil || inbox.InboxIdentifier == "" {
+	if err != nil {
+		logger.Debug().Err(err).Int("inboxId", cfg.InboxID).Msg("Chatwoot: inbox not found")
+		return nil
+	}
+	if inbox.InboxIdentifier == "" {
 		return nil
 	}
 
@@ -622,6 +633,7 @@ func (s *Service) HandleMessageRead(ctx context.Context, session *model.Session,
 		if core.IsNotFoundError(err) {
 			s.HandleConversationNotFound(ctx, session.ID, *msg.CwConvId)
 		}
+		logger.Debug().Err(err).Int("convId", *msg.CwConvId).Msg("Chatwoot: conversation not found")
 		return nil
 	}
 	_ = conv
@@ -650,14 +662,19 @@ func (s *Service) HandleMessageRead(ctx context.Context, session *model.Session,
 func (s *Service) ProcessMessageDelete(ctx context.Context, session *model.Session, messageID string) error {
 	cfg, err := s.repo.GetEnabledBySessionID(ctx, session.ID)
 	if err != nil {
-		return nil // Chatwoot not configured, ignore
+		logger.Debug().Err(err).Str("sessionId", session.ID).Msg("Chatwoot: config not found")
+		return nil
 	}
 	if cfg == nil {
 		return nil
 	}
 
 	msg, err := s.database.Messages.GetByMsgId(ctx, session.ID, messageID)
-	if err != nil || msg == nil || msg.CwMsgId == nil || msg.CwConvId == nil {
+	if err != nil {
+		logger.Debug().Err(err).Str("messageId", messageID).Msg("Chatwoot: message not found")
+		return nil
+	}
+	if msg == nil || msg.CwMsgId == nil || msg.CwConvId == nil {
 		return nil
 	}
 

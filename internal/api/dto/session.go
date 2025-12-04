@@ -18,8 +18,8 @@ type PairPhoneReq struct {
 type SessionData struct {
 	Session string `json:"session" example:"my-session"`
 	JID     string `json:"jid,omitempty" example:"5511999999999@s.whatsapp.net"`
-	Phone     string `json:"phone,omitempty" example:"5511999999999"`
-	Status    string `json:"status" example:"connected"`
+	Phone   string `json:"phone,omitempty" example:"5511999999999"`
+	Status  string `json:"status" example:"connected"`
 }
 
 // QRData represents QR code information

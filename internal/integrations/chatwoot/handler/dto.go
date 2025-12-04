@@ -13,9 +13,9 @@ type SetConfigRequest struct {
 	// When true: sets lock_to_single_conversation=true and allow_messages_after_resolved=true
 	// This means Chatwoot will automatically reopen resolved conversations when new messages arrive.
 	// When false: creates new conversations for each interaction (default Chatwoot behavior).
-	AutoReopen    bool `json:"autoReopen"`
-	StartPending  bool `json:"startPending"`
-	MergeBrPhones bool `json:"mergeBrPhones"`
+	AutoReopen     bool     `json:"autoReopen"`
+	StartPending   bool     `json:"startPending"`
+	MergeBrPhones  bool     `json:"mergeBrPhones"`
 	SyncContacts   bool     `json:"syncContacts"`
 	SyncMessages   bool     `json:"syncMessages"`
 	SyncDays       int      `json:"syncDays,omitempty"`

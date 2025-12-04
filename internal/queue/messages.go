@@ -60,9 +60,9 @@ type WAToCWMessage struct {
 
 // WAToCWReceiptMessage - dados de recibo (read/delivered)
 type WAToCWReceiptMessage struct {
-	MessageIDs []string `json:"message_ids"`
-	ChatJID    string   `json:"chat_jid"`
-	ReceiptType string  `json:"receipt_type"` // "read", "delivered"
+	MessageIDs  []string `json:"message_ids"`
+	ChatJID     string   `json:"chat_jid"`
+	ReceiptType string   `json:"receipt_type"` // "read", "delivered"
 }
 
 // WAToCWReactionMessage - dados de reação

@@ -71,7 +71,7 @@ func (p *Producer) PublishToDLQ(ctx context.Context, originalSubject string, msg
 	}
 
 	subject := p.client.Subject(StreamDLQ, string(msg.Type))
-	
+
 	data, err := json.Marshal(dlqMsg)
 	if err != nil {
 		return fmt.Errorf("failed to marshal DLQ message: %w", err)

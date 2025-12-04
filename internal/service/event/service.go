@@ -244,7 +244,7 @@ func (s *Service) saveHistorySyncToJSON(sessionId string, e *events.HistorySync,
 		return
 	}
 
-	if err := os.WriteFile(filePath, data, 0644); err != nil {
+	if err := os.WriteFile(filePath, data, 0600); err != nil {
 		logger.Error().Err(err).Str("file", filePath).Msg("Failed to write history sync JSON")
 		return
 	}
