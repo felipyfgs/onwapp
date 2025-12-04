@@ -10,7 +10,7 @@
       "command": "npx",
       "args": ["-y", "mcp-postgres-server"],
       "env": {
-        "DATABASE_URL": "postgres://zpwoot:zpwoot123@localhost:5434/zpwoot"
+        "DATABASE_URL": "postgres://zpwoot:zpwoot123@localhost:5432/zpwoot"
       }
     },
     "chatwoot-db": {

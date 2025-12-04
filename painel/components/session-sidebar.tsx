@@ -7,6 +7,11 @@ import {
   IconHome,
   IconWebhook,
   IconBrandHipchat,
+  IconUsers,
+  IconUsersGroup,
+  IconMessage,
+  IconPhoto,
+  IconUser,
 } from '@tabler/icons-react'
 
 import {
@@ -32,6 +37,11 @@ export function SessionSidebar({ sessionName }: SessionSidebarProps) {
 
   const mainNav = [
     { title: 'Overview', url: basePath, icon: IconHome },
+    { title: 'Perfil', url: `${basePath}/profile`, icon: IconUser },
+    { title: 'Contatos', url: `${basePath}/contacts`, icon: IconUsers },
+    { title: 'Grupos', url: `${basePath}/groups`, icon: IconUsersGroup },
+    { title: 'Mensagens', url: `${basePath}/messages`, icon: IconMessage },
+    { title: 'Midia', url: `${basePath}/media`, icon: IconPhoto },
   ]
 
   const integrationNav = [

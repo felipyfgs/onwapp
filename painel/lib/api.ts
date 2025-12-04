@@ -45,7 +45,16 @@ async function apiRequest<T>(
   })
 
   if (!response.ok) {
-    throw new Error(`API Error: ${response.status} ${response.statusText}`)
+    let errorMsg = `API Error: ${response.status} ${response.statusText}`
+    try {
+      const errorData = await response.json()
+      if (errorData.error) {
+        errorMsg = errorData.error
+      }
+    } catch {
+      // Ignore JSON parse errors
+    }
+    throw new Error(errorMsg)
   }
 
   return response.json()
@@ -328,4 +337,357 @@ export interface SyncOverview {
 
 export async function getSyncOverview(sessionName: string): Promise<SyncOverview> {
   return apiRequest(`/sessions/${sessionName}/chatwoot/overview`)
+}
+
+// ============================================================================
+// CONTACTS API
+// ============================================================================
+
+export interface ContactInfo {
+  pushName?: string
+  businessName?: string
+  fullName?: string
+  firstName?: string
+}
+
+export type ContactsMap = Record<string, ContactInfo>
+
+export interface Contact {
+  jid: string
+  pushName?: string
+  businessName?: string
+  fullName?: string
+  firstName?: string
+}
+
+export async function getContacts(sessionName: string): Promise<Contact[]> {
+  const data = await apiRequest<ContactsMap>(`/${sessionName}/contact/list`)
+  // Converte map para array
+  return Object.entries(data).map(([jid, info]) => ({
+    jid,
+    ...info
+  }))
+}
+
+export interface CheckPhoneResult {
+  phone: string
+  isRegistered: boolean
+  jid: string
+}
+
+export async function checkPhone(sessionName: string, phones: string[]): Promise<CheckPhoneResult[]> {
+  return apiRequest<CheckPhoneResult[]>(`/${sessionName}/contact/check`, {
+    method: 'POST',
+    body: JSON.stringify({ phones }),
+  })
+}
+
+export interface BlocklistResponse {
+  jids: string[]
+}
+
+export async function getBlocklist(sessionName: string): Promise<BlocklistResponse> {
+  return apiRequest<BlocklistResponse>(`/${sessionName}/contact/blocklist`)
+}
+
+export async function updateBlocklist(sessionName: string, phone: string, action: 'block' | 'unblock'): Promise<void> {
+  return apiRequest(`/${sessionName}/contact/blocklist`, {
+    method: 'POST',
+    body: JSON.stringify({ phone, action }),
+  })
+}
+
+export interface ContactInfoResponse {
+  jid: string
+  verifiedName?: string
+  status?: string
+  pictureId?: string
+  devices?: string[]
+}
+
+export async function getContactInfo(sessionName: string, phone: string): Promise<ContactInfoResponse> {
+  return apiRequest<ContactInfoResponse>(`/${sessionName}/contact/info?phone=${encodeURIComponent(phone)}`)
+}
+
+// ============================================================================
+// GROUPS API
+// ============================================================================
+
+export interface GroupParticipant {
+  jid: string
+  isAdmin: boolean
+  isSuperAdmin: boolean
+}
+
+export interface Group {
+  jid: string
+  name: string
+  topic?: string
+  topicId?: string
+  topicSetAt?: string
+  topicSetBy?: string
+  owner?: string
+  created?: string
+  participants?: GroupParticipant[]
+  announce?: boolean
+  locked?: boolean
+  ephemeral?: number
+}
+
+// Backend returns PascalCase, we need to map to camelCase
+interface GroupRaw {
+  JID: string
+  Name: string
+  Topic?: string
+  TopicID?: string
+  TopicSetAt?: string
+  TopicSetBy?: string
+  OwnerJID?: string
+  GroupCreated?: string
+  Participants?: Array<{
+    JID: string
+    IsAdmin: boolean
+    IsSuperAdmin: boolean
+  }>
+  IsAnnounce?: boolean
+  IsLocked?: boolean
+  DisappearingTimer?: number
+}
+
+function mapGroup(raw: GroupRaw): Group {
+  return {
+    jid: raw.JID,
+    name: raw.Name,
+    topic: raw.Topic,
+    topicId: raw.TopicID,
+    topicSetAt: raw.TopicSetAt,
+    topicSetBy: raw.TopicSetBy,
+    owner: raw.OwnerJID,
+    created: raw.GroupCreated,
+    participants: raw.Participants?.map(p => ({
+      jid: p.JID,
+      isAdmin: p.IsAdmin,
+      isSuperAdmin: p.IsSuperAdmin,
+    })),
+    announce: raw.IsAnnounce,
+    locked: raw.IsLocked,
+    ephemeral: raw.DisappearingTimer,
+  }
+}
+
+export interface GroupListResponse {
+  data: Group[]
+}
+
+export async function getGroups(sessionName: string): Promise<GroupListResponse> {
+  const response = await apiRequest<{ data: GroupRaw[] }>(`/${sessionName}/group/list`)
+  return {
+    data: response.data?.map(mapGroup) || []
+  }
+}
+
+export async function getGroupInfo(sessionName: string, jid: string): Promise<Group> {
+  const raw = await apiRequest<GroupRaw>(`/${sessionName}/group/info?groupId=${encodeURIComponent(jid)}`)
+  return mapGroup(raw)
+}
+
+export async function createGroup(sessionName: string, name: string, participants: string[]): Promise<Group> {
+  return apiRequest<Group>(`/${sessionName}/group/create`, {
+    method: 'POST',
+    body: JSON.stringify({ name, participants }),
+  })
+}
+
+export async function leaveGroup(sessionName: string, jid: string): Promise<void> {
+  return apiRequest(`/${sessionName}/group/leave`, {
+    method: 'POST',
+    body: JSON.stringify({ groupId: jid }),
+  })
+}
+
+export async function getGroupInviteLink(sessionName: string, jid: string): Promise<{ link: string }> {
+  return apiRequest(`/${sessionName}/group/invitelink?groupId=${encodeURIComponent(jid)}`)
+}
+
+// ============================================================================
+// MESSAGES API
+// ============================================================================
+
+export interface SendMessageResponse {
+  id: string
+  timestamp: string
+}
+
+export async function sendTextMessage(sessionName: string, phone: string, text: string): Promise<SendMessageResponse> {
+  return apiRequest<SendMessageResponse>(`/${sessionName}/message/send/text`, {
+    method: 'POST',
+    body: JSON.stringify({ phone, text }),
+  })
+}
+
+export async function sendImageMessage(sessionName: string, phone: string, image: string, caption?: string): Promise<SendMessageResponse> {
+  return apiRequest<SendMessageResponse>(`/${sessionName}/message/send/image`, {
+    method: 'POST',
+    body: JSON.stringify({ phone, image, caption }),
+  })
+}
+
+export async function sendDocumentMessage(sessionName: string, phone: string, document: string, filename: string, mimetype?: string): Promise<SendMessageResponse> {
+  return apiRequest<SendMessageResponse>(`/${sessionName}/message/send/document`, {
+    method: 'POST',
+    body: JSON.stringify({ phone, document, filename, mimetype }),
+  })
+}
+
+export async function sendLocationMessage(sessionName: string, phone: string, latitude: number, longitude: number, name?: string): Promise<SendMessageResponse> {
+  return apiRequest<SendMessageResponse>(`/${sessionName}/message/send/location`, {
+    method: 'POST',
+    body: JSON.stringify({ phone, latitude, longitude, name }),
+  })
+}
+
+// ============================================================================
+// MEDIA API
+// ============================================================================
+
+export interface MediaItem {
+  id: string
+  sessionId: string
+  msgId: string
+  mediaType: string
+  mimeType?: string
+  fileName?: string
+  fileSize?: number
+  chatJid?: string
+  fromMe?: boolean
+  caption?: string
+  pushName?: string
+  downloaded: boolean
+  downloadError?: string
+  downloadAttempts?: number
+  storageUrl?: string
+  thumbnailUrl?: string
+  width?: number
+  height?: number
+  duration?: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface MediaListResponse {
+  media: MediaItem[]
+  count: number
+  limit: number
+  offset: number
+}
+
+export async function getMediaList(sessionName: string, chatJid?: string, type?: string, limit?: number, offset?: number): Promise<MediaListResponse> {
+  const params = new URLSearchParams()
+  if (chatJid) params.append('chat', chatJid)
+  if (type) params.append('type', type)
+  if (limit) params.append('limit', limit.toString())
+  if (offset) params.append('offset', offset.toString())
+  const query = params.toString() ? `?${params.toString()}` : ''
+  return apiRequest<MediaListResponse>(`/${sessionName}/media/list${query}`)
+}
+
+export interface PendingMediaResponse {
+  media: MediaItem[]
+  count: number
+}
+
+export async function getPendingMedia(sessionName: string): Promise<PendingMediaResponse> {
+  return apiRequest<PendingMediaResponse>(`/${sessionName}/media/pending`)
+}
+
+export async function processMedia(sessionName: string, messageIds?: string[]): Promise<{ processed: number }> {
+  return apiRequest(`/${sessionName}/media/process`, {
+    method: 'POST',
+    body: JSON.stringify({ messageIds }),
+  })
+}
+
+export async function downloadMedia(sessionName: string, messageId: string): Promise<Blob> {
+  const response = await fetch(`${API_BASE_URL}/${sessionName}/media/download?messageId=${encodeURIComponent(messageId)}`, {
+    headers: {
+      ...(API_KEY && { 'Authorization': API_KEY }),
+    },
+  })
+  if (!response.ok) throw new Error('Failed to download media')
+  return response.blob()
+}
+
+// ============================================================================
+// PROFILE API
+// ============================================================================
+
+export interface Profile {
+  jid: string
+  name?: string
+  status?: string
+  pictureUrl?: string
+}
+
+export async function getProfile(sessionName: string): Promise<{ profile: Profile }> {
+  return apiRequest(`/${sessionName}/profile`)
+}
+
+export async function setProfileName(sessionName: string, name: string): Promise<void> {
+  return apiRequest(`/${sessionName}/profile/name`, {
+    method: 'POST',
+    body: JSON.stringify({ name }),
+  })
+}
+
+export async function setProfileStatus(sessionName: string, status: string): Promise<void> {
+  return apiRequest(`/${sessionName}/profile/status`, {
+    method: 'POST',
+    body: JSON.stringify({ status }),
+  })
+}
+
+export async function setProfilePicture(sessionName: string, image: string): Promise<void> {
+  return apiRequest(`/${sessionName}/profile/picture`, {
+    method: 'POST',
+    body: JSON.stringify({ image }),
+  })
+}
+
+export async function removeProfilePicture(sessionName: string): Promise<void> {
+  return apiRequest(`/${sessionName}/profile/picture/remove`, { method: 'POST' })
+}
+
+export interface PrivacySettings {
+  groupAdd?: string
+  lastSeen?: string
+  status?: string
+  profile?: string
+  readReceipts?: string
+}
+
+export async function getPrivacySettings(sessionName: string): Promise<PrivacySettings> {
+  return apiRequest(`/${sessionName}/profile/privacy`)
+}
+
+export async function setPrivacySettings(sessionName: string, settings: PrivacySettings): Promise<void> {
+  return apiRequest(`/${sessionName}/profile/privacy`, {
+    method: 'POST',
+    body: JSON.stringify(settings),
+  })
+}
+
+// ============================================================================
+// HISTORY API
+// ============================================================================
+
+export interface UnreadChat {
+  jid: string
+  name?: string
+  unreadCount: number
+  lastMessageTimestamp?: number
+  markedAsUnread?: boolean
+}
+
+export async function getUnreadChats(sessionName: string): Promise<{ chats: UnreadChat[] }> {
+  return apiRequest(`/${sessionName}/history/chats/unread`)
 }
