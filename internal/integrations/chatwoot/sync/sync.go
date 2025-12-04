@@ -72,6 +72,7 @@ func NewChatwootDBSync(
 
 	cli := client.NewClient(cfg.URL, cfg.Token, cfg.Account)
 	repo := NewRepository(db, cfg.Account, cfg.InboxID)
+	repo.SetImportAsResolved(cfg.ImportAsResolved)
 
 	return &ChatwootDBSync{
 		cfg:            cfg,
@@ -97,6 +98,13 @@ func (s *ChatwootDBSync) Close() error {
 // SyncAll performs full sync (contacts + messages)
 func (s *ChatwootDBSync) SyncAll(ctx context.Context, daysLimit int) (*core.SyncStats, error) {
 	totalStats := &core.SyncStats{}
+
+	// Clean orphan records before sync to prevent 500 errors
+	if cleaned, err := s.repo.CleanOrphanRecords(ctx); err != nil {
+		logger.Warn().Err(err).Msg("Chatwoot sync: failed to clean orphan records")
+	} else if cleaned > 0 {
+		logger.Info().Int("cleaned", cleaned).Msg("Chatwoot sync: cleaned orphan contact_inboxes")
+	}
 
 	contactStats, err := s.SyncContacts(ctx, daysLimit)
 	if err != nil {
@@ -220,4 +228,14 @@ func (s *ChatwootDBSync) runAsyncSync(syncType string, daysLimit int, startTime 
 func (s *ChatwootDBSync) ResetData(ctx context.Context) (*core.ResetStats, error) {
 	resetter := NewDataResetter(s.repo)
 	return resetter.Reset(ctx)
+}
+
+// ResolveAllConversations sets all open conversations to resolved status
+func (s *ChatwootDBSync) ResolveAllConversations(ctx context.Context) (int, error) {
+	return s.repo.ResolveAllConversations(ctx)
+}
+
+// GetOpenConversationsCount returns the count of open conversations
+func (s *ChatwootDBSync) GetOpenConversationsCount(ctx context.Context) (int, error) {
+	return s.repo.GetOpenConversationsCount(ctx)
 }

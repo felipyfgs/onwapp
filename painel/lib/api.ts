@@ -224,3 +224,67 @@ export async function getSessionWithStats(sessionName: string, phone?: string): 
 
   return result
 }
+
+// ============================================================================
+// WEBHOOK API
+// ============================================================================
+
+import type { WebhookConfig, WebhookEvents, ChatwootConfig, SyncStatus } from './types'
+
+export async function getWebhook(sessionName: string): Promise<WebhookConfig> {
+  return apiRequest<WebhookConfig>(`/${sessionName}/webhook`)
+}
+
+export async function setWebhook(sessionName: string, config: Partial<WebhookConfig>): Promise<WebhookConfig> {
+  return apiRequest<WebhookConfig>(`/${sessionName}/webhook`, {
+    method: 'POST',
+    body: JSON.stringify(config),
+  })
+}
+
+export async function deleteWebhook(sessionName: string): Promise<void> {
+  return apiRequest(`/${sessionName}/webhook`, { method: 'DELETE' })
+}
+
+export async function getWebhookEvents(): Promise<WebhookEvents> {
+  return apiRequest<WebhookEvents>('/events')
+}
+
+// ============================================================================
+// CHATWOOT API
+// ============================================================================
+
+export async function getChatwootConfig(sessionName: string): Promise<ChatwootConfig> {
+  return apiRequest<ChatwootConfig>(`/sessions/${sessionName}/chatwoot/find`)
+}
+
+export async function setChatwootConfig(sessionName: string, config: Partial<ChatwootConfig>): Promise<ChatwootConfig> {
+  return apiRequest<ChatwootConfig>(`/sessions/${sessionName}/chatwoot/set`, {
+    method: 'POST',
+    body: JSON.stringify(config),
+  })
+}
+
+export async function deleteChatwootConfig(sessionName: string): Promise<void> {
+  return apiRequest(`/sessions/${sessionName}/chatwoot`, { method: 'DELETE' })
+}
+
+export async function syncChatwoot(
+  sessionName: string,
+  type: 'all' | 'contacts' | 'messages' = 'all',
+  days?: number
+): Promise<SyncStatus> {
+  const endpoint = type === 'all' 
+    ? `/sessions/${sessionName}/chatwoot/sync`
+    : `/sessions/${sessionName}/chatwoot/sync/${type}`
+  const query = days ? `?days=${days}` : ''
+  return apiRequest<SyncStatus>(`${endpoint}${query}`, { method: 'POST' })
+}
+
+export async function getChatwootSyncStatus(sessionName: string): Promise<SyncStatus> {
+  return apiRequest<SyncStatus>(`/sessions/${sessionName}/chatwoot/sync/status`)
+}
+
+export async function resetChatwoot(sessionName: string): Promise<{ message: string; deleted: { contacts: number; conversations: number; messages: number } }> {
+  return apiRequest(`/sessions/${sessionName}/chatwoot/reset`, { method: 'POST' })
+}

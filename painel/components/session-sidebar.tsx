@@ -5,13 +5,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   IconHome,
-  IconMessage,
-  IconUsers,
-  IconSettings,
-  IconQrcode,
   IconWebhook,
-  IconPhoto,
-  IconHistory,
+  IconBrandHipchat,
 } from '@tabler/icons-react'
 
 import {
@@ -37,17 +32,11 @@ export function SessionSidebar({ sessionName }: SessionSidebarProps) {
 
   const mainNav = [
     { title: 'Overview', url: basePath, icon: IconHome },
-    { title: 'QR Code', url: `${basePath}/qr`, icon: IconQrcode },
-    { title: 'Mensagens', url: `${basePath}/messages`, icon: IconMessage },
-    { title: 'Contatos', url: `${basePath}/contacts`, icon: IconUsers },
-    { title: 'Grupos', url: `${basePath}/groups`, icon: IconUsers },
-    { title: 'Midia', url: `${basePath}/media`, icon: IconPhoto },
-    { title: 'Historico', url: `${basePath}/history`, icon: IconHistory },
   ]
 
-  const settingsNav = [
+  const integrationNav = [
     { title: 'Webhook', url: `${basePath}/webhook`, icon: IconWebhook },
-    { title: 'Configuracoes', url: `${basePath}/settings`, icon: IconSettings },
+    { title: 'Chatwoot', url: `${basePath}/chatwoot`, icon: IconBrandHipchat },
   ]
 
   return (
@@ -88,10 +77,10 @@ export function SessionSidebar({ sessionName }: SessionSidebarProps) {
           </SidebarGroupContent>
         </SidebarGroup>
         <SidebarGroup>
-          <SidebarGroupLabel>Configuracoes</SidebarGroupLabel>
+          <SidebarGroupLabel>Integracoes</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {settingsNav.map((item) => (
+              {integrationNav.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={pathname === item.url}>
                     <Link href={item.url}>

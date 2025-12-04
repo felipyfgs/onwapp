@@ -28,6 +28,10 @@ func RegisterRoutes(r *gin.Engine, handler *Handler, apiKey string, sessionLooku
 		sessions.POST("/:sessionId/chatwoot/sync/messages", handler.SyncMessages)
 		sessions.GET("/:sessionId/chatwoot/sync/status", handler.GetSyncStatusHandler)
 
+		// Conversations routes
+		sessions.POST("/:sessionId/chatwoot/resolve-all", handler.ResolveAllConversations)
+		sessions.GET("/:sessionId/chatwoot/conversations/stats", handler.GetConversationsStats)
+
 		// Reset route (for testing)
 		sessions.POST("/:sessionId/chatwoot/reset", handler.ResetChatwoot)
 	}

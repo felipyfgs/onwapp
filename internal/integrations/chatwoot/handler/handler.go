@@ -777,6 +777,98 @@ func (h *Handler) ResetChatwoot(c *gin.Context) {
 	})
 }
 
+// ResolveAllConversations handles POST /sessions/:sessionId/chatwoot/resolve-all
+// @Summary Resolve all open conversations
+// @Description Set all open conversations to resolved status
+// @Tags         chatwoot
+// @Produce json
+// @Security Authorization
+// @Param sessionId path string true "Session name"
+// @Success 200 {object} map[string]interface{}
+// @Router /sessions/{sessionId}/chatwoot/resolve-all [post]
+func (h *Handler) ResolveAllConversations(c *gin.Context) {
+	sessionId := c.Param("sessionId")
+	session, err := h.sessionService.Get(sessionId)
+	if err != nil || session == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
+		return
+	}
+
+	cfg, err := h.service.GetConfig(c.Request.Context(), session.ID)
+	if err != nil || cfg == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "chatwoot not configured"})
+		return
+	}
+
+	lidResolver := &whatsappLIDResolver{session: session}
+
+	dbSync, err := cwsync.NewChatwootDBSync(cfg, nil, nil, nil, session.ID, lidResolver)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to connect to database: " + err.Error()})
+		return
+	}
+	defer dbSync.Close()
+
+	resolved, err := dbSync.ResolveAllConversations(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	logger.Info().
+		Str("session", sessionId).
+		Int("resolved", resolved).
+		Msg("Chatwoot: resolved all conversations")
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":  "conversations resolved",
+		"resolved": resolved,
+	})
+}
+
+// GetConversationsStats handles GET /sessions/:sessionId/chatwoot/conversations/stats
+// @Summary Get conversations statistics
+// @Description Get count of open conversations
+// @Tags         chatwoot
+// @Produce json
+// @Security Authorization
+// @Param sessionId path string true "Session name"
+// @Success 200 {object} map[string]interface{}
+// @Router /sessions/{sessionId}/chatwoot/conversations/stats [get]
+func (h *Handler) GetConversationsStats(c *gin.Context) {
+	sessionId := c.Param("sessionId")
+	session, err := h.sessionService.Get(sessionId)
+	if err != nil || session == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
+		return
+	}
+
+	cfg, err := h.service.GetConfig(c.Request.Context(), session.ID)
+	if err != nil || cfg == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "chatwoot not configured"})
+		return
+	}
+
+	lidResolver := &whatsappLIDResolver{session: session}
+
+	dbSync, err := cwsync.NewChatwootDBSync(cfg, nil, nil, nil, session.ID, lidResolver)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to connect to database: " + err.Error()})
+		return
+	}
+	defer dbSync.Close()
+
+	openCount, err := dbSync.GetOpenConversationsCount(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"open": openCount,
+	})
+}
+
 // =============================================================================
 // ADAPTERS
 // =============================================================================

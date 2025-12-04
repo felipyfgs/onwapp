@@ -21,9 +21,10 @@ type Config struct {
 	AutoReopen     bool       `json:"autoReopen"`
 	StartPending   bool       `json:"startPending"`
 	MergeBrPhones  bool       `json:"mergeBrPhones"`
-	SyncContacts   bool       `json:"syncContacts"`
-	SyncMessages   bool       `json:"syncMessages"`
-	SyncDays       int        `json:"syncDays,omitempty"`
+	SyncContacts     bool       `json:"syncContacts"`
+	SyncMessages     bool       `json:"syncMessages"`
+	SyncDays         int        `json:"syncDays,omitempty"`
+	ImportAsResolved bool       `json:"importAsResolved"`
 	IgnoreChats    []string   `json:"ignoreChats,omitempty"`
 	AutoCreate     bool       `json:"autoCreate"`
 	WebhookURL     string     `json:"webhookUrl,omitempty"`

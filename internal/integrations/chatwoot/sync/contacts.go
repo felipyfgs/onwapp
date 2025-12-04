@@ -53,11 +53,16 @@ func (s *ContactSyncer) Sync(ctx context.Context, daysLimit int) (*core.SyncStat
 		return stats, err
 	}
 
-	logger.Info().Int("imported", stats.ContactsImported).Msg("Chatwoot sync: contacts completed")
+	logger.Info().
+		Int("imported", stats.ContactsImported).
+		Int("skipped", stats.ContactsSkipped).
+		Int("errors", stats.ContactsErrors).
+		Msg("Chatwoot sync: contacts completed")
 	return stats, nil
 }
 
 // filterValidContacts filters out invalid contacts and deduplicates by JID
+// Only includes contacts that are saved in agenda (have a name) or have message history
 func (s *ContactSyncer) filterValidContacts(ctx context.Context, contacts []core.WhatsAppContact, stats *core.SyncStats) []core.WhatsAppContact {
 	valid := make([]core.WhatsAppContact, 0, len(contacts)/2)
 	seen := make(map[string]bool)
@@ -83,6 +88,15 @@ func (s *ContactSyncer) filterValidContacts(ctx context.Context, contacts []core
 			continue
 		}
 
+		// Only sync contacts that are saved in agenda (have FullName or BusinessName)
+		// PushName alone is not enough - it's just the name the user set on their WhatsApp
+		// FullName/FirstName indicates the contact is saved in your phone's agenda
+		// BusinessName indicates it's a verified business contact
+		if !s.isContactSaved(c) {
+			stats.ContactsSkipped++
+			continue
+		}
+
 		// Deduplicate by JID (can happen after LID conversion)
 		if seen[c.JID] {
 			stats.ContactsSkipped++
@@ -95,24 +109,51 @@ func (s *ContactSyncer) filterValidContacts(ctx context.Context, contacts []core
 	return valid
 }
 
+// isContactSaved checks if a contact is saved in the phone's agenda
+// A contact is considered "saved" if:
+// - It has a FullName that is different from PushName (indicating it was saved with a custom name)
+// - OR it has a FirstName (indicates explicit save with first/last name split)
+// - OR it has a BusinessName (verified business account)
+// PushName alone doesn't count as it's just the user's WhatsApp display name
+func (s *ContactSyncer) isContactSaved(c core.WhatsAppContact) bool {
+	// BusinessName always counts (verified business)
+	if c.BusinessName != "" {
+		return true
+	}
+
+	// FirstName indicates contact was saved with first/last name split
+	if c.FirstName != "" {
+		return true
+	}
+
+	// FullName must exist AND be different from PushName to count as "saved"
+	// If FullName == PushName, it was likely auto-filled, not explicitly saved
+	if c.FullName != "" && c.FullName != c.PushName {
+		return true
+	}
+
+	return false
+}
+
 // shouldSkipContact checks if a contact should be skipped
 func (s *ContactSyncer) shouldSkipContact(jid string) bool {
 	return util.IsGroupJID(jid) || util.IsStatusBroadcast(jid) || util.IsNewsletter(jid)
 }
 
-// insertContactsInBatches inserts contacts in batches
+// insertContactsInBatches inserts contacts in batches with accurate stats
 func (s *ContactSyncer) insertContactsInBatches(ctx context.Context, contacts []core.WhatsAppContact, stats *core.SyncStats) error {
 	for i := 0; i < len(contacts); i += core.ContactBatchSize {
 		end := min(i+core.ContactBatchSize, len(contacts))
 		batch := contacts[i:end]
 
 		insertData := s.prepareContactsForInsert(batch)
-		imported, err := s.repo.UpsertContactsBatch(ctx, insertData)
+		result, err := s.repo.UpsertContactsBatchDetailed(ctx, insertData)
 		if err != nil {
 			logger.Warn().Err(err).Int("batchStart", i).Msg("Chatwoot sync: batch insert failed")
 			stats.ContactsErrors += len(batch)
 		} else {
-			stats.ContactsImported += imported
+			stats.ContactsImported += result.Inserted
+			stats.ContactsSkipped += result.Skipped + result.Updated // Updated = already existed
 		}
 
 		UpdateSyncStats(s.sessionID, stats)

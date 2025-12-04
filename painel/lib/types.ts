@@ -20,3 +20,72 @@ export interface Session {
   createdAt?: string
   updatedAt?: string
 }
+
+// Webhook types
+export interface WebhookConfig {
+  id?: string
+  sessionId: string
+  url: string
+  events: string[]
+  enabled: boolean
+  secret?: string
+}
+
+export interface WebhookEvents {
+  categories: Record<string, string[]>
+  all: string[]
+}
+
+// Chatwoot types
+export interface ChatwootConfig {
+  id?: string
+  sessionId?: string
+  enabled: boolean
+  url: string
+  token: string
+  account: number
+  inbox?: string
+  inboxId?: number
+  signAgent: boolean
+  signSeparator?: string
+  autoReopen: boolean
+  startPending: boolean
+  syncContacts: boolean
+  syncMessages: boolean
+  syncDays?: number
+  mergeBrPhones: boolean
+  ignoreChats?: string[]
+  autoCreate: boolean
+  number?: string
+  organization?: string
+  logo?: string
+  chatwootDbHost?: string
+  chatwootDbPort?: number
+  chatwootDbUser?: string
+  chatwootDbPass?: string
+  chatwootDbName?: string
+  webhookUrl?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface SyncStats {
+  contactsImported: number
+  contactsSkipped: number
+  contactsErrors: number
+  messagesImported: number
+  messagesSkipped: number
+  messagesErrors: number
+  conversationsUsed: number
+  errors: number
+}
+
+export interface SyncStatus {
+  sessionId: string
+  status: 'idle' | 'running' | 'completed' | 'failed'
+  type: 'contacts' | 'messages' | 'all'
+  startedAt?: string
+  endedAt?: string
+  stats: SyncStats
+  error?: string
+}
