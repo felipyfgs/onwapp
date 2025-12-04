@@ -16,6 +16,7 @@ import (
 	"zpwoot/internal/db"
 	"zpwoot/internal/logger"
 	"zpwoot/internal/model"
+	"zpwoot/internal/service/event"
 )
 
 // EventHandler is a function that handles WhatsApp events
@@ -30,14 +31,14 @@ type SessionService struct {
 	container        *sqlstore.Container
 	database         *db.Database
 	webhookService   WebhookSender
-	eventService     *EventService
+	eventService     *event.Service
 	sessions         map[string]*model.Session
 	mu               sync.RWMutex
 	externalHandlers []EventHandler
 }
 
 func NewSessionService(container *sqlstore.Container, database *db.Database, webhookService WebhookSender) *SessionService {
-	eventService := NewEventService(database, webhookService)
+	eventService := event.New(database, webhookService)
 	return &SessionService{
 		container:      container,
 		database:       database,
@@ -368,7 +369,7 @@ func (s *SessionService) SetHistorySyncService(historySyncService *HistorySyncSe
 
 // SetWebhookSkipChecker sets the function that determines if webhook should be skipped
 // for certain session/event combinations (e.g., when Chatwoot handles message webhooks)
-func (s *SessionService) SetWebhookSkipChecker(checker WebhookSkipChecker) {
+func (s *SessionService) SetWebhookSkipChecker(checker event.WebhookSkipChecker) {
 	s.eventService.SetWebhookSkipChecker(checker)
 }
 

@@ -116,9 +116,6 @@ func (s *Service) SendImage(ctx context.Context, sessionId, phone string, data [
 		}
 	})
 
-	if err == nil && quoted == nil {
-		s.saveSentMediaAsync(sessionId, resp.ID, phone, "image", mimeType, "", caption, data)
-	}
 	return resp, err
 }
 

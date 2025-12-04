@@ -3,6 +3,7 @@ package sync
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -51,8 +52,11 @@ func (r *Repository) GetInboxID(ctx context.Context) (int, error) {
 
 	var inboxID int
 	err := r.db.QueryRowContext(ctx, `SELECT id FROM inboxes WHERE id = $1`, r.inboxID).Scan(&inboxID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, nil // Inbox not found
+	}
 	if err != nil {
-		return 0, nil
+		return 0, wrapErr("get inbox id", err)
 	}
 	return inboxID, nil
 }

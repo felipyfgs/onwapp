@@ -495,7 +495,10 @@ func (s *Service) processOutgoingMediaMessageInternal(ctx context.Context, sessi
 // ProcessReactionMessage handles reaction events from WhatsApp
 func (s *Service) ProcessReactionMessage(ctx context.Context, session *model.Session, emoji, targetMsgID, remoteJid, senderJid string, isFromMe bool) error {
 	cfg, err := s.repo.GetEnabledBySessionID(ctx, session.ID)
-	if err != nil || cfg == nil {
+	if err != nil {
+		return nil // Chatwoot not configured, ignore
+	}
+	if cfg == nil {
 		return nil
 	}
 
@@ -571,7 +574,10 @@ func (s *Service) ProcessReactionMessage(ctx context.Context, session *model.Ses
 // ProcessReceipt handles message receipt (delivered/read) events
 func (s *Service) ProcessReceipt(ctx context.Context, session *model.Session, evt *events.Receipt) error {
 	cfg, err := s.repo.GetEnabledBySessionID(ctx, session.ID)
-	if err != nil || cfg == nil {
+	if err != nil {
+		return nil // Chatwoot not configured, ignore
+	}
+	if cfg == nil {
 		return nil
 	}
 
@@ -589,7 +595,10 @@ func (s *Service) ProcessReceipt(ctx context.Context, session *model.Session, ev
 // HandleMessageRead processes read receipts and updates Chatwoot last_seen
 func (s *Service) HandleMessageRead(ctx context.Context, session *model.Session, messageID string) error {
 	cfg, err := s.repo.GetEnabledBySessionID(ctx, session.ID)
-	if err != nil || cfg == nil {
+	if err != nil {
+		return nil // Chatwoot not configured, ignore
+	}
+	if cfg == nil {
 		return nil
 	}
 
@@ -640,7 +649,10 @@ func (s *Service) HandleMessageRead(ctx context.Context, session *model.Session,
 // ProcessMessageDelete handles message deletion from WhatsApp
 func (s *Service) ProcessMessageDelete(ctx context.Context, session *model.Session, messageID string) error {
 	cfg, err := s.repo.GetEnabledBySessionID(ctx, session.ID)
-	if err != nil || cfg == nil {
+	if err != nil {
+		return nil // Chatwoot not configured, ignore
+	}
+	if cfg == nil {
 		return nil
 	}
 

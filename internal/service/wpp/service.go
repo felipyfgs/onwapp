@@ -1,9 +1,7 @@
 package wpp
 
 import (
-	"context"
 	"fmt"
-	"time"
 
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
@@ -21,24 +19,6 @@ type SessionProvider interface {
 	EmitSyntheticEvent(sessionId string, evt interface{})
 }
 
-// MediaSaver defines interface for saving sent media
-type MediaSaver interface {
-	SaveSentMedia(ctx context.Context, info *SentMediaInfo) error
-}
-
-// SentMediaInfo holds info for saving sent media
-type SentMediaInfo struct {
-	SessionID string
-	MsgID     string
-	ChatJID   string
-	MediaType string
-	MimeType  string
-	FileName  string
-	Caption   string
-	FileSize  int64
-	Data      []byte
-}
-
 // QuotedMessage holds information for quoting a previous message
 type QuotedMessage struct {
 	MessageID string
@@ -51,17 +31,11 @@ type QuotedMessage struct {
 // Service handles WhatsApp operations
 type Service struct {
 	sessions SessionProvider
-	media    MediaSaver
 }
 
 // New creates a new WhatsApp service
 func New(sessions SessionProvider) *Service {
 	return &Service{sessions: sessions}
-}
-
-// SetMediaSaver sets the media saver for saving sent media
-func (s *Service) SetMediaSaver(saver MediaSaver) {
-	s.media = saver
 }
 
 // getClient returns the WhatsApp client for a session
@@ -123,35 +97,4 @@ func (s *Service) emitSentEvent(sessionId string, resp whatsmeow.SendResponse, j
 	}
 
 	s.sessions.EmitSyntheticEvent(sessionId, evt)
-}
-
-// saveSentMediaAsync saves sent media asynchronously
-func (s *Service) saveSentMediaAsync(sessionId, msgID, chatJID, mediaType, mimeType, fileName, caption string, data []byte) {
-	if s.media == nil {
-		return
-	}
-
-	session, err := s.sessions.Get(sessionId)
-	if err != nil {
-		return
-	}
-
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-		defer cancel()
-
-		info := &SentMediaInfo{
-			SessionID: session.ID,
-			MsgID:     msgID,
-			ChatJID:   chatJID,
-			MediaType: mediaType,
-			MimeType:  mimeType,
-			FileName:  fileName,
-			Caption:   caption,
-			FileSize:  int64(len(data)),
-			Data:      data,
-		}
-
-		_ = s.media.SaveSentMedia(ctx, info)
-	}()
 }
