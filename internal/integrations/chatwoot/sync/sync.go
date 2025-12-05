@@ -65,7 +65,7 @@ func NewChatwootDBSync(
 		return nil, err
 	}
 
-	logger.Debug().
+	logger.Chatwoot().Debug().
 		Str("host", cfg.ChatwootDBHost).
 		Str("database", cfg.ChatwootDBName).
 		Msg("Chatwoot: connected to database for sync")
@@ -101,7 +101,7 @@ func (s *ChatwootDBSync) SyncAll(ctx context.Context, daysLimit int) (*core.Sync
 
 	// Validate inbox exists before sync to prevent creating orphan records
 	if err := s.repo.ValidateInbox(ctx); err != nil {
-		logger.Error().Err(err).Int("inboxId", s.cfg.InboxID).Msg("Chatwoot sync: inbox validation failed")
+		logger.Chatwoot().Error().Err(err).Int("inboxId", s.cfg.InboxID).Msg("Chatwoot sync: inbox validation failed")
 		return nil, err
 	}
 
@@ -111,7 +111,7 @@ func (s *ChatwootDBSync) SyncAll(ctx context.Context, daysLimit int) (*core.Sync
 
 	contactStats, err := s.SyncContacts(ctx, daysLimit)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Chatwoot DB: contacts sync failed")
+		logger.Chatwoot().Warn().Err(err).Msg("Chatwoot DB: contacts sync failed")
 	}
 	if contactStats != nil {
 		totalStats.ContactsImported = contactStats.ContactsImported
@@ -121,7 +121,7 @@ func (s *ChatwootDBSync) SyncAll(ctx context.Context, daysLimit int) (*core.Sync
 
 	msgStats, err := s.SyncMessages(ctx, daysLimit)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Chatwoot DB: messages sync failed")
+		logger.Chatwoot().Warn().Err(err).Msg("Chatwoot DB: messages sync failed")
 	}
 	if msgStats != nil {
 		totalStats.MessagesImported = msgStats.MessagesImported
@@ -220,7 +220,7 @@ func (s *ChatwootDBSync) runAsyncSync(syncType string, daysLimit int, startTime 
 	SetSyncStatus(s.sessionID, finalStatus)
 	s.Close()
 
-	logger.Debug().
+	logger.Chatwoot().Debug().
 		Str("sessionId", s.sessionID).
 		Str("status", finalStatus.Status).
 		Dur("duration", endTime.Sub(startTime)).

@@ -174,7 +174,7 @@ func (p *MediaWorkerPool) processJob(ctx context.Context, uploader *client.Media
 	})
 
 	if err != nil {
-		logger.Debug().Err(err).Str("sourceId", job.SourceID).Msg("Chatwoot sync: media upload failed")
+		logger.Chatwoot().Debug().Err(err).Str("sourceId", job.SourceID).Msg("Chatwoot sync: media upload failed")
 		result.Error = err
 		return result
 	}

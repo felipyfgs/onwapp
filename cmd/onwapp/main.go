@@ -89,23 +89,23 @@ func main() {
 
 	logger.Init(cfg.LogLevel.String(), cfg.LogFormat.String())
 
-	logger.Info().Str("version", version.Short()).Msg("Starting OnWapp API")
+	logger.Core().Info().Str("version", version.Short()).Msg("Starting OnWapp API")
 
 	database, err := db.New(ctx, cfg.DatabaseURL)
 	if err != nil {
-		logger.Fatal().Err(err).Msg("failed to initialize database")
+		logger.DB().Fatal().Err(err).Msg("Failed to initialize database")
 	}
 
 	// Initialize Storage service (MinIO)
 	storageService, err := service.NewStorageService(cfg)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to initialize storage service, media storage disabled")
+		logger.Storage().Warn().Err(err).Msg("Failed to initialize storage service, media storage disabled")
 	} else {
 		if err := storageService.EnsureBucket(ctx); err != nil {
-			logger.Warn().Err(err).Msg("Failed to ensure storage bucket, media storage disabled")
+			logger.Storage().Warn().Err(err).Msg("Failed to ensure storage bucket, media storage disabled")
 			storageService = nil
 		} else {
-			logger.Info().Str("bucket", cfg.MinioBucket).Msg("Storage service initialized")
+			logger.Storage().Info().Str("bucket", cfg.MinioBucket).Msg("Storage service initialized")
 		}
 	}
 
@@ -124,7 +124,7 @@ func main() {
 	// Set media service for automatic media download to storage
 	if mediaService != nil {
 		sessionService.SetMediaService(mediaService)
-		logger.Info().Msg("Media service configured for automatic downloads")
+		logger.Storage().Info().Msg("Media service configured for automatic downloads")
 	}
 
 	// Initialize History Sync service
@@ -145,14 +145,14 @@ func main() {
 		var err error
 		queueService, err = queue.NewService(cfg)
 		if err != nil {
-			logger.Warn().Err(err).Msg("Failed to initialize queue service, messages will be processed directly")
+			logger.Nats().Warn().Err(err).Msg("Failed to initialize queue service, messages will be processed directly")
 		} else {
 			if err := queueService.Initialize(ctx); err != nil {
-				logger.Warn().Err(err).Msg("Failed to initialize queue streams")
+				logger.Nats().Warn().Err(err).Msg("Failed to initialize queue streams")
 				queueService.Close()
 				queueService = nil
 			} else {
-				logger.Info().Msg("Queue service initialized with NATS JetStream")
+				logger.Nats().Info().Msg("Queue service initialized with NATS JetStream")
 			}
 		}
 	}
@@ -217,9 +217,9 @@ func main() {
 
 		// Start queue consumers
 		if err := queueService.Start(ctx); err != nil {
-			logger.Warn().Err(err).Msg("Failed to start queue consumers")
+			logger.Nats().Warn().Err(err).Msg("Failed to start queue consumers")
 		} else {
-			logger.Info().Msg("Queue consumers started")
+			logger.Nats().Info().Msg("Queue consumers started")
 		}
 	}
 
@@ -228,7 +228,7 @@ func main() {
 
 	// Load existing sessions from database
 	if err := sessionService.LoadFromDatabase(ctx); err != nil {
-		logger.Warn().Err(err).Msg("Failed to load sessions from database")
+		logger.Session().Warn().Err(err).Msg("Failed to load sessions from database")
 	}
 
 	// Initialize Webhook handler
@@ -289,9 +289,9 @@ func main() {
 
 	// Start server in goroutine
 	go func() {
-		logger.Info().Str("port", cfg.Port).Msg("Server starting")
+		logger.API().Info().Str("port", cfg.Port).Msg("Server starting")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Fatal().Err(err).Msg("failed to start server")
+			logger.API().Fatal().Err(err).Msg("Failed to start server")
 		}
 	}()
 
@@ -300,22 +300,22 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	logger.Info().Msg("Shutting down server...")
+	logger.Core().Info().Msg("Shutting down server...")
 
 	// Give outstanding requests 10 seconds to complete
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		logger.Error().Err(err).Msg("Server forced to shutdown")
+		logger.API().Error().Err(err).Msg("Server forced to shutdown")
 	}
 
 	// Close queue service
 	if queueService != nil {
 		queueService.Close()
-		logger.Info().Msg("Queue service closed")
+		logger.Nats().Info().Msg("Queue service closed")
 	}
 
 	database.Close()
-	logger.Info().Msg("Server exited gracefully")
+	logger.Core().Info().Msg("Server exited gracefully")
 }

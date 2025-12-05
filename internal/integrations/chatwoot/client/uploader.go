@@ -62,7 +62,7 @@ func (m *MediaUploader) UploadFromURL(ctx context.Context, req MediaUploadReques
 		messageType = "incoming"
 	}
 
-	logger.Debug().
+	logger.Chatwoot().Debug().
 		Int("conversationId", req.ConversationID).
 		Str("mediaType", req.MediaType).
 		Str("filename", filename).
@@ -85,7 +85,7 @@ func (m *MediaUploader) UploadFromURL(ctx context.Context, req MediaUploadReques
 		return nil, fmt.Errorf("failed to upload to Chatwoot: %w", err)
 	}
 
-	logger.Debug().
+	logger.Chatwoot().Debug().
 		Int("conversationId", req.ConversationID).
 		Int("messageId", msg.ID).
 		Str("filename", filename).

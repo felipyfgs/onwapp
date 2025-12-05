@@ -45,7 +45,7 @@ func New(ctx context.Context, databaseURL string) (*Database, error) {
 	// Create whatsmeow sqlstore FIRST - this creates all whatsmeow tables
 	// (whatsmeow_device, whatsmeow_contacts, whatsmeow_chat_settings, etc.)
 	// Our migrations may depend on these tables existing
-	dbLog := waLog.Stdout("Database", "INFO", true)
+	dbLog := waLog.Zerolog(logger.Module("DB"))
 	container, err := sqlstore.New(ctx, "pgx", databaseURL, dbLog)
 	if err != nil {
 		pool.Close()
@@ -60,7 +60,7 @@ func New(ctx context.Context, databaseURL string) (*Database, error) {
 
 	// Ensure whatsmeow FK constraints after sqlstore creates its tables
 	if err := ensureWhatsmeowFKs(ctx, pool); err != nil {
-		logger.Warn().Err(err).Msg("Failed to ensure whatsmeow FK constraints")
+		logger.DB().Warn().Err(err).Msg("Failed to ensure whatsmeow FK constraints")
 	}
 
 	return &Database{
@@ -85,7 +85,7 @@ func ensureWhatsmeowFKs(ctx context.Context, pool *pgxpool.Pool) error {
 }
 
 func runMigrations(ctx context.Context, pool *pgxpool.Pool) error {
-	logger.Info().Msg("Running database migrations...")
+	logger.DB().Info().Msg("Running database migrations...")
 
 	_, err := pool.Exec(ctx, `
 		CREATE TABLE IF NOT EXISTS "schemaMigrations" (
@@ -123,7 +123,7 @@ func runMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 		}
 
 		if version > currentVersion {
-			logger.Info().Int("version", version).Str("file", file).Msg("Applying migration")
+			logger.DB().Info().Int("version", version).Str("file", file).Msg("Applying migration")
 
 			content, err := migrationsFS.ReadFile("migrations/" + file)
 			if err != nil {
@@ -151,10 +151,10 @@ func runMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 				return fmt.Errorf("failed to commit migration %d: %w", version, err)
 			}
 
-			logger.Info().Int("version", version).Msg("Migration applied successfully")
+			logger.DB().Info().Int("version", version).Msg("Migration applied successfully")
 		}
 	}
 
-	logger.Info().Msg("Database migrations completed")
+	logger.DB().Info().Msg("Database migrations completed")
 	return nil
 }

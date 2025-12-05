@@ -39,7 +39,7 @@ func (c *Consumer) RegisterHandler(msgType MessageType, handler MessageHandler) 
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.handlers[msgType] = handler
-	logger.Debug().Str("type", string(msgType)).Msg("Registered queue handler")
+	logger.Nats().Debug().Str("type", string(msgType)).Msg("Registered queue handler")
 }
 
 // Start inicia os consumers para ambos os streams
@@ -66,7 +66,7 @@ func (c *Consumer) Stop() {
 		c.cancel()
 	}
 	c.wg.Wait()
-	logger.Info().Msg("Queue consumers stopped")
+	logger.Nats().Info().Msg("Queue consumers stopped")
 }
 
 func (c *Consumer) startConsumer(ctx context.Context, streamType, consumerName string) error {
@@ -101,7 +101,7 @@ func (c *Consumer) startConsumer(ctx context.Context, streamType, consumerName s
 		c.consumeLoop(ctx, consumer, streamType, consumerName)
 	}()
 
-	logger.Info().
+	logger.Nats().Info().
 		Str("consumer", consumerName).
 		Str("stream", c.client.StreamName(streamType)).
 		Msg("Queue consumer started")
@@ -113,7 +113,7 @@ func (c *Consumer) consumeLoop(ctx context.Context, consumer jetstream.Consumer,
 	for {
 		select {
 		case <-ctx.Done():
-			logger.Debug().Str("consumer", consumerName).Msg("Consumer loop stopped")
+			logger.Nats().Debug().Str("consumer", consumerName).Msg("Consumer loop stopped")
 			return
 		default:
 			msgs, err := consumer.Fetch(10, jetstream.FetchMaxWait(5*time.Second))
@@ -129,7 +129,7 @@ func (c *Consumer) consumeLoop(ctx context.Context, consumer jetstream.Consumer,
 			}
 
 			if msgs.Error() != nil && ctx.Err() == nil {
-				logger.Debug().Err(msgs.Error()).Str("consumer", consumerName).Msg("Fetch error")
+				logger.Nats().Debug().Err(msgs.Error()).Str("consumer", consumerName).Msg("Fetch error")
 			}
 		}
 	}
@@ -138,9 +138,9 @@ func (c *Consumer) consumeLoop(ctx context.Context, consumer jetstream.Consumer,
 func (c *Consumer) processMessage(ctx context.Context, msg jetstream.Msg, streamType string) {
 	var queueMsg QueueMessage
 	if err := json.Unmarshal(msg.Data(), &queueMsg); err != nil {
-		logger.Error().Err(err).Msg("Failed to unmarshal queue message")
+		logger.Nats().Error().Err(err).Msg("Failed to unmarshal queue message")
 		if nakErr := msg.Nak(); nakErr != nil {
-			logger.Error().Err(nakErr).Msg("Failed to NAK message")
+			logger.Nats().Error().Err(nakErr).Msg("Failed to NAK message")
 		}
 		return
 	}
@@ -150,12 +150,12 @@ func (c *Consumer) processMessage(ctx context.Context, msg jetstream.Msg, stream
 	c.mu.RUnlock()
 
 	if !ok {
-		logger.Warn().
+		logger.Nats().Warn().
 			Str("type", string(queueMsg.Type)).
 			Str("msgId", queueMsg.ID).
 			Msg("No handler registered for message type")
 		if ackErr := msg.Ack(); ackErr != nil {
-			logger.Error().Err(ackErr).Str("msgId", queueMsg.ID).Msg("Failed to ACK message")
+			logger.Nats().Error().Err(ackErr).Str("msgId", queueMsg.ID).Msg("Failed to ACK message")
 		}
 		return
 	}
@@ -163,7 +163,7 @@ func (c *Consumer) processMessage(ctx context.Context, msg jetstream.Msg, stream
 	meta, _ := msg.Metadata()
 
 	if err := handler(ctx, &queueMsg); err != nil {
-		logger.Warn().
+		logger.Nats().Warn().
 			Err(err).
 			Str("msgId", queueMsg.ID).
 			Str("type", string(queueMsg.Type)).
@@ -175,24 +175,24 @@ func (c *Consumer) processMessage(ctx context.Context, msg jetstream.Msg, stream
 		// Se excedeu tentativas, mover para DLQ
 		if int(meta.NumDelivered) >= c.client.Config().MaxRetries {
 			if dlqErr := c.producer.PublishToDLQ(ctx, msg.Subject(), &queueMsg, err.Error()); dlqErr != nil {
-				logger.Error().Err(dlqErr).Str("msgId", queueMsg.ID).Msg("Failed to publish to DLQ")
+				logger.Nats().Error().Err(dlqErr).Str("msgId", queueMsg.ID).Msg("Failed to publish to DLQ")
 			}
 			if ackErr := msg.Ack(); ackErr != nil {
-				logger.Error().Err(ackErr).Str("msgId", queueMsg.ID).Msg("Failed to ACK message after DLQ")
+				logger.Nats().Error().Err(ackErr).Str("msgId", queueMsg.ID).Msg("Failed to ACK message after DLQ")
 			}
 			return
 		}
 
 		if nakErr := msg.NakWithDelay(c.client.Config().RetryDelay); nakErr != nil {
-			logger.Error().Err(nakErr).Str("msgId", queueMsg.ID).Msg("Failed to NAK message with delay")
+			logger.Nats().Error().Err(nakErr).Str("msgId", queueMsg.ID).Msg("Failed to NAK message with delay")
 		}
 		return
 	}
 
 	if ackErr := msg.Ack(); ackErr != nil {
-		logger.Error().Err(ackErr).Str("msgId", queueMsg.ID).Msg("Failed to ACK message")
+		logger.Nats().Error().Err(ackErr).Str("msgId", queueMsg.ID).Msg("Failed to ACK message")
 	}
-	logger.Debug().
+	logger.Nats().Debug().
 		Str("msgId", queueMsg.ID).
 		Str("type", string(queueMsg.Type)).
 		Str("sessionId", queueMsg.SessionID).

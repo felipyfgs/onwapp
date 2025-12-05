@@ -40,18 +40,22 @@ func (s *Service) handleMessage(ctx context.Context, session *model.Session, e *
 		return
 	}
 
-	logEvent := logger.Info()
-	if e.Info.Chat.String() == "status@broadcast" {
-		logEvent = logger.Debug()
+	isStatusBroadcast := e.Info.Chat.String() == "status@broadcast"
+	logEvent := logger.WPP().Info()
+	if isStatusBroadcast {
+		logEvent = logger.WPP().Debug()
 	}
-	logEvent.
+	logBuilder := logEvent.
 		Str("session", session.Session).
 		Str("event", "message").
 		Str("type", msgType).
 		Str("from", e.Info.Sender.String()).
 		Str("chat", e.Info.Chat.String()).
-		Str("id", e.Info.ID).
-		Msg("Message received")
+		Str("id", e.Info.ID)
+	if !isStatusBroadcast {
+		logBuilder = logBuilder.Interface("raw", e)
+	}
+	logBuilder.Msg("Message received")
 
 	rawEvent, _ := json.Marshal(e)
 
@@ -89,12 +93,12 @@ func (s *Service) handleMessage(ctx context.Context, session *model.Session, e *
 	}
 
 	if _, err := s.database.Messages.Save(ctx, msg); err != nil {
-		logger.Warn().Err(err).Str("session", session.Session).Str("messageId", e.Info.ID).Msg("Failed to save message")
+		logger.WPP().Warn().Err(err).Str("session", session.Session).Str("messageId", e.Info.ID).Msg("Failed to save message")
 	}
 
 	if media := s.extractMediaInfo(session.ID, e.Info.ID, e.Message); media != nil {
 		if _, err := s.database.Media.Save(ctx, media); err != nil {
-			logger.Warn().Err(err).Str("session", session.Session).Str("messageId", e.Info.ID).Msg("Failed to save media info")
+			logger.WPP().Warn().Err(err).Str("session", session.Session).Str("messageId", e.Info.ID).Msg("Failed to save media info")
 		} else {
 			if s.mediaService != nil && session.Client != nil {
 				go func(m *model.Media, client *model.Session) {
@@ -103,12 +107,12 @@ func (s *Service) handleMessage(ctx context.Context, session *model.Session, e *
 
 					savedMedia, err := s.database.Media.GetByMsgID(downloadCtx, m.SessionID, m.MsgID)
 					if err != nil || savedMedia == nil {
-						logger.Warn().Err(err).Str("msgId", m.MsgID).Msg("Failed to get saved media for download")
+						logger.WPP().Warn().Err(err).Str("msgId", m.MsgID).Msg("Failed to get saved media for download")
 						return
 					}
 
 					if err := s.mediaService.DownloadAndStore(downloadCtx, client.Client, savedMedia, client.Session); err != nil {
-						logger.Warn().Err(err).Str("msgId", m.MsgID).Msg("Failed to download media to storage")
+						logger.WPP().Warn().Err(err).Str("msgId", m.MsgID).Msg("Failed to download media to storage")
 					}
 				}(media, session)
 			}
@@ -124,7 +128,7 @@ func (s *Service) handleReaction(ctx context.Context, session *model.Session, e 
 	senderJid := e.Info.Sender.String()
 	timestamp := e.Info.Timestamp
 
-	logger.Info().
+	logger.WPP().Info().
 		Str("session", session.Session).
 		Str("event", "reaction").
 		Str("target", targetMsgID).
@@ -153,16 +157,16 @@ func (s *Service) handleReaction(ctx context.Context, session *model.Session, e 
 	}
 
 	if _, err := s.database.MessageUpdates.Save(ctx, update); err != nil {
-		logger.Warn().Err(err).Str("msgId", targetMsgID).Msg("Failed to save reaction update")
+		logger.WPP().Warn().Err(err).Str("msgId", targetMsgID).Msg("Failed to save reaction update")
 	}
 
 	if emoji != "" {
 		if err := s.database.Messages.AddReaction(ctx, session.ID, targetMsgID, emoji, senderJid, timestamp.Unix()); err != nil {
-			logger.Warn().Err(err).Str("msgId", targetMsgID).Msg("Failed to add reaction to message")
+			logger.WPP().Warn().Err(err).Str("msgId", targetMsgID).Msg("Failed to add reaction to message")
 		}
 	} else {
 		if err := s.database.Messages.RemoveReaction(ctx, session.ID, targetMsgID, senderJid); err != nil {
-			logger.Warn().Err(err).Str("msgId", targetMsgID).Msg("Failed to remove reaction from message")
+			logger.WPP().Warn().Err(err).Str("msgId", targetMsgID).Msg("Failed to remove reaction from message")
 		}
 	}
 
@@ -176,7 +180,7 @@ func (s *Service) handleProtocolMessage(ctx context.Context, session *model.Sess
 		targetMsgID := proto.GetKey().GetID()
 		senderJid := e.Info.Sender.String()
 
-		logger.Info().
+		logger.WPP().Info().
 			Str("session", session.Session).
 			Str("event", "message_delete").
 			Str("target", targetMsgID).
@@ -198,14 +202,14 @@ func (s *Service) handleProtocolMessage(ctx context.Context, session *model.Sess
 		}
 
 		if _, err := s.database.MessageUpdates.Save(ctx, update); err != nil {
-			logger.Warn().Err(err).Str("msgId", targetMsgID).Msg("Failed to save delete update")
+			logger.WPP().Warn().Err(err).Str("msgId", targetMsgID).Msg("Failed to save delete update")
 		}
 
 		s.sendWebhook(ctx, session, string(model.EventMessageDeleted), e)
 		return
 	}
 
-	logger.Info().
+	logger.WPP().Info().
 		Str("session", session.Session).
 		Str("event", "protocol_message").
 		Str("type", protoType.String()).
@@ -221,7 +225,7 @@ func (s *Service) handleMessageEdit(ctx context.Context, session *model.Session,
 	senderJid := e.Info.Sender.String()
 	msgType, newContent := s.extractMessageTypeAndContent(e.Message)
 
-	logger.Info().
+	logger.WPP().Info().
 		Str("session", session.Session).
 		Str("event", "message_edit").
 		Str("target", targetMsgID).
@@ -245,14 +249,14 @@ func (s *Service) handleMessageEdit(ctx context.Context, session *model.Session,
 	}
 
 	if _, err := s.database.MessageUpdates.Save(ctx, update); err != nil {
-		logger.Warn().Err(err).Str("msgId", targetMsgID).Msg("Failed to save edit update")
+		logger.WPP().Warn().Err(err).Str("msgId", targetMsgID).Msg("Failed to save edit update")
 	}
 
 	s.sendWebhook(ctx, session, string(model.EventMessageEdited), e)
 }
 
 func (s *Service) handleReceipt(ctx context.Context, session *model.Session, e *events.Receipt) {
-	logger.Debug().
+	logger.WPP().Debug().
 		Str("session", session.Session).
 		Str("event", "receipt").
 		Str("type", string(e.Type)).
@@ -280,7 +284,7 @@ func (s *Service) handleReceipt(ctx context.Context, session *model.Session, e *
 
 	for _, msgID := range e.MessageIDs {
 		if err := s.database.Messages.UpdateStatus(ctx, session.ID, msgID, status); err != nil {
-			logger.Warn().Err(err).
+			logger.WPP().Warn().Err(err).
 				Str("session", session.Session).
 				Str("messageId", msgID).
 				Str("status", string(status)).
@@ -302,7 +306,7 @@ func (s *Service) handleReceipt(ctx context.Context, session *model.Session, e *
 		}
 
 		if _, err := s.database.MessageUpdates.Save(ctx, update); err != nil {
-			logger.Warn().Err(err).Str("msgId", msgID).Msg("Failed to save receipt update")
+			logger.WPP().Warn().Err(err).Str("msgId", msgID).Msg("Failed to save receipt update")
 		}
 	}
 
@@ -310,7 +314,7 @@ func (s *Service) handleReceipt(ctx context.Context, session *model.Session, e *
 }
 
 func (s *Service) handleUndecryptableMessage(ctx context.Context, session *model.Session, e *events.UndecryptableMessage) {
-	logger.Warn().
+	logger.WPP().Warn().
 		Str("session", session.Session).
 		Str("event", "undecryptable_message").
 		Str("from", e.Info.Sender.String()).
@@ -322,7 +326,7 @@ func (s *Service) handleUndecryptableMessage(ctx context.Context, session *model
 }
 
 func (s *Service) handleMediaRetry(ctx context.Context, session *model.Session, e *events.MediaRetry) {
-	logger.Info().
+	logger.WPP().Info().
 		Str("session", session.Session).
 		Str("event", "media_retry").
 		Str("messageId", e.MessageID).
@@ -332,7 +336,7 @@ func (s *Service) handleMediaRetry(ctx context.Context, session *model.Session, 
 
 	if s.mediaService != nil && session.Client != nil {
 		if err := s.mediaService.HandleMediaRetryResponse(ctx, session.Client, e, session.ID); err != nil {
-			logger.Warn().
+			logger.WPP().Warn().
 				Err(err).
 				Str("messageId", e.MessageID).
 				Msg("Failed to process media retry response")

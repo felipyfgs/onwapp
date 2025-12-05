@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/mdp/qrterminal/v3"
+	"github.com/rs/zerolog"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/store"
 	"go.mau.fi/whatsmeow/store/sqlstore"
@@ -64,7 +65,7 @@ func (s *SessionService) LoadFromDatabase(ctx context.Context) error {
 			if err == nil {
 				device, err = s.container.GetDevice(ctx, jid)
 				if err != nil {
-					logger.Warn().Err(err).Str("session", rec.Session).Msg("Failed to get device, creating new")
+					logger.Session().Warn().Err(err).Str("session", rec.Session).Msg("Failed to get device, creating new")
 					device = s.container.NewDevice()
 				}
 			} else {
@@ -74,7 +75,7 @@ func (s *SessionService) LoadFromDatabase(ctx context.Context) error {
 			device = s.container.NewDevice()
 		}
 
-		clientLog := waLog.Stdout("Client-"+rec.Session, "INFO", true)
+		clientLog := waLog.Zerolog(logger.ModuleLevel("WPP", zerolog.InfoLevel))
 		client := whatsmeow.NewClient(device, clientLog)
 
 		session := &model.Session{
@@ -94,13 +95,13 @@ func (s *SessionService) LoadFromDatabase(ctx context.Context) error {
 		s.sessions[rec.Session] = session
 		s.mu.Unlock()
 
-		logger.Info().Str("session", rec.Session).Str("jid", rec.DeviceJID).Str("phone", rec.Phone).Str("status", rec.Status).Msg("Session loaded from database")
+		logger.Session().Info().Str("session", rec.Session).Str("jid", rec.DeviceJID).Str("phone", rec.Phone).Str("status", rec.Status).Msg("Session loaded from database")
 
 		// Se a sessão tem credenciais válidas (deviceJID preenchido), reconecta automaticamente
 		// O device.ID será preenchido pelo whatsmeow se houver credenciais no sqlstore
 		if device != nil && device.ID != nil {
 			sessionsToReconnect = append(sessionsToReconnect, session)
-			logger.Info().Str("session", rec.Session).Msg("Session has valid credentials, will auto-reconnect")
+			logger.Session().Info().Str("session", rec.Session).Msg("Session has valid credentials, will auto-reconnect")
 		}
 	}
 
@@ -113,19 +114,19 @@ func (s *SessionService) LoadFromDatabase(ctx context.Context) error {
 }
 
 func (s *SessionService) reconnectSession(session *model.Session) {
-	logger.Info().Str("session", session.Session).Msg("Auto-reconnecting session...")
+	logger.Session().Info().Str("session", session.Session).Msg("Auto-reconnecting session...")
 
 	s.setupEventHandler(session)
 
 	if err := session.Client.Connect(); err != nil {
-		logger.Error().Err(err).Str("session", session.Session).Msg("Failed to auto-reconnect session")
+		logger.Session().Error().Err(err).Str("session", session.Session).Msg("Failed to auto-reconnect session")
 		session.SetStatus(model.StatusDisconnected)
 		_ = s.database.Sessions.UpdateStatus(context.Background(), session.Session, "disconnected")
 		return
 	}
 
 	session.SetStatus(model.StatusConnected)
-	logger.Info().Str("session", session.Session).Msg("Session auto-reconnected successfully")
+	logger.Session().Info().Str("session", session.Session).Msg("Session auto-reconnected successfully")
 }
 
 func (s *SessionService) Create(ctx context.Context, sessionId string, apiKey string) (*model.Session, error) {
@@ -143,7 +144,7 @@ func (s *SessionService) Create(ctx context.Context, sessionId string, apiKey st
 	}
 
 	device := s.container.NewDevice()
-	clientLog := waLog.Stdout("Client-"+sessionId, "INFO", true)
+	clientLog := waLog.Zerolog(logger.ModuleLevel("WPP", zerolog.InfoLevel))
 	client := whatsmeow.NewClient(device, clientLog)
 
 	session := &model.Session{
@@ -202,23 +203,23 @@ func (s *SessionService) Delete(ctx context.Context, sessionId string) error {
 	if hasCredentials {
 		// If not connected, try to connect first so we can send logout to server
 		if !session.Client.IsConnected() {
-			logger.Info().Str("session", sessionId).Msg("Connecting to send logout request before delete...")
+			logger.Session().Info().Str("session", sessionId).Msg("Connecting to send logout request before delete...")
 			if err := session.Client.Connect(); err != nil {
-				logger.Warn().Err(err).Str("session", sessionId).Msg("Failed to connect for logout, will delete locally only")
+				logger.Session().Warn().Err(err).Str("session", sessionId).Msg("Failed to connect for logout, will delete locally only")
 			}
 		}
 
 		// Send logout to WhatsApp server (removes device from their servers)
 		if session.Client.IsConnected() {
 			if err := session.Client.Logout(ctx); err != nil {
-				logger.Warn().Err(err).Str("session", sessionId).Msg("Failed to logout from WhatsApp server")
+				logger.Session().Warn().Err(err).Str("session", sessionId).Msg("Failed to logout from WhatsApp server")
 				session.Client.Disconnect()
 			}
 		}
 
 		// Ensure device is deleted from whatsmeow store
 		if err := s.container.DeleteDevice(ctx, session.Device); err != nil {
-			logger.Debug().Err(err).Str("session", sessionId).Msg("DeleteDevice (may already be deleted by Logout)")
+			logger.Session().Debug().Err(err).Str("session", sessionId).Msg("DeleteDevice (may already be deleted by Logout)")
 		}
 	} else {
 		// No credentials, just disconnect if connected
@@ -229,11 +230,11 @@ func (s *SessionService) Delete(ctx context.Context, sessionId string) error {
 
 	// Delete from database
 	if err := s.database.Sessions.Delete(ctx, sessionId); err != nil {
-		logger.Warn().Err(err).Str("session", sessionId).Msg("Failed to delete session from database")
+		logger.Session().Warn().Err(err).Str("session", sessionId).Msg("Failed to delete session from database")
 	}
 
 	delete(s.sessions, sessionId)
-	logger.Info().Str("session", sessionId).Msg("Session deleted successfully")
+	logger.Session().Info().Str("session", sessionId).Msg("Session deleted successfully")
 	return nil
 }
 
@@ -279,13 +280,13 @@ func (s *SessionService) Connect(ctx context.Context, sessionId string) (*model.
 func (s *SessionService) startClientWithQR(session *model.Session) {
 	qrChan, err := session.Client.GetQRChannel(context.Background())
 	if err != nil {
-		logger.Error().Err(err).Str("session", session.Session).Msg("Failed to get QR channel")
+		logger.Session().Error().Err(err).Str("session", session.Session).Msg("Failed to get QR channel")
 		session.SetStatus(model.StatusDisconnected)
 		return
 	}
 
 	if err := session.Client.Connect(); err != nil {
-		logger.Error().Err(err).Str("session", session.Session).Msg("Failed to connect client")
+		logger.Session().Error().Err(err).Str("session", session.Session).Msg("Failed to connect client")
 		session.SetStatus(model.StatusDisconnected)
 		return
 	}
@@ -297,7 +298,7 @@ func (s *SessionService) startClientWithQR(session *model.Session) {
 			session.SetQR(evt.Code)
 			session.SetStatus(model.StatusConnecting)
 			qrterminal.GenerateHalfBlock(evt.Code, qrterminal.L, os.Stdout)
-			logger.Info().Str("session", session.Session).Msg("QR code generated - scan with WhatsApp")
+			logger.Session().Info().Str("session", session.Session).Msg("QR code generated - scan with WhatsApp")
 		case "success":
 			session.SetStatus(model.StatusConnected)
 			session.SetQR("")
@@ -306,18 +307,18 @@ func (s *SessionService) startClientWithQR(session *model.Session) {
 				jid := session.Client.Store.ID.String()
 				phone := session.Client.Store.ID.User // Extrai o número do JID
 				if err := s.database.Sessions.UpdateJID(context.Background(), session.Session, jid, phone); err != nil {
-					logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to update session JID")
+					logger.Session().Warn().Err(err).Str("session", session.Session).Msg("Failed to update session JID")
 				}
 				if err := s.database.Sessions.UpdateStatus(context.Background(), session.Session, "connected"); err != nil {
-					logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to update session status")
+					logger.Session().Warn().Err(err).Str("session", session.Session).Msg("Failed to update session status")
 				}
 			}
-			logger.Info().Str("session", session.Session).Msg("QR code scanned successfully")
+			logger.Session().Info().Str("session", session.Session).Msg("QR code scanned successfully")
 			return
 		case "timeout":
 			session.SetStatus(model.StatusDisconnected)
 			session.SetQR("")
-			logger.Warn().Str("session", session.Session).Msg("QR code timeout")
+			logger.Session().Warn().Str("session", session.Session).Msg("QR code timeout")
 			return
 		}
 	}
@@ -346,7 +347,7 @@ func (s *SessionService) AddEventHandler(handler EventHandler) {
 func (s *SessionService) EmitSyntheticEvent(sessionId string, evt interface{}) {
 	session, err := s.Get(sessionId)
 	if err != nil {
-		logger.Debug().Err(err).Str("session", sessionId).Msg("EmitSyntheticEvent: session not found")
+		logger.Session().Debug().Err(err).Str("session", sessionId).Msg("EmitSyntheticEvent: session not found")
 		return
 	}
 
@@ -408,7 +409,7 @@ func (s *SessionService) Disconnect(ctx context.Context, sessionId string) error
 
 	session.SetStatus(model.StatusDisconnected)
 	if err := s.database.Sessions.UpdateStatus(ctx, sessionId, "disconnected"); err != nil {
-		logger.Warn().Err(err).Str("session", sessionId).Msg("Failed to update session status")
+		logger.Session().Warn().Err(err).Str("session", sessionId).Msg("Failed to update session status")
 	}
 
 	return nil
@@ -428,9 +429,9 @@ func (s *SessionService) Logout(ctx context.Context, sessionId string) error {
 	if hasCredentials {
 		// If not connected, try to connect first so we can send logout to server
 		if !session.Client.IsConnected() {
-			logger.Info().Str("session", sessionId).Msg("Connecting to send logout request...")
+			logger.Session().Info().Str("session", sessionId).Msg("Connecting to send logout request...")
 			if err := session.Client.Connect(); err != nil {
-				logger.Warn().Err(err).Str("session", sessionId).Msg("Failed to connect for logout, will clear locally only")
+				logger.Session().Warn().Err(err).Str("session", sessionId).Msg("Failed to connect for logout, will clear locally only")
 			}
 		}
 
@@ -438,7 +439,7 @@ func (s *SessionService) Logout(ctx context.Context, sessionId string) error {
 		// This calls: sendIQ(remove-companion-device) + Disconnect() + Store.Delete()
 		if session.Client.IsConnected() {
 			if err := session.Client.Logout(ctx); err != nil {
-				logger.Warn().Err(err).Str("session", sessionId).Msg("Failed to logout from WhatsApp server")
+				logger.Session().Warn().Err(err).Str("session", sessionId).Msg("Failed to logout from WhatsApp server")
 				// Even if logout fails, disconnect and clear locally
 				session.Client.Disconnect()
 			}
@@ -446,7 +447,7 @@ func (s *SessionService) Logout(ctx context.Context, sessionId string) error {
 
 		// Ensure device is deleted from whatsmeow store (in case Logout() failed)
 		if err := s.container.DeleteDevice(ctx, session.Device); err != nil {
-			logger.Debug().Err(err).Str("session", sessionId).Msg("DeleteDevice (may already be deleted by Logout)")
+			logger.Session().Debug().Err(err).Str("session", sessionId).Msg("DeleteDevice (may already be deleted by Logout)")
 		}
 	} else {
 		// No credentials, just disconnect if connected
@@ -457,10 +458,10 @@ func (s *SessionService) Logout(ctx context.Context, sessionId string) error {
 
 	// Clear JID and phone in database but keep the session record
 	if err := s.database.Sessions.UpdateJID(ctx, sessionId, "", ""); err != nil {
-		logger.Warn().Err(err).Str("session", sessionId).Msg("Failed to clear session JID")
+		logger.Session().Warn().Err(err).Str("session", sessionId).Msg("Failed to clear session JID")
 	}
 	if err := s.database.Sessions.UpdateStatus(ctx, sessionId, "disconnected"); err != nil {
-		logger.Warn().Err(err).Str("session", sessionId).Msg("Failed to update session status")
+		logger.Session().Warn().Err(err).Str("session", sessionId).Msg("Failed to update session status")
 	}
 
 	// Create new device for next connection
@@ -471,7 +472,7 @@ func (s *SessionService) Logout(ctx context.Context, sessionId string) error {
 	session.SetStatus(model.StatusDisconnected)
 	session.SetQR("")
 
-	logger.Info().Str("session", sessionId).Msg("Session logged out successfully")
+	logger.Session().Info().Str("session", sessionId).Msg("Session logged out successfully")
 	return nil
 }
 

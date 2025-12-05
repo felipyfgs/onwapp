@@ -34,10 +34,10 @@ func (s *HistorySyncService) ProcessHistorySync(ctx context.Context, sessionID s
 
 	processedChats, err := s.processConversations(ctx, sessionID, e.Data.GetConversations())
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to process conversations")
+		logger.Session().Warn().Err(err).Msg("Failed to process conversations")
 	}
 
-	logger.Info().
+	logger.Session().Info().
 		Str("sessionId", sessionID).
 		Str("syncType", string(syncType)).
 		Int("progress", progress).

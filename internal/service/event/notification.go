@@ -12,7 +12,7 @@ import (
 // Call events
 
 func (s *Service) handleCallOffer(ctx context.Context, session *model.Session, e *events.CallOffer) {
-	logger.Info().
+	logger.WPP().Info().
 		Str("session", session.Session).
 		Str("event", "call_offer").
 		Str("from", e.CallCreator.String()).
@@ -23,14 +23,14 @@ func (s *Service) handleCallOffer(ctx context.Context, session *model.Session, e
 	if s.settingsProvider != nil && s.callRejecter != nil {
 		_, autoReject, err := s.settingsProvider.GetBySessionID(ctx, session.ID)
 		if err == nil && autoReject {
-			logger.Info().
+			logger.WPP().Info().
 				Str("session", session.Session).
 				Str("callId", e.CallID).
 				Str("from", e.CallCreator.String()).
 				Msg("Auto-rejecting call")
 
 			if err := s.callRejecter.RejectCall(ctx, session.Session, e.CallCreator.String(), e.CallID); err != nil {
-				logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to auto-reject call")
+				logger.WPP().Warn().Err(err).Str("session", session.Session).Msg("Failed to auto-reject call")
 			}
 		}
 	}
@@ -39,7 +39,7 @@ func (s *Service) handleCallOffer(ctx context.Context, session *model.Session, e
 }
 
 func (s *Service) handleCallOfferNotice(ctx context.Context, session *model.Session, e *events.CallOfferNotice) {
-	logger.Info().
+	logger.WPP().Info().
 		Str("session", session.Session).
 		Str("event", "call_offer_notice").
 		Str("from", e.CallCreator.String()).
@@ -52,7 +52,7 @@ func (s *Service) handleCallOfferNotice(ctx context.Context, session *model.Sess
 }
 
 func (s *Service) handleCallAccept(ctx context.Context, session *model.Session, e *events.CallAccept) {
-	logger.Info().
+	logger.WPP().Info().
 		Str("session", session.Session).
 		Str("event", "call_accept").
 		Str("from", e.CallCreator.String()).
@@ -63,7 +63,7 @@ func (s *Service) handleCallAccept(ctx context.Context, session *model.Session, 
 }
 
 func (s *Service) handleCallPreAccept(ctx context.Context, session *model.Session, e *events.CallPreAccept) {
-	logger.Info().
+	logger.WPP().Info().
 		Str("session", session.Session).
 		Str("event", "call_pre_accept").
 		Str("from", e.CallCreator.String()).
@@ -74,7 +74,7 @@ func (s *Service) handleCallPreAccept(ctx context.Context, session *model.Sessio
 }
 
 func (s *Service) handleCallReject(ctx context.Context, session *model.Session, e *events.CallReject) {
-	logger.Info().
+	logger.WPP().Info().
 		Str("session", session.Session).
 		Str("event", "call_reject").
 		Str("from", e.CallCreator.String()).
@@ -85,7 +85,7 @@ func (s *Service) handleCallReject(ctx context.Context, session *model.Session, 
 }
 
 func (s *Service) handleCallTerminate(ctx context.Context, session *model.Session, e *events.CallTerminate) {
-	logger.Info().
+	logger.WPP().Info().
 		Str("session", session.Session).
 		Str("event", "call_terminate").
 		Str("from", e.CallCreator.String()).
@@ -97,7 +97,7 @@ func (s *Service) handleCallTerminate(ctx context.Context, session *model.Sessio
 }
 
 func (s *Service) handleCallTransport(ctx context.Context, session *model.Session, e *events.CallTransport) {
-	logger.Debug().
+	logger.WPP().Debug().
 		Str("session", session.Session).
 		Str("event", "call_transport").
 		Str("from", e.CallCreator.String()).
@@ -108,7 +108,7 @@ func (s *Service) handleCallTransport(ctx context.Context, session *model.Sessio
 }
 
 func (s *Service) handleCallRelayLatency(ctx context.Context, session *model.Session, e *events.CallRelayLatency) {
-	logger.Debug().
+	logger.WPP().Debug().
 		Str("session", session.Session).
 		Str("event", "call_relay_latency").
 		Str("callId", e.CallID).
@@ -120,7 +120,7 @@ func (s *Service) handleCallRelayLatency(ctx context.Context, session *model.Ses
 // Group events
 
 func (s *Service) handleGroupInfo(ctx context.Context, session *model.Session, e *events.GroupInfo) {
-	logger.Debug().
+	logger.WPP().Debug().
 		Str("session", session.Session).
 		Str("event", "group_info").
 		Str("group", e.JID.String()).
@@ -131,7 +131,7 @@ func (s *Service) handleGroupInfo(ctx context.Context, session *model.Session, e
 }
 
 func (s *Service) handleJoinedGroup(ctx context.Context, session *model.Session, e *events.JoinedGroup) {
-	logger.Info().
+	logger.WPP().Info().
 		Str("session", session.Session).
 		Str("event", "joined_group").
 		Str("group", e.JID.String()).
@@ -144,7 +144,7 @@ func (s *Service) handleJoinedGroup(ctx context.Context, session *model.Session,
 // Newsletter events
 
 func (s *Service) handleNewsletterJoin(ctx context.Context, session *model.Session, e *events.NewsletterJoin) {
-	logger.Info().
+	logger.WPP().Info().
 		Str("session", session.Session).
 		Str("event", "newsletter_join").
 		Str("id", e.ID.String()).
@@ -152,7 +152,7 @@ func (s *Service) handleNewsletterJoin(ctx context.Context, session *model.Sessi
 }
 
 func (s *Service) handleNewsletterLeave(ctx context.Context, session *model.Session, e *events.NewsletterLeave) {
-	logger.Info().
+	logger.WPP().Info().
 		Str("session", session.Session).
 		Str("event", "newsletter_leave").
 		Str("id", e.ID.String()).
@@ -160,7 +160,7 @@ func (s *Service) handleNewsletterLeave(ctx context.Context, session *model.Sess
 }
 
 func (s *Service) handleNewsletterMuteChange(ctx context.Context, session *model.Session, e *events.NewsletterMuteChange) {
-	logger.Debug().
+	logger.WPP().Debug().
 		Str("session", session.Session).
 		Str("event", "newsletter_mute_change").
 		Str("id", e.ID.String()).
@@ -168,7 +168,7 @@ func (s *Service) handleNewsletterMuteChange(ctx context.Context, session *model
 }
 
 func (s *Service) handleNewsletterLiveUpdate(ctx context.Context, session *model.Session, e *events.NewsletterLiveUpdate) {
-	logger.Debug().
+	logger.WPP().Debug().
 		Str("session", session.Session).
 		Str("event", "newsletter_live_update").
 		Str("id", e.JID.String()).
@@ -178,7 +178,7 @@ func (s *Service) handleNewsletterLiveUpdate(ctx context.Context, session *model
 // Contact events
 
 func (s *Service) handlePushName(ctx context.Context, session *model.Session, e *events.PushName) {
-	logger.Debug().
+	logger.WPP().Debug().
 		Str("session", session.Session).
 		Str("event", "push_name").
 		Str("jid", e.JID.String()).
@@ -190,7 +190,7 @@ func (s *Service) handlePushName(ctx context.Context, session *model.Session, e 
 }
 
 func (s *Service) handlePicture(ctx context.Context, session *model.Session, e *events.Picture) {
-	logger.Debug().
+	logger.WPP().Debug().
 		Str("session", session.Session).
 		Str("event", "picture").
 		Str("jid", e.JID.String()).
@@ -201,7 +201,7 @@ func (s *Service) handlePicture(ctx context.Context, session *model.Session, e *
 }
 
 func (s *Service) handleContact(ctx context.Context, session *model.Session, e *events.Contact) {
-	logger.Debug().
+	logger.WPP().Debug().
 		Str("session", session.Session).
 		Str("event", "contact").
 		Str("jid", e.JID.String()).
@@ -212,7 +212,7 @@ func (s *Service) handleContact(ctx context.Context, session *model.Session, e *
 }
 
 func (s *Service) handleBusinessName(ctx context.Context, session *model.Session, e *events.BusinessName) {
-	logger.Debug().
+	logger.WPP().Debug().
 		Str("session", session.Session).
 		Str("event", "business_name").
 		Str("jid", e.JID.String()).
@@ -226,7 +226,7 @@ func (s *Service) handleBusinessName(ctx context.Context, session *model.Session
 // Privacy events
 
 func (s *Service) handleIdentityChange(ctx context.Context, session *model.Session, e *events.IdentityChange) {
-	logger.Debug().
+	logger.WPP().Debug().
 		Str("session", session.Session).
 		Str("event", "identity_change").
 		Str("jid", e.JID.String()).
@@ -235,14 +235,14 @@ func (s *Service) handleIdentityChange(ctx context.Context, session *model.Sessi
 }
 
 func (s *Service) handlePrivacySettings(ctx context.Context, session *model.Session, e *events.PrivacySettings) {
-	logger.Debug().
+	logger.WPP().Debug().
 		Str("session", session.Session).
 		Str("event", "privacy_settings").
 		Msg("Privacy settings changed")
 }
 
 func (s *Service) handleBlocklist(ctx context.Context, session *model.Session, e *events.Blocklist) {
-	logger.Debug().
+	logger.WPP().Debug().
 		Str("session", session.Session).
 		Str("event", "blocklist").
 		Str("action", string(e.Action)).

@@ -76,7 +76,7 @@ func (c *Client) doRequest(ctx context.Context, method, endpoint string, body in
 	}
 
 	if resp.StatusCode >= 400 {
-		logger.Error().
+		logger.Chatwoot().Error().
 			Int("status", resp.StatusCode).
 			Str("endpoint", endpoint).
 			Str("response", string(respBody)).
@@ -119,7 +119,7 @@ func (c *Client) doRequestSilent404(ctx context.Context, method, endpoint string
 
 	if resp.StatusCode >= 400 {
 		if resp.StatusCode != 404 {
-			logger.Error().
+			logger.Chatwoot().Error().
 				Int("status", resp.StatusCode).
 				Str("endpoint", endpoint).
 				Str("response", string(respBody)).
@@ -277,7 +277,7 @@ func (c *Client) GetOrCreateInboxWithOptions(ctx context.Context, name, webhookU
 		// Always update inbox settings to ensure they match the current config
 		_, err := c.UpdateInboxConversationSettings(ctx, inbox.ID, autoReopen)
 		if err != nil {
-			logger.Warn().Err(err).Int("inboxId", inbox.ID).Bool("autoReopen", autoReopen).Msg("Chatwoot: failed to update inbox conversation settings")
+			logger.Chatwoot().Warn().Err(err).Int("inboxId", inbox.ID).Bool("autoReopen", autoReopen).Msg("Chatwoot: failed to update inbox conversation settings")
 		}
 		return inbox, nil
 	}
@@ -566,9 +566,9 @@ func (c *Client) GetOrCreateContactWithMerge(ctx context.Context, inboxID int, p
 					mergeContact = contacts[0]
 				}
 				if mergeErr := c.MergeContacts(ctx, baseContact.ID, mergeContact.ID); mergeErr != nil {
-					logger.Warn().Err(mergeErr).Msg("Chatwoot: failed to merge Brazilian contacts")
+					logger.Chatwoot().Warn().Err(mergeErr).Msg("Chatwoot: failed to merge Brazilian contacts")
 				} else {
-					logger.Info().
+					logger.Chatwoot().Info().
 						Int("baseContactId", baseContact.ID).
 						Int("mergeContactId", mergeContact.ID).
 						Msg("Chatwoot: merged Brazilian contacts")
@@ -602,13 +602,13 @@ func (c *Client) GetOrCreateContactWithMerge(ctx context.Context, inboxID int, p
 			}
 			updatedContact, updateErr := c.UpdateContact(ctx, contact.ID, updates)
 			if updateErr != nil {
-				logger.Debug().Err(updateErr).
+				logger.Chatwoot().Debug().Err(updateErr).
 					Int("contactId", contact.ID).
 					Str("oldIdentifier", contact.Identifier).
 					Str("newIdentifier", identifier).
 					Msg("Chatwoot: failed to update contact identifier")
 			} else if updatedContact != nil {
-				logger.Debug().
+				logger.Chatwoot().Debug().
 					Int("contactId", contact.ID).
 					Str("oldIdentifier", contact.Identifier).
 					Str("newIdentifier", identifier).
@@ -998,7 +998,7 @@ func (c *Client) CreateMessageWithAttachmentFull(ctx context.Context, req Attach
 	}
 
 	if resp.StatusCode >= 400 {
-		logger.Error().
+		logger.Chatwoot().Error().
 			Int("status", resp.StatusCode).
 			Str("response", string(respBody)).
 			Msg("Chatwoot: attachment upload failed")

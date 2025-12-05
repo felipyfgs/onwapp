@@ -188,13 +188,13 @@ func (s *Service) SetConfig(ctx context.Context, sessionID, sessionId string, re
 	// Always get/create inbox and resolve ID when enabled
 	if req.Enabled {
 		if err := s.initInbox(ctx, savedCfg); err != nil {
-			logger.Warn().Err(err).Str("session", sessionId).Msg("Failed to init inbox")
+			logger.Chatwoot().Warn().Err(err).Str("session", sessionId).Msg("Failed to init inbox")
 		}
 
 		// AutoCreate only controls bot contact creation
 		if req.AutoCreate {
 			if err := s.createBotContact(ctx, savedCfg, req.Number, req.Organization, req.Logo); err != nil {
-				logger.Warn().Err(err).Str("session", sessionId).Msg("Failed to create bot contact")
+				logger.Chatwoot().Warn().Err(err).Str("session", sessionId).Msg("Failed to create bot contact")
 			}
 		}
 	}
@@ -248,16 +248,16 @@ func (s *Service) initInbox(ctx context.Context, cfg *core.Config) error {
 		return err
 	}
 
-	logger.Debug().Int("inboxId", inbox.ID).Str("name", inbox.Name).Msg("Chatwoot: inbox ready")
+	logger.Chatwoot().Debug().Int("inboxId", inbox.ID).Str("name", inbox.Name).Msg("Chatwoot: inbox ready")
 
 	if inbox.WebhookURL != cfg.WebhookURL {
-		logger.Debug().
+		logger.Chatwoot().Debug().
 			Str("oldWebhook", inbox.WebhookURL).
 			Str("newWebhook", cfg.WebhookURL).
 			Msg("Chatwoot: updating inbox webhook URL")
 
 		if updatedInbox, err := c.UpdateInboxWebhook(ctx, inbox.ID, cfg.WebhookURL); err != nil {
-			logger.Warn().Err(err).Msg("Chatwoot: failed to update inbox webhook URL")
+			logger.Chatwoot().Warn().Err(err).Msg("Chatwoot: failed to update inbox webhook URL")
 		} else {
 			inbox = updatedInbox
 		}
@@ -293,7 +293,7 @@ func (s *Service) initBotContact(ctx context.Context, c *client.Client, inboxID 
 
 	contact, err := c.FindContactByPhone(ctx, "+"+botPhone)
 	if err != nil {
-		logger.Debug().Err(err).Msg("Chatwoot: error finding bot contact")
+		logger.Chatwoot().Debug().Err(err).Msg("Chatwoot: error finding bot contact")
 	}
 
 	if contact == nil {
@@ -307,7 +307,7 @@ func (s *Service) initBotContact(ctx context.Context, c *client.Client, inboxID 
 		if err != nil {
 			return fmt.Errorf("failed to create bot contact: %w", err)
 		}
-		logger.Debug().Int("contactId", contact.ID).Str("name", botName).Msg("Chatwoot: created bot contact")
+		logger.Chatwoot().Debug().Int("contactId", contact.ID).Str("name", botName).Msg("Chatwoot: created bot contact")
 	}
 
 	convReq := &client.CreateConversationRequest{
@@ -316,7 +316,7 @@ func (s *Service) initBotContact(ctx context.Context, c *client.Client, inboxID 
 	}
 	conv, err := c.CreateConversation(ctx, convReq)
 	if err != nil {
-		logger.Debug().Err(err).Msg("Chatwoot: conversation might already exist")
+		logger.Chatwoot().Debug().Err(err).Msg("Chatwoot: conversation might already exist")
 		return nil
 	}
 
@@ -331,7 +331,7 @@ func (s *Service) initBotContact(ctx context.Context, c *client.Client, inboxID 
 		Private:     false,
 	}
 	if _, err = c.CreateMessage(ctx, conv.ID, msgReq); err != nil {
-		logger.Debug().Err(err).Msg("Chatwoot: failed to send init message")
+		logger.Chatwoot().Debug().Err(err).Msg("Chatwoot: failed to send init message")
 	}
 
 	return nil
@@ -352,7 +352,7 @@ func (s *Service) SendBotStatusMessage(ctx context.Context, cfg *core.Config, st
 
 	contact, err := c.FindContactByPhone(ctx, "+"+botPhone)
 	if err != nil {
-		logger.Debug().Err(err).Msg("Chatwoot: bot contact not found")
+		logger.Chatwoot().Debug().Err(err).Msg("Chatwoot: bot contact not found")
 		return core.ErrBotNotFound
 	}
 	if contact == nil {
@@ -361,7 +361,7 @@ func (s *Service) SendBotStatusMessage(ctx context.Context, cfg *core.Config, st
 
 	conv, err := c.GetOrCreateConversation(ctx, contact.ID, cfg.InboxID, "open", true)
 	if err != nil {
-		logger.Warn().Err(err).Int("contactId", contact.ID).Msg("Chatwoot: failed to get bot conversation")
+		logger.Chatwoot().Warn().Err(err).Int("contactId", contact.ID).Msg("Chatwoot: failed to get bot conversation")
 		return fmt.Errorf("failed to get bot conversation: %w", err)
 	}
 
@@ -441,7 +441,7 @@ func (s *Service) HandleConversationNotFound(ctx context.Context, sessionID stri
 
 	affected, err := s.database.Messages.ClearCwConversation(ctx, sessionID, conversationID)
 	if err != nil {
-		logger.Warn().
+		logger.Chatwoot().Warn().
 			Err(err).
 			Str("sessionId", sessionID).
 			Int("conversationId", conversationID).
@@ -449,7 +449,7 @@ func (s *Service) HandleConversationNotFound(ctx context.Context, sessionID stri
 		return
 	}
 
-	logger.Info().
+	logger.Chatwoot().Info().
 		Str("sessionId", sessionID).
 		Int("conversationId", conversationID).
 		Int64("messagesCleared", affected).

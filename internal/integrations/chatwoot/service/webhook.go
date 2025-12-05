@@ -77,7 +77,7 @@ func (s *Service) GetWebhookDataForSending(ctx context.Context, sessionID string
 	}
 
 	if payload.SourceID != "" && strings.HasPrefix(payload.SourceID, "WAID:") {
-		logger.Debug().
+		logger.Chatwoot().Debug().
 			Str("sourceId", payload.SourceID).
 			Int("msgId", payload.ID).
 			Msg("Chatwoot: skipping imported message in GetWebhookDataForSending")
@@ -97,7 +97,7 @@ func (s *Service) GetWebhookDataForSending(ctx context.Context, sessionID string
 	}
 
 	sender := payload.Conversation.Meta.Sender
-	logger.Debug().
+	logger.Chatwoot().Debug().
 		Str("identifier", sender.Identifier).
 		Str("phoneNumber", sender.PhoneNumber).
 		Str("name", sender.Name).

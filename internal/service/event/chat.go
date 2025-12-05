@@ -12,7 +12,7 @@ import (
 // Presence events
 
 func (s *Service) handlePresence(ctx context.Context, session *model.Session, e *events.Presence) {
-	logger.Debug().
+	logger.WPP().Debug().
 		Str("session", session.Session).
 		Str("event", "presence").
 		Str("from", e.From.String()).
@@ -24,7 +24,7 @@ func (s *Service) handlePresence(ctx context.Context, session *model.Session, e 
 }
 
 func (s *Service) handleChatPresence(ctx context.Context, session *model.Session, e *events.ChatPresence) {
-	logger.Debug().
+	logger.WPP().Debug().
 		Str("session", session.Session).
 		Str("event", "chat_presence").
 		Str("chat", e.Chat.String()).
@@ -39,7 +39,7 @@ func (s *Service) handleChatPresence(ctx context.Context, session *model.Session
 // Chat management events
 
 func (s *Service) handleMute(ctx context.Context, session *model.Session, e *events.Mute) {
-	logger.Debug().
+	logger.WPP().Debug().
 		Str("session", session.Session).
 		Str("event", "mute").
 		Str("jid", e.JID.String()).
@@ -50,7 +50,7 @@ func (s *Service) handleMute(ctx context.Context, session *model.Session, e *eve
 }
 
 func (s *Service) handleArchive(ctx context.Context, session *model.Session, e *events.Archive) {
-	logger.Debug().
+	logger.WPP().Debug().
 		Str("session", session.Session).
 		Str("event", "archive").
 		Str("jid", e.JID.String()).
@@ -61,7 +61,7 @@ func (s *Service) handleArchive(ctx context.Context, session *model.Session, e *
 }
 
 func (s *Service) handlePin(ctx context.Context, session *model.Session, e *events.Pin) {
-	logger.Debug().
+	logger.WPP().Debug().
 		Str("session", session.Session).
 		Str("event", "pin").
 		Str("jid", e.JID.String()).
@@ -72,7 +72,7 @@ func (s *Service) handlePin(ctx context.Context, session *model.Session, e *even
 }
 
 func (s *Service) handleStar(ctx context.Context, session *model.Session, e *events.Star) {
-	logger.Debug().
+	logger.WPP().Debug().
 		Str("session", session.Session).
 		Str("event", "star").
 		Str("chat", e.ChatJID.String()).
@@ -84,7 +84,7 @@ func (s *Service) handleStar(ctx context.Context, session *model.Session, e *eve
 }
 
 func (s *Service) handleDeleteForMe(ctx context.Context, session *model.Session, e *events.DeleteForMe) {
-	logger.Debug().
+	logger.WPP().Debug().
 		Str("session", session.Session).
 		Str("event", "delete_for_me").
 		Str("chat", e.ChatJID.String()).
@@ -96,7 +96,7 @@ func (s *Service) handleDeleteForMe(ctx context.Context, session *model.Session,
 }
 
 func (s *Service) handleDeleteChat(ctx context.Context, session *model.Session, e *events.DeleteChat) {
-	logger.Debug().
+	logger.WPP().Debug().
 		Str("session", session.Session).
 		Str("event", "delete_chat").
 		Str("jid", e.JID.String()).
@@ -107,7 +107,7 @@ func (s *Service) handleDeleteChat(ctx context.Context, session *model.Session, 
 }
 
 func (s *Service) handleClearChat(ctx context.Context, session *model.Session, e *events.ClearChat) {
-	logger.Debug().
+	logger.WPP().Debug().
 		Str("session", session.Session).
 		Str("event", "clear_chat").
 		Str("jid", e.JID.String()).
@@ -118,7 +118,7 @@ func (s *Service) handleClearChat(ctx context.Context, session *model.Session, e
 }
 
 func (s *Service) handleMarkChatAsRead(ctx context.Context, session *model.Session, e *events.MarkChatAsRead) {
-	logger.Debug().
+	logger.WPP().Debug().
 		Str("session", session.Session).
 		Str("event", "mark_chat_as_read").
 		Str("jid", e.JID.String()).
@@ -129,7 +129,7 @@ func (s *Service) handleMarkChatAsRead(ctx context.Context, session *model.Sessi
 }
 
 func (s *Service) handleLabelEdit(ctx context.Context, session *model.Session, e *events.LabelEdit) {
-	logger.Debug().
+	logger.WPP().Debug().
 		Str("session", session.Session).
 		Str("event", "label_edit").
 		Time("timestamp", e.Timestamp).
@@ -139,7 +139,7 @@ func (s *Service) handleLabelEdit(ctx context.Context, session *model.Session, e
 }
 
 func (s *Service) handleLabelAssociationChat(ctx context.Context, session *model.Session, e *events.LabelAssociationChat) {
-	logger.Debug().
+	logger.WPP().Debug().
 		Str("session", session.Session).
 		Str("event", "label_association_chat").
 		Str("jid", e.JID.String()).

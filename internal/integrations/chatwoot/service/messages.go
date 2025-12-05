@@ -40,7 +40,7 @@ func resolveLIDToStandardJID(ctx context.Context, waClient *whatsmeow.Client, ji
 	}
 
 	convertedJID := pnJID.String()
-	logger.Debug().
+	logger.Chatwoot().Debug().
 		Str("original", jid).
 		Str("converted", convertedJID).
 		Msg("Chatwoot: resolved LID via WhatsApp client store")
@@ -70,7 +70,7 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 func (s *Service) processIncomingMessageInternal(ctx context.Context, session *model.Session, evt *events.Message) (cwMsgID int, cwConvID int, cfg *core.Config, err error) {
 	cfg, err = s.repo.GetEnabledBySessionID(ctx, session.ID)
 	if err != nil {
-		logger.Debug().Err(err).Str("sessionId", session.ID).Msg("Chatwoot: error getting config")
+		logger.Chatwoot().Debug().Err(err).Str("sessionId", session.ID).Msg("Chatwoot: error getting config")
 		return 0, 0, nil, nil
 	}
 	if cfg == nil {
@@ -80,7 +80,7 @@ func (s *Service) processIncomingMessageInternal(ctx context.Context, session *m
 	// Prevent duplicate processing with in-memory lock
 	cacheKey := fmt.Sprintf("in:%d:%s", cfg.InboxID, evt.Info.ID)
 	if !TryAcquireMsgProcessing(cacheKey) {
-		logger.Debug().Str("msgId", evt.Info.ID).Int("inboxId", cfg.InboxID).Msg("Chatwoot: skipping duplicate incoming processing")
+		logger.Chatwoot().Debug().Str("msgId", evt.Info.ID).Int("inboxId", cfg.InboxID).Msg("Chatwoot: skipping duplicate incoming processing")
 		return 0, 0, nil, nil
 	}
 	defer ReleaseMsgProcessing(cacheKey)
@@ -191,7 +191,7 @@ func (s *Service) processIncomingMessageInternal(ctx context.Context, session *m
 
 	if cwMsg != nil && s.database != nil {
 		if err := s.database.Messages.UpdateCwFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, convID, sourceID); err != nil {
-			logger.Debug().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update message fields")
+			logger.Chatwoot().Debug().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update message fields")
 		}
 		return cwMsg.ID, convID, cfg, nil
 	}
@@ -216,7 +216,7 @@ func (s *Service) processIncomingMediaMessageInternal(ctx context.Context, sessi
 
 	mediaData, err := s.mediaDownloader(ctx, session.Session, evt.Message)
 	if err != nil {
-		logger.Debug().Err(err).
+		logger.Chatwoot().Debug().Err(err).
 			Str("session", session.Session).
 			Str("messageId", evt.Info.ID).
 			Msg("Chatwoot: failed to download media, sending filename as text")
@@ -255,7 +255,7 @@ func (s *Service) processIncomingMediaMessageInternal(ctx context.Context, sessi
 
 	if cwMsg != nil && s.database != nil {
 		if err := s.database.Messages.UpdateCwFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, conversationID, sourceID); err != nil {
-			logger.Debug().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update media message fields")
+			logger.Chatwoot().Debug().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update media message fields")
 		}
 		return cwMsg.ID, conversationID, cfg, nil
 	}
@@ -337,7 +337,7 @@ func (s *Service) processOutgoingMessageInternal(ctx context.Context, session *m
 	// Prevent duplicate processing with in-memory lock
 	cacheKey := fmt.Sprintf("out:%d:%s", cfg.InboxID, evt.Info.ID)
 	if !TryAcquireMsgProcessing(cacheKey) {
-		logger.Debug().Str("msgId", evt.Info.ID).Int("inboxId", cfg.InboxID).Msg("Chatwoot: skipping duplicate outgoing processing")
+		logger.Chatwoot().Debug().Str("msgId", evt.Info.ID).Int("inboxId", cfg.InboxID).Msg("Chatwoot: skipping duplicate outgoing processing")
 		return 0, 0, nil, nil
 	}
 	defer ReleaseMsgProcessing(cacheKey)
@@ -416,7 +416,7 @@ func (s *Service) processOutgoingMessageInternal(ctx context.Context, session *m
 
 	if cwMsg != nil && s.database != nil {
 		if err := s.database.Messages.UpdateCwFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, conv.ID, sourceID); err != nil {
-			logger.Debug().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update outgoing message fields")
+			logger.Chatwoot().Debug().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update outgoing message fields")
 		}
 		return cwMsg.ID, conv.ID, cfg, nil
 	}
@@ -441,7 +441,7 @@ func (s *Service) processOutgoingMediaMessageInternal(ctx context.Context, sessi
 
 	mediaData, err := s.mediaDownloader(ctx, session.Session, evt.Message)
 	if err != nil {
-		logger.Debug().Err(err).
+		logger.Chatwoot().Debug().Err(err).
 			Str("session", session.Session).
 			Str("messageId", evt.Info.ID).
 			Msg("Chatwoot: failed to download outgoing media, sending filename as text")
@@ -480,7 +480,7 @@ func (s *Service) processOutgoingMediaMessageInternal(ctx context.Context, sessi
 
 	if cwMsg != nil && s.database != nil {
 		if err := s.database.Messages.UpdateCwFields(ctx, session.ID, evt.Info.ID, cwMsg.ID, conversationID, sourceID); err != nil {
-			logger.Debug().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update outgoing media message fields")
+			logger.Chatwoot().Debug().Err(err).Str("messageId", evt.Info.ID).Msg("Chatwoot: failed to update outgoing media message fields")
 		}
 		return cwMsg.ID, conversationID, cfg, nil
 	}
@@ -496,7 +496,7 @@ func (s *Service) processOutgoingMediaMessageInternal(ctx context.Context, sessi
 func (s *Service) ProcessReactionMessage(ctx context.Context, session *model.Session, emoji, targetMsgID, remoteJid, senderJid string, isFromMe bool) error {
 	cfg, err := s.repo.GetEnabledBySessionID(ctx, session.ID)
 	if err != nil {
-		logger.Debug().Err(err).Str("sessionId", session.ID).Msg("Chatwoot: config not found")
+		logger.Chatwoot().Debug().Err(err).Str("sessionId", session.ID).Msg("Chatwoot: config not found")
 		return nil
 	}
 	if cfg == nil {
@@ -576,7 +576,7 @@ func (s *Service) ProcessReactionMessage(ctx context.Context, session *model.Ses
 func (s *Service) ProcessReceipt(ctx context.Context, session *model.Session, evt *events.Receipt) error {
 	cfg, err := s.repo.GetEnabledBySessionID(ctx, session.ID)
 	if err != nil {
-		logger.Debug().Err(err).Str("sessionId", session.ID).Msg("Chatwoot: config not found")
+		logger.Chatwoot().Debug().Err(err).Str("sessionId", session.ID).Msg("Chatwoot: config not found")
 		return nil
 	}
 	if cfg == nil {
@@ -586,7 +586,7 @@ func (s *Service) ProcessReceipt(ctx context.Context, session *model.Session, ev
 	if evt.Type == types.ReceiptTypeRead {
 		for _, msgID := range evt.MessageIDs {
 			if err := s.HandleMessageRead(ctx, session, msgID); err != nil {
-				logger.Debug().Err(err).Str("messageId", msgID).Msg("Chatwoot: failed to process read receipt")
+				logger.Chatwoot().Debug().Err(err).Str("messageId", msgID).Msg("Chatwoot: failed to process read receipt")
 			}
 		}
 	}
@@ -598,7 +598,7 @@ func (s *Service) ProcessReceipt(ctx context.Context, session *model.Session, ev
 func (s *Service) HandleMessageRead(ctx context.Context, session *model.Session, messageID string) error {
 	cfg, err := s.repo.GetEnabledBySessionID(ctx, session.ID)
 	if err != nil {
-		logger.Debug().Err(err).Str("sessionId", session.ID).Msg("Chatwoot: config not found")
+		logger.Chatwoot().Debug().Err(err).Str("sessionId", session.ID).Msg("Chatwoot: config not found")
 		return nil
 	}
 	if cfg == nil {
@@ -607,7 +607,7 @@ func (s *Service) HandleMessageRead(ctx context.Context, session *model.Session,
 
 	msg, err := s.database.Messages.GetByMsgId(ctx, session.ID, messageID)
 	if err != nil {
-		logger.Debug().Err(err).Str("messageId", messageID).Msg("Chatwoot: message not found")
+		logger.Chatwoot().Debug().Err(err).Str("messageId", messageID).Msg("Chatwoot: message not found")
 		return nil
 	}
 	if msg == nil || msg.CwConvId == nil || *msg.CwConvId == 0 {
@@ -621,7 +621,7 @@ func (s *Service) HandleMessageRead(ctx context.Context, session *model.Session,
 
 	inbox, err := c.GetInbox(ctx, cfg.InboxID)
 	if err != nil {
-		logger.Debug().Err(err).Int("inboxId", cfg.InboxID).Msg("Chatwoot: inbox not found")
+		logger.Chatwoot().Debug().Err(err).Int("inboxId", cfg.InboxID).Msg("Chatwoot: inbox not found")
 		return nil
 	}
 	if inbox.InboxIdentifier == "" {
@@ -633,7 +633,7 @@ func (s *Service) HandleMessageRead(ctx context.Context, session *model.Session,
 		if core.IsNotFoundError(err) {
 			s.HandleConversationNotFound(ctx, session.ID, *msg.CwConvId)
 		}
-		logger.Debug().Err(err).Int("convId", *msg.CwConvId).Msg("Chatwoot: conversation not found")
+		logger.Chatwoot().Debug().Err(err).Int("convId", *msg.CwConvId).Msg("Chatwoot: conversation not found")
 		return nil
 	}
 	_ = conv
@@ -647,7 +647,7 @@ func (s *Service) HandleMessageRead(ctx context.Context, session *model.Session,
 			s.HandleConversationNotFound(ctx, session.ID, *msg.CwConvId)
 			return nil
 		}
-		logger.Debug().Err(err).Int("conversationId", *msg.CwConvId).Msg("Chatwoot: failed to update last_seen")
+		logger.Chatwoot().Debug().Err(err).Int("conversationId", *msg.CwConvId).Msg("Chatwoot: failed to update last_seen")
 		return err
 	}
 
@@ -662,7 +662,7 @@ func (s *Service) HandleMessageRead(ctx context.Context, session *model.Session,
 func (s *Service) ProcessMessageDelete(ctx context.Context, session *model.Session, messageID string) error {
 	cfg, err := s.repo.GetEnabledBySessionID(ctx, session.ID)
 	if err != nil {
-		logger.Debug().Err(err).Str("sessionId", session.ID).Msg("Chatwoot: config not found")
+		logger.Chatwoot().Debug().Err(err).Str("sessionId", session.ID).Msg("Chatwoot: config not found")
 		return nil
 	}
 	if cfg == nil {
@@ -671,7 +671,7 @@ func (s *Service) ProcessMessageDelete(ctx context.Context, session *model.Sessi
 
 	msg, err := s.database.Messages.GetByMsgId(ctx, session.ID, messageID)
 	if err != nil {
-		logger.Debug().Err(err).Str("messageId", messageID).Msg("Chatwoot: message not found")
+		logger.Chatwoot().Debug().Err(err).Str("messageId", messageID).Msg("Chatwoot: message not found")
 		return nil
 	}
 	if msg == nil || msg.CwMsgId == nil || msg.CwConvId == nil {
@@ -813,7 +813,7 @@ func (s *Service) extractReplyInfo(ctx context.Context, sessionID string, evt *e
 	// Debug: Check each extractor explicitly for contact messages
 	if contact := evt.Message.GetContactMessage(); contact != nil {
 		if ctxInfo := contact.GetContextInfo(); ctxInfo != nil {
-			logger.Debug().
+			logger.Chatwoot().Debug().
 				Str("messageId", evt.Info.ID).
 				Str("stanzaId", ctxInfo.GetStanzaID()).
 				Str("participant", ctxInfo.GetParticipant()).
@@ -824,7 +824,7 @@ func (s *Service) extractReplyInfo(ctx context.Context, sessionID string, evt *e
 				foundExtractor = "ContactMessage"
 			}
 		} else {
-			logger.Debug().
+			logger.Chatwoot().Debug().
 				Str("messageId", evt.Info.ID).
 				Bool("hasContextInfo", false).
 				Msg("ContactMessage has no ContextInfo")
@@ -833,7 +833,7 @@ func (s *Service) extractReplyInfo(ctx context.Context, sessionID string, evt *e
 
 	if contacts := evt.Message.GetContactsArrayMessage(); contacts != nil {
 		if ctxInfo := contacts.GetContextInfo(); ctxInfo != nil {
-			logger.Debug().
+			logger.Chatwoot().Debug().
 				Str("messageId", evt.Info.ID).
 				Str("stanzaId", ctxInfo.GetStanzaID()).
 				Str("participant", ctxInfo.GetParticipant()).
@@ -846,7 +846,7 @@ func (s *Service) extractReplyInfo(ctx context.Context, sessionID string, evt *e
 				}
 			}
 		} else {
-			logger.Debug().
+			logger.Chatwoot().Debug().
 				Str("messageId", evt.Info.ID).
 				Bool("hasContextInfo", false).
 				Msg("ContactsArrayMessage has no ContextInfo")
@@ -870,7 +870,7 @@ func (s *Service) extractReplyInfo(ctx context.Context, sessionID string, evt *e
 		return nil
 	}
 
-	logger.Debug().
+	logger.Chatwoot().Debug().
 		Str("messageId", evt.Info.ID).
 		Str("stanzaId", stanzaID).
 		Str("extractor", foundExtractor).
@@ -878,7 +878,7 @@ func (s *Service) extractReplyInfo(ctx context.Context, sessionID string, evt *e
 
 	originalMsg, err := s.database.Messages.GetByMsgId(ctx, sessionID, stanzaID)
 	if err != nil {
-		logger.Debug().
+		logger.Chatwoot().Debug().
 			Err(err).
 			Str("messageId", evt.Info.ID).
 			Str("stanzaId", stanzaID).
@@ -887,7 +887,7 @@ func (s *Service) extractReplyInfo(ctx context.Context, sessionID string, evt *e
 	}
 
 	if originalMsg == nil {
-		logger.Debug().
+		logger.Chatwoot().Debug().
 			Str("messageId", evt.Info.ID).
 			Str("stanzaId", stanzaID).
 			Msg("Original message not found in database")
@@ -895,7 +895,7 @@ func (s *Service) extractReplyInfo(ctx context.Context, sessionID string, evt *e
 	}
 
 	if originalMsg.CwMsgId == nil || *originalMsg.CwMsgId == 0 {
-		logger.Debug().
+		logger.Chatwoot().Debug().
 			Str("messageId", evt.Info.ID).
 			Str("stanzaId", stanzaID).
 			Str("originalMsgId", originalMsg.MsgId).
@@ -903,7 +903,7 @@ func (s *Service) extractReplyInfo(ctx context.Context, sessionID string, evt *e
 		return nil
 	}
 
-	logger.Debug().
+	logger.Chatwoot().Debug().
 		Str("messageId", evt.Info.ID).
 		Str("stanzaId", stanzaID).
 		Int("cwMsgId", *originalMsg.CwMsgId).
@@ -928,7 +928,7 @@ func formatContactMessage(contact *waE2E.ContactMessage) string {
 	emails := util.ParseVCardEmails(vcard)
 	org := util.ParseVCardOrg(vcard)
 
-	logger.Debug().
+	logger.Chatwoot().Debug().
 		Str("name", name).
 		Strs("phones", phones).
 		Strs("emails", emails).

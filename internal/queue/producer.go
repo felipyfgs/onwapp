@@ -82,7 +82,7 @@ func (p *Producer) PublishToDLQ(ctx context.Context, originalSubject string, msg
 		return fmt.Errorf("failed to publish to DLQ: %w", err)
 	}
 
-	logger.Warn().
+	logger.Nats().Warn().
 		Str("subject", subject).
 		Str("msgId", msg.ID).
 		Str("type", string(msg.Type)).
@@ -103,7 +103,7 @@ func (p *Producer) publish(ctx context.Context, subject string, msg *QueueMessag
 		return fmt.Errorf("failed to publish to %s: %w", subject, err)
 	}
 
-	logger.Debug().
+	logger.Nats().Debug().
 		Str("subject", subject).
 		Str("msgId", msg.ID).
 		Str("type", string(msg.Type)).

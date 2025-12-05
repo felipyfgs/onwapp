@@ -134,7 +134,7 @@ func (s *MediaService) DownloadAndStore(ctx context.Context, client *whatsmeow.C
 
 		// Check if media expired (404/410) - needs retry request
 		if isMediaExpiredError(err) {
-			logger.Warn().
+			logger.Storage().Warn().
 				Str("mediaId", media.ID).
 				Str("msgId", media.MsgID).
 				Str("error", errMsg).
@@ -163,7 +163,7 @@ func (s *MediaService) DownloadAndStore(ctx context.Context, client *whatsmeow.C
 		return fmt.Errorf("failed to update media status: %w", err)
 	}
 
-	logger.Info().
+	logger.Storage().Info().
 		Str("mediaId", media.ID).
 		Str("msgId", media.MsgID).
 		Str("storageKey", result.Key).
@@ -234,7 +234,7 @@ func (s *MediaService) SendMediaRetryRequest(ctx context.Context, client *whatsm
 	// Mark as retry requested in database
 	_ = s.database.Media.MarkAsRetryRequested(ctx, media.ID)
 
-	logger.Info().
+	logger.Storage().Info().
 		Str("mediaId", media.ID).
 		Str("msgId", media.MsgID).
 		Str("chatJid", msg.ChatJID).
@@ -253,7 +253,7 @@ func (s *MediaService) HandleMediaRetryResponse(ctx context.Context, client *wha
 	s.pendingRetriesMu.RUnlock()
 
 	if !exists {
-		logger.Debug().
+		logger.Storage().Debug().
 			Str("msgId", msgID).
 			Msg("No pending retry info for media retry response")
 		return nil
@@ -262,7 +262,7 @@ func (s *MediaService) HandleMediaRetryResponse(ctx context.Context, client *wha
 	// Decrypt the retry notification
 	retryData, err := whatsmeow.DecryptMediaRetryNotification(evt, retryInfo.MediaKey)
 	if err != nil {
-		logger.Warn().
+		logger.Storage().Warn().
 			Err(err).
 			Str("msgId", msgID).
 			Msg("Failed to decrypt media retry notification")
@@ -271,7 +271,7 @@ func (s *MediaService) HandleMediaRetryResponse(ctx context.Context, client *wha
 
 	// Check result
 	if retryData.GetResult() != waMmsRetry.MediaRetryNotification_SUCCESS {
-		logger.Warn().
+		logger.Storage().Warn().
 			Str("msgId", msgID).
 			Int32("result", int32(retryData.GetResult())).
 			Msg("Media retry failed")
@@ -295,7 +295,7 @@ func (s *MediaService) HandleMediaRetryResponse(ctx context.Context, client *wha
 		return fmt.Errorf("failed to update direct path: %w", err)
 	}
 
-	logger.Info().
+	logger.Storage().Info().
 		Str("msgId", msgID).
 		Str("newDirectPath", newDirectPath).
 		Msg("Media retry successful, direct path updated")
@@ -317,7 +317,7 @@ func (s *MediaService) HandleMediaRetryResponse(ctx context.Context, client *wha
 		defer cancel()
 
 		if err := s.DownloadAndStore(downloadCtx, client, media, sessionID); err != nil {
-			logger.Warn().
+			logger.Storage().Warn().
 				Err(err).
 				Str("msgId", msgID).
 				Msg("Failed to download media after retry")
@@ -344,13 +344,13 @@ func (s *MediaService) CleanupOldPendingRetries() {
 // Returns (success, failed, retryRequested)
 func (s *MediaService) ProcessPendingDownloads(ctx context.Context, client *whatsmeow.Client, sessionID string, batchSize int) (int, int) {
 	if s.storage == nil {
-		logger.Warn().Msg("Storage service not configured, skipping media downloads")
+		logger.Storage().Warn().Msg("Storage service not configured, skipping media downloads")
 		return 0, 0
 	}
 
 	medias, err := s.database.Media.GetPendingDownloads(ctx, sessionID, batchSize)
 	if err != nil {
-		logger.Error().Err(err).Msg("Failed to get pending media downloads")
+		logger.Storage().Error().Err(err).Msg("Failed to get pending media downloads")
 		return 0, 0
 	}
 
@@ -358,7 +358,7 @@ func (s *MediaService) ProcessPendingDownloads(ctx context.Context, client *what
 		return 0, 0
 	}
 
-	logger.Debug().
+	logger.Storage().Debug().
 		Str("sessionId", sessionID).
 		Int("count", len(medias)).
 		Msg("Processing pending media downloads")
@@ -382,7 +382,7 @@ func (s *MediaService) ProcessPendingDownloads(ctx context.Context, client *what
 			if errors.Is(err, ErrMediaExpired) {
 				// Send retry request
 				if retryErr := s.SendMediaRetryRequest(ctx, client, media, sessionID); retryErr != nil {
-					logger.Warn().
+					logger.Storage().Warn().
 						Err(retryErr).
 						Str("mediaId", media.ID).
 						Str("msgId", media.MsgID).
@@ -390,7 +390,7 @@ func (s *MediaService) ProcessPendingDownloads(ctx context.Context, client *what
 				}
 			}
 
-			logger.Warn().
+			logger.Storage().Warn().
 				Err(err).
 				Str("mediaId", media.ID).
 				Str("msgId", media.MsgID).
@@ -405,7 +405,7 @@ func (s *MediaService) ProcessPendingDownloads(ctx context.Context, client *what
 	}
 
 	if skipped > 0 {
-		logger.Debug().Int("skipped", skipped).Msg("Skipped media already being downloaded")
+		logger.Storage().Debug().Int("skipped", skipped).Msg("Skipped media already being downloaded")
 	}
 
 	return success, failed
@@ -422,7 +422,7 @@ func (s *MediaService) ProcessHistorySyncMedia(ctx context.Context, client *what
 	s.historySyncMu.Lock()
 	if s.historySyncRunning {
 		s.historySyncMu.Unlock()
-		logger.Debug().Msg("History sync media processing already running, skipping")
+		logger.Storage().Debug().Msg("History sync media processing already running, skipping")
 		return
 	}
 	s.historySyncRunning = true
@@ -451,7 +451,7 @@ func (s *MediaService) ProcessHistorySyncMedia(ctx context.Context, client *what
 		for emptyBatches < 3 { // Exit after 3 consecutive empty batches
 			select {
 			case <-processCtx.Done():
-				logger.Warn().Msg("History sync media processing timeout")
+				logger.Storage().Warn().Msg("History sync media processing timeout")
 				return
 			default:
 			}
@@ -471,7 +471,7 @@ func (s *MediaService) ProcessHistorySyncMedia(ctx context.Context, client *what
 		}
 
 		if totalSuccess > 0 || totalFailed > 0 {
-			logger.Info().
+			logger.Storage().Info().
 				Str("sessionId", sessionID).
 				Int("success", totalSuccess).
 				Int("failed", totalFailed).

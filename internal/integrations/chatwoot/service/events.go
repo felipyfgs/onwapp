@@ -68,7 +68,7 @@ func (h *EventHandler) handleMessage(ctx context.Context, session *model.Session
 	if evt.Info.IsFromMe {
 		chatJID := evt.Info.Chat.String()
 		if IsPendingSentFromChatwoot(session.ID, chatJID) {
-			logger.Debug().
+			logger.Chatwoot().Debug().
 				Str("session", session.Session).
 				Str("messageId", evt.Info.ID).
 				Str("chatJid", chatJID).
@@ -86,7 +86,7 @@ func (h *EventHandler) handleMessage(ctx context.Context, session *model.Session
 	// Fallback to direct processing
 	if evt.Info.IsFromMe {
 		if err := h.service.ProcessOutgoingMessage(ctx, session, evt); err != nil {
-			logger.Warn().
+			logger.Chatwoot().Warn().
 				Err(err).
 				Str("session", session.Session).
 				Str("messageId", evt.Info.ID).
@@ -96,7 +96,7 @@ func (h *EventHandler) handleMessage(ctx context.Context, session *model.Session
 	}
 
 	if err := h.service.ProcessIncomingMessage(ctx, session, evt); err != nil {
-		logger.Warn().
+		logger.Chatwoot().Warn().
 			Err(err).
 			Str("session", session.Session).
 			Str("messageId", evt.Info.ID).
@@ -109,7 +109,7 @@ func (h *EventHandler) enqueueMessage(ctx context.Context, session *model.Sessio
 	// Serialize the raw protobuf message for Chatwoot processing
 	rawEvent, err := proto.Marshal(evt.Message)
 	if err != nil {
-		logger.Warn().Err(err).Str("messageId", evt.Info.ID).Msg("Failed to serialize message for queue, falling back to direct processing")
+		logger.Chatwoot().Warn().Err(err).Str("messageId", evt.Info.ID).Msg("Failed to serialize message for queue, falling back to direct processing")
 		h.processDirectly(ctx, session, evt)
 		return
 	}
@@ -117,7 +117,7 @@ func (h *EventHandler) enqueueMessage(ctx context.Context, session *model.Sessio
 	// Serialize the full event JSON for webhook payload
 	fullEventJSON, err := json.Marshal(evt)
 	if err != nil {
-		logger.Warn().Err(err).Str("messageId", evt.Info.ID).Msg("Failed to serialize full event JSON")
+		logger.Chatwoot().Warn().Err(err).Str("messageId", evt.Info.ID).Msg("Failed to serialize full event JSON")
 		fullEventJSON = nil
 	}
 
@@ -155,7 +155,7 @@ func (h *EventHandler) enqueueMessage(ctx context.Context, session *model.Sessio
 	}
 
 	if err := h.queueProducer.PublishWAToCW(ctx, session.ID, msgType, queueMsg); err != nil {
-		logger.Warn().
+		logger.Chatwoot().Warn().
 			Err(err).
 			Str("session", session.Session).
 			Str("messageId", evt.Info.ID).
@@ -164,7 +164,7 @@ func (h *EventHandler) enqueueMessage(ctx context.Context, session *model.Sessio
 		return
 	}
 
-	logger.Debug().
+	logger.Chatwoot().Debug().
 		Str("session", session.Session).
 		Str("messageId", evt.Info.ID).
 		Bool("isFromMe", evt.Info.IsFromMe).
@@ -175,7 +175,7 @@ func (h *EventHandler) enqueueMessage(ctx context.Context, session *model.Sessio
 func (h *EventHandler) processDirectly(ctx context.Context, session *model.Session, evt *events.Message) {
 	if evt.Info.IsFromMe {
 		if err := h.service.ProcessOutgoingMessage(ctx, session, evt); err != nil {
-			logger.Warn().
+			logger.Chatwoot().Warn().
 				Err(err).
 				Str("session", session.Session).
 				Str("messageId", evt.Info.ID).
@@ -185,7 +185,7 @@ func (h *EventHandler) processDirectly(ctx context.Context, session *model.Sessi
 	}
 
 	if err := h.service.ProcessIncomingMessage(ctx, session, evt); err != nil {
-		logger.Warn().
+		logger.Chatwoot().Warn().
 			Err(err).
 			Str("session", session.Session).
 			Str("messageId", evt.Info.ID).
@@ -195,7 +195,7 @@ func (h *EventHandler) processDirectly(ctx context.Context, session *model.Sessi
 
 func (h *EventHandler) handleReceipt(ctx context.Context, session *model.Session, evt *events.Receipt) {
 	if err := h.service.ProcessReceipt(ctx, session, evt); err != nil {
-		logger.Warn().
+		logger.Chatwoot().Warn().
 			Err(err).
 			Str("session", session.Session).
 			Msg("Failed to process receipt for Chatwoot")
@@ -214,7 +214,7 @@ func (h *EventHandler) handleReactionMessage(ctx context.Context, session *model
 	isFromMe := evt.Info.IsFromMe
 
 	if err := h.service.ProcessReactionMessage(ctx, session, emoji, targetMsgID, remoteJid, senderJid, isFromMe); err != nil {
-		logger.Warn().
+		logger.Chatwoot().Warn().
 			Err(err).
 			Str("session", session.Session).
 			Str("emoji", emoji).
@@ -236,7 +236,7 @@ func (h *EventHandler) handleMessageDelete(ctx context.Context, session *model.S
 	}
 
 	if err := h.service.ProcessMessageDelete(ctx, session, deletedMsgID); err != nil {
-		logger.Warn().
+		logger.Chatwoot().Warn().
 			Err(err).
 			Str("session", session.Session).
 			Str("deletedMsgId", deletedMsgID).

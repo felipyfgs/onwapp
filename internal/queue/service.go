@@ -18,7 +18,7 @@ type Service struct {
 // NewService cria um novo serviço de fila
 func NewService(cfg *config.Config) (*Service, error) {
 	if !cfg.NatsEnabled {
-		logger.Info().Msg("Queue service disabled (NATS_ENABLED=false)")
+		logger.Nats().Info().Msg("Queue service disabled (NATS_ENABLED=false)")
 		return &Service{enabled: false}, nil
 	}
 

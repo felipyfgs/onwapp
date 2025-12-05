@@ -19,7 +19,7 @@ func (s *Service) handleConnected(ctx context.Context, session *model.Session) {
 	session.SetStatus(model.StatusConnected)
 	session.SetQR("")
 
-	logger.Info().
+	logger.WPP().Info().
 		Str("session", session.Session).
 		Str("event", "connected").
 		Msg("Session connected")
@@ -28,18 +28,18 @@ func (s *Service) handleConnected(ctx context.Context, session *model.Session) {
 		jid := session.Client.Store.ID.String()
 		phone := session.Client.Store.ID.User
 		if err := s.database.Sessions.UpdateJID(ctx, session.Session, jid, phone); err != nil {
-			logger.Error().Err(err).Str("session", session.Session).Msg("Failed to update session JID/phone")
+			logger.WPP().Error().Err(err).Str("session", session.Session).Msg("Failed to update session JID/phone")
 		}
 	}
 
 	if err := s.database.Sessions.UpdateStatus(ctx, session.Session, "connected"); err != nil {
-		logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to update session status")
+		logger.WPP().Warn().Err(err).Str("session", session.Session).Msg("Failed to update session status")
 	}
 
 	// Ensure settings exist for this session
 	if s.settingsProvider != nil {
 		if err := s.settingsProvider.EnsureExists(ctx, session.ID); err != nil {
-			logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to ensure settings exist")
+			logger.WPP().Warn().Err(err).Str("session", session.Session).Msg("Failed to ensure settings exist")
 		}
 	}
 
@@ -53,11 +53,11 @@ func (s *Service) handleConnected(ctx context.Context, session *model.Session) {
 			if s.privacyGetter != nil {
 				privacy, err := s.privacyGetter.GetPrivacySettingsAsStrings(syncCtx, session.Session)
 				if err != nil {
-					logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to get privacy settings from WhatsApp")
+					logger.WPP().Warn().Err(err).Str("session", session.Session).Msg("Failed to get privacy settings from WhatsApp")
 				} else if err := s.settingsProvider.SyncPrivacyFromWhatsApp(syncCtx, session.ID, privacy); err != nil {
-					logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to sync privacy settings to database")
+					logger.WPP().Warn().Err(err).Str("session", session.Session).Msg("Failed to sync privacy settings to database")
 				} else {
-					logger.Info().Str("session", session.Session).Msg("Privacy settings synced from WhatsApp")
+					logger.WPP().Info().Str("session", session.Session).Msg("Privacy settings synced from WhatsApp")
 				}
 			}
 
@@ -74,7 +74,7 @@ func (s *Service) handleConnected(ctx context.Context, session *model.Session) {
 
 // startKeepOnline starts a goroutine that periodically sends online presence
 func (s *Service) startKeepOnline(session *model.Session) {
-	logger.Info().Str("session", session.Session).Msg("Starting keepOnline")
+	logger.WPP().Info().Str("session", session.Session).Msg("Starting keepOnline")
 
 	go func() {
 		ticker := time.NewTicker(4 * time.Minute)
@@ -83,13 +83,13 @@ func (s *Service) startKeepOnline(session *model.Session) {
 		// Send initial presence
 		ctx := context.Background()
 		if err := s.presenceSender.SendPresence(ctx, session.Session, true); err != nil {
-			logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to send initial online presence")
+			logger.WPP().Warn().Err(err).Str("session", session.Session).Msg("Failed to send initial online presence")
 		}
 
 		for range ticker.C {
 			// Check if session is still connected
 			if session.GetStatus() != model.StatusConnected {
-				logger.Debug().Str("session", session.Session).Msg("Session disconnected, stopping keepOnline")
+				logger.WPP().Debug().Str("session", session.Session).Msg("Session disconnected, stopping keepOnline")
 				return
 			}
 
@@ -97,16 +97,16 @@ func (s *Service) startKeepOnline(session *model.Session) {
 			if s.settingsProvider != nil {
 				alwaysOnline, _, err := s.settingsProvider.GetBySessionID(ctx, session.ID)
 				if err != nil || !alwaysOnline {
-					logger.Info().Str("session", session.Session).Msg("AlwaysOnline disabled, stopping keepOnline")
+					logger.WPP().Info().Str("session", session.Session).Msg("AlwaysOnline disabled, stopping keepOnline")
 					return
 				}
 			}
 
 			// Send presence
 			if err := s.presenceSender.SendPresence(ctx, session.Session, true); err != nil {
-				logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to send keepOnline presence")
+				logger.WPP().Warn().Err(err).Str("session", session.Session).Msg("Failed to send keepOnline presence")
 			} else {
-				logger.Debug().Str("session", session.Session).Msg("KeepOnline presence sent")
+				logger.WPP().Debug().Str("session", session.Session).Msg("KeepOnline presence sent")
 			}
 		}
 	}()
@@ -115,13 +115,13 @@ func (s *Service) startKeepOnline(session *model.Session) {
 func (s *Service) handleDisconnected(ctx context.Context, session *model.Session) {
 	session.SetStatus(model.StatusDisconnected)
 
-	logger.Info().
+	logger.WPP().Info().
 		Str("session", session.Session).
 		Str("event", "disconnected").
 		Msg("Session disconnected")
 
 	if err := s.database.Sessions.UpdateStatus(ctx, session.Session, "disconnected"); err != nil {
-		logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to update session status")
+		logger.WPP().Warn().Err(err).Str("session", session.Session).Msg("Failed to update session status")
 	}
 
 	s.sendWebhook(ctx, session, string(model.EventSessionDisconnected), nil)
@@ -130,7 +130,7 @@ func (s *Service) handleDisconnected(ctx context.Context, session *model.Session
 func (s *Service) handleLoggedOut(ctx context.Context, session *model.Session, e *events.LoggedOut) {
 	session.SetStatus(model.StatusDisconnected)
 
-	logger.Info().
+	logger.WPP().Info().
 		Str("session", session.Session).
 		Str("event", "logged_out").
 		Str("reason", e.Reason.String()).
@@ -140,17 +140,17 @@ func (s *Service) handleLoggedOut(ctx context.Context, session *model.Session, e
 		session.Client.Disconnect()
 		if session.Client.Store != nil {
 			if err := session.Client.Store.Delete(ctx); err != nil {
-				logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to delete device store")
+				logger.WPP().Warn().Err(err).Str("session", session.Session).Msg("Failed to delete device store")
 			}
 		}
 	}
 
 	if err := s.database.Sessions.UpdateJID(ctx, session.Session, "", ""); err != nil {
-		logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to clear device JID")
+		logger.WPP().Warn().Err(err).Str("session", session.Session).Msg("Failed to clear device JID")
 	}
 
 	if err := s.database.Sessions.UpdateStatus(ctx, session.Session, "disconnected"); err != nil {
-		logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to update session status")
+		logger.WPP().Warn().Err(err).Str("session", session.Session).Msg("Failed to update session status")
 	}
 
 	s.sendWebhook(ctx, session, string(model.EventSessionLoggedOut), e)
@@ -159,7 +159,7 @@ func (s *Service) handleLoggedOut(ctx context.Context, session *model.Session, e
 func (s *Service) handleConnectFailure(ctx context.Context, session *model.Session, e *events.ConnectFailure) {
 	session.SetStatus(model.StatusDisconnected)
 
-	logger.Error().
+	logger.WPP().Error().
 		Str("session", session.Session).
 		Str("event", "connect_failure").
 		Int("reason", int(e.Reason)).
@@ -167,7 +167,7 @@ func (s *Service) handleConnectFailure(ctx context.Context, session *model.Sessi
 		Msg("Connection failed")
 
 	if err := s.database.Sessions.UpdateStatus(ctx, session.Session, "disconnected"); err != nil {
-		logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to update session status")
+		logger.WPP().Warn().Err(err).Str("session", session.Session).Msg("Failed to update session status")
 	}
 
 	s.sendWebhook(ctx, session, string(model.EventConnectFailure), e)
@@ -176,20 +176,20 @@ func (s *Service) handleConnectFailure(ctx context.Context, session *model.Sessi
 func (s *Service) handleStreamReplaced(ctx context.Context, session *model.Session, e *events.StreamReplaced) {
 	session.SetStatus(model.StatusDisconnected)
 
-	logger.Warn().
+	logger.WPP().Warn().
 		Str("session", session.Session).
 		Str("event", "stream_replaced").
 		Msg("Stream replaced by another connection")
 
 	if err := s.database.Sessions.UpdateStatus(ctx, session.Session, "disconnected"); err != nil {
-		logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to update session status")
+		logger.WPP().Warn().Err(err).Str("session", session.Session).Msg("Failed to update session status")
 	}
 
 	s.sendWebhook(ctx, session, string(model.EventStreamReplaced), e)
 }
 
 func (s *Service) handleStreamError(ctx context.Context, session *model.Session, e *events.StreamError) {
-	logger.Error().
+	logger.WPP().Error().
 		Str("session", session.Session).
 		Str("event", "stream_error").
 		Str("code", e.Code).
@@ -201,7 +201,7 @@ func (s *Service) handleStreamError(ctx context.Context, session *model.Session,
 func (s *Service) handleTemporaryBan(ctx context.Context, session *model.Session, e *events.TemporaryBan) {
 	session.SetStatus(model.StatusDisconnected)
 
-	logger.Error().
+	logger.WPP().Error().
 		Str("session", session.Session).
 		Str("event", "temporary_ban").
 		Int("code", int(e.Code)).
@@ -209,7 +209,7 @@ func (s *Service) handleTemporaryBan(ctx context.Context, session *model.Session
 		Msg("Temporarily banned")
 
 	if err := s.database.Sessions.UpdateStatus(ctx, session.Session, "banned"); err != nil {
-		logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to update session status")
+		logger.WPP().Warn().Err(err).Str("session", session.Session).Msg("Failed to update session status")
 	}
 
 	s.sendWebhook(ctx, session, string(model.EventTemporaryBan), e)
@@ -218,20 +218,20 @@ func (s *Service) handleTemporaryBan(ctx context.Context, session *model.Session
 func (s *Service) handleClientOutdated(ctx context.Context, session *model.Session, e *events.ClientOutdated) {
 	session.SetStatus(model.StatusDisconnected)
 
-	logger.Error().
+	logger.WPP().Error().
 		Str("session", session.Session).
 		Str("event", "client_outdated").
 		Msg("Client version outdated")
 
 	if err := s.database.Sessions.UpdateStatus(ctx, session.Session, "outdated"); err != nil {
-		logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to update session status")
+		logger.WPP().Warn().Err(err).Str("session", session.Session).Msg("Failed to update session status")
 	}
 
 	s.sendWebhook(ctx, session, string(model.EventClientOutdated), e)
 }
 
 func (s *Service) handleKeepAliveTimeout(ctx context.Context, session *model.Session, e *events.KeepAliveTimeout) {
-	logger.Warn().
+	logger.WPP().Warn().
 		Str("session", session.Session).
 		Str("event", "keepalive_timeout").
 		Int("errorCount", e.ErrorCount).
@@ -242,7 +242,7 @@ func (s *Service) handleKeepAliveTimeout(ctx context.Context, session *model.Ses
 }
 
 func (s *Service) handleKeepAliveRestored(ctx context.Context, session *model.Session, e *events.KeepAliveRestored) {
-	logger.Info().
+	logger.WPP().Info().
 		Str("session", session.Session).
 		Str("event", "keepalive_restored").
 		Msg("Keep alive restored")
@@ -251,7 +251,7 @@ func (s *Service) handleKeepAliveRestored(ctx context.Context, session *model.Se
 }
 
 func (s *Service) handlePairSuccess(ctx context.Context, session *model.Session, e *events.PairSuccess) {
-	logger.Info().
+	logger.WPP().Info().
 		Str("session", session.Session).
 		Str("event", "pair_success").
 		Str("jid", e.ID.String()).
@@ -263,7 +263,7 @@ func (s *Service) handlePairSuccess(ctx context.Context, session *model.Session,
 }
 
 func (s *Service) handlePairError(ctx context.Context, session *model.Session, e *events.PairError) {
-	logger.Error().
+	logger.WPP().Error().
 		Str("session", session.Session).
 		Str("event", "pair_error").
 		Str("id", e.ID.String()).
@@ -281,7 +281,7 @@ func (s *Service) handleHistorySync(ctx context.Context, session *model.Session,
 	progress := e.Data.GetProgress()
 	conversations := e.Data.GetConversations()
 
-	logger.Info().
+	logger.WPP().Info().
 		Str("session", session.Session).
 		Str("event", "history_sync").
 		Str("syncType", syncType).
@@ -448,7 +448,7 @@ func (s *Service) handleHistorySync(ctx context.Context, session *model.Session,
 				}
 
 				if enriched > 0 {
-					logger.Debug().
+					logger.WPP().Debug().
 						Int("enriched", enriched).
 						Int("total", len(allMessages)).
 						Msg("Enriched messages with pushNames from whatsmeow contacts")
@@ -458,13 +458,13 @@ func (s *Service) handleHistorySync(ctx context.Context, session *model.Session,
 
 		saved, err := s.database.Messages.SaveBatch(ctx, allMessages)
 		if err != nil {
-			logger.Error().
+			logger.WPP().Error().
 				Err(err).
 				Str("session", session.Session).
 				Int("total", len(allMessages)).
 				Msg("Failed to save history sync messages")
 		} else {
-			logger.Info().
+			logger.WPP().Info().
 				Str("session", session.Session).
 				Str("syncType", syncType).
 				Uint32("chunkOrder", chunkOrder).
@@ -479,13 +479,13 @@ func (s *Service) handleHistorySync(ctx context.Context, session *model.Session,
 	if len(allMedias) > 0 {
 		savedMedia, err := s.database.Media.SaveBatch(ctx, allMedias)
 		if err != nil {
-			logger.Error().
+			logger.WPP().Error().
 				Err(err).
 				Str("session", session.Session).
 				Int("total", len(allMedias)).
 				Msg("Failed to save history sync media")
 		} else {
-			logger.Info().
+			logger.WPP().Info().
 				Str("session", session.Session).
 				Str("syncType", syncType).
 				Uint32("chunkOrder", chunkOrder).
@@ -504,7 +504,7 @@ func (s *Service) handleHistorySync(ctx context.Context, session *model.Session,
 			hsCtx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 			defer cancel()
 			if err := s.historySyncService.ProcessHistorySync(hsCtx, session.ID, e); err != nil {
-				logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to process history sync metadata")
+				logger.WPP().Warn().Err(err).Str("session", session.Session).Msg("Failed to process history sync metadata")
 			}
 		}()
 	}
@@ -563,7 +563,7 @@ func (s *Service) saveHistoryReactions(ctx context.Context, sessionID, msgID str
 		}
 
 		if _, err := s.database.MessageUpdates.Save(ctx, update); err != nil {
-			logger.Warn().Err(err).Str("msgId", msgID).Msg("Failed to save history reaction")
+			logger.WPP().Warn().Err(err).Str("msgId", msgID).Msg("Failed to save history reaction")
 		}
 	}
 }
@@ -573,7 +573,7 @@ func (s *Service) handlePushNameSync(ctx context.Context, session *model.Session
 		return
 	}
 
-	logger.Debug().
+	logger.WPP().Debug().
 		Str("session", session.Session).
 		Int("count", len(pushnames)).
 		Msg("Push name sync received")
@@ -604,7 +604,7 @@ func (s *Service) handlePushNameSync(ctx context.Context, session *model.Session
 			}
 		}
 		if updated > 0 {
-			logger.Debug().Int64("updated", updated).Msg("Updated messages with pushNames from phone JIDs")
+			logger.WPP().Debug().Int64("updated", updated).Msg("Updated messages with pushNames from phone JIDs")
 		}
 	}
 
@@ -622,7 +622,7 @@ func (s *Service) handlePushNameSync(ctx context.Context, session *model.Session
 			}
 		}
 		if updated > 0 {
-			logger.Debug().Int64("updated", updated).Msg("Updated messages with pushNames from LID JIDs")
+			logger.WPP().Debug().Int64("updated", updated).Msg("Updated messages with pushNames from LID JIDs")
 		}
 	}
 
@@ -652,7 +652,7 @@ func (s *Service) handlePushNameSync(ctx context.Context, session *model.Session
 					}
 				}
 				if updated > 0 {
-					logger.Debug().Int64("updated", updated).Msg("Updated LID messages with pushNames via whatsmeow LID store")
+					logger.WPP().Debug().Int64("updated", updated).Msg("Updated LID messages with pushNames via whatsmeow LID store")
 				}
 			}
 		}
@@ -660,7 +660,7 @@ func (s *Service) handlePushNameSync(ctx context.Context, session *model.Session
 }
 
 func (s *Service) handleOfflineSyncPreview(ctx context.Context, session *model.Session, e *events.OfflineSyncPreview) {
-	logger.Info().
+	logger.WPP().Info().
 		Str("session", session.Session).
 		Str("event", "offline_sync_preview").
 		Int("messages", e.Messages).
@@ -670,7 +670,7 @@ func (s *Service) handleOfflineSyncPreview(ctx context.Context, session *model.S
 }
 
 func (s *Service) handleOfflineSyncCompleted(ctx context.Context, session *model.Session, e *events.OfflineSyncCompleted) {
-	logger.Info().
+	logger.WPP().Info().
 		Str("session", session.Session).
 		Str("event", "offline_sync_completed").
 		Int("count", e.Count).
@@ -678,7 +678,7 @@ func (s *Service) handleOfflineSyncCompleted(ctx context.Context, session *model
 }
 
 func (s *Service) handleAppState(ctx context.Context, session *model.Session, e *events.AppState) {
-	logger.Debug().
+	logger.WPP().Debug().
 		Str("session", session.Session).
 		Str("event", "app_state").
 		Strs("index", e.Index).
@@ -688,7 +688,7 @@ func (s *Service) handleAppState(ctx context.Context, session *model.Session, e 
 }
 
 func (s *Service) handleAppStateSyncComplete(ctx context.Context, session *model.Session, e *events.AppStateSyncComplete) {
-	logger.Info().
+	logger.WPP().Info().
 		Str("session", session.Session).
 		Str("event", "app_state_sync_complete").
 		Str("name", string(e.Name)).

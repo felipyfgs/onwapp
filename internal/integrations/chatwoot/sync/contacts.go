@@ -32,7 +32,7 @@ func (s *ContactSyncer) Sync(ctx context.Context, daysLimit int) (*core.SyncStat
 		ContactDetails: &core.ContactSyncDetails{},
 	}
 
-	logger.Debug().Str("sessionId", s.sessionID).Msg("Chatwoot sync: starting contacts")
+	logger.Chatwoot().Debug().Str("sessionId", s.sessionID).Msg("Chatwoot sync: starting contacts")
 
 	if s.contactsGetter == nil {
 		return stats, ErrContactsGetterNil
@@ -47,17 +47,17 @@ func (s *ContactSyncer) Sync(ctx context.Context, daysLimit int) (*core.SyncStat
 
 	validContacts := s.filterValidContacts(ctx, contacts, stats)
 	if len(validContacts) == 0 {
-		logger.Debug().Msg("Chatwoot sync: no valid contacts to sync")
+		logger.Chatwoot().Debug().Msg("Chatwoot sync: no valid contacts to sync")
 		return stats, nil
 	}
 
-	logger.Debug().Int("contacts", len(validContacts)).Msg("Chatwoot sync: contacts filtered")
+	logger.Chatwoot().Debug().Int("contacts", len(validContacts)).Msg("Chatwoot sync: contacts filtered")
 
 	if err := s.insertContactsInBatches(ctx, validContacts, stats); err != nil {
 		return stats, err
 	}
 
-	logger.Info().
+	logger.Chatwoot().Info().
 		Int("imported", stats.ContactsImported).
 		Int("skipped", stats.ContactsSkipped).
 		Int("errors", stats.ContactsErrors).
@@ -173,7 +173,7 @@ func (s *ContactSyncer) insertContactsInBatches(ctx context.Context, contacts []
 		insertData := s.prepareContactsForInsert(batch)
 		result, err := s.repo.UpsertContactsBatchDetailed(ctx, insertData)
 		if err != nil {
-			logger.Warn().Err(err).Int("batchStart", i).Msg("Chatwoot sync: batch insert failed")
+			logger.Chatwoot().Warn().Err(err).Int("batchStart", i).Msg("Chatwoot sync: batch insert failed")
 			stats.ContactsErrors += len(batch)
 		} else {
 			stats.ContactsImported += result.Inserted

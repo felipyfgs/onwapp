@@ -65,7 +65,7 @@ func (s *Service) Send(ctx context.Context, sessionID, sessionId, event string, 
 func (s *Service) SendWithPreserializedJSON(ctx context.Context, sessionID, sessionId, event string, eventJSON []byte, cwInfo *ChatwootInfo) {
 	wh, err := s.repo.GetEnabledBySession(ctx, sessionID)
 	if err != nil {
-		logger.Error().Err(err).Str("sessionId", sessionID).Msg("Failed to get webhook")
+		logger.Chatwoot().Error().Err(err).Str("sessionId", sessionID).Msg("Failed to get webhook")
 		return
 	}
 
@@ -110,7 +110,7 @@ func (s *Service) SendWithPreserializedJSON(ctx context.Context, sessionID, sess
 
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
-		logger.Error().Err(err).Msg("Failed to marshal webhook payload")
+		logger.Chatwoot().Error().Err(err).Msg("Failed to marshal webhook payload")
 		return
 	}
 
@@ -121,7 +121,7 @@ func (s *Service) SendWithPreserializedJSON(ctx context.Context, sessionID, sess
 func (s *Service) SendWithChatwoot(ctx context.Context, sessionID, sessionId, event string, rawEvent interface{}, cwInfo *ChatwootInfo) {
 	wh, err := s.repo.GetEnabledBySession(ctx, sessionID)
 	if err != nil {
-		logger.Error().Err(err).Str("sessionId", sessionID).Msg("Failed to get webhook")
+		logger.Chatwoot().Error().Err(err).Str("sessionId", sessionID).Msg("Failed to get webhook")
 		return
 	}
 
@@ -199,7 +199,7 @@ func (s *Service) SendWithChatwoot(ctx context.Context, sessionID, sessionId, ev
 
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
-		logger.Error().Err(err).Msg("Failed to marshal webhook payload")
+		logger.Chatwoot().Error().Err(err).Msg("Failed to marshal webhook payload")
 		return
 	}
 
@@ -225,14 +225,14 @@ func (s *Service) sendWebhook(wh Webhook, payload []byte) {
 		if attempt > 0 {
 			delay := baseDelay * time.Duration(1<<(attempt-1))
 			time.Sleep(delay)
-			logger.Debug().Str("url", wh.URL).Int("attempt", attempt+1).Msg("Retrying webhook")
+			logger.Chatwoot().Debug().Str("url", wh.URL).Int("attempt", attempt+1).Msg("Retrying webhook")
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		req, err := http.NewRequestWithContext(ctx, "POST", wh.URL, bytes.NewReader(payload))
 		if err != nil {
 			cancel()
-			logger.Error().Err(err).Str("url", wh.URL).Msg("Failed to create webhook request")
+			logger.Chatwoot().Error().Err(err).Str("url", wh.URL).Msg("Failed to create webhook request")
 			return
 		}
 
@@ -249,28 +249,28 @@ func (s *Service) sendWebhook(wh Webhook, payload []byte) {
 
 		if err != nil {
 			lastErr = err
-			logger.Warn().Err(err).Str("url", wh.URL).Int("attempt", attempt+1).Msg("Failed to send webhook")
+			logger.Chatwoot().Warn().Err(err).Str("url", wh.URL).Int("attempt", attempt+1).Msg("Failed to send webhook")
 			continue
 		}
 		_ = resp.Body.Close()
 
 		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-			logger.Debug().Str("url", wh.URL).Int("status", resp.StatusCode).Msg("Webhook sent successfully")
+			logger.Chatwoot().Debug().Str("url", wh.URL).Int("status", resp.StatusCode).Msg("Webhook sent successfully")
 			return
 		}
 
 		if resp.StatusCode >= 500 {
 			lastErr = err
-			logger.Warn().Str("url", wh.URL).Int("status", resp.StatusCode).Int("attempt", attempt+1).Msg("Webhook server error, will retry")
+			logger.Chatwoot().Warn().Str("url", wh.URL).Int("status", resp.StatusCode).Int("attempt", attempt+1).Msg("Webhook server error, will retry")
 			continue
 		}
 
-		logger.Warn().Str("url", wh.URL).Int("status", resp.StatusCode).Msg("Webhook returned non-2xx status")
+		logger.Chatwoot().Warn().Str("url", wh.URL).Int("status", resp.StatusCode).Msg("Webhook returned non-2xx status")
 		return
 	}
 
 	if lastErr != nil {
-		logger.Error().Err(lastErr).Str("url", wh.URL).Int("maxRetries", maxRetries).Msg("Webhook failed after all retries")
+		logger.Chatwoot().Error().Err(lastErr).Str("url", wh.URL).Int("maxRetries", maxRetries).Msg("Webhook failed after all retries")
 	}
 }
 

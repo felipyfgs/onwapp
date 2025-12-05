@@ -76,7 +76,7 @@ func (s *StorageService) EnsureBucket(ctx context.Context) error {
 		lastErr = err
 		if attempt < maxRetries {
 			backoff := time.Duration(attempt) * 2 * time.Second
-			logger.Warn().
+			logger.Storage().Warn().
 				Err(err).
 				Int("attempt", attempt).
 				Int("maxRetries", maxRetries).
@@ -90,7 +90,7 @@ func (s *StorageService) EnsureBucket(ctx context.Context) error {
 }
 
 func (s *StorageService) ensureBucketOnce(ctx context.Context) error {
-	logger.Debug().
+	logger.Storage().Debug().
 		Str("endpoint", s.endpoint).
 		Str("bucket", s.bucket).
 		Bool("useSSL", s.useSSL).
@@ -98,26 +98,26 @@ func (s *StorageService) ensureBucketOnce(ctx context.Context) error {
 
 	exists, err := s.client.BucketExists(ctx, s.bucket)
 	if err != nil {
-		logger.Error().Err(err).Str("bucket", s.bucket).Msg("BucketExists check failed")
+		logger.Storage().Error().Err(err).Str("bucket", s.bucket).Msg("BucketExists check failed")
 		return fmt.Errorf("failed to check bucket existence: %w", err)
 	}
 
-	logger.Debug().Bool("exists", exists).Str("bucket", s.bucket).Msg("Bucket existence check result")
+	logger.Storage().Debug().Bool("exists", exists).Str("bucket", s.bucket).Msg("Bucket existence check result")
 
 	if !exists {
-		logger.Info().Str("bucket", s.bucket).Msg("Bucket does not exist, creating...")
+		logger.Storage().Info().Str("bucket", s.bucket).Msg("Bucket does not exist, creating...")
 		err = s.client.MakeBucket(ctx, s.bucket, minio.MakeBucketOptions{})
 		if err != nil {
-			logger.Error().Err(err).Str("bucket", s.bucket).Msg("MakeBucket failed")
+			logger.Storage().Error().Err(err).Str("bucket", s.bucket).Msg("MakeBucket failed")
 			// Check if bucket was created by another process
 			exists, checkErr := s.client.BucketExists(ctx, s.bucket)
 			if checkErr == nil && exists {
-				logger.Info().Str("bucket", s.bucket).Msg("Bucket already exists (created by another process)")
+				logger.Storage().Info().Str("bucket", s.bucket).Msg("Bucket already exists (created by another process)")
 			} else {
 				return fmt.Errorf("failed to create bucket: %w", err)
 			}
 		} else {
-			logger.Info().Str("bucket", s.bucket).Msg("Created MinIO bucket")
+			logger.Storage().Info().Str("bucket", s.bucket).Msg("Created MinIO bucket")
 		}
 
 		// Set bucket policy to allow public read
@@ -135,7 +135,7 @@ func (s *StorageService) ensureBucketOnce(ctx context.Context) error {
 
 		err = s.client.SetBucketPolicy(ctx, s.bucket, policy)
 		if err != nil {
-			logger.Warn().Err(err).Msg("Failed to set bucket policy (bucket may not be public)")
+			logger.Storage().Warn().Err(err).Msg("Failed to set bucket policy (bucket may not be public)")
 		}
 	}
 
@@ -166,7 +166,7 @@ func (s *StorageService) Upload(ctx context.Context, sessionID, msgID, mediaType
 
 	url := fmt.Sprintf("%s/%s", s.publicURL, key)
 
-	logger.Debug().
+	logger.Storage().Debug().
 		Str("key", key).
 		Int64("size", info.Size).
 		Str("contentType", contentType).

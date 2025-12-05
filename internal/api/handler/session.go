@@ -123,7 +123,7 @@ func (h *SessionHandler) enrichSessionResponse(ctx context.Context, sess *model.
 		userJID := types.NewJID(storeID.User, types.DefaultUserServer)
 		pic, err := sess.Client.GetProfilePictureInfo(ctx, userJID, &whatsmeow.GetProfilePictureParams{})
 		if err != nil {
-			logger.Debug().Err(err).Str("session", sess.Session).Str("jid", userJID.String()).Msg("Failed to get profile picture")
+			logger.API().Debug().Err(err).Str("session", sess.Session).Str("jid", userJID.String()).Msg("Failed to get profile picture")
 		} else if pic != nil && pic.URL != "" {
 			resp.ProfilePicture = &pic.URL
 		}

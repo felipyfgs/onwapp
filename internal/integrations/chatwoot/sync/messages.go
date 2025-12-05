@@ -55,7 +55,7 @@ func (s *MessageSyncer) Sync(ctx context.Context, daysLimit int) (*core.SyncStat
 		MessageDetails: &core.MessageSyncDetails{},
 	}
 
-	logger.Debug().Str("sessionId", s.sessionID).Int("daysLimit", daysLimit).Msg("Chatwoot sync: starting messages")
+	logger.Chatwoot().Debug().Str("sessionId", s.sessionID).Int("daysLimit", daysLimit).Msg("Chatwoot sync: starting messages")
 
 	userID, userType, err := s.repo.GetChatwootUser(ctx, s.cfg.Token)
 	if err != nil {
@@ -69,11 +69,11 @@ func (s *MessageSyncer) Sync(ctx context.Context, daysLimit int) (*core.SyncStat
 
 	filteredMessages, existingSourceIDs := s.filterMessages(ctx, messages, daysLimit, stats)
 	if len(filteredMessages) == 0 {
-		logger.Debug().Msg("Chatwoot sync: no valid messages to sync")
+		logger.Chatwoot().Debug().Msg("Chatwoot sync: no valid messages to sync")
 		return stats, nil
 	}
 
-	logger.Debug().Int("messages", len(filteredMessages)).Msg("Chatwoot sync: messages filtered")
+	logger.Chatwoot().Debug().Int("messages", len(filteredMessages)).Msg("Chatwoot sync: messages filtered")
 
 	// Sort by timestamp ascending
 	sort.Slice(filteredMessages, func(i, j int) bool {
@@ -98,16 +98,16 @@ func (s *MessageSyncer) Sync(ctx context.Context, daysLimit int) (*core.SyncStat
 	// Fix conversation created_at to match oldest message
 	// This is needed because Chatwoot UI ignores messages with created_at before conversation creation
 	if fixed, err := s.repo.FixConversationCreatedAt(ctx); err == nil && fixed > 0 {
-		logger.Debug().Int("fixed", fixed).Msg("Chatwoot sync: fixed conversation created_at timestamps")
+		logger.Chatwoot().Debug().Int("fixed", fixed).Msg("Chatwoot sync: fixed conversation created_at timestamps")
 	}
 
 	// Touch all inbox conversations to invalidate Chatwoot cache
 	// This ensures conversations appear in the UI after direct DB inserts
 	if err := s.repo.TouchInboxConversations(ctx); err != nil {
-		logger.Warn().Err(err).Msg("Chatwoot sync: failed to touch inbox conversations")
+		logger.Chatwoot().Warn().Err(err).Msg("Chatwoot sync: failed to touch inbox conversations")
 	}
 
-	logger.Info().Int("imported", stats.MessagesImported).Msg("Chatwoot sync: messages completed")
+	logger.Chatwoot().Info().Int("imported", stats.MessagesImported).Msg("Chatwoot sync: messages completed")
 	return stats, nil
 }
 
@@ -250,7 +250,7 @@ func (s *MessageSyncer) loadGroupNamesCache(ctx context.Context) map[string]stri
 
 	groups, err := s.contactsGetter.GetAllGroupNames(ctx)
 	if err != nil {
-		logger.Debug().Err(err).Msg("Chatwoot sync: failed to load group names cache")
+		logger.Chatwoot().Debug().Err(err).Msg("Chatwoot sync: failed to load group names cache")
 		return cache
 	}
 
@@ -267,7 +267,7 @@ func (s *MessageSyncer) createContactsAndConversations(
 ) (map[string]*core.ChatFKs, error) {
 	phoneDataList := s.buildPhoneDataList(messagesByChat, waContactsCache, groupNamesCache)
 
-	logger.Debug().Int("chats", len(phoneDataList)).Msg("Chatwoot sync: creating contacts/conversations")
+	logger.Chatwoot().Debug().Int("chats", len(phoneDataList)).Msg("Chatwoot sync: creating contacts/conversations")
 
 	chatCacheByPhone := make(map[string]*core.ChatFKs)
 
@@ -279,7 +279,7 @@ func (s *MessageSyncer) createContactsAndConversations(
 		// Try optimized version first, fallback to original if needed
 		result, err := s.repo.CreateContactsAndConversationsOptimized(ctx, batch)
 		if err != nil {
-			logger.Warn().Err(err).Msg("Chatwoot sync: optimized creation failed, using fallback")
+			logger.Chatwoot().Warn().Err(err).Msg("Chatwoot sync: optimized creation failed, using fallback")
 			result, err = s.repo.CreateContactsAndConversations(ctx, batch)
 			if err != nil {
 				return nil, err
@@ -442,7 +442,7 @@ func (s *MessageSyncer) processTextMessages(
 
 		imported, err := s.insertTextMessageBatch(ctx, batch, chatCache, userID, userType)
 		if err != nil {
-			logger.Warn().Err(err).Msg("Chatwoot sync: text message batch insert failed")
+			logger.Chatwoot().Warn().Err(err).Msg("Chatwoot sync: text message batch insert failed")
 			stats.Errors += len(batch)
 		} else {
 			stats.MessagesImported += imported
@@ -503,7 +503,7 @@ func (s *MessageSyncer) processMediaMessagesParallel(
 		return
 	}
 
-	logger.Debug().Int("jobs", len(jobs)).Msg("Chatwoot sync: starting parallel media upload")
+	logger.Chatwoot().Debug().Int("jobs", len(jobs)).Msg("Chatwoot sync: starting parallel media upload")
 
 	// Create worker pool and process
 	pool := NewMediaWorkerPool(s.client, core.MediaWorkers, core.MediaRatePerSecond)
@@ -530,7 +530,7 @@ func (s *MessageSyncer) processMediaMessagesParallel(
 		} else {
 			stats.MessagesErrors++
 			if result.Error != nil {
-				logger.Debug().Err(result.Error).Str("sourceId", result.SourceID).Msg("Chatwoot sync: media upload failed")
+				logger.Chatwoot().Debug().Err(result.Error).Str("sourceId", result.SourceID).Msg("Chatwoot sync: media upload failed")
 			}
 		}
 	}
@@ -544,7 +544,7 @@ func (s *MessageSyncer) processMediaMessagesParallel(
 	}
 
 	UpdateSyncStats(s.sessionID, stats)
-	logger.Debug().Int("success", stats.MessagesImported).Int("errors", stats.MessagesErrors).Msg("Chatwoot sync: parallel media upload completed")
+	logger.Chatwoot().Debug().Int("success", stats.MessagesImported).Int("errors", stats.MessagesErrors).Msg("Chatwoot sync: parallel media upload completed")
 }
 
 // prefetchMediaInfo loads media info for all messages in batch
@@ -641,7 +641,7 @@ func (s *MessageSyncer) insertTextMessageBatch(
 	}
 	cwMsgIDs, err := s.repo.GetInsertedMessageIDs(ctx, sourceIDs)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Chatwoot sync: failed to get inserted message IDs")
+		logger.Chatwoot().Warn().Err(err).Msg("Chatwoot sync: failed to get inserted message IDs")
 	}
 
 	// Step 2: Update zpMessages with Chatwoot IDs
@@ -668,9 +668,9 @@ func (s *MessageSyncer) insertTextMessageBatch(
 	if len(quotedRefs) > 0 && len(cwMsgIDs) > 0 {
 		resolved, err := s.repo.ResolveQuotedMessages(ctx, quotedRefs)
 		if err != nil {
-			logger.Warn().Err(err).Msg("Chatwoot sync: failed to resolve quoted messages")
+			logger.Chatwoot().Warn().Err(err).Msg("Chatwoot sync: failed to resolve quoted messages")
 		} else if resolved > 0 {
-			logger.Debug().Int("resolved", resolved).Msg("Chatwoot sync: resolved quoted message references")
+			logger.Chatwoot().Debug().Int("resolved", resolved).Msg("Chatwoot sync: resolved quoted message references")
 		}
 	}
 

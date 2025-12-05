@@ -248,7 +248,7 @@ func (s *Service) HandleEvent(session *model.Session, evt interface{}) {
 		s.handleLabelAssociationChat(ctx, session, e)
 
 	default:
-		logger.Debug().
+		logger.WPP().Debug().
 			Str("session", session.Session).
 			Str("event_type", fmt.Sprintf("%T", evt)).
 			Msg("Unhandled event type")
@@ -276,7 +276,7 @@ func (s *Service) saveHistorySyncToJSON(sessionId string, e *events.HistorySync,
 
 	dir := "history_sync_dumps"
 	if err := os.MkdirAll(dir, 0755); err != nil {
-		logger.Error().Err(err).Msg("Failed to create history sync dump directory")
+		logger.WPP().Error().Err(err).Msg("Failed to create history sync dump directory")
 		return
 	}
 
@@ -286,16 +286,16 @@ func (s *Service) saveHistorySyncToJSON(sessionId string, e *events.HistorySync,
 
 	data, err := json.MarshalIndent(e.Data, "", "  ")
 	if err != nil {
-		logger.Error().Err(err).Msg("Failed to marshal history sync data")
+		logger.WPP().Error().Err(err).Msg("Failed to marshal history sync data")
 		return
 	}
 
 	if err := os.WriteFile(filePath, data, 0600); err != nil {
-		logger.Error().Err(err).Str("file", filePath).Msg("Failed to write history sync JSON")
+		logger.WPP().Error().Err(err).Str("file", filePath).Msg("Failed to write history sync JSON")
 		return
 	}
 
-	logger.Info().
+	logger.WPP().Info().
 		Str("session", sessionId).
 		Str("file", filePath).
 		Int("size", len(data)).

@@ -49,7 +49,7 @@ func (r *DataResetter) Reset(ctx context.Context) (*core.ResetStats, error) {
 	}
 	stats.ContactsDeleted = contactsDeleted
 
-	logger.Info().
+	logger.Chatwoot().Info().
 		Int("contacts", stats.ContactsDeleted).
 		Int("conversations", stats.ConversationsDeleted).
 		Int("messages", stats.MessagesDeleted).

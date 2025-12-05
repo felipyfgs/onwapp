@@ -36,17 +36,17 @@ func NewClient(cfg *ClientConfig) (*Client, error) {
 		nats.ReconnectWait(2 * time.Second),
 		nats.DisconnectErrHandler(func(nc *nats.Conn, err error) {
 			if err != nil {
-				logger.Warn().Err(err).Msg("NATS disconnected")
+				logger.Nats().Warn().Err(err).Msg("NATS disconnected")
 			}
 		}),
 		nats.ReconnectHandler(func(nc *nats.Conn) {
-			logger.Info().Str("url", nc.ConnectedUrl()).Msg("NATS reconnected")
+			logger.Nats().Info().Str("url", nc.ConnectedUrl()).Msg("NATS reconnected")
 		}),
 		nats.ClosedHandler(func(nc *nats.Conn) {
-			logger.Info().Msg("NATS connection closed")
+			logger.Nats().Info().Msg("NATS connection closed")
 		}),
 		nats.ErrorHandler(func(nc *nats.Conn, sub *nats.Subscription, err error) {
-			logger.Error().Err(err).Msg("NATS error")
+			logger.Nats().Error().Err(err).Msg("NATS error")
 		}),
 	}
 
@@ -61,7 +61,7 @@ func NewClient(cfg *ClientConfig) (*Client, error) {
 		return nil, fmt.Errorf("failed to create JetStream context: %w", err)
 	}
 
-	logger.Info().Str("url", nc.ConnectedUrl()).Msg("NATS connected with JetStream")
+	logger.Nats().Info().Str("url", nc.ConnectedUrl()).Msg("NATS connected with JetStream")
 
 	return &Client{
 		nc:           nc,
@@ -75,10 +75,10 @@ func NewClient(cfg *ClientConfig) (*Client, error) {
 func (c *Client) Close() {
 	if c.nc != nil {
 		if err := c.nc.Drain(); err != nil {
-			logger.Warn().Err(err).Msg("Failed to drain NATS connection")
+			logger.Nats().Warn().Err(err).Msg("Failed to drain NATS connection")
 		}
 		c.nc.Close()
-		logger.Info().Msg("NATS connection closed")
+		logger.Nats().Info().Msg("NATS connection closed")
 	}
 }
 
@@ -143,7 +143,7 @@ func (c *Client) EnsureStreams(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("failed to create stream %s: %w", cfg.Name, err)
 		}
-		logger.Info().Str("stream", cfg.Name).Msg("JetStream stream ready")
+		logger.Nats().Info().Str("stream", cfg.Name).Msg("JetStream stream ready")
 	}
 
 	return nil

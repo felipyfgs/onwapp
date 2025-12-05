@@ -119,12 +119,12 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 			if getGroupInfo != nil {
 				if name, groupErr := getGroupInfo(ctx, sessionId, remoteJid); groupErr == nil && name != "" {
 					groupName = fmt.Sprintf("%s (GROUP)", name)
-					logger.Debug().
+					logger.Chatwoot().Debug().
 						Str("groupJid", remoteJid).
 						Str("groupName", name).
 						Msg("Chatwoot: got group name from WhatsApp")
 				} else if groupErr != nil {
-					logger.Debug().
+					logger.Chatwoot().Debug().
 						Err(groupErr).
 						Str("groupJid", remoteJid).
 						Msg("Chatwoot: failed to get group name, using fallback")
@@ -202,7 +202,7 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 		// If contact was from cache and we got a 404 error, the contact was deleted
 		// Invalidate cache and retry with fresh contact creation
 		if usedCache && core.IsNotFoundError(err) {
-			logger.Info().
+			logger.Chatwoot().Info().
 				Str("cacheKey", cacheKey).
 				Int("contactId", contactID).
 				Msg("Chatwoot: cached contact not found (404), invalidating cache and recreating")
@@ -228,10 +228,10 @@ func (cm *ContactManager) maybeUpdateContactName(ctx context.Context, c *client.
 		// If 404, the contact was deleted - just log at debug level and return
 		// The main flow will handle cache invalidation on next message
 		if core.IsNotFoundError(err) {
-			logger.Debug().Int("contactId", contactID).Msg("Chatwoot: contact not found (404), skipping name update")
+			logger.Chatwoot().Debug().Int("contactId", contactID).Msg("Chatwoot: contact not found (404), skipping name update")
 			return
 		}
-		logger.Debug().Err(err).Int("contactId", contactID).Msg("Chatwoot: failed to get contact for name update")
+		logger.Chatwoot().Debug().Err(err).Int("contactId", contactID).Msg("Chatwoot: failed to get contact for name update")
 		return
 	}
 
@@ -246,9 +246,9 @@ func (cm *ContactManager) maybeUpdateContactName(ctx context.Context, c *client.
 			if _, err := c.UpdateContact(ctx, contactID, map[string]interface{}{
 				"name": pushName,
 			}); err != nil {
-				logger.Debug().Err(err).Int("contactId", contactID).Msg("Chatwoot: failed to update contact name")
+				logger.Chatwoot().Debug().Err(err).Int("contactId", contactID).Msg("Chatwoot: failed to update contact name")
 			} else {
-				logger.Info().
+				logger.Chatwoot().Info().
 					Int("contactId", contactID).
 					Str("oldName", currentName).
 					Str("newName", pushName).
@@ -303,7 +303,7 @@ func (cm *ContactManager) getOrCreateIndividualContact(
 
 	if needsUpdate {
 		if _, err := c.UpdateContact(ctx, contact.ID, updateData); err != nil {
-			logger.Warn().Err(err).
+			logger.Chatwoot().Warn().Err(err).
 				Int("contactId", contact.ID).
 				Msg("Chatwoot: failed to update contact")
 		}
@@ -330,7 +330,7 @@ func (cm *ContactManager) getOrCreateGroupContact(
 		if _, err := c.UpdateContact(ctx, contact.ID, map[string]interface{}{
 			"name": groupName,
 		}); err != nil {
-			logger.Warn().Err(err).
+			logger.Chatwoot().Warn().Err(err).
 				Int("contactId", contact.ID).
 				Msg("Chatwoot: failed to update group name")
 		}

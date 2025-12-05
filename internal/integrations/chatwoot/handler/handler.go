@@ -115,7 +115,7 @@ func (h *Handler) SetConfig(c *gin.Context) {
 
 	cfg, err := h.service.SetConfig(c.Request.Context(), session.ID, session.Session, svcReq)
 	if err != nil {
-		logger.Warn().Err(err).Str("session", sessionId).Msg("Chatwoot: failed to set config")
+		logger.Chatwoot().Warn().Err(err).Str("session", sessionId).Msg("Chatwoot: failed to set config")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -143,7 +143,7 @@ func (h *Handler) GetConfig(c *gin.Context) {
 
 	cfg, err := h.service.GetConfig(c.Request.Context(), session.ID)
 	if err != nil {
-		logger.Warn().Err(err).Str("session", sessionId).Msg("Chatwoot: failed to get config")
+		logger.Chatwoot().Warn().Err(err).Str("session", sessionId).Msg("Chatwoot: failed to get config")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -170,7 +170,7 @@ func (h *Handler) DeleteConfig(c *gin.Context) {
 	}
 
 	if err := h.service.DeleteConfig(c.Request.Context(), session.ID); err != nil {
-		logger.Warn().Err(err).Str("session", sessionId).Msg("Chatwoot: failed to delete config")
+		logger.Chatwoot().Warn().Err(err).Str("session", sessionId).Msg("Chatwoot: failed to delete config")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -212,7 +212,7 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 
 	payload, err := cwservice.ParseWebhookPayload(body)
 	if err != nil {
-		logger.Warn().Err(err).Str("session", sessionId).Msg("Chatwoot: invalid webhook payload")
+		logger.Chatwoot().Warn().Err(err).Str("session", sessionId).Msg("Chatwoot: invalid webhook payload")
 		c.JSON(http.StatusOK, gin.H{"message": "invalid payload"})
 		return
 	}
@@ -227,7 +227,7 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 				go func() {
 					defer cancel()
 					if err := h.handleMessageDeleted(deleteCtx, session, payload); err != nil {
-						logger.Warn().Err(err).Str("session", sessionId).Msg("Chatwoot: failed to delete message from WhatsApp")
+						logger.Chatwoot().Warn().Err(err).Str("session", sessionId).Msg("Chatwoot: failed to delete message from WhatsApp")
 					}
 				}()
 				c.JSON(http.StatusOK, gin.H{"message": "ok"})
@@ -239,7 +239,7 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 		return
 	}
 
-	logger.Debug().
+	logger.Chatwoot().Debug().
 		Str("session", sessionId).
 		Str("event", payload.Event).
 		Int("msgId", payload.ID).
@@ -265,7 +265,7 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 		if h.database != nil && payload.ID > 0 {
 			existingMsg, _ := h.database.Messages.GetByCwMsgId(c.Request.Context(), session.ID, payload.ID)
 			if existingMsg != nil {
-				logger.Debug().
+				logger.Chatwoot().Debug().
 					Str("session", sessionId).
 					Int("cwMsgId", payload.ID).
 					Msg("Chatwoot: skipping duplicate webhook")
@@ -287,7 +287,7 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 
 		chatJid, content, attachments, err := h.service.GetWebhookDataForSending(c.Request.Context(), session.ID, payload)
 		if err != nil {
-			logger.Warn().Err(err).Str("session", sessionId).Int("msgId", payload.ID).Msg("Chatwoot: webhook data extraction failed")
+			logger.Chatwoot().Warn().Err(err).Str("session", sessionId).Int("msgId", payload.ID).Msg("Chatwoot: webhook data extraction failed")
 			c.JSON(http.StatusOK, gin.H{"message": "processing error"})
 			return
 		}
@@ -310,7 +310,7 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 					bgCtx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 					defer cancel()
 					if err := h.sendToWhatsAppBackground(bgCtx, sess, jid, txt, atts, quoted, cwMsgID, convID); err != nil {
-						logger.Warn().Err(err).Str("session", sess.Session).Str("chatJid", jid).Msg("Chatwoot: failed to send to WhatsApp")
+						logger.Chatwoot().Warn().Err(err).Str("session", sess.Session).Str("chatJid", jid).Msg("Chatwoot: failed to send to WhatsApp")
 					}
 				}(session, chatJid, content, attachments, quotedMsg, payload.ID, conversationID)
 			}
@@ -356,7 +356,7 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 			Content:   quotedMsg.Content,
 			IsFromMe:  quotedMsg.FromMe,
 		}
-		logger.Debug().
+		logger.Chatwoot().Debug().
 			Str("recipient", recipient).
 			Str("quoteMessageID", quotedMsg.MsgId).
 			Str("quoteChatJID", quotedMsg.ChatJID).
@@ -366,7 +366,7 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 			Int("cwMsgID", chatwootMsgID).
 			Msg("Chatwoot: sending message with quote")
 	} else {
-		logger.Debug().
+		logger.Chatwoot().Debug().
 			Str("recipient", recipient).
 			Int("cwMsgID", chatwootMsgID).
 			Msg("Chatwoot: sending message without quote")
@@ -376,7 +376,7 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 		if att.DataURL != "" {
 			mediaData, mimeType, err := downloadMedia(att.DataURL)
 			if err != nil {
-				logger.Warn().Err(err).Str("url", att.DataURL).Msg("Chatwoot: failed to download attachment")
+				logger.Chatwoot().Warn().Err(err).Str("url", att.DataURL).Msg("Chatwoot: failed to download attachment")
 				continue
 			}
 
@@ -385,7 +385,7 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 			case "image":
 				resp, err := h.wpp.SendImage(ctx, session.Session, recipient, mediaData, content, mimeType, quoted)
 				if err != nil {
-					logger.Warn().Err(err).Msg("Chatwoot: failed to send image")
+					logger.Chatwoot().Warn().Err(err).Msg("Chatwoot: failed to send image")
 				} else {
 					h.saveOutgoingMessage(ctx, session, chatJid, content, resp.ID, chatwootMsgID, chatwootConvID)
 				}
@@ -394,7 +394,7 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 			case "video":
 				resp, err := h.wpp.SendVideo(ctx, session.Session, recipient, mediaData, content, mimeType, quoted)
 				if err != nil {
-					logger.Warn().Err(err).Msg("Chatwoot: failed to send video")
+					logger.Chatwoot().Warn().Err(err).Msg("Chatwoot: failed to send video")
 				} else {
 					h.saveOutgoingMessage(ctx, session, chatJid, content, resp.ID, chatwootMsgID, chatwootConvID)
 				}
@@ -403,7 +403,7 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 			case "audio":
 				resp, err := h.wpp.SendAudio(ctx, session.Session, recipient, mediaData, mimeType, true, quoted)
 				if err != nil {
-					logger.Warn().Err(err).Msg("Chatwoot: failed to send audio")
+					logger.Chatwoot().Warn().Err(err).Msg("Chatwoot: failed to send audio")
 				} else {
 					h.saveOutgoingMessage(ctx, session, chatJid, "", resp.ID, chatwootMsgID, chatwootConvID)
 				}
@@ -423,7 +423,7 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 				}
 				resp, err := h.wpp.SendDocument(ctx, session.Session, recipient, mediaData, filename, mimeType, quoted)
 				if err != nil {
-					logger.Warn().Err(err).Msg("Chatwoot: failed to send document")
+					logger.Chatwoot().Warn().Err(err).Msg("Chatwoot: failed to send document")
 				} else {
 					h.saveOutgoingMessage(ctx, session, chatJid, content, resp.ID, chatwootMsgID, chatwootConvID)
 				}
@@ -503,7 +503,7 @@ func (h *Handler) enqueueToWhatsApp(ctx context.Context, session *model.Session,
 	}
 
 	if err := h.queueProducer.PublishCWToWA(ctx, session.ID, msgType, queueMsg); err != nil {
-		logger.Warn().
+		logger.Chatwoot().Warn().
 			Err(err).
 			Str("session", session.Session).
 			Str("chatJid", chatJid).
@@ -515,13 +515,13 @@ func (h *Handler) enqueueToWhatsApp(ctx context.Context, session *model.Session,
 			bgCtx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 			defer cancel()
 			if err := h.sendToWhatsAppBackground(bgCtx, session, chatJid, content, attachments, quotedMsg, chatwootMsgID, chatwootConvID); err != nil {
-				logger.Warn().Err(err).Str("session", session.Session).Str("chatJid", chatJid).Msg("Chatwoot: failed to send to WhatsApp")
+				logger.Chatwoot().Warn().Err(err).Str("session", session.Session).Str("chatJid", chatJid).Msg("Chatwoot: failed to send to WhatsApp")
 			}
 		}()
 		return
 	}
 
-	logger.Debug().
+	logger.Chatwoot().Debug().
 		Str("session", session.Session).
 		Str("chatJid", chatJid).
 		Int("cwMsgId", chatwootMsgID).
@@ -565,7 +565,7 @@ func (h *Handler) handleMessageDeleted(ctx context.Context, session *model.Sessi
 	var deleteErrors []error
 	for _, msg := range messages {
 		if _, err := h.wpp.DeleteMessage(ctx, session.Session, msg.ChatJID, msg.MsgId, msg.FromMe); err != nil {
-			logger.Warn().Err(err).Str("messageId", msg.MsgId).Msg("Chatwoot: failed to delete from WhatsApp")
+			logger.Chatwoot().Warn().Err(err).Str("messageId", msg.MsgId).Msg("Chatwoot: failed to delete from WhatsApp")
 			deleteErrors = append(deleteErrors, err)
 			continue
 		}
@@ -761,7 +761,7 @@ func (h *Handler) ResetChatwoot(c *gin.Context) {
 		return
 	}
 
-	logger.Info().
+	logger.Chatwoot().Info().
 		Str("session", sessionId).
 		Int("contactsDeleted", stats.ContactsDeleted).
 		Int("conversationsDeleted", stats.ConversationsDeleted).
@@ -816,7 +816,7 @@ func (h *Handler) ResolveAllConversations(c *gin.Context) {
 		return
 	}
 
-	logger.Info().
+	logger.Chatwoot().Info().
 		Str("session", sessionId).
 		Int("resolved", resolved).
 		Msg("Chatwoot: resolved all conversations")
@@ -1005,7 +1005,7 @@ func (h *Handler) CleanupOrphans(c *gin.Context) {
 
 	total := result.Messages + result.Conversations + result.ContactInboxes
 	if total > 0 {
-		logger.Info().
+		logger.Chatwoot().Info().
 			Str("session", sessionId).
 			Int("messages", result.Messages).
 			Int("conversations", result.Conversations).
@@ -1137,7 +1137,7 @@ func (h *Handler) markMessagesAsRead(ctx context.Context, session *model.Session
 	// Get unread incoming messages from this chat (limit 50 to avoid huge batches)
 	unreadMsgs, err := h.database.Messages.GetUnreadIncomingByChat(ctx, session.ID, chatJid, 50)
 	if err != nil {
-		logger.Debug().Err(err).Str("session", session.Session).Str("chatJid", chatJid).Msg("Chatwoot: failed to get unread messages")
+		logger.Chatwoot().Debug().Err(err).Str("session", session.Session).Str("chatJid", chatJid).Msg("Chatwoot: failed to get unread messages")
 		return
 	}
 
@@ -1156,18 +1156,18 @@ func (h *Handler) markMessagesAsRead(ctx context.Context, session *model.Session
 
 	// Send read receipt to WhatsApp
 	if markErr := h.wpp.MarkRead(ctx, session.Session, phone, msgIds); markErr != nil {
-		logger.Debug().Err(markErr).Str("session", session.Session).Str("chatJid", chatJid).Int("count", len(msgIds)).Msg("Chatwoot: failed to send read receipts to WhatsApp")
+		logger.Chatwoot().Debug().Err(markErr).Str("session", session.Session).Str("chatJid", chatJid).Int("count", len(msgIds)).Msg("Chatwoot: failed to send read receipts to WhatsApp")
 		return
 	}
 
 	// Mark messages as read in database
 	affected, dbErr := h.database.Messages.MarkAsReadByAgent(ctx, session.ID, msgIds)
 	if dbErr != nil {
-		logger.Debug().Err(dbErr).Str("session", session.Session).Msg("Chatwoot: failed to mark messages as read in database")
+		logger.Chatwoot().Debug().Err(dbErr).Str("session", session.Session).Msg("Chatwoot: failed to mark messages as read in database")
 		return
 	}
 
-	logger.Debug().
+	logger.Chatwoot().Debug().
 		Str("session", session.Session).
 		Str("chatJid", chatJid).
 		Int64("marked", affected).

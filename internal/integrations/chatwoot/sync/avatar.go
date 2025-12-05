@@ -84,7 +84,7 @@ type avatarJob struct {
 func (u *AvatarUpdater) runAvatarWorkers(cfg *core.Config) {
 	db, err := openChatwootDB(cfg)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Chatwoot avatar: failed to connect to database")
+		logger.Chatwoot().Warn().Err(err).Msg("Chatwoot avatar: failed to connect to database")
 		return
 	}
 	defer db.Close()
@@ -94,7 +94,7 @@ func (u *AvatarUpdater) runAvatarWorkers(cfg *core.Config) {
 
 	contacts, err := repo.GetContactsWithoutAvatar(ctx)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Chatwoot avatar: failed to fetch contacts")
+		logger.Chatwoot().Warn().Err(err).Msg("Chatwoot avatar: failed to fetch contacts")
 		return
 	}
 
@@ -102,7 +102,7 @@ func (u *AvatarUpdater) runAvatarWorkers(cfg *core.Config) {
 		return
 	}
 
-	logger.Debug().Int("contacts", len(contacts)).Msg("Chatwoot avatar: starting background update")
+	logger.Chatwoot().Debug().Int("contacts", len(contacts)).Msg("Chatwoot avatar: starting background update")
 
 	// Create job channel and worker pool
 	jobs := make(chan avatarJob, len(contacts))
@@ -126,7 +126,7 @@ func (u *AvatarUpdater) runAvatarWorkers(cfg *core.Config) {
 	// Wait for completion
 	wg.Wait()
 
-	logger.Debug().Int("contacts", len(contacts)).Msg("Chatwoot avatar: background update completed")
+	logger.Chatwoot().Debug().Int("contacts", len(contacts)).Msg("Chatwoot avatar: background update completed")
 }
 
 // avatarWorker processes avatar update jobs

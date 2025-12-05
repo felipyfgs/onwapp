@@ -3,6 +3,7 @@ package logger
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"onwapp/internal/config"
+	"onwapp/internal/version"
 )
 
 // Format aliases for convenience
@@ -39,8 +41,48 @@ func Init(level, format string) {
 	if format == "console" || format == string(Console) {
 		writer := zerolog.ConsoleWriter{
 			Out:           os.Stdout,
-			TimeFormat:    "15:04:05",
-			FieldsExclude: []string{"raw"},
+			TimeFormat:    "2006-01-02 15:04:05",
+			FieldsExclude: []string{"raw", "v", "module", "sublogger"},
+			PartsOrder:    []string{"time", "level", "message"},
+		}
+		writer.FormatLevel = func(i interface{}) string {
+			var l string
+			var color int
+			if ll, ok := i.(string); ok {
+				switch ll {
+				case "debug":
+					l, color = "DEBUG", 33 // yellow
+				case "info":
+					l, color = "INFO ", 32 // green
+				case "warn":
+					l, color = "WARN ", 33 // yellow
+				case "error":
+					l, color = "ERROR", 31 // red
+				case "fatal":
+					l, color = "FATAL", 31 // red
+				default:
+					l, color = "???  ", 0
+				}
+			}
+			return fmt.Sprintf("\x1b[%dm%s\x1b[0m \x1b[90m[v%s]\x1b[0m", color, l, version.Short())
+		}
+		writer.FormatPrepare = func(evt map[string]interface{}) error {
+			module, _ := evt["module"].(string)
+			sublogger, _ := evt["sublogger"].(string)
+			if module != "" || sublogger != "" {
+				tag := module
+				if sublogger != "" {
+					if tag != "" {
+						tag = tag + "/" + sublogger
+					} else {
+						tag = sublogger
+					}
+				}
+				if msg, ok := evt["message"].(string); ok {
+					evt["message"] = fmt.Sprintf("\x1b[36m[%s]\x1b[0m %s", tag, msg)
+				}
+			}
+			return nil
 		}
 		writer.FormatExtra = func(evt map[string]interface{}, buf *bytes.Buffer) error {
 			if raw, ok := evt["raw"]; ok {
@@ -56,7 +98,7 @@ func Init(level, format string) {
 		output = writer
 	}
 
-	Log = zerolog.New(output).With().Timestamp().Logger()
+	Log = zerolog.New(output).With().Timestamp().Str("v", version.Short()).Logger()
 	log.Logger = Log
 
 	gin.SetMode(gin.ReleaseMode)
@@ -148,3 +190,24 @@ func Error() *zerolog.Event {
 func Fatal() *zerolog.Event {
 	return Log.Fatal()
 }
+
+// Module returns a logger with module context
+func Module(name string) zerolog.Logger {
+	return Log.With().Str("module", name).Logger()
+}
+
+// ModuleLevel returns a logger with module context and specific level (filters verbose logs)
+func ModuleLevel(name string, level zerolog.Level) zerolog.Logger {
+	return Log.With().Str("module", name).Logger().Level(level)
+}
+
+// Pre-configured module loggers
+func Core() *zerolog.Logger     { l := Module("CORE"); return &l }
+func DB() *zerolog.Logger       { l := Module("DB"); return &l }
+func Storage() *zerolog.Logger  { l := Module("STORAGE"); return &l }
+func Nats() *zerolog.Logger     { l := Module("NATS"); return &l }
+func Session() *zerolog.Logger  { l := Module("SESSION"); return &l }
+func WPP() *zerolog.Logger      { l := Module("WPP"); return &l }
+func Chatwoot() *zerolog.Logger { l := Module("CHATWOOT"); return &l }
+func API() *zerolog.Logger      { l := Module("API"); return &l }
+func Queue() *zerolog.Logger    { l := Module("QUEUE"); return &l }

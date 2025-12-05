@@ -159,7 +159,7 @@ func RegisterQueueHandlers(queueSvc *queue.Service, chatwootSvc *Service) {
 			return fmt.Errorf("failed to unmarshal WAToCWMessage: %w", err)
 		}
 
-		logger.Debug().
+		logger.Chatwoot().Debug().
 			Str("sessionId", msg.SessionID).
 			Str("messageId", data.MessageID).
 			Msg("Processing incoming message from queue")
@@ -174,7 +174,7 @@ func RegisterQueueHandlers(queueSvc *queue.Service, chatwootSvc *Service) {
 			return fmt.Errorf("failed to unmarshal WAToCWMessage: %w", err)
 		}
 
-		logger.Debug().
+		logger.Chatwoot().Debug().
 			Str("sessionId", msg.SessionID).
 			Str("messageId", data.MessageID).
 			Msg("Processing outgoing message from queue")
@@ -189,7 +189,7 @@ func RegisterQueueHandlers(queueSvc *queue.Service, chatwootSvc *Service) {
 			return fmt.Errorf("failed to unmarshal WAToCWReactionMessage: %w", err)
 		}
 
-		logger.Debug().
+		logger.Chatwoot().Debug().
 			Str("sessionId", msg.SessionID).
 			Str("emoji", data.Emoji).
 			Str("targetMsgId", data.TargetMsgID).
@@ -205,7 +205,7 @@ func RegisterQueueHandlers(queueSvc *queue.Service, chatwootSvc *Service) {
 			return fmt.Errorf("failed to unmarshal WAToCWDeleteMessage: %w", err)
 		}
 
-		logger.Debug().
+		logger.Chatwoot().Debug().
 			Str("sessionId", msg.SessionID).
 			Str("deletedMsgId", data.DeletedMsgID).
 			Msg("Processing message deletion from queue")
@@ -213,7 +213,7 @@ func RegisterQueueHandlers(queueSvc *queue.Service, chatwootSvc *Service) {
 		return chatwootSvc.ProcessDeleteFromQueue(ctx, msg.SessionID, &data)
 	})
 
-	logger.Info().Msg("Registered WhatsApp -> Chatwoot queue handlers")
+	logger.Chatwoot().Info().Msg("Registered WhatsApp -> Chatwoot queue handlers")
 }
 
 // RegisterCWToWAQueueHandlers registers queue handlers for Chatwoot -> WhatsApp messages
@@ -233,14 +233,14 @@ func RegisterCWToWAQueueHandlers(queueSvc *queue.Service, handler CWToWAHandler)
 		// DO NOT release the lock - let it expire naturally to block redeliveries
 		cacheKey := fmt.Sprintf("cw2wa:text:%s:%d", msg.SessionID, data.ChatwootMsgID)
 		if !TryAcquireCWToWAProcessing(cacheKey) {
-			logger.Debug().
+			logger.Chatwoot().Debug().
 				Str("sessionId", msg.SessionID).
 				Int("cwMsgId", data.ChatwootMsgID).
 				Msg("Chatwoot->WhatsApp: skipping duplicate text (already processed or processing)")
 			return nil
 		}
 
-		logger.Debug().
+		logger.Chatwoot().Debug().
 			Str("sessionId", msg.SessionID).
 			Str("chatJid", data.ChatJID).
 			Int("cwMsgId", data.ChatwootMsgID).
@@ -260,7 +260,7 @@ func RegisterCWToWAQueueHandlers(queueSvc *queue.Service, handler CWToWAHandler)
 		// DO NOT release the lock - let it expire naturally to block redeliveries
 		cacheKey := fmt.Sprintf("cw2wa:media:%s:%d", msg.SessionID, data.ChatwootMsgID)
 		if !TryAcquireCWToWAProcessing(cacheKey) {
-			logger.Debug().
+			logger.Chatwoot().Debug().
 				Str("sessionId", msg.SessionID).
 				Int("cwMsgId", data.ChatwootMsgID).
 				Int("attachments", len(data.Attachments)).
@@ -268,7 +268,7 @@ func RegisterCWToWAQueueHandlers(queueSvc *queue.Service, handler CWToWAHandler)
 			return nil
 		}
 
-		logger.Debug().
+		logger.Chatwoot().Debug().
 			Str("sessionId", msg.SessionID).
 			Str("chatJid", data.ChatJID).
 			Int("attachments", len(data.Attachments)).
@@ -277,7 +277,7 @@ func RegisterCWToWAQueueHandlers(queueSvc *queue.Service, handler CWToWAHandler)
 		return handler.SendToWhatsAppFromQueue(ctx, msg.SessionID, &data)
 	})
 
-	logger.Info().Msg("Registered Chatwoot -> WhatsApp queue handlers")
+	logger.Chatwoot().Info().Msg("Registered Chatwoot -> WhatsApp queue handlers")
 }
 
 // CWToWAHandler interface for handling Chatwoot -> WhatsApp messages
