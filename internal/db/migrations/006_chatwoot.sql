@@ -1,11 +1,11 @@
 -- Migration: 006_chatwoot.sql
--- Table: zpChatwoot
+-- Table: onZapChatwoot
 -- Description: Chatwoot CRM integration configuration per session
--- Dependencies: zpSessions (002)
+-- Dependencies: onZapSession (002)
 
-CREATE TABLE IF NOT EXISTS "zpChatwoot" (
+CREATE TABLE IF NOT EXISTS "onZapChatwoot" (
     "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "sessionId" UUID NOT NULL UNIQUE REFERENCES "zpSessions"("id") ON DELETE CASCADE,
+    "sessionId" UUID NOT NULL UNIQUE REFERENCES "onZapSession"("id") ON DELETE CASCADE,
     "enabled" BOOLEAN NOT NULL DEFAULT FALSE,
     "url" TEXT NOT NULL DEFAULT '',
     "token" TEXT NOT NULL DEFAULT '',
@@ -32,6 +32,6 @@ CREATE TABLE IF NOT EXISTS "zpChatwoot" (
     "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-COMMENT ON TABLE "zpChatwoot" IS 'Chatwoot CRM integration configuration per session';
-COMMENT ON COLUMN "zpChatwoot"."mergeBrPhones" IS 'Normalize Brazilian phone numbers (9th digit)';
-COMMENT ON COLUMN "zpChatwoot"."syncDays" IS 'Number of days to sync history (0 = disabled)';
+COMMENT ON TABLE "onZapChatwoot" IS 'Chatwoot CRM integration configuration per session';
+COMMENT ON COLUMN "onZapChatwoot"."mergeBrPhones" IS 'Normalize Brazilian phone numbers (9th digit)';
+COMMENT ON COLUMN "onZapChatwoot"."syncDays" IS 'Number of days to sync history (0 = disabled)';

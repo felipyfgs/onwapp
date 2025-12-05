@@ -25,14 +25,14 @@ func (r *SessionRepository) Create(ctx context.Context, sessionId string, apiKey
 
 	if apiKey != "" {
 		query = `
-			INSERT INTO "zpSessions" ("session", "apiKey") 
+			INSERT INTO "onZapSession" ("session", "apiKey") 
 			VALUES ($1, $2) 
 			ON CONFLICT ("session") DO UPDATE SET "updatedAt" = CURRENT_TIMESTAMP 
 			RETURNING ` + sessionSelectFields
 		args = []interface{}{sessionId, apiKey}
 	} else {
 		query = `
-			INSERT INTO "zpSessions" ("session") 
+			INSERT INTO "onZapSession" ("session") 
 			VALUES ($1) 
 			ON CONFLICT ("session") DO UPDATE SET "updatedAt" = CURRENT_TIMESTAMP 
 			RETURNING ` + sessionSelectFields
@@ -49,7 +49,7 @@ func (r *SessionRepository) Create(ctx context.Context, sessionId string, apiKey
 
 func (r *SessionRepository) GetByID(ctx context.Context, id string) (*model.SessionRecord, error) {
 	var s model.SessionRecord
-	err := r.pool.QueryRow(ctx, `SELECT `+sessionSelectFields+` FROM "zpSessions" WHERE "id" = $1`, id).
+	err := r.pool.QueryRow(ctx, `SELECT `+sessionSelectFields+` FROM "onZapSession" WHERE "id" = $1`, id).
 		Scan(&s.ID, &s.Session, &s.DeviceJID, &s.Phone, &s.Status, &s.ApiKey, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
 		return nil, err
@@ -59,7 +59,7 @@ func (r *SessionRepository) GetByID(ctx context.Context, id string) (*model.Sess
 
 func (r *SessionRepository) GetBySessionId(ctx context.Context, sessionId string) (*model.SessionRecord, error) {
 	var s model.SessionRecord
-	err := r.pool.QueryRow(ctx, `SELECT `+sessionSelectFields+` FROM "zpSessions" WHERE "session" = $1`, sessionId).
+	err := r.pool.QueryRow(ctx, `SELECT `+sessionSelectFields+` FROM "onZapSession" WHERE "session" = $1`, sessionId).
 		Scan(&s.ID, &s.Session, &s.DeviceJID, &s.Phone, &s.Status, &s.ApiKey, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
 		return nil, err
@@ -69,7 +69,7 @@ func (r *SessionRepository) GetBySessionId(ctx context.Context, sessionId string
 
 func (r *SessionRepository) GetByApiKey(ctx context.Context, apiKey string) (*model.SessionRecord, error) {
 	var s model.SessionRecord
-	err := r.pool.QueryRow(ctx, `SELECT `+sessionSelectFields+` FROM "zpSessions" WHERE "apiKey" = $1`, apiKey).
+	err := r.pool.QueryRow(ctx, `SELECT `+sessionSelectFields+` FROM "onZapSession" WHERE "apiKey" = $1`, apiKey).
 		Scan(&s.ID, &s.Session, &s.DeviceJID, &s.Phone, &s.Status, &s.ApiKey, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
 		return nil, err
@@ -84,20 +84,20 @@ func (r *SessionRepository) GetByName(ctx context.Context, name string) (*model.
 
 func (r *SessionRepository) UpdateJID(ctx context.Context, sessionId, jid, phone string) error {
 	_, err := r.pool.Exec(ctx, `
-		UPDATE "zpSessions" SET "deviceJid" = $1, "phone" = $2, "updatedAt" = CURRENT_TIMESTAMP 
+		UPDATE "onZapSession" SET "deviceJid" = $1, "phone" = $2, "updatedAt" = CURRENT_TIMESTAMP 
 		WHERE "session" = $3`, jid, phone, sessionId)
 	return err
 }
 
 func (r *SessionRepository) UpdateStatus(ctx context.Context, sessionId, status string) error {
 	_, err := r.pool.Exec(ctx, `
-		UPDATE "zpSessions" SET "status" = $1, "updatedAt" = CURRENT_TIMESTAMP 
+		UPDATE "onZapSession" SET "status" = $1, "updatedAt" = CURRENT_TIMESTAMP 
 		WHERE "session" = $2`, status, sessionId)
 	return err
 }
 
 func (r *SessionRepository) Delete(ctx context.Context, sessionId string) error {
-	_, err := r.pool.Exec(ctx, `DELETE FROM "zpSessions" WHERE "session" = $1`, sessionId)
+	_, err := r.pool.Exec(ctx, `DELETE FROM "onZapSession" WHERE "session" = $1`, sessionId)
 	return err
 }
 
@@ -106,7 +106,7 @@ func (r *SessionRepository) GetAll(ctx context.Context) ([]model.SessionRecord, 
 }
 
 func (r *SessionRepository) GetAllPaginated(ctx context.Context, limit, offset int) ([]model.SessionRecord, error) {
-	baseQuery := `SELECT ` + sessionSelectFields + ` FROM "zpSessions" ORDER BY "id"`
+	baseQuery := `SELECT ` + sessionSelectFields + ` FROM "onZapSession" ORDER BY "id"`
 
 	if limit > 0 {
 		rows, err := r.pool.Query(ctx, baseQuery+` LIMIT $1 OFFSET $2`, limit, offset)
@@ -127,7 +127,7 @@ func (r *SessionRepository) GetAllPaginated(ctx context.Context, limit, offset i
 
 func (r *SessionRepository) Count(ctx context.Context) (int, error) {
 	var count int
-	err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM "zpSessions"`).Scan(&count)
+	err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM "onZapSession"`).Scan(&count)
 	return count, err
 }
 

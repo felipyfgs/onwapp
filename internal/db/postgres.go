@@ -28,8 +28,6 @@ type Database struct {
 	MessageUpdates *repository.MessageUpdateRepository
 	Media          *repository.MediaRepository
 	Chats          *repository.ChatRepository
-	Stickers       *repository.StickerRepository
-	HistorySync    *repository.HistorySyncRepository
 }
 
 func New(ctx context.Context, databaseURL string) (*Database, error) {
@@ -72,8 +70,6 @@ func New(ctx context.Context, databaseURL string) (*Database, error) {
 		MessageUpdates: repository.NewMessageUpdateRepository(pool),
 		Media:          repository.NewMediaRepository(pool),
 		Chats:          repository.NewChatRepository(pool),
-		Stickers:       repository.NewStickerRepository(pool),
-		HistorySync:    repository.NewHistorySyncRepository(pool),
 	}, nil
 }
 

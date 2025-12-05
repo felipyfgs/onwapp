@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -63,56 +62,6 @@ func (h *HistoryHandler) RequestHistorySync(c *gin.Context) {
 		Message: "history sync request sent",
 		ID:      &resp.ID,
 	})
-}
-
-// GetSyncProgress godoc
-// @Summary Get history sync progress
-// @Description Get the current progress of history sync operations
-// @Tags         history
-// @Produce json
-// @Param        session   path      string  true  "Session ID"
-// @Success 200 {array} dto.SyncProgressResponse
-// @Failure 404 {object} dto.ErrorResponse
-// @Failure 500 {object} dto.ErrorResponse
-// @Security Authorization
-// @Router       /{session}/history/progress [get]
-func (h *HistoryHandler) GetSyncProgress(c *gin.Context) {
-	sessionId := c.Param("session")
-
-	session, err := h.sessionService.Get(sessionId)
-	if err != nil {
-		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "session not found"})
-		return
-	}
-
-	progress, err := h.historySyncService.GetSyncProgress(c.Request.Context(), session.ID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
-		return
-	}
-
-	response := make([]dto.SyncProgressResponse, 0, len(progress))
-	for _, p := range progress {
-		resp := dto.SyncProgressResponse{
-			SyncType:          string(p.SyncType),
-			Status:            string(p.Status),
-			Progress:          p.Progress,
-			ProcessedChunks:   p.ProcessedChunks,
-			TotalMessages:     p.TotalMessages,
-			ProcessedMessages: p.ProcessedMessages,
-			TotalChats:        p.TotalChats,
-			ProcessedChats:    p.ProcessedChats,
-			Errors:            p.Errors,
-			StartedAt:         p.StartedAt,
-			CompletedAt:       p.CompletedAt,
-		}
-		if p.TotalChunks != nil {
-			resp.TotalChunks = *p.TotalChunks
-		}
-		response = append(response, resp)
-	}
-
-	c.JSON(http.StatusOK, response)
 }
 
 // GetUnreadChats godoc
@@ -203,109 +152,4 @@ func (h *HistoryHandler) GetChatInfo(c *gin.Context) {
 		Suspended:           chat.Suspended,
 		Locked:              chat.Locked,
 	})
-}
-
-// GetGroupPastParticipants godoc
-// @Summary Get group past participants
-// @Description Get past participants of a group from history sync data
-// @Tags         history
-// @Produce json
-// @Param        session   path      string  true  "Session ID"
-// @Param        groupId  query string true "Group JID"
-// @Success 200 {array} dto.PastParticipantResponse
-// @Failure 404 {object} dto.ErrorResponse
-// @Failure 500 {object} dto.ErrorResponse
-// @Security Authorization
-// @Router       /{session}/history/group/participants/past [get]
-func (h *HistoryHandler) GetGroupPastParticipants(c *gin.Context) {
-	sessionId := c.Param("session")
-	groupID := c.Query("groupId")
-	if groupID == "" {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "groupId query parameter is required"})
-		return
-	}
-
-	session, err := h.sessionService.Get(sessionId)
-	if err != nil {
-		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "session not found"})
-		return
-	}
-
-	participants, err := h.historySyncService.GetGroupPastParticipants(c.Request.Context(), session.ID, groupID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
-		return
-	}
-
-	response := make([]dto.PastParticipantResponse, 0, len(participants))
-	for _, p := range participants {
-		reason := "LEFT"
-		if p.LeaveReason == 1 {
-			reason = "REMOVED"
-		}
-		response = append(response, dto.PastParticipantResponse{
-			UserJID:        p.UserJID,
-			LeaveReason:    reason,
-			LeaveTimestamp: p.LeaveTimestamp,
-		})
-	}
-
-	c.JSON(http.StatusOK, response)
-}
-
-// GetTopStickers godoc
-// @Summary Get top stickers
-// @Description Get most used stickers from history sync data
-// @Tags         history
-// @Produce json
-// @Param        session   path      string  true  "Session ID"
-// @Param limit query int false "Number of stickers to return" default(20)
-// @Success 200 {array} dto.StickerResponse
-// @Failure 404 {object} dto.ErrorResponse
-// @Failure 500 {object} dto.ErrorResponse
-// @Security Authorization
-// @Router       /{session}/history/stickers [get]
-func (h *HistoryHandler) GetTopStickers(c *gin.Context) {
-	sessionId := c.Param("session")
-	limit := 20
-	if l := c.Query("limit"); l != "" {
-		if parsed, err := parseInt(l); err == nil && parsed > 0 {
-			limit = parsed
-		}
-	}
-
-	session, err := h.sessionService.Get(sessionId)
-	if err != nil {
-		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "session not found"})
-		return
-	}
-
-	stickers, err := h.historySyncService.GetTopStickers(c.Request.Context(), session.ID, limit)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
-		return
-	}
-
-	response := make([]dto.StickerResponse, 0, len(stickers))
-	for _, s := range stickers {
-		response = append(response, dto.StickerResponse{
-			DirectPath: s.WADirectPath,
-			MimeType:   s.MimeType,
-			FileSize:   s.FileSize,
-			Width:      s.Width,
-			Height:     s.Height,
-			IsLottie:   s.IsLottie,
-			IsAvatar:   s.IsAvatar,
-			Weight:     s.Weight,
-			LastUsedAt: s.LastUsedAt,
-		})
-	}
-
-	c.JSON(http.StatusOK, response)
-}
-
-func parseInt(s string) (int, error) {
-	var i int
-	_, err := fmt.Sscanf(s, "%d", &i)
-	return i, err
 }

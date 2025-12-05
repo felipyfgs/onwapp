@@ -254,11 +254,8 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 		// History
 		if h.History != nil {
 			session.POST("/history/sync", h.History.RequestHistorySync)
-			session.GET("/history/progress", h.History.GetSyncProgress)
 			session.GET("/history/chats/unread", h.History.GetUnreadChats)
 			session.GET("/history/chat", h.History.GetChatInfo)
-			session.GET("/history/group/participants/past", h.History.GetGroupPastParticipants)
-			session.GET("/history/stickers", h.History.GetTopStickers)
 		}
 
 		// Webhooks

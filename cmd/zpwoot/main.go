@@ -128,11 +128,7 @@ func main() {
 	}
 
 	// Initialize History Sync service
-	historySyncService := service.NewHistorySyncService(
-		database.Chats,
-		database.Stickers,
-		database.HistorySync,
-	)
+	historySyncService := service.NewHistorySyncService(database.Chats)
 	sessionService.SetHistorySyncService(historySyncService)
 
 	// Initialize Queue service (NATS JetStream)

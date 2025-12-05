@@ -23,7 +23,7 @@ func NewConfigRepository(pool *pgxpool.Pool) *ConfigRepository {
 // Upsert creates or updates a Chatwoot configuration
 func (r *ConfigRepository) Upsert(ctx context.Context, cfg *core.Config) (*core.Config, error) {
 	query := `
-		INSERT INTO "zpChatwoot" (
+		INSERT INTO "onZapChatwoot" (
 			"sessionId", "enabled", "url", "token", "account",
 			"inboxId", "inbox", "signAgent", "signSeparator",
 			"autoReopen", "startPending", "mergeBrPhones",
@@ -85,7 +85,7 @@ func (r *ConfigRepository) GetBySessionID(ctx context.Context, sessionID string)
 			   "ignoreChats", "autoCreate", "webhookUrl",
 			   "chatwootDbHost", "chatwootDbPort", "chatwootDbUser", "chatwootDbPass", "chatwootDbName",
 			   "createdAt", "updatedAt"
-		FROM "zpChatwoot"
+		FROM "onZapChatwoot"
 		WHERE "sessionId" = $1
 	`
 
@@ -124,14 +124,14 @@ func (r *ConfigRepository) GetEnabledBySessionID(ctx context.Context, sessionID 
 
 // Delete removes a configuration by session ID
 func (r *ConfigRepository) Delete(ctx context.Context, sessionID string) error {
-	query := `DELETE FROM "zpChatwoot" WHERE "sessionId" = $1`
+	query := `DELETE FROM "onZapChatwoot" WHERE "sessionId" = $1`
 	_, err := r.pool.Exec(ctx, query, sessionID)
 	return err
 }
 
 // UpdateInboxID updates the inbox ID for a configuration
 func (r *ConfigRepository) UpdateInboxID(ctx context.Context, sessionID string, inboxID int) error {
-	query := `UPDATE "zpChatwoot" SET "inboxId" = $1, "updatedAt" = $2 WHERE "sessionId" = $3`
+	query := `UPDATE "onZapChatwoot" SET "inboxId" = $1, "updatedAt" = $2 WHERE "sessionId" = $3`
 	_, err := r.pool.Exec(ctx, query, inboxID, time.Now(), sessionID)
 	return err
 }

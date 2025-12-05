@@ -1,12 +1,12 @@
 -- Migration: 008_chats.sql
--- Table: zpChats
+-- Table: onZapChat
 -- Description: Extended chat metadata from History Sync
--- Dependencies: zpSessions (002)
+-- Dependencies: onZapSession (002)
 -- Note: Complements whatsmeow_chat_settings (muted, pinned, archived)
 
-CREATE TABLE IF NOT EXISTS "zpChats" (
+CREATE TABLE IF NOT EXISTS "onZapChat" (
     "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "sessionId" UUID NOT NULL REFERENCES "zpSessions"("id") ON DELETE CASCADE,
+    "sessionId" UUID NOT NULL REFERENCES "onZapSession"("id") ON DELETE CASCADE,
     "chatJid" VARCHAR(255) NOT NULL,
     
     -- Display Info
@@ -46,11 +46,11 @@ CREATE TABLE IF NOT EXISTS "zpChats" (
     "syncedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
-    CONSTRAINT "zpChats_session_chat_unique" UNIQUE ("sessionId", "chatJid")
+    CONSTRAINT "onZapChat_session_chat_unique" UNIQUE ("sessionId", "chatJid")
 );
 
-COMMENT ON TABLE "zpChats" IS 'Extended chat metadata from History Sync';
-COMMENT ON COLUMN "zpChats"."ephemeralExpiration" IS 'Disappearing message timer in seconds (0=off)';
-COMMENT ON COLUMN "zpChats"."disappearingInitiator" IS '0=unknown, 1=me, 2=them';
-COMMENT ON COLUMN "zpChats"."limitSharing" IS 'Privacy: Only contacts can see profile/status';
-COMMENT ON COLUMN "zpChats"."pHash" IS 'Participant hash - changes when group membership changes';
+COMMENT ON TABLE "onZapChat" IS 'Extended chat metadata from History Sync';
+COMMENT ON COLUMN "onZapChat"."ephemeralExpiration" IS 'Disappearing message timer in seconds (0=off)';
+COMMENT ON COLUMN "onZapChat"."disappearingInitiator" IS '0=unknown, 1=me, 2=them';
+COMMENT ON COLUMN "onZapChat"."limitSharing" IS 'Privacy: Only contacts can see profile/status';
+COMMENT ON COLUMN "onZapChat"."pHash" IS 'Participant hash - changes when group membership changes';

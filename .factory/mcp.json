@@ -5,7 +5,7 @@
       "command": "npx",
       "args": ["-y", "@upstash/context7-mcp"]
     },
-    "zpwoot-db-dev": {
+    "zpwoot-db": {
       "type": "stdio",
       "command": "npx",
       "args": ["-y", "mcp-postgres-server"],

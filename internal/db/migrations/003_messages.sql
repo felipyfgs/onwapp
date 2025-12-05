@@ -1,11 +1,11 @@
 -- Migration: 003_messages.sql
--- Table: zpMessages
+-- Table: onZapMessage
 -- Description: WhatsApp messages with full metadata and delivery tracking
--- Dependencies: zpSessions (002)
+-- Dependencies: onZapSession (002)
 
-CREATE TABLE IF NOT EXISTS "zpMessages" (
+CREATE TABLE IF NOT EXISTS "onZapMessage" (
     "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "sessionId" UUID NOT NULL REFERENCES "zpSessions"("id") ON DELETE CASCADE,
+    "sessionId" UUID NOT NULL REFERENCES "onZapSession"("id") ON DELETE CASCADE,
     "msgId" VARCHAR(255) NOT NULL,
     "chatJid" VARCHAR(255) NOT NULL,
     "senderJid" VARCHAR(255),
@@ -57,17 +57,17 @@ CREATE TABLE IF NOT EXISTS "zpMessages" (
     "rawEvent" JSONB,
     "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
-    CONSTRAINT "zpMessages_sessionId_msgId_unique" UNIQUE ("sessionId", "msgId")
+    CONSTRAINT "onZapMessage_sessionId_msgId_unique" UNIQUE ("sessionId", "msgId")
 );
 
-COMMENT ON TABLE "zpMessages" IS 'WhatsApp messages with full metadata and delivery tracking';
-COMMENT ON COLUMN "zpMessages"."serverId" IS 'WhatsApp server sequence ID for precise ordering';
-COMMENT ON COLUMN "zpMessages"."verifiedName" IS 'Business verified name (if sender is verified)';
-COMMENT ON COLUMN "zpMessages"."status" IS 'Delivery: pending, sent, delivered, read, played, failed';
-COMMENT ON COLUMN "zpMessages"."msgOrderID" IS 'Server-assigned sequence for precise History Sync ordering';
-COMMENT ON COLUMN "zpMessages"."stubType" IS 'System message type (1=revoke, 28=add, 31=remove, 132=delete)';
-COMMENT ON COLUMN "zpMessages"."stubParams" IS 'Parameters for system messages (JIDs array)';
-COMMENT ON COLUMN "zpMessages"."messageSecret" IS 'Decryption key for view-once messages';
-COMMENT ON COLUMN "zpMessages"."revokeTimestamp" IS 'When message was deleted for everyone';
-COMMENT ON COLUMN "zpMessages"."expiresAt" IS 'Expiration time for ephemeral/status messages';
-COMMENT ON COLUMN "zpMessages"."broadcast" IS 'True for broadcast list messages';
+COMMENT ON TABLE "onZapMessage" IS 'WhatsApp messages with full metadata and delivery tracking';
+COMMENT ON COLUMN "onZapMessage"."serverId" IS 'WhatsApp server sequence ID for precise ordering';
+COMMENT ON COLUMN "onZapMessage"."verifiedName" IS 'Business verified name (if sender is verified)';
+COMMENT ON COLUMN "onZapMessage"."status" IS 'Delivery: pending, sent, delivered, read, played, failed';
+COMMENT ON COLUMN "onZapMessage"."msgOrderID" IS 'Server-assigned sequence for precise History Sync ordering';
+COMMENT ON COLUMN "onZapMessage"."stubType" IS 'System message type (1=revoke, 28=add, 31=remove, 132=delete)';
+COMMENT ON COLUMN "onZapMessage"."stubParams" IS 'Parameters for system messages (JIDs array)';
+COMMENT ON COLUMN "onZapMessage"."messageSecret" IS 'Decryption key for view-once messages';
+COMMENT ON COLUMN "onZapMessage"."revokeTimestamp" IS 'When message was deleted for everyone';
+COMMENT ON COLUMN "onZapMessage"."expiresAt" IS 'Expiration time for ephemeral/status messages';
+COMMENT ON COLUMN "onZapMessage"."broadcast" IS 'True for broadcast list messages';
