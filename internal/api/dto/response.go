@@ -176,6 +176,27 @@ type SetPictureResponse struct {
 	PictureID string `json:"pictureId" example:"abc123"`
 }
 
+// Settings responses
+
+type SettingsResponse struct {
+	ID                      int64  `json:"id"`
+	SessionID               int64  `json:"sessionId"`
+	AlwaysOnline            bool   `json:"alwaysOnline" example:"false"`
+	AutoRejectCalls         bool   `json:"autoRejectCalls" example:"false"`
+	SyncHistory             bool   `json:"syncHistory" example:"true"`
+	LastSeen                string `json:"lastSeen" example:"all"`
+	Online                  string `json:"online" example:"all"`
+	ProfilePhoto            string `json:"profilePhoto" example:"all"`
+	Status                  string `json:"status" example:"all"`
+	ReadReceipts            string `json:"readReceipts" example:"all"`
+	GroupAdd                string `json:"groupAdd" example:"all"`
+	CallAdd                 string `json:"callAdd" example:"all"`
+	DefaultDisappearingTimer string `json:"defaultDisappearingTimer" example:"off"`
+	PrivacySyncedAt         string `json:"privacySyncedAt,omitempty"`
+	CreatedAt               string `json:"createdAt"`
+	UpdatedAt               string `json:"updatedAt"`
+}
+
 // Chat responses
 
 type ChatActionResponse struct {

@@ -28,7 +28,7 @@ func NewSettingsHandler(settingsRepo *repository.SettingsRepository, wpp *wpp.Se
 // @Tags         settings
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
-// @Success      200    {object}  model.Settings
+// @Success      200    {object}  dto.SettingsResponse
 // @Failure      404    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization
@@ -53,7 +53,7 @@ func (h *SettingsHandler) GetSettings(c *gin.Context) {
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
 // @Param        body   body      dto.SessionSettingsRequest  true  "Settings to update"
-// @Success      200    {object}  model.Settings
+// @Success      200    {object}  dto.SettingsResponse
 // @Failure      400    {object}  dto.ErrorResponse
 // @Failure      500    {object}  dto.ErrorResponse
 // @Security     Authorization

@@ -5847,64 +5847,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/{session}/profile/disappearing": {
-            "patch": {
-                "security": [
-                    {
-                        "Authorization": []
-                    }
-                ],
-                "description": "Set the default disappearing messages timer for new chats",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "profile"
-                ],
-                "summary": "Set default disappearing timer",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session ID",
-                        "name": "session",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Timer data",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/DefaultDisappearingRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/{session}/profile/name": {
             "patch": {
                 "security": [
@@ -6088,117 +6030,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/{session}/profile/privacy": {
-            "get": {
-                "security": [
-                    {
-                        "Authorization": []
-                    }
-                ],
-                "description": "Get WhatsApp privacy settings",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "profile"
-                ],
-                "summary": "Get privacy settings",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session ID",
-                        "name": "session",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/PrivacySettingsResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "Authorization": []
-                    }
-                ],
-                "description": "Set WhatsApp privacy settings",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "profile"
-                ],
-                "summary": "Set privacy settings",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session ID",
-                        "name": "session",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Privacy settings",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/SetPrivacyRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/{session}/profile/status": {
             "patch": {
                 "security": [
@@ -6355,6 +6186,108 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/{session}/settings": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get all settings for a session (local + privacy synced from WhatsApp)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "settings"
+                ],
+                "summary": "Get session settings",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "session",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/SettingsResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Update settings for a session. Local settings are saved to DB. Privacy settings are applied to WhatsApp AND saved to DB.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "settings"
+                ],
+                "summary": "Update session settings",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "session",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Settings to update",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/SessionSettingsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/SettingsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -7056,19 +6989,6 @@ const docTemplate = `{
                     "description": "Session name/identifier (unique)",
                     "type": "string",
                     "example": "my-session"
-                }
-            }
-        },
-        "DefaultDisappearingRequest": {
-            "type": "object",
-            "required": [
-                "timer"
-            ],
-            "properties": {
-                "timer": {
-                    "description": "24h, 7d, 90d, or off",
-                    "type": "string",
-                    "example": "24h"
                 }
             }
         },
@@ -7801,12 +7721,6 @@ const docTemplate = `{
                 }
             }
         },
-        "PrivacySettingsResponse": {
-            "type": "object",
-            "properties": {
-                "settings": {}
-            }
-        },
         "ProfileInfoResponse": {
             "type": "object",
             "properties": {
@@ -8467,6 +8381,55 @@ const docTemplate = `{
                 }
             }
         },
+        "SessionSettingsRequest": {
+            "type": "object",
+            "properties": {
+                "alwaysOnline": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "autoRejectCalls": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "callAdd": {
+                    "type": "string",
+                    "example": "all"
+                },
+                "defaultDisappearingTimer": {
+                    "type": "string",
+                    "example": "off"
+                },
+                "groupAdd": {
+                    "type": "string",
+                    "example": "all"
+                },
+                "lastSeen": {
+                    "type": "string",
+                    "example": "all"
+                },
+                "online": {
+                    "type": "string",
+                    "example": "all"
+                },
+                "profilePhoto": {
+                    "type": "string",
+                    "example": "all"
+                },
+                "readReceipts": {
+                    "type": "string",
+                    "example": "all"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "all"
+                },
+                "syncHistory": {
+                    "type": "boolean",
+                    "example": false
+                }
+            }
+        },
         "SessionStats": {
             "type": "object",
             "properties": {
@@ -8600,25 +8563,6 @@ const docTemplate = `{
                 }
             }
         },
-        "SetPrivacyRequest": {
-            "type": "object",
-            "required": [
-                "setting",
-                "value"
-            ],
-            "properties": {
-                "setting": {
-                    "description": "last_seen, online, profile, status, read_receipts, group_add, call_add",
-                    "type": "string",
-                    "example": "last_seen"
-                },
-                "value": {
-                    "description": "all, contacts, contact_blacklist, match_last_seen, known, none",
-                    "type": "string",
-                    "example": "contacts"
-                }
-            }
-        },
         "SetProfilePictureRequest": {
             "type": "object",
             "required": [
@@ -8680,6 +8624,70 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "SettingsResponse": {
+            "type": "object",
+            "properties": {
+                "alwaysOnline": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "autoRejectCalls": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "callAdd": {
+                    "type": "string",
+                    "example": "all"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "defaultDisappearingTimer": {
+                    "type": "string",
+                    "example": "off"
+                },
+                "groupAdd": {
+                    "type": "string",
+                    "example": "all"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "lastSeen": {
+                    "type": "string",
+                    "example": "all"
+                },
+                "online": {
+                    "type": "string",
+                    "example": "all"
+                },
+                "privacySyncedAt": {
+                    "type": "string"
+                },
+                "profilePhoto": {
+                    "type": "string",
+                    "example": "all"
+                },
+                "readReceipts": {
+                    "type": "string",
+                    "example": "all"
+                },
+                "sessionId": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "all"
+                },
+                "syncHistory": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "updatedAt": {
                     "type": "string"
                 }
             }

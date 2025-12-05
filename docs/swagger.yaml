@@ -369,15 +369,6 @@ definitions:
     required:
     - session
     type: object
-  DefaultDisappearingRequest:
-    properties:
-      timer:
-        description: 24h, 7d, 90d, or off
-        example: 24h
-        type: string
-    required:
-    - timer
-    type: object
   DeleteMessageRequest:
     properties:
       forMe:
@@ -886,10 +877,6 @@ definitions:
         example: available
         type: string
     type: object
-  PrivacySettingsResponse:
-    properties:
-      settings: {}
-    type: object
   ProfileInfoResponse:
     properties:
       profile: {}
@@ -1369,6 +1356,42 @@ definitions:
         example: "2025-11-29T14:18:15.324706Z"
         type: string
     type: object
+  SessionSettingsRequest:
+    properties:
+      alwaysOnline:
+        example: false
+        type: boolean
+      autoRejectCalls:
+        example: false
+        type: boolean
+      callAdd:
+        example: all
+        type: string
+      defaultDisappearingTimer:
+        example: "off"
+        type: string
+      groupAdd:
+        example: all
+        type: string
+      lastSeen:
+        example: all
+        type: string
+      online:
+        example: all
+        type: string
+      profilePhoto:
+        example: all
+        type: string
+      readReceipts:
+        example: all
+        type: string
+      status:
+        example: all
+        type: string
+      syncHistory:
+        example: false
+        type: boolean
+    type: object
   SessionStats:
     properties:
       chats:
@@ -1464,21 +1487,6 @@ definitions:
         example: true
         type: boolean
     type: object
-  SetPrivacyRequest:
-    properties:
-      setting:
-        description: last_seen, online, profile, status, read_receipts, group_add,
-          call_add
-        example: last_seen
-        type: string
-      value:
-        description: all, contacts, contact_blacklist, match_last_seen, known, none
-        example: contacts
-        type: string
-    required:
-    - setting
-    - value
-    type: object
   SetProfilePictureRequest:
     properties:
       image:
@@ -1520,6 +1528,52 @@ definitions:
       secret:
         type: string
       url:
+        type: string
+    type: object
+  SettingsResponse:
+    properties:
+      alwaysOnline:
+        example: false
+        type: boolean
+      autoRejectCalls:
+        example: false
+        type: boolean
+      callAdd:
+        example: all
+        type: string
+      createdAt:
+        type: string
+      defaultDisappearingTimer:
+        example: "off"
+        type: string
+      groupAdd:
+        example: all
+        type: string
+      id:
+        type: integer
+      lastSeen:
+        example: all
+        type: string
+      online:
+        example: all
+        type: string
+      privacySyncedAt:
+        type: string
+      profilePhoto:
+        example: all
+        type: string
+      readReceipts:
+        example: all
+        type: string
+      sessionId:
+        type: integer
+      status:
+        example: all
+        type: string
+      syncHistory:
+        example: true
+        type: boolean
+      updatedAt:
         type: string
     type: object
   StatusPrivacyResponse:
@@ -4731,43 +4785,6 @@ paths:
       summary: Get own profile info
       tags:
       - profile
-  /{session}/profile/disappearing:
-    patch:
-      consumes:
-      - application/json
-      description: Set the default disappearing messages timer for new chats
-      parameters:
-      - description: Session ID
-        in: path
-        name: session
-        required: true
-        type: string
-      - description: Timer data
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/DefaultDisappearingRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - Authorization: []
-      summary: Set default disappearing timer
-      tags:
-      - profile
   /{session}/profile/name:
     patch:
       consumes:
@@ -4886,77 +4903,6 @@ paths:
       summary: Delete profile picture
       tags:
       - profile
-  /{session}/profile/privacy:
-    get:
-      consumes:
-      - application/json
-      description: Get WhatsApp privacy settings
-      parameters:
-      - description: Session ID
-        in: path
-        name: session
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/PrivacySettingsResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - Authorization: []
-      summary: Get privacy settings
-      tags:
-      - profile
-    post:
-      consumes:
-      - application/json
-      description: Set WhatsApp privacy settings
-      parameters:
-      - description: Session ID
-        in: path
-        name: session
-        required: true
-        type: string
-      - description: Privacy settings
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/SetPrivacyRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - Authorization: []
-      summary: Set privacy settings
-      tags:
-      - profile
   /{session}/profile/status:
     patch:
       consumes:
@@ -5065,6 +5011,72 @@ paths:
       summary: Restart session
       tags:
       - sessions
+  /{session}/settings:
+    get:
+      description: Get all settings for a session (local + privacy synced from WhatsApp)
+      parameters:
+      - description: Session ID
+        in: path
+        name: session
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SettingsResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - Authorization: []
+      summary: Get session settings
+      tags:
+      - settings
+    post:
+      consumes:
+      - application/json
+      description: Update settings for a session. Local settings are saved to DB.
+        Privacy settings are applied to WhatsApp AND saved to DB.
+      parameters:
+      - description: Session ID
+        in: path
+        name: session
+        required: true
+        type: string
+      - description: Settings to update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SessionSettingsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/SettingsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - Authorization: []
+      summary: Update session settings
+      tags:
+      - settings
   /{session}/status:
     get:
       consumes:
