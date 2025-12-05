@@ -25,9 +25,9 @@ Complete REST API documentation for OnWapp - WhatsApp API Bridge.
   - [Set Push Name](#set-push-name)
   - [Set Profile Picture](#set-profile-picture)
   - [Delete Profile Picture](#delete-profile-picture)
-  - [Get Privacy Settings](#get-privacy-settings)
-  - [Set Privacy Settings](#set-privacy-settings)
-  - [Set Default Disappearing Timer](#set-default-disappearing-timer)
+- [Settings](#settings)
+  - [Get Settings](#get-settings)
+  - [Update Settings](#update-settings)
 - [Presence](#presence)
   - [Set Presence](#set-presence)
   - [Subscribe to Contact Presence](#subscribe-to-contact-presence)
@@ -118,11 +118,8 @@ Complete REST API documentation for OnWapp - WhatsApp API Bridge.
   - [Reject Call](#reject-call)
 - [History Sync](#history-sync)
   - [Request History Sync](#request-history-sync)
-  - [Get Sync Progress](#get-sync-progress)
   - [Get Unread Chats](#get-unread-chats)
   - [Get Chat Info](#get-chat-info)
-  - [Get Past Participants](#get-past-participants)
-  - [Get Top Stickers](#get-top-stickers)
 - [Webhooks](#webhooks)
   - [Get Webhook Configuration](#get-webhook-configuration)
   - [Set Webhook](#set-webhook)
@@ -554,83 +551,122 @@ curl -X DELETE http://localhost:3000/sessions/my-session/profile/picture \
 
 ---
 
-## Get Privacy Settings
+# Settings
 
-**GET** `/sessions/:sessionId/profile/privacy`
+Unified settings management for session configuration. Local settings (alwaysOnline, autoRejectCalls) are managed by OnWapp. Privacy settings are synced FROM WhatsApp on connect and applied TO WhatsApp when updated.
 
-Get privacy settings.
+## Get Settings
+
+**GET** `/sessions/:sessionId/settings`
+
+Get all settings for a session.
 
 ```bash
-curl -X GET http://localhost:3000/sessions/my-session/profile/privacy \
+curl -X GET http://localhost:3000/sessions/my-session/settings \
   -H "X-API-Key: your-api-key"
 ```
 
 **Response (200):**
 ```json
 {
-  "settings": {
+  "id": 1,
+  "sessionId": 123,
+  "alwaysOnline": false,
+  "autoRejectCalls": false,
+  "syncHistory": true,
+  "lastSeen": "all",
+  "online": "all",
+  "profilePhoto": "all",
+  "status": "all",
+  "readReceipts": "all",
+  "groupAdd": "all",
+  "callAdd": "all",
+  "defaultDisappearingTimer": "off",
+  "privacySyncedAt": "2024-12-03T10:30:00Z",
+  "createdAt": "2024-12-03T10:00:00Z",
+  "updatedAt": "2024-12-03T10:30:00Z"
+}
+```
+
+---
+
+## Update Settings
+
+**POST** `/sessions/:sessionId/settings`
+
+Update settings for a session. All fields are optional - only provided fields are updated.
+
+**Local Settings** (saved to database only):
+
+| Field | Type | Description |
+|-------|------|-------------|
+| alwaysOnline | boolean | Keep session online (sends presence every 4 min) |
+| autoRejectCalls | boolean | Automatically reject incoming calls |
+| syncHistory | boolean | Enable history synchronization |
+
+**Privacy Settings** (applied to WhatsApp AND saved to database):
+
+| Field | Type | Description |
+|-------|------|-------------|
+| lastSeen | string | Who can see last seen (all, contacts, contact_blacklist, none) |
+| online | string | Who can see online status (all, match_last_seen) |
+| profilePhoto | string | Who can see profile photo (all, contacts, contact_blacklist, none) |
+| status | string | Who can see status (all, contacts, contact_blacklist, none) |
+| readReceipts | string | Read receipts (all, none) |
+| groupAdd | string | Who can add to groups (all, contacts, contact_blacklist) |
+| callAdd | string | Who can call (all, known) |
+| defaultDisappearingTimer | string | Default timer for new chats (off, 24h, 7d, 90d) |
+
+```bash
+# Update local settings
+curl -X POST http://localhost:3000/sessions/my-session/settings \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{
+    "alwaysOnline": true,
+    "autoRejectCalls": true
+  }'
+
+# Update privacy settings
+curl -X POST http://localhost:3000/sessions/my-session/settings \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{
     "lastSeen": "contacts",
-    "online": "all",
-    "profilePhoto": "contacts",
-    "status": "contacts",
-    "readReceipts": "all",
-    "groupAdd": "contacts"
-  }
-}
-```
+    "online": "match_last_seen",
+    "readReceipts": "none"
+  }'
 
----
-
-## Set Privacy Settings
-
-**PUT** `/sessions/:sessionId/profile/privacy`
-
-Update privacy settings.
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| setting | string | Yes | Setting name (last_seen, online, profile, status, read_receipts, group_add) |
-| value | string | Yes | Value (all, contacts, contact_blacklist, none) |
-
-```bash
-curl -X PUT http://localhost:3000/sessions/my-session/profile/privacy \
+# Update both
+curl -X POST http://localhost:3000/sessions/my-session/settings \
   -H "Content-Type: application/json" \
   -H "X-API-Key: your-api-key" \
-  -d '{"setting": "last_seen", "value": "contacts"}'
+  -d '{
+    "alwaysOnline": true,
+    "lastSeen": "contacts",
+    "defaultDisappearingTimer": "24h"
+  }'
 ```
 
 **Response (200):**
 ```json
 {
-  "settings": {
-    "lastSeen": "contacts"
-  }
-}
-```
-
----
-
-## Set Default Disappearing Timer
-
-**PATCH** `/sessions/:sessionId/profile/disappearing`
-
-Set default disappearing messages timer for new chats.
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| timer | string | Yes | Timer value (24h, 7d, 90d, off) |
-
-```bash
-curl -X PATCH http://localhost:3000/sessions/my-session/profile/disappearing \
-  -H "Content-Type: application/json" \
-  -H "X-API-Key: your-api-key" \
-  -d '{"timer": "24h"}'
-```
-
-**Response (200):**
-```json
-{
-  "message": "default disappearing timer set"
+  "id": 1,
+  "sessionId": 123,
+  "alwaysOnline": true,
+  "autoRejectCalls": true,
+  "syncHistory": true,
+  "lastSeen": "contacts",
+  "online": "match_last_seen",
+  "profilePhoto": "all",
+  "status": "all",
+  "readReceipts": "none",
+  "groupAdd": "all",
+  "callAdd": "all",
+  "defaultDisappearingTimer": "24h",
+  "privacySyncedAt": "2024-12-03T10:30:00Z",
+  "createdAt": "2024-12-03T10:00:00Z",
+  "updatedAt": "2024-12-03T10:35:00Z"
 }
 ```
 
@@ -2757,11 +2793,11 @@ curl -X POST http://localhost:3000/sessions/my-session/calls/reject \
 
 **POST** `/sessions/:sessionId/history/sync`
 
-Request chat history synchronization.
+Request chat history synchronization from WhatsApp.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| count | number | No | Number of messages to request |
+| count | number | No | Number of messages to request (default: 100) |
 
 ```bash
 curl -X POST http://localhost:3000/sessions/my-session/history/sync \
@@ -2773,31 +2809,8 @@ curl -X POST http://localhost:3000/sessions/my-session/history/sync \
 **Response (200):**
 ```json
 {
-  "message": "history sync requested"
-}
-```
-
----
-
-## Get Sync Progress
-
-**GET** `/sessions/:sessionId/history/progress`
-
-Get history sync progress.
-
-```bash
-curl -X GET http://localhost:3000/sessions/my-session/history/progress \
-  -H "X-API-Key: your-api-key"
-```
-
-**Response (200):**
-```json
-{
-  "syncType": "INITIAL_BOOTSTRAP",
-  "status": "in_progress",
-  "progress": 75,
-  "totalMessages": 1000,
-  "processedMessages": 750
+  "message": "history sync request sent",
+  "id": "3EB0ABC123"
 }
 ```
 
@@ -2807,7 +2820,7 @@ curl -X GET http://localhost:3000/sessions/my-session/history/progress \
 
 **GET** `/sessions/:sessionId/history/chats/unread`
 
-Get chats with unread messages.
+Get list of chats with unread messages from synced history data.
 
 ```bash
 curl -X GET http://localhost:3000/sessions/my-session/history/chats/unread \
@@ -2820,7 +2833,10 @@ curl -X GET http://localhost:3000/sessions/my-session/history/chats/unread \
   {
     "jid": "5511999999999@s.whatsapp.net",
     "name": "John Doe",
-    "unreadCount": 5
+    "unreadCount": 5,
+    "markedAsUnread": false,
+    "ephemeralExpiration": 0,
+    "conversationTimestamp": 1701619200
   }
 ]
 ```
@@ -2829,12 +2845,16 @@ curl -X GET http://localhost:3000/sessions/my-session/history/chats/unread \
 
 ## Get Chat Info
 
-**GET** `/sessions/:sessionId/history/chats/:chatId`
+**GET** `/sessions/:sessionId/history/chat?chatId=:chatId`
 
-Get chat information from history.
+Get detailed chat information from synced history data.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| chatId | string | Yes | Chat JID (query parameter) |
 
 ```bash
-curl -X GET http://localhost:3000/sessions/my-session/history/chats/5511999999999 \
+curl -X GET "http://localhost:3000/sessions/my-session/history/chat?chatId=5511999999999@s.whatsapp.net" \
   -H "X-API-Key: your-api-key"
 ```
 
@@ -2844,57 +2864,13 @@ curl -X GET http://localhost:3000/sessions/my-session/history/chats/551199999999
   "jid": "5511999999999@s.whatsapp.net",
   "name": "John Doe",
   "unreadCount": 0,
-  "conversationTimestamp": 1701619200
+  "markedAsUnread": false,
+  "ephemeralExpiration": 86400,
+  "conversationTimestamp": 1701619200,
+  "readOnly": false,
+  "suspended": false,
+  "locked": false
 }
-```
-
----
-
-## Get Past Participants
-
-**GET** `/sessions/:sessionId/history/groups/:groupId/participants/past`
-
-Get past participants of a group.
-
-```bash
-curl -X GET http://localhost:3000/sessions/my-session/history/groups/123456789@g.us/participants/past \
-  -H "X-API-Key: your-api-key"
-```
-
-**Response (200):**
-```json
-[
-  {
-    "userJid": "5511777777777@s.whatsapp.net",
-    "leaveReason": "LEFT",
-    "leaveTimestamp": "2024-12-01T10:00:00Z"
-  }
-]
-```
-
----
-
-## Get Top Stickers
-
-**GET** `/sessions/:sessionId/history/stickers`
-
-Get most used stickers.
-
-```bash
-curl -X GET http://localhost:3000/sessions/my-session/history/stickers \
-  -H "X-API-Key: your-api-key"
-```
-
-**Response (200):**
-```json
-[
-  {
-    "directPath": "/v/t62...",
-    "mimeType": "image/webp",
-    "fileSize": 12345,
-    "weight": 1.5
-  }
-]
 ```
 
 ---
