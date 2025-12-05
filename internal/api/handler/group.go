@@ -23,7 +23,7 @@ func NewGroupHandler(wpp *wpp.Service) *GroupHandler {
 // CreateGroup godoc
 // @Summary      Create a new group
 // @Description  Create a new WhatsApp group with participants
-// @Tags         groups
+// @Tags         group
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -59,7 +59,7 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 // GetGroupInfo godoc
 // @Summary      Get group info
 // @Description  Get information about a WhatsApp group
-// @Tags         groups
+// @Tags         group
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -93,7 +93,7 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 // GetJoinedGroups godoc
 // @Summary      Get joined groups
 // @Description  Get list of groups the session is part of
-// @Tags         groups
+// @Tags         group
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -120,7 +120,7 @@ func (h *GroupHandler) GetJoinedGroups(c *gin.Context) {
 // LeaveGroup godoc
 // @Summary      Leave group
 // @Description  Leave a WhatsApp group
-// @Tags         groups
+// @Tags         group
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -152,7 +152,7 @@ func (h *GroupHandler) LeaveGroup(c *gin.Context) {
 // UpdateGroupName godoc
 // @Summary      Update group name
 // @Description  Update the name of a WhatsApp group
-// @Tags         groups
+// @Tags         group
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -186,7 +186,7 @@ func (h *GroupHandler) UpdateGroupName(c *gin.Context) {
 // UpdateGroupTopic godoc
 // @Summary      Update group description
 // @Description  Update the description/topic of a WhatsApp group
-// @Tags         groups
+// @Tags         group
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -220,7 +220,7 @@ func (h *GroupHandler) UpdateGroupTopic(c *gin.Context) {
 // AddParticipants godoc
 // @Summary      Add participants to group
 // @Description  Add participants to a WhatsApp group
-// @Tags         groups
+// @Tags         group
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -256,7 +256,7 @@ func (h *GroupHandler) AddParticipants(c *gin.Context) {
 // RemoveParticipants godoc
 // @Summary      Remove participants from group
 // @Description  Remove participants from a WhatsApp group
-// @Tags         groups
+// @Tags         group
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -292,7 +292,7 @@ func (h *GroupHandler) RemoveParticipants(c *gin.Context) {
 // PromoteParticipants godoc
 // @Summary      Promote participants to admin
 // @Description  Promote participants to admin in a WhatsApp group
-// @Tags         groups
+// @Tags         group
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -328,7 +328,7 @@ func (h *GroupHandler) PromoteParticipants(c *gin.Context) {
 // DemoteParticipants godoc
 // @Summary      Demote participants from admin
 // @Description  Demote participants from admin in a WhatsApp group
-// @Tags         groups
+// @Tags         group
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -364,7 +364,7 @@ func (h *GroupHandler) DemoteParticipants(c *gin.Context) {
 // GetInviteLink godoc
 // @Summary      Get group invite link
 // @Description  Get the invite link for a WhatsApp group
-// @Tags         groups
+// @Tags         group
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -399,7 +399,7 @@ func (h *GroupHandler) GetInviteLink(c *gin.Context) {
 // JoinGroup godoc
 // @Summary      Join group via link
 // @Description  Join a WhatsApp group using an invite link
-// @Tags         groups
+// @Tags         group
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -434,7 +434,7 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 // SendGroupMessage godoc
 // @Summary      Send message to group
 // @Description  Send a text message to a WhatsApp group
-// @Tags         groups
+// @Tags         group
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -470,7 +470,7 @@ func (h *GroupHandler) SendGroupMessage(c *gin.Context) {
 // SetGroupAnnounce godoc
 // @Summary      Set group announce mode
 // @Description  Set whether only admins can send messages
-// @Tags         groups
+// @Tags         group
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -501,7 +501,7 @@ func (h *GroupHandler) SetGroupAnnounce(c *gin.Context) {
 // SetGroupLocked godoc
 // @Summary      Set group locked mode
 // @Description  Set whether only admins can edit group info
-// @Tags         groups
+// @Tags         group
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -532,7 +532,7 @@ func (h *GroupHandler) SetGroupLocked(c *gin.Context) {
 // SetGroupPicture godoc
 // @Summary      Set group picture
 // @Description  Set the group profile picture (supports JSON with base64/URL or multipart/form-data)
-// @Tags         groups
+// @Tags         group
 // @Accept       json,mpfd
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -583,7 +583,7 @@ func (h *GroupHandler) SetGroupPicture(c *gin.Context) {
 // DeleteGroupPicture godoc
 // @Summary      Delete group picture
 // @Description  Remove the group profile picture
-// @Tags         groups
+// @Tags         group
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
 // @Param        groupId path string true "Group ID"
@@ -613,7 +613,7 @@ func (h *GroupHandler) DeleteGroupPicture(c *gin.Context) {
 // SetGroupApprovalMode godoc
 // @Summary      Set group join approval mode
 // @Description  Set whether join requests need admin approval
-// @Tags         groups
+// @Tags         group
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -644,7 +644,7 @@ func (h *GroupHandler) SetGroupApprovalMode(c *gin.Context) {
 // SetGroupMemberAddMode godoc
 // @Summary      Set who can add members
 // @Description  Set whether only admins or all members can add participants
-// @Tags         groups
+// @Tags         group
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -686,7 +686,7 @@ func (h *GroupHandler) SetGroupMemberAddMode(c *gin.Context) {
 // GetGroupRequestParticipants godoc
 // @Summary      Get pending join requests
 // @Description  Get list of pending join requests for a group
-// @Tags         groups
+// @Tags         group
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
 // @Param        groupId path string true "Group ID"
@@ -718,7 +718,7 @@ func (h *GroupHandler) GetGroupRequestParticipants(c *gin.Context) {
 // UpdateGroupRequestParticipants godoc
 // @Summary      Approve or reject join requests
 // @Description  Approve or reject pending join requests
-// @Tags         groups
+// @Tags         group
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -766,7 +766,7 @@ func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
 // GetGroupInfoFromLink godoc
 // @Summary      Get group info from invite link
 // @Description  Get group information using an invite link
-// @Tags         groups
+// @Tags         group
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
 // @Param        link query string true "Invite link or code"

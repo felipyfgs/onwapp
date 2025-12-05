@@ -24,7 +24,7 @@ func NewMessageHandler(wpp *wpp.Service) *MessageHandler {
 // SendText godoc
 // @Summary      Send text message
 // @Description  Send a text message to a phone number
-// @Tags         messages
+// @Tags         message
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -60,7 +60,7 @@ func (h *MessageHandler) SendText(c *gin.Context) {
 // SendImage godoc
 // @Summary      Send image message
 // @Description  Send an image to a phone number (supports JSON with base64/URL or multipart/form-data)
-// @Tags         messages
+// @Tags         message
 // @Accept       json,mpfd
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -133,7 +133,7 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 // SendAudio godoc
 // @Summary      Send audio message
 // @Description  Send an audio to a phone number (supports JSON with base64/URL or multipart/form-data)
-// @Tags         messages
+// @Tags         message
 // @Accept       json,mpfd
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -207,7 +207,7 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 // SendVideo godoc
 // @Summary      Send video message
 // @Description  Send a video to a phone number (supports JSON with base64/URL or multipart/form-data)
-// @Tags         messages
+// @Tags         message
 // @Accept       json,mpfd
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -280,7 +280,7 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 // SendDocument godoc
 // @Summary      Send document message
 // @Description  Send a document to a phone number (supports JSON with base64/URL or multipart/form-data)
-// @Tags         messages
+// @Tags         message
 // @Accept       json,mpfd
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -353,7 +353,7 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 // SendSticker godoc
 // @Summary      Send sticker message
 // @Description  Send a sticker to a phone number (supports JSON with base64/URL or multipart/form-data)
-// @Tags         messages
+// @Tags         message
 // @Accept       json,mpfd
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -423,7 +423,7 @@ func (h *MessageHandler) SendSticker(c *gin.Context) {
 // SendLocation godoc
 // @Summary      Send location message
 // @Description  Send a location to a phone number
-// @Tags         messages
+// @Tags         message
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -459,7 +459,7 @@ func (h *MessageHandler) SendLocation(c *gin.Context) {
 // SendContact godoc
 // @Summary      Send contact message
 // @Description  Send a contact card to a phone number
-// @Tags         messages
+// @Tags         message
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -495,7 +495,7 @@ func (h *MessageHandler) SendContact(c *gin.Context) {
 // SendReaction godoc
 // @Summary      Send reaction to message
 // @Description  Send a reaction emoji to a message
-// @Tags         messages
+// @Tags         message
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -531,7 +531,7 @@ func (h *MessageHandler) SendReaction(c *gin.Context) {
 // SendPoll godoc
 // @Summary      Send poll message
 // @Description  Send a poll to a phone number
-// @Tags         messages
+// @Tags         message
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -567,7 +567,7 @@ func (h *MessageHandler) SendPoll(c *gin.Context) {
 // SendPollVote godoc
 // @Summary      Vote in a poll
 // @Description  Vote for options in an existing poll
-// @Tags         messages
+// @Tags         message
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -603,7 +603,7 @@ func (h *MessageHandler) SendPollVote(c *gin.Context) {
 // SendButtons godoc
 // @Summary      Send buttons message
 // @Description  Send a message with buttons (max 3 buttons)
-// @Tags         messages
+// @Tags         message
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -654,7 +654,7 @@ func (h *MessageHandler) SendButtons(c *gin.Context) {
 // SendList godoc
 // @Summary      Send list message
 // @Description  Send a message with a selectable list
-// @Tags         messages
+// @Tags         message
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -714,7 +714,7 @@ func (h *MessageHandler) SendList(c *gin.Context) {
 // SendInteractive godoc
 // @Summary      Send interactive message with native flow buttons
 // @Description  Send an interactive message with buttons (quick_reply, cta_url, cta_call, cta_copy). Supports optional image/video header.
-// @Tags         messages
+// @Tags         message
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -823,7 +823,7 @@ func (h *MessageHandler) SendInteractive(c *gin.Context) {
 // SendTemplate godoc
 // @Summary      Send template message
 // @Description  Send a message with template buttons (URL, Call, QuickReply). Works on Web and Mobile.
-// @Tags         messages
+// @Tags         message
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
@@ -978,7 +978,7 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 // SendCarousel godoc
 // @Summary      Send carousel message
 // @Description  Send an interactive carousel message with multiple cards, each with image/video and buttons
-// @Tags         messages
+// @Tags         message
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"

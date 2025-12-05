@@ -1197,12 +1197,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/ErrorResponse"
                         }
                     },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -1252,11 +1246,70 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/MessageOnlyResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/{session}/chat/info": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get detailed chat information from synced data",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chat"
+                ],
+                "summary": "Get chat info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "session",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Chat JID",
+                        "name": "chatId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ChatResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -1277,7 +1330,7 @@ const docTemplate = `{
                         "Authorization": []
                     }
                 ],
-                "description": "Get list of all chats from history sync data with pagination",
+                "description": "Get list of chats from synced data with pagination and optional filters",
                 "produces": [
                     "application/json"
                 ],
@@ -1303,6 +1356,12 @@ const docTemplate = `{
                         "type": "integer",
                         "description": "Offset for pagination (default: 0)",
                         "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Filter only unread chats (default: false)",
+                        "name": "unread",
                         "in": "query"
                     }
                 ],
@@ -1346,7 +1405,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "presence"
+                    "chat"
                 ],
                 "summary": "Mark messages as read",
                 "parameters": [
@@ -1354,13 +1413,6 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Session ID",
                         "name": "session",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Chat JID",
-                        "name": "chatId",
                         "in": "path",
                         "required": true
                     },
@@ -1383,12 +1435,6 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -1491,7 +1537,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "presence"
+                    "chat"
                 ],
                 "summary": "Set chat presence (typing/recording)",
                 "parameters": [
@@ -1499,13 +1545,6 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Session ID",
                         "name": "session",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Chat JID",
-                        "name": "chatId",
                         "in": "path",
                         "required": true
                     },
@@ -1528,12 +1567,6 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -1592,12 +1625,6 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -2374,7 +2401,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "groups"
+                    "group"
                 ],
                 "summary": "Set group announce mode",
                 "parameters": [
@@ -2432,7 +2459,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "groups"
+                    "group"
                 ],
                 "summary": "Set group join approval mode",
                 "parameters": [
@@ -2490,7 +2517,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "groups"
+                    "group"
                 ],
                 "summary": "Create a new group",
                 "parameters": [
@@ -2554,7 +2581,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "groups"
+                    "group"
                 ],
                 "summary": "Get group info",
                 "parameters": [
@@ -2613,7 +2640,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "groups"
+                    "group"
                 ],
                 "summary": "Get group info from invite link",
                 "parameters": [
@@ -2669,7 +2696,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "groups"
+                    "group"
                 ],
                 "summary": "Get group invite link",
                 "parameters": [
@@ -2731,7 +2758,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "groups"
+                    "group"
                 ],
                 "summary": "Join group via link",
                 "parameters": [
@@ -2795,7 +2822,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "groups"
+                    "group"
                 ],
                 "summary": "Leave group",
                 "parameters": [
@@ -2851,7 +2878,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "groups"
+                    "group"
                 ],
                 "summary": "Get joined groups",
                 "parameters": [
@@ -2900,7 +2927,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "groups"
+                    "group"
                 ],
                 "summary": "Set group locked mode",
                 "parameters": [
@@ -2958,7 +2985,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "groups"
+                    "group"
                 ],
                 "summary": "Set who can add members",
                 "parameters": [
@@ -3016,7 +3043,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "groups"
+                    "group"
                 ],
                 "summary": "Update group name",
                 "parameters": [
@@ -3080,7 +3107,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "groups"
+                    "group"
                 ],
                 "summary": "Add participants to group",
                 "parameters": [
@@ -3144,7 +3171,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "groups"
+                    "group"
                 ],
                 "summary": "Demote participants from admin",
                 "parameters": [
@@ -3208,7 +3235,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "groups"
+                    "group"
                 ],
                 "summary": "Promote participants to admin",
                 "parameters": [
@@ -3272,7 +3299,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "groups"
+                    "group"
                 ],
                 "summary": "Remove participants from group",
                 "parameters": [
@@ -3337,7 +3364,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "groups"
+                    "group"
                 ],
                 "summary": "Set group picture",
                 "parameters": [
@@ -3403,7 +3430,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "groups"
+                    "group"
                 ],
                 "summary": "Delete group picture",
                 "parameters": [
@@ -3456,7 +3483,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "groups"
+                    "group"
                 ],
                 "summary": "Get pending join requests",
                 "parameters": [
@@ -3506,7 +3533,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "groups"
+                    "group"
                 ],
                 "summary": "Approve or reject join requests",
                 "parameters": [
@@ -3571,7 +3598,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "groups"
+                    "group"
                 ],
                 "summary": "Send message to group",
                 "parameters": [
@@ -3635,7 +3662,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "groups"
+                    "group"
                 ],
                 "summary": "Update group description",
                 "parameters": [
@@ -3671,171 +3698,6 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/{session}/history/chat": {
-            "get": {
-                "security": [
-                    {
-                        "Authorization": []
-                    }
-                ],
-                "description": "Get detailed chat information from history sync data",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "history"
-                ],
-                "summary": "Get chat info",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session ID",
-                        "name": "session",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Chat JID",
-                        "name": "chatId",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/ChatResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/{session}/history/chats/unread": {
-            "get": {
-                "security": [
-                    {
-                        "Authorization": []
-                    }
-                ],
-                "description": "Get list of chats with unread messages from history sync data",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "history"
-                ],
-                "summary": "Get unread chats",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session ID",
-                        "name": "session",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/ChatResponse"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/{session}/history/sync": {
-            "post": {
-                "security": [
-                    {
-                        "Authorization": []
-                    }
-                ],
-                "description": "Request WhatsApp to send history sync data from the phone",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "history"
-                ],
-                "summary": "Request history sync",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session ID",
-                        "name": "session",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Sync options",
-                        "name": "request",
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/HistorySyncRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/MessageResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -4000,12 +3862,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/ErrorResponse"
                         }
                     },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -4064,12 +3920,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/ErrorResponse"
                         }
                     },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -4094,7 +3944,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "messages"
+                    "message"
                 ],
                 "summary": "Vote in a poll",
                 "parameters": [
@@ -4158,7 +4008,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "messages"
+                    "message"
                 ],
                 "summary": "Send reaction to message",
                 "parameters": [
@@ -4234,23 +4084,10 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "Chat JID",
-                        "name": "chatId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Message ID",
-                        "name": "messageId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Optional sender JID for group messages",
+                        "description": "Request data",
                         "name": "body",
                         "in": "body",
+                        "required": true,
                         "schema": {
                             "$ref": "#/definitions/RequestUnavailableMessageRequest"
                         }
@@ -4294,7 +4131,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "messages"
+                    "message"
                 ],
                 "summary": "Send audio message",
                 "parameters": [
@@ -4375,7 +4212,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "messages"
+                    "message"
                 ],
                 "summary": "Send buttons message",
                 "parameters": [
@@ -4439,7 +4276,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "messages"
+                    "message"
                 ],
                 "summary": "Send carousel message",
                 "parameters": [
@@ -4503,7 +4340,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "messages"
+                    "message"
                 ],
                 "summary": "Send contact message",
                 "parameters": [
@@ -4568,7 +4405,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "messages"
+                    "message"
                 ],
                 "summary": "Send document message",
                 "parameters": [
@@ -4650,7 +4487,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "messages"
+                    "message"
                 ],
                 "summary": "Send image message",
                 "parameters": [
@@ -4731,7 +4568,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "messages"
+                    "message"
                 ],
                 "summary": "Send interactive message with native flow buttons",
                 "parameters": [
@@ -4795,7 +4632,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "messages"
+                    "message"
                 ],
                 "summary": "Send list message",
                 "parameters": [
@@ -4859,7 +4696,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "messages"
+                    "message"
                 ],
                 "summary": "Send location message",
                 "parameters": [
@@ -4923,7 +4760,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "messages"
+                    "message"
                 ],
                 "summary": "Send poll message",
                 "parameters": [
@@ -4988,7 +4825,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "messages"
+                    "message"
                 ],
                 "summary": "Send sticker message",
                 "parameters": [
@@ -5063,7 +4900,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "messages"
+                    "message"
                 ],
                 "summary": "Send template message",
                 "parameters": [
@@ -5127,7 +4964,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "messages"
+                    "message"
                 ],
                 "summary": "Send text message",
                 "parameters": [
@@ -5192,7 +5029,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "messages"
+                    "message"
                 ],
                 "summary": "Send video message",
                 "parameters": [
@@ -5917,12 +5754,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/ErrorResponse"
                         }
                     },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -5955,13 +5786,6 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Session ID",
                         "name": "session",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Phone number",
-                        "name": "phone",
                         "in": "path",
                         "required": true
                     },
@@ -7524,15 +7348,6 @@ const docTemplate = `{
                 "value": {
                     "type": "string",
                     "example": "New Name"
-                }
-            }
-        },
-        "HistorySyncRequest": {
-            "type": "object",
-            "properties": {
-                "count": {
-                    "type": "integer",
-                    "example": 100
                 }
             }
         },
@@ -9144,6 +8959,10 @@ const docTemplate = `{
             "name": "profile"
         },
         {
+            "description": "Session settings \u0026 privacy configuration",
+            "name": "settings"
+        },
+        {
             "description": "Online status \u0026 typing indicators",
             "name": "presence"
         },
@@ -9153,7 +8972,7 @@ const docTemplate = `{
         },
         {
             "description": "Group management \u0026 participants",
-            "name": "groups"
+            "name": "group"
         },
         {
             "description": "Community \u0026 linked groups",
@@ -9165,7 +8984,7 @@ const docTemplate = `{
         },
         {
             "description": "Send text, media \u0026 interactive messages",
-            "name": "messages"
+            "name": "message"
         },
         {
             "description": "File storage \u0026 downloads",
@@ -9182,10 +9001,6 @@ const docTemplate = `{
         {
             "description": "Voice \u0026 video calls",
             "name": "call"
-        },
-        {
-            "description": "History sync \u0026 offline data",
-            "name": "history"
         },
         {
             "description": "Webhook integrations",

@@ -604,12 +604,6 @@ definitions:
     - groupId
     - value
     type: object
-  HistorySyncRequest:
-    properties:
-      count:
-        example: 100
-        type: integer
-    type: object
   JoinGroupRequest:
     properties:
       inviteLink:
@@ -1839,10 +1833,6 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -1875,7 +1865,7 @@ paths:
         "200":
           description: OK
           schema:
-            type: object
+            $ref: '#/definitions/MessageOnlyResponse'
         "400":
           description: Bad Request
           schema:
@@ -1889,9 +1879,48 @@ paths:
       summary: Set disappearing messages timer
       tags:
       - chat
+  /{session}/chat/info:
+    get:
+      description: Get detailed chat information from synced data
+      parameters:
+      - description: Session ID
+        in: path
+        name: session
+        required: true
+        type: string
+      - description: Chat JID
+        in: query
+        name: chatId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ChatResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - Authorization: []
+      summary: Get chat info
+      tags:
+      - chat
   /{session}/chat/list:
     get:
-      description: Get list of all chats from history sync data with pagination
+      description: Get list of chats from synced data with pagination and optional
+        filters
       parameters:
       - description: Session ID
         in: path
@@ -1906,6 +1935,10 @@ paths:
         in: query
         name: offset
         type: integer
+      - description: 'Filter only unread chats (default: false)'
+        in: query
+        name: unread
+        type: boolean
       produces:
       - application/json
       responses:
@@ -1939,11 +1972,6 @@ paths:
         name: session
         required: true
         type: string
-      - description: Chat JID
-        in: path
-        name: chatId
-        required: true
-        type: string
       - description: Messages to mark
         in: body
         name: body
@@ -1961,10 +1989,6 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -1973,7 +1997,7 @@ paths:
       - Authorization: []
       summary: Mark messages as read
       tags:
-      - presence
+      - chat
   /{session}/chat/messages:
     get:
       description: Get messages from a specific chat with pagination
@@ -2033,11 +2057,6 @@ paths:
         name: session
         required: true
         type: string
-      - description: Chat JID
-        in: path
-        name: chatId
-        required: true
-        type: string
       - description: Chat presence data
         in: body
         name: body
@@ -2055,10 +2074,6 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -2067,7 +2082,7 @@ paths:
       - Authorization: []
       summary: Set chat presence (typing/recording)
       tags:
-      - presence
+      - chat
   /{session}/chat/unread:
     post:
       consumes:
@@ -2094,10 +2109,6 @@ paths:
             $ref: '#/definitions/ChatActionResponse'
         "400":
           description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
           schema:
             $ref: '#/definitions/ErrorResponse'
         "500":
@@ -2623,7 +2634,7 @@ paths:
       - Authorization: []
       summary: Set group announce mode
       tags:
-      - groups
+      - group
   /{session}/group/approval:
     patch:
       consumes:
@@ -2660,7 +2671,7 @@ paths:
       - Authorization: []
       summary: Set group join approval mode
       tags:
-      - groups
+      - group
   /{session}/group/create:
     post:
       consumes:
@@ -2701,7 +2712,7 @@ paths:
       - Authorization: []
       summary: Create a new group
       tags:
-      - groups
+      - group
   /{session}/group/info:
     get:
       consumes:
@@ -2741,7 +2752,7 @@ paths:
       - Authorization: []
       summary: Get group info
       tags:
-      - groups
+      - group
   /{session}/group/inviteinfo:
     get:
       description: Get group information using an invite link
@@ -2775,7 +2786,7 @@ paths:
       - Authorization: []
       summary: Get group info from invite link
       tags:
-      - groups
+      - group
   /{session}/group/invitelink:
     get:
       consumes:
@@ -2815,7 +2826,7 @@ paths:
       - Authorization: []
       summary: Get group invite link
       tags:
-      - groups
+      - group
   /{session}/group/join:
     post:
       consumes:
@@ -2856,7 +2867,7 @@ paths:
       - Authorization: []
       summary: Join group via link
       tags:
-      - groups
+      - group
   /{session}/group/leave:
     post:
       consumes:
@@ -2892,7 +2903,7 @@ paths:
       - Authorization: []
       summary: Leave group
       tags:
-      - groups
+      - group
   /{session}/group/list:
     get:
       consumes:
@@ -2923,7 +2934,7 @@ paths:
       - Authorization: []
       summary: Get joined groups
       tags:
-      - groups
+      - group
   /{session}/group/locked:
     patch:
       consumes:
@@ -2960,7 +2971,7 @@ paths:
       - Authorization: []
       summary: Set group locked mode
       tags:
-      - groups
+      - group
   /{session}/group/memberadd:
     patch:
       consumes:
@@ -2997,7 +3008,7 @@ paths:
       - Authorization: []
       summary: Set who can add members
       tags:
-      - groups
+      - group
   /{session}/group/name:
     patch:
       consumes:
@@ -3038,7 +3049,7 @@ paths:
       - Authorization: []
       summary: Update group name
       tags:
-      - groups
+      - group
   /{session}/group/participants/add:
     post:
       consumes:
@@ -3079,7 +3090,7 @@ paths:
       - Authorization: []
       summary: Add participants to group
       tags:
-      - groups
+      - group
   /{session}/group/participants/demote:
     patch:
       consumes:
@@ -3120,7 +3131,7 @@ paths:
       - Authorization: []
       summary: Demote participants from admin
       tags:
-      - groups
+      - group
   /{session}/group/participants/promote:
     patch:
       consumes:
@@ -3161,7 +3172,7 @@ paths:
       - Authorization: []
       summary: Promote participants to admin
       tags:
-      - groups
+      - group
   /{session}/group/participants/remove:
     post:
       consumes:
@@ -3202,7 +3213,7 @@ paths:
       - Authorization: []
       summary: Remove participants from group
       tags:
-      - groups
+      - group
   /{session}/group/photo:
     post:
       consumes:
@@ -3248,7 +3259,7 @@ paths:
       - Authorization: []
       summary: Set group picture
       tags:
-      - groups
+      - group
   /{session}/group/photo/remove:
     post:
       description: Remove the group profile picture
@@ -3282,7 +3293,7 @@ paths:
       - Authorization: []
       summary: Delete group picture
       tags:
-      - groups
+      - group
   /{session}/group/requests:
     get:
       description: Get list of pending join requests for a group
@@ -3312,7 +3323,7 @@ paths:
       - Authorization: []
       summary: Get pending join requests
       tags:
-      - groups
+      - group
   /{session}/group/requests/action:
     post:
       consumes:
@@ -3354,7 +3365,7 @@ paths:
       - Authorization: []
       summary: Approve or reject join requests
       tags:
-      - groups
+      - group
   /{session}/group/send/text:
     post:
       consumes:
@@ -3395,7 +3406,7 @@ paths:
       - Authorization: []
       summary: Send message to group
       tags:
-      - groups
+      - group
   /{session}/group/topic:
     patch:
       consumes:
@@ -3436,112 +3447,7 @@ paths:
       - Authorization: []
       summary: Update group description
       tags:
-      - groups
-  /{session}/history/chat:
-    get:
-      description: Get detailed chat information from history sync data
-      parameters:
-      - description: Session ID
-        in: path
-        name: session
-        required: true
-        type: string
-      - description: Chat JID
-        in: query
-        name: chatId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/ChatResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - Authorization: []
-      summary: Get chat info
-      tags:
-      - history
-  /{session}/history/chats/unread:
-    get:
-      description: Get list of chats with unread messages from history sync data
-      parameters:
-      - description: Session ID
-        in: path
-        name: session
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/ChatResponse'
-            type: array
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - Authorization: []
-      summary: Get unread chats
-      tags:
-      - history
-  /{session}/history/sync:
-    post:
-      consumes:
-      - application/json
-      description: Request WhatsApp to send history sync data from the phone
-      parameters:
-      - description: Session ID
-        in: path
-        name: session
-        required: true
-        type: string
-      - description: Sync options
-        in: body
-        name: request
-        schema:
-          $ref: '#/definitions/HistorySyncRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/MessageResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - Authorization: []
-      summary: Request history sync
-      tags:
-      - history
+      - group
   /{session}/logout:
     post:
       consumes:
@@ -3636,10 +3542,6 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -3675,10 +3577,6 @@ paths:
             $ref: '#/definitions/SendResponse'
         "400":
           description: Bad Request
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
           schema:
             $ref: '#/definitions/ErrorResponse'
         "500":
@@ -3730,7 +3628,7 @@ paths:
       - Authorization: []
       summary: Vote in a poll
       tags:
-      - messages
+      - message
   /{session}/message/react:
     post:
       consumes:
@@ -3771,7 +3669,7 @@ paths:
       - Authorization: []
       summary: Send reaction to message
       tags:
-      - messages
+      - message
   /{session}/message/request-unavailable:
     post:
       consumes:
@@ -3783,19 +3681,10 @@ paths:
         name: session
         required: true
         type: string
-      - description: Chat JID
-        in: path
-        name: chatId
-        required: true
-        type: string
-      - description: Message ID
-        in: path
-        name: messageId
-        required: true
-        type: string
-      - description: Optional sender JID for group messages
+      - description: Request data
         in: body
         name: body
+        required: true
         schema:
           $ref: '#/definitions/RequestUnavailableMessageRequest'
       produces:
@@ -3871,7 +3760,7 @@ paths:
       - Authorization: []
       summary: Send audio message
       tags:
-      - messages
+      - message
   /{session}/message/send/buttons:
     post:
       consumes:
@@ -3912,7 +3801,7 @@ paths:
       - Authorization: []
       summary: Send buttons message
       tags:
-      - messages
+      - message
   /{session}/message/send/carousel:
     post:
       consumes:
@@ -3954,7 +3843,7 @@ paths:
       - Authorization: []
       summary: Send carousel message
       tags:
-      - messages
+      - message
   /{session}/message/send/contact:
     post:
       consumes:
@@ -3995,7 +3884,7 @@ paths:
       - Authorization: []
       summary: Send contact message
       tags:
-      - messages
+      - message
   /{session}/message/send/document:
     post:
       consumes:
@@ -4049,7 +3938,7 @@ paths:
       - Authorization: []
       summary: Send document message
       tags:
-      - messages
+      - message
   /{session}/message/send/image:
     post:
       consumes:
@@ -4103,7 +3992,7 @@ paths:
       - Authorization: []
       summary: Send image message
       tags:
-      - messages
+      - message
   /{session}/message/send/interactive:
     post:
       consumes:
@@ -4145,7 +4034,7 @@ paths:
       - Authorization: []
       summary: Send interactive message with native flow buttons
       tags:
-      - messages
+      - message
   /{session}/message/send/list:
     post:
       consumes:
@@ -4186,7 +4075,7 @@ paths:
       - Authorization: []
       summary: Send list message
       tags:
-      - messages
+      - message
   /{session}/message/send/location:
     post:
       consumes:
@@ -4227,7 +4116,7 @@ paths:
       - Authorization: []
       summary: Send location message
       tags:
-      - messages
+      - message
   /{session}/message/send/poll:
     post:
       consumes:
@@ -4268,7 +4157,7 @@ paths:
       - Authorization: []
       summary: Send poll message
       tags:
-      - messages
+      - message
   /{session}/message/send/sticker:
     post:
       consumes:
@@ -4318,7 +4207,7 @@ paths:
       - Authorization: []
       summary: Send sticker message
       tags:
-      - messages
+      - message
   /{session}/message/send/template:
     post:
       consumes:
@@ -4360,7 +4249,7 @@ paths:
       - Authorization: []
       summary: Send template message
       tags:
-      - messages
+      - message
   /{session}/message/send/text:
     post:
       consumes:
@@ -4401,7 +4290,7 @@ paths:
       - Authorization: []
       summary: Send text message
       tags:
-      - messages
+      - message
   /{session}/message/send/video:
     post:
       consumes:
@@ -4455,7 +4344,7 @@ paths:
       - Authorization: []
       summary: Send video message
       tags:
-      - messages
+      - message
   /{session}/newsletter/create:
     post:
       consumes:
@@ -4874,10 +4763,6 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
@@ -4896,11 +4781,6 @@ paths:
       - description: Session ID
         in: path
         name: session
-        required: true
-        type: string
-      - description: Phone number
-        in: path
-        name: phone
         required: true
         type: string
       - description: Subscribe data
@@ -6026,18 +5906,20 @@ tags:
   name: sessions
 - description: Account identity & settings
   name: profile
+- description: Session settings & privacy configuration
+  name: settings
 - description: Online status & typing indicators
   name: presence
 - description: Contacts & user management
   name: contact
 - description: Group management & participants
-  name: groups
+  name: group
 - description: Community & linked groups
   name: community
 - description: Conversations & message operations
   name: chat
 - description: Send text, media & interactive messages
-  name: messages
+  name: message
 - description: File storage & downloads
   name: media
 - description: Channels & broadcasts
@@ -6046,8 +5928,6 @@ tags:
   name: status
 - description: Voice & video calls
   name: call
-- description: History sync & offline data
-  name: history
 - description: Webhook integrations
   name: webhook
 - description: Chatwoot integration

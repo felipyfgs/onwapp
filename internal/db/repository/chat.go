@@ -159,8 +159,8 @@ func (r *ChatRepository) GetByJID(ctx context.Context, sessionID, chatJID string
 	return c, err
 }
 
-func (r *ChatRepository) GetBySession(ctx context.Context, sessionID string, limit, offset int) ([]*model.Chat, error) {
-	rows, err := r.pool.Query(ctx, `
+func (r *ChatRepository) GetBySession(ctx context.Context, sessionID string, limit, offset int, unreadOnly bool) ([]*model.Chat, error) {
+	query := `
 		SELECT 
 			"id", "sessionId", "chatJid", COALESCE("name", ''),
 			"unreadCount", "unreadMentionCount", "markedAsUnread",
@@ -171,35 +171,15 @@ func (r *ChatRepository) GetBySession(ctx context.Context, sessionID string, lim
 			"conversationTimestamp", COALESCE("pHash", ''), "notSpam",
 			"syncedAt", "updatedAt"
 		FROM "onWappChat"
-		WHERE "sessionId" = $1
-		ORDER BY "conversationTimestamp" DESC NULLS LAST
-		LIMIT $2 OFFSET $3`,
-		sessionID, limit, offset,
-	)
-	if err != nil {
-		return nil, err
+		WHERE "sessionId" = $1`
+
+	if unreadOnly {
+		query += ` AND ("unreadCount" > 0 OR "markedAsUnread" = true)`
 	}
-	defer rows.Close()
 
-	return r.scanChats(rows)
-}
+	query += ` ORDER BY "conversationTimestamp" DESC NULLS LAST LIMIT $2 OFFSET $3`
 
-func (r *ChatRepository) GetUnreadChats(ctx context.Context, sessionID string) ([]*model.Chat, error) {
-	rows, err := r.pool.Query(ctx, `
-		SELECT 
-			"id", "sessionId", "chatJid", COALESCE("name", ''),
-			"unreadCount", "unreadMentionCount", "markedAsUnread",
-			COALESCE("ephemeralExpiration", 0), COALESCE("ephemeralSettingTimestamp", 0), COALESCE("disappearingInitiator", 0),
-			"readOnly", "suspended", "locked",
-			"limitSharing", COALESCE("limitSharingTimestamp", 0), COALESCE("limitSharingTrigger", 0), COALESCE("limitSharingInitiatedByMe", false),
-			"isDefaultSubgroup", COALESCE("commentsCount", 0),
-			"conversationTimestamp", COALESCE("pHash", ''), "notSpam",
-			"syncedAt", "updatedAt"
-		FROM "onWappChat"
-		WHERE "sessionId" = $1 AND ("unreadCount" > 0 OR "markedAsUnread" = true)
-		ORDER BY "conversationTimestamp" DESC NULLS LAST`,
-		sessionID,
-	)
+	rows, err := r.pool.Query(ctx, query, sessionID, limit, offset)
 	if err != nil {
 		return nil, err
 	}

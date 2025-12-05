@@ -40,17 +40,19 @@ import (
 // @tag.description Session lifecycle & connection management
 // @tag.name profile
 // @tag.description Account identity & settings
+// @tag.name settings
+// @tag.description Session settings & privacy configuration
 // @tag.name presence
 // @tag.description Online status & typing indicators
 // @tag.name contact
 // @tag.description Contacts & user management
-// @tag.name groups
+// @tag.name group
 // @tag.description Group management & participants
 // @tag.name community
 // @tag.description Community & linked groups
 // @tag.name chat
 // @tag.description Conversations & message operations
-// @tag.name messages
+// @tag.name message
 // @tag.description Send text, media & interactive messages
 // @tag.name media
 // @tag.description File storage & downloads
@@ -60,8 +62,6 @@ import (
 // @tag.description Stories & status updates
 // @tag.name call
 // @tag.description Voice & video calls
-// @tag.name history
-// @tag.description History sync & offline data
 // @tag.name webhook
 // @tag.description Webhook integrations
 // @tag.name chatwoot
@@ -240,23 +240,22 @@ func main() {
 		mediaHandler = handler.NewMediaHandler(database, mediaService, sessionService)
 	}
 
-	// Initialize History handler
-	historyHandler := handler.NewHistoryHandler(sessionService, wppService, historySyncService)
+	// Initialize Chat handler with dependencies
+	chatHandler := handler.NewChatHandler(wppService)
+	chatHandler.SetSessionService(sessionService)
+	chatHandler.SetHistorySyncService(historySyncService)
 
 	handlers := &router.Handlers{
 		Session:    handler.NewSessionHandler(sessionService, wppService, database),
 		Profile:    handler.NewProfileHandler(wppService),
-		Presence:   handler.NewPresenceHandler(wppService),
 		Contact:    handler.NewContactHandler(wppService),
 		Group:      handler.NewGroupHandler(wppService),
 		Community:  handler.NewCommunityHandler(wppService),
-		Chat:       handler.NewChatHandler(wppService),
+		Chat:       chatHandler,
 		Message:    handler.NewMessageHandler(wppService),
 		Media:      mediaHandler,
 		Newsletter: handler.NewNewsletterHandler(wppService),
 		Status:     handler.NewStatusHandler(wppService),
-		Call:       handler.NewCallHandler(wppService),
-		History:    historyHandler,
 		Settings:   handler.NewSettingsHandler(database.Settings, wppService),
 		Webhook:    webhookHandler,
 	}

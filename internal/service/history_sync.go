@@ -98,20 +98,15 @@ func (s *HistorySyncService) processConversations(ctx context.Context, sessionID
 	return saved, nil
 }
 
-// GetUnreadChats returns chats with unread messages
-func (s *HistorySyncService) GetUnreadChats(ctx context.Context, sessionID string) ([]*model.Chat, error) {
-	return s.chatRepo.GetUnreadChats(ctx, sessionID)
-}
-
-// GetAllChats returns all chats for a session with pagination
-func (s *HistorySyncService) GetAllChats(ctx context.Context, sessionID string, limit, offset int) ([]*model.Chat, error) {
+// GetAllChats returns chats for a session with pagination and optional unread filter
+func (s *HistorySyncService) GetAllChats(ctx context.Context, sessionID string, limit, offset int, unreadOnly bool) ([]*model.Chat, error) {
 	if limit <= 0 {
 		limit = 100
 	}
 	if limit > 500 {
 		limit = 500
 	}
-	return s.chatRepo.GetBySession(ctx, sessionID, limit, offset)
+	return s.chatRepo.GetBySession(ctx, sessionID, limit, offset, unreadOnly)
 }
 
 // GetChatByJID returns a chat by its JID with additional context

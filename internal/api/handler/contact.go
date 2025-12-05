@@ -234,36 +234,6 @@ func (h *ContactHandler) UpdateBlocklist(c *gin.Context) {
 	})
 }
 
-// SubscribePresence godoc
-// @Summary      Subscribe to presence updates
-// @Description  Subscribe to receive presence updates from a contact
-// @Tags         contact
-// @Accept       json
-// @Produce      json
-// @Param        session   path      string  true  "Session ID"
-// @Param        body   body      dto.SubscribePresenceRequest true  "Subscribe data"
-// @Success      200    {object}  object
-// @Failure      400    {object}  dto.ErrorResponse
-// @Failure      500    {object}  dto.ErrorResponse
-// @Security     Authorization
-// @Router       /{session}/presence/subscribe [post]
-func (h *ContactHandler) SubscribePresence(c *gin.Context) {
-	sessionId := c.Param("session")
-
-	var req dto.SubscribePresenceRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-		return
-	}
-
-	if err := h.wpp.SubscribePresence(c.Request.Context(), sessionId, req.Phone); err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{})
-}
-
 // GetContactQRLink godoc
 // @Summary      Get contact QR link
 // @Description  Get QR link for adding contact
