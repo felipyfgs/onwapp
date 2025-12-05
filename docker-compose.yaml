@@ -103,9 +103,13 @@ services:
 
 volumes:
   dev_postgres_data:
+    name: onwapp_dev_postgres_data
   dev_nats_data:
+    name: onwapp_dev_nats_data
   dev_minio_data:
+    name: onwapp_dev_minio_data
 
 networks:
   onwapp-dev-network:
+    name: onwapp-dev-network
     driver: bridge
