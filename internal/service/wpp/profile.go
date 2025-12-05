@@ -21,10 +21,29 @@ func (s *Service) GetOwnProfile(ctx context.Context, sessionId string) (map[stri
 		return nil, fmt.Errorf("session not authenticated")
 	}
 
-	return map[string]interface{}{
+	result := map[string]interface{}{
 		"jid":      client.Store.ID.String(),
 		"pushName": client.Store.PushName,
-	}, nil
+	}
+
+	// Get user info (status, picture)
+	userJID := types.NewJID(client.Store.ID.User, types.DefaultUserServer)
+	userInfo, err := client.GetUserInfo(ctx, []types.JID{userJID})
+	if err == nil && userInfo != nil {
+		if info, ok := userInfo[userJID]; ok {
+			if info.Status != "" {
+				result["status"] = info.Status
+			}
+		}
+	}
+
+	// Get profile picture URL
+	pic, err := client.GetProfilePictureInfo(ctx, userJID, &whatsmeow.GetProfilePictureParams{})
+	if err == nil && pic != nil {
+		result["pictureUrl"] = pic.URL
+	}
+
+	return result, nil
 }
 
 // SetStatusMessage sets the status message
