@@ -240,6 +240,7 @@ func (r *Repository) GetExistingSourceIDs(ctx context.Context, messageIDs []stri
 				}
 				existing[sourceID] = true
 			}
+			_ = rows.Err()
 		}()
 	}
 
@@ -626,9 +627,13 @@ func (r *Repository) CreateContactsAndConversations(ctx context.Context, phoneDa
 	}
 
 	// Build query values
-	var values1, values2 []string
-	args1 := []interface{}{r.accountID}
-	args2 := []interface{}{r.accountID, r.inboxID}
+	values1 := make([]string, 0, len(phoneData))
+	values2 := make([]string, 0, len(phoneData))
+	args1 := make([]interface{}, 1, 1+len(phoneData)*4)
+	args1[0] = r.accountID
+	args2 := make([]interface{}, 2, 2+len(phoneData)*3)
+	args2[0] = r.accountID
+	args2[1] = r.inboxID
 
 	for _, pd := range phoneData {
 		idx1 := len(args1) + 1
@@ -844,8 +849,10 @@ func (r *Repository) InsertMessagesBatch(ctx context.Context, messages []Message
 		return 0, nil
 	}
 
-	var values []string
-	args := []interface{}{r.accountID, r.inboxID}
+	values := make([]string, 0, len(messages))
+	args := make([]interface{}, 2, 2+len(messages)*7)
+	args[0] = r.accountID
+	args[1] = r.inboxID
 
 	for _, msg := range messages {
 		idx := len(args) + 1
@@ -953,8 +960,8 @@ func (r *Repository) UpdateConversationTimestampsBatch(ctx context.Context, time
 		return nil
 	}
 
-	var values []string
-	var args []interface{}
+	values := make([]string, 0, len(timestamps))
+	args := make([]interface{}, 0, len(timestamps)*2)
 
 	for convID, ts := range timestamps {
 		idx := len(args) + 1
@@ -1193,8 +1200,8 @@ func (r *Repository) UpdateMessageTimestampsBatch(ctx context.Context, timestamp
 		return nil
 	}
 
-	var values []string
-	var args []interface{}
+	values := make([]string, 0, len(timestamps))
+	args := make([]interface{}, 0, len(timestamps)*2)
 
 	for msgID, ts := range timestamps {
 		idx := len(args) + 1
@@ -1225,8 +1232,10 @@ func (r *Repository) CreateContactsAndConversationsOptimized(ctx context.Context
 	}
 
 	// Build VALUES clause
-	var values []string
-	args := []interface{}{r.accountID, r.inboxID}
+	values := make([]string, 0, len(phoneData))
+	args := make([]interface{}, 2, 2+len(phoneData)*6)
+	args[0] = r.accountID
+	args[1] = r.inboxID
 
 	for _, pd := range phoneData {
 		idx := len(args) + 1

@@ -473,7 +473,7 @@ func (s *MessageSyncer) processMediaMessagesParallel(
 	mediaInfos := s.prefetchMediaInfo(ctx, messages)
 
 	// Build media upload jobs
-	var jobs []MediaUploadJob
+	jobs := make([]MediaUploadJob, 0, len(messages))
 	for i := range messages {
 		msg := &messages[i]
 		fks := chatCache[msg.ChatJID]

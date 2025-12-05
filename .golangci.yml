@@ -20,6 +20,13 @@ linters:
     # PERFORMANCE (optimize runtime)
     # ==========================================================================
     - copyloopvar      # detects loop variable issues (Go 1.22+)
+    - prealloc         # suggests slice pre-allocation
+    - wastedassign     # detects unused assignments
+
+    # ==========================================================================
+    # DATABASE PERFORMANCE
+    # ==========================================================================
+    - rowserrcheck     # checks rows.Err() is called after iterating
 
     # ==========================================================================
     # CODE QUALITY (cleaner, more maintainable code)

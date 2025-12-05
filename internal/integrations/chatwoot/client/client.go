@@ -352,7 +352,7 @@ func (c *Client) FindContactByPhoneWithMerge(ctx context.Context, phone string, 
 func (c *Client) FindContactWithBrazilianOR(ctx context.Context, phone string) ([]core.Contact, error) {
 	phones := util.GetBrazilianPhoneVariants(phone)
 
-	var payload []map[string]interface{}
+	payload := make([]map[string]interface{}, 0, len(phones))
 	for i, p := range phones {
 		filter := map[string]interface{}{
 			"attribute_key":   "phone_number",

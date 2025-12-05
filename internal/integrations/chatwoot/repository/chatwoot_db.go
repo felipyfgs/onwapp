@@ -78,6 +78,7 @@ func (r *ChatwootDBRepository) GetExistingSourceIDs(ctx context.Context, message
 				}
 				existing[sourceID] = true
 			}
+			_ = rows.Err()
 		}()
 	}
 
@@ -161,9 +162,13 @@ func (r *ChatwootDBRepository) UpsertContactsAndConversations(ctx context.Contex
 		return result, nil
 	}
 
-	var values1, values2 []string
-	args1 := []interface{}{r.accountID}
-	args2 := []interface{}{r.accountID, r.inboxID}
+	values1 := make([]string, 0, len(phoneData))
+	values2 := make([]string, 0, len(phoneData))
+	args1 := make([]interface{}, 1, 1+len(phoneData)*4)
+	args1[0] = r.accountID
+	args2 := make([]interface{}, 2, 2+len(phoneData)*3)
+	args2[0] = r.accountID
+	args2[1] = r.inboxID
 
 	for _, pd := range phoneData {
 		idx1 := len(args1) + 1
@@ -275,8 +280,9 @@ func (r *ChatwootDBRepository) InsertContactsBatch(ctx context.Context, contacts
 		return 0, nil
 	}
 
-	var values []string
-	args := []interface{}{r.accountID}
+	values := make([]string, 0, len(contacts))
+	args := make([]interface{}, 1, 1+len(contacts)*3)
+	args[0] = r.accountID
 
 	for _, c := range contacts {
 		idx := len(args) + 1

@@ -53,7 +53,7 @@ func (s *HistorySyncService) processConversations(ctx context.Context, sessionID
 		return 0, nil
 	}
 
-	var chats []*model.Chat
+	chats := make([]*model.Chat, 0, len(conversations))
 	for _, conv := range conversations {
 		chatJID := conv.GetID()
 		if chatJID == "" {

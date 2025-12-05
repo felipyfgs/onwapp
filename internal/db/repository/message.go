@@ -219,7 +219,7 @@ func (r *MessageRepository) scanMessages(rows interface {
 	Scan(...interface{}) error
 	Err() error
 }) ([]model.Message, error) {
-	var messages []model.Message
+	messages := make([]model.Message, 0, 50)
 	for rows.Next() {
 		var m model.Message
 		err := rows.Scan(
@@ -324,7 +324,7 @@ func (r *MessageRepository) GetAllByCwMsgId(ctx context.Context, sessionID strin
 	}
 	defer rows.Close()
 
-	var messages []*model.Message
+	messages := make([]*model.Message, 0, 5)
 	for rows.Next() {
 		var m model.Message
 		err := rows.Scan(

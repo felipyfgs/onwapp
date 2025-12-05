@@ -517,7 +517,7 @@ func (s *Service) buildReactionsJSON(reactions []*waWeb.Reaction) []byte {
 		return nil
 	}
 
-	var reactionsList []map[string]interface{}
+	reactionsList := make([]map[string]interface{}, 0, len(reactions))
 	for _, r := range reactions {
 		if r.GetKey() == nil {
 			continue

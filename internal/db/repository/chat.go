@@ -223,7 +223,7 @@ func (r *ChatRepository) UpdateEphemeralSettings(ctx context.Context, sessionID,
 }
 
 func (r *ChatRepository) scanChats(rows pgx.Rows) ([]*model.Chat, error) {
-	var chats []*model.Chat
+	chats := make([]*model.Chat, 0, 50)
 	for rows.Next() {
 		c := &model.Chat{}
 		err := rows.Scan(
