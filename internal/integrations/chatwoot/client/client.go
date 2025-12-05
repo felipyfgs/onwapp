@@ -565,8 +565,8 @@ func (c *Client) GetOrCreateContactWithMerge(ctx context.Context, inboxID int, p
 					baseContact = contacts[1]
 					mergeContact = contacts[0]
 				}
-				if err := c.MergeContacts(ctx, baseContact.ID, mergeContact.ID); err != nil {
-					logger.Warn().Err(err).Msg("Chatwoot: failed to merge Brazilian contacts")
+				if mergeErr := c.MergeContacts(ctx, baseContact.ID, mergeContact.ID); mergeErr != nil {
+					logger.Warn().Err(mergeErr).Msg("Chatwoot: failed to merge Brazilian contacts")
 				} else {
 					logger.Info().
 						Int("baseContactId", baseContact.ID).

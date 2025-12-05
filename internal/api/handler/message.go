@@ -13,6 +13,12 @@ import (
 	"onwapp/internal/service/wpp"
 )
 
+// Default MIME types for media
+const (
+	mimeJPEG = "image/jpeg"
+	mimeMP4  = "video/mp4"
+)
+
 type MessageHandler struct {
 	wpp *wpp.Service
 }
@@ -114,7 +120,7 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 		mimeType = detectedMime
 	}
 	if mimeType == "" {
-		mimeType = "image/jpeg"
+		mimeType = mimeJPEG
 	}
 
 	resp, err := h.wpp.SendImage(c.Request.Context(), sessionId, phone, imageData, caption, mimeType, nil)
@@ -261,7 +267,7 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 		mimeType = detectedMime
 	}
 	if mimeType == "" {
-		mimeType = "video/mp4"
+		mimeType = mimeMP4
 	}
 
 	resp, err := h.wpp.SendVideo(c.Request.Context(), sessionId, phone, videoData, caption, mimeType, nil)
@@ -765,7 +771,7 @@ func (h *MessageHandler) SendInteractive(c *gin.Context) {
 			mimeType = detectedMime
 		}
 		if mimeType == "" {
-			mimeType = "image/jpeg"
+			mimeType = mimeJPEG
 		}
 		params.ImageMessage = &waE2E.ImageMessage{
 			URL:           proto.String(uploaded.URL),
@@ -794,7 +800,7 @@ func (h *MessageHandler) SendInteractive(c *gin.Context) {
 			mimeType = detectedMime
 		}
 		if mimeType == "" {
-			mimeType = "video/mp4"
+			mimeType = mimeMP4
 		}
 		params.VideoMessage = &waE2E.VideoMessage{
 			URL:           proto.String(uploaded.URL),
@@ -890,7 +896,7 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 			mimeType = detectedMime
 		}
 		if mimeType == "" {
-			mimeType = "image/jpeg"
+			mimeType = mimeJPEG
 		}
 		params.ImageMessage = &waE2E.ImageMessage{
 			URL:           proto.String(uploaded.URL),
@@ -919,7 +925,7 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 			mimeType = detectedMime
 		}
 		if mimeType == "" {
-			mimeType = "video/mp4"
+			mimeType = mimeMP4
 		}
 		params.VideoMessage = &waE2E.VideoMessage{
 			URL:           proto.String(uploaded.URL),
@@ -1044,7 +1050,7 @@ func (h *MessageHandler) SendCarousel(c *gin.Context) {
 				return
 			}
 			if mimeType == "" {
-				mimeType = "image/jpeg"
+				mimeType = mimeJPEG
 			}
 			cardHeader.ImageMessage = &waE2E.ImageMessage{
 				URL:           proto.String(uploaded.URL),
@@ -1089,7 +1095,7 @@ func (h *MessageHandler) SendCarousel(c *gin.Context) {
 				return
 			}
 			if mimeType == "" {
-				mimeType = "video/mp4"
+				mimeType = mimeMP4
 			}
 			cardHeader.VideoMessage = &waE2E.VideoMessage{
 				URL:           proto.String(uploaded.URL),

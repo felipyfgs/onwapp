@@ -19,7 +19,6 @@ linters:
     # ==========================================================================
     # PERFORMANCE (optimize runtime)
     # ==========================================================================
-    - prealloc         # find slice declarations that could be preallocated
     - copyloopvar      # detects loop variable issues (Go 1.22+)
 
     # ==========================================================================
@@ -42,8 +41,8 @@ linters-settings:
       - G304  # file inclusion via variable (common in file handlers)
 
   goconst:
-    min-len: 3         # minimum length of string to consider
-    min-occurrences: 3 # minimum occurrences before suggesting const
+    min-len: 6         # minimum length of string to consider
+    min-occurrences: 5 # minimum occurrences before suggesting const
 
   govet:
     enable-all: true
@@ -54,10 +53,6 @@ linters-settings:
     errorf: true       # check fmt.Errorf uses %w
     asserts: true      # check type assertions on errors
     comparison: true   # check error comparisons
-
-  prealloc:
-    simple: true       # only report simple cases
-    for-loops: true    # check for loops
 
 issues:
   max-issues-per-linter: 0

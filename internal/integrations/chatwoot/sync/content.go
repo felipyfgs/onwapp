@@ -8,6 +8,14 @@ import (
 	"onwapp/internal/model"
 )
 
+// Message type placeholders for Chatwoot
+const (
+	msgLocation = "_[📍 Localização]_"
+	msgContact  = "_[👤 Contato]_"
+	msgContacts = "_[👥 Contatos]_"
+	msgResponse = "_[🔘 Resposta]_"
+)
+
 // GetMessageContent extracts displayable content from a message
 func GetMessageContent(msg *model.Message) string {
 	if msg.Content == "" && len(msg.RawEvent) > 0 {
@@ -66,14 +74,14 @@ func formatMessageContent(msg *model.Message) string {
 func extractLocationContent(msg *model.Message) string {
 	if len(msg.RawEvent) == 0 {
 		if msg.Content != "" {
-			return "_[📍 Localização]_\n" + msg.Content
+			return msgLocation + "\n" + msg.Content
 		}
-		return "_[📍 Localização]_"
+		return msgLocation
 	}
 
 	var rawEvent map[string]interface{}
 	if err := json.Unmarshal(msg.RawEvent, &rawEvent); err != nil {
-		return "_[📍 Localização]_"
+		return msgLocation
 	}
 
 	// Try to extract from webMessageInfo or historySyncMsg
@@ -97,9 +105,9 @@ func extractLocationContent(msg *model.Message) string {
 
 	if locationMsg == nil {
 		if msg.Content != "" {
-			return "_[📍 Localização]_\n" + msg.Content
+			return msgLocation + "\n" + msg.Content
 		}
-		return "_[📍 Localização]_"
+		return msgLocation
 	}
 
 	lat, _ := locationMsg["degreesLatitude"].(float64)
@@ -108,7 +116,7 @@ func extractLocationContent(msg *model.Message) string {
 	address, _ := locationMsg["address"].(string)
 
 	var b strings.Builder
-	b.WriteString("_[📍 Localização]_")
+	b.WriteString(msgLocation)
 
 	if name != "" {
 		b.WriteString("\n*")
@@ -136,12 +144,12 @@ func extractContactContent(msg *model.Message) string {
 		if msg.Content != "" {
 			return "_[👤 Contato: " + msg.Content + "]_"
 		}
-		return "_[👤 Contato]_"
+		return msgContact
 	}
 
 	var rawEvent map[string]interface{}
 	if err := json.Unmarshal(msg.RawEvent, &rawEvent); err != nil {
-		return "_[👤 Contato]_"
+		return msgContact
 	}
 
 	// Try Message.contactMessage first (real-time format)
@@ -174,14 +182,14 @@ func extractContactContent(msg *model.Message) string {
 		if msg.Content != "" {
 			return "_[👤 Contato: " + msg.Content + "]_"
 		}
-		return "_[👤 Contato]_"
+		return msgContact
 	}
 
 	displayName, _ := contactMsg["displayName"].(string)
 	vcard, _ := contactMsg["vcard"].(string)
 
 	var b strings.Builder
-	b.WriteString("_[👤 Contato]_")
+	b.WriteString(msgContact)
 
 	if displayName != "" {
 		b.WriteString("\n*")
@@ -204,12 +212,12 @@ func extractContactsArrayContent(msg *model.Message) string {
 		if msg.Content != "" {
 			return "_[👥 Contatos: " + msg.Content + "]_"
 		}
-		return "_[👥 Contatos]_"
+		return msgContacts
 	}
 
 	var rawEvent map[string]interface{}
 	if err := json.Unmarshal(msg.RawEvent, &rawEvent); err != nil {
-		return "_[👥 Contatos]_"
+		return msgContacts
 	}
 
 	// Try Message.contactsArrayMessage first (real-time format)
@@ -248,11 +256,11 @@ func extractContactsArrayContent(msg *model.Message) string {
 		if msg.Content != "" {
 			return "_[👥 Contatos: " + msg.Content + "]_"
 		}
-		return "_[👥 Contatos]_"
+		return msgContacts
 	}
 
 	var b strings.Builder
-	b.WriteString("_[👥 Contatos]_")
+	b.WriteString(msgContacts)
 
 	for _, c := range contactsArray {
 		contact, ok := c.(map[string]interface{})
@@ -282,16 +290,16 @@ func extractContactsArrayContent(msg *model.Message) string {
 func extractButtonReplyContent(msg *model.Message) string {
 	// Button replies usually have the selected button text in Content
 	if msg.Content != "" {
-		return "_[🔘 Resposta]_ " + msg.Content
+		return msgResponse + " " + msg.Content
 	}
 
 	if len(msg.RawEvent) == 0 {
-		return "_[🔘 Resposta]_"
+		return msgResponse
 	}
 
 	var rawEvent map[string]interface{}
 	if err := json.Unmarshal(msg.RawEvent, &rawEvent); err != nil {
-		return "_[🔘 Resposta]_"
+		return msgResponse
 	}
 
 	// Try to extract selected display text from various formats
@@ -328,10 +336,10 @@ func extractButtonReplyContent(msg *model.Message) string {
 	}
 
 	if selectedText != "" {
-		return "_[🔘 Resposta]_ " + selectedText
+		return msgResponse + " " + selectedText
 	}
 
-	return "_[🔘 Resposta]_"
+	return msgResponse
 }
 
 // extractPhoneFromVCard extracts phone number from vCard string

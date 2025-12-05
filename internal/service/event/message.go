@@ -325,7 +325,7 @@ func (s *Service) handleMediaRetry(ctx context.Context, session *model.Session, 
 	logger.Info().
 		Str("session", session.Session).
 		Str("event", "media_retry").
-		Str("messageId", string(e.MessageID)).
+		Str("messageId", e.MessageID).
 		Str("chat", e.ChatID.String()).
 		Bool("hasError", e.Error != nil).
 		Msg("Media retry response received")
@@ -334,7 +334,7 @@ func (s *Service) handleMediaRetry(ctx context.Context, session *model.Session, 
 		if err := s.mediaService.HandleMediaRetryResponse(ctx, session.Client, e, session.ID); err != nil {
 			logger.Warn().
 				Err(err).
-				Str("messageId", string(e.MessageID)).
+				Str("messageId", e.MessageID).
 				Msg("Failed to process media retry response")
 		}
 	}
@@ -481,7 +481,7 @@ func (s *Service) extractMediaInfo(sessionID, msgID string, msg *waE2E.Message) 
 			WAMediaKey:          img.GetMediaKey(),
 			WAFileSHA256:        img.GetFileSHA256(),
 			WAFileEncSHA256:     img.GetFileEncSHA256(),
-			WAMediaKeyTimestamp: int64(img.GetMediaKeyTimestamp()),
+			WAMediaKeyTimestamp: img.GetMediaKeyTimestamp(),
 			Width:               int(img.GetWidth()),
 			Height:              int(img.GetHeight()),
 		}
@@ -499,7 +499,7 @@ func (s *Service) extractMediaInfo(sessionID, msgID string, msg *waE2E.Message) 
 			WAMediaKey:          vid.GetMediaKey(),
 			WAFileSHA256:        vid.GetFileSHA256(),
 			WAFileEncSHA256:     vid.GetFileEncSHA256(),
-			WAMediaKeyTimestamp: int64(vid.GetMediaKeyTimestamp()),
+			WAMediaKeyTimestamp: vid.GetMediaKeyTimestamp(),
 			Width:               int(vid.GetWidth()),
 			Height:              int(vid.GetHeight()),
 			Duration:            int(vid.GetSeconds()),
@@ -517,7 +517,7 @@ func (s *Service) extractMediaInfo(sessionID, msgID string, msg *waE2E.Message) 
 			WAMediaKey:          aud.GetMediaKey(),
 			WAFileSHA256:        aud.GetFileSHA256(),
 			WAFileEncSHA256:     aud.GetFileEncSHA256(),
-			WAMediaKeyTimestamp: int64(aud.GetMediaKeyTimestamp()),
+			WAMediaKeyTimestamp: aud.GetMediaKeyTimestamp(),
 			Duration:            int(aud.GetSeconds()),
 		}
 	}
@@ -535,7 +535,7 @@ func (s *Service) extractMediaInfo(sessionID, msgID string, msg *waE2E.Message) 
 			WAMediaKey:          doc.GetMediaKey(),
 			WAFileSHA256:        doc.GetFileSHA256(),
 			WAFileEncSHA256:     doc.GetFileEncSHA256(),
-			WAMediaKeyTimestamp: int64(doc.GetMediaKeyTimestamp()),
+			WAMediaKeyTimestamp: doc.GetMediaKeyTimestamp(),
 		}
 	}
 
@@ -550,7 +550,7 @@ func (s *Service) extractMediaInfo(sessionID, msgID string, msg *waE2E.Message) 
 			WAMediaKey:          stk.GetMediaKey(),
 			WAFileSHA256:        stk.GetFileSHA256(),
 			WAFileEncSHA256:     stk.GetFileEncSHA256(),
-			WAMediaKeyTimestamp: int64(stk.GetMediaKeyTimestamp()),
+			WAMediaKeyTimestamp: stk.GetMediaKeyTimestamp(),
 			Width:               int(stk.GetWidth()),
 			Height:              int(stk.GetHeight()),
 		}

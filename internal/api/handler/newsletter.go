@@ -222,8 +222,8 @@ func (h *NewsletterHandler) NewsletterSendReaction(c *gin.Context) {
 		return
 	}
 
-	serverID := types.MessageServerID(req.ServerID)
-	messageID := types.MessageID(req.MessageID)
+	serverID := req.ServerID
+	messageID := req.MessageID
 
 	if err := h.wpp.NewsletterSendReaction(c.Request.Context(), sessionId, req.NewsletterJID, serverID, req.Reaction, messageID); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
@@ -287,9 +287,7 @@ func (h *NewsletterHandler) NewsletterMarkViewed(c *gin.Context) {
 	}
 
 	serverIDs := make([]types.MessageServerID, len(req.ServerIDs))
-	for i, id := range req.ServerIDs {
-		serverIDs[i] = types.MessageServerID(id)
-	}
+	copy(serverIDs, req.ServerIDs)
 
 	if err := h.wpp.NewsletterMarkViewed(c.Request.Context(), sessionId, req.NewsletterJID, serverIDs); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})

@@ -199,7 +199,7 @@ func (s *MediaService) SendMediaRetryRequest(ctx context.Context, client *whatsm
 
 	// Build message info for retry request
 	msgInfo := &types.MessageInfo{
-		ID: types.MessageID(msg.MsgId),
+		ID: msg.MsgId,
 		MessageSource: types.MessageSource{
 			Chat:     chatJID,
 			Sender:   senderJID,
@@ -245,7 +245,7 @@ func (s *MediaService) SendMediaRetryRequest(ctx context.Context, client *whatsm
 
 // HandleMediaRetryResponse processes a media retry response from WhatsApp
 func (s *MediaService) HandleMediaRetryResponse(ctx context.Context, client *whatsmeow.Client, evt *events.MediaRetry, sessionID string) error {
-	msgID := string(evt.MessageID)
+	msgID := evt.MessageID
 
 	// Get pending retry info
 	s.pendingRetriesMu.RLock()

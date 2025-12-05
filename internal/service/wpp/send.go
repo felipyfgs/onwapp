@@ -402,7 +402,7 @@ func (s *Service) SendPollVote(ctx context.Context, sessionId, phone, pollMsgID 
 	}
 
 	pollInfo := &types.MessageInfo{
-		ID: types.MessageID(pollMsgID),
+		ID: pollMsgID,
 		MessageSource: types.MessageSource{
 			Chat:   jid,
 			Sender: jid,

@@ -25,9 +25,7 @@ func (s *Service) MarkRead(ctx context.Context, sessionId, phone string, message
 	}
 
 	ids := make([]types.MessageID, len(messageIDs))
-	for i, id := range messageIDs {
-		ids[i] = types.MessageID(id)
-	}
+	copy(ids, messageIDs)
 
 	return client.MarkRead(ctx, ids, time.Now(), jid, jid)
 }
