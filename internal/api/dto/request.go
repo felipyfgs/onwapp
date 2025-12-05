@@ -213,11 +213,6 @@ type SetProfilePictureRequest struct {
 	Image string `json:"image" binding:"required" example:"base64_encoded_image"`
 }
 
-type SetPrivacyRequest struct {
-	Setting string `json:"setting" binding:"required" example:"last_seen"` // last_seen, online, profile, status, read_receipts, group_add, call_add
-	Value   string `json:"value" binding:"required" example:"contacts"`    // all, contacts, contact_blacklist, match_last_seen, known, none
-}
-
 // Poll requests
 
 type SendPollRequest struct {
@@ -244,10 +239,6 @@ type BlocklistRequest struct {
 
 type DisappearingRequest struct {
 	Phone string `json:"phone" binding:"required" example:"5511999999999"`
-	Timer string `json:"timer" binding:"required" example:"24h"` // 24h, 7d, 90d, or off
-}
-
-type DefaultDisappearingRequest struct {
 	Timer string `json:"timer" binding:"required" example:"24h"` // 24h, 7d, 90d, or off
 }
 

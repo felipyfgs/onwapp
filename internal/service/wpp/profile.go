@@ -100,35 +100,6 @@ func (s *Service) DeleteProfilePicture(ctx context.Context, sessionId string) er
 	return err
 }
 
-// GetPrivacySettings gets privacy settings
-func (s *Service) GetPrivacySettings(ctx context.Context, sessionId string) (map[string]interface{}, error) {
-	client, err := s.getClient(sessionId)
-	if err != nil {
-		return nil, err
-	}
-
-	settings := client.GetPrivacySettings(ctx)
-
-	return map[string]interface{}{
-		"groupAdd":     string(settings.GroupAdd),
-		"lastSeen":     string(settings.LastSeen),
-		"status":       string(settings.Status),
-		"profile":      string(settings.Profile),
-		"readReceipts": string(settings.ReadReceipts),
-		"callAdd":      string(settings.CallAdd),
-		"online":       string(settings.Online),
-	}, nil
-}
-
-// SetPrivacySettings sets privacy settings
-func (s *Service) SetPrivacySettings(ctx context.Context, sessionId string, settingName types.PrivacySettingType, value types.PrivacySetting) (types.PrivacySettings, error) {
-	client, err := s.getClient(sessionId)
-	if err != nil {
-		return types.PrivacySettings{}, err
-	}
-	return client.SetPrivacySetting(ctx, settingName, value)
-}
-
 // GetBlocklist gets blocklist
 func (s *Service) GetBlocklist(ctx context.Context, sessionId string) (*types.Blocklist, error) {
 	client, err := s.getClient(sessionId)

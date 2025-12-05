@@ -375,6 +375,26 @@ func (s *SessionService) SetWebhookSkipChecker(checker event.WebhookSkipChecker)
 	s.eventService.SetWebhookSkipChecker(checker)
 }
 
+// SetSettingsProvider sets the settings provider for auto-reject calls and privacy sync
+func (s *SessionService) SetSettingsProvider(provider event.SettingsProvider) {
+	s.eventService.SetSettingsProvider(provider)
+}
+
+// SetCallRejecter sets the call rejecter for auto-reject calls
+func (s *SessionService) SetCallRejecter(rejecter event.CallRejecter) {
+	s.eventService.SetCallRejecter(rejecter)
+}
+
+// SetPrivacyGetter sets the privacy getter for syncing privacy settings from WhatsApp
+func (s *SessionService) SetPrivacyGetter(getter event.PrivacyGetter) {
+	s.eventService.SetPrivacyGetter(getter)
+}
+
+// SetPresenceSender sets the presence sender for keepOnline feature
+func (s *SessionService) SetPresenceSender(sender event.PresenceSender) {
+	s.eventService.SetPresenceSender(sender)
+}
+
 // Disconnect disconnects the session but keeps credentials for auto-reconnect
 func (s *SessionService) Disconnect(ctx context.Context, sessionId string) error {
 	session, err := s.Get(sessionId)

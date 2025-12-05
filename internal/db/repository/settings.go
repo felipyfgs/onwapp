@@ -166,6 +166,16 @@ func (r *SettingsRepository) EnsureExists(ctx context.Context, sessionID string)
 	return r.Create(ctx, defaults)
 }
 
+// GetLocalSettingsBySessionID gets only the local settings (alwaysOnline, autoRejectCalls) by session ID
+func (r *SettingsRepository) GetLocalSettingsBySessionID(ctx context.Context, sessionID string) (alwaysOnline, autoRejectCalls bool, err error) {
+	query := `SELECT "alwaysOnline", "autoRejectCalls" FROM "onWappSettings" WHERE "sessionId" = $1`
+	err = r.pool.QueryRow(ctx, query, sessionID).Scan(&alwaysOnline, &autoRejectCalls)
+	if err != nil {
+		return false, false, fmt.Errorf("failed to get local settings: %w", err)
+	}
+	return alwaysOnline, autoRejectCalls, nil
+}
+
 // SyncPrivacyFromWhatsApp updates privacy settings synced from WhatsApp
 // This should be called when session connects to sync current WhatsApp settings
 func (r *SettingsRepository) SyncPrivacyFromWhatsApp(ctx context.Context, sessionID string, privacy map[string]string) (*model.Settings, error) {

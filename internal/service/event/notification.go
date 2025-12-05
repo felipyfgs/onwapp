@@ -19,6 +19,22 @@ func (s *Service) handleCallOffer(ctx context.Context, session *model.Session, e
 		Str("callId", e.CallID).
 		Msg("Call offer received")
 
+	// Check if auto-reject calls is enabled
+	if s.settingsProvider != nil && s.callRejecter != nil {
+		_, autoReject, err := s.settingsProvider.GetBySessionID(ctx, session.ID)
+		if err == nil && autoReject {
+			logger.Info().
+				Str("session", session.Session).
+				Str("callId", e.CallID).
+				Str("from", e.CallCreator.String()).
+				Msg("Auto-rejecting call")
+
+			if err := s.callRejecter.RejectCall(ctx, session.Session, e.CallCreator.String(), e.CallID); err != nil {
+				logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to auto-reject call")
+			}
+		}
+	}
+
 	s.sendWebhook(ctx, session, string(model.EventCallOffer), e)
 }
 

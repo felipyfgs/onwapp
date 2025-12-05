@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"go.mau.fi/whatsmeow/types"
 
 	"onwapp/internal/api/dto"
 	"onwapp/internal/service/wpp"
@@ -175,104 +174,4 @@ func (h *ProfileHandler) DeleteProfilePicture(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{})
-}
-
-// GetPrivacySettings godoc
-// @Summary      Get privacy settings
-// @Description  Get WhatsApp privacy settings
-// @Tags         profile
-// @Accept       json
-// @Produce      json
-// @Param        session   path      string  true  "Session ID"
-// @Success      200    {object}  dto.PrivacySettingsResponse
-// @Failure      401    {object}  dto.ErrorResponse
-// @Failure      500    {object}  dto.ErrorResponse
-// @Security     Authorization
-// @Router       /{session}/profile/privacy [get]
-func (h *ProfileHandler) GetPrivacySettings(c *gin.Context) {
-	sessionId := c.Param("session")
-
-	settings, err := h.wpp.GetPrivacySettings(c.Request.Context(), sessionId)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, dto.PrivacySettingsResponse{
-
-		Settings: settings,
-	})
-}
-
-// SetPrivacySettings godoc
-// @Summary      Set privacy settings
-// @Description  Set WhatsApp privacy settings
-// @Tags         profile
-// @Accept       json
-// @Produce      json
-// @Param        session   path      string  true  "Session ID"
-// @Param        body   body      dto.SetPrivacyRequest   true  "Privacy settings"
-// @Success      200    {object}  object
-// @Failure      400    {object}  dto.ErrorResponse
-// @Failure      401    {object}  dto.ErrorResponse
-// @Failure      500    {object}  dto.ErrorResponse
-// @Security     Authorization
-// @Router       /{session}/profile/privacy [post]
-func (h *ProfileHandler) SetPrivacySettings(c *gin.Context) {
-	sessionId := c.Param("session")
-
-	var req dto.SetPrivacyRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-		return
-	}
-
-	settingType := types.PrivacySettingType(req.Setting)
-	value := types.PrivacySetting(req.Value)
-
-	settings, err := h.wpp.SetPrivacySettings(c.Request.Context(), sessionId, settingType, value)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, dto.PrivacySettingsResponse{
-
-		Settings: settings,
-	})
-}
-
-// SetDefaultDisappearingTimer godoc
-// @Summary      Set default disappearing timer
-// @Description  Set the default disappearing messages timer for new chats
-// @Tags         profile
-// @Accept       json
-// @Produce      json
-// @Param        session   path      string  true  "Session ID"
-// @Param        body   body      dto.DefaultDisappearingRequest true  "Timer data"
-// @Success      200    {object}  object
-// @Failure      400    {object}  dto.ErrorResponse
-// @Failure      500    {object}  dto.ErrorResponse
-// @Security     Authorization
-// @Router       /{session}/profile/disappearing [patch]
-func (h *ProfileHandler) SetDefaultDisappearingTimer(c *gin.Context) {
-	sessionId := c.Param("session")
-
-	var req dto.DefaultDisappearingRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-		return
-	}
-
-	timer, ok := ParseDisappearingTimer(c, req.Timer)
-	if !ok {
-		return
-	}
-
-	if err := h.wpp.SetDefaultDisappearingTimer(c.Request.Context(), sessionId, timer); err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, dto.MessageOnlyResponse{Message: "default timer set to " + req.Timer})
 }

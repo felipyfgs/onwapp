@@ -176,10 +176,6 @@ type SetPictureResponse struct {
 	PictureID string `json:"pictureId" example:"abc123"`
 }
 
-type PrivacySettingsResponse struct {
-	Settings interface{} `json:"settings"`
-}
-
 // Chat responses
 
 type ChatActionResponse struct {

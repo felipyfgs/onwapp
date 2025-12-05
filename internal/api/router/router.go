@@ -132,9 +132,6 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 		session.POST("/profile/name", h.Profile.SetPushName)
 		session.POST("/profile/picture", h.Profile.SetProfilePicture)
 		session.POST("/profile/picture/remove", h.Profile.DeleteProfilePicture)
-		session.GET("/profile/privacy", h.Profile.GetPrivacySettings)
-		session.POST("/profile/privacy", h.Profile.SetPrivacySettings)
-		session.POST("/profile/disappearing", h.Profile.SetDefaultDisappearingTimer)
 
 		// Contact
 		session.GET("/contact/list", h.Contact.GetContacts)

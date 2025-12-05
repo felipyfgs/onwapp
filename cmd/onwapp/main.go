@@ -131,6 +131,13 @@ func main() {
 	historySyncService := service.NewHistorySyncService(database.Chats)
 	sessionService.SetHistorySyncService(historySyncService)
 
+	// Initialize Settings adapter for auto-reject calls, privacy sync, and keepOnline
+	settingsAdapter := service.NewSettingsAdapter(database.Settings)
+	sessionService.SetSettingsProvider(settingsAdapter)
+	sessionService.SetCallRejecter(wppService)
+	sessionService.SetPrivacyGetter(wppService)
+	sessionService.SetPresenceSender(wppService)
+
 	// Initialize Queue service (NATS JetStream)
 	var queueService *queue.Service
 	if cfg.NatsEnabled {

@@ -36,7 +36,83 @@ func (s *Service) handleConnected(ctx context.Context, session *model.Session) {
 		logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to update session status")
 	}
 
+	// Ensure settings exist for this session
+	if s.settingsProvider != nil {
+		if err := s.settingsProvider.EnsureExists(ctx, session.ID); err != nil {
+			logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to ensure settings exist")
+		}
+	}
+
+	// Sync privacy settings from WhatsApp to database and check keepOnline
+	if s.settingsProvider != nil {
+		go func() {
+			syncCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+
+			// Sync privacy settings
+			if s.privacyGetter != nil {
+				privacy, err := s.privacyGetter.GetPrivacySettingsAsStrings(syncCtx, session.Session)
+				if err != nil {
+					logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to get privacy settings from WhatsApp")
+				} else if err := s.settingsProvider.SyncPrivacyFromWhatsApp(syncCtx, session.ID, privacy); err != nil {
+					logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to sync privacy settings to database")
+				} else {
+					logger.Info().Str("session", session.Session).Msg("Privacy settings synced from WhatsApp")
+				}
+			}
+
+			// Check if keepOnline is enabled and start presence loop
+			alwaysOnline, _, err := s.settingsProvider.GetBySessionID(syncCtx, session.ID)
+			if err == nil && alwaysOnline && s.presenceSender != nil {
+				s.startKeepOnline(session)
+			}
+		}()
+	}
+
 	s.sendWebhook(ctx, session, string(model.EventSessionConnected), nil)
+}
+
+// startKeepOnline starts a goroutine that periodically sends online presence
+func (s *Service) startKeepOnline(session *model.Session) {
+	logger.Info().Str("session", session.Session).Msg("Starting keepOnline")
+
+	go func() {
+		ticker := time.NewTicker(4 * time.Minute)
+		defer ticker.Stop()
+
+		// Send initial presence
+		ctx := context.Background()
+		if err := s.presenceSender.SendPresence(ctx, session.Session, true); err != nil {
+			logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to send initial online presence")
+		}
+
+		for {
+			select {
+			case <-ticker.C:
+				// Check if session is still connected
+				if session.GetStatus() != model.StatusConnected {
+					logger.Debug().Str("session", session.Session).Msg("Session disconnected, stopping keepOnline")
+					return
+				}
+
+				// Check if alwaysOnline is still enabled
+				if s.settingsProvider != nil {
+					alwaysOnline, _, err := s.settingsProvider.GetBySessionID(ctx, session.ID)
+					if err != nil || !alwaysOnline {
+						logger.Info().Str("session", session.Session).Msg("AlwaysOnline disabled, stopping keepOnline")
+						return
+					}
+				}
+
+				// Send presence
+				if err := s.presenceSender.SendPresence(ctx, session.Session, true); err != nil {
+					logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to send keepOnline presence")
+				} else {
+					logger.Debug().Str("session", session.Session).Msg("KeepOnline presence sent")
+				}
+			}
+		}
+	}()
 }
 
 func (s *Service) handleDisconnected(ctx context.Context, session *model.Session) {

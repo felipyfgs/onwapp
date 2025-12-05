@@ -36,6 +36,28 @@ type HistorySyncService interface {
 	ProcessHistorySync(ctx context.Context, sessionID string, e *events.HistorySync) error
 }
 
+// SettingsProvider defines the interface for settings operations
+type SettingsProvider interface {
+	GetBySessionID(ctx context.Context, sessionID string) (alwaysOnline, autoRejectCalls bool, err error)
+	EnsureExists(ctx context.Context, sessionID string) error
+	SyncPrivacyFromWhatsApp(ctx context.Context, sessionID string, privacy map[string]string) error
+}
+
+// CallRejecter defines the interface for rejecting calls
+type CallRejecter interface {
+	RejectCall(ctx context.Context, sessionId, callFrom, callID string) error
+}
+
+// PrivacyGetter defines the interface for getting privacy settings from WhatsApp
+type PrivacyGetter interface {
+	GetPrivacySettingsAsStrings(ctx context.Context, sessionId string) (map[string]string, error)
+}
+
+// PresenceSender defines the interface for sending presence
+type PresenceSender interface {
+	SendPresence(ctx context.Context, sessionId string, available bool) error
+}
+
 // Service handles WhatsApp events
 type Service struct {
 	database           *db.Database
@@ -43,6 +65,10 @@ type Service struct {
 	mediaService       MediaService
 	historySyncService HistorySyncService
 	webhookSkipChecker WebhookSkipChecker
+	settingsProvider   SettingsProvider
+	callRejecter       CallRejecter
+	privacyGetter      PrivacyGetter
+	presenceSender     PresenceSender
 }
 
 // New creates a new event service
@@ -66,6 +92,26 @@ func (s *Service) SetHistorySyncService(historySyncService HistorySyncService) {
 // SetWebhookSkipChecker sets the function that determines if webhook should be skipped
 func (s *Service) SetWebhookSkipChecker(checker WebhookSkipChecker) {
 	s.webhookSkipChecker = checker
+}
+
+// SetSettingsProvider sets the settings provider for auto-reject calls and privacy sync
+func (s *Service) SetSettingsProvider(provider SettingsProvider) {
+	s.settingsProvider = provider
+}
+
+// SetCallRejecter sets the call rejecter for auto-reject calls
+func (s *Service) SetCallRejecter(rejecter CallRejecter) {
+	s.callRejecter = rejecter
+}
+
+// SetPrivacyGetter sets the privacy getter for syncing privacy settings from WhatsApp
+func (s *Service) SetPrivacyGetter(getter PrivacyGetter) {
+	s.privacyGetter = getter
+}
+
+// SetPresenceSender sets the presence sender for keepOnline feature
+func (s *Service) SetPresenceSender(sender PresenceSender) {
+	s.presenceSender = sender
 }
 
 // HandleEvent routes events to appropriate handlers

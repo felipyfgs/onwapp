@@ -160,15 +160,6 @@ func (s *Service) SetDisappearingTimer(ctx context.Context, sessionId, phone str
 	return client.SetDisappearingTimer(ctx, jid, timer, time.Now())
 }
 
-// SetDefaultDisappearingTimer sets default disappearing messages timer
-func (s *Service) SetDefaultDisappearingTimer(ctx context.Context, sessionId string, timer time.Duration) error {
-	client, err := s.getClient(sessionId)
-	if err != nil {
-		return err
-	}
-	return client.SetDefaultDisappearingTimer(ctx, timer)
-}
-
 // RequestHistorySync sends a history sync request
 func (s *Service) RequestHistorySync(ctx context.Context, sessionId string, count int) (whatsmeow.SendResponse, error) {
 	client, err := s.getClient(sessionId)
