@@ -247,15 +247,6 @@ func (s *Service) GetGroupPicture(ctx context.Context, sessionId, groupJID strin
 	return client.GetProfilePictureInfo(ctx, jid, &whatsmeow.GetProfilePictureParams{})
 }
 
-// GetGroupInfoFromInvite gets group info from invite without joining
-func (s *Service) GetGroupInfoFromInvite(ctx context.Context, sessionId string, jid types.JID, inviter types.JID, code string, expiration int64) (*types.GroupInfo, error) {
-	client, err := s.getClient(sessionId)
-	if err != nil {
-		return nil, err
-	}
-	return client.GetGroupInfoFromInvite(ctx, jid, inviter, code, expiration)
-}
-
 // GetGroupInfoFromLink gets group info from invite link
 func (s *Service) GetGroupInfoFromLink(ctx context.Context, sessionId, code string) (*types.GroupInfo, error) {
 	client, err := s.getClient(sessionId)

@@ -483,10 +483,10 @@ type SyncOverview struct {
 type ContactsOverview struct {
 	TotalChatwoot  int `json:"totalChatwoot"`
 	WhatsAppSynced int `json:"whatsAppSynced"`
-	Groups         int `json:"groups"`         // Contacts with @g.us identifier (groups)
-	Private        int `json:"private"`        // Contacts with @s.whatsapp.net (private chats)
-	WithName       int `json:"withName"`       // Contacts that have a name (saved in agenda)
-	WithoutName    int `json:"withoutName"`    // Contacts that only have phone number as name
+	Groups         int `json:"groups"`      // Contacts with @g.us identifier (groups)
+	Private        int `json:"private"`     // Contacts with @s.whatsapp.net (private chats)
+	WithName       int `json:"withName"`    // Contacts that have a name (saved in agenda)
+	WithoutName    int `json:"withoutName"` // Contacts that only have phone number as name
 }
 
 type ConversationsOverview struct {

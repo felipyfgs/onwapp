@@ -86,30 +86,27 @@ func (s *Service) startKeepOnline(session *model.Session) {
 			logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to send initial online presence")
 		}
 
-		for {
-			select {
-			case <-ticker.C:
-				// Check if session is still connected
-				if session.GetStatus() != model.StatusConnected {
-					logger.Debug().Str("session", session.Session).Msg("Session disconnected, stopping keepOnline")
+		for range ticker.C {
+			// Check if session is still connected
+			if session.GetStatus() != model.StatusConnected {
+				logger.Debug().Str("session", session.Session).Msg("Session disconnected, stopping keepOnline")
+				return
+			}
+
+			// Check if alwaysOnline is still enabled
+			if s.settingsProvider != nil {
+				alwaysOnline, _, err := s.settingsProvider.GetBySessionID(ctx, session.ID)
+				if err != nil || !alwaysOnline {
+					logger.Info().Str("session", session.Session).Msg("AlwaysOnline disabled, stopping keepOnline")
 					return
 				}
+			}
 
-				// Check if alwaysOnline is still enabled
-				if s.settingsProvider != nil {
-					alwaysOnline, _, err := s.settingsProvider.GetBySessionID(ctx, session.ID)
-					if err != nil || !alwaysOnline {
-						logger.Info().Str("session", session.Session).Msg("AlwaysOnline disabled, stopping keepOnline")
-						return
-					}
-				}
-
-				// Send presence
-				if err := s.presenceSender.SendPresence(ctx, session.Session, true); err != nil {
-					logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to send keepOnline presence")
-				} else {
-					logger.Debug().Str("session", session.Session).Msg("KeepOnline presence sent")
-				}
+			// Send presence
+			if err := s.presenceSender.SendPresence(ctx, session.Session, true); err != nil {
+				logger.Warn().Err(err).Str("session", session.Session).Msg("Failed to send keepOnline presence")
+			} else {
+				logger.Debug().Str("session", session.Session).Msg("KeepOnline presence sent")
 			}
 		}
 	}()

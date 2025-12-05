@@ -8,33 +8,33 @@ import "time"
 
 // Config represents the Chatwoot integration configuration for a session
 type Config struct {
-	ID             string     `json:"id"`
-	SessionID      string     `json:"sessionId"`
-	Enabled        bool       `json:"enabled"`
-	URL            string     `json:"url"`
-	Token          string     `json:"token"`
-	Account        int        `json:"account"`
-	InboxID        int        `json:"inboxId,omitempty"`
-	Inbox          string     `json:"inbox,omitempty"`
-	SignAgent      bool       `json:"signAgent"`
-	SignSeparator  string     `json:"signSeparator,omitempty"`
-	AutoReopen     bool       `json:"autoReopen"`
-	StartPending   bool       `json:"startPending"`
-	MergeBrPhones  bool       `json:"mergeBrPhones"`
+	ID               string     `json:"id"`
+	SessionID        string     `json:"sessionId"`
+	Enabled          bool       `json:"enabled"`
+	URL              string     `json:"url"`
+	Token            string     `json:"token"`
+	Account          int        `json:"account"`
+	InboxID          int        `json:"inboxId,omitempty"`
+	Inbox            string     `json:"inbox,omitempty"`
+	SignAgent        bool       `json:"signAgent"`
+	SignSeparator    string     `json:"signSeparator,omitempty"`
+	AutoReopen       bool       `json:"autoReopen"`
+	StartPending     bool       `json:"startPending"`
+	MergeBrPhones    bool       `json:"mergeBrPhones"`
 	SyncContacts     bool       `json:"syncContacts"`
 	SyncMessages     bool       `json:"syncMessages"`
 	SyncDays         int        `json:"syncDays,omitempty"`
 	ImportAsResolved bool       `json:"importAsResolved"`
-	IgnoreChats    []string   `json:"ignoreChats,omitempty"`
-	AutoCreate     bool       `json:"autoCreate"`
-	WebhookURL     string     `json:"webhookUrl,omitempty"`
-	ChatwootDBHost string     `json:"chatwootDbHost,omitempty"`
-	ChatwootDBPort int        `json:"chatwootDbPort,omitempty"`
-	ChatwootDBUser string     `json:"chatwootDbUser,omitempty"`
-	ChatwootDBPass string     `json:"chatwootDbPass,omitempty"`
-	ChatwootDBName string     `json:"chatwootDbName,omitempty"`
-	CreatedAt      *time.Time `json:"createdAt,omitempty"`
-	UpdatedAt      *time.Time `json:"updatedAt,omitempty"`
+	IgnoreChats      []string   `json:"ignoreChats,omitempty"`
+	AutoCreate       bool       `json:"autoCreate"`
+	WebhookURL       string     `json:"webhookUrl,omitempty"`
+	ChatwootDBHost   string     `json:"chatwootDbHost,omitempty"`
+	ChatwootDBPort   int        `json:"chatwootDbPort,omitempty"`
+	ChatwootDBUser   string     `json:"chatwootDbUser,omitempty"`
+	ChatwootDBPass   string     `json:"chatwootDbPass,omitempty"`
+	ChatwootDBName   string     `json:"chatwootDbName,omitempty"`
+	CreatedAt        *time.Time `json:"createdAt,omitempty"`
+	UpdatedAt        *time.Time `json:"updatedAt,omitempty"`
 }
 
 // =============================================================================
@@ -170,13 +170,13 @@ type ContactSyncDetails struct {
 	BusinessContacts int `json:"businessContacts"` // Business/verified contacts
 
 	// Skipped breakdown
-	AlreadyExists      int `json:"alreadyExists"`      // Contact already in Chatwoot
-	Groups             int `json:"groups"`             // Group JIDs (not synced as contacts)
-	StatusBroadcast    int `json:"statusBroadcast"`    // Status broadcast
-	Newsletters        int `json:"newsletters"`        // Newsletter channels
-	NotInAgenda        int `json:"notInAgenda"`        // Contacts not saved (only PushName)
-	LidContacts        int `json:"lidContacts"`        // LID contacts that couldn't be resolved
-	InvalidPhone       int `json:"invalidPhone"`       // Invalid phone numbers
+	AlreadyExists   int `json:"alreadyExists"`   // Contact already in Chatwoot
+	Groups          int `json:"groups"`          // Group JIDs (not synced as contacts)
+	StatusBroadcast int `json:"statusBroadcast"` // Status broadcast
+	Newsletters     int `json:"newsletters"`     // Newsletter channels
+	NotInAgenda     int `json:"notInAgenda"`     // Contacts not saved (only PushName)
+	LidContacts     int `json:"lidContacts"`     // LID contacts that couldn't be resolved
+	InvalidPhone    int `json:"invalidPhone"`    // Invalid phone numbers
 
 	// Source info
 	TotalWhatsApp int `json:"totalWhatsApp"` // Total contacts from WhatsApp

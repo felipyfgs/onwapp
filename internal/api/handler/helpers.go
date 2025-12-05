@@ -12,17 +12,6 @@ import (
 	"onwapp/internal/api/dto"
 )
 
-func DecodeBase64(c *gin.Context, data, mediaType string) ([]byte, bool) {
-	decoded, err := base64.StdEncoding.DecodeString(data)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "invalid base64 " + mediaType,
-		})
-		return nil, false
-	}
-	return decoded, true
-}
-
 // IsURL checks if a string is a URL
 func IsURL(s string) bool {
 	return strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://")
@@ -127,11 +116,4 @@ func ParseDisappearingTimer(c *gin.Context, timer string) (time.Duration, bool) 
 		}
 		return parsed, true
 	}
-}
-
-func GetMimeTypeOrDefault(mimeType, defaultType string) string {
-	if mimeType == "" {
-		return defaultType
-	}
-	return mimeType
 }

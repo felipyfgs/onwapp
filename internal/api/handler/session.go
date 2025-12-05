@@ -101,18 +101,18 @@ func (h *SessionHandler) enrichSessionResponse(ctx context.Context, sess *model.
 	// Get data from client store
 	if sess.Client != nil && sess.Client.Store != nil && sess.Client.Store.ID != nil {
 		storeID := sess.Client.Store.ID
-		
+
 		// Set DeviceJID if not already set
 		if resp.DeviceJID == nil {
 			jid := storeID.String()
 			resp.DeviceJID = &jid
 		}
-		
+
 		// Set Phone if not already set (extract from JID)
 		if resp.Phone == nil && storeID.User != "" {
 			resp.Phone = &storeID.User
 		}
-		
+
 		// Get push name
 		pushName := sess.Client.Store.PushName
 		if pushName != "" {

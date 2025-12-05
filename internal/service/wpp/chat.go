@@ -10,8 +10,6 @@ import (
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
 	"google.golang.org/protobuf/proto"
-
-	"onwapp/internal/model"
 )
 
 // MarkRead marks messages as read
@@ -114,21 +112,6 @@ func (s *Service) SendPresence(ctx context.Context, sessionId string, available 
 	return client.SendPresence(ctx, presence)
 }
 
-// SendChatPresence sends typing/recording status
-func (s *Service) SendChatPresence(ctx context.Context, sessionId, phone string, state model.ChatPresence, media model.ChatPresenceMedia) error {
-	client, err := s.getClient(sessionId)
-	if err != nil {
-		return err
-	}
-
-	jid, err := parseJID(phone)
-	if err != nil {
-		return fmt.Errorf("invalid phone: %w", err)
-	}
-
-	return client.SendChatPresence(ctx, jid, types.ChatPresence(state), types.ChatPresenceMedia(media))
-}
-
 // SendChatPresenceRaw sends chat presence with string parameters
 func (s *Service) SendChatPresenceRaw(ctx context.Context, sessionId, phone, state, media string) error {
 	client, err := s.getClient(sessionId)
@@ -173,22 +156,6 @@ func (s *Service) SetDisappearingTimer(ctx context.Context, sessionId, phone str
 	}
 
 	return client.SetDisappearingTimer(ctx, jid, timer, time.Now())
-}
-
-// RequestHistorySync sends a history sync request
-func (s *Service) RequestHistorySync(ctx context.Context, sessionId string, count int) (whatsmeow.SendResponse, error) {
-	client, err := s.getClient(sessionId)
-	if err != nil {
-		return whatsmeow.SendResponse{}, err
-	}
-
-	if count <= 0 {
-		count = 100
-	}
-
-	msg := client.BuildHistorySyncRequest(nil, count)
-	ownJID := *client.Store.ID
-	return client.SendMessage(ctx, ownJID, msg)
 }
 
 // RequestUnavailableMessage requests an unavailable message from the phone

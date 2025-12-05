@@ -1,7 +1,5 @@
 package dto
 
-import "time"
-
 // ErrorResponse is the only envelope - used for errors
 type ErrorResponse struct {
 	Error string `json:"error" example:"session not found"`
@@ -136,13 +134,6 @@ type BusinessProfileResponse struct {
 
 // Group responses
 
-type GroupResponse struct {
-	JID          string   `json:"jid" example:"123456789@g.us"`
-	Name         string   `json:"name" example:"My Group"`
-	Topic        string   `json:"topic,omitempty" example:"Group description"`
-	Participants []string `json:"participants,omitempty"`
-}
-
 type GroupActionResponse struct {
 	GroupID string      `json:"groupId,omitempty" example:"123456789@g.us"`
 	Data    interface{} `json:"data,omitempty"`
@@ -179,22 +170,22 @@ type SetPictureResponse struct {
 // Settings responses
 
 type SettingsResponse struct {
-	ID                      int64  `json:"id"`
-	SessionID               int64  `json:"sessionId"`
-	AlwaysOnline            bool   `json:"alwaysOnline" example:"false"`
-	AutoRejectCalls         bool   `json:"autoRejectCalls" example:"false"`
-	SyncHistory             bool   `json:"syncHistory" example:"true"`
-	LastSeen                string `json:"lastSeen" example:"all"`
-	Online                  string `json:"online" example:"all"`
-	ProfilePhoto            string `json:"profilePhoto" example:"all"`
-	Status                  string `json:"status" example:"all"`
-	ReadReceipts            string `json:"readReceipts" example:"all"`
-	GroupAdd                string `json:"groupAdd" example:"all"`
-	CallAdd                 string `json:"callAdd" example:"all"`
+	ID                       int64  `json:"id"`
+	SessionID                int64  `json:"sessionId"`
+	AlwaysOnline             bool   `json:"alwaysOnline" example:"false"`
+	AutoRejectCalls          bool   `json:"autoRejectCalls" example:"false"`
+	SyncHistory              bool   `json:"syncHistory" example:"true"`
+	LastSeen                 string `json:"lastSeen" example:"all"`
+	Online                   string `json:"online" example:"all"`
+	ProfilePhoto             string `json:"profilePhoto" example:"all"`
+	Status                   string `json:"status" example:"all"`
+	ReadReceipts             string `json:"readReceipts" example:"all"`
+	GroupAdd                 string `json:"groupAdd" example:"all"`
+	CallAdd                  string `json:"callAdd" example:"all"`
 	DefaultDisappearingTimer string `json:"defaultDisappearingTimer" example:"off"`
-	PrivacySyncedAt         string `json:"privacySyncedAt,omitempty"`
-	CreatedAt               string `json:"createdAt"`
-	UpdatedAt               string `json:"updatedAt"`
+	PrivacySyncedAt          string `json:"privacySyncedAt,omitempty"`
+	CreatedAt                string `json:"createdAt"`
+	UpdatedAt                string `json:"updatedAt"`
 }
 
 // Chat responses
@@ -222,10 +213,6 @@ type ChatMessageResponse struct {
 
 type NewsletterResponse struct {
 	Data interface{} `json:"data"`
-}
-
-type NewsletterListResponse struct {
-	Newsletters interface{} `json:"newsletters"`
 }
 
 // Status responses
@@ -261,22 +248,7 @@ type MediaResponse struct {
 	CreatedAt  string `json:"createdAt" example:"2025-01-01T00:00:00Z"`
 }
 
-// History sync responses
-
-type SyncProgressResponse struct {
-	SyncType          string     `json:"syncType" example:"INITIAL_BOOTSTRAP"`
-	Status            string     `json:"status" example:"in_progress"`
-	Progress          int        `json:"progress" example:"75"`
-	TotalChunks       int        `json:"totalChunks,omitempty" example:"10"`
-	ProcessedChunks   int        `json:"processedChunks,omitempty" example:"7"`
-	TotalMessages     int        `json:"totalMessages,omitempty" example:"1000"`
-	ProcessedMessages int        `json:"processedMessages,omitempty" example:"750"`
-	TotalChats        int        `json:"totalChats,omitempty" example:"50"`
-	ProcessedChats    int        `json:"processedChats,omitempty" example:"35"`
-	Errors            int        `json:"errors,omitempty" example:"0"`
-	StartedAt         *time.Time `json:"startedAt,omitempty"`
-	CompletedAt       *time.Time `json:"completedAt,omitempty"`
-}
+// Chat responses
 
 type ChatResponse struct {
 	JID                 string `json:"jid" example:"5511999999999@s.whatsapp.net"`
@@ -288,24 +260,6 @@ type ChatResponse struct {
 	ReadOnly            bool   `json:"readOnly,omitempty" example:"false"`
 	Suspended           bool   `json:"suspended,omitempty" example:"false"`
 	Locked              bool   `json:"locked,omitempty" example:"false"`
-}
-
-type PastParticipantResponse struct {
-	UserJID        string    `json:"userJid" example:"5511999999999@s.whatsapp.net"`
-	LeaveReason    string    `json:"leaveReason" example:"LEFT"`
-	LeaveTimestamp time.Time `json:"leaveTimestamp"`
-}
-
-type StickerResponse struct {
-	DirectPath string     `json:"directPath,omitempty"`
-	MimeType   string     `json:"mimeType,omitempty" example:"image/webp"`
-	FileSize   int        `json:"fileSize,omitempty" example:"12345"`
-	Width      int        `json:"width,omitempty" example:"512"`
-	Height     int        `json:"height,omitempty" example:"512"`
-	IsLottie   bool       `json:"isLottie,omitempty" example:"false"`
-	IsAvatar   bool       `json:"isAvatar,omitempty" example:"false"`
-	Weight     float32    `json:"weight,omitempty" example:"1.5"`
-	LastUsedAt *time.Time `json:"lastUsedAt,omitempty"`
 }
 
 // Newsletter extra responses

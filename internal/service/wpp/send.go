@@ -3,7 +3,6 @@ package wpp
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
@@ -199,42 +198,6 @@ func (s *Service) SendSticker(ctx context.Context, sessionId, phone string, data
 			},
 		}
 	})
-}
-
-// SendImageFromFile sends image from file path
-func (s *Service) SendImageFromFile(ctx context.Context, sessionId, phone, path, caption string) (whatsmeow.SendResponse, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return whatsmeow.SendResponse{}, fmt.Errorf("read file: %w", err)
-	}
-	return s.SendImage(ctx, sessionId, phone, data, caption, "image/jpeg", nil)
-}
-
-// SendDocumentFromFile sends document from file path
-func (s *Service) SendDocumentFromFile(ctx context.Context, sessionId, phone, path, filename, mimeType string) (whatsmeow.SendResponse, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return whatsmeow.SendResponse{}, fmt.Errorf("read file: %w", err)
-	}
-	return s.SendDocument(ctx, sessionId, phone, data, filename, mimeType, nil)
-}
-
-// SendAudioFromFile sends audio from file path
-func (s *Service) SendAudioFromFile(ctx context.Context, sessionId, phone, path string, ptt bool) (whatsmeow.SendResponse, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return whatsmeow.SendResponse{}, fmt.Errorf("read file: %w", err)
-	}
-	return s.SendAudio(ctx, sessionId, phone, data, "audio/ogg; codecs=opus", ptt, nil)
-}
-
-// SendVideoFromFile sends video from file path
-func (s *Service) SendVideoFromFile(ctx context.Context, sessionId, phone, path, caption string) (whatsmeow.SendResponse, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return whatsmeow.SendResponse{}, fmt.Errorf("read file: %w", err)
-	}
-	return s.SendVideo(ctx, sessionId, phone, data, caption, "video/mp4", nil)
 }
 
 // =============================================================================

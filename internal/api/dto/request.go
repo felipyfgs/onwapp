@@ -116,49 +116,10 @@ type GroupIDRequest struct {
 	GroupID string `json:"groupId" binding:"required" example:"123456789@g.us"`
 }
 
-type GetInviteLinkRequest struct {
-	GroupID string `json:"groupId" binding:"required" example:"123456789@g.us"`
-	Reset   bool   `json:"reset" example:"false"`
-}
-
-// Contact requests (body-based)
-
-type ContactPhoneRequest struct {
-	Phone string `json:"phone" binding:"required" example:"5511999999999"`
-}
-
 // Newsletter requests (body-based)
 
 type NewsletterIDRequest struct {
 	NewsletterJID string `json:"newsletterJid" binding:"required" example:"123456789@newsletter"`
-}
-
-// Media requests (body-based)
-
-type MediaIDRequest struct {
-	MessageID string `json:"messageId" binding:"required" example:"ABCD1234"`
-}
-
-// History requests (body-based)
-
-type ChatIDRequest struct {
-	ChatID string `json:"chatId" binding:"required" example:"5511999999999@s.whatsapp.net"`
-}
-
-// Community requests (body-based)
-
-type CommunityIDRequest struct {
-	CommunityID string `json:"communityId" binding:"required" example:"123456789@g.us"`
-}
-
-type UpdateGroupNameRequest struct {
-	GroupID string `json:"groupId" binding:"required"`
-	Name    string `json:"name" binding:"required"`
-}
-
-type UpdateGroupTopicRequest struct {
-	GroupID string `json:"groupId" binding:"required"`
-	Topic   string `json:"topic" binding:"required"`
 }
 
 type GroupParticipantsRequest struct {
@@ -284,10 +245,6 @@ type GroupRequestActionBodyRequest struct {
 	Action       string   `json:"action" binding:"required" example:"approve"` // approve or reject
 }
 
-type GroupInfoFromLinkRequest struct {
-	InviteLink string `json:"inviteLink" binding:"required" example:"https://chat.whatsapp.com/ABC123"`
-}
-
 // Newsletter requests
 
 type CreateNewsletterRequest struct {
@@ -334,12 +291,6 @@ type RejectCallRequest struct {
 
 type PairPhoneRequest struct {
 	Phone string `json:"phone" binding:"required" example:"5511999999999"`
-}
-
-// History sync request
-
-type HistorySyncRequest struct {
-	Count int `json:"count" example:"100"`
 }
 
 // Request unavailable message
@@ -483,23 +434,6 @@ type SendCarouselRequest struct {
 
 // SessionSettingsRequest contains all optional settings fields for create/update
 type SessionSettingsRequest struct {
-	AlwaysOnline             *bool   `json:"alwaysOnline,omitempty" example:"false"`
-	AutoRejectCalls          *bool   `json:"autoRejectCalls,omitempty" example:"false"`
-	SyncHistory              *bool   `json:"syncHistory,omitempty" example:"false"`
-	LastSeen                 *string `json:"lastSeen,omitempty" example:"all"`
-	Online                   *string `json:"online,omitempty" example:"all"`
-	ProfilePhoto             *string `json:"profilePhoto,omitempty" example:"all"`
-	Status                   *string `json:"status,omitempty" example:"all"`
-	ReadReceipts             *string `json:"readReceipts,omitempty" example:"all"`
-	GroupAdd                 *string `json:"groupAdd,omitempty" example:"all"`
-	CallAdd                  *string `json:"callAdd,omitempty" example:"all"`
-	DefaultDisappearingTimer *string `json:"defaultDisappearingTimer,omitempty" example:"off"`
-}
-
-// CreateSessionWithSettingsRequest extends CreateSessionRequest with optional settings
-type CreateSessionWithSettingsRequest struct {
-	Session                  string  `json:"session" binding:"required" example:"my-session"`
-	ApiKey                   string  `json:"apiKey,omitempty" example:"my-custom-api-key"`
 	AlwaysOnline             *bool   `json:"alwaysOnline,omitempty" example:"false"`
 	AutoRejectCalls          *bool   `json:"autoRejectCalls,omitempty" example:"false"`
 	SyncHistory              *bool   `json:"syncHistory,omitempty" example:"false"`
