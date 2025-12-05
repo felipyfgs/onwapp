@@ -3,9 +3,9 @@ package chatwoot
 import (
 	"context"
 
-	"zpwoot/internal/db"
-	cwservice "zpwoot/internal/integrations/chatwoot/service"
-	"zpwoot/internal/integrations/webhook"
+	"onwapp/internal/db"
+	cwservice "onwapp/internal/integrations/chatwoot/service"
+	"onwapp/internal/integrations/webhook"
 )
 
 // WebhookProvider implements webhook.ChatwootProvider interface

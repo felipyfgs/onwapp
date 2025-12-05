@@ -6,8 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"zpwoot/internal/model"
-	"zpwoot/internal/service"
+	"onwapp/internal/model"
+	"onwapp/internal/service"
 )
 
 // Handler handles HTTP requests for Webhook integration

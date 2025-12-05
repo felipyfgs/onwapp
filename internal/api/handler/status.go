@@ -7,8 +7,8 @@ import (
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"google.golang.org/protobuf/proto"
 
-	"zpwoot/internal/api/dto"
-	"zpwoot/internal/service/wpp"
+	"onwapp/internal/api/dto"
+	"onwapp/internal/service/wpp"
 )
 
 type StatusHandler struct {

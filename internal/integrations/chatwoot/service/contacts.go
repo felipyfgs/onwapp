@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"zpwoot/internal/integrations/chatwoot/client"
-	"zpwoot/internal/integrations/chatwoot/core"
-	"zpwoot/internal/integrations/chatwoot/util"
-	"zpwoot/internal/logger"
+	"onwapp/internal/integrations/chatwoot/client"
+	"onwapp/internal/integrations/chatwoot/core"
+	"onwapp/internal/integrations/chatwoot/util"
+	"onwapp/internal/logger"
 )
 
 // ProfilePictureFetcher is a function type for getting profile pictures from WhatsApp

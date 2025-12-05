@@ -1,11 +1,11 @@
 -- Migration: 004_webhooks.sql
--- Table: onZapWebhook
+-- Table: onWappWebhook
 -- Description: Webhook configurations for event notifications
--- Dependencies: onZapSession (002)
+-- Dependencies: onWappSession (002)
 
-CREATE TABLE IF NOT EXISTS "onZapWebhook" (
+CREATE TABLE IF NOT EXISTS "onWappWebhook" (
     "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "sessionId" UUID NOT NULL UNIQUE REFERENCES "onZapSession"("id") ON DELETE CASCADE,
+    "sessionId" UUID NOT NULL UNIQUE REFERENCES "onWappSession"("id") ON DELETE CASCADE,
     "url" VARCHAR(500) NOT NULL,
     "events" TEXT[] NOT NULL DEFAULT '{}',
     "enabled" BOOLEAN NOT NULL DEFAULT TRUE,
@@ -14,6 +14,6 @@ CREATE TABLE IF NOT EXISTS "onZapWebhook" (
     "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-COMMENT ON TABLE "onZapWebhook" IS 'Webhook configurations for event notifications';
-COMMENT ON COLUMN "onZapWebhook"."events" IS 'Array of event types to subscribe (empty = all)';
-COMMENT ON COLUMN "onZapWebhook"."secret" IS 'HMAC secret for webhook signature verification';
+COMMENT ON TABLE "onWappWebhook" IS 'Webhook configurations for event notifications';
+COMMENT ON COLUMN "onWappWebhook"."events" IS 'Array of event types to subscribe (empty = all)';
+COMMENT ON COLUMN "onWappWebhook"."secret" IS 'HMAC secret for webhook signature verification';

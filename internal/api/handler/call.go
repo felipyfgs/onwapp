@@ -5,8 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"zpwoot/internal/api/dto"
-	"zpwoot/internal/service/wpp"
+	"onwapp/internal/api/dto"
+	"onwapp/internal/service/wpp"
 )
 
 type CallHandler struct {

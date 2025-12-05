@@ -202,7 +202,7 @@ type EditMessageRequest struct {
 // Profile requests
 
 type SetStatusRequest struct {
-	Status string `json:"status" binding:"required" example:"Hey there! I'm using ZPWoot"`
+	Status string `json:"status" binding:"required" example:"Hey there! I'm using OnWapp"`
 }
 
 type SetPushNameRequest struct {
@@ -451,7 +451,7 @@ type SendTemplateRequest struct {
 	Phone    string              `json:"phone" binding:"required" example:"5511999999999"`
 	Title    string              `json:"title" example:"Welcome!"`
 	Content  string              `json:"content" binding:"required" example:"Please choose an option below"`
-	Footer   string              `json:"footer" example:"Powered by ZPWoot"`
+	Footer   string              `json:"footer" example:"Powered by OnWapp"`
 	Buttons  []TemplateButtonDTO `json:"buttons" binding:"required,min=1"`
 	Image    string              `json:"image,omitempty" example:"base64_encoded_image"`
 	Video    string              `json:"video,omitempty" example:"base64_encoded_video"`
@@ -480,6 +480,6 @@ type SendCarouselRequest struct {
 	Phone  string            `json:"phone" binding:"required" example:"5511999999999"`
 	Title  string            `json:"title" example:"Check out our products!"`
 	Body   string            `json:"body" example:"Browse our catalog"`
-	Footer string            `json:"footer" example:"Powered by ZPWoot"`
+	Footer string            `json:"footer" example:"Powered by OnWapp"`
 	Cards  []CarouselCardDTO `json:"cards" binding:"required,min=1"`
 }

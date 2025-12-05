@@ -4,7 +4,7 @@
 *.dll
 *.so
 *.dylib
-/zpwoot
+/onwapp
 
 # Test binary
 *.test

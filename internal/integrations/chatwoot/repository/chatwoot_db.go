@@ -9,7 +9,7 @@ import (
 
 	"github.com/lib/pq"
 
-	"zpwoot/internal/integrations/chatwoot/core"
+	"onwapp/internal/integrations/chatwoot/core"
 )
 
 // ChatwootDBRepository handles all Chatwoot PostgreSQL database operations

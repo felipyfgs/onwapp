@@ -11,7 +11,7 @@ import (
 	"go.mau.fi/whatsmeow/types"
 	"google.golang.org/protobuf/proto"
 
-	"zpwoot/internal/model"
+	"onwapp/internal/model"
 )
 
 // MarkRead marks messages as read

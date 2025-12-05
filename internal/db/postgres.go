@@ -13,8 +13,8 @@ import (
 	"go.mau.fi/whatsmeow/store/sqlstore"
 	waLog "go.mau.fi/whatsmeow/util/log"
 
-	"zpwoot/internal/db/repository"
-	"zpwoot/internal/logger"
+	"onwapp/internal/db/repository"
+	"onwapp/internal/logger"
 )
 
 //go:embed migrations/*.sql
@@ -51,7 +51,7 @@ func New(ctx context.Context, databaseURL string) (*Database, error) {
 		return nil, fmt.Errorf("failed to create sqlstore: %w", err)
 	}
 
-	// Now run zpwoot migrations (safe to reference whatsmeow tables)
+	// Now run onwapp migrations (safe to reference whatsmeow tables)
 	if err := runMigrations(ctx, pool); err != nil {
 		pool.Close()
 		return nil, fmt.Errorf("failed to run migrations: %w", err)

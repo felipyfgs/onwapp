@@ -10,7 +10,7 @@ import (
 
 	"github.com/lib/pq"
 
-	"zpwoot/internal/integrations/chatwoot/core"
+	"onwapp/internal/integrations/chatwoot/core"
 )
 
 // Repository handles all Chatwoot database operations for sync

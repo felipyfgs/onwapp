@@ -10,10 +10,10 @@ import (
 	"go.mau.fi/whatsmeow/types/events"
 	"google.golang.org/protobuf/proto"
 
-	"zpwoot/internal/integrations/chatwoot/core"
-	"zpwoot/internal/logger"
-	"zpwoot/internal/model"
-	"zpwoot/internal/queue"
+	"onwapp/internal/integrations/chatwoot/core"
+	"onwapp/internal/logger"
+	"onwapp/internal/model"
+	"onwapp/internal/queue"
 )
 
 // ProcessIncomingFromQueue processes an incoming message from the queue

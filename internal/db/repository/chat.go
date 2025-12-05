@@ -7,7 +7,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"zpwoot/internal/model"
+	"onwapp/internal/model"
 )
 
 type ChatRepository struct {
@@ -23,7 +23,7 @@ func (r *ChatRepository) Save(ctx context.Context, c *model.Chat) (string, error
 	now := time.Now()
 
 	err := r.pool.QueryRow(ctx, `
-		INSERT INTO "onZapChat" (
+		INSERT INTO "onWappChat" (
 			"sessionId", "chatJid", "name",
 			"unreadCount", "unreadMentionCount", "markedAsUnread",
 			"ephemeralExpiration", "ephemeralSettingTimestamp", "disappearingInitiator",
@@ -35,7 +35,7 @@ func (r *ChatRepository) Save(ctx context.Context, c *model.Chat) (string, error
 		)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
 		ON CONFLICT ("sessionId", "chatJid") DO UPDATE SET
-			"name" = COALESCE(EXCLUDED."name", "onZapChat"."name"),
+			"name" = COALESCE(EXCLUDED."name", "onWappChat"."name"),
 			"unreadCount" = EXCLUDED."unreadCount",
 			"unreadMentionCount" = EXCLUDED."unreadMentionCount",
 			"markedAsUnread" = EXCLUDED."markedAsUnread",
@@ -51,8 +51,8 @@ func (r *ChatRepository) Save(ctx context.Context, c *model.Chat) (string, error
 			"limitSharingInitiatedByMe" = EXCLUDED."limitSharingInitiatedByMe",
 			"isDefaultSubgroup" = EXCLUDED."isDefaultSubgroup",
 			"commentsCount" = EXCLUDED."commentsCount",
-			"conversationTimestamp" = GREATEST(EXCLUDED."conversationTimestamp", "onZapChat"."conversationTimestamp"),
-			"pHash" = COALESCE(EXCLUDED."pHash", "onZapChat"."pHash"),
+			"conversationTimestamp" = GREATEST(EXCLUDED."conversationTimestamp", "onWappChat"."conversationTimestamp"),
+			"pHash" = COALESCE(EXCLUDED."pHash", "onWappChat"."pHash"),
 			"notSpam" = EXCLUDED."notSpam",
 			"updatedAt" = $23
 		RETURNING "id"`,
@@ -83,7 +83,7 @@ func (r *ChatRepository) SaveBatch(ctx context.Context, chats []*model.Chat) (in
 	batch := &pgx.Batch{}
 	for _, c := range chats {
 		batch.Queue(`
-			INSERT INTO "onZapChat" (
+			INSERT INTO "onWappChat" (
 				"sessionId", "chatJid", "name",
 				"unreadCount", "unreadMentionCount", "markedAsUnread",
 				"ephemeralExpiration", "ephemeralSettingTimestamp", "disappearingInitiator",
@@ -95,10 +95,10 @@ func (r *ChatRepository) SaveBatch(ctx context.Context, chats []*model.Chat) (in
 			)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
 			ON CONFLICT ("sessionId", "chatJid") DO UPDATE SET
-				"name" = COALESCE(EXCLUDED."name", "onZapChat"."name"),
+				"name" = COALESCE(EXCLUDED."name", "onWappChat"."name"),
 				"unreadCount" = EXCLUDED."unreadCount",
 				"unreadMentionCount" = EXCLUDED."unreadMentionCount",
-				"conversationTimestamp" = GREATEST(EXCLUDED."conversationTimestamp", "onZapChat"."conversationTimestamp"),
+				"conversationTimestamp" = GREATEST(EXCLUDED."conversationTimestamp", "onWappChat"."conversationTimestamp"),
 				"updatedAt" = $23`,
 			c.SessionID, c.ChatJID, c.Name,
 			c.UnreadCount, c.UnreadMentionCount, c.MarkedAsUnread,
@@ -139,7 +139,7 @@ func (r *ChatRepository) GetByJID(ctx context.Context, sessionID, chatJID string
 			"isDefaultSubgroup", COALESCE("commentsCount", 0),
 			"conversationTimestamp", COALESCE("pHash", ''), "notSpam",
 			"syncedAt", "updatedAt"
-		FROM "onZapChat"
+		FROM "onWappChat"
 		WHERE "sessionId" = $1 AND "chatJid" = $2`,
 		sessionID, chatJID,
 	).Scan(
@@ -170,7 +170,7 @@ func (r *ChatRepository) GetBySession(ctx context.Context, sessionID string, lim
 			"isDefaultSubgroup", COALESCE("commentsCount", 0),
 			"conversationTimestamp", COALESCE("pHash", ''), "notSpam",
 			"syncedAt", "updatedAt"
-		FROM "onZapChat"
+		FROM "onWappChat"
 		WHERE "sessionId" = $1
 		ORDER BY "conversationTimestamp" DESC NULLS LAST
 		LIMIT $2 OFFSET $3`,
@@ -195,7 +195,7 @@ func (r *ChatRepository) GetUnreadChats(ctx context.Context, sessionID string) (
 			"isDefaultSubgroup", COALESCE("commentsCount", 0),
 			"conversationTimestamp", COALESCE("pHash", ''), "notSpam",
 			"syncedAt", "updatedAt"
-		FROM "onZapChat"
+		FROM "onWappChat"
 		WHERE "sessionId" = $1 AND ("unreadCount" > 0 OR "markedAsUnread" = true)
 		ORDER BY "conversationTimestamp" DESC NULLS LAST`,
 		sessionID,
@@ -211,7 +211,7 @@ func (r *ChatRepository) GetUnreadChats(ctx context.Context, sessionID string) (
 func (r *ChatRepository) UpdateUnreadCount(ctx context.Context, sessionID, chatJID string, unreadCount, unreadMentionCount int) error {
 	now := time.Now()
 	_, err := r.pool.Exec(ctx, `
-		UPDATE "onZapChat"
+		UPDATE "onWappChat"
 		SET "unreadCount" = $3, "unreadMentionCount" = $4, "updatedAt" = $5
 		WHERE "sessionId" = $1 AND "chatJid" = $2`,
 		sessionID, chatJID, unreadCount, unreadMentionCount, now,
@@ -222,7 +222,7 @@ func (r *ChatRepository) UpdateUnreadCount(ctx context.Context, sessionID, chatJ
 func (r *ChatRepository) MarkAsRead(ctx context.Context, sessionID, chatJID string) error {
 	now := time.Now()
 	_, err := r.pool.Exec(ctx, `
-		UPDATE "onZapChat"
+		UPDATE "onWappChat"
 		SET "unreadCount" = 0, "unreadMentionCount" = 0, "markedAsUnread" = false, "updatedAt" = $3
 		WHERE "sessionId" = $1 AND "chatJid" = $2`,
 		sessionID, chatJID, now,
@@ -233,7 +233,7 @@ func (r *ChatRepository) MarkAsRead(ctx context.Context, sessionID, chatJID stri
 func (r *ChatRepository) UpdateEphemeralSettings(ctx context.Context, sessionID, chatJID string, expiration int, timestamp int64) error {
 	now := time.Now()
 	_, err := r.pool.Exec(ctx, `
-		UPDATE "onZapChat"
+		UPDATE "onWappChat"
 		SET "ephemeralExpiration" = $3, "ephemeralSettingTimestamp" = $4, "updatedAt" = $5
 		WHERE "sessionId" = $1 AND "chatJid" = $2`,
 		sessionID, chatJID, expiration, timestamp, now,
@@ -270,7 +270,7 @@ func (r *ChatRepository) GetWithContext(ctx context.Context, sessionID, chatJID 
 
 func (r *ChatRepository) Delete(ctx context.Context, sessionID, chatJID string) error {
 	_, err := r.pool.Exec(ctx, `
-		DELETE FROM "onZapChat"
+		DELETE FROM "onWappChat"
 		WHERE "sessionId" = $1 AND "chatJid" = $2`,
 		sessionID, chatJID,
 	)
@@ -279,6 +279,6 @@ func (r *ChatRepository) Delete(ctx context.Context, sessionID, chatJID string) 
 
 func (r *ChatRepository) CountBySession(ctx context.Context, sessionID string) (int, error) {
 	var count int
-	err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM "onZapChat" WHERE "sessionId" = $1::uuid`, sessionID).Scan(&count)
+	err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM "onWappChat" WHERE "sessionId" = $1::uuid`, sessionID).Scan(&count)
 	return count, err
 }

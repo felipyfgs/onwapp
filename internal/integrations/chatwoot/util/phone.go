@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"zpwoot/internal/integrations/chatwoot/core"
+	"onwapp/internal/integrations/chatwoot/core"
 )
 
 // LIDResolver interface for resolving LID to phone number

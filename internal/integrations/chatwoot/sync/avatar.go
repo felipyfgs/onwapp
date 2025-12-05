@@ -7,9 +7,9 @@ import (
 	gosync "sync"
 	"time"
 
-	"zpwoot/internal/integrations/chatwoot/client"
-	"zpwoot/internal/integrations/chatwoot/core"
-	"zpwoot/internal/logger"
+	"onwapp/internal/integrations/chatwoot/client"
+	"onwapp/internal/integrations/chatwoot/core"
+	"onwapp/internal/logger"
 )
 
 const (

@@ -8,7 +8,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 
-	"zpwoot/internal/logger"
+	"onwapp/internal/logger"
 )
 
 // Client gerencia a conexão NATS e JetStream

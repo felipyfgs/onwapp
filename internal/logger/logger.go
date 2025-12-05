@@ -13,7 +13,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"zpwoot/internal/config"
+	"onwapp/internal/config"
 )
 
 // Format aliases for convenience

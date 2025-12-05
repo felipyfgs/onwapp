@@ -94,7 +94,7 @@ func Load() *Config {
 	}
 
 	return &Config{
-		DatabaseURL:  getEnv("DATABASE_URL", "postgres://zpwoot:zpwoot123@localhost:5432/zpwoot?sslmode=disable"),
+		DatabaseURL:  getEnv("DATABASE_URL", "postgres://onwapp:postgres@localhost:5432/onwapp?sslmode=disable"),
 		Port:         port,
 		LogLevel:     LogLevel(getEnv("LOG_LEVEL", "info")),
 		LogFormat:    LogFormat(getEnv("LOG_FORMAT", "console")),
@@ -102,9 +102,9 @@ func Load() *Config {
 		ServerURL:    serverURL,
 
 		MinioEndpoint:  getEnv("MINIO_ENDPOINT", "localhost:9000"),
-		MinioAccessKey: getEnv("MINIO_ACCESS_KEY", "zpwoot"),
-		MinioSecretKey: getEnv("MINIO_SECRET_KEY", "zpwoot123"),
-		MinioBucket:    getEnv("MINIO_BUCKET", "zpwoot-media"),
+		MinioAccessKey: getEnv("MINIO_ACCESS_KEY", "onwapp"),
+		MinioSecretKey: getEnv("MINIO_SECRET_KEY", "postgres"),
+		MinioBucket:    getEnv("MINIO_BUCKET", "onwapp-media"),
 		MinioUseSSL:    getEnv("MINIO_USE_SSL", "false") == "true",
 		MinioPublicURL: getEnv("MINIO_PUBLIC_URL", ""),
 
@@ -112,7 +112,7 @@ func Load() *Config {
 
 		NatsURL:          getEnv("NATS_URL", "nats://localhost:4222"),
 		NatsEnabled:      getEnv("NATS_ENABLED", "false") == "true",
-		NatsStreamPrefix: getEnv("NATS_STREAM_PREFIX", "ZPWOOT"),
+		NatsStreamPrefix: getEnv("NATS_STREAM_PREFIX", "ONWAPP"),
 		NatsMaxRetries:   getEnvInt("NATS_MAX_RETRIES", 5),
 		NatsRetryDelay:   getEnvDuration("NATS_RETRY_DELAY", 5*time.Second),
 		NatsAckWait:      getEnvDuration("NATS_ACK_WAIT", 30*time.Second),

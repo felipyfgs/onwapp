@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"zpwoot/internal/logger"
+	"onwapp/internal/logger"
 )
 
 // Producer publica mensagens nos streams

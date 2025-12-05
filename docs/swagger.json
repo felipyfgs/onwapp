@@ -2,7 +2,7 @@
     "swagger": "2.0",
     "info": {
         "description": "WhatsApp API with Chatwoot Integration. Supports two authentication levels: Global API key (full access) and Session API key (session-specific access).",
-        "title": "ZPWoot WhatsApp API",
+        "title": "OnWapp WhatsApp API",
         "contact": {},
         "version": "0.1.0"
     },
@@ -8122,7 +8122,7 @@
                 },
                 "footer": {
                     "type": "string",
-                    "example": "Powered by ZPWoot"
+                    "example": "Powered by OnWapp"
                 },
                 "phone": {
                     "type": "string",
@@ -8508,7 +8508,7 @@
                 },
                 "footer": {
                     "type": "string",
-                    "example": "Powered by ZPWoot"
+                    "example": "Powered by OnWapp"
                 },
                 "image": {
                     "type": "string",
@@ -8821,7 +8821,7 @@
             "properties": {
                 "status": {
                     "type": "string",
-                    "example": "Hey there! I'm using ZPWoot"
+                    "example": "Hey there! I'm using OnWapp"
                 }
             }
         },

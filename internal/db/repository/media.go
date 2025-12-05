@@ -7,7 +7,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"zpwoot/internal/model"
+	"onwapp/internal/model"
 )
 
 type MediaRepository struct {
@@ -23,7 +23,7 @@ func (r *MediaRepository) Save(ctx context.Context, m *model.Media) (string, err
 	now := time.Now()
 
 	err := r.pool.QueryRow(ctx, `
-		INSERT INTO "onZapMedia" (
+		INSERT INTO "onWappMedia" (
 			"sessionId", "msgId",
 			"mediaType", "mimeType", "fileSize", "fileName",
 			"waDirectPath", "waMediaKey", "waFileSHA256", "waFileEncSHA256", "waMediaKeyTimestamp",
@@ -35,10 +35,10 @@ func (r *MediaRepository) Save(ctx context.Context, m *model.Media) (string, err
 		)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
 		ON CONFLICT ("sessionId", "msgId") DO UPDATE SET
-			"storageKey" = COALESCE(EXCLUDED."storageKey", "onZapMedia"."storageKey"),
-			"storageUrl" = COALESCE(EXCLUDED."storageUrl", "onZapMedia"."storageUrl"),
-			"storedAt" = COALESCE(EXCLUDED."storedAt", "onZapMedia"."storedAt"),
-			"downloaded" = COALESCE(EXCLUDED."downloaded", "onZapMedia"."downloaded"),
+			"storageKey" = COALESCE(EXCLUDED."storageKey", "onWappMedia"."storageKey"),
+			"storageUrl" = COALESCE(EXCLUDED."storageUrl", "onWappMedia"."storageUrl"),
+			"storedAt" = COALESCE(EXCLUDED."storedAt", "onWappMedia"."storedAt"),
+			"downloaded" = COALESCE(EXCLUDED."downloaded", "onWappMedia"."downloaded"),
 			"downloadError" = EXCLUDED."downloadError",
 			"downloadAttempts" = EXCLUDED."downloadAttempts",
 			"updatedAt" = $24
@@ -70,7 +70,7 @@ func (r *MediaRepository) SaveBatch(ctx context.Context, medias []*model.Media) 
 	batch := &pgx.Batch{}
 	for _, m := range medias {
 		batch.Queue(`
-			INSERT INTO "onZapMedia" (
+			INSERT INTO "onWappMedia" (
 				"sessionId", "msgId", "mediaType", "mimeType", "fileSize", "fileName",
 				"waDirectPath", "waMediaKey", "waFileSHA256", "waFileEncSHA256", "waMediaKeyTimestamp",
 				"width", "height", "duration",
@@ -112,7 +112,7 @@ func (r *MediaRepository) GetByMsgID(ctx context.Context, sessionID, msgID strin
 			COALESCE("thumbnailKey", ''), COALESCE("thumbnailUrl", ''),
 			COALESCE("downloaded", false), COALESCE("downloadError", ''), COALESCE("downloadAttempts", 0),
 			"createdAt", "updatedAt"
-		FROM "onZapMedia"
+		FROM "onWappMedia"
 		WHERE "sessionId" = $1 AND "msgId" = $2`,
 		sessionID, msgID,
 	).Scan(
@@ -144,8 +144,8 @@ func (r *MediaRepository) GetByMsgIDWithContext(ctx context.Context, sessionID, 
 			COALESCE(m."downloaded", false), COALESCE(m."downloadError", ''), COALESCE(m."downloadAttempts", 0),
 			m."createdAt", m."updatedAt",
 			msg."chatJid", msg."fromMe", COALESCE(msg."content", ''), COALESCE(msg."pushName", '')
-		FROM "onZapMedia" m
-		JOIN "onZapMessage" msg ON msg."sessionId" = m."sessionId" AND msg."msgId" = m."msgId"
+		FROM "onWappMedia" m
+		JOIN "onWappMessage" msg ON msg."sessionId" = m."sessionId" AND msg."msgId" = m."msgId"
 		WHERE m."sessionId" = $1 AND m."msgId" = $2`,
 		sessionID, msgID,
 	).Scan(
@@ -175,7 +175,7 @@ func (r *MediaRepository) GetPendingDownloads(ctx context.Context, sessionID str
 			COALESCE("thumbnailKey", ''), COALESCE("thumbnailUrl", ''),
 			COALESCE("downloaded", false), COALESCE("downloadError", ''), COALESCE("downloadAttempts", 0),
 			"createdAt", "updatedAt"
-		FROM "onZapMedia"
+		FROM "onWappMedia"
 		WHERE "sessionId" = $1 
 			AND "downloaded" = false 
 			AND "waDirectPath" IS NOT NULL 
@@ -219,7 +219,7 @@ func (r *MediaRepository) UpdateDownloadStatus(ctx context.Context, id string, d
 	}
 
 	_, err := r.pool.Exec(ctx, `
-		UPDATE "onZapMedia"
+		UPDATE "onWappMedia"
 		SET "downloaded" = $2, 
 			"storageKey" = $3, 
 			"storageUrl" = $4, 
@@ -236,7 +236,7 @@ func (r *MediaRepository) UpdateDownloadStatus(ctx context.Context, id string, d
 func (r *MediaRepository) IncrementDownloadAttempts(ctx context.Context, id string, errorMsg string) error {
 	now := time.Now()
 	_, err := r.pool.Exec(ctx, `
-		UPDATE "onZapMedia"
+		UPDATE "onWappMedia"
 		SET "downloadAttempts" = "downloadAttempts" + 1,
 			"downloadError" = $2,
 			"updatedAt" = $3
@@ -250,7 +250,7 @@ func (r *MediaRepository) IncrementDownloadAttempts(ctx context.Context, id stri
 func (r *MediaRepository) UpdateDirectPath(ctx context.Context, sessionID, msgID, newDirectPath string) error {
 	now := time.Now()
 	_, err := r.pool.Exec(ctx, `
-		UPDATE "onZapMedia"
+		UPDATE "onWappMedia"
 		SET "waDirectPath" = $3,
 			"downloadError" = NULL,
 			"updatedAt" = $4
@@ -264,7 +264,7 @@ func (r *MediaRepository) UpdateDirectPath(ctx context.Context, sessionID, msgID
 func (r *MediaRepository) MarkAsRetryRequested(ctx context.Context, id string) error {
 	now := time.Now()
 	_, err := r.pool.Exec(ctx, `
-		UPDATE "onZapMedia"
+		UPDATE "onWappMedia"
 		SET "downloadError" = 'retry_requested',
 			"updatedAt" = $2
 		WHERE "id" = $1`,
@@ -284,7 +284,7 @@ func (r *MediaRepository) GetPendingRetries(ctx context.Context, sessionID strin
 			COALESCE("thumbnailKey", ''), COALESCE("thumbnailUrl", ''),
 			COALESCE("downloaded", false), COALESCE("downloadError", ''), COALESCE("downloadAttempts", 0),
 			"createdAt", "updatedAt"
-		FROM "onZapMedia"
+		FROM "onWappMedia"
 		WHERE "sessionId" = $1 
 			AND "downloaded" = false 
 			AND ("downloadError" LIKE '%404%' OR "downloadError" LIKE '%410%' OR "downloadError" LIKE '%not found%')
@@ -330,7 +330,7 @@ func (r *MediaRepository) GetBySessionID(ctx context.Context, sessionID string, 
 			COALESCE("thumbnailKey", ''), COALESCE("thumbnailUrl", ''),
 			COALESCE("downloaded", false), COALESCE("downloadError", ''), COALESCE("downloadAttempts", 0),
 			"createdAt", "updatedAt"
-		FROM "onZapMedia"
+		FROM "onWappMedia"
 		WHERE "sessionId" = $1
 		ORDER BY "createdAt" DESC
 		LIMIT $2 OFFSET $3`,

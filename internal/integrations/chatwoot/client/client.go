@@ -14,9 +14,9 @@ import (
 	"strings"
 	"time"
 
-	"zpwoot/internal/integrations/chatwoot/core"
-	"zpwoot/internal/integrations/chatwoot/util"
-	"zpwoot/internal/logger"
+	"onwapp/internal/integrations/chatwoot/core"
+	"onwapp/internal/integrations/chatwoot/util"
+	"onwapp/internal/logger"
 )
 
 // Client provides methods to interact with the Chatwoot API

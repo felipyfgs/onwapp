@@ -8,8 +8,8 @@ import (
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/types"
 
-	"zpwoot/internal/api/dto"
-	"zpwoot/internal/service/wpp"
+	"onwapp/internal/api/dto"
+	"onwapp/internal/service/wpp"
 )
 
 type GroupHandler struct {

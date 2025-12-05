@@ -13,12 +13,12 @@ import (
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/types"
 
-	"zpwoot/internal/api/dto"
-	"zpwoot/internal/db"
-	"zpwoot/internal/logger"
-	"zpwoot/internal/model"
-	"zpwoot/internal/service"
-	"zpwoot/internal/service/wpp"
+	"onwapp/internal/api/dto"
+	"onwapp/internal/db"
+	"onwapp/internal/logger"
+	"onwapp/internal/model"
+	"onwapp/internal/service"
+	"onwapp/internal/service/wpp"
 )
 
 // generateAPIKey generates a random 32-byte hex API key

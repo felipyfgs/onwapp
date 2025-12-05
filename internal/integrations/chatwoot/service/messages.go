@@ -11,11 +11,11 @@ import (
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 
-	"zpwoot/internal/integrations/chatwoot/client"
-	"zpwoot/internal/integrations/chatwoot/core"
-	"zpwoot/internal/integrations/chatwoot/util"
-	"zpwoot/internal/logger"
-	"zpwoot/internal/model"
+	"onwapp/internal/integrations/chatwoot/client"
+	"onwapp/internal/integrations/chatwoot/core"
+	"onwapp/internal/integrations/chatwoot/util"
+	"onwapp/internal/logger"
+	"onwapp/internal/model"
 )
 
 // resolveLIDToStandardJID converts a @lid JID to @s.whatsapp.net JID

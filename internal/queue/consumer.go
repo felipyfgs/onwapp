@@ -9,7 +9,7 @@ import (
 
 	"github.com/nats-io/nats.go/jetstream"
 
-	"zpwoot/internal/logger"
+	"onwapp/internal/logger"
 )
 
 // MessageHandler processa uma mensagem da fila

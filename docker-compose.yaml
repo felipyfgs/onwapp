@@ -6,22 +6,22 @@ services:
   # PostgreSQL Database
   dev_postgres:
     image: postgres:16-alpine
-    container_name: zpwoot-dev-postgres
+    container_name: onwapp-dev-postgres
     restart: unless-stopped
     ports:
       - '5432:5432'
     environment:
       TZ: America/Sao_Paulo
-      POSTGRES_USER: ${POSTGRES_USER:-zpwoot}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-zpwoot123}
-      POSTGRES_DB: ${POSTGRES_DB:-zpwoot}
+      POSTGRES_USER: ${POSTGRES_USER:-onwapp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-onwapp}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - dev_postgres_data:/var/lib/postgresql/data
     networks:
-      - zpwoot-dev-network
+      - onwapp-dev-network
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-zpwoot} -d ${POSTGRES_DB:-zpwoot}']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-onwapp} -d ${POSTGRES_DB:-onwapp}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -29,7 +29,7 @@ services:
   # NATS JetStream
   dev_nats:
     image: nats:latest
-    container_name: zpwoot-dev-nats
+    container_name: onwapp-dev-nats
     restart: unless-stopped
     ports:
       - '4222:4222'
@@ -43,12 +43,12 @@ services:
     volumes:
       - dev_nats_data:/data
     networks:
-      - zpwoot-dev-network
+      - onwapp-dev-network
 
   # MinIO (S3 Storage)
   dev_minio:
     image: quay.io/minio/minio:RELEASE.2024-01-13T07-53-03Z-cpuv1
-    container_name: zpwoot-dev-minio
+    container_name: onwapp-dev-minio
     command: server /data --console-address ":9001"
     restart: unless-stopped
     ports:
@@ -56,40 +56,40 @@ services:
       - '9001:9001'
     environment:
       TZ: America/Sao_Paulo
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-zpwoot}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-zpwoot123}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-onwapp}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-postgres}
     volumes:
       - dev_minio_data:/data
     networks:
-      - zpwoot-dev-network
+      - onwapp-dev-network
 
   # DBGate (Database Manager - pre-configured)
   dev_dbgate:
     image: dbgate/dbgate:latest
-    container_name: zpwoot-dev-dbgate
+    container_name: onwapp-dev-dbgate
     restart: unless-stopped
     ports:
       - '3100:3000'
     environment:
       TZ: America/Sao_Paulo
       CONNECTIONS: con1
-      LABEL_con1: zpwoot PostgreSQL Dev
+      LABEL_con1: onwapp PostgreSQL Dev
       SERVER_con1: dev_postgres
-      USER_con1: ${POSTGRES_USER:-zpwoot}
-      PASSWORD_con1: ${POSTGRES_PASSWORD:-zpwoot123}
+      USER_con1: ${POSTGRES_USER:-onwapp}
+      PASSWORD_con1: ${POSTGRES_PASSWORD:-postgres}
       PORT_con1: 5432
       ENGINE_con1: postgres@dbgate-plugin-postgres
-      DATABASE_con1: ${POSTGRES_DB:-zpwoot}
+      DATABASE_con1: ${POSTGRES_DB:-onwapp}
     depends_on:
       dev_postgres:
         condition: service_healthy
     networks:
-      - zpwoot-dev-network
+      - onwapp-dev-network
 
   # Webhook Tester (for testing webhooks in development)
   dev_webhook:
     image: ghcr.io/tarampampam/webhook-tester:2
-    container_name: zpwoot-dev-webhook
+    container_name: onwapp-dev-webhook
     restart: unless-stopped
     ports:
       - '8090:8080'
@@ -99,7 +99,7 @@ services:
       AUTO_CREATE_SESSIONS: "true"
       MAX_REQUESTS: "512"
     networks:
-      - zpwoot-dev-network
+      - onwapp-dev-network
 
 volumes:
   dev_postgres_data:
@@ -107,5 +107,5 @@ volumes:
   dev_minio_data:
 
 networks:
-  zpwoot-dev-network:
+  onwapp-dev-network:
     driver: bridge

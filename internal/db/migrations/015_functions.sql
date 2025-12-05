@@ -26,7 +26,7 @@ BEGIN
         to_timestamp(c."conversationTimestamp"),
         c."ephemeralExpiration",
         c."readOnly"
-    FROM "onZapChat" c
+    FROM "onWappChat" c
     WHERE c."sessionId" = p_session_id AND c."chatJid" = p_chat_jid;
 END;
 $$ LANGUAGE plpgsql;

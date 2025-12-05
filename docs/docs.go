@@ -8129,7 +8129,7 @@ const docTemplate = `{
                 },
                 "footer": {
                     "type": "string",
-                    "example": "Powered by ZPWoot"
+                    "example": "Powered by OnWapp"
                 },
                 "phone": {
                     "type": "string",
@@ -8515,7 +8515,7 @@ const docTemplate = `{
                 },
                 "footer": {
                     "type": "string",
-                    "example": "Powered by ZPWoot"
+                    "example": "Powered by OnWapp"
                 },
                 "image": {
                     "type": "string",
@@ -8828,7 +8828,7 @@ const docTemplate = `{
             "properties": {
                 "status": {
                     "type": "string",
-                    "example": "Hey there! I'm using ZPWoot"
+                    "example": "Hey there! I'm using OnWapp"
                 }
             }
         },
@@ -9202,7 +9202,7 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "",
 	BasePath:         "/",
 	Schemes:          []string{},
-	Title:            "ZPWoot WhatsApp API",
+	Title:            "OnWapp WhatsApp API",
 	Description:      "WhatsApp API with Chatwoot Integration. Supports two authentication levels: Global API key (full access) and Session API key (session-specific access).",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,

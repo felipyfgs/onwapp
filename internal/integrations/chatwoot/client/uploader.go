@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"zpwoot/internal/integrations/chatwoot/core"
-	"zpwoot/internal/logger"
+	"onwapp/internal/integrations/chatwoot/core"
+	"onwapp/internal/logger"
 )
 
 // MediaUploader handles uploading media to Chatwoot via API

@@ -1,8 +1,8 @@
 -- Migration: 002_sessions.sql
--- Table: onZapSession
+-- Table: onWappSession
 -- Description: WhatsApp sessions with device credentials and connection state
 
-CREATE TABLE IF NOT EXISTS "onZapSession" (
+CREATE TABLE IF NOT EXISTS "onWappSession" (
     "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "session" VARCHAR(255) UNIQUE NOT NULL,
     "deviceJid" VARCHAR(255),
@@ -35,14 +35,14 @@ CREATE TABLE IF NOT EXISTS "onZapSession" (
     "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-COMMENT ON TABLE "onZapSession" IS 'WhatsApp sessions with device credentials and connection state';
-COMMENT ON COLUMN "onZapSession"."session" IS 'Unique session identifier (used in API routes)';
-COMMENT ON COLUMN "onZapSession"."deviceJid" IS 'WhatsApp device JID after connection';
-COMMENT ON COLUMN "onZapSession"."status" IS 'Connection status: disconnected, connecting, connected';
-COMMENT ON COLUMN "onZapSession"."pushName" IS 'WhatsApp display name';
-COMMENT ON COLUMN "onZapSession"."platform" IS 'Device platform: android, ios, web, unknown';
-COMMENT ON COLUMN "onZapSession"."syncHistory" IS 'Sync message history on connect';
-COMMENT ON COLUMN "onZapSession"."historySyncStatus" IS 'History sync status: pending, syncing, completed';
-COMMENT ON COLUMN "onZapSession"."apiKey" IS 'Session-specific API key for authentication';
+COMMENT ON TABLE "onWappSession" IS 'WhatsApp sessions with device credentials and connection state';
+COMMENT ON COLUMN "onWappSession"."session" IS 'Unique session identifier (used in API routes)';
+COMMENT ON COLUMN "onWappSession"."deviceJid" IS 'WhatsApp device JID after connection';
+COMMENT ON COLUMN "onWappSession"."status" IS 'Connection status: disconnected, connecting, connected';
+COMMENT ON COLUMN "onWappSession"."pushName" IS 'WhatsApp display name';
+COMMENT ON COLUMN "onWappSession"."platform" IS 'Device platform: android, ios, web, unknown';
+COMMENT ON COLUMN "onWappSession"."syncHistory" IS 'Sync message history on connect';
+COMMENT ON COLUMN "onWappSession"."historySyncStatus" IS 'History sync status: pending, syncing, completed';
+COMMENT ON COLUMN "onWappSession"."apiKey" IS 'Session-specific API key for authentication';
 
-CREATE UNIQUE INDEX IF NOT EXISTS "idx_onZapSession_apiKey" ON "onZapSession"("apiKey") WHERE "apiKey" IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS "idx_onWappSession_apiKey" ON "onWappSession"("apiKey") WHERE "apiKey" IS NOT NULL;

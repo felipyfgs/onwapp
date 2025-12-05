@@ -75,4 +75,4 @@ jobs:
         run: make build
 
       - name: Test binary
-        run: ./zpwoot -version
+        run: ./onwapp -version

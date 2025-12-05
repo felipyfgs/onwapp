@@ -3,7 +3,7 @@ package sync
 import (
 	gosync "sync"
 
-	"zpwoot/internal/integrations/chatwoot/core"
+	"onwapp/internal/integrations/chatwoot/core"
 )
 
 var (

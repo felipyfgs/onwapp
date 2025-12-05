@@ -21,7 +21,7 @@ var (
 
 // Info returns version information as a formatted string
 func Info() string {
-	return fmt.Sprintf("ZPWoot v%s (commit: %s, built: %s, %s)",
+	return fmt.Sprintf("OnWapp v%s (commit: %s, built: %s, %s)",
 		Version, GitCommit, BuildDate, GoVersion)
 }
 

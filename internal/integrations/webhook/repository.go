@@ -21,7 +21,7 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 func (r *Repository) Upsert(ctx context.Context, wh *Webhook) (*Webhook, error) {
 	var w Webhook
 	err := r.pool.QueryRow(ctx, `
-		INSERT INTO "onZapWebhook" ("sessionId", "url", "events", "enabled", "secret")
+		INSERT INTO "onWappWebhook" ("sessionId", "url", "events", "enabled", "secret")
 		VALUES ($1, $2, $3, $4, $5)
 		ON CONFLICT ("sessionId") DO UPDATE SET 
 			"url" = EXCLUDED."url",
@@ -43,7 +43,7 @@ func (r *Repository) GetBySession(ctx context.Context, sessionID string) (*Webho
 	var w Webhook
 	err := r.pool.QueryRow(ctx, `
 		SELECT "id", "sessionId", "url", "events", "enabled", COALESCE("secret", '') as "secret"
-		FROM "onZapWebhook" WHERE "sessionId" = $1`,
+		FROM "onWappWebhook" WHERE "sessionId" = $1`,
 		sessionID).Scan(&w.ID, &w.SessionID, &w.URL, &w.Events, &w.Enabled, &w.Secret)
 	if err == pgx.ErrNoRows {
 		return nil, nil
@@ -59,7 +59,7 @@ func (r *Repository) GetEnabledBySession(ctx context.Context, sessionID string) 
 	var w Webhook
 	err := r.pool.QueryRow(ctx, `
 		SELECT "id", "sessionId", "url", "events", "enabled", COALESCE("secret", '') as "secret"
-		FROM "onZapWebhook" WHERE "sessionId" = $1 AND "enabled" = true`,
+		FROM "onWappWebhook" WHERE "sessionId" = $1 AND "enabled" = true`,
 		sessionID).Scan(&w.ID, &w.SessionID, &w.URL, &w.Events, &w.Enabled, &w.Secret)
 	if err == pgx.ErrNoRows {
 		return nil, nil
@@ -72,6 +72,6 @@ func (r *Repository) GetEnabledBySession(ctx context.Context, sessionID string) 
 
 // Delete removes the webhook for a session
 func (r *Repository) Delete(ctx context.Context, sessionID string) error {
-	_, err := r.pool.Exec(ctx, `DELETE FROM "onZapWebhook" WHERE "sessionId" = $1`, sessionID)
+	_, err := r.pool.Exec(ctx, `DELETE FROM "onWappWebhook" WHERE "sessionId" = $1`, sessionID)
 	return err
 }

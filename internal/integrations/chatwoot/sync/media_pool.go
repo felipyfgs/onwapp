@@ -7,10 +7,10 @@ import (
 
 	"golang.org/x/time/rate"
 
-	"zpwoot/internal/integrations/chatwoot/client"
-	"zpwoot/internal/integrations/chatwoot/core"
-	"zpwoot/internal/logger"
-	"zpwoot/internal/model"
+	"onwapp/internal/integrations/chatwoot/client"
+	"onwapp/internal/integrations/chatwoot/core"
+	"onwapp/internal/logger"
+	"onwapp/internal/model"
 )
 
 // MediaUploadJob represents a single media upload task

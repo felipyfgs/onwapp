@@ -3,7 +3,7 @@ package handler
 import (
 	"github.com/gin-gonic/gin"
 
-	"zpwoot/internal/api/middleware"
+	"onwapp/internal/api/middleware"
 )
 
 // SessionKeyLookup is re-exported from middleware

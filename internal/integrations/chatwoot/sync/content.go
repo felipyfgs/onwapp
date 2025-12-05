@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"zpwoot/internal/model"
+	"onwapp/internal/model"
 )
 
 // GetMessageContent extracts displayable content from a message

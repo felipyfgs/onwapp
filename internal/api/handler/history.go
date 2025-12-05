@@ -5,9 +5,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"zpwoot/internal/api/dto"
-	"zpwoot/internal/service"
-	"zpwoot/internal/service/wpp"
+	"onwapp/internal/api/dto"
+	"onwapp/internal/service"
+	"onwapp/internal/service/wpp"
 )
 
 type HistoryHandler struct {

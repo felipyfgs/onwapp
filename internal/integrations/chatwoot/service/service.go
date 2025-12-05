@@ -8,12 +8,12 @@ import (
 
 	"go.mau.fi/whatsmeow/proto/waE2E"
 
-	"zpwoot/internal/db"
-	"zpwoot/internal/integrations/chatwoot/client"
-	"zpwoot/internal/integrations/chatwoot/core"
-	"zpwoot/internal/integrations/chatwoot/repository"
-	"zpwoot/internal/integrations/chatwoot/util"
-	"zpwoot/internal/logger"
+	"onwapp/internal/db"
+	"onwapp/internal/integrations/chatwoot/client"
+	"onwapp/internal/integrations/chatwoot/core"
+	"onwapp/internal/integrations/chatwoot/repository"
+	"onwapp/internal/integrations/chatwoot/util"
+	"onwapp/internal/logger"
 )
 
 // NOTE: Cache types and global cache instances are defined in cache.go
@@ -281,7 +281,7 @@ func (s *Service) createBotContact(ctx context.Context, cfg *core.Config, number
 func (s *Service) initBotContact(ctx context.Context, c *client.Client, inboxID int, number, organization, logo string) error {
 	const botPhone = "123456"
 
-	botName := "ZPWoot"
+	botName := "OnWapp"
 	if organization != "" {
 		botName = organization
 	}

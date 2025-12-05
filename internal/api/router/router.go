@@ -8,11 +8,11 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
-	"zpwoot/internal/api/handler"
-	"zpwoot/internal/api/middleware"
-	"zpwoot/internal/db"
-	"zpwoot/internal/logger"
-	"zpwoot/internal/version"
+	"onwapp/internal/api/handler"
+	"onwapp/internal/api/middleware"
+	"onwapp/internal/db"
+	"onwapp/internal/logger"
+	"onwapp/internal/version"
 )
 
 type WebhookHandlerInterface interface {

@@ -1,16 +1,16 @@
 .PHONY: build run dev clean swagger deps test lint fmt vet up down logs help version release cover rebuild
 
 # Variables
-BINARY_NAME=zpwoot
-MAIN_PATH=./cmd/zpwoot
-SWAGGER_PATH=./cmd/zpwoot/main.go
+BINARY_NAME=onwapp
+MAIN_PATH=./cmd/onwapp
+SWAGGER_PATH=./cmd/onwapp/main.go
 GO ?= go
 
 # Version info
 VERSION ?= $(shell grep -E '^\s+Version\s*=' internal/version/version.go | head -1 | cut -d'"' -f2)
 GIT_COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 BUILD_DATE ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-LDFLAGS = -s -w -X zpwoot/internal/version.Version=$(VERSION) -X zpwoot/internal/version.GitCommit=$(GIT_COMMIT) -X zpwoot/internal/version.BuildDate=$(BUILD_DATE)
+LDFLAGS = -s -w -X onwapp/internal/version.Version=$(VERSION) -X onwapp/internal/version.GitCommit=$(GIT_COMMIT) -X onwapp/internal/version.BuildDate=$(BUILD_DATE)
 
 # === MAIN ===
 

@@ -1,6 +1,6 @@
-# ZPWoot API Reference
+# OnWapp API Reference
 
-Complete REST API documentation for ZPWoot - WhatsApp API Bridge.
+Complete REST API documentation for OnWapp - WhatsApp API Bridge.
 
 ## Table of Contents
 
@@ -2132,7 +2132,7 @@ curl -X POST http://localhost:3000/sessions/my-session/messages/buttons \
       {"buttonId": "opt1", "displayText": "Option 1"},
       {"buttonId": "opt2", "displayText": "Option 2"}
     ],
-    "footerText": "Powered by ZPWoot"
+    "footerText": "Powered by OnWapp"
   }'
 ```
 
@@ -2255,7 +2255,7 @@ curl -X POST http://localhost:3000/sessions/my-session/messages/template \
     "phone": "5511999999999",
     "title": "Welcome!",
     "content": "Thanks for reaching out",
-    "footer": "ZPWoot",
+    "footer": "OnWapp",
     "buttons": [
       {"index": 0, "quickReply": {"displayText": "Get Started", "id": "start"}},
       {"index": 1, "urlButton": {"displayText": "Visit Site", "url": "https://example.com"}}
@@ -2687,7 +2687,7 @@ Post a story/status update.
 curl -X POST http://localhost:3000/sessions/my-session/stories \
   -H "Content-Type: application/json" \
   -H "X-API-Key: your-api-key" \
-  -d '{"text": "Hello from ZPWoot!"}'
+  -d '{"text": "Hello from OnWapp!"}'
 ```
 
 **Response (200):**

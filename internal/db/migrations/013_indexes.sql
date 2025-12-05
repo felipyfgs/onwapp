@@ -3,69 +3,69 @@
 -- Dependencies: All table migrations (001-011)
 
 -- ============================================================================
--- onZapSession INDEXES
+-- onWappSession INDEXES
 -- ============================================================================
-CREATE INDEX IF NOT EXISTS "idx_onZapSession_status" ON "onZapSession"("status");
-CREATE INDEX IF NOT EXISTS "idx_onZapSession_phone" ON "onZapSession"("phone") WHERE "phone" IS NOT NULL;
-CREATE INDEX IF NOT EXISTS "idx_onZapSession_deviceJid" ON "onZapSession"("deviceJid") WHERE "deviceJid" IS NOT NULL;
+CREATE INDEX IF NOT EXISTS "idx_onWappSession_status" ON "onWappSession"("status");
+CREATE INDEX IF NOT EXISTS "idx_onWappSession_phone" ON "onWappSession"("phone") WHERE "phone" IS NOT NULL;
+CREATE INDEX IF NOT EXISTS "idx_onWappSession_deviceJid" ON "onWappSession"("deviceJid") WHERE "deviceJid" IS NOT NULL;
 
 -- ============================================================================
--- onZapMessage INDEXES
+-- onWappMessage INDEXES
 -- ============================================================================
-CREATE INDEX IF NOT EXISTS "idx_onZapMessage_chat_timeline" ON "onZapMessage"("sessionId", "chatJid", "timestamp" DESC);
-CREATE INDEX IF NOT EXISTS "idx_onZapMessage_serverId" ON "onZapMessage"("serverId") WHERE "serverId" IS NOT NULL;
-CREATE INDEX IF NOT EXISTS "idx_onZapMessage_status" ON "onZapMessage"("status");
-CREATE INDEX IF NOT EXISTS "idx_onZapMessage_type" ON "onZapMessage"("type");
-CREATE INDEX IF NOT EXISTS "idx_onZapMessage_msgId" ON "onZapMessage"("msgId");
-CREATE INDEX IF NOT EXISTS "idx_onZapMessage_unread" ON "onZapMessage"("sessionId", "chatJid") WHERE "status" IN ('sent', 'delivered');
-CREATE INDEX IF NOT EXISTS "idx_onZapMessage_reactions" ON "onZapMessage" USING GIN ("reactions") WHERE jsonb_array_length("reactions") > 0;
-CREATE INDEX IF NOT EXISTS "idx_onZapMessage_chat_direction" ON "onZapMessage"("sessionId", "chatJid", "fromMe", "timestamp" DESC);
+CREATE INDEX IF NOT EXISTS "idx_onWappMessage_chat_timeline" ON "onWappMessage"("sessionId", "chatJid", "timestamp" DESC);
+CREATE INDEX IF NOT EXISTS "idx_onWappMessage_serverId" ON "onWappMessage"("serverId") WHERE "serverId" IS NOT NULL;
+CREATE INDEX IF NOT EXISTS "idx_onWappMessage_status" ON "onWappMessage"("status");
+CREATE INDEX IF NOT EXISTS "idx_onWappMessage_type" ON "onWappMessage"("type");
+CREATE INDEX IF NOT EXISTS "idx_onWappMessage_msgId" ON "onWappMessage"("msgId");
+CREATE INDEX IF NOT EXISTS "idx_onWappMessage_unread" ON "onWappMessage"("sessionId", "chatJid") WHERE "status" IN ('sent', 'delivered');
+CREATE INDEX IF NOT EXISTS "idx_onWappMessage_reactions" ON "onWappMessage" USING GIN ("reactions") WHERE jsonb_array_length("reactions") > 0;
+CREATE INDEX IF NOT EXISTS "idx_onWappMessage_chat_direction" ON "onWappMessage"("sessionId", "chatJid", "fromMe", "timestamp" DESC);
 
 -- Chatwoot indexes
-CREATE INDEX IF NOT EXISTS "idx_onZapMessage_cwMsgId" ON "onZapMessage"("sessionId", "cwMsgId") WHERE "cwMsgId" IS NOT NULL;
-CREATE INDEX IF NOT EXISTS "idx_onZapMessage_cwSourceId" ON "onZapMessage"("cwSourceId") WHERE "cwSourceId" IS NOT NULL;
-CREATE INDEX IF NOT EXISTS "idx_onZapMessage_cwConvId" ON "onZapMessage"("sessionId", "cwConvId") WHERE "cwConvId" IS NOT NULL;
+CREATE INDEX IF NOT EXISTS "idx_onWappMessage_cwMsgId" ON "onWappMessage"("sessionId", "cwMsgId") WHERE "cwMsgId" IS NOT NULL;
+CREATE INDEX IF NOT EXISTS "idx_onWappMessage_cwSourceId" ON "onWappMessage"("cwSourceId") WHERE "cwSourceId" IS NOT NULL;
+CREATE INDEX IF NOT EXISTS "idx_onWappMessage_cwConvId" ON "onWappMessage"("sessionId", "cwConvId") WHERE "cwConvId" IS NOT NULL;
 
 -- History Sync indexes
-CREATE INDEX IF NOT EXISTS "idx_onZapMessage_order" ON "onZapMessage"("sessionId", "chatJid", "msgOrderID" DESC NULLS LAST) WHERE "msgOrderID" IS NOT NULL;
-CREATE INDEX IF NOT EXISTS "idx_onZapMessage_stubType" ON "onZapMessage"("sessionId", "stubType") WHERE "stubType" IS NOT NULL;
-CREATE INDEX IF NOT EXISTS "idx_onZapMessage_expires" ON "onZapMessage"("expiresAt") WHERE "expiresAt" IS NOT NULL;
-CREATE INDEX IF NOT EXISTS "idx_onZapMessage_status_broadcast" ON "onZapMessage"("sessionId", "timestamp" DESC) WHERE "chatJid" = 'status@broadcast';
+CREATE INDEX IF NOT EXISTS "idx_onWappMessage_order" ON "onWappMessage"("sessionId", "chatJid", "msgOrderID" DESC NULLS LAST) WHERE "msgOrderID" IS NOT NULL;
+CREATE INDEX IF NOT EXISTS "idx_onWappMessage_stubType" ON "onWappMessage"("sessionId", "stubType") WHERE "stubType" IS NOT NULL;
+CREATE INDEX IF NOT EXISTS "idx_onWappMessage_expires" ON "onWappMessage"("expiresAt") WHERE "expiresAt" IS NOT NULL;
+CREATE INDEX IF NOT EXISTS "idx_onWappMessage_status_broadcast" ON "onWappMessage"("sessionId", "timestamp" DESC) WHERE "chatJid" = 'status@broadcast';
 
 -- ============================================================================
--- onZapWebhook INDEXES
+-- onWappWebhook INDEXES
 -- ============================================================================
-CREATE INDEX IF NOT EXISTS "idx_onZapWebhook_enabled" ON "onZapWebhook"("enabled") WHERE "enabled" = TRUE;
+CREATE INDEX IF NOT EXISTS "idx_onWappWebhook_enabled" ON "onWappWebhook"("enabled") WHERE "enabled" = TRUE;
 
 -- ============================================================================
--- onZapMessageUpdate INDEXES
+-- onWappMessageUpdate INDEXES
 -- ============================================================================
-CREATE INDEX IF NOT EXISTS "idx_onZapMsgUpdate_session_msg" ON "onZapMessageUpdate"("sessionId", "msgId");
-CREATE INDEX IF NOT EXISTS "idx_onZapMsgUpdate_type" ON "onZapMessageUpdate"("type");
-CREATE INDEX IF NOT EXISTS "idx_onZapMsgUpdate_eventAt" ON "onZapMessageUpdate"("eventAt" DESC);
-CREATE INDEX IF NOT EXISTS "idx_onZapMsgUpdate_msgId" ON "onZapMessageUpdate"("msgId");
-CREATE INDEX IF NOT EXISTS "idx_onZapMsgUpdate_reactions" ON "onZapMessageUpdate"("sessionId", "msgId") WHERE "type" = 'reaction';
-CREATE INDEX IF NOT EXISTS "idx_onZapMsgUpdate_delivery" ON "onZapMessageUpdate"("sessionId", "msgId") WHERE "type" IN ('delivered', 'read', 'played');
+CREATE INDEX IF NOT EXISTS "idx_onWappMsgUpdate_session_msg" ON "onWappMessageUpdate"("sessionId", "msgId");
+CREATE INDEX IF NOT EXISTS "idx_onWappMsgUpdate_type" ON "onWappMessageUpdate"("type");
+CREATE INDEX IF NOT EXISTS "idx_onWappMsgUpdate_eventAt" ON "onWappMessageUpdate"("eventAt" DESC);
+CREATE INDEX IF NOT EXISTS "idx_onWappMsgUpdate_msgId" ON "onWappMessageUpdate"("msgId");
+CREATE INDEX IF NOT EXISTS "idx_onWappMsgUpdate_reactions" ON "onWappMessageUpdate"("sessionId", "msgId") WHERE "type" = 'reaction';
+CREATE INDEX IF NOT EXISTS "idx_onWappMsgUpdate_delivery" ON "onWappMessageUpdate"("sessionId", "msgId") WHERE "type" IN ('delivered', 'read', 'played');
 
 -- ============================================================================
--- onZapChatwoot INDEXES
+-- onWappChatwoot INDEXES
 -- ============================================================================
-CREATE INDEX IF NOT EXISTS "idx_onZapChatwoot_enabled" ON "onZapChatwoot"("enabled") WHERE "enabled" = TRUE;
+CREATE INDEX IF NOT EXISTS "idx_onWappChatwoot_enabled" ON "onWappChatwoot"("enabled") WHERE "enabled" = TRUE;
 
 -- ============================================================================
--- onZapMedia INDEXES
+-- onWappMedia INDEXES
 -- ============================================================================
-CREATE INDEX IF NOT EXISTS "idx_onZapMedia_pending_downloads" ON "onZapMedia"("sessionId", "createdAt") 
+CREATE INDEX IF NOT EXISTS "idx_onWappMedia_pending_downloads" ON "onWappMedia"("sessionId", "createdAt") 
     WHERE "downloaded" = FALSE AND "waDirectPath" IS NOT NULL AND "downloadAttempts" < 3;
-CREATE INDEX IF NOT EXISTS "idx_onZapMedia_mediaType" ON "onZapMedia"("mediaType");
-CREATE INDEX IF NOT EXISTS "idx_onZapMedia_msgId" ON "onZapMedia"("msgId");
-CREATE INDEX IF NOT EXISTS "idx_onZapMedia_storage" ON "onZapMedia"("sessionId", "storageKey") WHERE "storageKey" IS NOT NULL;
+CREATE INDEX IF NOT EXISTS "idx_onWappMedia_mediaType" ON "onWappMedia"("mediaType");
+CREATE INDEX IF NOT EXISTS "idx_onWappMedia_msgId" ON "onWappMedia"("msgId");
+CREATE INDEX IF NOT EXISTS "idx_onWappMedia_storage" ON "onWappMedia"("sessionId", "storageKey") WHERE "storageKey" IS NOT NULL;
 
 -- ============================================================================
--- onZapChat INDEXES
+-- onWappChat INDEXES
 -- ============================================================================
-CREATE INDEX IF NOT EXISTS "idx_onZapChat_session_timestamp" ON "onZapChat"("sessionId", "conversationTimestamp" DESC NULLS LAST);
-CREATE INDEX IF NOT EXISTS "idx_onZapChat_unread" ON "onZapChat"("sessionId", "unreadCount") WHERE "unreadCount" > 0;
-CREATE INDEX IF NOT EXISTS "idx_onZapChat_ephemeral" ON "onZapChat"("sessionId") WHERE "ephemeralExpiration" > 0;
+CREATE INDEX IF NOT EXISTS "idx_onWappChat_session_timestamp" ON "onWappChat"("sessionId", "conversationTimestamp" DESC NULLS LAST);
+CREATE INDEX IF NOT EXISTS "idx_onWappChat_unread" ON "onWappChat"("sessionId", "unreadCount") WHERE "unreadCount" > 0;
+CREATE INDEX IF NOT EXISTS "idx_onWappChat_ephemeral" ON "onWappChat"("sessionId") WHERE "ephemeralExpiration" > 0;
 
 

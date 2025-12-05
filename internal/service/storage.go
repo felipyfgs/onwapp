@@ -12,8 +12,8 @@ import (
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 
-	"zpwoot/internal/config"
-	"zpwoot/internal/logger"
+	"onwapp/internal/config"
+	"onwapp/internal/logger"
 )
 
 type StorageService struct {

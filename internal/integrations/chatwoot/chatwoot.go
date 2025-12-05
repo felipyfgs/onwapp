@@ -6,15 +6,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"zpwoot/internal/db"
-	"zpwoot/internal/integrations/chatwoot/core"
-	"zpwoot/internal/integrations/chatwoot/handler"
-	"zpwoot/internal/integrations/chatwoot/repository"
-	"zpwoot/internal/integrations/chatwoot/service"
-	"zpwoot/internal/integrations/chatwoot/sync"
-	"zpwoot/internal/queue"
-	zpservice "zpwoot/internal/service"
-	"zpwoot/internal/service/wpp"
+	"onwapp/internal/db"
+	"onwapp/internal/integrations/chatwoot/core"
+	"onwapp/internal/integrations/chatwoot/handler"
+	"onwapp/internal/integrations/chatwoot/repository"
+	"onwapp/internal/integrations/chatwoot/service"
+	"onwapp/internal/integrations/chatwoot/sync"
+	"onwapp/internal/queue"
+	zpservice "onwapp/internal/service"
+	"onwapp/internal/service/wpp"
 )
 
 // =============================================================================

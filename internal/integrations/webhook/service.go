@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"time"
 
-	"zpwoot/internal/logger"
+	"onwapp/internal/logger"
 )
 
 const (
@@ -237,7 +237,7 @@ func (s *Service) sendWebhook(wh Webhook, payload []byte) {
 		}
 
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("User-Agent", "ZPWoot-Webhook/1.0")
+		req.Header.Set("User-Agent", "OnWapp-Webhook/1.0")
 
 		if wh.Secret != "" {
 			signature := s.generateSignature(payload, wh.Secret)

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"zpwoot/internal/integrations/chatwoot/core"
-	"zpwoot/internal/logger"
-	"zpwoot/internal/model"
-	zpservice "zpwoot/internal/service"
+	"onwapp/internal/integrations/chatwoot/core"
+	"onwapp/internal/logger"
+	"onwapp/internal/model"
+	zpservice "onwapp/internal/service"
 )
 
 // BotCommandHandler handles commands sent to the bot contact (123456)

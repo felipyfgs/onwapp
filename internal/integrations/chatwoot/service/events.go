@@ -8,10 +8,10 @@ import (
 	"go.mau.fi/whatsmeow/types/events"
 	"google.golang.org/protobuf/proto"
 
-	"zpwoot/internal/integrations/chatwoot/util"
-	"zpwoot/internal/logger"
-	"zpwoot/internal/model"
-	"zpwoot/internal/queue"
+	"onwapp/internal/integrations/chatwoot/util"
+	"onwapp/internal/logger"
+	"onwapp/internal/model"
+	"onwapp/internal/queue"
 )
 
 // EventHandler handles WhatsApp events for Chatwoot integration

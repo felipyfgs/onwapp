@@ -5,8 +5,8 @@ import (
 
 	"go.mau.fi/whatsmeow/types/events"
 
-	"zpwoot/internal/logger"
-	"zpwoot/internal/model"
+	"onwapp/internal/logger"
+	"onwapp/internal/model"
 )
 
 // Call events

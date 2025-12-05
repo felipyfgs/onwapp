@@ -6,9 +6,9 @@ import (
 	"go.mau.fi/whatsmeow/proto/waHistorySync"
 	"go.mau.fi/whatsmeow/types/events"
 
-	"zpwoot/internal/db/repository"
-	"zpwoot/internal/logger"
-	"zpwoot/internal/model"
+	"onwapp/internal/db/repository"
+	"onwapp/internal/logger"
+	"onwapp/internal/model"
 )
 
 type HistorySyncService struct {

@@ -1,9 +1,9 @@
-# GoReleaser configuration for ZPWoot
+# GoReleaser configuration for OnWapp
 # Documentation: https://goreleaser.com
 
 version: 2
 
-project_name: zpwoot
+project_name: onwapp
 
 before:
   hooks:
@@ -11,9 +11,9 @@ before:
     - go generate ./...
 
 builds:
-  - id: zpwoot
-    main: ./cmd/zpwoot
-    binary: zpwoot
+  - id: onwapp
+    main: ./cmd/onwapp
+    binary: onwapp
     env:
       - CGO_ENABLED=0
     goos:
@@ -25,9 +25,9 @@ builds:
       - arm64
     ldflags:
       - -s -w
-      - -X zpwoot/internal/version.Version={{.Version}}
-      - -X zpwoot/internal/version.GitCommit={{.Commit}}
-      - -X zpwoot/internal/version.BuildDate={{.Date}}
+      - -X onwapp/internal/version.Version={{.Version}}
+      - -X onwapp/internal/version.GitCommit={{.Commit}}
+      - -X onwapp/internal/version.BuildDate={{.Date}}
 
 archives:
   - id: default
@@ -78,8 +78,8 @@ changelog:
 
 dockers:
   - image_templates:
-      - "docker.io/onwapp/zpwoot:{{ .Version }}"
-      - "docker.io/onwapp/zpwoot:latest"
+      - "docker.io/onwapp/onwapp:{{ .Version }}"
+      - "docker.io/onwapp/onwapp:latest"
     dockerfile: Dockerfile
     goos: linux
     goarch: amd64
@@ -94,18 +94,18 @@ dockers:
 release:
   github:
     owner: "{{ .Env.GITHUB_REPOSITORY_OWNER }}"
-    name: zpwoot
+    name: onwapp
   draft: false
   prerelease: auto
   mode: replace
   header: |
-    ## ZPWoot {{ .Version }}
+    ## OnWapp {{ .Version }}
     
     WhatsApp API with Chatwoot Integration
   footer: |
     ---
     
-    **Full Changelog**: https://github.com/{{ .Env.GITHUB_REPOSITORY_OWNER }}/zpwoot/compare/{{ .PreviousTag }}...{{ .Tag }}
+    **Full Changelog**: https://github.com/{{ .Env.GITHUB_REPOSITORY_OWNER }}/onwapp/compare/{{ .PreviousTag }}...{{ .Tag }}
 
 announce:
   skip: true

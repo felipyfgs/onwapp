@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"zpwoot/internal/integrations/chatwoot/core"
+	"onwapp/internal/integrations/chatwoot/core"
 )
 
 // MessageType identifica o tipo de mensagem na fila

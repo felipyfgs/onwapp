@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"zpwoot/internal/model"
+	"onwapp/internal/model"
 )
 
 // sanitizeString removes null bytes and other problematic Unicode characters
@@ -49,7 +49,7 @@ func (r *MessageRepository) Save(ctx context.Context, msg *model.Message) (strin
 	var id string
 	now := time.Now()
 	err := r.pool.QueryRow(ctx, `
-		INSERT INTO "onZapMessage" (
+		INSERT INTO "onWappMessage" (
 			"sessionId", "msgId", "chatJid", "senderJid", "timestamp",
 			"pushName", "senderAlt", "serverId", "verifiedName",
 			"type", "mediaType", "category", "content",
@@ -60,9 +60,9 @@ func (r *MessageRepository) Save(ctx context.Context, msg *model.Message) (strin
 		)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29)
 		ON CONFLICT ("sessionId", "msgId") DO UPDATE SET
-			"cwMsgId" = COALESCE(EXCLUDED."cwMsgId", "onZapMessage"."cwMsgId"),
-			"cwConvId" = COALESCE(EXCLUDED."cwConvId", "onZapMessage"."cwConvId"),
-			"cwSourceId" = COALESCE(EXCLUDED."cwSourceId", "onZapMessage"."cwSourceId")
+			"cwMsgId" = COALESCE(EXCLUDED."cwMsgId", "onWappMessage"."cwMsgId"),
+			"cwConvId" = COALESCE(EXCLUDED."cwConvId", "onWappMessage"."cwConvId"),
+			"cwSourceId" = COALESCE(EXCLUDED."cwSourceId", "onWappMessage"."cwSourceId")
 		RETURNING "id"`,
 		msg.SessionID, msg.MsgId, msg.ChatJID, msg.SenderJID, msg.Timestamp,
 		msg.PushName, msg.SenderAlt, msg.ServerId, msg.VerifiedName,
@@ -97,7 +97,7 @@ func (r *MessageRepository) SaveBatch(ctx context.Context, msgs []*model.Message
 		pushName := sanitizeString(msg.PushName)
 
 		batch.Queue(`
-			INSERT INTO "onZapMessage" (
+			INSERT INTO "onWappMessage" (
 				"sessionId", "msgId", "chatJid", "senderJid", "timestamp",
 				"pushName", "senderAlt", "type", "mediaType", "category", "content",
 				"fromMe", "isGroup", "ephemeral", "viewOnce", "isEdit",
@@ -107,10 +107,10 @@ func (r *MessageRepository) SaveBatch(ctx context.Context, msgs []*model.Message
 			)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, COALESCE($23, '[]'::jsonb), $24, $25, $26, $27, $28, $29, $30)
 			ON CONFLICT ("sessionId", "msgId") DO UPDATE SET
-				"msgOrderID" = COALESCE(EXCLUDED."msgOrderID", "onZapMessage"."msgOrderID"),
-				"stubType" = COALESCE(EXCLUDED."stubType", "onZapMessage"."stubType"),
-				"stubParams" = COALESCE(EXCLUDED."stubParams", "onZapMessage"."stubParams"),
-				"messageSecret" = COALESCE(EXCLUDED."messageSecret", "onZapMessage"."messageSecret")`,
+				"msgOrderID" = COALESCE(EXCLUDED."msgOrderID", "onWappMessage"."msgOrderID"),
+				"stubType" = COALESCE(EXCLUDED."stubType", "onWappMessage"."stubType"),
+				"stubParams" = COALESCE(EXCLUDED."stubParams", "onWappMessage"."stubParams"),
+				"messageSecret" = COALESCE(EXCLUDED."messageSecret", "onWappMessage"."messageSecret")`,
 			msg.SessionID, msg.MsgId, msg.ChatJID, msg.SenderJID, msg.Timestamp,
 			pushName, msg.SenderAlt, msg.Type, msg.MediaType, msg.Category, content,
 			msg.FromMe, msg.IsGroup, msg.Ephemeral, msg.ViewOnce, msg.IsEdit,
@@ -139,14 +139,14 @@ func (r *MessageRepository) SaveBatch(ctx context.Context, msgs []*model.Message
 func (r *MessageRepository) ExistsByMsgId(ctx context.Context, sessionID, msgId string) (bool, error) {
 	var exists bool
 	err := r.pool.QueryRow(ctx, `
-		SELECT EXISTS(SELECT 1 FROM "onZapMessage" WHERE "sessionId" = $1 AND "msgId" = $2)`,
+		SELECT EXISTS(SELECT 1 FROM "onWappMessage" WHERE "sessionId" = $1 AND "msgId" = $2)`,
 		sessionID, msgId).Scan(&exists)
 	return exists, err
 }
 
 func (r *MessageRepository) GetBySession(ctx context.Context, sessionID string, limit, offset int) ([]model.Message, error) {
 	rows, err := r.pool.Query(ctx,
-		`SELECT `+messageSelectFields+` FROM "onZapMessage" WHERE "sessionId" = $1 ORDER BY "timestamp" DESC LIMIT $2 OFFSET $3`,
+		`SELECT `+messageSelectFields+` FROM "onWappMessage" WHERE "sessionId" = $1 ORDER BY "timestamp" DESC LIMIT $2 OFFSET $3`,
 		sessionID, limit, offset)
 	if err != nil {
 		return nil, err
@@ -158,7 +158,7 @@ func (r *MessageRepository) GetBySession(ctx context.Context, sessionID string, 
 
 func (r *MessageRepository) GetByChat(ctx context.Context, sessionID string, chatJID string, limit, offset int) ([]model.Message, error) {
 	rows, err := r.pool.Query(ctx,
-		`SELECT `+messageSelectFields+` FROM "onZapMessage" WHERE "sessionId" = $1 AND "chatJid" = $2 ORDER BY "timestamp" DESC LIMIT $3 OFFSET $4`,
+		`SELECT `+messageSelectFields+` FROM "onWappMessage" WHERE "sessionId" = $1 AND "chatJid" = $2 ORDER BY "timestamp" DESC LIMIT $3 OFFSET $4`,
 		sessionID, chatJID, limit, offset)
 	if err != nil {
 		return nil, err
@@ -175,16 +175,16 @@ func (r *MessageRepository) UpdateStatus(ctx context.Context, sessionID string, 
 
 	switch status {
 	case model.MessageStatusDelivered:
-		updateQuery = `UPDATE "onZapMessage" SET "status" = $1, "deliveredAt" = $2 WHERE "sessionId" = $3::uuid AND "msgId" = $4`
+		updateQuery = `UPDATE "onWappMessage" SET "status" = $1, "deliveredAt" = $2 WHERE "sessionId" = $3::uuid AND "msgId" = $4`
 		args = []interface{}{status, now, sessionID, msgId}
 	case model.MessageStatusRead:
-		updateQuery = `UPDATE "onZapMessage" SET "status" = $1, "readAt" = $2 WHERE "sessionId" = $3::uuid AND "msgId" = $4`
+		updateQuery = `UPDATE "onWappMessage" SET "status" = $1, "readAt" = $2 WHERE "sessionId" = $3::uuid AND "msgId" = $4`
 		args = []interface{}{status, now, sessionID, msgId}
 	case model.MessageStatusPlayed:
-		updateQuery = `UPDATE "onZapMessage" SET "status" = $1, "readAt" = $2 WHERE "sessionId" = $3::uuid AND "msgId" = $4`
+		updateQuery = `UPDATE "onWappMessage" SET "status" = $1, "readAt" = $2 WHERE "sessionId" = $3::uuid AND "msgId" = $4`
 		args = []interface{}{status, now, sessionID, msgId}
 	default:
-		updateQuery = `UPDATE "onZapMessage" SET "status" = $1 WHERE "sessionId" = $2::uuid AND "msgId" = $3`
+		updateQuery = `UPDATE "onWappMessage" SET "status" = $1 WHERE "sessionId" = $2::uuid AND "msgId" = $3`
 		args = []interface{}{status, sessionID, msgId}
 	}
 
@@ -194,7 +194,7 @@ func (r *MessageRepository) UpdateStatus(ctx context.Context, sessionID string, 
 
 func (r *MessageRepository) GetByMsgId(ctx context.Context, sessionID string, msgId string) (*model.Message, error) {
 	row := r.pool.QueryRow(ctx,
-		`SELECT `+messageSelectFields+` FROM "onZapMessage" WHERE "sessionId" = $1 AND "msgId" = $2`,
+		`SELECT `+messageSelectFields+` FROM "onWappMessage" WHERE "sessionId" = $1 AND "msgId" = $2`,
 		sessionID, msgId)
 
 	var m model.Message
@@ -241,7 +241,7 @@ func (r *MessageRepository) scanMessages(rows interface {
 // AddReaction adds a reaction to a message (upsert by senderJid)
 func (r *MessageRepository) AddReaction(ctx context.Context, sessionID, msgId, emoji, senderJid string, timestamp int64) error {
 	_, err := r.pool.Exec(ctx, `
-		UPDATE "onZapMessage" 
+		UPDATE "onWappMessage" 
 		SET "reactions" = (
 			SELECT jsonb_agg(r) FROM (
 				SELECT elem FROM jsonb_array_elements(COALESCE("reactions", '[]'::jsonb)) elem
@@ -258,7 +258,7 @@ func (r *MessageRepository) AddReaction(ctx context.Context, sessionID, msgId, e
 // RemoveReaction removes a reaction from a message by senderJid
 func (r *MessageRepository) RemoveReaction(ctx context.Context, sessionID, msgId, senderJid string) error {
 	_, err := r.pool.Exec(ctx, `
-		UPDATE "onZapMessage" 
+		UPDATE "onWappMessage" 
 		SET "reactions" = (
 			SELECT COALESCE(jsonb_agg(r), '[]'::jsonb) FROM jsonb_array_elements(COALESCE("reactions", '[]'::jsonb)) r
 			WHERE r->>'senderJid' != $3
@@ -271,7 +271,7 @@ func (r *MessageRepository) RemoveReaction(ctx context.Context, sessionID, msgId
 // UpdateCwFields updates Chatwoot-related fields for a message
 func (r *MessageRepository) UpdateCwFields(ctx context.Context, sessionID, msgId string, cwMsgId, cwConvId int, cwSourceId string) error {
 	result, err := r.pool.Exec(ctx, `
-		UPDATE "onZapMessage" 
+		UPDATE "onWappMessage" 
 		SET "cwMsgId" = $3, "cwConvId" = $4, "cwSourceId" = $5
 		WHERE "sessionId" = $1::uuid AND "msgId" = $2`,
 		sessionID, msgId, cwMsgId, cwConvId, cwSourceId)
@@ -290,7 +290,7 @@ func (r *MessageRepository) UpdateCwFields(ctx context.Context, sessionID, msgId
 // GetByCwMsgId finds a message by its Chatwoot message ID
 func (r *MessageRepository) GetByCwMsgId(ctx context.Context, sessionID string, cwMsgId int) (*model.Message, error) {
 	row := r.pool.QueryRow(ctx,
-		`SELECT `+messageSelectFields+` FROM "onZapMessage" WHERE "sessionId" = $1::uuid AND "cwMsgId" = $2`,
+		`SELECT `+messageSelectFields+` FROM "onWappMessage" WHERE "sessionId" = $1::uuid AND "cwMsgId" = $2`,
 		sessionID, cwMsgId)
 
 	var m model.Message
@@ -316,7 +316,7 @@ func (r *MessageRepository) GetByCwMsgId(ctx context.Context, sessionID string, 
 // This is needed because multiple attachments in Chatwoot become multiple WhatsApp messages
 func (r *MessageRepository) GetAllByCwMsgId(ctx context.Context, sessionID string, cwMsgId int) ([]*model.Message, error) {
 	rows, err := r.pool.Query(ctx,
-		`SELECT `+messageSelectFields+` FROM "onZapMessage" WHERE "sessionId" = $1::uuid AND "cwMsgId" = $2`,
+		`SELECT `+messageSelectFields+` FROM "onWappMessage" WHERE "sessionId" = $1::uuid AND "cwMsgId" = $2`,
 		sessionID, cwMsgId)
 	if err != nil {
 		return nil, err
@@ -346,7 +346,7 @@ func (r *MessageRepository) GetAllByCwMsgId(ctx context.Context, sessionID strin
 // Delete removes a message from the database
 func (r *MessageRepository) Delete(ctx context.Context, sessionID, msgId string) error {
 	_, err := r.pool.Exec(ctx, `
-		DELETE FROM "onZapMessage" 
+		DELETE FROM "onWappMessage" 
 		WHERE "sessionId" = $1::uuid AND "msgId" = $2`,
 		sessionID, msgId)
 	return err
@@ -356,7 +356,7 @@ func (r *MessageRepository) Delete(ctx context.Context, sessionID, msgId string)
 // This is used when a conversation is deleted in Chatwoot (404 error)
 func (r *MessageRepository) ClearCwConversation(ctx context.Context, sessionID string, cwConvId int) (int64, error) {
 	result, err := r.pool.Exec(ctx, `
-		UPDATE "onZapMessage" 
+		UPDATE "onWappMessage" 
 		SET "cwConvId" = NULL, "cwMsgId" = NULL, "cwSourceId" = NULL
 		WHERE "sessionId" = $1::uuid AND "cwConvId" = $2`,
 		sessionID, cwConvId)
@@ -370,7 +370,7 @@ func (r *MessageRepository) ClearCwConversation(ctx context.Context, sessionID s
 // Only updates messages that have empty pushName
 func (r *MessageRepository) UpdatePushNameByJID(ctx context.Context, sessionID, senderJID, pushName string) (int64, error) {
 	result, err := r.pool.Exec(ctx, `
-		UPDATE "onZapMessage" 
+		UPDATE "onWappMessage" 
 		SET "pushName" = $1 
 		WHERE "sessionId" = $2 
 		AND "senderJid" = $3 
@@ -386,7 +386,7 @@ func (r *MessageRepository) UpdatePushNameByJID(ctx context.Context, sessionID, 
 // Uses LIKE pattern to match LID JIDs with device suffix variations
 func (r *MessageRepository) UpdatePushNameByLIDPattern(ctx context.Context, sessionID, lidPattern, pushName string) (int64, error) {
 	result, err := r.pool.Exec(ctx, `
-		UPDATE "onZapMessage" 
+		UPDATE "onWappMessage" 
 		SET "pushName" = $1 
 		WHERE "sessionId" = $2 
 		AND "senderJid" LIKE $3 
@@ -420,7 +420,7 @@ func (r *MessageRepository) UpdatePushNamesBatch(ctx context.Context, sessionID 
 // This is used to send read receipts to WhatsApp when agent responds in Chatwoot
 func (r *MessageRepository) GetUnreadIncomingByChat(ctx context.Context, sessionID, chatJID string, limit int) ([]model.Message, error) {
 	rows, err := r.pool.Query(ctx,
-		`SELECT `+messageSelectFields+` FROM "onZapMessage" 
+		`SELECT `+messageSelectFields+` FROM "onWappMessage" 
 		WHERE "sessionId" = $1 AND "chatJid" = $2 AND "fromMe" = false AND "readAt" IS NULL
 		ORDER BY "timestamp" DESC LIMIT $3`,
 		sessionID, chatJID, limit)
@@ -441,7 +441,7 @@ func (r *MessageRepository) MarkAsReadByAgent(ctx context.Context, sessionID str
 
 	now := time.Now()
 	result, err := r.pool.Exec(ctx, `
-		UPDATE "onZapMessage" 
+		UPDATE "onWappMessage" 
 		SET "readAt" = $1
 		WHERE "sessionId" = $2::uuid AND "msgId" = ANY($3) AND "fromMe" = false AND "readAt" IS NULL`,
 		now, sessionID, msgIds)
@@ -453,6 +453,6 @@ func (r *MessageRepository) MarkAsReadByAgent(ctx context.Context, sessionID str
 
 func (r *MessageRepository) CountBySession(ctx context.Context, sessionID string) (int, error) {
 	var count int
-	err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM "onZapMessage" WHERE "sessionId" = $1::uuid`, sessionID).Scan(&count)
+	err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM "onWappMessage" WHERE "sessionId" = $1::uuid`, sessionID).Scan(&count)
 	return count, err
 }

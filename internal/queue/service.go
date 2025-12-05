@@ -3,8 +3,8 @@ package queue
 import (
 	"context"
 
-	"zpwoot/internal/config"
-	"zpwoot/internal/logger"
+	"onwapp/internal/config"
+	"onwapp/internal/logger"
 )
 
 // Service gerencia a fila de mensagens

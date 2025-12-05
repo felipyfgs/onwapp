@@ -6,9 +6,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"zpwoot/internal/api/dto"
-	"zpwoot/internal/db"
-	"zpwoot/internal/service"
+	"onwapp/internal/api/dto"
+	"onwapp/internal/db"
+	"onwapp/internal/service"
 )
 
 type MediaHandler struct {

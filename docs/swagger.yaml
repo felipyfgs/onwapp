@@ -1001,7 +1001,7 @@ definitions:
         minItems: 1
         type: array
       footer:
-        example: Powered by ZPWoot
+        example: Powered by OnWapp
         type: string
       phone:
         example: "5511999999999"
@@ -1280,7 +1280,7 @@ definitions:
         example: document.pdf
         type: string
       footer:
-        example: Powered by ZPWoot
+        example: Powered by OnWapp
         type: string
       image:
         example: base64_encoded_image
@@ -1509,7 +1509,7 @@ definitions:
   SetStatusRequest:
     properties:
       status:
-        example: Hey there! I'm using ZPWoot
+        example: Hey there! I'm using OnWapp
         type: string
     required:
     - status
@@ -1715,7 +1715,7 @@ info:
   contact: {}
   description: 'WhatsApp API with Chatwoot Integration. Supports two authentication
     levels: Global API key (full access) and Session API key (session-specific access).'
-  title: ZPWoot WhatsApp API
+  title: OnWapp WhatsApp API
   version: 0.1.0
 paths:
   /{session}:

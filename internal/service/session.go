@@ -13,10 +13,10 @@ import (
 	"go.mau.fi/whatsmeow/types"
 	waLog "go.mau.fi/whatsmeow/util/log"
 
-	"zpwoot/internal/db"
-	"zpwoot/internal/logger"
-	"zpwoot/internal/model"
-	"zpwoot/internal/service/event"
+	"onwapp/internal/db"
+	"onwapp/internal/logger"
+	"onwapp/internal/model"
+	"onwapp/internal/service/event"
 )
 
 // EventHandler is a function that handles WhatsApp events

@@ -1,11 +1,11 @@
 -- Migration: 007_media.sql
--- Table: onZapMedia
+-- Table: onWappMedia
 -- Description: Media files attached to WhatsApp messages
--- Dependencies: onZapSession (002)
+-- Dependencies: onWappSession (002)
 
-CREATE TABLE IF NOT EXISTS "onZapMedia" (
+CREATE TABLE IF NOT EXISTS "onWappMedia" (
     "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "sessionId" UUID NOT NULL REFERENCES "onZapSession"("id") ON DELETE CASCADE,
+    "sessionId" UUID NOT NULL REFERENCES "onWappSession"("id") ON DELETE CASCADE,
     "msgId" VARCHAR(255) NOT NULL,
     
     -- Media Classification
@@ -44,10 +44,10 @@ CREATE TABLE IF NOT EXISTS "onZapMedia" (
     "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
-    CONSTRAINT "onZapMedia_sessionId_msgId_unique" UNIQUE ("sessionId", "msgId")
+    CONSTRAINT "onWappMedia_sessionId_msgId_unique" UNIQUE ("sessionId", "msgId")
 );
 
-COMMENT ON TABLE "onZapMedia" IS 'Media files attached to WhatsApp messages';
-COMMENT ON COLUMN "onZapMedia"."waDirectPath" IS 'WhatsApp CDN path for downloading';
-COMMENT ON COLUMN "onZapMedia"."waMediaKey" IS 'Encryption key for media decryption';
-COMMENT ON COLUMN "onZapMedia"."downloadAttempts" IS 'Number of download attempts (max 3)';
+COMMENT ON TABLE "onWappMedia" IS 'Media files attached to WhatsApp messages';
+COMMENT ON COLUMN "onWappMedia"."waDirectPath" IS 'WhatsApp CDN path for downloading';
+COMMENT ON COLUMN "onWappMedia"."waMediaKey" IS 'Encryption key for media decryption';
+COMMENT ON COLUMN "onWappMedia"."downloadAttempts" IS 'Number of download attempts (max 3)';

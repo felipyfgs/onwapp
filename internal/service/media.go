@@ -13,9 +13,9 @@ import (
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 
-	"zpwoot/internal/db"
-	"zpwoot/internal/logger"
-	"zpwoot/internal/model"
+	"onwapp/internal/db"
+	"onwapp/internal/logger"
+	"onwapp/internal/model"
 )
 
 // MediaRetryInfo stores info needed to process media retry responses

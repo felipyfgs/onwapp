@@ -11,9 +11,9 @@ import (
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/types/events"
 
-	"zpwoot/internal/db"
-	"zpwoot/internal/logger"
-	"zpwoot/internal/model"
+	"onwapp/internal/db"
+	"onwapp/internal/logger"
+	"onwapp/internal/model"
 )
 
 // WebhookSender defines the interface for sending webhooks

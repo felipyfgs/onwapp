@@ -11,16 +11,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mau.fi/whatsmeow/types"
 
-	"zpwoot/internal/db"
-	"zpwoot/internal/integrations/chatwoot/core"
-	cwservice "zpwoot/internal/integrations/chatwoot/service"
-	cwsync "zpwoot/internal/integrations/chatwoot/sync"
-	"zpwoot/internal/integrations/chatwoot/util"
-	"zpwoot/internal/logger"
-	"zpwoot/internal/model"
-	"zpwoot/internal/queue"
-	"zpwoot/internal/service"
-	"zpwoot/internal/service/wpp"
+	"onwapp/internal/db"
+	"onwapp/internal/integrations/chatwoot/core"
+	cwservice "onwapp/internal/integrations/chatwoot/service"
+	cwsync "onwapp/internal/integrations/chatwoot/sync"
+	"onwapp/internal/integrations/chatwoot/util"
+	"onwapp/internal/logger"
+	"onwapp/internal/model"
+	"onwapp/internal/queue"
+	"onwapp/internal/service"
+	"onwapp/internal/service/wpp"
 )
 
 // Handler handles HTTP requests for Chatwoot integration

@@ -9,7 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"zpwoot/internal/api/dto"
+	"onwapp/internal/api/dto"
 )
 
 func DecodeBase64(c *gin.Context, data, mediaType string) ([]byte, bool) {

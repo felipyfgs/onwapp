@@ -9,8 +9,8 @@ import (
 	"go.mau.fi/whatsmeow/types/events"
 	"google.golang.org/protobuf/proto"
 
-	"zpwoot/internal/model"
-	"zpwoot/internal/util"
+	"onwapp/internal/model"
+	"onwapp/internal/util"
 )
 
 // SessionProvider defines interface for session management

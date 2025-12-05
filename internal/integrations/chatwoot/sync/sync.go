@@ -8,11 +8,11 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/lib/pq"
 
-	"zpwoot/internal/integrations/chatwoot/client"
-	"zpwoot/internal/integrations/chatwoot/core"
-	"zpwoot/internal/integrations/chatwoot/util"
-	"zpwoot/internal/logger"
-	"zpwoot/internal/model"
+	"onwapp/internal/integrations/chatwoot/client"
+	"onwapp/internal/integrations/chatwoot/core"
+	"onwapp/internal/integrations/chatwoot/util"
+	"onwapp/internal/logger"
+	"onwapp/internal/model"
 )
 
 // MessageRepository interface for accessing message data

@@ -3,8 +3,8 @@ package sync
 import (
 	"context"
 
-	"zpwoot/internal/integrations/chatwoot/core"
-	"zpwoot/internal/logger"
+	"onwapp/internal/integrations/chatwoot/core"
+	"onwapp/internal/logger"
 )
 
 // DataResetter handles data reset operations

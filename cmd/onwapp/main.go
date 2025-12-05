@@ -10,22 +10,22 @@ import (
 	"syscall"
 	"time"
 
-	"zpwoot/internal/api/handler"
-	"zpwoot/internal/api/router"
-	"zpwoot/internal/config"
-	"zpwoot/internal/db"
-	"zpwoot/internal/integrations/chatwoot"
-	"zpwoot/internal/integrations/webhook"
-	"zpwoot/internal/logger"
-	"zpwoot/internal/queue"
-	"zpwoot/internal/service"
-	"zpwoot/internal/service/wpp"
-	"zpwoot/internal/version"
+	"onwapp/internal/api/handler"
+	"onwapp/internal/api/router"
+	"onwapp/internal/config"
+	"onwapp/internal/db"
+	"onwapp/internal/integrations/chatwoot"
+	"onwapp/internal/integrations/webhook"
+	"onwapp/internal/logger"
+	"onwapp/internal/queue"
+	"onwapp/internal/service"
+	"onwapp/internal/service/wpp"
+	"onwapp/internal/version"
 
-	_ "zpwoot/docs"
+	_ "onwapp/docs"
 )
 
-// @title           ZPWoot WhatsApp API
+// @title           OnWapp WhatsApp API
 // @version         0.1.0
 // @description     WhatsApp API with Chatwoot Integration. Supports two authentication levels: Global API key (full access) and Session API key (session-specific access).
 
@@ -89,7 +89,7 @@ func main() {
 
 	logger.Init(cfg.LogLevel.String(), cfg.LogFormat.String())
 
-	logger.Info().Str("version", version.Short()).Msg("Starting ZPWoot API")
+	logger.Info().Str("version", version.Short()).Msg("Starting OnWapp API")
 
 	database, err := db.New(ctx, cfg.DatabaseURL)
 	if err != nil {

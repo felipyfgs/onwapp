@@ -27,7 +27,7 @@ $$ LANGUAGE plpgsql;
 
 SELECT zp_ensure_whatsmeow_fks();
 
--- Trigger function to clean up whatsmeow_device when onZapSession is deleted
+-- Trigger function to clean up whatsmeow_device when onWappSession is deleted
 CREATE OR REPLACE FUNCTION zp_cleanup_whatsmeow_device()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -40,40 +40,40 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trg_onZapSession_cleanup_whatsmeow ON "onZapSession";
-CREATE TRIGGER trg_onZapSession_cleanup_whatsmeow
-    BEFORE DELETE ON "onZapSession"
+DROP TRIGGER IF EXISTS trg_onWappSession_cleanup_whatsmeow ON "onWappSession";
+CREATE TRIGGER trg_onWappSession_cleanup_whatsmeow
+    BEFORE DELETE ON "onWappSession"
     FOR EACH ROW
     EXECUTE FUNCTION zp_cleanup_whatsmeow_device();
 
 -- ============================================================================
--- ZPWOOT TABLE RELATIONSHIPS
+-- ONWAPP TABLE RELATIONSHIPS
 -- ============================================================================
 
--- FK from onZapMedia to onZapMessage (DEFERRABLE for async history sync)
+-- FK from onWappMedia to onWappMessage (DEFERRABLE for async history sync)
 DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.table_constraints 
-        WHERE constraint_name = 'onZapMedia_message_fk'
-        AND table_name = 'onZapMedia'
+        WHERE constraint_name = 'onWappMedia_message_fk'
+        AND table_name = 'onWappMedia'
     ) THEN
-        DELETE FROM "onZapMedia" m
+        DELETE FROM "onWappMedia" m
         WHERE NOT EXISTS (
-            SELECT 1 FROM "onZapMessage" msg 
+            SELECT 1 FROM "onWappMessage" msg 
             WHERE msg."sessionId" = m."sessionId" AND msg."msgId" = m."msgId"
         );
         
-        ALTER TABLE "onZapMedia" 
-        ADD CONSTRAINT "onZapMedia_message_fk" 
+        ALTER TABLE "onWappMedia" 
+        ADD CONSTRAINT "onWappMedia_message_fk" 
         FOREIGN KEY ("sessionId", "msgId") 
-        REFERENCES "onZapMessage"("sessionId", "msgId") 
+        REFERENCES "onWappMessage"("sessionId", "msgId") 
         ON DELETE CASCADE
         DEFERRABLE INITIALLY DEFERRED;
     END IF;
 END $$;
 
-COMMENT ON TRIGGER trg_onZapSession_cleanup_whatsmeow ON "onZapSession" IS 
-    'Deletes whatsmeow_device when onZapSession is deleted, cascading to all whatsmeow tables';
-COMMENT ON CONSTRAINT "onZapMedia_message_fk" ON "onZapMedia" IS 
+COMMENT ON TRIGGER trg_onWappSession_cleanup_whatsmeow ON "onWappSession" IS 
+    'Deletes whatsmeow_device when onWappSession is deleted, cascading to all whatsmeow tables';
+COMMENT ON CONSTRAINT "onWappMedia_message_fk" ON "onWappMedia" IS 
     'Links media to parent message. DEFERRABLE for async history sync.';

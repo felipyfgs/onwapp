@@ -7,7 +7,7 @@ import (
 
 	"go.mau.fi/whatsmeow/proto/waE2E"
 
-	"zpwoot/internal/integrations/chatwoot/core"
+	"onwapp/internal/integrations/chatwoot/core"
 )
 
 // IsMediaMessage checks if the message contains downloadable media

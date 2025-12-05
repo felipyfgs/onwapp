@@ -3,9 +3,9 @@ package sync
 import (
 	"context"
 
-	"zpwoot/internal/integrations/chatwoot/core"
-	"zpwoot/internal/integrations/chatwoot/util"
-	"zpwoot/internal/logger"
+	"onwapp/internal/integrations/chatwoot/core"
+	"onwapp/internal/integrations/chatwoot/util"
+	"onwapp/internal/logger"
 )
 
 // ContactSyncer handles contact synchronization
