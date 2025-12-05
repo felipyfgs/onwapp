@@ -880,17 +880,6 @@ definitions:
         example: ABCD-EFGH
         type: string
     type: object
-  PastParticipantResponse:
-    properties:
-      leaveReason:
-        example: LEFT
-        type: string
-      leaveTimestamp:
-        type: string
-      userJid:
-        example: 5511999999999@s.whatsapp.net
-        type: string
-    type: object
   PresenceResponse:
     properties:
       status:
@@ -1537,34 +1526,6 @@ definitions:
     properties:
       privacy: {}
     type: object
-  StickerResponse:
-    properties:
-      directPath:
-        type: string
-      fileSize:
-        example: 12345
-        type: integer
-      height:
-        example: 512
-        type: integer
-      isAvatar:
-        example: false
-        type: boolean
-      isLottie:
-        example: false
-        type: boolean
-      lastUsedAt:
-        type: string
-      mimeType:
-        example: image/webp
-        type: string
-      weight:
-        example: 1.5
-        type: number
-      width:
-        example: 512
-        type: integer
-    type: object
   SubscribePresenceRequest:
     properties:
       phone:
@@ -1581,43 +1542,6 @@ definitions:
         $ref: '#/definitions/ConversationsOverview'
       messages:
         $ref: '#/definitions/MessagesOverview'
-    type: object
-  SyncProgressResponse:
-    properties:
-      completedAt:
-        type: string
-      errors:
-        example: 0
-        type: integer
-      processedChats:
-        example: 35
-        type: integer
-      processedChunks:
-        example: 7
-        type: integer
-      processedMessages:
-        example: 750
-        type: integer
-      progress:
-        example: 75
-        type: integer
-      startedAt:
-        type: string
-      status:
-        example: in_progress
-        type: string
-      syncType:
-        example: INITIAL_BOOTSTRAP
-        type: string
-      totalChats:
-        example: 50
-        type: integer
-      totalChunks:
-        example: 10
-        type: integer
-      totalMessages:
-        example: 1000
-        type: integer
     type: object
   SyncStats:
     properties:
@@ -3347,109 +3271,6 @@ paths:
       security:
       - Authorization: []
       summary: Get unread chats
-      tags:
-      - history
-  /{session}/history/group/participants/past:
-    get:
-      description: Get past participants of a group from history sync data
-      parameters:
-      - description: Session ID
-        in: path
-        name: session
-        required: true
-        type: string
-      - description: Group JID
-        in: query
-        name: groupId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/PastParticipantResponse'
-            type: array
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - Authorization: []
-      summary: Get group past participants
-      tags:
-      - history
-  /{session}/history/progress:
-    get:
-      description: Get the current progress of history sync operations
-      parameters:
-      - description: Session ID
-        in: path
-        name: session
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/SyncProgressResponse'
-            type: array
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - Authorization: []
-      summary: Get history sync progress
-      tags:
-      - history
-  /{session}/history/stickers:
-    get:
-      description: Get most used stickers from history sync data
-      parameters:
-      - description: Session ID
-        in: path
-        name: session
-        required: true
-        type: string
-      - default: 20
-        description: Number of stickers to return
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/StickerResponse'
-            type: array
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/ErrorResponse'
-      security:
-      - Authorization: []
-      summary: Get top stickers
       tags:
       - history
   /{session}/history/sync:
