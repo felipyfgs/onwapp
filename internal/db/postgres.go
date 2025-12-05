@@ -37,9 +37,9 @@ func New(ctx context.Context, databaseURL string) (*Database, error) {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	if err := pool.Ping(ctx); err != nil {
+	if pingErr := pool.Ping(ctx); pingErr != nil {
 		pool.Close()
-		return nil, fmt.Errorf("failed to ping database: %w", err)
+		return nil, fmt.Errorf("failed to ping database: %w", pingErr)
 	}
 
 	// Create whatsmeow sqlstore FIRST - this creates all whatsmeow tables

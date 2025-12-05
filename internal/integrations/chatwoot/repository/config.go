@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -100,7 +101,7 @@ func (r *ConfigRepository) GetBySessionID(ctx context.Context, sessionID string)
 		&cfg.CreatedAt, &cfg.UpdatedAt,
 	)
 
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {

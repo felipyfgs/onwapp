@@ -75,8 +75,8 @@ func (h *Handler) SetConfig(c *gin.Context) {
 	}
 
 	var req SetConfigRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if bindErr := c.ShouldBindJSON(&req); bindErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": bindErr.Error()})
 		return
 	}
 
@@ -1155,15 +1155,15 @@ func (h *Handler) markMessagesAsRead(ctx context.Context, session *model.Session
 	phone := strings.Split(chatJid, "@")[0]
 
 	// Send read receipt to WhatsApp
-	if err := h.wpp.MarkRead(ctx, session.Session, phone, msgIds); err != nil {
-		logger.Debug().Err(err).Str("session", session.Session).Str("chatJid", chatJid).Int("count", len(msgIds)).Msg("Chatwoot: failed to send read receipts to WhatsApp")
+	if markErr := h.wpp.MarkRead(ctx, session.Session, phone, msgIds); markErr != nil {
+		logger.Debug().Err(markErr).Str("session", session.Session).Str("chatJid", chatJid).Int("count", len(msgIds)).Msg("Chatwoot: failed to send read receipts to WhatsApp")
 		return
 	}
 
 	// Mark messages as read in database
-	affected, err := h.database.Messages.MarkAsReadByAgent(ctx, session.ID, msgIds)
-	if err != nil {
-		logger.Debug().Err(err).Str("session", session.Session).Msg("Chatwoot: failed to mark messages as read in database")
+	affected, dbErr := h.database.Messages.MarkAsReadByAgent(ctx, session.ID, msgIds)
+	if dbErr != nil {
+		logger.Debug().Err(dbErr).Str("session", session.Session).Msg("Chatwoot: failed to mark messages as read in database")
 		return
 	}
 

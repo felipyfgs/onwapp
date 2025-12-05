@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -45,7 +46,7 @@ func (r *Repository) GetBySession(ctx context.Context, sessionID string) (*Webho
 		SELECT "id", "sessionId", "url", "events", "enabled", COALESCE("secret", '') as "secret"
 		FROM "onWappWebhook" WHERE "sessionId" = $1`,
 		sessionID).Scan(&w.ID, &w.SessionID, &w.URL, &w.Events, &w.Enabled, &w.Secret)
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {
@@ -61,7 +62,7 @@ func (r *Repository) GetEnabledBySession(ctx context.Context, sessionID string) 
 		SELECT "id", "sessionId", "url", "events", "enabled", COALESCE("secret", '') as "secret"
 		FROM "onWappWebhook" WHERE "sessionId" = $1 AND "enabled" = true`,
 		sessionID).Scan(&w.ID, &w.SessionID, &w.URL, &w.Events, &w.Enabled, &w.Secret)
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {

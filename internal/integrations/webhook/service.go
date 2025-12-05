@@ -80,7 +80,7 @@ func (s *Service) SendWithPreserializedJSON(ctx context.Context, sessionID, sess
 	// Parse existing JSON and inject metadata (single parse, single serialize)
 	var payload map[string]interface{}
 	if len(eventJSON) > 0 {
-		if err := json.Unmarshal(eventJSON, &payload); err != nil {
+		if unmarshalErr := json.Unmarshal(eventJSON, &payload); unmarshalErr != nil {
 			payload = make(map[string]interface{})
 		}
 	} else {
@@ -186,10 +186,10 @@ func (s *Service) SendWithChatwoot(ctx context.Context, sessionID, sessionId, ev
 
 	// Merge event fields into payload (flatten)
 	if rawEvent != nil {
-		eventJSON, err := json.Marshal(rawEvent)
-		if err == nil {
+		rawEventJSON, marshalErr := json.Marshal(rawEvent)
+		if marshalErr == nil {
 			var eventMap map[string]interface{}
-			if json.Unmarshal(eventJSON, &eventMap) == nil {
+			if json.Unmarshal(rawEventJSON, &eventMap) == nil {
 				for k, v := range eventMap {
 					payload[k] = v
 				}

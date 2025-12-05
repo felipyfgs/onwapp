@@ -32,9 +32,9 @@ func (s *Service) updateParticipants(ctx context.Context, sessionId, groupID str
 
 	jids := make([]types.JID, len(phones))
 	for i, phone := range phones {
-		jid, err := parseJID(phone)
-		if err != nil {
-			return nil, fmt.Errorf("invalid phone %s: %w", phone, err)
+		jid, parseErr := parseJID(phone)
+		if parseErr != nil {
+			return nil, fmt.Errorf("invalid phone %s: %w", phone, parseErr)
 		}
 		jids[i] = jid
 	}

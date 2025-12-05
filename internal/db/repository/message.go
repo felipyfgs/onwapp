@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -74,7 +75,7 @@ func (r *MessageRepository) Save(ctx context.Context, msg *model.Message) (strin
 	).Scan(&id)
 
 	// Handle case where ID already exists
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return "", nil
 	}
 	return id, err
@@ -303,7 +304,7 @@ func (r *MessageRepository) GetByCwMsgId(ctx context.Context, sessionID string, 
 		&m.Status, &m.DeliveredAt, &m.ReadAt, &m.Reactions, &m.RawEvent, &m.CreatedAt,
 		&m.CwMsgId, &m.CwConvId, &m.CwSourceId,
 	)
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {

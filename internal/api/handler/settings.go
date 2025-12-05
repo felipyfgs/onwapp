@@ -125,8 +125,8 @@ func (h *SettingsHandler) UpdateSettings(c *gin.Context) {
 	// Apply privacy settings to WhatsApp
 	if len(privacyUpdates) > 0 {
 		for setting, value := range privacyUpdates {
-			if err := h.wpp.SetPrivacySettingByName(ctx, sessionName, setting, value); err != nil {
-				c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to apply privacy setting " + setting + ": " + err.Error()})
+			if setErr := h.wpp.SetPrivacySettingByName(ctx, sessionName, setting, value); setErr != nil {
+				c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to apply privacy setting " + setting + ": " + setErr.Error()})
 				return
 			}
 		}
@@ -134,8 +134,8 @@ func (h *SettingsHandler) UpdateSettings(c *gin.Context) {
 
 	// Apply default disappearing timer to WhatsApp
 	if req.DefaultDisappearingTimer != nil {
-		if err := h.wpp.SetDefaultDisappearingTimerByName(ctx, sessionName, *req.DefaultDisappearingTimer); err != nil {
-			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to set disappearing timer: " + err.Error()})
+		if timerErr := h.wpp.SetDefaultDisappearingTimerByName(ctx, sessionName, *req.DefaultDisappearingTimer); timerErr != nil {
+			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to set disappearing timer: " + timerErr.Error()})
 			return
 		}
 		updates["defaultDisappearingTimer"] = *req.DefaultDisappearingTimer

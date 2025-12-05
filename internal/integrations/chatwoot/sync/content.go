@@ -419,22 +419,22 @@ func extractListContent(message map[string]interface{}) string {
 
 	var b strings.Builder
 
-	if desc, ok := listMsg["description"].(string); ok && desc != "" {
+	if desc, descOk := listMsg["description"].(string); descOk && desc != "" {
 		b.WriteString(desc)
 	}
 
-	sections, ok := listMsg["sections"].([]interface{})
-	if !ok {
+	sections, secOk := listMsg["sections"].([]interface{})
+	if !secOk {
 		return strings.TrimSpace(b.String())
 	}
 
 	for _, sec := range sections {
-		section, ok := sec.(map[string]interface{})
-		if !ok {
+		section, sectionOk := sec.(map[string]interface{})
+		if !sectionOk {
 			continue
 		}
 
-		if title, ok := section["title"].(string); ok && title != "" {
+		if title, titleOk := section["title"].(string); titleOk && title != "" {
 			b.WriteString("\n\n*")
 			b.WriteString(title)
 			b.WriteString("*")

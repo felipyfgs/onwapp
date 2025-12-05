@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -66,7 +67,7 @@ func (r *ChatRepository) Save(ctx context.Context, c *model.Chat) (string, error
 		now, now,
 	).Scan(&id)
 
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return "", nil
 	}
 	return id, err
@@ -153,7 +154,7 @@ func (r *ChatRepository) GetByJID(ctx context.Context, sessionID, chatJID string
 		&c.SyncedAt, &c.UpdatedAt,
 	)
 
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
 	return c, err

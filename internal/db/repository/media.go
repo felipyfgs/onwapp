@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -53,7 +54,7 @@ func (r *MediaRepository) Save(ctx context.Context, m *model.Media) (string, err
 		now, now,
 	).Scan(&id)
 
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return "", nil
 	}
 	return id, err
@@ -125,7 +126,7 @@ func (r *MediaRepository) GetByMsgID(ctx context.Context, sessionID, msgID strin
 		&m.CreatedAt, &m.UpdatedAt,
 	)
 
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
 	return m, err
@@ -159,7 +160,7 @@ func (r *MediaRepository) GetByMsgIDWithContext(ctx context.Context, sessionID, 
 		&m.ChatJID, &m.FromMe, &m.Caption, &m.PushName,
 	)
 
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil
 	}
 	return m, err

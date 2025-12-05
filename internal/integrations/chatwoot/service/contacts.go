@@ -117,15 +117,15 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 			groupName := fmt.Sprintf("%s (GROUP)", phoneNumber)
 
 			if getGroupInfo != nil {
-				if name, err := getGroupInfo(ctx, sessionId, remoteJid); err == nil && name != "" {
+				if name, groupErr := getGroupInfo(ctx, sessionId, remoteJid); groupErr == nil && name != "" {
 					groupName = fmt.Sprintf("%s (GROUP)", name)
 					logger.Debug().
 						Str("groupJid", remoteJid).
 						Str("groupName", name).
 						Msg("Chatwoot: got group name from WhatsApp")
-				} else if err != nil {
+				} else if groupErr != nil {
 					logger.Debug().
-						Err(err).
+						Err(groupErr).
 						Str("groupJid", remoteJid).
 						Msg("Chatwoot: failed to get group name, using fallback")
 				}
@@ -133,7 +133,7 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 
 			var avatarURL string
 			if getProfilePicture != nil {
-				if pic, err := getProfilePicture(ctx, sessionId, remoteJid); err == nil && pic != "" {
+				if pic, picErr := getProfilePicture(ctx, sessionId, remoteJid); picErr == nil && pic != "" {
 					avatarURL = pic
 				}
 			}
@@ -154,7 +154,7 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 
 			var avatarURL string
 			if getProfilePicture != nil && !isFromMe {
-				if pic, err := getProfilePicture(ctx, sessionId, phoneNumber); err == nil && pic != "" {
+				if pic, picErr := getProfilePicture(ctx, sessionId, phoneNumber); picErr == nil && pic != "" {
 					avatarURL = pic
 				}
 			}

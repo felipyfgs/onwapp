@@ -97,8 +97,8 @@ func (s *Service) processIncomingMessageInternal(ctx context.Context, session *m
 	c := client.NewClient(cfg.URL, cfg.Token, cfg.Account)
 
 	if cfg.InboxID == 0 {
-		if err := s.InitInbox(ctx, cfg); err != nil {
-			return 0, 0, nil, fmt.Errorf("failed to init inbox: %w", err)
+		if initErr := s.InitInbox(ctx, cfg); initErr != nil {
+			return 0, 0, nil, fmt.Errorf("failed to init inbox: %w", initErr)
 		}
 	}
 
@@ -112,12 +112,12 @@ func (s *Service) processIncomingMessageInternal(ctx context.Context, session *m
 	var contactNameFetcher ContactNameFetcher
 	if session.Client != nil && session.Client.Store != nil && session.Client.Store.Contacts != nil {
 		contactNameFetcher = func(ctx context.Context, jid string) string {
-			parsedJID, err := types.ParseJID(jid)
-			if err != nil {
+			parsedJID, parseErr := types.ParseJID(jid)
+			if parseErr != nil {
 				return ""
 			}
-			contact, err := session.Client.Store.Contacts.GetContact(ctx, parsedJID)
-			if err != nil || !contact.Found {
+			contact, contactErr := session.Client.Store.Contacts.GetContact(ctx, parsedJID)
+			if contactErr != nil || !contact.Found {
 				return ""
 			}
 			// Return best available name: FullName > FirstName > PushName > BusinessName
@@ -233,9 +233,9 @@ func (s *Service) processIncomingMediaMessageInternal(ctx context.Context, sessi
 			ContentAttributes: contentAttributes,
 			CreatedAt:         &msgTimestamp,
 		}
-		cwMsg, err := c.CreateMessage(ctx, conversationID, msgReq)
-		if err != nil {
-			return 0, conversationID, cfg, err
+		cwMsg, createErr := c.CreateMessage(ctx, conversationID, msgReq)
+		if createErr != nil {
+			return 0, conversationID, cfg, createErr
 		}
 		if cwMsg != nil {
 			return cwMsg.ID, conversationID, cfg, nil
@@ -245,12 +245,12 @@ func (s *Service) processIncomingMediaMessageInternal(ctx context.Context, sessi
 
 	content := mediaInfo.Caption
 	msgTimestamp := evt.Info.Timestamp
-	cwMsg, err := c.CreateMessageWithAttachmentAndMimeAndTime(ctx, conversationID, content, "incoming", bytes.NewReader(mediaData), mediaInfo.Filename, mediaInfo.MimeType, contentAttributes, &msgTimestamp)
-	if err != nil {
-		if core.IsNotFoundError(err) {
+	cwMsg, createErr := c.CreateMessageWithAttachmentAndMimeAndTime(ctx, conversationID, content, "incoming", bytes.NewReader(mediaData), mediaInfo.Filename, mediaInfo.MimeType, contentAttributes, &msgTimestamp)
+	if createErr != nil {
+		if core.IsNotFoundError(createErr) {
 			s.HandleConversationNotFound(ctx, session.ID, conversationID)
 		}
-		return 0, 0, nil, fmt.Errorf("failed to upload media to chatwoot: %w", err)
+		return 0, 0, nil, fmt.Errorf("failed to upload media to chatwoot: %w", createErr)
 	}
 
 	if cwMsg != nil && s.database != nil {
@@ -363,8 +363,8 @@ func (s *Service) processOutgoingMessageInternal(ctx context.Context, session *m
 	c := client.NewClient(cfg.URL, cfg.Token, cfg.Account)
 
 	if cfg.InboxID == 0 {
-		if err := s.InitInbox(ctx, cfg); err != nil {
-			return 0, 0, nil, fmt.Errorf("failed to init inbox: %w", err)
+		if initErr := s.InitInbox(ctx, cfg); initErr != nil {
+			return 0, 0, nil, fmt.Errorf("failed to init inbox: %w", initErr)
 		}
 	}
 
@@ -458,9 +458,9 @@ func (s *Service) processOutgoingMediaMessageInternal(ctx context.Context, sessi
 			ContentAttributes: contentAttributes,
 			CreatedAt:         &msgTimestamp,
 		}
-		cwMsg, err := c.CreateMessage(ctx, conversationID, msgReq)
-		if err != nil {
-			return 0, conversationID, cfg, err
+		cwMsg, createErr := c.CreateMessage(ctx, conversationID, msgReq)
+		if createErr != nil {
+			return 0, conversationID, cfg, createErr
 		}
 		if cwMsg != nil {
 			return cwMsg.ID, conversationID, cfg, nil
@@ -470,12 +470,12 @@ func (s *Service) processOutgoingMediaMessageInternal(ctx context.Context, sessi
 
 	content := mediaInfo.Caption
 	msgTimestamp := evt.Info.Timestamp
-	cwMsg, err := c.CreateMessageWithAttachmentAndMimeAndTime(ctx, conversationID, content, "outgoing", bytes.NewReader(mediaData), mediaInfo.Filename, mediaInfo.MimeType, contentAttributes, &msgTimestamp)
-	if err != nil {
-		if core.IsNotFoundError(err) {
+	cwMsg, createErr := c.CreateMessageWithAttachmentAndMimeAndTime(ctx, conversationID, content, "outgoing", bytes.NewReader(mediaData), mediaInfo.Filename, mediaInfo.MimeType, contentAttributes, &msgTimestamp)
+	if createErr != nil {
+		if core.IsNotFoundError(createErr) {
 			s.HandleConversationNotFound(ctx, session.ID, conversationID)
 		}
-		return 0, 0, nil, fmt.Errorf("failed to upload outgoing media to chatwoot: %w", err)
+		return 0, 0, nil, fmt.Errorf("failed to upload outgoing media to chatwoot: %w", createErr)
 	}
 
 	if cwMsg != nil && s.database != nil {
@@ -533,8 +533,8 @@ func (s *Service) ProcessReactionMessage(ctx context.Context, session *model.Ses
 	var inReplyToExternalID string
 
 	if s.database != nil {
-		originalMsg, err := s.database.Messages.GetByMsgId(ctx, session.ID, targetMsgID)
-		if err == nil && originalMsg != nil && originalMsg.CwMsgId != nil {
+		originalMsg, msgErr := s.database.Messages.GetByMsgId(ctx, session.ID, targetMsgID)
+		if msgErr == nil && originalMsg != nil && originalMsg.CwMsgId != nil {
 			inReplyTo = originalMsg.CwMsgId
 			inReplyToExternalID = targetMsgID
 		}

@@ -85,7 +85,7 @@ func (h *MediaHandler) ListPendingMedia(c *gin.Context) {
 
 	limit := 100
 	if l := c.Query("limit"); l != "" {
-		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 {
+		if parsed, parseErr := strconv.Atoi(l); parseErr == nil && parsed > 0 {
 			limit = parsed
 		}
 	}
@@ -172,13 +172,13 @@ func (h *MediaHandler) ListMedia(c *gin.Context) {
 	offset := 0
 
 	if l := c.Query("limit"); l != "" {
-		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 {
+		if parsed, parseErr := strconv.Atoi(l); parseErr == nil && parsed > 0 {
 			limit = parsed
 		}
 	}
 
 	if o := c.Query("offset"); o != "" {
-		if parsed, err := strconv.Atoi(o); err == nil && parsed >= 0 {
+		if parsed, parseErr := strconv.Atoi(o); parseErr == nil && parsed >= 0 {
 			offset = parsed
 		}
 	}

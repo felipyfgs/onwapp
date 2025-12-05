@@ -4,20 +4,36 @@ run:
 
 linters:
   enable:
-    # Bugs - CRITICAL
+    # ==========================================================================
+    # BUGS - CRITICAL (prevent runtime errors)
+    # ==========================================================================
     - bodyclose        # HTTP response body must be closed
     - durationcheck    # check for two durations multiplied together
     - errcheck         # check for unchecked errors
     - gosec            # security problems
     - nilerr           # returning nil after checking err != nil
     - sqlclosecheck    # ensure sql.Rows/Stmt are closed
+    - govet            # reports suspicious constructs (go vet)
+    - ineffassign      # detects unused assignments
 
-    # Style & Quality
+    # ==========================================================================
+    # PERFORMANCE (optimize runtime)
+    # ==========================================================================
+    - prealloc         # find slice declarations that could be preallocated
+    - copyloopvar      # detects loop variable issues (Go 1.22+)
+
+    # ==========================================================================
+    # CODE QUALITY (cleaner, more maintainable code)
+    # ==========================================================================
     - gofmt            # formatting
     - goimports        # imports ordering
     - misspell         # spelling mistakes
     - unused           # unused code
-    - staticcheck      # many checks
+    - staticcheck      # comprehensive static analysis
+    - gosimple         # simplify code
+    - unconvert        # remove unnecessary type conversions
+    - goconst          # find repeated strings that could be constants
+    - errorlint        # proper error wrapping (Go 1.13+)
 
 linters-settings:
   gosec:
@@ -25,21 +41,42 @@ linters-settings:
       - G104  # audit errors not checked (handled by errcheck)
       - G304  # file inclusion via variable (common in file handlers)
 
+  goconst:
+    min-len: 3         # minimum length of string to consider
+    min-occurrences: 3 # minimum occurrences before suggesting const
+
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment # too noisy, micro-optimization
+
+  errorlint:
+    errorf: true       # check fmt.Errorf uses %w
+    asserts: true      # check type assertions on errors
+    comparison: true   # check error comparisons
+
+  prealloc:
+    simple: true       # only report simple cases
+    for-loops: true    # check for loops
+
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
 
   exclude-rules:
+    # Test files - relaxed rules
     - path: _test\.go
       linters:
         - errcheck
         - gosec
+        - goconst
 
+    # Generated docs
     - path: docs/
       linters:
         - all
 
-    # G201 false positives - these use parameterized placeholders ($1, $2), not user data
+    # G201 false positives - parameterized queries ($1, $2)
     - path: internal/integrations/chatwoot/repository/chatwoot_db.go
       linters:
         - gosec
@@ -50,12 +87,12 @@ issues:
         - gosec
       text: "G201"
 
-    # G115 integer overflow - values are from protobuf and are always within safe range
+    # G115 integer overflow - protobuf values are safe
     - linters:
         - gosec
       text: "G115"
 
-    # G107 HTTP request with variable URL - these are API calls to configured endpoints
+    # G107 HTTP request with variable URL - configured endpoints
     - linters:
         - gosec
       text: "G107"

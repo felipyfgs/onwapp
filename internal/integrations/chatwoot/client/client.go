@@ -552,9 +552,9 @@ func (c *Client) GetOrCreateContactWithMerge(ctx context.Context, inboxID int, p
 		phone := "+" + phoneNumber
 
 		if mergeBrPhones && strings.HasPrefix(phone, "+55") {
-			contacts, err := c.SearchContactsForBrazilianMerge(ctx, phone)
-			if err != nil {
-				return nil, err
+			contacts, searchErr := c.SearchContactsForBrazilianMerge(ctx, phone)
+			if searchErr != nil {
+				return nil, searchErr
 			}
 
 			if len(contacts) == 2 {
@@ -876,8 +876,8 @@ func (c *Client) CreateMessageWithAttachmentAndMimeAndTime(ctx context.Context, 
 		return nil, fmt.Errorf("failed to create form file: %w", err)
 	}
 
-	if _, err := io.Copy(part, attachment); err != nil {
-		return nil, fmt.Errorf("failed to copy attachment: %w", err)
+	if _, copyErr := io.Copy(part, attachment); copyErr != nil {
+		return nil, fmt.Errorf("failed to copy attachment: %w", copyErr)
 	}
 
 	writer.Close()
@@ -971,8 +971,8 @@ func (c *Client) CreateMessageWithAttachmentFull(ctx context.Context, req Attach
 		return nil, fmt.Errorf("failed to create form file: %w", err)
 	}
 
-	if _, err := io.Copy(part, req.Attachment); err != nil {
-		return nil, fmt.Errorf("failed to copy attachment: %w", err)
+	if _, copyErr := io.Copy(part, req.Attachment); copyErr != nil {
+		return nil, fmt.Errorf("failed to copy attachment: %w", copyErr)
 	}
 
 	writer.Close()
