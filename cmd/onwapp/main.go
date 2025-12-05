@@ -129,6 +129,7 @@ func main() {
 
 	// Initialize History Sync service
 	historySyncService := service.NewHistorySyncService(database.Chats)
+	historySyncService.SetMessageRepository(database.Messages)
 	sessionService.SetHistorySyncService(historySyncService)
 
 	// Initialize Settings adapter for auto-reject calls, privacy sync, and keepOnline

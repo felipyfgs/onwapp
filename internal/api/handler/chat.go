@@ -17,6 +17,37 @@ func NewChatHandler(wpp *wpp.Service) *ChatHandler {
 	return &ChatHandler{wpp: wpp}
 }
 
+// MarkChatUnread godoc
+// @Summary      Mark chat as unread
+// @Description  Mark a WhatsApp chat as unread
+// @Tags         chat
+// @Accept       json
+// @Produce      json
+// @Param        session   path      string  true  "Session ID"
+// @Param        body   body      dto.MarkChatUnreadRequest true  "Chat data"
+// @Success      200    {object}  dto.ChatActionResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
+// @Security     Authorization
+// @Router       /{session}/chat/unread [post]
+func (h *ChatHandler) MarkChatUnread(c *gin.Context) {
+	sessionId := c.Param("session")
+
+	var req dto.MarkChatUnreadRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	if err := h.wpp.MarkChatUnread(c.Request.Context(), sessionId, req.Phone); err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.ChatActionResponse{Status: "marked_unread"})
+}
+
 // ArchiveChat godoc
 // @Summary      Archive or unarchive a chat
 // @Description  Archive or unarchive a WhatsApp chat

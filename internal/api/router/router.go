@@ -174,8 +174,13 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 		// Chat actions
 		session.POST("/chat/presence", h.Presence.SetChatPresence)
 		session.POST("/chat/markread", h.Presence.MarkRead)
+		session.POST("/chat/unread", h.Chat.MarkChatUnread)
 		session.POST("/chat/archive", h.Chat.ArchiveChat)
 		session.POST("/chat/disappearing", h.Chat.SetDisappearingTimer)
+		if h.History != nil {
+			session.GET("/chat/list", h.History.GetAllChats)
+			session.GET("/chat/messages", h.History.GetChatMessages)
+		}
 
 		// Group CRUD
 		session.POST("/group/create", h.Group.CreateGroup)

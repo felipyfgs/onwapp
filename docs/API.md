@@ -71,6 +71,9 @@ Complete REST API documentation for OnWapp - WhatsApp API Bridge.
   - [Link Group to Community](#link-group-to-community)
   - [Unlink Group from Community](#unlink-group-from-community)
 - [Chats](#chats)
+  - [List All Chats](#list-all-chats)
+  - [Get Chat Messages](#get-chat-messages)
+  - [Mark Chat as Unread](#mark-chat-as-unread)
   - [Archive/Unarchive Chat](#archiveunarchive-chat)
   - [Set Disappearing Timer](#set-disappearing-timer)
   - [Edit Message](#edit-message)
@@ -1629,6 +1632,104 @@ curl -X DELETE http://localhost:3000/sessions/my-session/communities/123456789@g
 ---
 
 # Chats
+
+## List All Chats
+
+**GET** `/sessions/:sessionId/chat/list`
+
+Get list of all chats from synced history data with pagination.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| limit | int | No | Max results (default: 100, max: 500) |
+| offset | int | No | Offset for pagination (default: 0) |
+
+```bash
+curl -X GET "http://localhost:3000/sessions/my-session/chat/list?limit=50&offset=0" \
+  -H "X-API-Key: your-api-key"
+```
+
+**Response (200):**
+```json
+[
+  {
+    "jid": "5511999999999@s.whatsapp.net",
+    "name": "John Doe",
+    "unreadCount": 3,
+    "markedAsUnread": false,
+    "ephemeralExpiration": 86400,
+    "conversationTimestamp": 1701619200,
+    "readOnly": false,
+    "suspended": false,
+    "locked": false
+  }
+]
+```
+
+---
+
+## Get Chat Messages
+
+**GET** `/sessions/:sessionId/chat/messages`
+
+Get messages from a specific chat with pagination.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| chatId | string | Yes | Chat JID (query parameter) |
+| limit | int | No | Max results (default: 50, max: 200) |
+| offset | int | No | Offset for pagination (default: 0) |
+
+```bash
+curl -X GET "http://localhost:3000/sessions/my-session/chat/messages?chatId=5511999999999@s.whatsapp.net&limit=20" \
+  -H "X-API-Key: your-api-key"
+```
+
+**Response (200):**
+```json
+[
+  {
+    "msgId": "3EB0ABC123",
+    "chatJid": "5511999999999@s.whatsapp.net",
+    "senderJid": "5511999999999@s.whatsapp.net",
+    "pushName": "John Doe",
+    "timestamp": 1701619200,
+    "type": "text",
+    "content": "Hello!",
+    "fromMe": false,
+    "isGroup": false,
+    "status": "received"
+  }
+]
+```
+
+---
+
+## Mark Chat as Unread
+
+**POST** `/sessions/:sessionId/chat/unread`
+
+Mark a chat as unread.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| phone | string | Yes | Phone number or JID |
+
+```bash
+curl -X POST http://localhost:3000/sessions/my-session/chat/unread \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{"phone": "5511999999999"}'
+```
+
+**Response (200):**
+```json
+{
+  "status": "marked_unread"
+}
+```
+
+---
 
 ## Archive/Unarchive Chat
 

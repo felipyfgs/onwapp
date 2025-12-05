@@ -12,13 +12,19 @@ import (
 )
 
 type HistorySyncService struct {
-	chatRepo *repository.ChatRepository
+	chatRepo    *repository.ChatRepository
+	messageRepo *repository.MessageRepository
 }
 
 func NewHistorySyncService(chatRepo *repository.ChatRepository) *HistorySyncService {
 	return &HistorySyncService{
 		chatRepo: chatRepo,
 	}
+}
+
+// SetMessageRepository sets the message repository (optional dependency)
+func (s *HistorySyncService) SetMessageRepository(repo *repository.MessageRepository) {
+	s.messageRepo = repo
 }
 
 // ProcessHistorySync processes a history sync event and saves chat metadata
@@ -97,9 +103,34 @@ func (s *HistorySyncService) GetUnreadChats(ctx context.Context, sessionID strin
 	return s.chatRepo.GetUnreadChats(ctx, sessionID)
 }
 
+// GetAllChats returns all chats for a session with pagination
+func (s *HistorySyncService) GetAllChats(ctx context.Context, sessionID string, limit, offset int) ([]*model.Chat, error) {
+	if limit <= 0 {
+		limit = 100
+	}
+	if limit > 500 {
+		limit = 500
+	}
+	return s.chatRepo.GetBySession(ctx, sessionID, limit, offset)
+}
+
 // GetChatByJID returns a chat by its JID with additional context
 func (s *HistorySyncService) GetChatByJID(ctx context.Context, sessionID, chatJID string) (*model.Chat, error) {
 	return s.chatRepo.GetWithContext(ctx, sessionID, chatJID)
+}
+
+// GetMessagesByChat returns messages for a specific chat with pagination
+func (s *HistorySyncService) GetMessagesByChat(ctx context.Context, sessionID, chatJID string, limit, offset int) ([]model.Message, error) {
+	if s.messageRepo == nil {
+		return nil, nil
+	}
+	if limit <= 0 {
+		limit = 50
+	}
+	if limit > 200 {
+		limit = 200
+	}
+	return s.messageRepo.GetByChat(ctx, sessionID, chatJID, limit, offset)
 }
 
 // mapSyncType converts whatsmeow sync type to our model type

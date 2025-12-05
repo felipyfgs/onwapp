@@ -1270,6 +1270,67 @@ const docTemplate = `{
                 }
             }
         },
+        "/{session}/chat/list": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get list of all chats from history sync data with pagination",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chat"
+                ],
+                "summary": "Get all chats",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "session",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Max results (default: 100, max: 500)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset for pagination (default: 0)",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/ChatResponse"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/{session}/chat/markread": {
             "post": {
                 "security": [
@@ -1341,6 +1402,80 @@ const docTemplate = `{
                 }
             }
         },
+        "/{session}/chat/messages": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get messages from a specific chat with pagination",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chat"
+                ],
+                "summary": "Get chat messages",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "session",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Chat JID",
+                        "name": "chatId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Max results (default: 50, max: 200)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset for pagination (default: 0)",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/ChatMessageResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/{session}/chat/presence": {
             "post": {
                 "security": [
@@ -1389,6 +1524,70 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/ChatPresenceResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/{session}/chat/unread": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Mark a WhatsApp chat as unread",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chat"
+                ],
+                "summary": "Mark chat as unread",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "session",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Chat data",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/MarkChatUnreadRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ChatActionResponse"
                         }
                     },
                     "400": {
@@ -6614,6 +6813,59 @@ const docTemplate = `{
                 }
             }
         },
+        "ChatMessageResponse": {
+            "type": "object",
+            "properties": {
+                "chatJid": {
+                    "type": "string",
+                    "example": "5511999999999@s.whatsapp.net"
+                },
+                "content": {
+                    "type": "string",
+                    "example": "Hello!"
+                },
+                "fromMe": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "isGroup": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "mediaType": {
+                    "type": "string",
+                    "example": "image"
+                },
+                "msgId": {
+                    "type": "string",
+                    "example": "3EB0ABC123"
+                },
+                "pushName": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
+                "quotedId": {
+                    "type": "string",
+                    "example": "3EB0DEF456"
+                },
+                "senderJid": {
+                    "type": "string",
+                    "example": "5511999999999@s.whatsapp.net"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "sent"
+                },
+                "timestamp": {
+                    "type": "integer",
+                    "example": 1701619200
+                },
+                "type": {
+                    "type": "string",
+                    "example": "text"
+                }
+            }
+        },
         "ChatPresenceRequest": {
             "type": "object",
             "required": [
@@ -7363,6 +7615,18 @@ const docTemplate = `{
                 "title": {
                     "type": "string",
                     "example": "Section 1"
+                }
+            }
+        },
+        "MarkChatUnreadRequest": {
+            "type": "object",
+            "required": [
+                "phone"
+            ],
+            "properties": {
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
                 }
             }
         },

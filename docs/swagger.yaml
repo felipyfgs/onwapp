@@ -106,6 +106,45 @@ definitions:
         example: archived
         type: string
     type: object
+  ChatMessageResponse:
+    properties:
+      chatJid:
+        example: 5511999999999@s.whatsapp.net
+        type: string
+      content:
+        example: Hello!
+        type: string
+      fromMe:
+        example: false
+        type: boolean
+      isGroup:
+        example: false
+        type: boolean
+      mediaType:
+        example: image
+        type: string
+      msgId:
+        example: 3EB0ABC123
+        type: string
+      pushName:
+        example: John Doe
+        type: string
+      quotedId:
+        example: 3EB0DEF456
+        type: string
+      senderJid:
+        example: 5511999999999@s.whatsapp.net
+        type: string
+      status:
+        example: sent
+        type: string
+      timestamp:
+        example: 1701619200
+        type: integer
+      type:
+        example: text
+        type: string
+    type: object
   ChatPresenceRequest:
     properties:
       media:
@@ -627,6 +666,14 @@ definitions:
     required:
     - rows
     - title
+    type: object
+  MarkChatUnreadRequest:
+    properties:
+      phone:
+        example: "5511999999999"
+        type: string
+    required:
+    - phone
     type: object
   MarkReadRequest:
     properties:
@@ -1842,6 +1889,45 @@ paths:
       summary: Set disappearing messages timer
       tags:
       - chat
+  /{session}/chat/list:
+    get:
+      description: Get list of all chats from history sync data with pagination
+      parameters:
+      - description: Session ID
+        in: path
+        name: session
+        required: true
+        type: string
+      - description: 'Max results (default: 100, max: 500)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Offset for pagination (default: 0)'
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/ChatResponse'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - Authorization: []
+      summary: Get all chats
+      tags:
+      - chat
   /{session}/chat/markread:
     post:
       consumes:
@@ -1888,6 +1974,54 @@ paths:
       summary: Mark messages as read
       tags:
       - presence
+  /{session}/chat/messages:
+    get:
+      description: Get messages from a specific chat with pagination
+      parameters:
+      - description: Session ID
+        in: path
+        name: session
+        required: true
+        type: string
+      - description: Chat JID
+        in: query
+        name: chatId
+        required: true
+        type: string
+      - description: 'Max results (default: 50, max: 200)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Offset for pagination (default: 0)'
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/ChatMessageResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - Authorization: []
+      summary: Get chat messages
+      tags:
+      - chat
   /{session}/chat/presence:
     post:
       consumes:
@@ -1934,6 +2068,47 @@ paths:
       summary: Set chat presence (typing/recording)
       tags:
       - presence
+  /{session}/chat/unread:
+    post:
+      consumes:
+      - application/json
+      description: Mark a WhatsApp chat as unread
+      parameters:
+      - description: Session ID
+        in: path
+        name: session
+        required: true
+        type: string
+      - description: Chat data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/MarkChatUnreadRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ChatActionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - Authorization: []
+      summary: Mark chat as unread
+      tags:
+      - chat
   /{session}/community/groups:
     get:
       description: Get list of subgroups in a community

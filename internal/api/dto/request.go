@@ -187,6 +187,10 @@ type ArchiveChatRequest struct {
 	Archive bool   `json:"archive" example:"true"`
 }
 
+type MarkChatUnreadRequest struct {
+	Phone string `json:"phone" binding:"required" example:"5511999999999"`
+}
+
 type DeleteMessageRequest struct {
 	Phone     string `json:"phone" binding:"required" example:"5511999999999"`
 	MessageID string `json:"messageId" binding:"required" example:"ABCD1234"`

@@ -49,6 +49,21 @@ func (s *Service) ArchiveChat(ctx context.Context, sessionId, phone string, arch
 	return client.SendAppState(ctx, appstate.BuildArchive(jid, archive, time.Time{}, nil))
 }
 
+// MarkChatUnread marks a chat as unread
+func (s *Service) MarkChatUnread(ctx context.Context, sessionId, phone string) error {
+	client, err := s.getClient(sessionId)
+	if err != nil {
+		return err
+	}
+
+	jid, err := parseJID(phone)
+	if err != nil {
+		return fmt.Errorf("invalid phone: %w", err)
+	}
+
+	return client.SendAppState(ctx, appstate.BuildMarkChatAsRead(jid, false, time.Time{}, nil))
+}
+
 // DeleteMessage deletes a message
 func (s *Service) DeleteMessage(ctx context.Context, sessionId, phone, messageID string, forMe bool) (whatsmeow.SendResponse, error) {
 	client, err := s.getClient(sessionId)
