@@ -23,7 +23,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { api } from "@/lib/api"
+import { getSession, deleteSession } from "@/lib/actions"
 import type { Session } from "@/types"
 
 interface SettingsPageProps {
@@ -39,9 +39,9 @@ export default function SettingsPage({ params }: SettingsPageProps) {
   const [copied, setCopied] = React.useState(false)
 
   React.useEffect(() => {
-    const fetchSession = async () => {
+    const fetchSessionData = async () => {
       try {
-        const data = await api.sessions.get(id)
+        const data = await getSession(id)
         setSession(data)
       } catch (error) {
         console.error("Failed to fetch session:", error)
@@ -49,7 +49,7 @@ export default function SettingsPage({ params }: SettingsPageProps) {
         setLoading(false)
       }
     }
-    fetchSession()
+    fetchSessionData()
   }, [id])
 
   const handleCopyApiKey = () => {
@@ -64,7 +64,7 @@ export default function SettingsPage({ params }: SettingsPageProps) {
   const handleDelete = async () => {
     setDeleting(true)
     try {
-      await api.sessions.delete(id)
+      await deleteSession(id)
       toast.success("Sessao deletada com sucesso")
       router.push("/")
     } catch (error) {

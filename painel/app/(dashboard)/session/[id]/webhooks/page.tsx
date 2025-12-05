@@ -33,7 +33,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { api } from "@/lib/api"
+import { getWebhook, setWebhook, deleteWebhook } from "@/lib/actions"
 import { WEBHOOK_EVENTS, type Webhook } from "@/types"
 
 interface WebhooksPageProps {
@@ -42,7 +42,7 @@ interface WebhooksPageProps {
 
 export default function WebhooksPage({ params }: WebhooksPageProps) {
   const { id } = use(params)
-  const [webhook, setWebhook] = React.useState<Webhook | null>(null)
+  const [webhookData, setWebhookData] = React.useState<Webhook | null>(null)
   const [loading, setLoading] = React.useState(true)
   const [saving, setSaving] = React.useState(false)
   const [dialogOpen, setDialogOpen] = React.useState(false)
@@ -51,23 +51,23 @@ export default function WebhooksPage({ params }: WebhooksPageProps) {
   const [selectedEvents, setSelectedEvents] = React.useState<string[]>([])
   const [enabled, setEnabled] = React.useState(true)
 
-  const fetchWebhook = React.useCallback(async () => {
+  const fetchWebhookData = React.useCallback(async () => {
     try {
-      const data = await api.webhooks.get(id)
-      setWebhook(data)
-      setUrl(data.url || "")
-      setSelectedEvents(data.events || [])
-      setEnabled(data.enabled ?? true)
+      const data = await getWebhook(id)
+      setWebhookData(data)
+      setUrl(data?.url || "")
+      setSelectedEvents(data?.events || [])
+      setEnabled(data?.enabled ?? true)
     } catch {
-      setWebhook(null)
+      setWebhookData(null)
     } finally {
       setLoading(false)
     }
   }, [id])
 
   React.useEffect(() => {
-    fetchWebhook()
-  }, [fetchWebhook])
+    fetchWebhookData()
+  }, [fetchWebhookData])
 
   const handleSave = async () => {
     if (!url.trim()) {
@@ -77,14 +77,14 @@ export default function WebhooksPage({ params }: WebhooksPageProps) {
 
     setSaving(true)
     try {
-      await api.webhooks.set(id, {
+      await setWebhook(id, {
         url: url.trim(),
         events: selectedEvents,
         enabled,
       })
       toast.success("Webhook salvo com sucesso")
       setDialogOpen(false)
-      fetchWebhook()
+      fetchWebhookData()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro ao salvar webhook")
     } finally {
@@ -94,9 +94,9 @@ export default function WebhooksPage({ params }: WebhooksPageProps) {
 
   const handleDelete = async () => {
     try {
-      await api.webhooks.delete(id)
+      await deleteWebhook(id)
       toast.success("Webhook removido com sucesso")
-      setWebhook(null)
+      setWebhookData(null)
       setUrl("")
       setSelectedEvents([])
       setEnabled(true)
@@ -147,13 +147,13 @@ export default function WebhooksPage({ params }: WebhooksPageProps) {
             <DialogTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
-                {webhook ? "Editar Webhook" : "Adicionar Webhook"}
+                {webhookData ? "Editar Webhook" : "Adicionar Webhook"}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>
-                  {webhook ? "Editar Webhook" : "Adicionar Webhook"}
+                  {webhookData ? "Editar Webhook" : "Adicionar Webhook"}
                 </DialogTitle>
                 <DialogDescription>
                   Configure a URL e os eventos que deseja receber
@@ -208,17 +208,17 @@ export default function WebhooksPage({ params }: WebhooksPageProps) {
           </Dialog>
         </div>
 
-        {webhook ? (
+        {webhookData ? (
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <ExternalLink className="h-4 w-4" />
-                    {webhook.url}
+                    {webhookData.url}
                   </CardTitle>
                   <CardDescription>
-                    {webhook.enabled ? "Ativo" : "Inativo"} - {webhook.events?.length || 0} eventos
+                    {webhookData.enabled ? "Ativo" : "Inativo"} - {webhookData.events?.length || 0} eventos
                   </CardDescription>
                 </div>
                 <AlertDialog>
@@ -250,8 +250,8 @@ export default function WebhooksPage({ params }: WebhooksPageProps) {
                 <div>
                   <h4 className="text-sm font-medium mb-2">Eventos configurados</h4>
                   <div className="flex flex-wrap gap-2">
-                    {webhook.events?.length ? (
-                      webhook.events.map((event) => (
+                    {webhookData.events?.length ? (
+                      webhookData.events.map((event) => (
                         <Badge key={event} variant="secondary">
                           {event}
                         </Badge>

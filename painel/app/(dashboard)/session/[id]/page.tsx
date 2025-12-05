@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { SessionStatusBadge, QRCodeDialog } from "@/components/sessions"
-import { api } from "@/lib/api"
+import { getSession, connectSession, disconnectSession, restartSession, logoutSession } from "@/lib/actions"
 import type { Session } from "@/types"
 
 interface SessionPageProps {
@@ -37,7 +37,7 @@ export default function SessionPage({ params }: SessionPageProps) {
 
   const fetchSession = React.useCallback(async () => {
     try {
-      const data = await api.sessions.get(id)
+      const data = await getSession(id)
       setSession(data)
     } catch (error) {
       console.error("Failed to fetch session:", error)
@@ -55,7 +55,7 @@ export default function SessionPage({ params }: SessionPageProps) {
   const handleConnect = async () => {
     setActionLoading(true)
     try {
-      const result = await api.sessions.connect(id)
+      const result = await connectSession(id)
       toast.success(result.message)
       if (result.status === 'connecting') {
         setShowQR(true)
@@ -71,7 +71,7 @@ export default function SessionPage({ params }: SessionPageProps) {
   const handleDisconnect = async () => {
     setActionLoading(true)
     try {
-      const result = await api.sessions.disconnect(id)
+      const result = await disconnectSession(id)
       toast.success(result.message)
       fetchSession()
     } catch (error) {
@@ -84,7 +84,7 @@ export default function SessionPage({ params }: SessionPageProps) {
   const handleRestart = async () => {
     setActionLoading(true)
     try {
-      const result = await api.sessions.restart(id)
+      const result = await restartSession(id)
       toast.success(result.message)
       fetchSession()
     } catch (error) {
@@ -97,7 +97,7 @@ export default function SessionPage({ params }: SessionPageProps) {
   const handleLogout = async () => {
     setActionLoading(true)
     try {
-      const result = await api.sessions.logout(id)
+      const result = await logoutSession(id)
       toast.success(result.message)
       fetchSession()
     } catch (error) {
