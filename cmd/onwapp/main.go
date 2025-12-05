@@ -249,6 +249,7 @@ func main() {
 		Status:     handler.NewStatusHandler(wppService),
 		Call:       handler.NewCallHandler(wppService),
 		History:    historyHandler,
+		Settings:   handler.NewSettingsHandler(database.Settings, wppService),
 		Webhook:    webhookHandler,
 	}
 

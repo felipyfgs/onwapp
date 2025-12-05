@@ -3,6 +3,7 @@ package wpp
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/types"
@@ -196,4 +197,69 @@ func (s *Service) RejectCall(ctx context.Context, sessionId, callFrom, callID st
 	}
 
 	return client.RejectCall(ctx, jid, callID)
+}
+
+// GetPrivacySettingsAsStrings gets privacy settings as a map of strings
+func (s *Service) GetPrivacySettingsAsStrings(ctx context.Context, sessionId string) (map[string]string, error) {
+	client, err := s.getClient(sessionId)
+	if err != nil {
+		return nil, err
+	}
+
+	settings := client.GetPrivacySettings(ctx)
+
+	return map[string]string{
+		"groupAdd":     string(settings.GroupAdd),
+		"lastSeen":     string(settings.LastSeen),
+		"status":       string(settings.Status),
+		"profilePhoto": string(settings.Profile),
+		"readReceipts": string(settings.ReadReceipts),
+		"callAdd":      string(settings.CallAdd),
+		"online":       string(settings.Online),
+	}, nil
+}
+
+// SetPrivacySettingByName sets a privacy setting by name
+func (s *Service) SetPrivacySettingByName(ctx context.Context, sessionId, settingName, value string) error {
+	client, err := s.getClient(sessionId)
+	if err != nil {
+		return err
+	}
+
+	settingType := types.PrivacySettingType(settingName)
+	settingValue := types.PrivacySetting(value)
+
+	_, err = client.SetPrivacySetting(ctx, settingType, settingValue)
+	return err
+}
+
+// SetDefaultDisappearingTimerByName sets the default disappearing timer by name
+func (s *Service) SetDefaultDisappearingTimerByName(ctx context.Context, sessionId, timer string) error {
+	client, err := s.getClient(sessionId)
+	if err != nil {
+		return err
+	}
+
+	duration, err := parseDisappearingTimer(timer)
+	if err != nil {
+		return err
+	}
+
+	return client.SetDefaultDisappearingTimer(ctx, duration)
+}
+
+// parseDisappearingTimer converts timer string to duration
+func parseDisappearingTimer(timer string) (time.Duration, error) {
+	switch timer {
+	case "off", "":
+		return 0, nil
+	case "24h":
+		return 24 * time.Hour, nil
+	case "7d":
+		return 7 * 24 * time.Hour, nil
+	case "90d":
+		return 90 * 24 * time.Hour, nil
+	default:
+		return 0, fmt.Errorf("invalid timer value: %s (must be off, 24h, 7d, or 90d)", timer)
+	}
 }

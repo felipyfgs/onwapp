@@ -483,3 +483,37 @@ type SendCarouselRequest struct {
 	Footer string            `json:"footer" example:"Powered by OnWapp"`
 	Cards  []CarouselCardDTO `json:"cards" binding:"required,min=1"`
 }
+
+// Settings requests
+
+// SessionSettingsRequest contains all optional settings fields for create/update
+type SessionSettingsRequest struct {
+	AlwaysOnline             *bool   `json:"alwaysOnline,omitempty" example:"false"`
+	AutoRejectCalls          *bool   `json:"autoRejectCalls,omitempty" example:"false"`
+	SyncHistory              *bool   `json:"syncHistory,omitempty" example:"false"`
+	LastSeen                 *string `json:"lastSeen,omitempty" example:"all"`
+	Online                   *string `json:"online,omitempty" example:"all"`
+	ProfilePhoto             *string `json:"profilePhoto,omitempty" example:"all"`
+	Status                   *string `json:"status,omitempty" example:"all"`
+	ReadReceipts             *string `json:"readReceipts,omitempty" example:"all"`
+	GroupAdd                 *string `json:"groupAdd,omitempty" example:"all"`
+	CallAdd                  *string `json:"callAdd,omitempty" example:"all"`
+	DefaultDisappearingTimer *string `json:"defaultDisappearingTimer,omitempty" example:"off"`
+}
+
+// CreateSessionWithSettingsRequest extends CreateSessionRequest with optional settings
+type CreateSessionWithSettingsRequest struct {
+	Session                  string  `json:"session" binding:"required" example:"my-session"`
+	ApiKey                   string  `json:"apiKey,omitempty" example:"my-custom-api-key"`
+	AlwaysOnline             *bool   `json:"alwaysOnline,omitempty" example:"false"`
+	AutoRejectCalls          *bool   `json:"autoRejectCalls,omitempty" example:"false"`
+	SyncHistory              *bool   `json:"syncHistory,omitempty" example:"false"`
+	LastSeen                 *string `json:"lastSeen,omitempty" example:"all"`
+	Online                   *string `json:"online,omitempty" example:"all"`
+	ProfilePhoto             *string `json:"profilePhoto,omitempty" example:"all"`
+	Status                   *string `json:"status,omitempty" example:"all"`
+	ReadReceipts             *string `json:"readReceipts,omitempty" example:"all"`
+	GroupAdd                 *string `json:"groupAdd,omitempty" example:"all"`
+	CallAdd                  *string `json:"callAdd,omitempty" example:"all"`
+	DefaultDisappearingTimer *string `json:"defaultDisappearingTimer,omitempty" example:"off"`
+}

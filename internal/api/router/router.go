@@ -37,6 +37,7 @@ type Handlers struct {
 	Status     *handler.StatusHandler
 	Call       *handler.CallHandler
 	History    *handler.HistoryHandler
+	Settings   *handler.SettingsHandler
 	Webhook    WebhookHandlerInterface
 }
 
@@ -256,6 +257,12 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 			session.POST("/history/sync", h.History.RequestHistorySync)
 			session.GET("/history/chats/unread", h.History.GetUnreadChats)
 			session.GET("/history/chat", h.History.GetChatInfo)
+		}
+
+		// Settings
+		if h.Settings != nil {
+			session.GET("/settings", h.Settings.GetSettings)
+			session.POST("/settings", h.Settings.UpdateSettings)
 		}
 
 		// Webhooks
