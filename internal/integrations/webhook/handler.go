@@ -57,7 +57,7 @@ type ErrorResponse struct {
 // @Security Authorization
 // @Router /sessions/{sessionId}/webhooks [get]
 func (h *Handler) GetWebhook(c *gin.Context) {
-	name := c.Param("sessionId")
+	name := c.Param("session")
 
 	session, err := h.sessionService.Get(name)
 	if err != nil || session == nil {
@@ -102,7 +102,7 @@ func (h *Handler) GetWebhook(c *gin.Context) {
 // @Security Authorization
 // @Router /sessions/{sessionId}/webhooks [post]
 func (h *Handler) SetWebhook(c *gin.Context) {
-	name := c.Param("sessionId")
+	name := c.Param("session")
 
 	var req SetWebhookRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -153,7 +153,7 @@ func (h *Handler) SetWebhook(c *gin.Context) {
 // @Security Authorization
 // @Router /sessions/{sessionId}/webhooks [put]
 func (h *Handler) UpdateWebhook(c *gin.Context) {
-	name := c.Param("sessionId")
+	name := c.Param("session")
 
 	var req SetWebhookRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -212,7 +212,7 @@ func (h *Handler) UpdateWebhook(c *gin.Context) {
 // @Security Authorization
 // @Router /sessions/{sessionId}/webhooks [delete]
 func (h *Handler) DeleteWebhook(c *gin.Context) {
-	name := c.Param("sessionId")
+	name := c.Param("session")
 
 	session, err := h.sessionService.Get(name)
 	if err != nil || session == nil {

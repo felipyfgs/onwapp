@@ -50,6 +50,7 @@ import {
   deleteChatwootConfig,
   syncAll,
   getSyncStatus,
+  resolveAllConversations,
 } from "@/lib/api/chatwoot"
 
 interface ChatwootConfigProps {

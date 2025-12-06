@@ -10,7 +10,7 @@ export default function WebhooksPage() {
 
   useEffect(() => {
     // Redireciona para a página de configuração
-    router.replace(`/sessions/${sessionId}/webhooks/config`)
+    router.replace(`/sessions/${sessionId}/integrations/webhooks/config`)
   }, [sessionId, router])
 
   return null

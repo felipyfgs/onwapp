@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Loader2, Plus, Save, Trash2, Webhook as WebhookIcon } from "lucide-react"
+import { CheckCircle, Loader2, Save, Trash2, Webhook as WebhookIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -64,7 +64,7 @@ export function WebhookConfig({ sessionId }: WebhookConfigProps) {
   const loadData = React.useCallback(async () => {
     try {
       const [webhookData, eventsData] = await Promise.all([
-        getWebhook(sessionId),
+        getWebhook(sessionId).catch(() => null), // 404 = not configured yet
         getWebhookEvents(),
       ])
 
@@ -78,7 +78,7 @@ export function WebhookConfig({ sessionId }: WebhookConfigProps) {
         setSelectedEvents(webhookData.events || [])
       }
     } catch (error) {
-      console.error("Failed to load webhook config:", error)
+      console.error("Failed to load webhook events:", error)
     } finally {
       setLoading(false)
     }
@@ -181,23 +181,49 @@ export function WebhookConfig({ sessionId }: WebhookConfigProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <div className="space-y-4">
+      {/* Status Badge */}
+      {webhook?.id && (
         <div className="flex items-center justify-between">
+          <Badge variant="default" className={enabled ? "bg-emerald-600" : "bg-secondary"}>
+            <CheckCircle className="h-3 w-3 mr-1" />
+            {enabled ? "Integração Ativa" : "Integração Inativa"}
+          </Badge>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                <Trash2 className="h-4 w-4 mr-1" />
+                Remover
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Remover integração?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Isso irá desativar a integração de Webhook. Você poderá configurar novamente depois.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+                  Remover
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )}
+
+      <Card>
+        <CardHeader>
           <div className="flex items-center gap-2">
             <WebhookIcon className="h-5 w-5 text-muted-foreground" />
             <CardTitle>Configuração de Webhook</CardTitle>
           </div>
-          {webhook?.id && (
-            <Badge variant={enabled ? "default" : "secondary"}>
-              {enabled ? "Ativo" : "Inativo"}
-            </Badge>
-          )}
-        </div>
-        <CardDescription>
-          Configure uma URL para receber eventos do WhatsApp em tempo real.
-        </CardDescription>
-      </CardHeader>
+          <CardDescription>
+            Configure uma URL para receber eventos do WhatsApp em tempo real.
+          </CardDescription>
+        </CardHeader>
       <CardContent className="space-y-6">
         {/* Enabled Toggle */}
         <div className="flex items-center justify-between">
@@ -263,24 +289,29 @@ export function WebhookConfig({ sessionId }: WebhookConfigProps) {
 
           {events && (
             <Accordion type="multiple" className="w-full">
-              {Object.entries(events.categories).map(([category, categoryEvents]) => (
+              {Object.entries(events.categories).map(([category, categoryEvents]) => {
+                const selectedCount = categoryEvents.filter((e) => selectedEvents.includes(e)).length
+                const allSelected = selectedCount === categoryEvents.length
+                const someSelected = selectedCount > 0 && !allSelected
+                
+                return (
                 <AccordionItem key={category} value={category}>
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        checked={categoryEvents.every((e) =>
-                          selectedEvents.includes(e)
-                        )}
-                        onCheckedChange={() => toggleCategory(categoryEvents)}
-                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                      />
-                      <span className="capitalize">{category}</span>
-                      <Badge variant="secondary" className="ml-2">
-                        {categoryEvents.filter((e) => selectedEvents.includes(e)).length}/
-                        {categoryEvents.length}
-                      </Badge>
-                    </div>
-                  </AccordionTrigger>
+                  <div className="flex items-center">
+                    <Checkbox
+                      checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                      onCheckedChange={() => toggleCategory(categoryEvents)}
+                      className="mr-2"
+                    />
+                    <AccordionTrigger className="hover:no-underline flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="capitalize">{category}</span>
+                        <Badge variant="secondary" className="ml-2">
+                          {categoryEvents.filter((e) => selectedEvents.includes(e)).length}/
+                          {categoryEvents.length}
+                        </Badge>
+                      </div>
+                    </AccordionTrigger>
+                  </div>
                   <AccordionContent>
                     <div className="grid gap-2 pl-6">
                       {categoryEvents.map((event) => (
@@ -304,41 +335,13 @@ export function WebhookConfig({ sessionId }: WebhookConfigProps) {
                     </div>
                   </AccordionContent>
                 </AccordionItem>
-              ))}
+              )})}
             </Accordion>
           )}
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-between pt-4 border-t">
-          {webhook?.id ? (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm">
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Deletar Webhook
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Deletar Webhook?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Esta ação não pode ser desfeita. O webhook será permanentemente
-                    removido e você não receberá mais eventos.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete}>
-                    Deletar
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          ) : (
-            <div />
-          )}
-
+        <div className="flex justify-end pt-4 border-t">
           <Button onClick={handleSave} disabled={saving}>
             {saving ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -350,6 +353,7 @@ export function WebhookConfig({ sessionId }: WebhookConfigProps) {
         </div>
       </CardContent>
     </Card>
+    </div>
   )
 }
 

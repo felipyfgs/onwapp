@@ -10,7 +10,7 @@ export default function ChatwootPage() {
 
   useEffect(() => {
     // Redireciona para a página de configuração
-    router.replace(`/sessions/${sessionId}/chatwoot/config`)
+    router.replace(`/sessions/${sessionId}/integrations/chatwoot/config`)
   }, [sessionId, router])
 
   return null

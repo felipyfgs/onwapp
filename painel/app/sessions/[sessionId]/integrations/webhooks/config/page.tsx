@@ -1,6 +1,5 @@
 "use client"
 
-import * as React from "react"
 import { useParams } from "next/navigation"
 import { SessionSidebar } from "@/components/sessions/session-sidebar"
 import { AppHeader } from "@/components/app-header"
@@ -39,14 +38,8 @@ export default function WebhooksConfigPage() {
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
-              <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href={`/sessions/${sessionId}/webhooks`}>
-                  Webhooks
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
-                <BreadcrumbPage>Configurar</BreadcrumbPage>
+                <BreadcrumbPage>Webhooks</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
