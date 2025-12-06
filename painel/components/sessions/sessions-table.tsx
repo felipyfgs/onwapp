@@ -149,7 +149,7 @@ export function SessionsTable({
       </div>
 
       <QRCodeDialog
-        session={qrSession}
+        session={qrSession || ""}
         open={!!qrSession}
         onClose={() => setQrSession(null)}
       />

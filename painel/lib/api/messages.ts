@@ -1,8 +1,16 @@
 import type {
   SendTextRequest,
-  SendMediaRequest,
+  SendImageRequest,
+  SendAudioRequest,
+  SendVideoRequest,
+  SendDocumentRequest,
+  SendStickerRequest,
   SendLocationRequest,
   SendContactRequest,
+  SendPollRequest,
+  SendButtonsRequest,
+  SendListRequest,
+  SendTemplateRequest,
   MessageResponse,
 } from "@/lib/types/message"
 
@@ -34,29 +42,36 @@ export async function sendText(session: string, data: SendTextRequest): Promise<
   })
 }
 
-export async function sendImage(session: string, data: SendMediaRequest): Promise<MessageResponse> {
+export async function sendImage(session: string, data: SendImageRequest): Promise<MessageResponse> {
   return fetchAPI<MessageResponse>(`/${session}/message/send/image`, {
     method: "POST",
     body: JSON.stringify(data),
   })
 }
 
-export async function sendDocument(session: string, data: SendMediaRequest): Promise<MessageResponse> {
-  return fetchAPI<MessageResponse>(`/${session}/message/send/document`, {
-    method: "POST",
-    body: JSON.stringify(data),
-  })
-}
-
-export async function sendAudio(session: string, data: SendMediaRequest): Promise<MessageResponse> {
+export async function sendAudio(session: string, data: SendAudioRequest): Promise<MessageResponse> {
   return fetchAPI<MessageResponse>(`/${session}/message/send/audio`, {
     method: "POST",
     body: JSON.stringify(data),
   })
 }
 
-export async function sendVideo(session: string, data: SendMediaRequest): Promise<MessageResponse> {
+export async function sendVideo(session: string, data: SendVideoRequest): Promise<MessageResponse> {
   return fetchAPI<MessageResponse>(`/${session}/message/send/video`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  })
+}
+
+export async function sendDocument(session: string, data: SendDocumentRequest): Promise<MessageResponse> {
+  return fetchAPI<MessageResponse>(`/${session}/message/send/document`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  })
+}
+
+export async function sendSticker(session: string, data: SendStickerRequest): Promise<MessageResponse> {
+  return fetchAPI<MessageResponse>(`/${session}/message/send/sticker`, {
     method: "POST",
     body: JSON.stringify(data),
   })
@@ -71,6 +86,34 @@ export async function sendLocation(session: string, data: SendLocationRequest): 
 
 export async function sendContact(session: string, data: SendContactRequest): Promise<MessageResponse> {
   return fetchAPI<MessageResponse>(`/${session}/message/send/contact`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  })
+}
+
+export async function sendPoll(session: string, data: SendPollRequest): Promise<MessageResponse> {
+  return fetchAPI<MessageResponse>(`/${session}/message/send/poll`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  })
+}
+
+export async function sendButtons(session: string, data: SendButtonsRequest): Promise<MessageResponse> {
+  return fetchAPI<MessageResponse>(`/${session}/message/send/buttons`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  })
+}
+
+export async function sendList(session: string, data: SendListRequest): Promise<MessageResponse> {
+  return fetchAPI<MessageResponse>(`/${session}/message/send/list`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  })
+}
+
+export async function sendTemplate(session: string, data: SendTemplateRequest): Promise<MessageResponse> {
+  return fetchAPI<MessageResponse>(`/${session}/message/send/template`, {
     method: "POST",
     body: JSON.stringify(data),
   })
