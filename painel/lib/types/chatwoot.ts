@@ -28,6 +28,7 @@ export interface ChatwootConfig {
   chatwootDbName?: string
   createdAt?: string
   updatedAt?: string
+  warnings?: string[]
 }
 
 export interface SetChatwootConfigRequest {

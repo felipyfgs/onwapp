@@ -17,6 +17,7 @@ import {
   Plus,
   Check,
   Loader2,
+  Plug,
 } from "lucide-react"
 
 import {
@@ -176,36 +177,19 @@ export function SessionSidebar({ sessionId, ...props }: SessionSidebarProps) {
       icon: Users,
     },
     {
-      title: "Chatwoot",
-      url: `${baseUrl}/chatwoot`,
-      icon: MessageCircle,
+      title: "Integrações",
+      url: `${baseUrl}/integrations`,
+      icon: Plug,
       items: [
         {
-          title: "Configurar",
+          title: "Chatwoot",
           url: `${baseUrl}/chatwoot/config`,
+          icon: MessageCircle,
         },
         {
-          title: "Status",
-          url: `${baseUrl}/chatwoot/status`,
-        },
-      ],
-    },
-    {
-      title: "Webhooks",
-      url: `${baseUrl}/webhooks`,
-      icon: Webhook,
-      items: [
-        {
-          title: "Configurar",
+          title: "Webhooks",
           url: `${baseUrl}/webhooks/config`,
-        },
-        {
-          title: "Logs",
-          url: `${baseUrl}/webhooks/logs`,
-        },
-        {
-          title: "Eventos",
-          url: `${baseUrl}/webhooks/events`,
+          icon: Webhook,
         },
       ],
     },
@@ -332,8 +316,12 @@ export function SessionSidebar({ sessionId, ...props }: SessionSidebarProps) {
             <SidebarGroupContent>
               <SidebarMenu>
                 {navItems.map((item) => {
-                  const isActive = pathname === item.url || pathname.startsWith(item.url + "/")
                   const hasSubItems = item.items && item.items.length > 0
+                  // Check if any subitem is active
+                  const isSubItemActive = hasSubItems && item.items?.some(
+                    sub => pathname === sub.url || pathname.startsWith(sub.url.replace('/config', ''))
+                  )
+                  const isActive = pathname === item.url || pathname.startsWith(item.url + "/") || isSubItemActive
 
                   if (!hasSubItems) {
                     return (
@@ -361,7 +349,7 @@ export function SessionSidebar({ sessionId, ...props }: SessionSidebarProps) {
                     >
                       <SidebarMenuItem>
                         <CollapsibleTrigger asChild>
-                          <SidebarMenuButton tooltip={item.title} isActive={isActive}>
+                          <SidebarMenuButton tooltip={item.title} isActive={pathname === item.url}>
                             <item.icon className="size-4" />
                             <span>{item.title}</span>
                             <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
@@ -370,7 +358,8 @@ export function SessionSidebar({ sessionId, ...props }: SessionSidebarProps) {
                         <CollapsibleContent>
                           <SidebarMenuSub>
                             {item.items?.map((subItem) => {
-                              const isSubActive = pathname === subItem.url
+                              const subBase = subItem.url.replace('/config', '')
+                              const isSubActive = pathname === subItem.url || pathname.startsWith(subBase + '/')
                               return (
                                 <SidebarMenuSubItem key={subItem.title}>
                                   <SidebarMenuSubButton asChild isActive={isSubActive}>

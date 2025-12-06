@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import {
+  AlertTriangle,
   CheckCircle,
   Database,
   Globe,
@@ -61,6 +62,7 @@ export function ChatwootConfiguration({ sessionId }: ChatwootConfigProps) {
   const [config, setConfig] = React.useState<ChatwootConfig | null>(null)
   const [syncStatus, setSyncStatus] = React.useState<SyncStatus | null>(null)
   const [syncing, setSyncing] = React.useState(false)
+  const [warnings, setWarnings] = React.useState<string[]>([])
 
   // Connection form
   const [url, setUrl] = React.useState("")
@@ -187,8 +189,16 @@ export function ChatwootConfiguration({ sessionId }: ChatwootConfigProps) {
         chatwootDbName: dbName.trim() || undefined,
       }
 
-      await setChatwootConfig(sessionId, data)
-      toast.success("Configuração salva!")
+      const result = await setChatwootConfig(sessionId, data)
+      
+      // Check for warnings in response
+      if (result.warnings && result.warnings.length > 0) {
+        setWarnings(result.warnings)
+        result.warnings.forEach((w: string) => toast.warning(w))
+      } else {
+        setWarnings([])
+        toast.success("Configuração salva!")
+      }
       await loadData()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro ao salvar")
@@ -247,12 +257,31 @@ export function ChatwootConfiguration({ sessionId }: ChatwootConfigProps) {
 
   return (
     <div className="space-y-4">
+      {/* Warnings Alert */}
+      {warnings.length > 0 && (
+        <div className="p-4 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/20">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-200">Atenção</p>
+              {warnings.map((w, i) => (
+                <p key={i} className="text-sm text-amber-700 dark:text-amber-300">{w}</p>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Status Badge */}
       {config?.enabled && (
         <div className="flex items-center justify-between">
-          <Badge variant="default" className="bg-emerald-600">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            Integração Ativa
+          <Badge variant="default" className={warnings.length > 0 ? "bg-amber-600" : "bg-emerald-600"}>
+            {warnings.length > 0 ? (
+              <AlertTriangle className="h-3 w-3 mr-1" />
+            ) : (
+              <CheckCircle className="h-3 w-3 mr-1" />
+            )}
+            {warnings.length > 0 ? "Integração com Problemas" : "Integração Ativa"}
           </Badge>
           <AlertDialog>
             <AlertDialogTrigger asChild>
