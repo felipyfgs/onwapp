@@ -17,6 +17,7 @@ import {
   LayoutTemplate,
   Plus,
   Trash2,
+  GalleryHorizontal,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -31,9 +32,14 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 import type { 
   MessageType,
@@ -41,6 +47,8 @@ import type {
   ListSectionDTO,
   ListRowDTO,
   TemplateButtonDTO,
+  CarouselCardDTO,
+  NativeFlowButtonDTO,
 } from "@/lib/types/message"
 import {
   sendText,
@@ -54,7 +62,9 @@ import {
   sendPoll,
   sendButtons,
   sendList,
+  sendInteractive,
   sendTemplate,
+  sendCarousel,
 } from "@/lib/api/messages"
 
 interface MessageSenderProps {
@@ -110,12 +120,32 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
     { title: "", rows: [{ title: "", description: "", rowId: "row1" }] }
   ])
 
-  // Template
+  // Interactive (supports QuickReply - but can't mix with CTA buttons)
+  const [interactiveTitle, setInteractiveTitle] = React.useState("")
+  const [interactiveBody, setInteractiveBody] = React.useState("")
+  const [interactiveFooter, setInteractiveFooter] = React.useState("")
+  const [interactiveImage, setInteractiveImage] = React.useState("")
+  const [interactiveImageMime, setInteractiveImageMime] = React.useState("")
+  const [interactiveButtons, setInteractiveButtons] = React.useState<NativeFlowButtonDTO[]>([
+    { name: "quick_reply", params: { display_text: "", id: "btn1" } }
+  ])
+
+  // Template (only URL and Call buttons - QuickReply NOT supported)
   const [templateTitle, setTemplateTitle] = React.useState("")
   const [templateContent, setTemplateContent] = React.useState("")
   const [templateFooter, setTemplateFooter] = React.useState("")
+  const [templateImage, setTemplateImage] = React.useState("")
+  const [templateImageMime, setTemplateImageMime] = React.useState("")
   const [templateButtons, setTemplateButtons] = React.useState<TemplateButtonDTO[]>([
-    { index: 0, quickReply: { displayText: "", id: "btn1" } }
+    { index: 0, urlButton: { displayText: "", url: "" } }
+  ])
+
+  // Carousel
+  const [carouselTitle, setCarouselTitle] = React.useState("")
+  const [carouselBody, setCarouselBody] = React.useState("")
+  const [carouselFooter, setCarouselFooter] = React.useState("")
+  const [carouselCards, setCarouselCards] = React.useState<CarouselCardDTO[]>([
+    { header: { title: "" }, body: "", footer: "", buttons: [{ name: "quick_reply", params: { display_text: "", id: "btn1" } }] }
   ])
 
   const fileInputRef = React.useRef<HTMLInputElement>(null)
@@ -165,10 +195,22 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
     setListDescription("")
     setListButtonText("")
     setSections([{ title: "", rows: [{ title: "", description: "", rowId: "row1" }] }])
+    setInteractiveTitle("")
+    setInteractiveBody("")
+    setInteractiveFooter("")
+    setInteractiveImage("")
+    setInteractiveImageMime("")
+    setInteractiveButtons([{ name: "quick_reply", params: { display_text: "", id: "btn1" } }])
     setTemplateTitle("")
     setTemplateContent("")
     setTemplateFooter("")
-    setTemplateButtons([{ index: 0, quickReply: { displayText: "", id: "btn1" } }])
+    setTemplateImage("")
+    setTemplateImageMime("")
+    setTemplateButtons([{ index: 0, urlButton: { displayText: "", url: "" } }])
+    setCarouselTitle("")
+    setCarouselBody("")
+    setCarouselFooter("")
+    setCarouselCards([{ header: { title: "" }, body: "", footer: "", buttons: [{ name: "quick_reply", params: { display_text: "", id: "btn1" } }] }])
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
@@ -363,6 +405,31 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
           })
           break
 
+        case "interactive":
+          if (!interactiveBody.trim()) {
+            toast.error("Informe o conteúdo da mensagem")
+            setSending(false)
+            return
+          }
+          const validInteractiveButtons = interactiveButtons.filter(
+            b => (b.params as { display_text?: string }).display_text?.trim()
+          )
+          if (validInteractiveButtons.length === 0) {
+            toast.error("Adicione pelo menos um botão")
+            setSending(false)
+            return
+          }
+          await sendInteractive(sessionId, {
+            phone: cleanPhone,
+            title: interactiveTitle.trim() || undefined,
+            body: interactiveBody.trim(),
+            footer: interactiveFooter.trim() || undefined,
+            buttons: validInteractiveButtons,
+            image: interactiveImage || undefined,
+            mimetype: interactiveImageMime || undefined,
+          })
+          break
+
         case "template":
           if (!templateContent.trim()) {
             toast.error("Informe o conteúdo do template")
@@ -370,7 +437,7 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
             return
           }
           const validTemplateButtons = templateButtons.filter(
-            b => b.quickReply?.displayText?.trim() || b.urlButton?.displayText?.trim() || b.callButton?.displayText?.trim()
+            b => b.urlButton?.displayText?.trim() || b.callButton?.displayText?.trim()
           )
           if (validTemplateButtons.length === 0) {
             toast.error("Adicione pelo menos um botão")
@@ -383,6 +450,32 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
             content: templateContent.trim(),
             footer: templateFooter.trim() || undefined,
             buttons: validTemplateButtons,
+            image: templateImage || undefined,
+            mimetype: templateImageMime || undefined,
+          })
+          break
+
+        case "carousel":
+          const validCards = carouselCards.filter(c => c.body.trim())
+          if (validCards.length === 0) {
+            toast.error("Adicione pelo menos um card com conteúdo")
+            setSending(false)
+            return
+          }
+          await sendCarousel(sessionId, {
+            phone: cleanPhone,
+            title: carouselTitle.trim() || undefined,
+            body: carouselBody.trim() || undefined,
+            footer: carouselFooter.trim() || undefined,
+            cards: validCards.map(card => ({
+              header: {
+                title: card.header.title?.trim() || undefined,
+                image: card.header.image || undefined,
+              },
+              body: card.body.trim(),
+              footer: card.footer?.trim() || undefined,
+              buttons: card.buttons.filter(b => b.params.display_text),
+            })),
           })
           break
       }
@@ -489,14 +582,12 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
     setSections(newSections)
   }
 
-  // Template button helpers
-  const addTemplateButton = (type: "quickReply" | "urlButton" | "callButton") => {
+  // Template button helpers (only URL and Call - QuickReply only works in Carousel)
+  const addTemplateButton = (type: "urlButton" | "callButton") => {
     if (templateButtons.length < 3) {
       const index = templateButtons.length
       let newButton: TemplateButtonDTO = { index }
-      if (type === "quickReply") {
-        newButton.quickReply = { displayText: "", id: `btn${index + 1}` }
-      } else if (type === "urlButton") {
+      if (type === "urlButton") {
         newButton.urlButton = { displayText: "", url: "" }
       } else {
         newButton.callButton = { displayText: "", phoneNumber: "" }
@@ -524,8 +615,103 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
     setTemplateButtons(newButtons)
   }
 
+  // Carousel helpers
+  const addCarouselCard = () => {
+    setCarouselCards([...carouselCards, { 
+      header: { title: "" }, 
+      body: "", 
+      footer: "", 
+      buttons: [{ name: "quick_reply", params: { display_text: "", id: `btn${Date.now()}` } }] 
+    }])
+  }
+
+  const removeCarouselCard = (index: number) => {
+    if (carouselCards.length > 1) {
+      setCarouselCards(carouselCards.filter((_, i) => i !== index))
+    }
+  }
+
+  const updateCarouselCard = (index: number, field: keyof CarouselCardDTO, value: string) => {
+    const newCards = [...carouselCards]
+    if (field === "body" || field === "footer") {
+      newCards[index] = { ...newCards[index], [field]: value }
+    }
+    setCarouselCards(newCards)
+  }
+
+  const updateCarouselCardHeader = (index: number, field: string, value: string) => {
+    const newCards = [...carouselCards]
+    newCards[index] = { 
+      ...newCards[index], 
+      header: { ...newCards[index].header, [field]: value } 
+    }
+    setCarouselCards(newCards)
+  }
+
+  const addCarouselCardButton = (cardIndex: number) => {
+    const newCards = [...carouselCards]
+    if (newCards[cardIndex].buttons.length < 3) {
+      newCards[cardIndex].buttons.push({ 
+        name: "quick_reply", 
+        params: { display_text: "", id: `btn${Date.now()}` } 
+      })
+      setCarouselCards(newCards)
+    }
+  }
+
+  const removeCarouselCardButton = (cardIndex: number, buttonIndex: number) => {
+    const newCards = [...carouselCards]
+    if (newCards[cardIndex].buttons.length > 1) {
+      newCards[cardIndex].buttons = newCards[cardIndex].buttons.filter((_, i) => i !== buttonIndex)
+      setCarouselCards(newCards)
+    }
+  }
+
+  const updateCarouselCardButton = (cardIndex: number, buttonIndex: number, value: string) => {
+    const newCards = [...carouselCards]
+    newCards[cardIndex].buttons[buttonIndex] = {
+      ...newCards[cardIndex].buttons[buttonIndex],
+      params: { ...newCards[cardIndex].buttons[buttonIndex].params, display_text: value }
+    }
+    setCarouselCards(newCards)
+  }
+
+  const handleCarouselCardImage = (cardIndex: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Imagem muito grande (máximo 5MB)")
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      const base64 = (reader.result as string).split(",")[1]
+      const newCards = [...carouselCards]
+      newCards[cardIndex] = {
+        ...newCards[cardIndex],
+        header: { ...newCards[cardIndex].header, image: base64 }
+      }
+      setCarouselCards(newCards)
+    }
+    reader.onerror = () => {
+      toast.error("Erro ao ler imagem")
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const removeCarouselCardImage = (cardIndex: number) => {
+    const newCards = [...carouselCards]
+    newCards[cardIndex] = {
+      ...newCards[cardIndex],
+      header: { ...newCards[cardIndex].header, image: undefined }
+    }
+    setCarouselCards(newCards)
+  }
+
   return (
-    <Card>
+    <Card className="min-w-0 overflow-hidden">
       <CardHeader>
         <div className="flex items-center gap-2">
           <Send className="h-5 w-5 text-muted-foreground" />
@@ -535,7 +721,7 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
           Envie mensagens de texto, mídia, localização, enquetes e mais.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 overflow-hidden">
         {/* Phone Input */}
         <div className="space-y-2">
           <Label htmlFor="phone">Número de Telefone *</Label>
@@ -550,70 +736,97 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
           </p>
         </div>
 
-        {/* Message Type Tabs */}
-        <Tabs
-          value={messageType}
-          onValueChange={(v) => {
-            setMessageType(v as MessageType)
-            resetForm()
-          }}
-        >
-          <ScrollArea className="w-full whitespace-nowrap">
-            <TabsList className="inline-flex w-max">
-              <TabsTrigger value="text" className="gap-1">
-                <FileText className="h-4 w-4" />
-                <span className="hidden sm:inline">Texto</span>
-              </TabsTrigger>
-              <TabsTrigger value="image" className="gap-1">
-                <Image className="h-4 w-4" />
-                <span className="hidden sm:inline">Imagem</span>
-              </TabsTrigger>
-              <TabsTrigger value="document" className="gap-1">
-                <FileText className="h-4 w-4" />
-                <span className="hidden sm:inline">Doc</span>
-              </TabsTrigger>
-              <TabsTrigger value="audio" className="gap-1">
-                <Mic className="h-4 w-4" />
-                <span className="hidden sm:inline">Áudio</span>
-              </TabsTrigger>
-              <TabsTrigger value="video" className="gap-1">
-                <Video className="h-4 w-4" />
-                <span className="hidden sm:inline">Vídeo</span>
-              </TabsTrigger>
-              <TabsTrigger value="sticker" className="gap-1">
-                <Sticker className="h-4 w-4" />
-                <span className="hidden sm:inline">Sticker</span>
-              </TabsTrigger>
-              <TabsTrigger value="location" className="gap-1">
-                <MapPin className="h-4 w-4" />
-                <span className="hidden sm:inline">Local</span>
-              </TabsTrigger>
-              <TabsTrigger value="contact" className="gap-1">
-                <UserRound className="h-4 w-4" />
-                <span className="hidden sm:inline">Contato</span>
-              </TabsTrigger>
-              <TabsTrigger value="poll" className="gap-1">
-                <BarChart3 className="h-4 w-4" />
-                <span className="hidden sm:inline">Enquete</span>
-              </TabsTrigger>
-              <TabsTrigger value="buttons" className="gap-1">
-                <MousePointerClick className="h-4 w-4" />
-                <span className="hidden sm:inline">Botões</span>
-              </TabsTrigger>
-              <TabsTrigger value="list" className="gap-1">
-                <List className="h-4 w-4" />
-                <span className="hidden sm:inline">Lista</span>
-              </TabsTrigger>
-              <TabsTrigger value="template" className="gap-1">
-                <LayoutTemplate className="h-4 w-4" />
-                <span className="hidden sm:inline">Template</span>
-              </TabsTrigger>
-            </TabsList>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
+        {/* Message Type Select */}
+        <div className="space-y-2">
+          <Label>Tipo de Mensagem</Label>
+          <Select
+            value={messageType}
+            onValueChange={(v) => {
+              setMessageType(v as MessageType)
+              resetForm()
+            }}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="text">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" /> Texto
+                </div>
+              </SelectItem>
+              <SelectItem value="image">
+                <div className="flex items-center gap-2">
+                  <Image className="h-4 w-4" /> Imagem
+                </div>
+              </SelectItem>
+              <SelectItem value="document">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" /> Documento
+                </div>
+              </SelectItem>
+              <SelectItem value="audio">
+                <div className="flex items-center gap-2">
+                  <Mic className="h-4 w-4" /> Áudio
+                </div>
+              </SelectItem>
+              <SelectItem value="video">
+                <div className="flex items-center gap-2">
+                  <Video className="h-4 w-4" /> Vídeo
+                </div>
+              </SelectItem>
+              <SelectItem value="sticker">
+                <div className="flex items-center gap-2">
+                  <Sticker className="h-4 w-4" /> Sticker
+                </div>
+              </SelectItem>
+              <SelectItem value="location">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" /> Localização
+                </div>
+              </SelectItem>
+              <SelectItem value="contact">
+                <div className="flex items-center gap-2">
+                  <UserRound className="h-4 w-4" /> Contato
+                </div>
+              </SelectItem>
+              <SelectItem value="poll">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4" /> Enquete
+                </div>
+              </SelectItem>
+              <SelectItem value="buttons">
+                <div className="flex items-center gap-2">
+                  <MousePointerClick className="h-4 w-4" /> Botões
+                </div>
+              </SelectItem>
+              <SelectItem value="list">
+                <div className="flex items-center gap-2">
+                  <List className="h-4 w-4" /> Lista
+                </div>
+              </SelectItem>
+              <SelectItem value="interactive">
+                <div className="flex items-center gap-2">
+                  <MousePointerClick className="h-4 w-4" /> Interativo (QuickReply)
+                </div>
+              </SelectItem>
+              <SelectItem value="template">
+                <div className="flex items-center gap-2">
+                  <LayoutTemplate className="h-4 w-4" /> Template (Link/Ligar)
+                </div>
+              </SelectItem>
+              <SelectItem value="carousel">
+                <div className="flex items-center gap-2">
+                  <GalleryHorizontal className="h-4 w-4" /> Carrossel
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-          {/* Text */}
-          <TabsContent value="text" className="space-y-4">
+        {/* Text */}
+        {messageType === "text" && (
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="message">Mensagem *</Label>
               <Textarea
@@ -624,10 +837,10 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
                 rows={4}
               />
             </div>
-          </TabsContent>
+          </div>)}
 
           {/* Image */}
-          <TabsContent value="image" className="space-y-4">
+          {messageType === "image" && (<div className="space-y-4">
             <div className="space-y-2">
               <Label>Imagem *</Label>
               <Input
@@ -647,10 +860,10 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
                 onChange={(e) => setCaption(e.target.value)}
               />
             </div>
-          </TabsContent>
+          </div>)}
 
           {/* Document */}
-          <TabsContent value="document" className="space-y-4">
+          {messageType === "document" && (<div className="space-y-4">
             <div className="space-y-2">
               <Label>Documento *</Label>
               <Input
@@ -661,10 +874,10 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
               />
               {filename && <p className="text-sm text-muted-foreground">Selecionado: {filename}</p>}
             </div>
-          </TabsContent>
+          </div>)}
 
           {/* Audio */}
-          <TabsContent value="audio" className="space-y-4">
+          {messageType === "audio" && (<div className="space-y-4">
             <div className="space-y-2">
               <Label>Áudio *</Label>
               <Input
@@ -683,10 +896,10 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
               />
               <Label htmlFor="ptt">Enviar como mensagem de voz (PTT)</Label>
             </div>
-          </TabsContent>
+          </div>)}
 
           {/* Video */}
-          <TabsContent value="video" className="space-y-4">
+          {messageType === "video" && (<div className="space-y-4">
             <div className="space-y-2">
               <Label>Vídeo *</Label>
               <Input
@@ -706,10 +919,10 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
                 onChange={(e) => setCaption(e.target.value)}
               />
             </div>
-          </TabsContent>
+          </div>)}
 
           {/* Sticker */}
-          <TabsContent value="sticker" className="space-y-4">
+          {messageType === "sticker" && (<div className="space-y-4">
             <div className="space-y-2">
               <Label>Figurinha * (WebP ou PNG)</Label>
               <Input
@@ -723,10 +936,10 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
                 Recomendado: 512x512 pixels, formato WebP
               </p>
             </div>
-          </TabsContent>
+          </div>)}
 
           {/* Location */}
-          <TabsContent value="location" className="space-y-4">
+          {messageType === "location" && (<div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="latitude">Latitude *</Label>
@@ -769,10 +982,10 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
                 onChange={(e) => setAddress(e.target.value)}
               />
             </div>
-          </TabsContent>
+          </div>)}
 
           {/* Contact */}
-          <TabsContent value="contact" className="space-y-4">
+          {messageType === "contact" && (<div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="contactName">Nome do Contato *</Label>
               <Input
@@ -791,10 +1004,10 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
                 onChange={(e) => setContactPhone(e.target.value)}
               />
             </div>
-          </TabsContent>
+          </div>)}
 
           {/* Poll */}
-          <TabsContent value="poll" className="space-y-4">
+          {messageType === "poll" && (<div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="pollName">Pergunta *</Label>
               <Input
@@ -842,10 +1055,10 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
                 onChange={(e) => setSelectableCount(parseInt(e.target.value) || 1)}
               />
             </div>
-          </TabsContent>
+          </div>)}
 
           {/* Buttons */}
-          <TabsContent value="buttons" className="space-y-4">
+          {messageType === "buttons" && (<div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="headerText">Cabeçalho (opcional)</Label>
               <Input
@@ -901,10 +1114,10 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
                 </Button>
               )}
             </div>
-          </TabsContent>
+          </div>)}
 
           {/* List */}
-          <TabsContent value="list" className="space-y-4">
+          {messageType === "list" && (<div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="listTitle">Título *</Label>
@@ -1004,10 +1217,117 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
                 <Plus className="h-4 w-4 mr-1" /> Adicionar Seção
               </Button>
             </div>
-          </TabsContent>
+          </div>)}
+
+          {/* Interactive (QuickReply) */}
+          {messageType === "interactive" && (<div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Mensagem interativa com botões de Resposta Rápida. Não misture com botões de Link/Ligar.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="interactiveTitle">Título (opcional)</Label>
+              <Input
+                id="interactiveTitle"
+                placeholder="Título da mensagem"
+                value={interactiveTitle}
+                onChange={(e) => setInteractiveTitle(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="interactiveBody">Conteúdo *</Label>
+              <Textarea
+                id="interactiveBody"
+                placeholder="Texto principal..."
+                value={interactiveBody}
+                onChange={(e) => setInteractiveBody(e.target.value)}
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="interactiveFooter">Rodapé (opcional)</Label>
+              <Input
+                id="interactiveFooter"
+                placeholder="Texto do rodapé"
+                value={interactiveFooter}
+                onChange={(e) => setInteractiveFooter(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Imagem (recomendado para WhatsApp Web)</Label>
+              <p className="text-xs text-muted-foreground">QuickReply funciona melhor com imagem no WhatsApp Web</p>
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  if (file.size > 5 * 1024 * 1024) {
+                    toast.error("Imagem muito grande (máx. 5MB)")
+                    return
+                  }
+                  setInteractiveImageMime(file.type)
+                  const reader = new FileReader()
+                  reader.onload = () => {
+                    setInteractiveImage((reader.result as string).split(",")[1])
+                  }
+                  reader.readAsDataURL(file)
+                }}
+              />
+              {interactiveImage && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-green-600">Imagem selecionada</span>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => { setInteractiveImage(""); setInteractiveImageMime("") }}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>Botões de Resposta Rápida * (máx. 3)</Label>
+              {interactiveButtons.map((btn, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    placeholder={`Texto do botão ${index + 1}`}
+                    value={(btn.params as { display_text?: string }).display_text || ""}
+                    onChange={(e) => {
+                      const newButtons = [...interactiveButtons]
+                      newButtons[index] = {
+                        ...newButtons[index],
+                        params: { ...newButtons[index].params, display_text: e.target.value }
+                      }
+                      setInteractiveButtons(newButtons)
+                    }}
+                  />
+                  {interactiveButtons.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setInteractiveButtons(interactiveButtons.filter((_, i) => i !== index))}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              {interactiveButtons.length < 3 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setInteractiveButtons([...interactiveButtons, { name: "quick_reply", params: { display_text: "", id: `btn${Date.now()}` } }])}
+                >
+                  <Plus className="h-4 w-4 mr-1" /> Adicionar Botão
+                </Button>
+              )}
+            </div>
+          </div>)}
 
           {/* Template */}
-          <TabsContent value="template" className="space-y-4">
+          {messageType === "template" && (<div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Template suporta apenas botões de Link e Ligar. Para Resposta Rápida, use o tipo Interativo.
+            </p>
             <div className="space-y-2">
               <Label htmlFor="templateTitle">Título (opcional)</Label>
               <Input
@@ -1037,13 +1357,43 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label>Botões * (máx. 3)</Label>
+              <Label>Imagem (opcional)</Label>
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  if (file.size > 5 * 1024 * 1024) {
+                    toast.error("Imagem muito grande (máx. 5MB)")
+                    return
+                  }
+                  setTemplateImageMime(file.type)
+                  const reader = new FileReader()
+                  reader.onload = () => {
+                    setTemplateImage((reader.result as string).split(",")[1])
+                  }
+                  reader.readAsDataURL(file)
+                }}
+              />
+              {templateImage && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-green-600">Imagem selecionada</span>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => { setTemplateImage(""); setTemplateImageMime("") }}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>Botões * (máx. 3) - Apenas Link e Ligar</Label>
+              <p className="text-xs text-muted-foreground">Para Resposta Rápida, use o tipo Interativo</p>
               {templateButtons.map((btn, index) => (
                 <Card key={index} className="p-3">
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium">
-                        {btn.quickReply ? "Resposta Rápida" : btn.urlButton ? "Link" : "Ligar"}
+                        {btn.urlButton ? "Link" : "Ligar"}
                       </span>
                       {templateButtons.length > 1 && (
                         <Button
@@ -1058,7 +1408,7 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
                     </div>
                     <Input
                       placeholder="Texto do botão"
-                      value={btn.quickReply?.displayText || btn.urlButton?.displayText || btn.callButton?.displayText || ""}
+                      value={btn.urlButton?.displayText || btn.callButton?.displayText || ""}
                       onChange={(e) => updateTemplateButton(index, "displayText", e.target.value)}
                     />
                     {btn.urlButton && (
@@ -1080,9 +1430,6 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
               ))}
               {templateButtons.length < 3 && (
                 <div className="flex gap-2 flex-wrap">
-                  <Button type="button" variant="outline" size="sm" onClick={() => addTemplateButton("quickReply")}>
-                    <Plus className="h-4 w-4 mr-1" /> Resposta
-                  </Button>
                   <Button type="button" variant="outline" size="sm" onClick={() => addTemplateButton("urlButton")}>
                     <Plus className="h-4 w-4 mr-1" /> Link
                   </Button>
@@ -1092,8 +1439,132 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
                 </div>
               )}
             </div>
-          </TabsContent>
-        </Tabs>
+          </div>)}
+
+          {/* Carousel */}
+          {messageType === "carousel" && (<div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="carouselTitle">Título (opcional)</Label>
+              <Input
+                id="carouselTitle"
+                placeholder="Título do carrossel"
+                value={carouselTitle}
+                onChange={(e) => setCarouselTitle(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="carouselBody">Descrição (opcional)</Label>
+              <Textarea
+                id="carouselBody"
+                placeholder="Texto de introdução..."
+                value={carouselBody}
+                onChange={(e) => setCarouselBody(e.target.value)}
+                rows={2}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="carouselFooter">Rodapé (opcional)</Label>
+              <Input
+                id="carouselFooter"
+                placeholder="Texto do rodapé"
+                value={carouselFooter}
+                onChange={(e) => setCarouselFooter(e.target.value)}
+              />
+            </div>
+            <div className="space-y-4">
+              <Label>Cards *</Label>
+              {carouselCards.map((card, cardIndex) => (
+                <Card key={cardIndex} className="p-4">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Card {cardIndex + 1}</span>
+                      {carouselCards.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeCarouselCard(cardIndex)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="Título do card"
+                        value={card.header.title || ""}
+                        onChange={(e) => updateCarouselCardHeader(cardIndex, "title", e.target.value)}
+                      />
+                      <div className="space-y-1">
+                        <Label className="text-xs">Imagem do card *</Label>
+                        {card.header.image ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-green-600">Imagem selecionada</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeCarouselCardImage(cardIndex)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleCarouselCardImage(cardIndex, e)}
+                          />
+                        )}
+                      </div>
+                      <Textarea
+                        placeholder="Conteúdo do card *"
+                        value={card.body}
+                        onChange={(e) => updateCarouselCard(cardIndex, "body", e.target.value)}
+                        rows={2}
+                      />
+                      <Input
+                        placeholder="Rodapé do card (opcional)"
+                        value={card.footer || ""}
+                        onChange={(e) => updateCarouselCard(cardIndex, "footer", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Botões (máx. 3)</Label>
+                      {card.buttons.map((btn, btnIndex) => (
+                        <div key={btnIndex} className="flex gap-2">
+                          <Input
+                            placeholder={`Botão ${btnIndex + 1}`}
+                            value={(btn.params as { display_text?: string }).display_text || ""}
+                            onChange={(e) => updateCarouselCardButton(cardIndex, btnIndex, e.target.value)}
+                          />
+                          {card.buttons.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeCarouselCardButton(cardIndex, btnIndex)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      {card.buttons.length < 3 && (
+                        <Button type="button" variant="outline" size="sm" onClick={() => addCarouselCardButton(cardIndex)}>
+                          <Plus className="h-4 w-4 mr-1" /> Botão
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              ))}
+              <Button type="button" variant="outline" size="sm" onClick={addCarouselCard}>
+                <Plus className="h-4 w-4 mr-1" /> Adicionar Card
+              </Button>
+            </div>
+          </div>)}
+
 
         {/* Send Button */}
         <Button onClick={handleSend} disabled={sending} className="w-full">

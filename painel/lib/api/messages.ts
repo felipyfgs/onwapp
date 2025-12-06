@@ -10,7 +10,9 @@ import type {
   SendPollRequest,
   SendButtonsRequest,
   SendListRequest,
+  SendInteractiveRequest,
   SendTemplateRequest,
+  SendCarouselRequest,
   MessageResponse,
 } from "@/lib/types/message"
 
@@ -112,8 +114,22 @@ export async function sendList(session: string, data: SendListRequest): Promise<
   })
 }
 
+export async function sendInteractive(session: string, data: SendInteractiveRequest): Promise<MessageResponse> {
+  return fetchAPI<MessageResponse>(`/${session}/message/send/interactive`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  })
+}
+
 export async function sendTemplate(session: string, data: SendTemplateRequest): Promise<MessageResponse> {
   return fetchAPI<MessageResponse>(`/${session}/message/send/template`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  })
+}
+
+export async function sendCarousel(session: string, data: SendCarouselRequest): Promise<MessageResponse> {
+  return fetchAPI<MessageResponse>(`/${session}/message/send/carousel`, {
     method: "POST",
     body: JSON.stringify(data),
   })

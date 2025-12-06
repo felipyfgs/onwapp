@@ -73,14 +73,44 @@ interface SessionSidebarProps extends React.ComponentProps<typeof Sidebar> {
   sessionId: string
 }
 
+const SESSIONS_CACHE_KEY = "sessions_cache"
+
+// Helper to get cached sessions
+const getCachedSessions = (): Session[] => {
+  if (typeof window === "undefined") return []
+  try {
+    const cached = sessionStorage.getItem(SESSIONS_CACHE_KEY)
+    return cached ? JSON.parse(cached) : []
+  } catch {
+    return []
+  }
+}
+
+// Helper to cache sessions
+const setCachedSessions = (sessions: Session[]) => {
+  if (typeof window === "undefined") return
+  try {
+    sessionStorage.setItem(SESSIONS_CACHE_KEY, JSON.stringify(sessions))
+  } catch {
+    // Ignore storage errors
+  }
+}
+
 export function SessionSidebar({ sessionId, ...props }: SessionSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { isMobile } = useSidebar()
   const baseUrl = `/sessions/${sessionId}`
 
-  const [sessions, setSessions] = React.useState<Session[]>([])
-  const [currentSession, setCurrentSession] = React.useState<Session | null>(null)
+  // Initialize from cache to prevent flash
+  const cachedSessions = React.useMemo(() => getCachedSessions(), [])
+  const cachedCurrentSession = React.useMemo(
+    () => cachedSessions.find(s => s.session === sessionId) || null,
+    [cachedSessions, sessionId]
+  )
+
+  const [sessions, setSessions] = React.useState<Session[]>(cachedSessions)
+  const [currentSession, setCurrentSession] = React.useState<Session | null>(cachedCurrentSession)
   const [dropdownOpen, setDropdownOpen] = React.useState(false)
   
   // Create session dialog state
@@ -92,6 +122,7 @@ export function SessionSidebar({ sessionId, ...props }: SessionSidebarProps) {
     try {
       const data = await fetchSessions()
       setSessions(data)
+      setCachedSessions(data)
       const current = data.find(s => s.session === sessionId)
       if (current) {
         setCurrentSession(current)
@@ -223,10 +254,18 @@ export function SessionSidebar({ sessionId, ...props }: SessionSidebarProps) {
                     size="lg"
                     className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                   >
-                    <div className="relative">
-                      <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
-                        <Smartphone className="size-4" />
-                      </div>
+                    <div className="relative shrink-0">
+                      {currentSession?.profilePicture ? (
+                        <img 
+                          src={currentSession.profilePicture} 
+                          alt={currentSession.pushName || sessionId}
+                          className="size-8 min-w-8 min-h-8 rounded-lg object-cover"
+                        />
+                      ) : (
+                        <div className="flex aspect-square size-8 min-w-8 min-h-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
+                          <Smartphone className="size-4" />
+                        </div>
+                      )}
                       {currentSession && (
                         <span 
                           className={cn(
@@ -262,9 +301,17 @@ export function SessionSidebar({ sessionId, ...props }: SessionSidebarProps) {
                         className="gap-2 p-2 cursor-pointer"
                       >
                         <div className="relative">
-                          <div className="flex size-8 items-center justify-center rounded-lg border bg-background">
-                            <Smartphone className="size-4" />
-                          </div>
+                          {session.profilePicture ? (
+                            <img 
+                              src={session.profilePicture} 
+                              alt={session.pushName || session.session}
+                              className="size-8 rounded-lg object-cover"
+                            />
+                          ) : (
+                            <div className="flex size-8 items-center justify-center rounded-lg border bg-background">
+                              <Smartphone className="size-4" />
+                            </div>
+                          )}
                           <span 
                             className={cn(
                               "absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border border-background",
@@ -311,7 +358,11 @@ export function SessionSidebar({ sessionId, ...props }: SessionSidebarProps) {
                   const isSubItemActive = hasSubItems && item.items?.some(
                     sub => pathname === sub.url || pathname.startsWith(sub.url.replace('/config', ''))
                   )
-                  const isActive = pathname === item.url || pathname.startsWith(item.url + "/") || isSubItemActive
+                  // For the overview page (baseUrl), only exact match; for others, also check startsWith
+                  const isOverview = item.url === baseUrl
+                  const isActive = isOverview 
+                    ? pathname === item.url 
+                    : (pathname === item.url || pathname.startsWith(item.url + "/") || isSubItemActive)
 
                   if (!hasSubItems) {
                     return (

@@ -378,9 +378,17 @@ export default function SessionsListPage() {
               >
                 {/* Avatar */}
                 <div className="relative flex-shrink-0">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                    <Smartphone className="h-4 w-4 text-primary" />
-                  </div>
+                  {session.profilePicture ? (
+                    <img 
+                      src={session.profilePicture} 
+                      alt={session.pushName || session.session}
+                      className="h-10 w-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                      <Smartphone className="h-4 w-4 text-primary" />
+                    </div>
+                  )}
                   <span 
                     className={cn(
                       "absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-card",

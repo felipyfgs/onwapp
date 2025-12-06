@@ -231,9 +231,17 @@ export default function SessionPage() {
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-4">
                   <div className="relative">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30">
-                      <Smartphone className="h-8 w-8 text-emerald-600" />
-                    </div>
+                    {session.profilePicture ? (
+                      <img 
+                        src={session.profilePicture} 
+                        alt={session.pushName || session.session}
+                        className="h-16 w-16 rounded-2xl object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30">
+                        <Smartphone className="h-8 w-8 text-emerald-600" />
+                      </div>
+                    )}
                     <span 
                       className={cn(
                         "absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-4 border-background",

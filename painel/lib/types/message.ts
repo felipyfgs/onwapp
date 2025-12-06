@@ -197,4 +197,6 @@ export type MessageType =
   | "poll"
   | "buttons"
   | "list"
+  | "interactive"
   | "template"
+  | "carousel"

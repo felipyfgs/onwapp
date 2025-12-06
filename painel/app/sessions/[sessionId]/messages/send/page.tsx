@@ -24,7 +24,7 @@ export default function MessagesSendPage() {
   return (
     <SidebarProvider>
       <SessionSidebar sessionId={sessionId} />
-      <SidebarInset>
+      <SidebarInset className="min-w-0 overflow-hidden">
         <AppHeader>
           <Breadcrumb>
             <BreadcrumbList>
@@ -44,7 +44,7 @@ export default function MessagesSendPage() {
             </BreadcrumbList>
           </Breadcrumb>
         </AppHeader>
-        <div className="flex flex-1 flex-col gap-4 p-4">
+        <div className="flex flex-1 flex-col gap-4 p-4 min-w-0 overflow-x-hidden overflow-y-auto">
           <MessageSender sessionId={sessionId} />
         </div>
       </SidebarInset>
