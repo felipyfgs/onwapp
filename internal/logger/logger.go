@@ -212,6 +212,20 @@ func Chatwoot() *zerolog.Logger { l := Module("CHATWOOT"); return &l }
 func API() *zerolog.Logger      { l := Module("API"); return &l }
 func Queue() *zerolog.Logger    { l := Module("QUEUE"); return &l }
 
+// FilteredDBLogger returns a logger that filters noisy whatsmeow messages
+func FilteredDBLogger() zerolog.Logger {
+	return Log.With().Str("module", "DB").Logger().Hook(dbFilterHook{})
+}
+
+// dbFilterHook filters specific noisy messages from whatsmeow
+type dbFilterHook struct{}
+
+func (h dbFilterHook) Run(e *zerolog.Event, level zerolog.Level, msg string) {
+	if strings.Contains(msg, "duplicate") && strings.Contains(msg, "found in") {
+		e.Discard()
+	}
+}
+
 // Sensitive data patterns to sanitize in logs
 var sensitivePatterns = []string{
 	"password",

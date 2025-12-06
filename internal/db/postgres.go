@@ -45,7 +45,7 @@ func New(ctx context.Context, databaseURL string) (*Database, error) {
 	// Create whatsmeow sqlstore FIRST - this creates all whatsmeow tables
 	// (whatsmeow_device, whatsmeow_contacts, whatsmeow_chat_settings, etc.)
 	// Our migrations may depend on these tables existing
-	dbLog := waLog.Zerolog(logger.Module("DB"))
+	dbLog := waLog.Zerolog(logger.FilteredDBLogger())
 	container, err := sqlstore.New(ctx, "pgx", databaseURL, dbLog)
 	if err != nil {
 		pool.Close()
