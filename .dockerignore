@@ -18,11 +18,13 @@
 !.env.example
 
 # Docker files (not needed in build context)
-docker/
 docker-compose*.yaml
 docker-compose*.yml
 Dockerfile*
 .dockerignore
+# Keep docker/entrypoint.sh but ignore the rest
+docker/*.yaml
+docker/*.yml
 
 # Documentation (keep docs/ for swagger)
 *.md
