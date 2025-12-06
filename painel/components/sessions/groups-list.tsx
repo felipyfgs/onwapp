@@ -152,6 +152,7 @@ export function GroupsList({ sessionId }: GroupsListProps) {
   // Avatars
   const [groupAvatars, setGroupAvatars] = React.useState<Record<string, string>>({})
   const [selectedGroupAvatar, setSelectedGroupAvatar] = React.useState<string>("")
+  const loadedAvatarsRef = React.useRef<Set<string>>(new Set())
 
   // Settings
   const [savingSettings, setSavingSettings] = React.useState<string | null>(null)
@@ -200,7 +201,48 @@ export function GroupsList({ sessionId }: GroupsListProps) {
   const loadGroups = React.useCallback(async () => {
     try {
       const response = await getGroups(sessionId)
-      setGroups(response.data || [])
+      const groupList = response.data || []
+      setGroups(groupList)
+      
+      // Load avatars in background (batch of 5 at a time to avoid rate limit)
+      const loadAvatarsBatch = async (groups: Group[], batchSize = 5) => {
+        for (let i = 0; i < groups.length; i += batchSize) {
+          const batch = groups.slice(i, i + batchSize)
+          const results = await Promise.allSettled(
+            batch.map(async (g) => {
+              const jid = getGroupJid(g)
+              // Skip if already loaded or loading
+              if (!jid || loadedAvatarsRef.current.has(jid)) return null
+              loadedAvatarsRef.current.add(jid)
+              try {
+                const avatar = await getGroupAvatar(sessionId, jid)
+                return { jid, url: avatar.url }
+              } catch {
+                return null
+              }
+            })
+          )
+          
+          const newAvatars: Record<string, string> = {}
+          results.forEach((result) => {
+            if (result.status === 'fulfilled' && result.value?.url) {
+              newAvatars[result.value.jid] = result.value.url
+            }
+          })
+          
+          if (Object.keys(newAvatars).length > 0) {
+            setGroupAvatars(prev => ({ ...prev, ...newAvatars }))
+          }
+          
+          // Small delay between batches to avoid rate limit
+          if (i + batchSize < groups.length) {
+            await new Promise(r => setTimeout(r, 500))
+          }
+        }
+      }
+      
+      // Start loading avatars in background
+      loadAvatarsBatch(groupList)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro ao carregar grupos")
     } finally {
