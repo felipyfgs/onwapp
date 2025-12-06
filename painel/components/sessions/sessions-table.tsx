@@ -89,7 +89,7 @@ export function SessionsTable({
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon-sm">
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -100,11 +100,11 @@ export function SessionsTable({
                 {session.status === "disconnected" && (
                   <>
                     <DropdownMenuItem onClick={() => onConnect(session.session)}>
-                      <Power className="mr-2 h-4 w-4" />
+                      <Power />
                       Conectar
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setQrSession(session.session)}>
-                      <QrCode className="mr-2 h-4 w-4" />
+                      <QrCode />
                       Ver QR Code
                     </DropdownMenuItem>
                   </>
@@ -113,15 +113,15 @@ export function SessionsTable({
                 {session.status === "connected" && (
                   <>
                     <DropdownMenuItem onClick={() => onDisconnect(session.session)}>
-                      <PowerOff className="mr-2 h-4 w-4" />
+                      <PowerOff />
                       Desconectar
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onRestart(session.session)}>
-                      <RefreshCw className="mr-2 h-4 w-4" />
+                      <RefreshCw />
                       Reiniciar
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onLogout(session.session)}>
-                      <LogOut className="mr-2 h-4 w-4" />
+                      <LogOut />
                       Logout
                     </DropdownMenuItem>
                   </>
@@ -129,7 +129,7 @@ export function SessionsTable({
 
                 {session.status === "connecting" && (
                   <DropdownMenuItem onClick={() => setQrSession(session.session)}>
-                    <QrCode className="mr-2 h-4 w-4" />
+                    <QrCode />
                     Ver QR Code
                   </DropdownMenuItem>
                 )}
@@ -139,7 +139,7 @@ export function SessionsTable({
                   onClick={() => onDelete(session.session)}
                   className="text-destructive"
                 >
-                  <Trash2 className="mr-2 h-4 w-4" />
+                  <Trash2 />
                   Deletar
                 </DropdownMenuItem>
               </DropdownMenuContent>

@@ -645,11 +645,11 @@ export function GroupsList({ sessionId }: GroupsListProps) {
             </div>
             <div className="flex gap-2">
               <Button onClick={() => setJoinDialogOpen(true)} variant="outline" size="sm">
-                <Link2 className="mr-2 h-4 w-4" />
+                <Link2 className="h-4 w-4" />
                 Entrar
               </Button>
               <Button onClick={() => setCreateDialogOpen(true)} size="sm">
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="h-4 w-4" />
                 Criar
               </Button>
             </div>
@@ -666,7 +666,7 @@ export function GroupsList({ sessionId }: GroupsListProps) {
                 className="pl-10"
               />
             </div>
-            <Button variant="outline" size="icon" onClick={loadGroups}>
+            <Button variant="outline" size="icon-sm" onClick={loadGroups}>
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
@@ -701,18 +701,18 @@ export function GroupsList({ sessionId }: GroupsListProps) {
                         )}
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <Badge variant="secondary" className="text-xs">
-                            <Users2 className="mr-1 h-3 w-3" />
+                            <Users2 className="h-3 w-3" />
                             {group.participantCount || getParticipants(group).length || "?"}
                           </Badge>
                           {getGroupAnnounce(group) && (
                             <Badge variant="outline" className="text-xs">
-                              <MessageSquare className="mr-1 h-3 w-3" />
+                              <MessageSquare className="h-3 w-3" />
                               Anúncio
                             </Badge>
                           )}
                           {getGroupLocked(group) && (
                             <Badge variant="outline" className="text-xs">
-                              <ShieldCheck className="mr-1 h-3 w-3" />
+                              <ShieldCheck className="h-3 w-3" />
                               Bloqueado
                             </Badge>
                           )}
@@ -848,13 +848,13 @@ export function GroupsList({ sessionId }: GroupsListProps) {
                     {inviteLink ? (
                       <div className="flex gap-2">
                         <Input value={inviteLink} readOnly className="font-mono text-xs" />
-                        <Button variant="outline" size="icon" onClick={() => copyToClipboard(inviteLink)}>
+                        <Button variant="outline" size="icon-sm" onClick={() => copyToClipboard(inviteLink)}>
                           <Copy className="h-4 w-4" />
                         </Button>
                       </div>
                     ) : (
                       <Button onClick={handleGetInviteLink} disabled={loadingLink} variant="outline" className="w-full">
-                        {loadingLink ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Link2 className="mr-2 h-4 w-4" />}
+                        {loadingLink ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
                         Gerar Link de Convite
                       </Button>
                     )}
@@ -864,7 +864,7 @@ export function GroupsList({ sessionId }: GroupsListProps) {
 
                   {/* Actions */}
                   <Button variant="destructive" onClick={() => setLeaveDialogOpen(true)} className="w-full">
-                    <LogOut className="mr-2 h-4 w-4" />
+                    <LogOut className="h-4 w-4" />
                     Sair do Grupo
                   </Button>
                 </TabsContent>
@@ -875,7 +875,7 @@ export function GroupsList({ sessionId }: GroupsListProps) {
                       {getParticipants(selectedGroup).length} participantes
                     </span>
                     <Button size="sm" onClick={() => setAddParticipantOpen(true)}>
-                      <UserPlus className="mr-2 h-4 w-4" />
+                      <UserPlus className="h-4 w-4" />
                       Adicionar
                     </Button>
                   </div>
@@ -908,20 +908,22 @@ export function GroupsList({ sessionId }: GroupsListProps) {
                               {!isSuperAdmin && (
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <Button variant="ghost" size="icon-sm">
                                       <MoreVertical className="h-4 w-4" />
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={() => setParticipantAction({jid: pJid, action: 'demote'})}>
-                                      <UserMinus className="mr-2 h-4 w-4" />Rebaixar
+                                      <UserMinus />
+                                      Rebaixar
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem 
                                       onClick={() => setParticipantAction({jid: pJid, action: 'remove'})} 
                                       className="text-destructive"
                                     >
-                                      <Trash2 className="mr-2 h-4 w-4" />Remover
+                                      <Trash2 />
+                                      Remover
                                     </DropdownMenuItem>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
@@ -952,20 +954,22 @@ export function GroupsList({ sessionId }: GroupsListProps) {
                               </div>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <Button variant="ghost" size="icon-sm">
                                     <MoreVertical className="h-4 w-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem onClick={() => setParticipantAction({jid: pJid, action: 'promote'})}>
-                                    <Shield className="mr-2 h-4 w-4" />Promover a Admin
+                                    <Shield />
+                                    Promover a Admin
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem 
                                     onClick={() => setParticipantAction({jid: pJid, action: 'remove'})} 
                                     className="text-destructive"
                                   >
-                                    <Trash2 className="mr-2 h-4 w-4" />Remover
+                                    <Trash2 />
+                                    Remover
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
@@ -1064,7 +1068,7 @@ export function GroupsList({ sessionId }: GroupsListProps) {
                         </div>
                         <div className="flex gap-2">
                           <Button variant="outline" className="flex-1" onClick={() => setPhotoDialogOpen(true)}>
-                            <ImageIcon className="mr-2 h-4 w-4" />
+                            <ImageIcon className="h-4 w-4" />
                             Alterar Foto
                           </Button>
                           <Button variant="outline" onClick={handleDeletePhoto} disabled={savingPhoto}>
@@ -1131,7 +1135,7 @@ export function GroupsList({ sessionId }: GroupsListProps) {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleLeaveGroup} disabled={leaving} className="bg-destructive text-destructive-foreground">
-              {leaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {leaving && <Loader2 className="h-4 w-4 animate-spin" />}
               Sair
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -1193,7 +1197,7 @@ export function GroupsList({ sessionId }: GroupsListProps) {
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>Cancelar</Button>
             <Button onClick={handleCreateGroup} disabled={creating || !newGroupName.trim()}>
-              {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+              {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
               Criar Grupo
             </Button>
           </DialogFooter>
@@ -1244,7 +1248,7 @@ export function GroupsList({ sessionId }: GroupsListProps) {
               Cancelar
             </Button>
             <Button onClick={handleJoinGroup} disabled={joining || !joinLink.trim()}>
-              {joining ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+              {joining ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
               Entrar no Grupo
             </Button>
           </DialogFooter>
@@ -1271,7 +1275,7 @@ export function GroupsList({ sessionId }: GroupsListProps) {
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddParticipantOpen(false)}>Cancelar</Button>
             <Button onClick={handleAddParticipants} disabled={addingParticipants || !newParticipants.trim()}>
-              {addingParticipants ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+              {addingParticipants ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
               Adicionar
             </Button>
           </DialogFooter>
@@ -1312,7 +1316,7 @@ export function GroupsList({ sessionId }: GroupsListProps) {
               Cancelar
             </Button>
             <Button onClick={handleSavePhoto} disabled={savingPhoto || !newPhoto}>
-              {savingPhoto ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
+              {savingPhoto ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
               Salvar Foto
             </Button>
           </DialogFooter>

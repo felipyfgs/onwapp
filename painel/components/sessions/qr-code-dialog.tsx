@@ -231,7 +231,7 @@ export function QRCodeDialog({ session, open, onClose, onConnected }: QRCodeDial
                       <AlertCircle className="h-8 w-8 text-rose-600" />
                     </div>
                     <p className="text-sm text-center text-rose-600">{error}</p>
-                    <Button variant="outline" onClick={refreshQR} className="gap-2">
+                    <Button variant="outline" size="sm" onClick={refreshQR}>
                       <RefreshCw className="h-4 w-4" />
                       Tentar Novamente
                     </Button>
@@ -256,8 +256,8 @@ export function QRCodeDialog({ session, open, onClose, onConnected }: QRCodeDial
                         Abra o WhatsApp → Menu → Dispositivos Conectados → Conectar
                       </p>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={refreshQR} className="gap-2">
-                      <RefreshCw className="h-3 w-3" />
+                    <Button variant="ghost" size="sm" onClick={refreshQR}>
+                      <RefreshCw className="h-4 w-4" />
                       Atualizar QR Code
                     </Button>
                   </div>
@@ -269,7 +269,7 @@ export function QRCodeDialog({ session, open, onClose, onConnected }: QRCodeDial
                       <QrCode className="h-8 w-8 text-muted-foreground" />
                     </div>
                     <p className="text-sm text-muted-foreground">QR Code não disponível</p>
-                    <Button variant="outline" onClick={startConnection} className="gap-2">
+                    <Button variant="outline" size="sm" onClick={startConnection}>
                       <RefreshCw className="h-4 w-4" />
                       Gerar QR Code
                     </Button>
@@ -314,9 +314,8 @@ export function QRCodeDialog({ session, open, onClose, onConnected }: QRCodeDial
                         <Button
                           type="button"
                           variant="ghost"
-                          size="icon"
+                          size="icon-sm"
                           onClick={copyCode}
-                          className="h-8 w-8"
                         >
                           {codeCopied ? (
                             <Check className="h-4 w-4 text-emerald-600" />
@@ -335,6 +334,7 @@ export function QRCodeDialog({ session, open, onClose, onConnected }: QRCodeDial
                     <Button
                       type="button"
                       variant="outline"
+                      size="sm"
                       className="w-full"
                       onClick={() => {
                         setPairingCode(null)
@@ -348,17 +348,18 @@ export function QRCodeDialog({ session, open, onClose, onConnected }: QRCodeDial
                 ) : (
                   <Button 
                     type="submit" 
+                    size="sm"
                     className="w-full bg-emerald-600 hover:bg-emerald-700"
                     disabled={pairingLoading || !phone.trim()}
                   >
                     {pairingLoading ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="h-4 w-4 animate-spin" />
                         Gerando código...
                       </>
                     ) : (
                       <>
-                        <Smartphone className="mr-2 h-4 w-4" />
+                        <Smartphone className="h-4 w-4" />
                         Gerar Código de Pareamento
                       </>
                     )}

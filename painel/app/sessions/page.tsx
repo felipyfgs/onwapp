@@ -284,7 +284,7 @@ export default function SessionsListPage() {
                 placeholder="Buscar sessão..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-9 pl-9 bg-muted/50 border-0 text-sm"
+                className="pl-9 bg-muted/50 border-0 text-sm"
               />
             </div>
           </div>
@@ -457,18 +457,18 @@ export default function SessionsListPage() {
                         e.stopPropagation()
                         router.push(`/sessions/${session.session}`)
                       }}>
-                        <Settings className="mr-2 h-4 w-4" />
+                        <Settings />
                         Configurações
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       {session.status === "connected" ? (
                         <DropdownMenuItem onClick={(e) => handleDisconnect(e, session.session)}>
-                          <PowerOff className="mr-2 h-4 w-4" />
+                          <PowerOff />
                           Desconectar
                         </DropdownMenuItem>
                       ) : (
                         <DropdownMenuItem onClick={(e) => handleConnect(e, session.session)}>
-                          <Power className="mr-2 h-4 w-4" />
+                          <Power />
                           Conectar
                         </DropdownMenuItem>
                       )}
@@ -477,7 +477,7 @@ export default function SessionsListPage() {
                         className="text-destructive focus:text-destructive"
                         onClick={(e) => handleDelete(e, session.session)}
                       >
-                        <Trash2 className="mr-2 h-4 w-4" />
+                        <Trash2 />
                         Deletar
                       </DropdownMenuItem>
                     </DropdownMenuContent>

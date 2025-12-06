@@ -141,7 +141,7 @@ export function ContactsList({ sessionId }: ContactsListProps) {
             <Dialog open={checkDialogOpen} onOpenChange={setCheckDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
-                  <Phone className="mr-2 h-4 w-4" />
+                  <Phone className="h-4 w-4" />
                   Verificar Números
                 </Button>
               </DialogTrigger>
@@ -172,12 +172,12 @@ export function ContactsList({ sessionId }: ContactsListProps) {
                           <span className="font-mono text-sm">{result.phone}</span>
                           {result.isRegistered ? (
                             <Badge variant="default" className="bg-emerald-600">
-                              <UserCheck className="mr-1 h-3 w-3" />
+                              <UserCheck className="h-3 w-3" />
                               Registrado
                             </Badge>
                           ) : (
                             <Badge variant="secondary">
-                              <UserX className="mr-1 h-3 w-3" />
+                              <UserX className="h-3 w-3" />
                               Não encontrado
                             </Badge>
                           )}
@@ -187,11 +187,11 @@ export function ContactsList({ sessionId }: ContactsListProps) {
                   )}
                 </div>
                 <DialogFooter>
-                  <Button onClick={handleCheckPhones} disabled={checking}>
+                  <Button onClick={handleCheckPhones} disabled={checking} size="sm">
                     {checking ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <Search className="mr-2 h-4 w-4" />
+                      <Search className="h-4 w-4" />
                     )}
                     Verificar
                   </Button>

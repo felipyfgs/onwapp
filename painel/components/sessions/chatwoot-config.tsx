@@ -291,9 +291,9 @@ export function ChatwootConfiguration({ sessionId }: ChatwootConfigProps) {
         <div className="flex items-center justify-between">
           <Badge variant="default" className={warnings.length > 0 ? "bg-amber-600" : "bg-emerald-600"}>
             {warnings.length > 0 ? (
-              <AlertTriangle className="h-3 w-3 mr-1" />
+              <AlertTriangle className="h-3 w-3" />
             ) : (
-              <CheckCircle className="h-3 w-3 mr-1" />
+              <CheckCircle className="h-3 w-3" />
             )}
             {warnings.length > 0 ? "Integração com Problemas" : "Integração Ativa"}
           </Badge>
@@ -395,15 +395,15 @@ export function ChatwootConfiguration({ sessionId }: ChatwootConfigProps) {
                 </div>
               </div>
 
-              <Button onClick={handleSave} disabled={saving} className="w-full">
+              <Button onClick={handleSave} disabled={saving} size="sm" className="w-full">
                 {saving ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                     Salvando...
                   </>
                 ) : (
                   <>
-                    <Save className="mr-2 h-4 w-4" />
+                    <Save className="h-4 w-4" />
                     Salvar Conexão
                   </>
                 )}
@@ -482,12 +482,12 @@ export function ChatwootConfiguration({ sessionId }: ChatwootConfigProps) {
               <Button onClick={handleSave} disabled={saving} className="w-full">
                 {saving ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                     Salvando...
                   </>
                 ) : (
                   <>
-                    <Save className="mr-2 h-4 w-4" />
+                    <Save className="h-4 w-4" />
                     Salvar Opções
                   </>
                 )}
@@ -566,12 +566,12 @@ export function ChatwootConfiguration({ sessionId }: ChatwootConfigProps) {
                 <Button onClick={handleSave} disabled={saving} variant="outline" className="w-full">
                   {saving ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin" />
                       Salvando...
                     </>
                   ) : (
                     <>
-                      <Save className="mr-2 h-4 w-4" />
+                      <Save className="h-4 w-4" />
                       Salvar Configuração do Banco
                     </>
                   )}
@@ -680,12 +680,12 @@ export function ChatwootConfiguration({ sessionId }: ChatwootConfigProps) {
                   >
                     {syncing || syncStatus?.status === "running" ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="h-4 w-4 animate-spin" />
                         Sincronizando...
                       </>
                     ) : (
                       <>
-                        <RefreshCcw className="mr-2 h-4 w-4" />
+                        <RefreshCcw className="h-4 w-4" />
                         Sincronizar
                       </>
                     )}
@@ -699,7 +699,7 @@ export function ChatwootConfiguration({ sessionId }: ChatwootConfigProps) {
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <>
-                        <CheckCircle className="mr-2 h-4 w-4" />
+                        <CheckCircle className="h-4 w-4" />
                         Resolver Todas
                       </>
                     )}

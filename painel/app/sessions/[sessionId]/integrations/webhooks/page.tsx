@@ -1,17 +1,45 @@
 "use client"
 
-import { useEffect } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
+import { AppHeader } from "@/components/app-header"
+import { WebhookConfig } from "@/components/sessions/webhook-config"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 
 export default function WebhooksPage() {
   const params = useParams()
-  const router = useRouter()
   const sessionId = params.sessionId as string
 
-  useEffect(() => {
-    // Redireciona para a página de configuração
-    router.replace(`/sessions/${sessionId}/integrations/webhooks/config`)
-  }, [sessionId, router])
-
-  return null
+  return (
+    <>
+      <AppHeader>
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem className="hidden md:block">
+              <BreadcrumbLink href="/sessions">Sessões</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator className="hidden md:block" />
+            <BreadcrumbItem className="hidden md:block">
+              <BreadcrumbLink href={`/sessions/${sessionId}`}>
+                {sessionId}
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator className="hidden md:block" />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Webhooks</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </AppHeader>
+      <div className="flex flex-1 flex-col gap-4 p-4">
+        <WebhookConfig sessionId={sessionId} />
+      </div>
+    </>
+  )
 }

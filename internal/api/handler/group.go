@@ -9,15 +9,20 @@ import (
 	"go.mau.fi/whatsmeow/types"
 
 	"onwapp/internal/api/dto"
+	"onwapp/internal/cache"
 	"onwapp/internal/service/wpp"
 )
 
 type GroupHandler struct {
-	wpp *wpp.Service
+	wpp   *wpp.Service
+	cache *cache.SessionCache
 }
 
 func NewGroupHandler(wpp *wpp.Service) *GroupHandler {
-	return &GroupHandler{wpp: wpp}
+	return &GroupHandler{
+		wpp:   wpp,
+		cache: cache.NewSessionCache(),
+	}
 }
 
 // CreateGroup godoc
@@ -48,6 +53,9 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
+
+	// Invalidate groups cache
+	h.cache.InvalidateGroups(sessionId)
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
 
@@ -105,6 +113,14 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 func (h *GroupHandler) GetJoinedGroups(c *gin.Context) {
 	sessionId := c.Param("session")
 
+	// Check cache first (30s TTL)
+	if cached, ok := h.cache.GetGroups(sessionId); ok {
+		if items, ok := cached.([]dto.GroupListItem); ok {
+			c.JSON(http.StatusOK, dto.GroupListResponse{Data: items})
+			return
+		}
+	}
+
 	groups, err := h.wpp.GetJoinedGroups(c.Request.Context(), sessionId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
@@ -124,6 +140,9 @@ func (h *GroupHandler) GetJoinedGroups(c *gin.Context) {
 			CreatedAt:        g.GroupCreated.Unix(),
 		}
 	}
+
+	// Cache the result for 30 seconds
+	h.cache.SetGroups(sessionId, items)
 
 	c.JSON(http.StatusOK, dto.GroupListResponse{Data: items})
 }
@@ -154,6 +173,9 @@ func (h *GroupHandler) LeaveGroup(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
+
+	// Invalidate groups cache
+	h.cache.InvalidateGroups(sessionId)
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
 		GroupID: req.GroupID,
@@ -435,6 +457,9 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
+
+	// Invalidate groups cache
+	h.cache.InvalidateGroups(sessionId)
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
 

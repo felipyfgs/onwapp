@@ -512,25 +512,27 @@ export function SessionSidebar({ sessionId, ...props }: SessionSidebarProps) {
             <DialogFooter>
               <Button 
                 type="button" 
-                variant="outline" 
+                variant="outline"
+                size="sm"
                 onClick={() => setCreateDialogOpen(false)} 
                 disabled={creating}
               >
                 Cancelar
               </Button>
               <Button 
-                type="submit" 
+                type="submit"
+                size="sm"
                 disabled={creating || !newSessionName.trim()}
                 className="bg-emerald-600 hover:bg-emerald-700"
               >
                 {creating ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                     Criando...
                   </>
                 ) : (
                   <>
-                    <Plus className="mr-2 h-4 w-4" />
+                    <Plus className="h-4 w-4" />
                     Criar Sessão
                   </>
                 )}

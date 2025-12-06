@@ -125,8 +125,8 @@ func Load() *Config {
 		NatsAckWait:      getEnvDuration("NATS_ACK_WAIT", 30*time.Second),
 
 		AllowedOrigins:        getEnvSlice("ALLOWED_ORIGINS", []string{"*"}),
-		RateLimitPerSecond:    getEnvFloat("RATE_LIMIT_REQUESTS_PER_SECOND", 10),
-		RateLimitBurst:        getEnvInt("RATE_LIMIT_BURST", 20),
+		RateLimitPerSecond:    getEnvFloat("RATE_LIMIT_REQUESTS_PER_SECOND", 200),
+		RateLimitBurst:        getEnvInt("RATE_LIMIT_BURST", 500),
 		EnableSecurityHeaders: getEnv("ENABLE_SECURITY_HEADERS", "true") == "true",
 		TrustedProxies:        getEnvSlice("TRUSTED_PROXIES", []string{"127.0.0.1"}),
 	}

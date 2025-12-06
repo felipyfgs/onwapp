@@ -17,11 +17,11 @@ type RateLimiterConfig struct {
 	TTL               time.Duration
 }
 
-// DefaultRateLimiterConfig returns sensible defaults
+// DefaultRateLimiterConfig returns sensible defaults for high-volume usage (1000+ sessions)
 func DefaultRateLimiterConfig() RateLimiterConfig {
 	return RateLimiterConfig{
-		RequestsPerSecond: 10,
-		Burst:             20,
+		RequestsPerSecond: 200,
+		Burst:             500,
 		CleanupInterval:   5 * time.Minute,
 		TTL:               10 * time.Minute,
 	}

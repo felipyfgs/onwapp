@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { SessionSidebar } from "@/components/sessions/session-sidebar"
 import { AppHeader } from "@/components/app-header"
 import { QRCodeDialog } from "@/components/sessions/qr-code-dialog"
 import {
@@ -13,11 +12,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -173,27 +168,24 @@ export default function SessionPage() {
 
   if (loading) {
     return (
-      <SidebarProvider>
-        <SessionSidebar sessionId={sessionId} />
-        <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-            <div className="flex items-center gap-2 px-4">
-              <SidebarTrigger className="-ml-1" />
-              <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
-              <Skeleton className="h-4 w-32" />
-            </div>
-          </header>
-          <div className="flex flex-1 flex-col gap-4 p-4">
-            <Skeleton className="h-24 w-full rounded-xl" />
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-32 rounded-xl" />
-              ))}
-            </div>
-            <Skeleton className="h-64 w-full rounded-xl" />
+      <>
+        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+          <div className="flex items-center gap-2 px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
+            <Skeleton className="h-4 w-32" />
           </div>
-        </SidebarInset>
-      </SidebarProvider>
+        </header>
+        <div className="flex flex-1 flex-col gap-4 p-4">
+          <Skeleton className="h-24 w-full rounded-xl" />
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-32 rounded-xl" />
+            ))}
+          </div>
+          <Skeleton className="h-64 w-full rounded-xl" />
+        </div>
+      </>
     )
   }
 
@@ -202,22 +194,20 @@ export default function SessionPage() {
   }
 
   return (
-    <SidebarProvider>
-      <SessionSidebar sessionId={sessionId} />
-      <SidebarInset>
-        <AppHeader>
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href="/sessions">Sessões</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator className="hidden md:block" />
-              <BreadcrumbItem>
-                <BreadcrumbPage>{sessionId}</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </AppHeader>
+    <>
+      <AppHeader>
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem className="hidden md:block">
+              <BreadcrumbLink href="/sessions">Sessões</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator className="hidden md:block" />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{sessionId}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </AppHeader>
         <div className="flex flex-1 flex-col gap-4 p-4">
           {/* Session Header Card */}
           <Card className="overflow-hidden">
@@ -276,37 +266,41 @@ export default function SessionPage() {
                 <div className="flex flex-wrap gap-2">
                   {session.status === "connected" ? (
                     <Button 
-                      variant="outline" 
+                      variant="outline"
+                      size="sm"
                       onClick={handleDisconnect}
                       disabled={actionLoading !== null}
                     >
-                      <PowerOff className="mr-2 h-4 w-4" />
+                      <PowerOff className="h-4 w-4" />
                       {actionLoading === "disconnect" ? "Desconectando..." : "Desconectar"}
                     </Button>
                   ) : (
-                    <Button 
+                    <Button
+                      size="sm"
                       onClick={handleConnect}
                       disabled={actionLoading !== null}
                       className="bg-emerald-600 hover:bg-emerald-700"
                     >
-                      <Power className="mr-2 h-4 w-4" />
+                      <Power className="h-4 w-4" />
                       {actionLoading === "connect" ? "Conectando..." : "Conectar"}
                     </Button>
                   )}
                   <Button 
-                    variant="outline" 
+                    variant="outline"
+                    size="sm"
                     onClick={handleRestart}
                     disabled={actionLoading !== null}
                   >
-                    <RefreshCw className={cn("mr-2 h-4 w-4", actionLoading === "restart" && "animate-spin")} />
+                    <RefreshCw className={cn("h-4 w-4", actionLoading === "restart" && "animate-spin")} />
                     Reiniciar
                   </Button>
                   <Button 
-                    variant="destructive" 
+                    variant="destructive"
+                    size="sm"
                     onClick={handleLogout}
                     disabled={actionLoading !== null}
                   >
-                    <LogOut className="mr-2 h-4 w-4" />
+                    <LogOut className="h-4 w-4" />
                     Logout
                   </Button>
                 </div>
@@ -380,10 +374,10 @@ export default function SessionPage() {
                 <Button 
                   onClick={handleConnect}
                   disabled={actionLoading !== null}
-                  size="lg"
+                  size="sm"
                   className="bg-emerald-600 hover:bg-emerald-700"
                 >
-                  <QrCode className="mr-2 h-5 w-5" />
+                  <QrCode className="h-4 w-4" />
                   Gerar QR Code
                 </Button>
               </CardContent>
@@ -420,7 +414,7 @@ export default function SessionPage() {
                     <div className="space-y-1">
                       <p className="text-sm font-medium text-muted-foreground">Status</p>
                       <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-                        <Wifi className="mr-1 h-3 w-3" />
+                        <Wifi className="h-3 w-3" />
                         {getStatusText(session.status)}
                       </Badge>
                     </div>
@@ -453,14 +447,13 @@ export default function SessionPage() {
                   className="mt-4"
                   onClick={() => setQrDialogOpen(true)}
                 >
-                  <QrCode className="mr-2 h-4 w-4" />
+                  <QrCode className="h-4 w-4" />
                   Escanear QR Code
                 </Button>
               </CardContent>
             </Card>
           )}
         </div>
-      </SidebarInset>
 
       {/* QR Code Dialog */}
       <QRCodeDialog
@@ -469,6 +462,6 @@ export default function SessionPage() {
         onClose={() => setQrDialogOpen(false)}
         onConnected={loadSession}
       />
-    </SidebarProvider>
+    </>
   )
 }

@@ -185,10 +185,10 @@ export default function LoginPage() {
               )}
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading || isLocked}>
+            <Button type="submit" size="sm" className="w-full" disabled={isLoading || isLocked}>
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Conectando...
                 </>
               ) : isLocked ? (

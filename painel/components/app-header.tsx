@@ -30,7 +30,7 @@ export function AppHeader({ children }: AppHeaderProps) {
         <Button
           variant="outline"
           size="sm"
-          className="h-9 gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+          className="text-destructive hover:text-destructive hover:bg-destructive/10"
           onClick={logout}
         >
           <LogOut className="h-4 w-4" />

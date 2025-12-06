@@ -221,7 +221,7 @@ export function ProfileConfig({ sessionId }: ProfileConfigProps) {
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <>
-                    <Camera className="mr-2 h-4 w-4" />
+                    <Camera className="h-4 w-4" />
                     Alterar Foto
                   </>
                 )}
@@ -275,7 +275,7 @@ export function ProfileConfig({ sessionId }: ProfileConfigProps) {
               value={name}
               onChange={(e) => setNameValue(e.target.value)}
             />
-            <Button onClick={handleSaveName} disabled={saving || !name.trim()}>
+            <Button onClick={handleSaveName} disabled={saving || !name.trim()} size="icon-sm">
               {saving ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
@@ -300,7 +300,7 @@ export function ProfileConfig({ sessionId }: ProfileConfigProps) {
               rows={2}
               className="resize-none"
             />
-            <Button onClick={handleSaveStatus} disabled={saving} className="self-end">
+            <Button onClick={handleSaveStatus} disabled={saving} size="icon-sm" className="self-end">
               {saving ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (

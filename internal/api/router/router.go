@@ -39,11 +39,13 @@ type Handlers struct {
 }
 
 type Config struct {
-	Handlers        *Handlers
-	GlobalAPIKey   string
-	SessionLookup  middleware.SessionKeyLookup
-	Database       *db.Database
-	AllowedOrigins []string
+	Handlers           *Handlers
+	GlobalAPIKey       string
+	SessionLookup      middleware.SessionKeyLookup
+	Database           *db.Database
+	AllowedOrigins     []string
+	RateLimitPerSecond float64
+	RateLimitBurst     int
 }
 
 func Setup(handlers *Handlers, globalAPIKey string) *gin.Engine {
@@ -63,8 +65,15 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 	r.Use(middleware.SecurityHeaders())
 	r.Use(middleware.CORS(cfg.AllowedOrigins))
 
-	// Rate limiting (10 req/s with burst of 20)
-	rateLimiter := middleware.NewRateLimiter(middleware.DefaultRateLimiterConfig())
+	// Rate limiting (configurable, default 200 req/s for high-volume usage)
+	rlConfig := middleware.DefaultRateLimiterConfig()
+	if cfg.RateLimitPerSecond > 0 {
+		rlConfig.RequestsPerSecond = cfg.RateLimitPerSecond
+	}
+	if cfg.RateLimitBurst > 0 {
+		rlConfig.Burst = cfg.RateLimitBurst
+	}
+	rateLimiter := middleware.NewRateLimiter(rlConfig)
 	r.Use(rateLimiter.Middleware())
 
 	h := cfg.Handlers

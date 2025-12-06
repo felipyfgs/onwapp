@@ -1030,7 +1030,7 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
                     <Button
                       type="button"
                       variant="ghost"
-                      size="icon"
+                      size="icon-sm"
                       onClick={() => removePollOption(index)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -1100,7 +1100,7 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
                     <Button
                       type="button"
                       variant="ghost"
-                      size="icon"
+                      size="icon-sm"
                       onClick={() => removeButton(index)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -1172,7 +1172,7 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
                         <Button
                           type="button"
                           variant="ghost"
-                          size="icon"
+                          size="icon-sm"
                           onClick={() => removeSection(sIndex)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -1198,7 +1198,7 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
                             <Button
                               type="button"
                               variant="ghost"
-                              size="icon"
+                              size="icon-sm"
                               onClick={() => removeRow(sIndex, rIndex)}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -1302,7 +1302,7 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
                     <Button
                       type="button"
                       variant="ghost"
-                      size="icon"
+                      size="icon-sm"
                       onClick={() => setInteractiveButtons(interactiveButtons.filter((_, i) => i !== index))}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -1399,7 +1399,7 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
                         <Button
                           type="button"
                           variant="ghost"
-                          size="icon"
+                          size="icon-sm"
                           onClick={() => removeTemplateButton(index)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -1482,7 +1482,7 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
                         <Button
                           type="button"
                           variant="ghost"
-                          size="icon"
+                          size="icon-sm"
                           onClick={() => removeCarouselCard(cardIndex)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -1542,7 +1542,7 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
                             <Button
                               type="button"
                               variant="ghost"
-                              size="icon"
+                              size="icon-sm"
                               onClick={() => removeCarouselCardButton(cardIndex, btnIndex)}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -1567,11 +1567,11 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
 
 
         {/* Send Button */}
-        <Button onClick={handleSend} disabled={sending} className="w-full">
+        <Button onClick={handleSend} disabled={sending} size="sm" className="w-full">
           {sending ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <Send className="mr-2 h-4 w-4" />
+            <Send className="h-4 w-4" />
           )}
           Enviar Mensagem
         </Button>

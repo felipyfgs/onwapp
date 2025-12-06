@@ -186,7 +186,7 @@ export function WebhookConfig({ sessionId }: WebhookConfigProps) {
       {webhook?.id && (
         <div className="flex items-center justify-between">
           <Badge variant="default" className={enabled ? "bg-emerald-600" : "bg-secondary"}>
-            <CheckCircle className="h-3 w-3 mr-1" />
+            <CheckCircle className="h-3 w-3" />
             {enabled ? "Integração Ativa" : "Integração Inativa"}
           </Badge>
           <AlertDialog>
@@ -342,11 +342,11 @@ export function WebhookConfig({ sessionId }: WebhookConfigProps) {
 
         {/* Actions */}
         <div className="flex justify-end pt-4 border-t">
-          <Button onClick={handleSave} disabled={saving}>
+          <Button onClick={handleSave} disabled={saving} size="sm">
             {saving ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Save className="mr-2 h-4 w-4" />
+              <Save className="h-4 w-4" />
             )}
             {webhook?.id ? "Atualizar" : "Salvar"}
           </Button>

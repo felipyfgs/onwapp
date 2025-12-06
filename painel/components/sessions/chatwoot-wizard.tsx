@@ -405,7 +405,7 @@ export function ChatwootWizard({ sessionId }: ChatwootWizardProps) {
           </div>
           {config?.enabled && (
             <Badge variant="default" className="bg-emerald-600 hover:bg-emerald-700">
-              <CheckCircle className="h-3 w-3 mr-1" />
+              <CheckCircle className="h-3 w-3" />
               Configurado
             </Badge>
           )}
@@ -965,30 +965,31 @@ export function ChatwootWizard({ sessionId }: ChatwootWizardProps) {
         <div className="flex items-center justify-between pt-4">
           <Button
             variant="outline"
+            size="sm"
             onClick={handlePrevious}
             disabled={currentStep === 1}
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
+            <ArrowLeft className="h-4 w-4" />
             Anterior
           </Button>
 
           <div className="flex gap-2">
             {currentStep < 4 ? (
-              <Button onClick={handleNext}>
+              <Button onClick={handleNext} size="sm">
                 Próximo
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className="h-4 w-4" />
               </Button>
             ) : (
               <>
-                <Button onClick={handleSave} disabled={saving}>
+                <Button onClick={handleSave} disabled={saving} size="sm">
                   {saving ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin" />
                       Salvando...
                     </>
                   ) : (
                     <>
-                      <Save className="mr-2 h-4 w-4" />
+                      <Save className="h-4 w-4" />
                       Salvar Configuração
                     </>
                   )}
@@ -996,16 +997,17 @@ export function ChatwootWizard({ sessionId }: ChatwootWizardProps) {
                 <Button
                   onClick={handleSyncAll}
                   disabled={syncing || syncStatus?.status === "running" || !chatwootDbHost}
+                  size="sm"
                   className="bg-emerald-600 hover:bg-emerald-700"
                 >
                   {syncing || syncStatus?.status === "running" ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin" />
                       Sincronizando...
                     </>
                   ) : (
                     <>
-                      <RefreshCcw className="mr-2 h-4 w-4" />
+                      <RefreshCcw className="h-4 w-4" />
                       Sincronizar
                     </>
                   )}

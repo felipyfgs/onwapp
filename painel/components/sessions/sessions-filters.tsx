@@ -54,7 +54,7 @@ export function SessionsFilters({
         onClick={onRefresh}
         disabled={isRefreshing}
       >
-        <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
+        <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
         {isRefreshing ? "Atualizando..." : "Atualizar"}
       </Button>
     </div>
