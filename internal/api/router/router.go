@@ -40,19 +40,17 @@ type Handlers struct {
 
 type Config struct {
 	Handlers        *Handlers
-	GlobalAPIKey    string
-	SessionLookup   middleware.SessionKeyLookup
-	Database        *db.Database
-	RateLimitPerMin int
-	AllowedOrigins  []string
+	GlobalAPIKey   string
+	SessionLookup  middleware.SessionKeyLookup
+	Database       *db.Database
+	AllowedOrigins []string
 }
 
 func Setup(handlers *Handlers, globalAPIKey string) *gin.Engine {
 	return SetupWithConfig(&Config{
-		Handlers:        handlers,
-		GlobalAPIKey:    globalAPIKey,
-		RateLimitPerMin: 100,
-		AllowedOrigins:  []string{"*"},
+		Handlers:       handlers,
+		GlobalAPIKey:   globalAPIKey,
+		AllowedOrigins: []string{"*"},
 	})
 }
 
@@ -61,7 +59,6 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 	r.Use(gin.Recovery())
 	r.Use(logger.GinMiddleware())
 	r.Use(middleware.CORS(cfg.AllowedOrigins))
-	r.Use(middleware.RateLimit(cfg.RateLimitPerMin))
 
 	h := cfg.Handlers
 
@@ -187,6 +184,7 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 		session.POST("/group/topic", h.Group.UpdateGroupTopic)
 		session.POST("/group/photo", h.Group.SetGroupPicture)
 		session.POST("/group/photo/remove", h.Group.DeleteGroupPicture)
+		session.GET("/group/avatar", h.Group.GetGroupPicture)
 
 		// ----------------------------------------------------------
 		// GROUP - PARTICIPANTS

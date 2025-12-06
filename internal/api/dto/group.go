@@ -102,3 +102,19 @@ type GroupActionData struct {
 }
 
 // NOTE: GroupResponse, GroupActionResponse are defined in response.go
+
+// GroupListItem represents a group in the list response with proper JSON field names
+type GroupListItem struct {
+	JID              string `json:"jid" example:"123456789@g.us"`
+	Name             string `json:"name" example:"My Group"`
+	Topic            string `json:"topic,omitempty" example:"Group description"`
+	ParticipantCount int    `json:"participantCount" example:"10"`
+	IsAnnounce       bool   `json:"isAnnounce" example:"false"`
+	IsLocked         bool   `json:"isLocked" example:"false"`
+	CreatedAt        int64  `json:"createdAt,omitempty" example:"1699999999"`
+}
+
+// GroupListResponse is the response for listing joined groups
+type GroupListResponse struct {
+	Data []GroupListItem `json:"data"`
+}

@@ -270,12 +270,11 @@ func main() {
 	}
 
 	r := router.SetupWithConfig(&router.Config{
-		Handlers:        handlers,
-		GlobalAPIKey:    cfg.GlobalAPIKey,
-		SessionLookup:   sessionLookup,
-		Database:        database,
-		RateLimitPerMin: 100,
-		AllowedOrigins:  []string{"*"},
+		Handlers:       handlers,
+		GlobalAPIKey:   cfg.GlobalAPIKey,
+		SessionLookup:  sessionLookup,
+		Database:       database,
+		AllowedOrigins: []string{"*"},
 	})
 
 	// Register Chatwoot routes

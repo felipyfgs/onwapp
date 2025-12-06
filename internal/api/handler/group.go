@@ -118,10 +118,21 @@ func (h *GroupHandler) GetJoinedGroups(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.GroupActionResponse{
+	// Convert to DTO with proper JSON field names (lowercase)
+	items := make([]dto.GroupListItem, len(groups))
+	for i, g := range groups {
+		items[i] = dto.GroupListItem{
+			JID:              g.JID.String(),
+			Name:             g.Name,
+			Topic:            g.Topic,
+			ParticipantCount: len(g.Participants),
+			IsAnnounce:       g.IsAnnounce,
+			IsLocked:         g.IsLocked,
+			CreatedAt:        g.GroupCreated.Unix(),
+		}
+	}
 
-		Data: groups,
-	})
+	c.JSON(http.StatusOK, dto.GroupListResponse{Data: items})
 }
 
 // LeaveGroup godoc
@@ -615,6 +626,37 @@ func (h *GroupHandler) DeleteGroupPicture(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.MessageOnlyResponse{Message: "group picture deleted"})
+}
+
+// GetGroupPicture godoc
+// @Summary      Get group picture
+// @Description  Get group profile picture URL
+// @Tags         group
+// @Produce      json
+// @Param        session   path      string  true  "Session ID"
+// @Param        groupId   query     string  true  "Group ID"
+// @Success      200 {object} dto.AvatarResponse
+// @Failure      400 {object} dto.ErrorResponse
+// @Failure      500 {object} dto.ErrorResponse
+// @Security     Authorization
+// @Router       /{session}/group/avatar [get]
+func (h *GroupHandler) GetGroupPicture(c *gin.Context) {
+	sessionId := c.Param("session")
+	groupID := c.Query("groupId")
+	if groupID == "" {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "groupId query parameter is required"})
+		return
+	}
+
+	groupID = strings.TrimSuffix(groupID, "@g.us")
+	pic, err := h.wpp.GetGroupPicture(c.Request.Context(), sessionId, groupID)
+	if err != nil || pic == nil {
+		// Group might not have a profile picture - return empty URL instead of error
+		c.JSON(http.StatusOK, dto.AvatarResponse{URL: ""})
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.AvatarResponse{URL: pic.URL, ID: pic.ID})
 }
 
 // SetGroupApprovalMode godoc

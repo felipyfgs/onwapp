@@ -99,18 +99,13 @@ const setCachedSessions = (sessions: Session[]) => {
 export function SessionSidebar({ sessionId, ...props }: SessionSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const { isMobile } = useSidebar()
+  const { isMobile, state } = useSidebar()
+  const isCollapsed = state === "collapsed"
   const baseUrl = `/sessions/${sessionId}`
 
-  // Initialize from cache to prevent flash
-  const cachedSessions = React.useMemo(() => getCachedSessions(), [])
-  const cachedCurrentSession = React.useMemo(
-    () => cachedSessions.find(s => s.session === sessionId) || null,
-    [cachedSessions, sessionId]
-  )
-
-  const [sessions, setSessions] = React.useState<Session[]>(cachedSessions)
-  const [currentSession, setCurrentSession] = React.useState<Session | null>(cachedCurrentSession)
+  // Initialize with empty values to match server render (avoid hydration mismatch)
+  const [sessions, setSessions] = React.useState<Session[]>([])
+  const [currentSession, setCurrentSession] = React.useState<Session | null>(null)
   const [dropdownOpen, setDropdownOpen] = React.useState(false)
   
   // Create session dialog state
@@ -132,12 +127,22 @@ export function SessionSidebar({ sessionId, ...props }: SessionSidebarProps) {
     }
   }, [sessionId])
 
+  // Sync with cache after hydration to avoid hydration mismatch
   React.useEffect(() => {
+    const cached = getCachedSessions()
+    if (cached.length > 0) {
+      setSessions(cached)
+      const current = cached.find(s => s.session === sessionId)
+      if (current) {
+        setCurrentSession(current)
+      }
+    }
+    // Then load fresh data
     loadSessions()
     // Increase interval to 60 seconds to reduce API calls and avoid rate limits
     const interval = setInterval(loadSessions, 60000)
     return () => clearInterval(interval)
-  }, [loadSessions])
+  }, [sessionId, loadSessions])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -377,6 +382,46 @@ export function SessionSidebar({ sessionId, ...props }: SessionSidebarProps) {
                             <span>{item.title}</span>
                           </Link>
                         </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    )
+                  }
+
+                  // When sidebar is collapsed, show dropdown instead of collapsible
+                  if (isCollapsed) {
+                    return (
+                      <SidebarMenuItem key={item.title}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <SidebarMenuButton tooltip={item.title} isActive={isSubItemActive}>
+                              <item.icon className="size-4" />
+                              <span>{item.title}</span>
+                              <ChevronRight className="ml-auto" />
+                            </SidebarMenuButton>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            side="right"
+                            align="start"
+                            className="min-w-[180px]"
+                          >
+                            <DropdownMenuLabel>{item.title}</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {item.items?.map((subItem) => {
+                              const subBase = subItem.url.replace('/config', '')
+                              const isSubActive = pathname === subItem.url || pathname.startsWith(subBase + '/')
+                              return (
+                                <DropdownMenuItem
+                                  key={subItem.title}
+                                  asChild
+                                  className={cn(isSubActive && "bg-accent")}
+                                >
+                                  <Link href={subItem.url}>
+                                    {subItem.title}
+                                  </Link>
+                                </DropdownMenuItem>
+                              )
+                            })}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </SidebarMenuItem>
                     )
                   }
