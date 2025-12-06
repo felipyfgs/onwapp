@@ -110,7 +110,6 @@ func GetAlternateBrazilianNumber(phone string) string {
 }
 
 // GetBrazilianPhoneVariants returns all phone number variants for Brazilian numbers
-// Used for OR filter queries (like Evolution API pattern)
 // For BR numbers: returns both formats (with and without 9)
 // For non-BR: returns only the original number
 func GetBrazilianPhoneVariants(phone string) []string {

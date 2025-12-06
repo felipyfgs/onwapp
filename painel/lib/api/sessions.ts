@@ -7,8 +7,26 @@ import type {
   PairPhoneResponse,
 } from "@/lib/types/session"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
-const API_KEY = process.env.NEXT_PUBLIC_API_KEY || ""
+export interface ApiConfig {
+  apiUrl: string
+  apiKey: string
+}
+
+let globalConfig: ApiConfig | null = null
+
+export function setApiConfig(config: ApiConfig) {
+  globalConfig = config
+}
+
+export function getApiConfig(): ApiConfig {
+  if (globalConfig) {
+    return globalConfig
+  }
+  return {
+    apiUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080",
+    apiKey: process.env.NEXT_PUBLIC_API_KEY || "",
+  }
+}
 
 export class RateLimitError extends Error {
   constructor(message: string, public retryAfter?: number) {
@@ -18,18 +36,19 @@ export class RateLimitError extends Error {
 }
 
 async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  const { apiUrl, apiKey } = getApiConfig()
+  
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(`${apiUrl}${endpoint}`, {
       ...options,
       headers: {
         "Content-Type": "application/json",
-        ...(API_KEY ? { "Authorization": API_KEY } : {}),
+        ...(apiKey ? { "Authorization": apiKey } : {}),
         ...options?.headers,
       },
     })
 
     if (!response.ok) {
-      // Handle rate limiting (429)
       if (response.status === 429) {
         const retryAfter = response.headers.get("Retry-After")
         const retrySeconds = retryAfter ? parseInt(retryAfter, 10) : undefined
@@ -42,7 +61,6 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> 
       const error = await response.json().catch(() => ({ error: response.statusText }))
       const errorMessage = error.error || error.message || `API request failed: ${response.status}`
       
-      // Check if error message contains rate limit info
       if (errorMessage.toLowerCase().includes("rate limit") || 
           errorMessage.toLowerCase().includes("limite")) {
         throw new RateLimitError(errorMessage)

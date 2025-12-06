@@ -8,6 +8,7 @@ import {
   User,
 } from "lucide-react"
 import Link from "next/link"
+import { useAuth } from "@/lib/auth/context"
 
 import {
   Avatar,
@@ -40,6 +41,7 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
+  const { logout } = useAuth()
 
   const initials = user.name
     .split(" ")
@@ -112,7 +114,10 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">
+            <DropdownMenuItem 
+              className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer"
+              onClick={logout}
+            >
               <LogOut />
               Sair
             </DropdownMenuItem>

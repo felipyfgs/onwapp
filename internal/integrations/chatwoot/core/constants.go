@@ -56,5 +56,4 @@ const (
 	MessageTypeOutgoing = "outgoing"
 )
 
-// Bot contact phone (Evolution API pattern)
 const BotContactPhone = "123456"

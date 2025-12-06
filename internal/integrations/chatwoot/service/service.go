@@ -277,7 +277,7 @@ func (s *Service) createBotContact(ctx context.Context, cfg *core.Config, number
 	return s.initBotContact(ctx, c, cfg.InboxID, number, organization, logo)
 }
 
-// initBotContact creates a bot contact with number 123456 (Evolution API pattern)
+// initBotContact creates a bot contact with number 123456
 func (s *Service) initBotContact(ctx context.Context, c *client.Client, inboxID int, number, organization, logo string) error {
 	const botPhone = "123456"
 
@@ -286,7 +286,7 @@ func (s *Service) initBotContact(ctx context.Context, c *client.Client, inboxID 
 		botName = organization
 	}
 
-	botAvatar := "https://evolution-api.com/files/evolution-api-favicon.png"
+	botAvatar := ""
 	if logo != "" {
 		botAvatar = logo
 	}

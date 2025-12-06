@@ -96,8 +96,12 @@ func (s *Service) DeleteProfilePicture(ctx context.Context, sessionId string) er
 		return fmt.Errorf("session not authenticated")
 	}
 
+	// Pass nil to delete the picture (whatsmeow sends empty content which removes the picture)
 	_, err = session.Client.SetGroupPhoto(ctx, *session.Client.Store.ID, nil)
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to delete profile picture: %w", err)
+	}
+	return nil
 }
 
 // GetBlocklist gets blocklist

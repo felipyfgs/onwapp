@@ -107,13 +107,6 @@ func (h *GroupHandler) GetJoinedGroups(c *gin.Context) {
 
 	groups, err := h.wpp.GetJoinedGroups(c.Request.Context(), sessionId)
 	if err != nil {
-		// Check if it's a WhatsApp rate limit error
-		errStr := err.Error()
-		if strings.Contains(errStr, "rate") || strings.Contains(errStr, "429") || strings.Contains(errStr, "overlimit") {
-			c.Header("Retry-After", "60")
-			c.JSON(http.StatusTooManyRequests, dto.ErrorResponse{Error: "WhatsApp rate limit exceeded. Please wait a moment and try again."})
-			return
-		}
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}

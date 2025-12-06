@@ -193,47 +193,56 @@ func (s *SessionService) Delete(ctx context.Context, sessionId string) error {
 	defer s.mu.Unlock()
 
 	session, exists := s.sessions[sessionId]
-	if !exists {
-		return fmt.Errorf("session %s not found", sessionId)
-	}
+	
+	// If session exists in memory, properly cleanup WhatsApp connection
+	if exists && session != nil {
+		hasCredentials := session.Device != nil && session.Device.ID != nil
 
-	hasCredentials := session.Device != nil && session.Device.ID != nil
-
-	// If we have credentials, properly logout from WhatsApp server first
-	if hasCredentials {
-		// If not connected, try to connect first so we can send logout to server
-		if !session.Client.IsConnected() {
-			logger.Session().Info().Str("session", sessionId).Msg("Connecting to send logout request before delete...")
-			if err := session.Client.Connect(); err != nil {
-				logger.Session().Warn().Err(err).Str("session", sessionId).Msg("Failed to connect for logout, will delete locally only")
+		// If we have credentials, properly logout from WhatsApp server first
+		if hasCredentials {
+			// If not connected, try to connect first so we can send logout to server
+			if !session.Client.IsConnected() {
+				logger.Session().Info().Str("session", sessionId).Msg("Connecting to send logout request before delete...")
+				if err := session.Client.Connect(); err != nil {
+					logger.Session().Warn().Err(err).Str("session", sessionId).Msg("Failed to connect for logout, will delete locally only")
+				}
 			}
-		}
 
-		// Send logout to WhatsApp server (removes device from their servers)
-		if session.Client.IsConnected() {
-			if err := session.Client.Logout(ctx); err != nil {
-				logger.Session().Warn().Err(err).Str("session", sessionId).Msg("Failed to logout from WhatsApp server")
-				session.Client.Disconnect()
+			// Send logout to WhatsApp server (removes device from their servers)
+			if session.Client.IsConnected() {
+				if err := session.Client.Logout(ctx); err != nil {
+					logger.Session().Warn().Err(err).Str("session", sessionId).Msg("Failed to logout from WhatsApp server")
+					session.Client.Disconnect()
+				}
 			}
-		}
 
-		// Ensure device is deleted from whatsmeow store
-		if err := s.container.DeleteDevice(ctx, session.Device); err != nil {
-			logger.Session().Debug().Err(err).Str("session", sessionId).Msg("DeleteDevice (may already be deleted by Logout)")
-		}
-	} else {
-		// No credentials, just disconnect if connected
-		if session.Client.IsConnected() {
+			// Ensure device is deleted from whatsmeow store
+			if err := s.container.DeleteDevice(ctx, session.Device); err != nil {
+				logger.Session().Debug().Err(err).Str("session", sessionId).Msg("DeleteDevice (may already be deleted by Logout)")
+			}
+		} else {
+			// No credentials - always disconnect to stop QR generation goroutine
+			// Disconnect() is safe to call even if not connected, and it will
+			// close the QR channel which stops the startClientWithQR goroutine
 			session.Client.Disconnect()
 		}
+
+		// Clear QR code
+		session.SetQR("")
+
+		// Remove from in-memory map
+		delete(s.sessions, sessionId)
 	}
 
-	// Delete from database
+	// Always try to delete from database (even if not in memory)
 	if err := s.database.Sessions.Delete(ctx, sessionId); err != nil {
 		logger.Session().Warn().Err(err).Str("session", sessionId).Msg("Failed to delete session from database")
+		// If not in memory and database delete failed, session truly doesn't exist
+		if !exists {
+			return fmt.Errorf("session %s not found", sessionId)
+		}
 	}
 
-	delete(s.sessions, sessionId)
 	logger.Session().Info().Str("session", sessionId).Msg("Session deleted successfully")
 	return nil
 }

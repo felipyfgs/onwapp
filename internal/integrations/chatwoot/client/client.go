@@ -88,6 +88,7 @@ func (c *Client) doRequest(ctx context.Context, method, endpoint string, body in
 }
 
 // doRequestSilent404 is like doRequest but doesn't log 404 errors (resource not found)
+// Also silences 422 errors for "Phone number has already been taken" (duplicate contact)
 func (c *Client) doRequestSilent404(ctx context.Context, method, endpoint string, body interface{}) ([]byte, error) {
 	var bodyReader io.Reader
 	if body != nil {
@@ -118,14 +119,18 @@ func (c *Client) doRequestSilent404(ctx context.Context, method, endpoint string
 	}
 
 	if resp.StatusCode >= 400 {
-		if resp.StatusCode != 404 {
+		respStr := string(respBody)
+		// Don't log 404 (not found) or 422 with "Phone number has already been taken" (duplicate)
+		shouldLog := resp.StatusCode != 404 &&
+			!(resp.StatusCode == 422 && strings.Contains(respStr, "Phone number has already been taken"))
+		if shouldLog {
 			logger.Chatwoot().Error().
 				Int("status", resp.StatusCode).
 				Str("endpoint", endpoint).
-				Str("response", string(respBody)).
+				Str("response", respStr).
 				Msg("Chatwoot API error")
 		}
-		return nil, fmt.Errorf("chatwoot API error: status %d, body: %s", resp.StatusCode, string(respBody))
+		return nil, fmt.Errorf("chatwoot API error: status %d, body: %s", resp.StatusCode, respStr)
 	}
 
 	return respBody, nil
@@ -347,7 +352,7 @@ func (c *Client) FindContactByPhoneWithMerge(ctx context.Context, phone string, 
 	return altContact, nil
 }
 
-// FindContactWithBrazilianOR searches for Brazilian contacts using OR filter (like Evolution API)
+// FindContactWithBrazilianOR searches for Brazilian contacts using OR filter
 // This is more efficient as it searches both phone formats in a single API call
 func (c *Client) FindContactWithBrazilianOR(ctx context.Context, phone string) ([]core.Contact, error) {
 	phones := util.GetBrazilianPhoneVariants(phone)
@@ -478,9 +483,16 @@ func (c *Client) CreateContact(ctx context.Context, req *CreateContactRequest) (
 }
 
 // UpdateContact updates a contact
+// Silently ignores "Phone number has already been taken" errors (422) as these
+// indicate a duplicate contact exists and the update is not necessary
 func (c *Client) UpdateContact(ctx context.Context, contactID int, updates map[string]interface{}) (*core.Contact, error) {
-	data, err := c.doRequest(ctx, http.MethodPut, fmt.Sprintf("/contacts/%d", contactID), updates)
+	// Use doRequestSilent404 to avoid logging 404 and 422 duplicate phone errors
+	data, err := c.doRequestSilent404(ctx, http.MethodPut, fmt.Sprintf("/contacts/%d", contactID), updates)
 	if err != nil {
+		// Silently ignore "Phone number has already been taken" error
+		if strings.Contains(err.Error(), "Phone number has already been taken") {
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -493,9 +505,14 @@ func (c *Client) UpdateContact(ctx context.Context, contactID int, updates map[s
 }
 
 // UpdateContactSilent404 updates a contact without logging 404 errors (deleted contacts)
+// Also silently ignores "Phone number has already been taken" errors (422)
 func (c *Client) UpdateContactSilent404(ctx context.Context, contactID int, updates map[string]interface{}) (*core.Contact, error) {
 	data, err := c.doRequestSilent404(ctx, http.MethodPut, fmt.Sprintf("/contacts/%d", contactID), updates)
 	if err != nil {
+		// Silently ignore "Phone number has already been taken" error
+		if strings.Contains(err.Error(), "Phone number has already been taken") {
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -541,7 +558,6 @@ func (c *Client) GetOrCreateContact(ctx context.Context, inboxID int, phoneNumbe
 }
 
 // GetOrCreateContactWithMerge gets or creates a contact with optional Brazilian number merge
-// Follows Evolution API pattern: OR filter search, auto-merge, identifier update
 func (c *Client) GetOrCreateContactWithMerge(ctx context.Context, inboxID int, phoneNumber, identifier, name, avatarURL string, isGroup bool, mergeBrPhones bool) (*core.Contact, error) {
 	var contact *core.Contact
 	var err error
@@ -592,7 +608,7 @@ func (c *Client) GetOrCreateContactWithMerge(ctx context.Context, inboxID int, p
 	}
 
 	if contact != nil {
-		// Update identifier if different (Evolution API pattern for LID migration)
+		// Update identifier if different (for LID migration)
 		if !isGroup && contact.Identifier != identifier && identifier != "" {
 			updates := map[string]interface{}{
 				"identifier": identifier,

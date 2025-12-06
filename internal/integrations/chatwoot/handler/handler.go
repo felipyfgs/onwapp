@@ -217,7 +217,7 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 		return
 	}
 
-	// Ignore message_updated events (except deletions) - same as Evolution API
+	// Ignore message_updated events (except deletions)
 	// Chatwoot sends these in bulk when messages are viewed/read, causing spam
 	if payload.Event == "message_updated" {
 		if payload.ContentAttrs != nil {
@@ -234,7 +234,6 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 				return
 			}
 		}
-		// Ignore all other message_updated events silently (like Evolution API)
 		c.JSON(http.StatusOK, gin.H{"message": "ignored"})
 		return
 	}
@@ -344,7 +343,7 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 	cwservice.MarkPendingSentFromChatwoot(session.ID, chatJid, chatwootMsgID)
 	defer cwservice.ClearPendingSentFromChatwoot(session.ID, chatJid, chatwootMsgID)
 
-	// Mark incoming messages as read in WhatsApp when agent responds (like Evolution API)
+	// Mark incoming messages as read in WhatsApp when agent responds
 	h.markMessagesAsRead(ctx, session, chatJid)
 
 	var quoted *wpp.QuotedMessage
@@ -680,6 +679,7 @@ func (h *Handler) handleSync(c *gin.Context, syncType string) {
 
 	dbSync, err := cwsync.NewChatwootDBSync(cfg, h.database.Messages, contactsAdapter, h.database.Media, session.ID, lidResolver)
 	if err != nil {
+		logger.Chatwoot().Error().Err(err).Str("session", sessionId).Msg("Chatwoot: failed to connect to chatwoot db for sync")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to connect to chatwoot db: " + err.Error()})
 		return
 	}
@@ -693,10 +693,12 @@ func (h *Handler) handleSync(c *gin.Context, syncType string) {
 
 	status, err := dbSync.StartSyncAsync(syncType, daysLimit)
 	if err != nil {
+		logger.Chatwoot().Warn().Err(err).Str("session", sessionId).Str("syncType", syncType).Msg("Chatwoot: sync failed to start")
 		c.JSON(http.StatusConflict, gin.H{"error": err.Error(), "status": status})
 		return
 	}
 
+	logger.Chatwoot().Info().Str("session", sessionId).Str("syncType", syncType).Int("daysLimit", daysLimit).Msg("Chatwoot: sync started")
 	c.JSON(http.StatusAccepted, status)
 }
 
@@ -1128,7 +1130,6 @@ func (r *whatsappLIDResolver) ResolveLIDToPhone(ctx context.Context, lidNumber s
 // =============================================================================
 
 // markMessagesAsRead sends read receipts to WhatsApp for unread incoming messages
-// This is called when agent responds in Chatwoot (like Evolution API MESSAGE_READ feature)
 func (h *Handler) markMessagesAsRead(ctx context.Context, session *model.Session, chatJid string) {
 	if h.database == nil {
 		return

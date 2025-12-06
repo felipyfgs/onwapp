@@ -1148,19 +1148,21 @@ func (r *Repository) DeleteContacts(ctx context.Context) (int, error) {
 	return int(rows), nil
 }
 
-// ResolveAllConversations sets all open conversations to resolved status
+// ResolveAllConversations sets all open and pending conversations to resolved status
 // Chatwoot status: 0=open, 1=resolved, 2=pending
 func (r *Repository) ResolveAllConversations(ctx context.Context) (int, error) {
 	var query string
 	var args []interface{}
 
 	if r.inboxID > 0 {
+		// Resolve both open (0) and pending (2) conversations
 		query = `UPDATE conversations SET status = 1, updated_at = NOW() 
-			WHERE account_id = $1 AND inbox_id = $2 AND status = 0`
+			WHERE account_id = $1 AND inbox_id = $2 AND status IN (0, 2)`
 		args = []interface{}{r.accountID, r.inboxID}
 	} else {
+		// Resolve both open (0) and pending (2) conversations from ALL inboxes
 		query = `UPDATE conversations SET status = 1, updated_at = NOW() 
-			WHERE account_id = $1 AND status = 0`
+			WHERE account_id = $1 AND status IN (0, 2)`
 		args = []interface{}{r.accountID}
 	}
 

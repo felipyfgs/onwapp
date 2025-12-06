@@ -19,6 +19,7 @@ import {
   Hash,
   Filter,
   X,
+  LogOut,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -32,6 +33,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { CreateSessionDialog } from "@/components/sessions/create-session-dialog"
 import { ModeToggle } from "@/components/mode-toggle"
+import { useAuth } from "@/lib/auth/context"
 import type { Session } from "@/lib/types/session"
 import {
   fetchSessions,
@@ -46,6 +48,7 @@ import { cn } from "@/lib/utils"
 
 export default function SessionsListPage() {
   const router = useRouter()
+  const { logout } = useAuth()
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -217,7 +220,7 @@ export default function SessionsListPage() {
                 <h1 className="text-base font-semibold text-foreground">OnWApp</h1>
               </div>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
                 size="icon"
@@ -229,7 +232,15 @@ export default function SessionsListPage() {
                 <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
               </Button>
               <ModeToggle />
-              <CreateSessionDialog onCreateSession={handleCreateSession} />
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={logout}
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Sair</span>
+              </Button>
             </div>
           </div>
         </div>
@@ -280,59 +291,62 @@ export default function SessionsListPage() {
           </div>
 
           {/* Status Filter */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Filter className="h-3.5 w-3.5" />
-              <span>Status:</span>
-            </div>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <Button
-                variant={statusFilter === null ? "default" : "outline"}
-                size="sm"
-                onClick={() => setStatusFilter(null)}
-                className="h-7 text-xs"
-              >
-                Todos
-              </Button>
-              <Button
-                variant={statusFilter === "connected" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setStatusFilter("connected")}
-                className="h-7 text-xs"
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-primary mr-1.5" />
-                Conectado
-              </Button>
-              <Button
-                variant={statusFilter === "connecting" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setStatusFilter("connecting")}
-                className="h-7 text-xs"
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-chart-4 mr-1.5" />
-                Conectando
-              </Button>
-              <Button
-                variant={statusFilter === "disconnected" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setStatusFilter("disconnected")}
-                className="h-7 text-xs"
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-destructive mr-1.5" />
-                Desconectado
-              </Button>
-              {statusFilter && (
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Filter className="h-3.5 w-3.5" />
+                <span>Status:</span>
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <Button
-                  variant="ghost"
+                  variant={statusFilter === null ? "default" : "outline"}
                   size="sm"
                   onClick={() => setStatusFilter(null)}
-                  className="h-7 w-7 p-0 text-muted-foreground"
-                  title="Limpar filtro"
+                  className="h-7 text-xs"
                 >
-                  <X className="h-3.5 w-3.5" />
+                  Todos
                 </Button>
-              )}
+                <Button
+                  variant={statusFilter === "connected" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStatusFilter("connected")}
+                  className="h-7 text-xs"
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary mr-1.5" />
+                  Conectado
+                </Button>
+                <Button
+                  variant={statusFilter === "connecting" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStatusFilter("connecting")}
+                  className="h-7 text-xs"
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-chart-4 mr-1.5" />
+                  Conectando
+                </Button>
+                <Button
+                  variant={statusFilter === "disconnected" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStatusFilter("disconnected")}
+                  className="h-7 text-xs"
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-destructive mr-1.5" />
+                  Desconectado
+                </Button>
+                {statusFilter && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setStatusFilter(null)}
+                    className="h-7 w-7 p-0 text-muted-foreground"
+                    title="Limpar filtro"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
             </div>
+            <CreateSessionDialog onCreateSession={handleCreateSession} />
           </div>
         </div>
 
