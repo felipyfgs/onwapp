@@ -1,5 +1,8 @@
 version: "3.7"
 
+# OnWapp Production Stack for Docker Swarm
+# Replace 'yourdomain.com' with your actual domain
+
 services:
 
   onwapp_postgres:
@@ -7,10 +10,10 @@ services:
     volumes:
       - onwapp_postgres_data:/var/lib/postgresql/data
     networks:
-      - infraNet
+      - onwapp_network
     environment:
       - POSTGRES_DB=onwapp
-      - POSTGRES_USER=onwapp
+      - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - TZ=America/Sao_Paulo
     deploy:
@@ -33,7 +36,7 @@ services:
     volumes:
       - onwapp_nats_data:/data
     networks:
-      - infraNet
+      - onwapp_network
     environment:
       - TZ=America/Sao_Paulo
     deploy:
@@ -53,10 +56,10 @@ services:
     volumes:
       - onwapp_minio_data:/data
     networks:
-      - infraNet
+      - onwapp_network
     environment:
-      - MINIO_ROOT_USER=onwapp
-      - MINIO_ROOT_PASSWORD=postgres
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
       - MINIO_BROWSER_REDIRECT_URL=https://minio.yourdomain.com
       - MINIO_SERVER_URL=https://s3.yourdomain.com
       - TZ=America/Sao_Paulo
@@ -68,12 +71,14 @@ services:
           - node.role == manager
       labels:
         - traefik.enable=true
+        # MinIO S3 API
         - traefik.http.routers.onwapp_minio_public.rule=Host(`s3.yourdomain.com`)
         - traefik.http.routers.onwapp_minio_public.entrypoints=websecure
         - traefik.http.routers.onwapp_minio_public.tls.certresolver=letsencryptresolver
         - traefik.http.services.onwapp_minio_public.loadbalancer.server.port=9000
         - traefik.http.services.onwapp_minio_public.loadbalancer.passHostHeader=true
         - traefik.http.routers.onwapp_minio_public.service=onwapp_minio_public
+        # MinIO Console
         - traefik.http.routers.onwapp_minio_console.rule=Host(`minio.yourdomain.com`)
         - traefik.http.routers.onwapp_minio_console.entrypoints=websecure
         - traefik.http.routers.onwapp_minio_console.tls.certresolver=letsencryptresolver
@@ -86,23 +91,23 @@ services:
     volumes:
       - onwapp_data:/app/data
     networks:
-      - infraNet
+      - onwapp_network
     environment:
       # Database
-      - DATABASE_URL=postgres://onwapp:postgres@onwapp_postgres:5432/onwapp?sslmode=disable
+      - DATABASE_URL=postgres://postgres:postgres@onwapp_postgres:5432/onwapp?sslmode=disable
       # Server
       - PORT=3000
-      - API_KEY=your-api-key-here
-      - SERVER_URL=https://wpapi.yourdomain.com
+      - GLOBAL_API_KEY=your-api-key-here
+      - SERVER_URL=https://api.yourdomain.com
       # Logging
-      - LOG_LEVEL=debug
+      - LOG_LEVEL=info
       - LOG_FORMAT=json
-      # MinIO (internal endpoint for bucket creation, public URL for media access)
-      - MINIO_ENDPOINT=s3.yourdomain.com
+      # MinIO
+      - MINIO_ENDPOINT=onwapp_minio:9000
       - MINIO_ACCESS_KEY=minioadmin
       - MINIO_SECRET_KEY=minioadmin
       - MINIO_BUCKET=onwapp-media
-      - MINIO_USE_SSL=true
+      - MINIO_USE_SSL=false
       - MINIO_PUBLIC_URL=https://s3.yourdomain.com
       # NATS
       - NATS_ENABLED=true
@@ -121,8 +126,8 @@ services:
           memory: 1024M
       labels:
         - traefik.enable=true
-        - traefik.docker.network=infraNet
-        - traefik.http.routers.onwapp_api.rule=Host(`wpapi.yourdomain.com`)
+        - traefik.docker.network=onwapp_network
+        - traefik.http.routers.onwapp_api.rule=Host(`api.yourdomain.com`)
         - traefik.http.routers.onwapp_api.entrypoints=websecure
         - traefik.http.routers.onwapp_api.tls.certresolver=letsencryptresolver
         - traefik.http.routers.onwapp_api.priority=1
@@ -143,6 +148,6 @@ volumes:
     driver: local
 
 networks:
-  infraNet:
-    external: true
-    name: infraNet
+  onwapp_network:
+    driver: overlay
+    attachable: true
