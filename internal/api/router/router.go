@@ -58,7 +58,14 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Recovery())
 	r.Use(logger.GinMiddleware())
+
+	// Security middleware chain
+	r.Use(middleware.SecurityHeaders())
 	r.Use(middleware.CORS(cfg.AllowedOrigins))
+
+	// Rate limiting (10 req/s with burst of 20)
+	rateLimiter := middleware.NewRateLimiter(middleware.DefaultRateLimiterConfig())
+	r.Use(rateLimiter.Middleware())
 
 	h := cfg.Handlers
 

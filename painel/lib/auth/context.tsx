@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react"
+import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { setApiConfig } from "@/lib/api/sessions"
 
@@ -16,8 +16,58 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-const STORAGE_KEY = "onwapp_api_key"
+const STORAGE_KEY = "onwapp_auth"
 const PUBLIC_ROUTES = ["/login"]
+const LOGIN_TIMEOUT = 10000 // 10 seconds
+const MAX_API_KEY_LENGTH = 128
+const MIN_API_KEY_LENGTH = 16
+
+// Sanitize input to prevent XSS
+function sanitizeInput(input: string): string {
+  return input
+    .trim()
+    .replace(/[<>\"'&]/g, "") // Remove potential XSS chars
+    .slice(0, MAX_API_KEY_LENGTH)
+}
+
+// Validate API key format
+function isValidApiKey(key: string): boolean {
+  if (!key || key.length < MIN_API_KEY_LENGTH || key.length > MAX_API_KEY_LENGTH) {
+    return false
+  }
+  // Allow alphanumeric and common token chars
+  return /^[a-zA-Z0-9_\-\.]+$/.test(key)
+}
+
+// Use sessionStorage for better security (clears on browser close)
+function getStoredAuth(): string | null {
+  if (typeof window === "undefined") return null
+  try {
+    return sessionStorage.getItem(STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
+function setStoredAuth(key: string): void {
+  if (typeof window === "undefined") return
+  try {
+    sessionStorage.setItem(STORAGE_KEY, key)
+  } catch {
+    // Storage might be full or disabled
+  }
+}
+
+function clearStoredAuth(): void {
+  if (typeof window === "undefined") return
+  try {
+    sessionStorage.removeItem(STORAGE_KEY)
+    // Also clear localStorage in case it was used before
+    localStorage.removeItem("onwapp_api_key")
+  } catch {
+    // Ignore errors
+  }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [apiKey, setApiKey] = useState<string | null>(null)
@@ -26,10 +76,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname()
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) {
+    const stored = getStoredAuth()
+    if (stored && isValidApiKey(stored)) {
       setApiKey(stored)
       setApiConfig({ apiUrl: API_URL, apiKey: stored })
+    } else {
+      // Clear invalid stored data
+      clearStoredAuth()
     }
     setIsLoading(false)
   }, [])
@@ -46,33 +99,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [apiKey, isLoading, pathname, router])
 
-  const login = async (key: string): Promise<boolean> => {
+  const login = useCallback(async (key: string): Promise<boolean> => {
+    // Sanitize and validate
+    const sanitizedKey = sanitizeInput(key)
+    if (!isValidApiKey(sanitizedKey)) {
+      return false
+    }
+
     try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), LOGIN_TIMEOUT)
+
       const response = await fetch(`${API_URL}/sessions`, {
         headers: {
           "Content-Type": "application/json",
-          "Authorization": key,
+          "Authorization": sanitizedKey,
         },
+        signal: controller.signal,
       })
+
+      clearTimeout(timeoutId)
 
       if (!response.ok) {
         return false
       }
 
-      setApiKey(key)
-      setApiConfig({ apiUrl: API_URL, apiKey: key })
-      localStorage.setItem(STORAGE_KEY, key)
+      setApiKey(sanitizedKey)
+      setApiConfig({ apiUrl: API_URL, apiKey: sanitizedKey })
+      setStoredAuth(sanitizedKey)
       return true
     } catch {
       return false
     }
-  }
+  }, [])
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setApiKey(null)
-    localStorage.removeItem(STORAGE_KEY)
+    clearStoredAuth()
+    // Clear API config
+    setApiConfig({ apiUrl: API_URL, apiKey: "" })
     router.push("/login")
-  }
+  }, [router])
 
   return (
     <AuthContext.Provider

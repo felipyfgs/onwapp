@@ -211,3 +211,59 @@ func WPP() *zerolog.Logger      { l := Module("WPP"); return &l }
 func Chatwoot() *zerolog.Logger { l := Module("CHATWOOT"); return &l }
 func API() *zerolog.Logger      { l := Module("API"); return &l }
 func Queue() *zerolog.Logger    { l := Module("QUEUE"); return &l }
+
+// Sensitive data patterns to sanitize in logs
+var sensitivePatterns = []string{
+	"password",
+	"apiKey",
+	"api_key",
+	"token",
+	"secret",
+	"authorization",
+	"credential",
+	"private_key",
+	"access_key",
+}
+
+// SanitizeForLog removes sensitive data from a map before logging
+func SanitizeForLog(data map[string]interface{}) map[string]interface{} {
+	sanitized := make(map[string]interface{}, len(data))
+	for k, v := range data {
+		lowerKey := strings.ToLower(k)
+		isSensitive := false
+		for _, pattern := range sensitivePatterns {
+			if strings.Contains(lowerKey, pattern) {
+				isSensitive = true
+				break
+			}
+		}
+		if isSensitive {
+			sanitized[k] = "[REDACTED]"
+		} else if nested, ok := v.(map[string]interface{}); ok {
+			sanitized[k] = SanitizeForLog(nested)
+		} else {
+			sanitized[k] = v
+		}
+	}
+	return sanitized
+}
+
+// SanitizeString masks sensitive data in a string
+func SanitizeString(s string) string {
+	// Mask API keys (hex strings longer than 16 chars)
+	if len(s) > 16 {
+		return s[:4] + "***" + s[len(s)-4:]
+	}
+	return s
+}
+
+// RedactAuthHeader redacts authorization header for logging
+func RedactAuthHeader(header string) string {
+	if header == "" {
+		return ""
+	}
+	if len(header) <= 8 {
+		return "[REDACTED]"
+	}
+	return header[:4] + "***"
+}

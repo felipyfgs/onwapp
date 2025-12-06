@@ -43,8 +43,8 @@ export function CreateSessionDialog({ onCreateSession }: CreateSessionDialogProp
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button data-create-session>
-          <Plus className="mr-2 h-4 w-4" />
+        <Button size="sm" data-create-session>
+          <Plus className="h-4 w-4" />
           Nova Sessão
         </Button>
       </DialogTrigger>
@@ -69,10 +69,10 @@ export function CreateSessionDialog({ onCreateSession }: CreateSessionDialogProp
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading}>
+            <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)} disabled={loading}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading || !sessionName.trim()}>
+            <Button type="submit" size="sm" disabled={loading || !sessionName.trim()}>
               {loading ? "Criando..." : "Criar Sessão"}
             </Button>
           </DialogFooter>

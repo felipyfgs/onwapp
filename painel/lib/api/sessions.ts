@@ -14,6 +14,9 @@ export interface ApiConfig {
 
 let globalConfig: ApiConfig | null = null
 
+// Request timeout in milliseconds
+const DEFAULT_TIMEOUT = 30000
+
 export function setApiConfig(config: ApiConfig) {
   globalConfig = config
 }
@@ -35,18 +38,37 @@ export class RateLimitError extends Error {
   }
 }
 
-async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
+export class TimeoutError extends Error {
+  constructor(message: string = "Request timed out") {
+    super(message)
+    this.name = "TimeoutError"
+  }
+}
+
+interface FetchOptions extends RequestInit {
+  timeout?: number
+}
+
+async function fetchAPI<T>(endpoint: string, options?: FetchOptions): Promise<T> {
   const { apiUrl, apiKey } = getApiConfig()
+  const timeout = options?.timeout ?? DEFAULT_TIMEOUT
+  
+  // Create abort controller for timeout
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeout)
   
   try {
     const response = await fetch(`${apiUrl}${endpoint}`, {
       ...options,
+      signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
         ...(apiKey ? { "Authorization": apiKey } : {}),
         ...options?.headers,
       },
     })
+
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
       if (response.status === 429) {
@@ -56,6 +78,14 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> 
           "Limite de requisições excedido. Por favor, tente novamente mais tarde.",
           retrySeconds
         )
+      }
+
+      if (response.status === 401) {
+        // Clear stored auth on unauthorized
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem("onwapp_auth")
+        }
+        throw new Error("Sessão expirada. Faça login novamente.")
       }
 
       const error = await response.json().catch(() => ({ error: response.statusText }))
@@ -71,12 +101,21 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> 
 
     return response.json()
   } catch (error) {
-    if (error instanceof RateLimitError) {
+    clearTimeout(timeoutId)
+    
+    if (error instanceof RateLimitError || error instanceof TimeoutError) {
       throw error
     }
-    if (error instanceof TypeError && error.message === "Failed to fetch") {
-      throw new Error("Não foi possível conectar à API. Verifique se o backend está rodando.")
+    
+    if (error instanceof Error) {
+      if (error.name === "AbortError") {
+        throw new TimeoutError("A requisição demorou muito. Tente novamente.")
+      }
+      if (error.message === "Failed to fetch") {
+        throw new Error("Não foi possível conectar à API. Verifique se o backend está rodando.")
+      }
     }
+    
     throw error
   }
 }

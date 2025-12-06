@@ -223,10 +223,9 @@ export default function SessionsListPage() {
             <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
-                size="icon"
+                size="icon-sm"
                 onClick={() => loadSessions(true)}
                 disabled={refreshing || rateLimited}
-                className="h-9 w-9 text-muted-foreground"
                 title={rateLimited ? "Aguarde antes de atualizar novamente" : "Atualizar"}
               >
                 <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
@@ -235,7 +234,7 @@ export default function SessionsListPage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
                 onClick={logout}
               >
                 <LogOut className="h-4 w-4" />
@@ -302,7 +301,6 @@ export default function SessionsListPage() {
                   variant={statusFilter === null ? "default" : "outline"}
                   size="sm"
                   onClick={() => setStatusFilter(null)}
-                  className="h-7 text-xs"
                 >
                   Todos
                 </Button>
@@ -310,35 +308,31 @@ export default function SessionsListPage() {
                   variant={statusFilter === "connected" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setStatusFilter("connected")}
-                  className="h-7 text-xs"
                 >
-                  <span className="h-1.5 w-1.5 rounded-full bg-primary mr-1.5" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                   Conectado
                 </Button>
                 <Button
                   variant={statusFilter === "connecting" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setStatusFilter("connecting")}
-                  className="h-7 text-xs"
                 >
-                  <span className="h-1.5 w-1.5 rounded-full bg-chart-4 mr-1.5" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-chart-4" />
                   Conectando
                 </Button>
                 <Button
                   variant={statusFilter === "disconnected" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setStatusFilter("disconnected")}
-                  className="h-7 text-xs"
                 >
-                  <span className="h-1.5 w-1.5 rounded-full bg-destructive mr-1.5" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-destructive" />
                   Desconectado
                 </Button>
                 {statusFilter && (
                   <Button
                     variant="ghost"
-                    size="sm"
+                    size="icon-sm"
                     onClick={() => setStatusFilter(null)}
-                    className="h-7 w-7 p-0 text-muted-foreground"
                     title="Limpar filtro"
                   >
                     <X className="h-3.5 w-3.5" />
@@ -454,7 +448,7 @@ export default function SessionsListPage() {
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                      <Button variant="ghost" size="icon-sm">
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>

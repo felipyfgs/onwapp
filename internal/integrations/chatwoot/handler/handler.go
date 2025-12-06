@@ -182,6 +182,9 @@ func (h *Handler) DeleteConfig(c *gin.Context) {
 // WEBHOOK ENDPOINT
 // =============================================================================
 
+// Maximum webhook payload size (1MB)
+const maxWebhookPayloadSize = 1 * 1024 * 1024
+
 // ReceiveWebhook handles POST /chatwoot/webhook/:sessionId
 // @Summary Receive Chatwoot webhook
 // @Description Receive webhook events from Chatwoot
@@ -193,6 +196,13 @@ func (h *Handler) DeleteConfig(c *gin.Context) {
 // @Router /chatwoot/webhook/{sessionId} [post]
 func (h *Handler) ReceiveWebhook(c *gin.Context) {
 	sessionId := c.Param("sessionId")
+
+	// Validate session name format
+	if sessionId == "" || len(sessionId) > 64 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid session id"})
+		return
+	}
+
 	session, err := h.sessionService.Get(sessionId)
 	if err != nil || session == nil {
 		c.JSON(http.StatusOK, gin.H{"message": "session not found, ignoring"})
@@ -204,8 +214,14 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 		return
 	}
 
+	// Limit payload size to prevent memory exhaustion
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxWebhookPayloadSize)
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
+		if err.Error() == "http: request body too large" {
+			c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "payload too large"})
+			return
+		}
 		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to read body"})
 		return
 	}

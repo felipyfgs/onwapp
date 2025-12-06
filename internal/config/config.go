@@ -82,6 +82,13 @@ type Config struct {
 	NatsMaxRetries   int
 	NatsRetryDelay   time.Duration
 	NatsAckWait      time.Duration
+
+	// Security Configuration
+	AllowedOrigins        []string // CORS allowed origins
+	RateLimitPerSecond    float64  // Rate limit requests per second
+	RateLimitBurst        int      // Rate limit burst size
+	EnableSecurityHeaders bool     // Enable security headers middleware
+	TrustedProxies        []string // Trusted proxy IPs
 }
 
 func Load() *Config {
@@ -116,6 +123,12 @@ func Load() *Config {
 		NatsMaxRetries:   getEnvInt("NATS_MAX_RETRIES", 5),
 		NatsRetryDelay:   getEnvDuration("NATS_RETRY_DELAY", 5*time.Second),
 		NatsAckWait:      getEnvDuration("NATS_ACK_WAIT", 30*time.Second),
+
+		AllowedOrigins:        getEnvSlice("ALLOWED_ORIGINS", []string{"*"}),
+		RateLimitPerSecond:    getEnvFloat("RATE_LIMIT_REQUESTS_PER_SECOND", 10),
+		RateLimitBurst:        getEnvInt("RATE_LIMIT_BURST", 20),
+		EnableSecurityHeaders: getEnv("ENABLE_SECURITY_HEADERS", "true") == "true",
+		TrustedProxies:        getEnvSlice("TRUSTED_PROXIES", []string{"127.0.0.1"}),
 	}
 }
 
@@ -165,6 +178,32 @@ func getEnvDuration(key string, fallback time.Duration) time.Duration {
 	if value := os.Getenv(key); value != "" {
 		if d, err := time.ParseDuration(value); err == nil {
 			return d
+		}
+	}
+	return fallback
+}
+
+func getEnvFloat(key string, fallback float64) float64 {
+	if value := os.Getenv(key); value != "" {
+		if f, err := strconv.ParseFloat(value, 64); err == nil {
+			return f
+		}
+	}
+	return fallback
+}
+
+func getEnvSlice(key string, fallback []string) []string {
+	if value := os.Getenv(key); value != "" {
+		parts := strings.Split(value, ",")
+		result := make([]string, 0, len(parts))
+		for _, p := range parts {
+			trimmed := strings.TrimSpace(p)
+			if trimmed != "" {
+				result = append(result, trimmed)
+			}
+		}
+		if len(result) > 0 {
+			return result
 		}
 	}
 	return fallback

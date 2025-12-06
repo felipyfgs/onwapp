@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/base64"
 	"io"
 	"net/http"
@@ -10,6 +11,13 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"onwapp/internal/api/dto"
+	"onwapp/internal/validator"
+)
+
+const (
+	maxDownloadSize    = 100 * 1024 * 1024 // 100MB max file size
+	downloadTimeout    = 30 * time.Second
+	maxUploadSize      = 100 * 1024 * 1024 // 100MB max upload
 )
 
 // IsURL checks if a string is a URL
@@ -17,17 +25,59 @@ func IsURL(s string) bool {
 	return strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://")
 }
 
-// DownloadFromURL downloads content from a URL and returns the data and detected mime type
+// DownloadFromURL downloads content from a URL with SSRF protection and size limits
 func DownloadFromURL(url string) ([]byte, string, error) {
-	resp, err := http.Get(url)
+	// Validate URL for SSRF
+	if err := validator.ValidateURL(url); err != nil {
+		return nil, "", err
+	}
+
+	// Create HTTP client with timeout
+	client := &http.Client{
+		Timeout: downloadTimeout,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			// Validate redirect URLs for SSRF
+			if err := validator.ValidateURL(req.URL.String()); err != nil {
+				return err
+			}
+			if len(via) >= 5 {
+				return http.ErrUseLastResponse
+			}
+			return nil
+		},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), downloadTimeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, "", err
+	}
+
+	req.Header.Set("User-Agent", "OnWapp/1.0")
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, "", err
 	}
 	defer resp.Body.Close()
 
-	data, err := io.ReadAll(resp.Body)
+	// Check response status
+	if resp.StatusCode != http.StatusOK {
+		return nil, "", &validator.ValidationError{Field: "url", Message: "failed to download: " + resp.Status}
+	}
+
+	// Limit read size to prevent memory exhaustion
+	limitedReader := io.LimitReader(resp.Body, maxDownloadSize+1)
+	data, err := io.ReadAll(limitedReader)
 	if err != nil {
 		return nil, "", err
+	}
+
+	// Check if we hit the limit
+	if int64(len(data)) > maxDownloadSize {
+		return nil, "", &validator.ValidationError{Field: "file", Message: "file size exceeds 100MB limit"}
 	}
 
 	mimeType := resp.Header.Get("Content-Type")
