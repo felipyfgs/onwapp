@@ -27,6 +27,10 @@ COPY painel/package.json painel/package-lock.json ./
 RUN npm ci
 
 COPY painel/ .
+
+# Remove .env.local to use runtime config
+RUN rm -f .env.local
+
 RUN npm run build
 
 # Stage 3: Final image

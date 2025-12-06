@@ -1,14 +1,13 @@
 import type { Chat, Message } from "@/lib/types/chat"
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
-const API_KEY = process.env.NEXT_PUBLIC_API_KEY || ""
+import { getApiConfig } from "./sessions"
 
 async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  const { apiUrl, apiKey } = getApiConfig()
+  const response = await fetch(`${apiUrl}${endpoint}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      ...(API_KEY ? { Authorization: API_KEY } : {}),
+      ...(apiKey ? { Authorization: apiKey } : {}),
       ...options?.headers,
     },
   })

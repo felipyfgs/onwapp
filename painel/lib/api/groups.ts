@@ -5,9 +5,7 @@ import type {
   GroupActionRequest,
   ParticipantsActionRequest,
 } from "@/lib/types/group"
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
-const API_KEY = process.env.NEXT_PUBLIC_API_KEY || ""
+import { getApiConfig } from "./sessions"
 
 // Função para fazer retry com exponential backoff
 async function sleep(ms: number): Promise<void> {
@@ -15,15 +13,16 @@ async function sleep(ms: number): Promise<void> {
 }
 
 async function fetchAPI<T>(endpoint: string, options?: RequestInit, maxRetries: number = 3): Promise<T> {
+  const { apiUrl, apiKey } = getApiConfig()
   let lastError: Error | null = null
   
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      const response = await fetch(`${apiUrl}${endpoint}`, {
         ...options,
         headers: {
           "Content-Type": "application/json",
-          ...(API_KEY ? { Authorization: API_KEY } : {}),
+          ...(apiKey ? { Authorization: apiKey } : {}),
           ...options?.headers,
         },
       })

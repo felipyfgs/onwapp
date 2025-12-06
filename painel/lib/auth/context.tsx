@@ -3,8 +3,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { setApiConfig } from "@/lib/api/sessions"
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+import { useEnvConfig } from "@/lib/env"
 
 interface AuthContextType {
   apiKey: string | null
@@ -74,18 +73,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
   const pathname = usePathname()
+  const envConfig = useEnvConfig()
 
   useEffect(() => {
     const stored = getStoredAuth()
     if (stored && isValidApiKey(stored)) {
       setApiKey(stored)
-      setApiConfig({ apiUrl: API_URL, apiKey: stored })
+      setApiConfig({ apiUrl: envConfig.apiUrl, apiKey: stored })
     } else {
       // Clear invalid stored data
       clearStoredAuth()
     }
     setIsLoading(false)
-  }, [])
+  }, [envConfig.apiUrl])
 
   useEffect(() => {
     if (isLoading) return
@@ -110,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), LOGIN_TIMEOUT)
 
-      const response = await fetch(`${API_URL}/sessions`, {
+      const response = await fetch(`${envConfig.apiUrl}/sessions`, {
         headers: {
           "Content-Type": "application/json",
           "Authorization": sanitizedKey,
@@ -125,21 +125,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setApiKey(sanitizedKey)
-      setApiConfig({ apiUrl: API_URL, apiKey: sanitizedKey })
+      setApiConfig({ apiUrl: envConfig.apiUrl, apiKey: sanitizedKey })
       setStoredAuth(sanitizedKey)
       return true
     } catch {
       return false
     }
-  }, [])
+  }, [envConfig.apiUrl])
 
   const logout = useCallback(() => {
     setApiKey(null)
     clearStoredAuth()
     // Clear API config
-    setApiConfig({ apiUrl: API_URL, apiKey: "" })
+    setApiConfig({ apiUrl: envConfig.apiUrl, apiKey: "" })
     router.push("/login")
-  }, [router])
+  }, [router, envConfig.apiUrl])
 
   return (
     <AuthContext.Provider
