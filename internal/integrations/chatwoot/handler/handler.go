@@ -389,7 +389,7 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 
 	for _, att := range attachments {
 		if att.DataURL != "" {
-			mediaData, mimeType, err := downloadMedia(att.DataURL)
+			mediaData, mimeType, err := downloadMedia(ctx, att.DataURL)
 			if err != nil {
 				logger.Chatwoot().Warn().Err(err).Str("url", att.DataURL).Msg("Chatwoot: failed to download attachment")
 				continue
@@ -595,8 +595,12 @@ func (h *Handler) handleMessageDeleted(ctx context.Context, session *model.Sessi
 	return nil
 }
 
-func downloadMedia(url string) ([]byte, string, error) {
-	resp, err := http.Get(url)
+func downloadMedia(ctx context.Context, url string) ([]byte, string, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, "", err
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, "", err
 	}

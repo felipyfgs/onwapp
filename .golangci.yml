@@ -22,11 +22,20 @@ linters:
     - copyloopvar      # detects loop variable issues (Go 1.22+)
     - prealloc         # suggests slice pre-allocation
     - wastedassign     # detects unused assignments
+    - noctx            # finds HTTP requests without context.Context
+    - unparam          # reports unused function parameters
+    - nakedret         # finds naked returns in long functions
+    - makezero         # finds slice declarations not initialized with zero length
 
     # ==========================================================================
     # DATABASE PERFORMANCE
     # ==========================================================================
     - rowserrcheck     # checks rows.Err() is called after iterating
+
+    # ==========================================================================
+    # MEMORY & ALLOCATIONS
+    # ==========================================================================
+    - gocritic         # extensive checks including performance hints
 
     # ==========================================================================
     # CODE QUALITY (cleaner, more maintainable code)
@@ -61,6 +70,24 @@ linters-settings:
     asserts: true      # check type assertions on errors
     comparison: true   # check error comparisons
 
+  nakedret:
+    max-func-lines: 30 # max lines before naked return is flagged
+
+  gocritic:
+    enabled-tags:
+      - performance    # performance-related checks
+      - diagnostic     # bug detection
+    disabled-checks:
+      - hugeParam      # too strict for this project
+      - rangeValCopy   # often false positives with small structs
+
+  prealloc:
+    simple: true       # only report simple loops
+    for-loops: true    # check for loops
+
+  unparam:
+    check-exported: false # don't check exported functions
+
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
@@ -72,6 +99,8 @@ issues:
         - errcheck
         - gosec
         - goconst
+        - unparam
+        - gocritic
 
     # Generated docs
     - path: docs/
@@ -98,3 +127,37 @@ issues:
     - linters:
         - gosec
       text: "G107"
+
+    # Event handlers need consistent signatures even if params are unused
+    - path: internal/service/event/
+      linters:
+        - unparam
+
+    # Queue consumer has consistent interface
+    - path: internal/queue/consumer.go
+      linters:
+        - unparam
+
+    # Chatwoot sync has batch functions with consistent interface
+    - path: internal/integrations/chatwoot/sync/
+      linters:
+        - unparam
+
+    # Chatwoot service event handlers
+    - path: internal/integrations/chatwoot/service/events.go
+      linters:
+        - unparam
+
+    # Style suggestions - not critical for performance
+    - linters:
+        - gocritic
+      text: "ifElseChain|elseif|sprintfQuotedString"
+
+    # Pre-allocation in repository - rows count unknown ahead of time
+    - path: internal/db/repository/
+      linters:
+        - prealloc
+
+    - path: internal/integrations/chatwoot/
+      linters:
+        - prealloc

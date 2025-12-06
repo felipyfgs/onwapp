@@ -29,10 +29,10 @@ func New(ttl time.Duration) *Cache {
 		items: make(map[string]*Item),
 		ttl:   ttl,
 	}
-	
+
 	// Start cleanup goroutine
 	go c.cleanup()
-	
+
 	return c
 }
 
@@ -40,12 +40,12 @@ func New(ttl time.Duration) *Cache {
 func (c *Cache) Get(key string) (interface{}, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	
+
 	item, exists := c.items[key]
 	if !exists || item.IsExpired() {
 		return nil, false
 	}
-	
+
 	return item.Value, true
 }
 
@@ -58,7 +58,7 @@ func (c *Cache) Set(key string, value interface{}) {
 func (c *Cache) SetWithTTL(key string, value interface{}, ttl time.Duration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	c.items[key] = &Item{
 		Value:      value,
 		Expiration: time.Now().Add(ttl),
@@ -69,7 +69,7 @@ func (c *Cache) SetWithTTL(key string, value interface{}, ttl time.Duration) {
 func (c *Cache) Delete(key string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	delete(c.items, key)
 }
 
@@ -77,7 +77,7 @@ func (c *Cache) Delete(key string) {
 func (c *Cache) DeletePrefix(prefix string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	for key := range c.items {
 		if len(key) >= len(prefix) && key[:len(prefix)] == prefix {
 			delete(c.items, key)
@@ -89,7 +89,7 @@ func (c *Cache) DeletePrefix(prefix string) {
 func (c *Cache) Clear() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	c.items = make(map[string]*Item)
 }
 
@@ -97,7 +97,7 @@ func (c *Cache) Clear() {
 func (c *Cache) cleanup() {
 	ticker := time.NewTicker(1 * time.Minute)
 	defer ticker.Stop()
-	
+
 	for range ticker.C {
 		c.mu.Lock()
 		for key, item := range c.items {

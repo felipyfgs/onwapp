@@ -108,6 +108,12 @@ export function SessionSidebar({ sessionId, ...props }: SessionSidebarProps) {
   const [currentSession, setCurrentSession] = React.useState<Session | null>(null)
   const [dropdownOpen, setDropdownOpen] = React.useState(false)
   
+  // Track hydration to avoid mismatch with isMobile
+  const [isHydrated, setIsHydrated] = React.useState(false)
+  React.useEffect(() => {
+    setIsHydrated(true)
+  }, [])
+  
   // Create session dialog state
   const [createDialogOpen, setCreateDialogOpen] = React.useState(false)
   const [newSessionName, setNewSessionName] = React.useState("")
@@ -292,7 +298,7 @@ export function SessionSidebar({ sessionId, ...props }: SessionSidebarProps) {
                 <DropdownMenuContent
                   className="w-[--radix-dropdown-menu-trigger-width] min-w-64 rounded-lg"
                   align="start"
-                  side={isMobile ? "bottom" : "right"}
+                  side={isHydrated && isMobile ? "bottom" : "right"}
                   sideOffset={4}
                 >
                   <DropdownMenuLabel className="text-xs text-muted-foreground">

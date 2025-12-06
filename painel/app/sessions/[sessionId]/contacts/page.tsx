@@ -1,6 +1,7 @@
 "use client"
 
 import { useParams } from "next/navigation"
+import Link from "next/link"
 import { AppHeader } from "@/components/app-header"
 import { ContactsList } from "@/components/sessions/contacts-list"
 import {
@@ -22,12 +23,14 @@ export default function ContactsPage() {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem className="hidden md:block">
-              <BreadcrumbLink href="/sessions">Sessões</BreadcrumbLink>
+              <BreadcrumbLink asChild>
+                <Link href="/sessions">Sessões</Link>
+              </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator className="hidden md:block" />
             <BreadcrumbItem className="hidden md:block">
-              <BreadcrumbLink href={`/sessions/${sessionId}`}>
-                {sessionId}
+              <BreadcrumbLink asChild>
+                <Link href={`/sessions/${sessionId}`}>{sessionId}</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator className="hidden md:block" />

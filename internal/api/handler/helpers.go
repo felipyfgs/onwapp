@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	maxDownloadSize    = 100 * 1024 * 1024 // 100MB max file size
-	downloadTimeout    = 30 * time.Second
-	maxUploadSize      = 100 * 1024 * 1024 // 100MB max upload
+	maxDownloadSize = 100 * 1024 * 1024 // 100MB max file size
+	downloadTimeout = 30 * time.Second
+	maxUploadSize   = 100 * 1024 * 1024 // 100MB max upload
 )
 
 // IsURL checks if a string is a URL

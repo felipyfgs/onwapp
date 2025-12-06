@@ -132,8 +132,9 @@ func ValidateURL(rawURL string) error {
 	// Resolve hostname and check IP
 	ips, err := net.LookupIP(hostname)
 	if err != nil {
-		// If we can't resolve, allow but log (might be temporary DNS issue)
-		return nil
+		// If we can't resolve, allow the URL (might be temporary DNS issue)
+		// This is intentional - we don't want to block valid URLs due to DNS hiccups
+		return nil //nolint:nilerr // intentionally returning nil on DNS error
 	}
 
 	for _, ip := range ips {

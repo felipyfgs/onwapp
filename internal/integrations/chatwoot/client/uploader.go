@@ -42,7 +42,7 @@ type MediaUploadRequest struct {
 
 // UploadFromURL downloads media from URL and uploads to Chatwoot
 func (m *MediaUploader) UploadFromURL(ctx context.Context, req MediaUploadRequest) (*core.Message, error) {
-	data, contentType, err := DownloadMedia(req.MediaURL)
+	data, contentType, err := DownloadMedia(ctx, req.MediaURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to download media: %w", err)
 	}
@@ -94,9 +94,13 @@ func (m *MediaUploader) UploadFromURL(ctx context.Context, req MediaUploadReques
 	return msg, nil
 }
 
-// DownloadMedia downloads media from a URL
-func DownloadMedia(url string) ([]byte, string, error) {
-	resp, err := http.Get(url)
+// DownloadMedia downloads media from a URL with context for timeout control
+func DownloadMedia(ctx context.Context, url string) ([]byte, string, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, "", err
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, "", err
 	}

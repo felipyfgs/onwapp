@@ -1,6 +1,7 @@
 "use client"
 
 import { useParams } from "next/navigation"
+import Link from "next/link"
 import { AppHeader } from "@/components/app-header"
 import { ProfileConfig } from "@/components/sessions/profile-config"
 import {
@@ -22,12 +23,14 @@ export default function ProfilePage() {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem className="hidden md:block">
-              <BreadcrumbLink href="/sessions">Sessões</BreadcrumbLink>
+              <BreadcrumbLink asChild>
+                <Link href="/sessions">Sessões</Link>
+              </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator className="hidden md:block" />
             <BreadcrumbItem className="hidden md:block">
-              <BreadcrumbLink href={`/sessions/${sessionId}`}>
-                {sessionId}
+              <BreadcrumbLink asChild>
+                <Link href={`/sessions/${sessionId}`}>{sessionId}</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator className="hidden md:block" />

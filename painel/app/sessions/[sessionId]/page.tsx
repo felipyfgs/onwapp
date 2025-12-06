@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
+import Link from "next/link"
 import { AppHeader } from "@/components/app-header"
 import { QRCodeDialog } from "@/components/sessions/qr-code-dialog"
 import {
@@ -199,7 +200,9 @@ export default function SessionPage() {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem className="hidden md:block">
-              <BreadcrumbLink href="/sessions">Sessões</BreadcrumbLink>
+              <BreadcrumbLink asChild>
+                <Link href="/sessions">Sessões</Link>
+              </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator className="hidden md:block" />
             <BreadcrumbItem>

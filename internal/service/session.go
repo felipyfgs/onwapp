@@ -193,7 +193,7 @@ func (s *SessionService) Delete(ctx context.Context, sessionId string) error {
 	defer s.mu.Unlock()
 
 	session, exists := s.sessions[sessionId]
-	
+
 	// If session exists in memory, properly cleanup WhatsApp connection
 	if exists && session != nil {
 		hasCredentials := session.Device != nil && session.Device.ID != nil
