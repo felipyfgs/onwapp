@@ -8,9 +8,11 @@ import {
   Smartphone,
   Webhook,
   MessageCircle,
+  MessageSquare,
   Settings2,
   Send,
   Users,
+  Users2,
   ArrowLeft,
   ChevronRight,
   ChevronsUpDown,
@@ -18,6 +20,7 @@ import {
   Check,
   Loader2,
   Plug,
+  User,
 } from "lucide-react"
 
 import {
@@ -153,28 +156,29 @@ export function SessionSidebar({ sessionId, ...props }: SessionSidebarProps) {
       icon: Home,
     },
     {
-      title: "Mensagens",
-      url: `${baseUrl}/messages`,
+      title: "Perfil",
+      url: `${baseUrl}/profile`,
+      icon: User,
+    },
+    {
+      title: "Enviar Mensagem",
+      url: `${baseUrl}/messages/send`,
       icon: Send,
-      items: [
-        {
-          title: "Enviar Mensagem",
-          url: `${baseUrl}/messages/send`,
-        },
-        {
-          title: "Histórico",
-          url: `${baseUrl}/messages/history`,
-        },
-        {
-          title: "Templates",
-          url: `${baseUrl}/messages/templates`,
-        },
-      ],
     },
     {
       title: "Contatos",
       url: `${baseUrl}/contacts`,
       icon: Users,
+    },
+    {
+      title: "Grupos",
+      url: `${baseUrl}/groups`,
+      icon: Users2,
+    },
+    {
+      title: "Conversas",
+      url: `${baseUrl}/chats`,
+      icon: MessageSquare,
     },
     {
       title: "Integrações",
@@ -197,20 +201,6 @@ export function SessionSidebar({ sessionId, ...props }: SessionSidebarProps) {
       title: "Configurações",
       url: `${baseUrl}/settings`,
       icon: Settings2,
-      items: [
-        {
-          title: "Geral",
-          url: `${baseUrl}/settings/general`,
-        },
-        {
-          title: "Notificações",
-          url: `${baseUrl}/settings/notifications`,
-        },
-        {
-          title: "API Keys",
-          url: `${baseUrl}/settings/api-keys`,
-        },
-      ],
     },
   ]
 

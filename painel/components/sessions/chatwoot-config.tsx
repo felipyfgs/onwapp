@@ -63,6 +63,7 @@ export function ChatwootConfiguration({ sessionId }: ChatwootConfigProps) {
   const [config, setConfig] = React.useState<ChatwootConfig | null>(null)
   const [syncStatus, setSyncStatus] = React.useState<SyncStatus | null>(null)
   const [syncing, setSyncing] = React.useState(false)
+  const [resolving, setResolving] = React.useState(false)
   const [warnings, setWarnings] = React.useState<string[]>([])
 
   // Connection form
@@ -223,6 +224,18 @@ export function ChatwootConfiguration({ sessionId }: ChatwootConfigProps) {
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro ao sincronizar")
       setSyncing(false)
+    }
+  }
+
+  const handleResolveAll = async () => {
+    setResolving(true)
+    try {
+      const result = await resolveAllConversations(sessionId)
+      toast.success(`${result.resolved} conversas resolvidas!`)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Erro ao resolver conversas")
+    } finally {
+      setResolving(false)
     }
   }
 
@@ -659,23 +672,39 @@ export function ChatwootConfiguration({ sessionId }: ChatwootConfigProps) {
                   </div>
                 )}
 
-                <Button
-                  onClick={handleSync}
-                  disabled={syncing || syncStatus?.status === "running" || !dbHost.trim()}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700"
-                >
-                  {syncing || syncStatus?.status === "running" ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Sincronizando...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCcw className="mr-2 h-4 w-4" />
-                      Iniciar Sincronização
-                    </>
-                  )}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleSync}
+                    disabled={syncing || syncStatus?.status === "running" || !dbHost.trim()}
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    {syncing || syncStatus?.status === "running" ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sincronizando...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCcw className="mr-2 h-4 w-4" />
+                        Sincronizar
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    onClick={handleResolveAll}
+                    disabled={resolving || !config?.enabled}
+                    variant="outline"
+                  >
+                    {resolving ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Resolver Todas
+                      </>
+                    )}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>
