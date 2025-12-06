@@ -86,7 +86,7 @@ services:
         - traefik.http.services.onwapp_minio_console.loadbalancer.passHostHeader=true
         - traefik.http.routers.onwapp_minio_console.service=onwapp_minio_console
 
-  onwapp_api:
+  onwapp:
     image: onwapp/onwapp:latest
     volumes:
       - onwapp_data:/app/data
@@ -113,6 +113,8 @@ services:
       - NATS_ENABLED=true
       - NATS_URL=nats://onwapp_nats:4222
       - NATS_STREAM_PREFIX=ONWAPP
+      # Painel
+      - NEXT_PUBLIC_API_URL=https://api.yourdomain.com
       - TZ=America/Sao_Paulo
     deploy:
       mode: replicated
@@ -127,15 +129,22 @@ services:
       labels:
         - traefik.enable=true
         - traefik.docker.network=onwapp_network
+        # API (port 3000)
         - traefik.http.routers.onwapp_api.rule=Host(`api.yourdomain.com`)
         - traefik.http.routers.onwapp_api.entrypoints=websecure
         - traefik.http.routers.onwapp_api.tls.certresolver=letsencryptresolver
-        - traefik.http.routers.onwapp_api.priority=1
         - traefik.http.routers.onwapp_api.service=onwapp_api
         - traefik.http.services.onwapp_api.loadbalancer.server.port=3000
         - traefik.http.services.onwapp_api.loadbalancer.passhostheader=true
         - traefik.http.middlewares.onwapp_sslheader.headers.customrequestheaders.X-Forwarded-Proto=https
         - traefik.http.routers.onwapp_api.middlewares=onwapp_sslheader@docker
+        # Painel (port 3001)
+        - traefik.http.routers.onwapp_painel.rule=Host(`painel.yourdomain.com`)
+        - traefik.http.routers.onwapp_painel.entrypoints=websecure
+        - traefik.http.routers.onwapp_painel.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.onwapp_painel.service=onwapp_painel
+        - traefik.http.services.onwapp_painel.loadbalancer.server.port=3001
+        - traefik.http.services.onwapp_painel.loadbalancer.passhostheader=true
 
 volumes:
   onwapp_postgres_data:
