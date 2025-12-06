@@ -1040,7 +1040,7 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
               ))}
               {pollOptions.length < 12 && (
                 <Button type="button" variant="outline" size="sm" onClick={addPollOption}>
-                  <Plus className="h-4 w-4 mr-1" /> Adicionar Opção
+                  <Plus className="h-4 w-4" /> Adicionar Opção
                 </Button>
               )}
             </div>
@@ -1110,7 +1110,7 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
               ))}
               {buttons.length < 3 && (
                 <Button type="button" variant="outline" size="sm" onClick={addButton}>
-                  <Plus className="h-4 w-4 mr-1" /> Adicionar Botão
+                  <Plus className="h-4 w-4" /> Adicionar Botão
                 </Button>
               )}
             </div>
@@ -1207,14 +1207,14 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
                         </div>
                       ))}
                       <Button type="button" variant="outline" size="sm" onClick={() => addRow(sIndex)}>
-                        <Plus className="h-4 w-4 mr-1" /> Item
+                        <Plus className="h-4 w-4" /> Item
                       </Button>
                     </div>
                   </div>
                 </Card>
               ))}
               <Button type="button" variant="outline" size="sm" onClick={addSection}>
-                <Plus className="h-4 w-4 mr-1" /> Adicionar Seção
+                <Plus className="h-4 w-4" /> Adicionar Seção
               </Button>
             </div>
           </div>)}
@@ -1317,7 +1317,7 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
                   size="sm"
                   onClick={() => setInteractiveButtons([...interactiveButtons, { name: "quick_reply", params: { display_text: "", id: `btn${Date.now()}` } }])}
                 >
-                  <Plus className="h-4 w-4 mr-1" /> Adicionar Botão
+                  <Plus className="h-4 w-4" /> Adicionar Botão
                 </Button>
               )}
             </div>
@@ -1431,10 +1431,10 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
               {templateButtons.length < 3 && (
                 <div className="flex gap-2 flex-wrap">
                   <Button type="button" variant="outline" size="sm" onClick={() => addTemplateButton("urlButton")}>
-                    <Plus className="h-4 w-4 mr-1" /> Link
+                    <Plus className="h-4 w-4" /> Link
                   </Button>
                   <Button type="button" variant="outline" size="sm" onClick={() => addTemplateButton("callButton")}>
-                    <Plus className="h-4 w-4 mr-1" /> Ligar
+                    <Plus className="h-4 w-4" /> Ligar
                   </Button>
                 </div>
               )}
@@ -1552,7 +1552,7 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
                       ))}
                       {card.buttons.length < 3 && (
                         <Button type="button" variant="outline" size="sm" onClick={() => addCarouselCardButton(cardIndex)}>
-                          <Plus className="h-4 w-4 mr-1" /> Botão
+                          <Plus className="h-4 w-4" /> Botão
                         </Button>
                       )}
                     </div>
@@ -1560,7 +1560,7 @@ export function MessageSender({ sessionId }: MessageSenderProps) {
                 </Card>
               ))}
               <Button type="button" variant="outline" size="sm" onClick={addCarouselCard}>
-                <Plus className="h-4 w-4 mr-1" /> Adicionar Card
+                <Plus className="h-4 w-4" /> Adicionar Card
               </Button>
             </div>
           </div>)}

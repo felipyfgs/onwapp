@@ -112,18 +112,31 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 // @Router       /{session}/group/list [get]
 func (h *GroupHandler) GetJoinedGroups(c *gin.Context) {
 	sessionId := c.Param("session")
+	cacheKey := sessionId
 
 	// Check cache first (30s TTL)
-	if cached, ok := h.cache.GetGroups(sessionId); ok {
+	if cached, ok := h.cache.GetGroups(cacheKey); ok {
 		if items, ok := cached.([]dto.GroupListItem); ok {
 			c.JSON(http.StatusOK, dto.GroupListResponse{Data: items})
+			return
+		}
+		// Check if it's a cached error (rate limit protection)
+		if errMsg, ok := cached.(string); ok {
+			c.JSON(http.StatusTooManyRequests, dto.ErrorResponse{Error: errMsg})
 			return
 		}
 	}
 
 	groups, err := h.wpp.GetJoinedGroups(c.Request.Context(), sessionId)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		errMsg := err.Error()
+		// If rate limited by WhatsApp, cache the error for 30s to avoid hammering
+		if strings.Contains(errMsg, "rate") || strings.Contains(errMsg, "429") {
+			h.cache.SetGroups(cacheKey, errMsg)
+			c.JSON(http.StatusTooManyRequests, dto.ErrorResponse{Error: "WhatsApp rate limit - aguarde 30 segundos"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: errMsg})
 		return
 	}
 
@@ -142,7 +155,7 @@ func (h *GroupHandler) GetJoinedGroups(c *gin.Context) {
 	}
 
 	// Cache the result for 30 seconds
-	h.cache.SetGroups(sessionId, items)
+	h.cache.SetGroups(cacheKey, items)
 
 	c.JSON(http.StatusOK, dto.GroupListResponse{Data: items})
 }

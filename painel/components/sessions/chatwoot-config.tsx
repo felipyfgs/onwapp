@@ -300,7 +300,7 @@ export function ChatwootConfiguration({ sessionId }: ChatwootConfigProps) {
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                <Trash2 className="h-4 w-4 mr-1" />
+                <Trash2 className="h-4 w-4" />
                 Remover
               </Button>
             </AlertDialogTrigger>

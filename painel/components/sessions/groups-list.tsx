@@ -757,19 +757,19 @@ export function GroupsList({ sessionId }: GroupsListProps) {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
               <TabsList className="grid w-full grid-cols-4 shrink-0">
                 <TabsTrigger value="info" className="text-xs sm:text-sm">
-                  <Pencil className="mr-1.5 h-3.5 w-3.5 hidden sm:inline" />
+                  <Pencil className="hidden sm:inline" />
                   Info
                 </TabsTrigger>
                 <TabsTrigger value="participants" className="text-xs sm:text-sm">
-                  <Users2 className="mr-1.5 h-3.5 w-3.5 hidden sm:inline" />
+                  <Users2 className="hidden sm:inline" />
                   Membros
                 </TabsTrigger>
                 <TabsTrigger value="settings" className="text-xs sm:text-sm">
-                  <Shield className="mr-1.5 h-3.5 w-3.5 hidden sm:inline" />
+                  <Shield className="hidden sm:inline" />
                   Config
                 </TabsTrigger>
                 <TabsTrigger value="requests" className="text-xs sm:text-sm">
-                  <UserCheck className="mr-1.5 h-3.5 w-3.5 hidden sm:inline" />
+                  <UserCheck className="hidden sm:inline" />
                   Pedidos
                   {joinRequests.length > 0 && (
                     <Badge variant="destructive" className="ml-1.5 h-5 w-5 p-0 text-xs">
@@ -900,7 +900,7 @@ export function GroupsList({ sessionId }: GroupsListProps) {
                                   <p className="text-sm font-medium">{pJid.split("@")[0]}</p>
                                   {isSuperAdmin && (
                                     <Badge variant="default" className="text-[10px] h-4">
-                                      <Crown className="mr-1 h-2.5 w-2.5" />Criador
+                                      <Crown className="h-2.5 w-2.5" />Criador
                                     </Badge>
                                   )}
                                 </div>

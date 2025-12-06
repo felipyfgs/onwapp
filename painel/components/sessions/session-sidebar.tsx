@@ -223,12 +223,12 @@ export function SessionSidebar({ sessionId, ...props }: SessionSidebarProps) {
       items: [
         {
           title: "Chatwoot",
-          url: `${baseUrl}/integrations/chatwoot/config`,
+          url: `${baseUrl}/integrations/chatwoot`,
           icon: MessageCircle,
         },
         {
           title: "Webhooks",
-          url: `${baseUrl}/integrations/webhooks/config`,
+          url: `${baseUrl}/integrations/webhooks`,
           icon: Webhook,
         },
       ],
