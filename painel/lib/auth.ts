@@ -11,7 +11,7 @@ export async function login(prevState: unknown, formData: FormData) {
   if (apiKey === VALID_API_KEY) {
     const cookieStore = await cookies()
     cookieStore.set('api_key', apiKey, {
-      httpOnly: true,
+      httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7,

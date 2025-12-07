@@ -16,6 +16,17 @@ import {
   UsersRound,
   LogOut,
   Phone,
+  Smartphone,
+  X,
+  Copy,
+  Check,
+  Key,
+  Calendar,
+  Settings,
+  Webhook,
+  Eye,
+  EyeOff,
+  ExternalLink,
 } from "lucide-react"
 import {
   Breadcrumb,
@@ -30,6 +41,21 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs"
 import { 
   connectSession, 
   disconnectSession, 
@@ -37,6 +63,7 @@ import {
   logoutSession,
   getSessionQR,
   getSessionStatus,
+  pairPhone,
   type SessionStats,
 } from "@/lib/api/sessions"
 
@@ -49,6 +76,8 @@ interface SessionDashboardProps {
   pushName?: string
   profilePicture?: string
   stats?: SessionStats
+  apiKey?: string
+  createdAt?: string
 }
 
 export function SessionDashboard({ 
@@ -58,6 +87,8 @@ export function SessionDashboard({
   pushName: initialPushName,
   profilePicture: initialPicture,
   stats: initialStats,
+  apiKey: initialApiKey,
+  createdAt: initialCreatedAt,
 }: SessionDashboardProps) {
   const [status, setStatus] = useState<SessionStatusType>(initialStatus)
   const [phone, setPhone] = useState(initialPhone)
@@ -67,6 +98,15 @@ export function SessionDashboard({
   const [qrCode, setQrCode] = useState<string | null>(null)
   const [loading, setLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  
+  // Dialog states
+  const [showConnectDialog, setShowConnectDialog] = useState(false)
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false)
+  const [connectMethod, setConnectMethod] = useState<'qr' | 'phone'>('qr')
+  const [phoneNumber, setPhoneNumber] = useState('')
+  const [pairingCode, setPairingCode] = useState<string | null>(null)
+  const [copied, setCopied] = useState<string | null>(null)
+  const [showApiKey, setShowApiKey] = useState(false)
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -77,10 +117,16 @@ export function SessionDashboard({
       if (data.pushName) setPushName(data.pushName)
       if (data.profilePicture) setProfilePicture(data.profilePicture)
       if (data.stats) setStats(data.stats)
+      
+      if (newStatus === 'connected' && showConnectDialog) {
+        setShowConnectDialog(false)
+        setPairingCode(null)
+        setQrCode(null)
+      }
     } catch {
       // Ignore errors on status check
     }
-  }, [sessionId])
+  }, [sessionId, showConnectDialog])
 
   const fetchQR = useCallback(async () => {
     try {
@@ -98,85 +144,171 @@ export function SessionDashboard({
   }, [sessionId, fetchStatus])
 
   useEffect(() => {
-    if (status === 'connecting') {
+    if (status === 'connecting' && showConnectDialog && connectMethod === 'qr') {
       fetchQR()
       const interval = setInterval(fetchQR, 2000)
       return () => clearInterval(interval)
-    } else if (status === 'disconnected') {
-      setQrCode(null)
     }
-  }, [status, fetchQR])
+  }, [status, showConnectDialog, connectMethod, fetchQR])
 
   useEffect(() => {
-    if (status === 'connected') {
-      fetchStatus()
+    if (status === 'connecting') {
+      const interval = setInterval(fetchStatus, 3000)
+      return () => clearInterval(interval)
+    } else if (status === 'connected') {
       const interval = setInterval(fetchStatus, 30000)
       return () => clearInterval(interval)
     }
   }, [status, fetchStatus])
 
-  const handleAction = async (action: 'connect' | 'disconnect' | 'restart' | 'logout') => {
-    setLoading(action)
+  // Auto open dialog if connecting on page load
+  useEffect(() => {
+    if (initialStatus === 'connecting') {
+      setShowConnectDialog(true)
+    }
+  }, [initialStatus])
+
+  const handleConnect = async () => {
+    setLoading('connect')
     setError(null)
     try {
-      switch (action) {
-        case 'connect':
-          await connectSession(sessionId)
-          setStatus('connecting')
-          break
-        case 'disconnect':
-          await disconnectSession(sessionId)
-          setStatus('disconnected')
-          setQrCode(null)
-          break
-        case 'restart':
-          await restartSession(sessionId)
-          setStatus('connecting')
-          break
-        case 'logout':
-          await logoutSession(sessionId)
-          setStatus('disconnected')
-          setQrCode(null)
-          setPhone(undefined)
-          setPushName(undefined)
-          setProfilePicture(undefined)
-          setStats(undefined)
-          break
-      }
+      await connectSession(sessionId)
+      setStatus('connecting')
+      setShowConnectDialog(true)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro na operacao')
+      setError(err instanceof Error ? err.message : 'Erro ao conectar')
     } finally {
       setLoading(null)
     }
   }
 
-  const StatusIcon = () => {
-    switch (status) {
-      case 'connected':
-        return <Wifi className="size-5 text-green-500" />
-      case 'connecting':
-        return <Loader2 className="size-5 text-yellow-500 animate-spin" />
-      default:
-        return <WifiOff className="size-5 text-red-500" />
+  const handlePairPhone = async () => {
+    if (!phoneNumber.trim()) return
+    setLoading('pair')
+    setError(null)
+    try {
+      if (status !== 'connecting') {
+        await connectSession(sessionId)
+        setStatus('connecting')
+      }
+      
+      const cleanPhone = phoneNumber.replace(/\D/g, '')
+      const result = await pairPhone(sessionId, cleanPhone)
+      setPairingCode(result.code)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao gerar código')
+    } finally {
+      setLoading(null)
     }
   }
 
-  const statusText = {
-    connected: 'Conectado',
-    connecting: 'Conectando...',
-    disconnected: 'Desconectado',
+  const handleDisconnect = async () => {
+    setLoading('disconnect')
+    setError(null)
+    try {
+      await disconnectSession(sessionId)
+      setStatus('disconnected')
+      setQrCode(null)
+      setShowConnectDialog(false)
+      setPairingCode(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao desconectar')
+    } finally {
+      setLoading(null)
+    }
   }
 
-  const statusColor = {
-    connected: 'text-green-500',
-    connecting: 'text-yellow-500',
-    disconnected: 'text-red-500',
+  const handleRestart = async () => {
+    setLoading('restart')
+    setError(null)
+    try {
+      await restartSession(sessionId)
+      setStatus('connecting')
+      setShowConnectDialog(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao reiniciar')
+    } finally {
+      setLoading(null)
+    }
   }
+
+  const handleLogout = async () => {
+    setLoading('logout')
+    setError(null)
+    try {
+      await logoutSession(sessionId)
+      setStatus('disconnected')
+      setQrCode(null)
+      setPhone(undefined)
+      setPushName(undefined)
+      setProfilePicture(undefined)
+      setStats(undefined)
+      setShowLogoutDialog(false)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao fazer logout')
+    } finally {
+      setLoading(null)
+    }
+  }
+
+  const copyToClipboard = (text: string, key: string) => {
+    navigator.clipboard.writeText(text)
+    setCopied(key)
+    setTimeout(() => setCopied(null), 2000)
+  }
+
+  const closeConnectDialog = () => {
+    if (status === 'connecting') {
+      handleDisconnect()
+    } else {
+      setShowConnectDialog(false)
+      setPairingCode(null)
+      setQrCode(null)
+    }
+  }
+
+  const statusConfig = {
+    connected: { 
+      icon: Wifi, 
+      text: 'Conectado', 
+      color: 'text-green-500',
+      bg: 'bg-green-500/10',
+      badge: 'bg-green-500'
+    },
+    connecting: { 
+      icon: Loader2, 
+      text: 'Conectando...', 
+      color: 'text-yellow-500',
+      bg: 'bg-yellow-500/10',
+      badge: 'bg-yellow-500'
+    },
+    disconnected: { 
+      icon: WifiOff, 
+      text: 'Desconectado', 
+      color: 'text-red-500',
+      bg: 'bg-red-500/10',
+      badge: 'bg-red-500'
+    },
+  }
+
+  const currentStatus = statusConfig[status]
+  const StatusIcon = currentStatus.icon
 
   const formatPhone = (p?: string) => {
     if (!p) return null
     if (p.startsWith('+')) return p
     return `+${p}`
+  }
+
+  const formatDate = (date?: string) => {
+    if (!date) return '-'
+    return new Date(date).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
   }
 
   return (
@@ -201,31 +333,118 @@ export function SessionDashboard({
 
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
         {error && (
-          <div className="bg-destructive/10 text-destructive px-4 py-2 rounded-lg text-sm">
-            {error}
+          <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-lg text-sm flex items-center justify-between">
+            <span>{error}</span>
+            <button onClick={() => setError(null)} className="hover:bg-destructive/20 rounded p-1">
+              <X className="size-4" />
+            </button>
           </div>
         )}
 
-        {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Status</CardTitle>
-              <StatusIcon />
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${statusColor[status]}`}>
-                {statusText[status]}
+        {/* Session Overview Card */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row gap-6">
+              {/* Avatar e Status */}
+              <div className="flex flex-col items-center gap-3">
+                <div className="relative">
+                  <Avatar className="size-24 border-4 border-background shadow-lg">
+                    <AvatarImage src={profilePicture} />
+                    <AvatarFallback className="text-2xl bg-primary/10">
+                      {pushName?.[0]?.toUpperCase() || sessionId[0]?.toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span 
+                    className={`absolute bottom-1 right-1 size-5 rounded-full border-2 border-background ${currentStatus.badge}`}
+                    title={currentStatus.text}
+                  />
+                </div>
+                <Badge variant="outline" className={`${currentStatus.color} ${currentStatus.bg}`}>
+                  <StatusIcon className={`size-3 mr-1 ${status === 'connecting' ? 'animate-spin' : ''}`} />
+                  {currentStatus.text}
+                </Badge>
               </div>
-              {formatPhone(phone) && (
-                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                  <Phone className="size-3" />
-                  {formatPhone(phone)}
-                </p>
-              )}
-            </CardContent>
-          </Card>
 
+              {/* Info */}
+              <div className="flex-1 space-y-4">
+                <div>
+                  <h1 className="text-2xl font-bold">{pushName || sessionId}</h1>
+                  {formatPhone(phone) && (
+                    <p className="text-muted-foreground flex items-center gap-1 mt-1">
+                      <Phone className="size-4" />
+                      {formatPhone(phone)}
+                    </p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Key className="size-4" />
+                    <span>API Key:</span>
+                    <code className="bg-muted px-2 py-0.5 rounded text-xs font-mono flex-1 truncate">
+                      {showApiKey ? (initialApiKey || '••••••••') : '••••••••••••••••'}
+                    </code>
+                    <button onClick={() => setShowApiKey(!showApiKey)} className="hover:text-foreground">
+                      {showApiKey ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
+                    <button 
+                      onClick={() => copyToClipboard(initialApiKey || '', 'apiKey')} 
+                      className="hover:text-foreground"
+                    >
+                      {copied === 'apiKey' ? <Check className="size-4 text-green-500" /> : <Copy className="size-4" />}
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Calendar className="size-4" />
+                    <span>Criado em:</span>
+                    <span className="text-foreground">{formatDate(initialCreatedAt)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-col gap-2 min-w-[160px]">
+                {status === 'disconnected' && (
+                  <Button onClick={handleConnect} disabled={loading !== null} className="gap-2">
+                    {loading === 'connect' ? <Loader2 className="size-4 animate-spin" /> : <Power className="size-4" />}
+                    Conectar
+                  </Button>
+                )}
+                {status === 'connecting' && (
+                  <>
+                    <Button onClick={() => setShowConnectDialog(true)} className="gap-2">
+                      <QrCode className="size-4" />
+                      Ver QR Code
+                    </Button>
+                    <Button variant="outline" onClick={handleDisconnect} disabled={loading !== null} className="gap-2">
+                      {loading === 'disconnect' ? <Loader2 className="size-4 animate-spin" /> : <X className="size-4" />}
+                      Cancelar
+                    </Button>
+                  </>
+                )}
+                {status === 'connected' && (
+                  <>
+                    <Button variant="outline" onClick={handleRestart} disabled={loading !== null} className="gap-2">
+                      {loading === 'restart' ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+                      Reiniciar
+                    </Button>
+                    <Button variant="outline" onClick={handleDisconnect} disabled={loading !== null} className="gap-2">
+                      {loading === 'disconnect' ? <Loader2 className="size-4 animate-spin" /> : <PowerOff className="size-4" />}
+                      Desconectar
+                    </Button>
+                    <Button variant="destructive" onClick={() => setShowLogoutDialog(true)} disabled={loading !== null} className="gap-2">
+                      <LogOut className="size-4" />
+                      Logout
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Stats Cards */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Link href={`/sessions/${sessionId}/chats`}>
             <Card className="hover:bg-muted/50 transition-colors cursor-pointer h-full">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -233,9 +452,9 @@ export function SessionDashboard({
                 <MessageSquare className="size-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats?.chats ?? '-'}</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {stats?.messages ? `${stats.messages} mensagens` : 'Chats ativos'}
+                <div className="text-2xl font-bold">{stats?.chats ?? 0}</div>
+                <p className="text-xs text-muted-foreground">
+                  {stats?.messages ? `${stats.messages.toLocaleString()} mensagens` : 'Chats ativos'}
                 </p>
               </CardContent>
             </Card>
@@ -248,10 +467,8 @@ export function SessionDashboard({
                 <Users className="size-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats?.contacts ?? '-'}</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Total de contatos
-                </p>
+                <div className="text-2xl font-bold">{stats?.contacts ?? 0}</div>
+                <p className="text-xs text-muted-foreground">Total salvos</p>
               </CardContent>
             </Card>
           </Link>
@@ -263,187 +480,188 @@ export function SessionDashboard({
                 <UsersRound className="size-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats?.groups ?? '-'}</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Grupos ativos
-                </p>
+                <div className="text-2xl font-bold">{stats?.groups ?? 0}</div>
+                <p className="text-xs text-muted-foreground">Participando</p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href={`/sessions/${sessionId}/integrations/webhooks`}>
+            <Card className="hover:bg-muted/50 transition-colors cursor-pointer h-full">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Webhooks</CardTitle>
+                <Webhook className="size-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold flex items-center gap-2">
+                  <Settings className="size-5" />
+                </div>
+                <p className="text-xs text-muted-foreground">Configurar eventos</p>
               </CardContent>
             </Card>
           </Link>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          {/* QR Code / Connected State */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                {status === 'connected' ? (
-                  <User className="size-5" />
-                ) : (
-                  <QrCode className="size-5" />
-                )}
-                {status === 'connected' ? 'Perfil' : 'QR Code'}
-              </CardTitle>
-              <CardDescription>
-                {status === 'connected' 
-                  ? 'Informacoes do WhatsApp conectado'
-                  : status === 'connecting'
-                  ? 'Escaneie o QR Code com seu WhatsApp'
-                  : 'Clique em Conectar para gerar o QR Code'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex items-center justify-center min-h-[280px]">
-              {status === 'connected' ? (
-                <div className="text-center space-y-4">
-                  <Avatar className="size-24 mx-auto">
-                    <AvatarImage src={profilePicture} />
-                    <AvatarFallback className="text-2xl">
-                      {pushName?.[0]?.toUpperCase() || <User className="size-10" />}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="text-xl font-semibold">{pushName || 'Sem nome'}</p>
-                    {formatPhone(phone) && (
-                      <p className="text-muted-foreground">{formatPhone(phone)}</p>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-center gap-2 text-green-500">
-                    <Wifi className="size-4" />
-                    <span className="text-sm">Conectado</span>
-                  </div>
-                </div>
-              ) : status === 'connecting' && qrCode ? (
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                  <img 
-                    src={qrCode.startsWith('data:') ? qrCode : `data:image/png;base64,${qrCode}`}
-                    alt="QR Code"
-                    className="size-56"
-                  />
-                </div>
-              ) : status === 'connecting' ? (
-                <div className="text-center text-muted-foreground">
-                  <Loader2 className="size-12 mx-auto mb-3 animate-spin" />
-                  <p>Gerando QR Code...</p>
-                  <p className="text-xs mt-1">Aguarde alguns segundos</p>
-                </div>
-              ) : (
-                <div className="text-center text-muted-foreground">
-                  <QrCode className="size-16 mx-auto mb-4 opacity-30" />
-                  <p>Sessao desconectada</p>
-                  <p className="text-xs mt-1">Clique em Conectar para iniciar</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Acoes</CardTitle>
-              <CardDescription>
-                Gerenciar conexao da sessao
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {status === 'disconnected' && (
-                <Button 
-                  className="w-full" 
-                  onClick={() => handleAction('connect')}
-                  disabled={loading !== null}
-                >
-                  {loading === 'connect' ? (
-                    <Loader2 className="size-4 mr-2 animate-spin" />
-                  ) : (
-                    <Power className="size-4 mr-2" />
-                  )}
-                  Conectar
+        {/* Quick Links */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Acesso Rapido</CardTitle>
+            <CardDescription>Links uteis para gerenciar esta sessao</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              <Link href={`/sessions/${sessionId}/settings`}>
+                <Button variant="outline" className="w-full justify-start gap-2">
+                  <Settings className="size-4" />
+                  Configuracoes
                 </Button>
-              )}
-
-              {status === 'connecting' && (
-                <>
-                  <Button variant="outline" className="w-full" disabled>
-                    <Loader2 className="size-4 mr-2 animate-spin" />
-                    Aguardando QR Code...
-                  </Button>
-                  <Button 
-                    variant="destructive"
-                    className="w-full" 
-                    onClick={() => handleAction('disconnect')}
-                    disabled={loading !== null}
-                  >
-                    {loading === 'disconnect' ? (
-                      <Loader2 className="size-4 mr-2 animate-spin" />
-                    ) : (
-                      <PowerOff className="size-4 mr-2" />
-                    )}
-                    Cancelar
-                  </Button>
-                </>
-              )}
-
-              {status === 'connected' && (
-                <>
-                  <Button 
-                    variant="outline"
-                    className="w-full" 
-                    onClick={() => handleAction('restart')}
-                    disabled={loading !== null}
-                  >
-                    {loading === 'restart' ? (
-                      <Loader2 className="size-4 mr-2 animate-spin" />
-                    ) : (
-                      <RefreshCw className="size-4 mr-2" />
-                    )}
-                    Reiniciar Conexao
-                  </Button>
-
-                  <Button 
-                    variant="outline"
-                    className="w-full" 
-                    onClick={() => handleAction('disconnect')}
-                    disabled={loading !== null}
-                  >
-                    {loading === 'disconnect' ? (
-                      <Loader2 className="size-4 mr-2 animate-spin" />
-                    ) : (
-                      <PowerOff className="size-4 mr-2" />
-                    )}
-                    Desconectar (manter credenciais)
-                  </Button>
-
-                  <Button 
-                    variant="destructive"
-                    className="w-full" 
-                    onClick={() => {
-                      if (confirm('Isso vai deslogar e exigir novo QR Code. Continuar?')) {
-                        handleAction('logout')
-                      }
-                    }}
-                    disabled={loading !== null}
-                  >
-                    {loading === 'logout' ? (
-                      <Loader2 className="size-4 mr-2 animate-spin" />
-                    ) : (
-                      <LogOut className="size-4 mr-2" />
-                    )}
-                    Logout (novo QR necessario)
-                  </Button>
-                </>
-              )}
-
-              <div className="pt-2 border-t">
-                <p className="text-xs text-muted-foreground">
-                  <strong>Desconectar:</strong> Mantem credenciais, reconecta automaticamente.
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  <strong>Logout:</strong> Remove credenciais, precisa escanear QR novamente.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </Link>
+              <Link href={`/sessions/${sessionId}/integrations/webhooks`}>
+                <Button variant="outline" className="w-full justify-start gap-2">
+                  <Webhook className="size-4" />
+                  Webhooks
+                </Button>
+              </Link>
+              <Link href={`/sessions/${sessionId}/integrations/chatwoot`}>
+                <Button variant="outline" className="w-full justify-start gap-2">
+                  <ExternalLink className="size-4" />
+                  Chatwoot
+                </Button>
+              </Link>
+              <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/swagger/index.html`} target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" className="w-full justify-start gap-2">
+                  <ExternalLink className="size-4" />
+                  API Docs
+                </Button>
+              </a>
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Connect Dialog */}
+      <Dialog open={showConnectDialog} onOpenChange={closeConnectDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Conectar WhatsApp</DialogTitle>
+            <DialogDescription>
+              Escolha como deseja conectar
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Tabs value={connectMethod} onValueChange={(v) => setConnectMethod(v as 'qr' | 'phone')}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="qr" className="gap-2">
+                <QrCode className="size-4" />
+                QR Code
+              </TabsTrigger>
+              <TabsTrigger value="phone" className="gap-2">
+                <Smartphone className="size-4" />
+                Codigo
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="qr" className="mt-4">
+              <div className="flex flex-col items-center gap-4">
+                {qrCode ? (
+                  <>
+                    <div className="bg-white p-3 rounded-lg shadow-sm">
+                      <img 
+                        src={qrCode.startsWith('data:') ? qrCode : `data:image/png;base64,${qrCode}`}
+                        alt="QR Code"
+                        className="size-56"
+                      />
+                    </div>
+                    <p className="text-sm text-muted-foreground text-center">
+                      Abra o WhatsApp → Aparelhos conectados → Escanear
+                    </p>
+                  </>
+                ) : (
+                  <div className="py-12 text-center">
+                    <Loader2 className="size-10 mx-auto mb-3 animate-spin text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">Gerando QR Code...</p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="phone" className="mt-4">
+              <div className="space-y-4">
+                {!pairingCode ? (
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Numero com DDI</label>
+                      <Input
+                        placeholder="5511999999999"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                        onKeyDown={(e) => e.key === 'Enter' && handlePairPhone()}
+                      />
+                    </div>
+                    <Button 
+                      className="w-full" 
+                      onClick={handlePairPhone}
+                      disabled={loading === 'pair' || !phoneNumber.trim()}
+                    >
+                      {loading === 'pair' ? (
+                        <Loader2 className="size-4 mr-2 animate-spin" />
+                      ) : (
+                        <Phone className="size-4 mr-2" />
+                      )}
+                      Gerar Codigo
+                    </Button>
+                  </>
+                ) : (
+                  <div className="text-center space-y-4">
+                    <p className="text-sm text-muted-foreground">Digite no WhatsApp:</p>
+                    <div className="flex items-center justify-center gap-2">
+                      <code className="text-3xl font-mono font-bold tracking-widest bg-muted px-4 py-3 rounded-lg">
+                        {pairingCode}
+                      </code>
+                      <Button variant="ghost" size="icon" onClick={() => copyToClipboard(pairingCode, 'code')}>
+                        {copied === 'code' ? <Check className="size-4 text-green-500" /> : <Copy className="size-4" />}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Aparelhos conectados → Conectar → Numero de telefone
+                    </p>
+                    <Button variant="outline" onClick={() => setPairingCode(null)} size="sm">
+                      Gerar novo
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          <div className="flex justify-end pt-2 border-t">
+            <Button variant="ghost" onClick={closeConnectDialog}>
+              Cancelar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Logout Dialog */}
+      <Dialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Fazer Logout?</DialogTitle>
+            <DialogDescription>
+              Voce precisara escanear o QR Code novamente para reconectar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="ghost" onClick={() => setShowLogoutDialog(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleLogout} disabled={loading === 'logout'}>
+              {loading === 'logout' && <Loader2 className="size-4 mr-2 animate-spin" />}
+              Logout
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

@@ -123,12 +123,12 @@ export default function SessionsPage() {
     if (!newSessionName.trim()) return
     setCreating(true)
     try {
-      await createSession(newSessionName.trim())
+      const session = await createSession(newSessionName.trim())
       setShowNewDialog(false)
-      fetchSessions()
+      // Redireciona para a pagina da sessao para escanear o QR
+      router.push(`/sessions/${session.session}`)
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Erro ao criar sessão')
-    } finally {
       setCreating(false)
     }
   }
@@ -188,6 +188,7 @@ export default function SessionsPage() {
               onDisconnect={handleDisconnect}
               onDelete={handleDelete}
               onSessionClick={handleSessionClick}
+              onCreateSession={handleNewSession}
               emptyMessage={
                 statusFilter !== 'all'
                   ? `Nenhuma sessao ${statusFilter === 'connected' ? 'conectada' : statusFilter === 'disconnected' ? 'desconectada' : 'conectando'}`
@@ -201,21 +202,33 @@ export default function SessionsPage() {
       </main>
 
       <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Nova Sessão</DialogTitle>
             <DialogDescription>
-              Digite um nome para identificar a sessão WhatsApp
+              Escolha um nome para identificar esta conexão
             </DialogDescription>
           </DialogHeader>
-          <Input
-            placeholder="Ex: vendas, suporte, marketing"
-            value={newSessionName}
-            onChange={(e) => setNewSessionName(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleCreateSession()}
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowNewDialog(false)}>
+          <div className="space-y-3">
+            <Input
+              placeholder="Ex: Vendas, Suporte, Marketing"
+              value={newSessionName}
+              onChange={(e) => {
+                const value = e.target.value.replace(/[^a-zA-Z0-9-]/g, '')
+                setNewSessionName(value)
+              }}
+              onKeyDown={(e) => e.key === 'Enter' && !creating && newSessionName.trim() && handleCreateSession()}
+              autoFocus
+              className="text-base"
+            />
+            {newSessionName && !/^[a-zA-Z0-9-]+$/.test(newSessionName) && (
+              <p className="text-xs text-destructive">
+                Use apenas letras, números e hífens
+              </p>
+            )}
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="ghost" onClick={() => setShowNewDialog(false)} disabled={creating}>
               Cancelar
             </Button>
             <Button onClick={handleCreateSession} disabled={creating || !newSessionName.trim()}>

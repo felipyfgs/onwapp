@@ -17,8 +17,8 @@ export interface Session {
   pushName?: string
   profilePicture?: string
   stats?: SessionStats
-  createdAt: string
-  updatedAt: string
+  createdAt?: string
+  updatedAt?: string
 }
 
 export type StatusFilter = 'all' | SessionStatus

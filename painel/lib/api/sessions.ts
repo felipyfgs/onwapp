@@ -66,10 +66,10 @@ export async function getSessions(): Promise<Session[]> {
   return data || []
 }
 
-export async function createSession(name: string): Promise<Session> {
+export async function createSession(session: string): Promise<Session> {
   return apiRequest<Session>('/sessions', {
     method: 'POST',
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ session }),
   })
 }
 
@@ -108,4 +108,11 @@ export async function getSessionProfile(sessionId: string): Promise<{
   profilePicture?: string
 }> {
   return apiRequest(`/${sessionId}/profile`)
+}
+
+export async function pairPhone(sessionId: string, phone: string): Promise<{ code: string }> {
+  return apiRequest(`/${sessionId}/pairphone`, {
+    method: 'POST',
+    body: JSON.stringify({ phone }),
+  })
 }

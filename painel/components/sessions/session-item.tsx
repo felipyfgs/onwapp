@@ -104,7 +104,7 @@ export function SessionItem({ session, isLast, onConnect, onDisconnect, onDelete
         )}
 
         <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-      </Link>
+      </ContentWrapper>
 
       <div className="flex items-center gap-1 shrink-0">
         {session.status === 'disconnected' ? (
@@ -112,7 +112,7 @@ export function SessionItem({ session, isLast, onConnect, onDisconnect, onDelete
             variant="ghost"
             size="icon"
             className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
-            onClick={() => onConnect?.(session.session)}
+            onClick={() => onConnect?.(session.id)}
             title="Conectar"
           >
             <Power className="h-4 w-4" />
@@ -122,7 +122,7 @@ export function SessionItem({ session, isLast, onConnect, onDisconnect, onDelete
             variant="ghost"
             size="icon"
             className="h-8 w-8 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-            onClick={() => onDisconnect?.(session.session)}
+            onClick={() => onDisconnect?.(session.id)}
             title="Desconectar"
           >
             <PowerOff className="h-4 w-4" />
@@ -132,7 +132,7 @@ export function SessionItem({ session, isLast, onConnect, onDisconnect, onDelete
           variant="ghost"
           size="icon"
           className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-          onClick={() => onDelete?.(session.session)}
+          onClick={() => onDelete?.(session.id)}
           title="Excluir"
         >
           <Trash2 className="h-4 w-4" />
