@@ -68,35 +68,10 @@ function SidebarProvider({
 }) {
   const isMobile = useIsMobile()
   const [openMobile, setOpenMobile] = React.useState(false)
-  const [isHydrated, setIsHydrated] = React.useState(false)
-
-  // Read cookie value (only on client)
-  const getCookieValue = () => {
-    if (typeof document === "undefined") return null
-    const cookie = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith(`${SIDEBAR_COOKIE_NAME}=`))
-    if (cookie) {
-      return cookie.split("=")[1] === "true"
-    }
-    return null
-  }
 
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.
   const [_open, _setOpen] = React.useState(defaultOpen)
-
-  // Sync with cookie after hydration to avoid hydration mismatch
-  React.useLayoutEffect(() => {
-    const cookieValue = getCookieValue()
-    if (cookieValue !== null) {
-      _setOpen(cookieValue)
-    }
-    // Small delay to allow the state to update before enabling transitions
-    requestAnimationFrame(() => {
-      setIsHydrated(true)
-    })
-  }, [])
   const open = openProp ?? _open
   const setOpen = React.useCallback(
     (value: boolean | ((value: boolean) => boolean)) => {
@@ -165,7 +140,6 @@ function SidebarProvider({
           }
           className={cn(
             "group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full",
-            !isHydrated && "[&_*]:!transition-none",
             className
           )}
           {...props}
