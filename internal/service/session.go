@@ -9,16 +9,29 @@ import (
 	"github.com/mdp/qrterminal/v3"
 	"github.com/rs/zerolog"
 	"go.mau.fi/whatsmeow"
+	"go.mau.fi/whatsmeow/proto/waCompanionReg"
 	"go.mau.fi/whatsmeow/store"
 	"go.mau.fi/whatsmeow/store/sqlstore"
 	"go.mau.fi/whatsmeow/types"
 	waLog "go.mau.fi/whatsmeow/util/log"
+	"google.golang.org/protobuf/proto"
 
 	"onwapp/internal/db"
 	"onwapp/internal/logger"
 	"onwapp/internal/model"
 	"onwapp/internal/service/event"
 )
+
+func init() {
+	// Device name shown in WhatsApp linked devices
+	deviceName := os.Getenv("DEVICE_NAME")
+	if deviceName == "" {
+		deviceName = "OnWApp"
+	}
+	store.DeviceProps.Os = proto.String(deviceName)
+	store.DeviceProps.PlatformType = waCompanionReg.DeviceProps_CHROME.Enum()
+	store.DeviceProps.RequireFullSync = proto.Bool(false)
+}
 
 // EventHandler is a function that handles WhatsApp events
 type EventHandler func(session *model.Session, evt interface{})
