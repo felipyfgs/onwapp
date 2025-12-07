@@ -236,7 +236,11 @@ export default function ChatwootPage({
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-semibold">Chatwoot</h1>
           <div className="flex items-center gap-2">
-            <Button size="sm" onClick={handleSave} disabled={saving}>
+            <Button 
+              size="sm" 
+              onClick={handleSave} 
+              disabled={saving || (formData.enabled && (!formData.url || !formData.token || !formData.account))}
+            >
               {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
               <span className="ml-1.5">Salvar</span>
             </Button>

@@ -121,7 +121,7 @@ export function ProfileCard({
             <div className="size-8 rounded-full bg-muted flex items-center justify-center">
               <User className="size-4 text-muted-foreground" />
             </div>
-            <span className="text-sm">Nome</span>
+            <span className="text-sm">Nome<span className="text-destructive ml-0.5">*</span></span>
           </div>
           {editingName ? (
             <div className="flex gap-1.5">

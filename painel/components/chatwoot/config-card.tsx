@@ -17,6 +17,10 @@ interface ConfigCardProps {
   onInboxIdChange: (inboxId: number) => void
 }
 
+function RequiredMark() {
+  return <span className="text-destructive ml-0.5">*</span>
+}
+
 export function ConfigCard({
   enabled,
   url,
@@ -42,32 +46,41 @@ export function ConfigCard({
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">URL</label>
+          <label className="text-sm font-medium">
+            URL{enabled && <RequiredMark />}
+          </label>
           <Input
             placeholder="https://app.chatwoot.com"
             value={url}
             onChange={(e) => onUrlChange(e.target.value)}
+            required={enabled}
           />
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">API Token</label>
+          <label className="text-sm font-medium">
+            API Token{enabled && <RequiredMark />}
+          </label>
           <Input
             type="password"
             placeholder="Token de acesso"
             value={token}
             onChange={(e) => onTokenChange(e.target.value)}
+            required={enabled}
           />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Account ID</label>
+            <label className="text-sm font-medium">
+              Account ID{enabled && <RequiredMark />}
+            </label>
             <Input
               type="number"
               placeholder="1"
               value={account || ""}
               onChange={(e) => onAccountChange(parseInt(e.target.value) || 0)}
+              required={enabled}
             />
           </div>
           <div className="space-y-2">

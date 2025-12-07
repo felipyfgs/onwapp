@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, use } from "react"
-import { Loader2, Users, User, Search, Phone, Building2 } from "lucide-react"
+import { Users, User, Search, Phone, Building2 } from "lucide-react"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -13,6 +13,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Input } from "@/components/ui/input"
+import { ContactsSkeleton } from "@/components/contacts"
 import { getContacts, type Contact } from "@/lib/api/contacts"
 
 export default function ContactsPage({
@@ -65,29 +66,42 @@ export default function ContactsPage({
     return jidParts[0]
   }
 
+  const headerContent = (
+    <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+      <div className="flex items-center gap-2 px-4">
+        <SidebarTrigger className="-ml-1" />
+        <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem className="hidden md:block">
+              <BreadcrumbLink href="/sessions">Sessoes</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator className="hidden md:block" />
+            <BreadcrumbItem className="hidden md:block">
+              <BreadcrumbLink href={`/sessions/${sessionId}`}>{sessionId}</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator className="hidden md:block" />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Contatos</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
+    </header>
+  )
+
+  if (loading) {
+    return (
+      <>
+        {headerContent}
+        <ContactsSkeleton />
+      </>
+    )
+  }
+
   return (
     <>
-      <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-        <div className="flex items-center gap-2 px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href="/sessions">Sessoes</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator className="hidden md:block" />
-              <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href={`/sessions/${sessionId}`}>{sessionId}</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator className="hidden md:block" />
-              <BreadcrumbItem>
-                <BreadcrumbPage>Contatos</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </div>
-      </header>
+      {headerContent}
 
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
         <div className="flex items-center justify-between">
@@ -118,11 +132,7 @@ export default function ContactsPage({
           </div>
         )}
 
-        {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="size-8 animate-spin" />
-          </div>
-        ) : filteredContacts.length === 0 ? (
+        {filteredContacts.length === 0 && !loading ? (
           <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
             <Users className="size-12 mb-4" />
             <p>{search ? 'Nenhum contato encontrado' : 'Nenhum contato'}</p>
