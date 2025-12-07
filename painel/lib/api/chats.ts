@@ -178,10 +178,11 @@ export async function sendAudioMessage(
   sessionId: string,
   phone: string,
   audio: string,
-  ptt?: boolean
+  ptt?: boolean,
+  mimeType?: string
 ): Promise<SendMessageResponse> {
   return apiRequest<SendMessageResponse>(`/${sessionId}/message/send/audio`, {
     method: 'POST',
-    body: JSON.stringify({ phone, audio, ptt }),
+    body: JSON.stringify({ phone, audio, ptt, mimetype: mimeType }),
   })
 }

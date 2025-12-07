@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { ChatMessageItem } from "./chat-message-item"
 import { ChatInput } from "./chat-input"
-import { getChatMessages, sendTextMessage, markChatRead, type Chat, type ChatMessage } from "@/lib/api/chats"
+import { getChatMessages, sendTextMessage, sendAudioMessage, markChatRead, type Chat, type ChatMessage } from "@/lib/api/chats"
 import { cn } from "@/lib/utils"
 
 const PAGE_SIZE = 50
@@ -304,9 +304,38 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
       <ChatInput
         onSendMessage={handleSendMessage}
         onSendAudio={async (blob) => {
-          // TODO: Implement audio sending when API is ready
-          console.log('Audio blob:', blob)
-          alert('Envio de audio sera implementado em breve!')
+          try {
+            setSending(true)
+            console.log('Enviando audio:', blob.type, blob.size, 'bytes')
+            
+            // Convert blob to base64
+            const reader = new FileReader()
+            const base64Promise = new Promise<string>((resolve, reject) => {
+              reader.onload = () => {
+                const result = reader.result as string
+                // Remove data URL prefix (data:audio/webm;base64,)
+                const base64 = result.split(',')[1]
+                resolve(base64)
+              }
+              reader.onerror = reject
+            })
+            reader.readAsDataURL(blob)
+            const audioBase64 = await base64Promise
+            
+            console.log('Base64 length:', audioBase64.length)
+            
+            // Send as PTT (Push to Talk / voice note)
+            const result = await sendAudioMessage(sessionId, phone, audioBase64, true, blob.type)
+            console.log('Audio enviado:', result)
+            
+            // Reload messages to show the sent audio
+            await loadMessages()
+          } catch (err) {
+            console.error('Erro ao enviar audio:', err)
+            setError(err instanceof Error ? err.message : 'Erro ao enviar audio')
+          } finally {
+            setSending(false)
+          }
         }}
         onSendFile={async (type, file) => {
           // TODO: Implement file sending when API is ready

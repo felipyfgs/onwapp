@@ -197,6 +197,17 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 		mimeType = "audio/ogg; codecs=opus"
 	}
 
+	// Convert WebM to OGG for WhatsApp compatibility (WhatsApp requires OGG Opus for PTT)
+	if IsWebMFormat(audioData, mimeType) {
+		convertedData, err := ConvertWebMToOgg(audioData)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to convert audio: " + err.Error()})
+			return
+		}
+		audioData = convertedData
+		mimeType = "audio/ogg; codecs=opus"
+	}
+
 	resp, err := h.wpp.SendAudio(c.Request.Context(), sessionId, phone, audioData, mimeType, ptt, nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
