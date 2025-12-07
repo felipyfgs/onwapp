@@ -30,12 +30,34 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Delete existing release if exists
+      - name: Delete existing release and assets if exists
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG=${GITHUB_REF#refs/tags/}
-          gh release delete "$TAG" --yes || true
+          echo "Checking for existing release: $TAG"
+          
+          # Get release info if exists
+          RELEASE_ID=$(gh api repos/${{ github.repository }}/releases/tags/$TAG --jq '.id' 2>/dev/null || echo "")
+          
+          if [ -n "$RELEASE_ID" ]; then
+            echo "Found release ID: $RELEASE_ID, deleting all assets first..."
+            
+            # Delete all assets first
+            gh api repos/${{ github.repository }}/releases/$RELEASE_ID/assets --jq '.[].id' | while read ASSET_ID; do
+              echo "Deleting asset: $ASSET_ID"
+              gh api -X DELETE repos/${{ github.repository }}/releases/assets/$ASSET_ID || true
+            done
+            
+            # Then delete the release
+            echo "Deleting release..."
+            gh release delete "$TAG" --yes || true
+            
+            # Wait a moment for GitHub to process
+            sleep 5
+          else
+            echo "No existing release found for $TAG"
+          fi
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
