@@ -1,3 +1,5 @@
+import { avatarCache, groupAvatarCache, profileCache } from '@/lib/cache'
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
 
 export interface Contact {
@@ -103,17 +105,10 @@ export async function getContactsInfo(
   })
 }
 
-// Avatar cache to avoid repeated requests
-const avatarCache = new Map<string, string | null>()
-
-// Session profile cache (our own avatar)
-const sessionProfileCache = new Map<string, { phone: string; avatar: string | null }>()
-
 // Get our own profile (phone and avatar) for the session
 export async function getMyProfile(sessionId: string): Promise<{ phone: string; avatar: string | null }> {
-  if (sessionProfileCache.has(sessionId)) {
-    return sessionProfileCache.get(sessionId)!
-  }
+  const cached = profileCache.get(sessionId)
+  if (cached) return cached
   
   try {
     const response = await apiRequest<{
@@ -129,11 +124,11 @@ export async function getMyProfile(sessionId: string): Promise<{ phone: string; 
       phone: response.profile?.jid?.split('@')[0] || '',
       avatar: response.profile?.pictureUrl || null
     }
-    sessionProfileCache.set(sessionId, profile)
+    profileCache.set(sessionId, profile)
     return profile
   } catch {
     const fallback = { phone: '', avatar: null }
-    sessionProfileCache.set(sessionId, fallback)
+    profileCache.set(sessionId, fallback)
     return fallback
   }
 }
@@ -143,14 +138,23 @@ export async function getContactAvatar(sessionId: string, phone: string): Promis
   return apiRequest<AvatarResponse>(`/${sessionId}/contact/avatar?${params}`)
 }
 
-// Cached version for UI components
+// Cached version with stale-while-revalidate pattern
 export async function getContactAvatarUrl(sessionId: string, phone: string): Promise<string | null> {
   const cacheKey = `${sessionId}:${phone}`
+  const cached = avatarCache.get(cacheKey)
   
-  if (avatarCache.has(cacheKey)) {
-    return avatarCache.get(cacheKey) || null
+  // Return cached value if exists
+  if (cached !== undefined) {
+    // Revalidate in background if stale
+    if (avatarCache.isStale(cacheKey)) {
+      getContactAvatar(sessionId, phone)
+        .then(res => avatarCache.set(cacheKey, res.url || null))
+        .catch(() => {})
+    }
+    return cached
   }
   
+  // Fetch if no cache
   try {
     const response = await getContactAvatar(sessionId, phone)
     const url = response.url || null
@@ -168,21 +172,30 @@ export async function getGroupAvatar(sessionId: string, groupId: string): Promis
   return apiRequest<AvatarResponse>(`/${sessionId}/group/avatar?${params}`)
 }
 
-// Cached version for UI components
+// Cached version with stale-while-revalidate pattern
 export async function getGroupAvatarUrl(sessionId: string, groupId: string): Promise<string | null> {
-  const cacheKey = `${sessionId}:group:${groupId}`
+  const cacheKey = `${sessionId}:${groupId}`
+  const cached = groupAvatarCache.get(cacheKey)
   
-  if (avatarCache.has(cacheKey)) {
-    return avatarCache.get(cacheKey) || null
+  // Return cached value if exists
+  if (cached !== undefined) {
+    // Revalidate in background if stale
+    if (groupAvatarCache.isStale(cacheKey)) {
+      getGroupAvatar(sessionId, groupId)
+        .then(res => groupAvatarCache.set(cacheKey, res.url || null))
+        .catch(() => {})
+    }
+    return cached
   }
   
+  // Fetch if no cache
   try {
     const response = await getGroupAvatar(sessionId, groupId)
     const url = response.url || null
-    avatarCache.set(cacheKey, url)
+    groupAvatarCache.set(cacheKey, url)
     return url
   } catch {
-    avatarCache.set(cacheKey, null)
+    groupAvatarCache.set(cacheKey, null)
     return null
   }
 }

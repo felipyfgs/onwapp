@@ -5,7 +5,7 @@ import { Users, User, Check, CheckCheck, Clock, Archive, Pin, BellOff, Image, Mi
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { type Chat } from "@/lib/api/chats"
-import { getContactAvatarUrl } from "@/lib/api/contacts"
+import { getChatAvatarUrl } from "@/lib/api/contacts"
 
 interface ChatListItemProps {
   chat: Chat
@@ -46,9 +46,8 @@ export function ChatListItem({ chat, sessionId, selected, onClick }: ChatListIte
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
 
   useEffect(() => {
-    if (sessionId && !chat.isGroup) {
-      const phone = chat.jid.split('@')[0]
-      getContactAvatarUrl(sessionId, phone).then(url => setAvatarUrl(url))
+    if (sessionId) {
+      getChatAvatarUrl(sessionId, chat.jid, chat.isGroup).then(url => setAvatarUrl(url))
     }
   }, [sessionId, chat.jid, chat.isGroup])
 

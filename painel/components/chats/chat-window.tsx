@@ -16,7 +16,7 @@ import { ChatMessageItem } from "./chat-message-item"
 import { ChatInput } from "./chat-input"
 import { MediaPreviewModal, createMediaFiles, type MediaFile } from "./media-preview-modal"
 import { getChatMessages, sendTextMessage, sendAudioMessage, sendImageMessage, sendVideoMessage, sendDocumentMessage, markChatRead, deleteMessage, editMessage, sendReaction, type Chat, type ChatMessage, type QuotedMessage } from "@/lib/api/chats"
-import { getContactAvatarUrl } from "@/lib/api/contacts"
+import { getChatAvatarUrl } from "@/lib/api/contacts"
 import { useRealtime, type NewMessageData, type MessageStatusData } from "@/hooks/use-realtime"
 import { cn } from "@/lib/utils"
 
@@ -64,10 +64,8 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
   })()
 
   useEffect(() => {
-    if (!chat.isGroup) {
-      getContactAvatarUrl(sessionId, phone).then(url => setAvatarUrl(url))
-    }
-  }, [sessionId, phone, chat.isGroup])
+    getChatAvatarUrl(sessionId, chat.jid, chat.isGroup).then(url => setAvatarUrl(url))
+  }, [sessionId, chat.jid, chat.isGroup])
 
   const scrollToBottom = useCallback(() => {
     // With flex-col-reverse, scrollTop 0 is the bottom (most recent messages)
@@ -103,12 +101,12 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
     
     // Mark received message as read immediately (sends blue tick)
     if (!data.fromMe) {
-      markChatRead(sessionId, phone, [data.msgId]).catch(() => {})
+      markChatRead(sessionId, chat.jid, [data.msgId]).catch(() => {})
     }
     
     // Auto-scroll to bottom for new messages
     setTimeout(() => scrollToBottom(), 100)
-  }, [chat.jid, scrollToBottom, sessionId, phone])
+  }, [chat.jid, scrollToBottom, sessionId])
 
   const handleMessageStatus = useCallback((data: MessageStatusData) => {
     if (data.chatJid !== chat.jid) return
@@ -257,9 +255,9 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
       .map(m => m.msgId)
     
     if (receivedMessages.length > 0) {
-      markChatRead(sessionId, phone, receivedMessages).catch(() => {})
+      markChatRead(sessionId, chat.jid, receivedMessages).catch(() => {})
     }
-  }, [sessionId, phone, messages, loading])
+  }, [sessionId, chat.jid, messages, loading])
 
   const handleSendMessage = async (text: string) => {
     setSending(true)
