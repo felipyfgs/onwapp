@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { ENV_SCRIPT_ID } from "./EnvScript"
 import type { RuntimeEnvConfig } from "./config"
+import { setApiConfig } from "@/lib/api/sessions"
 
 const defaultEnvConfig: RuntimeEnvConfig = {
   apiUrl: "http://localhost:3000",
@@ -31,11 +32,21 @@ interface EnvProviderProps {
 }
 
 export function EnvProvider({ children }: EnvProviderProps) {
-  const [envConfig, setEnvConfig] = useState<RuntimeEnvConfig>(defaultEnvConfig)
+  const [envConfig, setEnvConfig] = useState<RuntimeEnvConfig>(() => {
+    // Initialize with runtime config immediately if available
+    const config = getRuntimeEnv()
+    // Also set API config immediately
+    if (!isSSR) {
+      setApiConfig({ apiUrl: config.apiUrl, apiKey: config.apiKey })
+    }
+    return config
+  })
 
   useEffect(() => {
     const config = getRuntimeEnv()
     setEnvConfig(config)
+    // Ensure API config is set
+    setApiConfig({ apiUrl: config.apiUrl, apiKey: config.apiKey })
   }, [])
 
   return <EnvContext.Provider value={envConfig}>{children}</EnvContext.Provider>

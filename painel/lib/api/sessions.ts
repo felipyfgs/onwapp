@@ -25,8 +25,9 @@ export function getApiConfig(): ApiConfig {
   if (globalConfig) {
     return globalConfig
   }
+  // Fallback - should match EnvProvider defaults
   return {
-    apiUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080",
+    apiUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000",
     apiKey: process.env.NEXT_PUBLIC_API_KEY || "",
   }
 }
