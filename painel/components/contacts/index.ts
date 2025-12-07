@@ -1,1 +1,5 @@
 export { ContactsSkeleton } from './contacts-skeleton'
+export { ContactDetailsDialog } from './contact-details-dialog'
+export { CheckPhoneDialog } from './check-phone-dialog'
+export { QRLinkDialog } from './qr-link-dialog'
+export { BlocklistTab } from './blocklist-tab'
