@@ -63,6 +63,7 @@ import {
   logoutSession,
   getSessionQR,
   getSessionStatus,
+  getSessionProfile,
   pairPhone,
   type SessionStats,
 } from "@/lib/api/sessions"
@@ -107,6 +108,11 @@ export function SessionDashboard({
   const [pairingCode, setPairingCode] = useState<string | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
   const [showApiKey, setShowApiKey] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -115,8 +121,20 @@ export function SessionDashboard({
       setStatus(newStatus)
       if (data.phone) setPhone(data.phone)
       if (data.pushName) setPushName(data.pushName)
-      if (data.profilePicture) setProfilePicture(data.profilePicture)
       if (data.stats) setStats(data.stats)
+      
+      // Fetch profile picture from /profile endpoint when connected
+      if (newStatus === 'connected') {
+        try {
+          const profile = await getSessionProfile(sessionId)
+          if (profile.pushName) setPushName(profile.pushName)
+          if ((profile as any).profile?.pictureUrl) {
+            setProfilePicture((profile as any).profile.pictureUrl)
+          }
+        } catch {
+          // Ignore profile fetch errors
+        }
+      }
       
       if (newStatus === 'connected' && showConnectDialog) {
         setShowConnectDialog(false)
@@ -318,6 +336,7 @@ export function SessionDashboard({
 
   const formatDate = (date?: string) => {
     if (!date) return '-'
+    if (!mounted) return '-'
     return new Date(date).toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
@@ -357,103 +376,130 @@ export function SessionDashboard({
           </div>
         )}
 
-        {/* Session Overview Card - Compact */}
-        <Card className="overflow-hidden">
-          <div className="flex flex-col sm:flex-row">
-            {/* Left: Avatar + Status */}
-            <div className={`flex items-center gap-4 p-4 sm:pr-6 ${currentStatus.bg} border-b sm:border-b-0 sm:border-r`}>
-              <div className="relative">
-                <Avatar className="size-14 border-2 border-background shadow">
-                  <AvatarImage src={profilePicture} />
-                  <AvatarFallback className="text-lg font-semibold bg-background">
-                    {pushName?.[0]?.toUpperCase() || sessionId[0]?.toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <span 
-                  className={`absolute -bottom-0.5 -right-0.5 size-4 rounded-full border-2 border-background ${currentStatus.badge}`}
-                />
-              </div>
-              <div className="sm:hidden flex-1">
-                <h1 className="font-semibold">{pushName || sessionId}</h1>
-                <div className={`text-sm flex items-center gap-1 ${currentStatus.color}`}>
-                  <StatusIcon className={`size-3 ${status === 'connecting' ? 'animate-spin' : ''}`} />
-                  {currentStatus.text}
-                </div>
-              </div>
+        {/* Session Profile Card */}
+        <Card className="p-5">
+          {/* Main Row: Avatar + Info + Actions */}
+          <div className="flex items-center gap-4">
+            {/* Avatar */}
+            <div className="relative shrink-0">
+              <Avatar className="size-16 border-2 border-background shadow-md">
+                <AvatarImage src={profilePicture} />
+                <AvatarFallback className="text-xl font-semibold bg-gradient-to-br from-primary/20 to-primary/5">
+                  {pushName?.[0]?.toUpperCase() || sessionId[0]?.toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <span 
+                className={`absolute -bottom-0.5 -right-0.5 size-4 rounded-full border-2 border-background ${currentStatus.badge}`}
+              />
             </div>
 
-            {/* Center: Info */}
-            <div className="flex-1 p-4 space-y-3">
-              <div className="hidden sm:block">
-                <div className="flex items-center gap-2">
-                  <h1 className="text-xl font-semibold">{pushName || sessionId}</h1>
-                  <Badge variant="outline" className={`${currentStatus.color} text-xs`}>
-                    <StatusIcon className={`size-3 mr-1 ${status === 'connecting' ? 'animate-spin' : ''}`} />
-                    {currentStatus.text}
-                  </Badge>
-                </div>
-                {formatPhone(phone) && (
-                  <p className="text-sm text-muted-foreground">{formatPhone(phone)}</p>
-                )}
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-lg font-semibold truncate">{sessionId}</h1>
+                <Badge variant="secondary" className={`${currentStatus.color} shrink-0`}>
+                  <StatusIcon className={`size-3 mr-1 ${status === 'connecting' ? 'animate-spin' : ''}`} />
+                  {currentStatus.text}
+                </Badge>
               </div>
-
-              <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <Key className="size-3.5 text-muted-foreground" />
-                  <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono max-w-[180px] truncate">
+              <p className="text-sm text-muted-foreground">
+                {pushName && pushName !== sessionId ? pushName : ''}{pushName && pushName !== sessionId && formatPhone(phone) ? ' · ' : ''}{formatPhone(phone) || ''}
+              </p>
+              <div className="flex flex-col gap-1 mt-1.5 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1.5">
+                  <Key className="size-3" />
+                  <code className="bg-muted px-1 py-0.5 rounded font-mono">
                     {showApiKey ? (initialApiKey || '-') : '••••••••••••'}
                   </code>
-                  <button onClick={() => setShowApiKey(!showApiKey)} className="text-muted-foreground hover:text-foreground">
-                    {showApiKey ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                  <button onClick={() => setShowApiKey(!showApiKey)} className="hover:text-foreground">
+                    {showApiKey ? <EyeOff className="size-3" /> : <Eye className="size-3" />}
                   </button>
-                  <button onClick={() => copyToClipboard(initialApiKey || '', 'apiKey')} className="text-muted-foreground hover:text-foreground">
-                    {copied === 'apiKey' ? <Check className="size-3.5 text-green-500" /> : <Copy className="size-3.5" />}
+                  <button onClick={() => copyToClipboard(initialApiKey || '', 'apiKey')} className="hover:text-foreground">
+                    {copied === 'apiKey' ? <Check className="size-3 text-green-500" /> : <Copy className="size-3" />}
                   </button>
                 </div>
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <Calendar className="size-3.5" />
-                  <span className="text-xs">{formatDate(initialCreatedAt)}</span>
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="size-3" />
+                  <span>Criado em {formatDate(initialCreatedAt)}</span>
                 </div>
               </div>
             </div>
 
-            {/* Right: Actions */}
-            <div className="flex sm:flex-col gap-2 p-4 pt-0 sm:pt-4 sm:pl-0 border-t sm:border-t-0 sm:border-l bg-muted/30">
+            {/* Actions */}
+            <div className="hidden sm:flex items-center gap-2 shrink-0">
               {status === 'disconnected' && (
-                <Button onClick={handleConnect} disabled={loading !== null} size="sm" className="flex-1 sm:flex-none gap-1.5">
-                  {loading === 'connect' ? <Loader2 className="size-3.5 animate-spin" /> : <Power className="size-3.5" />}
+                <Button onClick={handleConnect} disabled={loading !== null} size="sm" className="gap-1.5">
+                  {loading === 'connect' ? <Loader2 className="size-4 animate-spin" /> : <Power className="size-4" />}
                   Conectar
                 </Button>
               )}
               {status === 'connecting' && (
                 <>
-                  <Button onClick={() => setShowConnectDialog(true)} size="sm" className="flex-1 sm:flex-none gap-1.5">
-                    <QrCode className="size-3.5" />
+                  <Button onClick={() => setShowConnectDialog(true)} size="sm" className="gap-1.5">
+                    <QrCode className="size-4" />
                     QR Code
                   </Button>
-                  <Button variant="ghost" onClick={handleDisconnect} disabled={loading !== null} size="sm" className="gap-1.5">
-                    {loading === 'disconnect' ? <Loader2 className="size-3.5 animate-spin" /> : <X className="size-3.5" />}
+                  <Button variant="outline" onClick={handleDisconnect} disabled={loading !== null} size="sm" className="gap-1.5">
+                    {loading === 'disconnect' ? <Loader2 className="size-4 animate-spin" /> : <X className="size-4" />}
                     Cancelar
                   </Button>
                 </>
               )}
               {status === 'connected' && (
-                <div className="flex sm:flex-col gap-1.5">
-                  <Button variant="ghost" onClick={handleRestart} disabled={loading !== null} size="sm" className="gap-1.5 flex-1">
-                    {loading === 'restart' ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
-                    <span className="hidden sm:inline">Reiniciar</span>
+                <>
+                  <Button variant="outline" onClick={handleRestart} disabled={loading !== null} size="sm" className="gap-1.5">
+                    {loading === 'restart' ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+                    Reiniciar
                   </Button>
-                  <Button variant="ghost" onClick={handleDisconnect} disabled={loading !== null} size="sm" className="gap-1.5 flex-1">
-                    {loading === 'disconnect' ? <Loader2 className="size-3.5 animate-spin" /> : <PowerOff className="size-3.5" />}
-                    <span className="hidden sm:inline">Desconectar</span>
+                  <Button variant="outline" onClick={handleDisconnect} disabled={loading !== null} size="sm" className="gap-1.5">
+                    {loading === 'disconnect' ? <Loader2 className="size-4 animate-spin" /> : <PowerOff className="size-4" />}
+                    Desconectar
                   </Button>
-                  <Button variant="ghost" onClick={() => setShowLogoutDialog(true)} disabled={loading !== null} size="sm" className="gap-1.5 text-destructive hover:text-destructive flex-1">
-                    <LogOut className="size-3.5" />
-                    <span className="hidden sm:inline">Logout</span>
+                  <Button variant="outline" onClick={() => setShowLogoutDialog(true)} disabled={loading !== null} size="sm" className="gap-1.5 text-destructive hover:text-destructive border-destructive/30 hover:border-destructive/50 hover:bg-destructive/10">
+                    <LogOut className="size-4" />
+                    Logout
                   </Button>
-                </div>
+                </>
               )}
             </div>
+          </div>
+
+          {/* Actions - Mobile */}
+          <div className="flex sm:hidden flex-wrap gap-2 mt-4 pt-4 border-t">
+            {status === 'disconnected' && (
+              <Button onClick={handleConnect} disabled={loading !== null} className="flex-1 gap-1.5">
+                {loading === 'connect' ? <Loader2 className="size-4 animate-spin" /> : <Power className="size-4" />}
+                Conectar
+              </Button>
+            )}
+            {status === 'connecting' && (
+              <>
+                <Button onClick={() => setShowConnectDialog(true)} className="flex-1 gap-1.5">
+                  <QrCode className="size-4" />
+                  QR Code
+                </Button>
+                <Button variant="outline" onClick={handleDisconnect} disabled={loading !== null} className="gap-1.5">
+                  {loading === 'disconnect' ? <Loader2 className="size-4 animate-spin" /> : <X className="size-4" />}
+                  Cancelar
+                </Button>
+              </>
+            )}
+            {status === 'connected' && (
+              <>
+                <Button variant="outline" onClick={handleRestart} disabled={loading !== null} size="sm" className="flex-1 gap-1.5">
+                  {loading === 'restart' ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+                  Reiniciar
+                </Button>
+                <Button variant="outline" onClick={handleDisconnect} disabled={loading !== null} size="sm" className="flex-1 gap-1.5">
+                  {loading === 'disconnect' ? <Loader2 className="size-4 animate-spin" /> : <PowerOff className="size-4" />}
+                  Desconectar
+                </Button>
+                <Button variant="outline" onClick={() => setShowLogoutDialog(true)} disabled={loading !== null} size="sm" className="flex-1 gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10">
+                  <LogOut className="size-4" />
+                  Logout
+                </Button>
+              </>
+            )}
           </div>
         </Card>
 

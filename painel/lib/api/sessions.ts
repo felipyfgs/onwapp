@@ -116,3 +116,72 @@ export async function pairPhone(sessionId: string, phone: string): Promise<{ cod
     body: JSON.stringify({ phone }),
   })
 }
+
+// Settings types
+export interface SessionSettings {
+  sessionId: string
+  alwaysOnline: boolean
+  autoRejectCalls: boolean
+  syncHistory: boolean
+  lastSeen: string
+  online: string
+  profilePhoto: string
+  status: string
+  readReceipts: string
+  groupAdd: string
+  callAdd: string
+  defaultDisappearingTimer: string
+}
+
+export interface UpdateSettingsRequest {
+  alwaysOnline?: boolean
+  autoRejectCalls?: boolean
+  syncHistory?: boolean
+  lastSeen?: string
+  online?: string
+  profilePhoto?: string
+  status?: string
+  readReceipts?: string
+  groupAdd?: string
+  callAdd?: string
+  defaultDisappearingTimer?: string
+}
+
+export async function getSessionSettings(sessionId: string): Promise<SessionSettings> {
+  return apiRequest<SessionSettings>(`/${sessionId}/settings`)
+}
+
+export async function updateSessionSettings(sessionId: string, settings: UpdateSettingsRequest): Promise<SessionSettings> {
+  return apiRequest<SessionSettings>(`/${sessionId}/settings`, {
+    method: 'POST',
+    body: JSON.stringify(settings),
+  })
+}
+
+// Profile update functions
+export async function updatePushName(sessionId: string, name: string): Promise<void> {
+  await apiRequest(`/${sessionId}/profile/name`, {
+    method: 'POST',
+    body: JSON.stringify({ name }),
+  })
+}
+
+export async function updateStatus(sessionId: string, status: string): Promise<void> {
+  await apiRequest(`/${sessionId}/profile/status`, {
+    method: 'POST',
+    body: JSON.stringify({ status }),
+  })
+}
+
+export async function updateProfilePicture(sessionId: string, image: string): Promise<{ pictureId: string }> {
+  return apiRequest(`/${sessionId}/profile/picture`, {
+    method: 'POST',
+    body: JSON.stringify({ image }),
+  })
+}
+
+export async function deleteProfilePicture(sessionId: string): Promise<void> {
+  await apiRequest(`/${sessionId}/profile/picture/remove`, {
+    method: 'POST',
+  })
+}
