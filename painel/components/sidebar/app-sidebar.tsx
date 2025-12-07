@@ -31,13 +31,11 @@ import {
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   sessions: SessionItem[]
   currentSessionId: string
-  onAddSession?: () => void
 }
 
 export function AppSidebar({ 
   sessions, 
-  currentSessionId, 
-  onAddSession,
+  currentSessionId,
   ...props 
 }: AppSidebarProps) {
   const navItems = [
@@ -90,7 +88,6 @@ export function AppSidebar({
         <SessionSwitcher
           sessions={sessions}
           currentSessionId={currentSessionId}
-          onAddSession={onAddSession}
         />
       </SidebarHeader>
       <SidebarContent>

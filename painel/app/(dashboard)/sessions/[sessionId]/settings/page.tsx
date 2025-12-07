@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, use } from "react"
-import { Loader2, Settings, Save, User, Shield, Clock } from "lucide-react"
+import { useState, useEffect, use, useCallback } from "react"
+import { Loader2, AlertCircle } from "lucide-react"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -12,21 +12,20 @@ import {
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { getSessionProfile } from "@/lib/api/sessions"
-
-interface SessionSettings {
-  alwaysOnline?: boolean
-  autoRejectCalls?: boolean
-  ephemeralDuration?: number
-}
+import { ProfileCard, PrivacyCard, BehaviorCard } from "@/components/settings"
+import {
+  getSessionProfile,
+  getSessionSettings,
+  updateSessionSettings,
+  type SessionSettings,
+  type UpdateSettingsRequest,
+} from "@/lib/api/sessions"
 
 interface Profile {
   phone?: string
   pushName?: string
   status?: string
+  pictureUrl?: string
 }
 
 export default function SettingsPage({
@@ -36,45 +35,62 @@ export default function SettingsPage({
 }) {
   const { sessionId } = use(params)
   const [profile, setProfile] = useState<Profile>({})
-  const [settings, setSettings] = useState<SessionSettings>({})
+  const [settings, setSettings] = useState<SessionSettings | null>(null)
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
+  const [isConnected, setIsConnected] = useState(false)
 
-  useEffect(() => {
-    async function load() {
+  const loadData = useCallback(async () => {
+    setLoading(true)
+    try {
+      // Load profile
       try {
         const profileData = await getSessionProfile(sessionId)
-        setProfile(profileData)
-      } catch (err) {
-        // Profile pode falhar se sessao desconectada
-      } finally {
-        setLoading(false)
+        const profileObj = (profileData as any).profile || profileData
+        setProfile({
+          phone: profileObj.jid?.split(":")[0] || profileObj.phone,
+          pushName: profileObj.pushName,
+          status: profileObj.status,
+          pictureUrl: profileObj.pictureUrl,
+        })
+        setIsConnected(true)
+      } catch {
+        setIsConnected(false)
       }
+
+      // Load settings
+      try {
+        const settingsData = await getSessionSettings(sessionId)
+        setSettings(settingsData)
+      } catch {
+        // Settings may not exist yet
+      }
+    } finally {
+      setLoading(false)
     }
-    load()
   }, [sessionId])
 
-  const handleSave = async () => {
-    setSaving(true)
-    setError(null)
-    setSuccess(null)
+  useEffect(() => {
+    loadData()
+  }, [loadData])
+
+  const handleSettingsChange = async (updates: UpdateSettingsRequest) => {
+    // Optimistic update
+    setSettings((prev) => prev ? { ...prev, ...updates } : null)
     
+    // Save immediately
     try {
-      // TODO: Implementar save settings quando API estiver pronta
-      setSuccess('Configuracoes salvas!')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao salvar')
-    } finally {
-      setSaving(false)
+      const updatedSettings = await updateSessionSettings(sessionId, updates)
+      setSettings(updatedSettings)
+    } catch {
+      // Revert on error - reload settings
+      loadData()
     }
   }
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <Loader2 className="size-8 animate-spin" />
+        <Loader2 className="size-8 animate-spin text-muted-foreground" />
       </div>
     )
   }
@@ -104,130 +120,41 @@ export default function SettingsPage({
       </header>
 
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Settings className="size-6" />
-            Configuracoes
-          </h1>
-          <p className="text-muted-foreground">
-            Configuracoes da sessao {sessionId}
-          </p>
-        </div>
+        {/* Header */}
+        <h1 className="text-lg font-semibold">Configuracoes</h1>
 
-        {error && (
-          <div className="bg-destructive/10 text-destructive px-4 py-2 rounded-lg text-sm">
-            {error}
+        {/* Alert */}
+        {!isConnected && (
+          <div className="flex items-center gap-2 bg-yellow-500/10 text-yellow-600 dark:text-yellow-500 px-3 py-2 rounded-md text-xs">
+            <AlertCircle className="size-3.5 shrink-0" />
+            <span>Sessao desconectada</span>
           </div>
         )}
 
-        {success && (
-          <div className="bg-green-500/10 text-green-500 px-4 py-2 rounded-lg text-sm">
-            {success}
+        {/* Settings Grid */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          <ProfileCard
+            sessionId={sessionId}
+            phone={profile.phone}
+            pushName={profile.pushName}
+            status={profile.status}
+            pictureUrl={profile.pictureUrl}
+            onUpdate={loadData}
+          />
+
+          <BehaviorCard
+            settings={settings}
+            onChange={handleSettingsChange}
+            disabled={!isConnected}
+          />
+
+          <div className="lg:col-span-2">
+            <PrivacyCard
+              settings={settings}
+              onChange={handleSettingsChange}
+              disabled={!isConnected}
+            />
           </div>
-        )}
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="size-5" />
-                Perfil
-              </CardTitle>
-              <CardDescription>
-                Informacoes do perfil WhatsApp
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Telefone</label>
-                <Input value={profile.phone || '-'} disabled />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Nome</label>
-                <Input value={profile.pushName || '-'} disabled />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Status</label>
-                <Input value={profile.status || '-'} disabled />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="size-5" />
-                Privacidade
-              </CardTitle>
-              <CardDescription>
-                Configuracoes de privacidade
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Sempre Online</p>
-                  <p className="text-sm text-muted-foreground">Manter status online</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={settings.alwaysOnline || false}
-                  onChange={(e) => setSettings({ ...settings, alwaysOnline: e.target.checked })}
-                  className="rounded"
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Rejeitar Chamadas</p>
-                  <p className="text-sm text-muted-foreground">Rejeitar chamadas automaticamente</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={settings.autoRejectCalls || false}
-                  onChange={(e) => setSettings({ ...settings, autoRejectCalls: e.target.checked })}
-                  className="rounded"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="size-5" />
-                Mensagens Temporarias
-              </CardTitle>
-              <CardDescription>
-                Configurar mensagens que desaparecem
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Duracao padrao</label>
-                <select
-                  className="w-full rounded-md border px-3 py-2 text-sm"
-                  value={settings.ephemeralDuration || 0}
-                  onChange={(e) => setSettings({ ...settings, ephemeralDuration: parseInt(e.target.value) })}
-                >
-                  <option value={0}>Desativado</option>
-                  <option value={86400}>24 horas</option>
-                  <option value={604800}>7 dias</option>
-                  <option value={7776000}>90 dias</option>
-                </select>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="flex gap-2">
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? (
-              <Loader2 className="size-4 mr-2 animate-spin" />
-            ) : (
-              <Save className="size-4 mr-2" />
-            )}
-            Salvar
-          </Button>
         </div>
       </div>
     </>
