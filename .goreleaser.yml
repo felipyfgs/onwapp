@@ -89,6 +89,7 @@ dockers:
       - go.sum
       - cmd
       - internal
+      - docs
       - painel
       - docker/entrypoint.sh
     build_flag_templates:
