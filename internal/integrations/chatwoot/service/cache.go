@@ -130,8 +130,9 @@ func (p *PendingSentCache) ClearPending(sessionID, chatJID string, cwMsgID int) 
 // Global cache instances with appropriate TTLs.
 // These are package-level to maintain compatibility with existing code.
 var (
-	// msgProcessingCache prevents duplicate message processing (30 second TTL)
-	msgProcessingCache = NewCache[string](30 * time.Second)
+	// msgProcessingCache prevents duplicate message processing (5 minute TTL)
+	// Extended from 30s to handle large video uploads that may take longer
+	msgProcessingCache = NewCache[string](5 * time.Minute)
 
 	// pendingSentFromChatwoot tracks messages being sent from Chatwoot to WhatsApp (2 minute TTL)
 	pendingSentFromChatwoot = NewPendingSentCache()
