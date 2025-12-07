@@ -123,6 +123,39 @@ func (h *Handler) SetConfig(c *gin.Context) {
 	c.JSON(http.StatusOK, cfg)
 }
 
+// ValidateCredentials handles POST /chatwoot/validate
+// @Summary Validate Chatwoot credentials
+// @Description Validate Chatwoot URL, token and account ID before saving configuration
+// @Tags         chatwoot
+// @Accept json
+// @Produce json
+// @Param credentials body ValidateCredentialsRequest true "Chatwoot credentials to validate"
+// @Success 200 {object} client.ValidationResult
+// @Failure 400 {object} map[string]interface{}
+// @Security Authorization
+// @Router /chatwoot/validate [post]
+func (h *Handler) ValidateCredentials(c *gin.Context) {
+	var req ValidateCredentialsRequest
+	if bindErr := c.ShouldBindJSON(&req); bindErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": bindErr.Error()})
+		return
+	}
+
+	svcReq := &cwservice.ValidateCredentialsRequest{
+		URL:     req.URL,
+		Token:   req.Token,
+		Account: req.Account,
+	}
+
+	result, err := h.service.ValidateCredentials(c.Request.Context(), svcReq)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
 // GetConfig handles GET /sessions/:sessionId/chatwoot/find
 // @Summary Get Chatwoot configuration
 // @Description Get Chatwoot integration configuration for a session

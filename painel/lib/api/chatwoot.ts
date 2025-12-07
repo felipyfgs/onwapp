@@ -60,6 +60,37 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> 
   }
 }
 
+// Validation result type
+export interface ValidationResult {
+  valid: boolean
+  tokenValid: boolean
+  accountValid: boolean
+  userId?: number
+  userName?: string
+  userEmail?: string
+  userRole?: string
+  accountName?: string
+  availableAccounts?: Array<{
+    id: number
+    name: string
+    role: string
+  }>
+  error?: string
+  errorCode?: string
+}
+
+// Validate Chatwoot credentials
+export async function validateChatwootCredentials(data: {
+  url: string
+  token: string
+  account: number
+}): Promise<ValidationResult> {
+  return fetchAPI<ValidationResult>(`/chatwoot/validate`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  })
+}
+
 // Get Chatwoot configuration for a session
 export async function getChatwootConfig(session: string): Promise<ChatwootConfig> {
   return fetchAPI<ChatwootConfig>(`/sessions/${session}/chatwoot/find`)

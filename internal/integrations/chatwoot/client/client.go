@@ -137,6 +137,154 @@ func (c *Client) doRequestSilent404(ctx context.Context, method, endpoint string
 }
 
 // =============================================================================
+// CREDENTIAL VALIDATION
+// =============================================================================
+
+// ValidationResult contains the result of credential validation
+type ValidationResult struct {
+	Valid          bool     `json:"valid"`
+	TokenValid     bool     `json:"tokenValid"`
+	AccountValid   bool     `json:"accountValid"`
+	UserID         int      `json:"userId,omitempty"`
+	UserName       string   `json:"userName,omitempty"`
+	UserEmail      string   `json:"userEmail,omitempty"`
+	UserRole       string   `json:"userRole,omitempty"`
+	AccountName    string   `json:"accountName,omitempty"`
+	AvailableAccounts []AccountInfo `json:"availableAccounts,omitempty"`
+	Error          string   `json:"error,omitempty"`
+	ErrorCode      string   `json:"errorCode,omitempty"`
+}
+
+// AccountInfo contains basic account information
+type AccountInfo struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+	Role string `json:"role"`
+}
+
+// ProfileResponse represents the Chatwoot profile API response
+type ProfileResponse struct {
+	ID        int    `json:"id"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	AccountID int    `json:"account_id"`
+	Role      string `json:"role"`
+	Accounts  []struct {
+		ID   int    `json:"id"`
+		Name string `json:"name"`
+		Role string `json:"role"`
+	} `json:"accounts"`
+}
+
+// ValidateCredentials validates the Chatwoot credentials by checking token and account access
+func (c *Client) ValidateCredentials(ctx context.Context) (*ValidationResult, error) {
+	result := &ValidationResult{
+		Valid:        false,
+		TokenValid:   false,
+		AccountValid: false,
+	}
+
+	// Step 1: Validate token by fetching profile
+	profileURL := fmt.Sprintf("%s/api/v1/profile", c.baseURL)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, profileURL, nil)
+	if err != nil {
+		result.Error = "Erro ao criar requisição"
+		result.ErrorCode = "REQUEST_ERROR"
+		return result, nil
+	}
+	req.Header.Set("api_access_token", c.token)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		result.Error = "Não foi possível conectar ao Chatwoot. Verifique a URL."
+		result.ErrorCode = "CONNECTION_ERROR"
+		return result, nil
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+
+	if resp.StatusCode == 401 {
+		result.Error = "Token inválido ou expirado"
+		result.ErrorCode = "INVALID_TOKEN"
+		return result, nil
+	}
+
+	if resp.StatusCode != 200 {
+		result.Error = fmt.Sprintf("Erro ao validar token: status %d", resp.StatusCode)
+		result.ErrorCode = "TOKEN_ERROR"
+		return result, nil
+	}
+
+	var profile ProfileResponse
+	if err := json.Unmarshal(body, &profile); err != nil {
+		result.Error = "Resposta inválida do Chatwoot"
+		result.ErrorCode = "INVALID_RESPONSE"
+		return result, nil
+	}
+
+	result.TokenValid = true
+	result.UserID = profile.ID
+	result.UserName = profile.Name
+	result.UserEmail = profile.Email
+	result.UserRole = profile.Role
+
+	// Collect available accounts
+	for _, acc := range profile.Accounts {
+		result.AvailableAccounts = append(result.AvailableAccounts, AccountInfo{
+			ID:   acc.ID,
+			Name: acc.Name,
+			Role: acc.Role,
+		})
+	}
+
+	// Step 2: Check if user has access to the specified account
+	hasAccountAccess := false
+	for _, acc := range profile.Accounts {
+		if acc.ID == c.accountID {
+			hasAccountAccess = true
+			result.AccountName = acc.Name
+			result.AccountValid = true
+			break
+		}
+	}
+
+	if !hasAccountAccess {
+		if len(profile.Accounts) == 0 {
+			result.Error = "O token não tem acesso a nenhuma conta"
+			result.ErrorCode = "NO_ACCOUNTS"
+		} else if len(profile.Accounts) == 1 {
+			result.Error = fmt.Sprintf("Account ID incorreto. Use o ID %d (conta: %s)", 
+				profile.Accounts[0].ID, profile.Accounts[0].Name)
+			result.ErrorCode = "WRONG_ACCOUNT"
+		} else {
+			accountList := ""
+			for i, acc := range profile.Accounts {
+				if i > 0 {
+					accountList += ", "
+				}
+				accountList += fmt.Sprintf("%d (%s)", acc.ID, acc.Name)
+			}
+			result.Error = fmt.Sprintf("Account ID %d não encontrado. Contas disponíveis: %s", 
+				c.accountID, accountList)
+			result.ErrorCode = "WRONG_ACCOUNT"
+		}
+		return result, nil
+	}
+
+	// Step 3: Test account access by listing inboxes
+	_, err = c.ListInboxes(ctx)
+	if err != nil {
+		result.Error = "Token não tem permissão para gerenciar inboxes nesta conta"
+		result.ErrorCode = "NO_INBOX_PERMISSION"
+		return result, nil
+	}
+
+	result.Valid = true
+	return result, nil
+}
+
+// =============================================================================
 // INBOX OPERATIONS
 // =============================================================================
 

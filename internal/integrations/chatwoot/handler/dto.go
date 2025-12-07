@@ -1,5 +1,12 @@
 package handler
 
+// ValidateCredentialsRequest represents the request to validate Chatwoot credentials
+type ValidateCredentialsRequest struct {
+	URL     string `json:"url" binding:"required"`
+	Token   string `json:"token" binding:"required"`
+	Account int    `json:"account" binding:"required"`
+}
+
 // SetConfigRequest represents the request to set Chatwoot config
 type SetConfigRequest struct {
 	Enabled       bool   `json:"enabled"`

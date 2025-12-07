@@ -146,6 +146,20 @@ type SetConfigRequest struct {
 	ChatwootDBName string   `json:"chatwootDbName,omitempty"`
 }
 
+// ValidateCredentialsRequest represents the request to validate Chatwoot credentials
+type ValidateCredentialsRequest struct {
+	URL     string `json:"url" binding:"required"`
+	Token   string `json:"token" binding:"required"`
+	Account int    `json:"account" binding:"required"`
+}
+
+// ValidateCredentials validates Chatwoot credentials without saving
+func (s *Service) ValidateCredentials(ctx context.Context, req *ValidateCredentialsRequest) (*client.ValidationResult, error) {
+	url := strings.TrimSuffix(req.URL, "/")
+	c := client.NewClient(url, req.Token, req.Account)
+	return c.ValidateCredentials(ctx)
+}
+
 // SetConfig creates or updates Chatwoot configuration for a session
 func (s *Service) SetConfig(ctx context.Context, sessionID, sessionId string, req *SetConfigRequest) (*core.Config, error) {
 	webhookURL := fmt.Sprintf("%s/chatwoot/webhook/%s", s.baseURL, sessionId)

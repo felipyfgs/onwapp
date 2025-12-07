@@ -14,6 +14,13 @@ func RegisterRoutes(r *gin.Engine, handler *Handler, apiKey string, sessionLooku
 	// Chatwoot webhook endpoint (no auth - Chatwoot sends webhooks)
 	r.POST("/chatwoot/webhook/:sessionId", handler.ReceiveWebhook)
 
+	// Chatwoot validation endpoint (with auth but no session required)
+	chatwoot := r.Group("/chatwoot")
+	chatwoot.Use(middleware.Auth(apiKey, sessionLookup))
+	{
+		chatwoot.POST("/validate", handler.ValidateCredentials)
+	}
+
 	// Protected routes under /sessions/:sessionId/chatwoot
 	sessions := r.Group("/sessions")
 	sessions.Use(middleware.Auth(apiKey, sessionLookup))
