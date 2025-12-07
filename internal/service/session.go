@@ -347,6 +347,13 @@ func (s *SessionService) startClientWithQR(session *model.Session) {
 }
 
 func (s *SessionService) setupEventHandler(session *model.Session) {
+	// Prevent duplicate event handler registration on reconnect
+	if session.EventHandlerSet {
+		logger.Session().Debug().Str("session", session.Session).Msg("Event handler already set, skipping")
+		return
+	}
+	session.EventHandlerSet = true
+
 	session.Client.AddEventHandler(func(evt interface{}) {
 		// First, save message to database so UpdateCwFields can work
 		s.eventService.HandleEvent(session, evt)
