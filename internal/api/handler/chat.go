@@ -191,12 +191,20 @@ func (h *ChatHandler) MarkRead(c *gin.Context) {
 	}
 
 	// Mark chat as read in database (zero unread count)
-	if h.database != nil {
-		chatJID := req.Phone
-		if !strings.Contains(chatJID, "@") {
-			chatJID = req.Phone + "@s.whatsapp.net"
+	if h.database != nil && h.sessionService != nil {
+		session, err := h.sessionService.Get(sessionId)
+		if err == nil {
+			chatJID := req.Phone
+			if !strings.Contains(chatJID, "@") {
+				// Check if it's a group (contains hyphen) or individual chat
+				if strings.Contains(req.Phone, "-") {
+					chatJID = req.Phone + "@g.us"
+				} else {
+					chatJID = req.Phone + "@s.whatsapp.net"
+				}
+			}
+			_ = h.database.Chats.MarkAsRead(c.Request.Context(), session.ID, chatJID)
 		}
-		_ = h.database.Chats.MarkAsRead(c.Request.Context(), sessionId, chatJID)
 	}
 
 	c.JSON(http.StatusOK, gin.H{})

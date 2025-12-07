@@ -68,15 +68,22 @@ export default function ChatsPage({
           getChats(sessionId),
           getSessionStatus(sessionId),
         ])
-        setChats(data)
         setMyJid(session.deviceJid || undefined)
         
-        // Restore selected chat from URL
+        // Restore selected chat from URL and clear its unread count
         if (chatIdFromUrl && data.length > 0) {
           const chatFromUrl = findChatById(data, chatIdFromUrl)
           if (chatFromUrl) {
             setSelectedChat(chatFromUrl)
+            // Clear unread for the selected chat
+            setChats(data.map(c => 
+              c.jid === chatFromUrl.jid ? { ...c, unreadCount: 0, markedAsUnread: false } : c
+            ))
+          } else {
+            setChats(data)
           }
+        } else {
+          setChats(data)
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erro ao carregar')
@@ -136,14 +143,21 @@ export default function ChatsPage({
     const interval = setInterval(async () => {
       try {
         const data = await getChats(sessionId)
-        setChats(data)
+        // Preserve unreadCount=0 for currently open chat (already marked as read locally)
+        setChats(prev => data.map(chat => {
+          if (selectedChat?.jid === chat.jid) {
+            return { ...chat, unreadCount: 0, markedAsUnread: false }
+          }
+          return chat
+        }))
       } catch {}
     }, 30000)
     return () => clearInterval(interval)
-  }, [sessionId])
+  }, [sessionId, selectedChat?.jid])
 
   const counts = {
     all: chats.filter(c => !c.archived).length,
+    unread: chats.filter(c => !c.archived && ((c.unreadCount && c.unreadCount > 0) || c.markedAsUnread)).length,
     private: chats.filter(c => !c.isGroup && !c.archived).length,
     groups: chats.filter(c => c.isGroup && !c.archived).length,
     archived: chats.filter(c => c.archived).length,
@@ -157,6 +171,9 @@ export default function ChatsPage({
     
     let matchesFilter = true
     switch (filter) {
+      case 'unread':
+        matchesFilter = !chat.archived && ((chat.unreadCount && chat.unreadCount > 0) || !!chat.markedAsUnread)
+        break
       case 'private':
         matchesFilter = !chat.isGroup && !chat.archived
         break

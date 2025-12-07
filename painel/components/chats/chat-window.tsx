@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { ArrowLeft, MoreVertical, Search, Users, Loader2, Phone, Video } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -44,7 +44,6 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
   const topSentinelRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const offsetRef = useRef(0)
-  const [initialScrollDone, setInitialScrollDone] = useState(false)
 
   const phone = chat.jid.split('@')[0]
   
@@ -61,14 +60,17 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
     }
   }, [sessionId, phone, chat.isGroup])
 
-  const scrollToBottom = useCallback((smooth = true) => {
-    messagesEndRef.current?.scrollIntoView({ 
-      behavior: smooth ? 'smooth' : 'instant' 
-    })
+  const scrollToBottom = useCallback(() => {
+    // With flex-col-reverse, scrollTop 0 is the bottom (most recent messages)
+    if (containerRef.current) {
+      containerRef.current.scrollTop = 0
+    }
   }, [])
 
   // Real-time updates via SSE
   const handleNewMessage = useCallback((data: NewMessageData) => {
+    console.log('[SSE] New message received:', data.chatJid, 'current chat:', chat.jid, 'match:', data.chatJid === chat.jid)
+    
     // Only add message if it's for this chat
     if (data.chatJid !== chat.jid) return
     
@@ -127,6 +129,45 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
     onMessageStatus: handleMessageStatus,
   })
 
+  // Polling fallback for real-time updates (in case SSE fails)
+  useEffect(() => {
+    if (loading || messages.length === 0) return
+
+    const pollNewMessages = async () => {
+      try {
+        // Get latest messages and check for new ones
+        const latestMessages = await getChatMessages(sessionId, chat.jid, 20, 0)
+        
+        setMessages(prev => {
+          // Find messages that don't exist in current list
+          const existingIds = new Set(prev.map(m => m.msgId))
+          const newMessages = latestMessages.filter(m => !existingIds.has(m.msgId))
+          
+          if (newMessages.length > 0) {
+            console.log('[Polling] Found new messages:', newMessages.length)
+            // Also update status of existing messages
+            const updatedPrev = prev.map(existing => {
+              const updated = latestMessages.find(m => m.msgId === existing.msgId)
+              return updated ? { ...existing, status: updated.status } : existing
+            })
+            return [...updatedPrev, ...newMessages].sort((a, b) => a.timestamp - b.timestamp)
+          }
+          
+          // Just update status of existing messages
+          return prev.map(existing => {
+            const updated = latestMessages.find(m => m.msgId === existing.msgId)
+            return updated ? { ...existing, status: updated.status } : existing
+          })
+        })
+      } catch (err) {
+        // Silent fail - SSE might be working
+      }
+    }
+
+    const interval = setInterval(pollNewMessages, 5000) // Poll every 5 seconds
+    return () => clearInterval(interval)
+  }, [sessionId, chat.jid, loading, messages.length])
+
   const loadMessages = useCallback(async () => {
     try {
       setLoading(true)
@@ -147,7 +188,8 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
     if (loadingMore || !hasMore) return
     
     setLoadingMore(true)
-    const scrollHeightBefore = containerRef.current?.scrollHeight || 0
+    // With flex-col-reverse, we need to preserve scroll position from bottom
+    const scrollTopBefore = containerRef.current?.scrollTop || 0
     
     try {
       const newOffset = offsetRef.current + PAGE_SIZE
@@ -162,10 +204,10 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
       offsetRef.current = newOffset
       setMessages(prev => [...older, ...prev])
       
+      // With flex-col-reverse, maintain scroll position after adding older messages
       requestAnimationFrame(() => {
         if (containerRef.current) {
-          const scrollHeightAfter = containerRef.current.scrollHeight
-          containerRef.current.scrollTop = scrollHeightAfter - scrollHeightBefore
+          containerRef.current.scrollTop = scrollTopBefore
         }
       })
     } catch (err) {
@@ -179,34 +221,10 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
     loadMessages()
   }, [loadMessages])
 
-  // Scroll to bottom when messages are loaded for the first time or chat changes
-  useLayoutEffect(() => {
-    if (!loading && messages.length > 0 && !initialScrollDone) {
-      // Use requestAnimationFrame to ensure layout is calculated
-      const scrollToEnd = () => {
-        if (containerRef.current) {
-          containerRef.current.scrollTop = containerRef.current.scrollHeight
-        }
-      }
-      // Double RAF to ensure paint is complete
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          scrollToEnd()
-          setInitialScrollDone(true)
-        })
-      })
-    }
-  }, [loading, messages.length, initialScrollDone])
-  
-  // Reset initial scroll flag when chat changes
-  useEffect(() => {
-    setInitialScrollDone(false)
-  }, [chat.jid])
-
+  // IntersectionObserver for loading more messages when scrolling to top
   useEffect(() => {
     const sentinel = topSentinelRef.current
-    // Only observe AFTER initial scroll is done
-    if (!sentinel || loading || !initialScrollDone) return
+    if (!sentinel || loading) return
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -219,7 +237,7 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
 
     observer.observe(sentinel)
     return () => observer.disconnect()
-  }, [hasMore, loadingMore, loading, loadMoreMessages, initialScrollDone])
+  }, [hasMore, loadingMore, loading, loadMoreMessages])
 
   // Mark received messages as read (sends blue ticks)
   useEffect(() => {
@@ -429,17 +447,17 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
         </div>
       </div>
 
-      {/* Messages area with doodle pattern */}
+      {/* Messages area with doodle pattern - using flex-col-reverse for auto scroll to bottom */}
       <div 
         ref={containerRef}
-        className="flex-1 min-h-0 overflow-y-auto px-3 md:px-4 py-2"
+        className="flex-1 min-h-0 overflow-y-auto px-3 md:px-4 py-2 flex flex-col-reverse"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80' width='80' height='80'%3E%3Cg fill-opacity='0.03'%3E%3Cpath fill='%23888' d='M20 20h8v8h-8zM50 10h10v10H50zM10 50h10v10H10zM60 55h8v8h-8zM35 35h10v10H35zM70 25h6v6h-6zM5 70h8v8H5zM45 65h10v10H45z'/%3E%3Ccircle fill='%23888' cx='25' cy='65' r='4'/%3E%3Ccircle fill='%23888' cx='65' cy='15' r='3'/%3E%3Ccircle fill='%23888' cx='75' cy='70' r='5'/%3E%3C/g%3E%3C/svg%3E")`,
           backgroundColor: 'hsl(var(--muted) / 0.3)',
         }}
       >
         {loading ? (
-          <div className="space-y-3 py-4">
+          <div className="space-y-3 py-4 flex flex-col-reverse">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className={cn("flex", i % 2 === 0 ? "justify-start" : "justify-end")}>
                 <Skeleton className={cn("h-10 rounded-lg", i % 2 === 0 ? "w-48" : "w-32")} />
@@ -456,23 +474,7 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
             <p className="text-xs mt-1">Envie uma mensagem para iniciar a conversa</p>
           </div>
         ) : (
-          <div className="py-2">
-            <div ref={topSentinelRef} className="h-1" />
-            
-            {loadingMore && (
-              <div className="flex justify-center py-3">
-                <Loader2 className="size-5 animate-spin text-muted-foreground" />
-              </div>
-            )}
-            
-            {!hasMore && messages.length > 0 && (
-              <div className="flex justify-center py-3 mb-2">
-                <span className="text-xs text-muted-foreground bg-card/90 px-3 py-1.5 rounded-lg shadow-sm">
-                  Inicio da conversa
-                </span>
-              </div>
-            )}
-            
+          <div className="flex flex-col">
             {messageGroups.map(group => (
               <div key={group.date}>
                 <div className="flex justify-center my-3">
@@ -501,6 +503,27 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
               </div>
             ))}
             <div ref={messagesEndRef} />
+          </div>
+        )}
+        
+        {/* Top sentinel and loading indicators - shown above messages due to column-reverse */}
+        {!loading && messages.length > 0 && (
+          <div className="flex flex-col">
+            {!hasMore && (
+              <div className="flex justify-center py-3 mb-2">
+                <span className="text-xs text-muted-foreground bg-card/90 px-3 py-1.5 rounded-lg shadow-sm">
+                  Inicio da conversa
+                </span>
+              </div>
+            )}
+            
+            {loadingMore && (
+              <div className="flex justify-center py-3">
+                <Loader2 className="size-5 animate-spin text-muted-foreground" />
+              </div>
+            )}
+            
+            <div ref={topSentinelRef} className="h-1" />
           </div>
         )}
       </div>

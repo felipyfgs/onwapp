@@ -1,15 +1,16 @@
 "use client"
 
-import { Users, User, Archive } from "lucide-react"
+import { Users, User, Archive, MessageCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-export type FilterType = 'all' | 'private' | 'groups' | 'archived'
+export type FilterType = 'all' | 'unread' | 'private' | 'groups' | 'archived'
 
 interface ChatFiltersProps {
   filter: FilterType
   onFilterChange: (filter: FilterType) => void
   counts: {
     all: number
+    unread: number
     private: number
     groups: number
     archived: number
@@ -19,6 +20,7 @@ interface ChatFiltersProps {
 export function ChatFilters({ filter, onFilterChange, counts }: ChatFiltersProps) {
   const filters: { key: FilterType; label: string; icon?: React.ReactNode }[] = [
     { key: 'all', label: 'Todas' },
+    { key: 'unread', label: 'Nao lidas', icon: <MessageCircle className="size-3.5" /> },
     { key: 'private', label: 'Privadas', icon: <User className="size-3.5" /> },
     { key: 'groups', label: 'Grupos', icon: <Users className="size-3.5" /> },
     { key: 'archived', label: 'Arquivadas', icon: <Archive className="size-3.5" /> },

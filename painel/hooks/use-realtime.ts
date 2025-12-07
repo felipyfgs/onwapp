@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useCallback } from "react"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+// Use Next.js API proxy to avoid CORS issues with SSE
+const SSE_URL = typeof window !== 'undefined' ? window.location.origin : ''
 
 export type SSEEventType = 
   | "message.new" 
@@ -75,6 +76,20 @@ export function useRealtime({
   const maxReconnectAttempts = 10
   const baseReconnectDelay = 1000
 
+  // Use refs for callbacks to avoid stale closure issues
+  const onMessageRef = useRef(onMessage)
+  const onMessageStatusRef = useRef(onMessageStatus)
+  const onChatUpdateRef = useRef(onChatUpdate)
+  const onConnectRef = useRef(onConnect)
+  const onDisconnectRef = useRef(onDisconnect)
+
+  // Keep refs updated
+  onMessageRef.current = onMessage
+  onMessageStatusRef.current = onMessageStatus
+  onChatUpdateRef.current = onChatUpdate
+  onConnectRef.current = onConnect
+  onDisconnectRef.current = onDisconnect
+
   const connect = useCallback(async () => {
     if (!enabled || !sessionId) return
     
@@ -99,8 +114,8 @@ export function useRealtime({
       eventSourceRef.current = null
     }
 
-    // SSE URL with auth header via query param (EventSource doesn't support headers)
-    const url = `${API_URL}/sse/${sessionId}/events?auth=${encodeURIComponent(apiKey)}`
+    // SSE URL through Next.js proxy to avoid CORS issues
+    const url = `${SSE_URL}/api/sse/${sessionId}/events?auth=${encodeURIComponent(apiKey)}`
     
     console.log("[SSE] Connecting to", url.replace(apiKey, "***"))
     
@@ -115,7 +130,7 @@ export function useRealtime({
 
     eventSource.addEventListener("connected", () => {
       console.log("[SSE] Connected event received")
-      onConnect?.()
+      onConnectRef.current?.()
     })
 
     eventSource.addEventListener("message", (e) => {
@@ -124,13 +139,13 @@ export function useRealtime({
         
         switch (event.type) {
           case "message.new":
-            onMessage?.(event.data as unknown as NewMessageData)
+            onMessageRef.current?.(event.data as unknown as NewMessageData)
             break
           case "message.status":
-            onMessageStatus?.(event.data as unknown as MessageStatusData)
+            onMessageStatusRef.current?.(event.data as unknown as MessageStatusData)
             break
           case "chat.update":
-            onChatUpdate?.(event.data)
+            onChatUpdateRef.current?.(event.data)
             break
         }
       } catch (err) {
@@ -142,7 +157,7 @@ export function useRealtime({
       eventSource.close()
       eventSourceRef.current = null
       isConnecting.current = false
-      onDisconnect?.()
+      onDisconnectRef.current?.()
 
       // Reconnect with exponential backoff
       if (reconnectAttempts.current < maxReconnectAttempts) {
