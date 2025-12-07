@@ -14,6 +14,8 @@ export interface LastMessageInfo {
 export interface Chat {
   jid: string
   name?: string
+  contactName?: string // From WhatsApp (contacts or groups) - same priority as Chatwoot
+  profilePicture?: string // Avatar URL from WhatsApp
   unreadCount?: number
   markedAsUnread?: boolean
   ephemeralExpiration?: number
@@ -26,7 +28,6 @@ export interface Chat {
   pinned?: boolean
   muted?: string
   lastMessage?: LastMessageInfo
-  contactName?: string // Cached contact name from received messages (preserves name when we send)
 }
 
 export interface ChatMessage {

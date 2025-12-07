@@ -15,6 +15,7 @@ interface ChatListItemProps {
 }
 
 // Resolve display name with fallback chain
+// Priority: chat.name > contactName (from WhatsApp) > pushName > phone/groupId
 function getDisplayName(chat: Chat): string {
   const phone = chat.jid.split('@')[0]
   
@@ -23,19 +24,18 @@ function getDisplayName(chat: Chat): string {
     return chat.name
   }
   
-  // 2. For private chats, try pushName from last message ONLY if it's a received message (not from us)
-  // When fromMe is true, pushName is OUR name, not the contact's name
+  // 2. Use contactName from WhatsApp (server-side, same priority as Chatwoot)
+  // Works for both contacts (from ContactStore) and groups (from GetGroupInfo)
+  if (chat.contactName && chat.contactName.trim()) {
+    return chat.contactName
+  }
+  
+  // 3. For private chats, try pushName from last message ONLY if it's a received message
   if (!chat.isGroup && !chat.lastMessage?.fromMe && chat.lastMessage?.pushName && chat.lastMessage.pushName.trim()) {
     return chat.lastMessage.pushName
   }
   
-  // 3. For private chats, if last message is from us, check if we have a cached contact name
-  // This preserves the contact name even when we send messages
-  if (!chat.isGroup && chat.lastMessage?.fromMe && chat.contactName && chat.contactName.trim()) {
-    return chat.contactName
-  }
-  
-  // 4. Fallback to phone number
+  // 4. Fallback to phone number or group ID
   return phone
 }
 

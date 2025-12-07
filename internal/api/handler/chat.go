@@ -533,14 +533,35 @@ func (h *ChatHandler) GetAllChats(c *gin.Context) {
 		return contact.BusinessName
 	}
 
+	// Helper to get group name from WhatsApp
+	// Note: Avatar is fetched separately via /group/avatar endpoint to avoid slow list loading
+	getGroupName := func(groupJID string) string {
+		if session.Client == nil {
+			return ""
+		}
+		parsedJID, parseErr := types.ParseJID(groupJID)
+		if parseErr != nil {
+			return ""
+		}
+		groupInfo, err := session.Client.GetGroupInfo(c.Request.Context(), parsedJID)
+		if err == nil && groupInfo != nil {
+			return groupInfo.Name
+		}
+		return ""
+	}
+
 	response := make([]dto.ChatResponse, 0, len(chats))
 	for _, chatData := range chats {
 		chat := chatData.Chat
 		isGroup := len(chat.ChatJID) > 12 && chat.ChatJID[len(chat.ChatJID)-5:] == "@g.us"
 
-		// Get contact name from WhatsApp contacts (for non-group chats)
-		contactName := ""
-		if !isGroup {
+		var contactName string
+
+		if isGroup {
+			// Get group name from WhatsApp (avatar is fetched separately via /group/avatar)
+			contactName = getGroupName(chat.ChatJID)
+		} else {
+			// Get contact name from WhatsApp contacts
 			contactName = getContactName(chat.ChatJID)
 		}
 

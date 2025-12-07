@@ -162,6 +162,40 @@ export async function getContactAvatarUrl(sessionId: string, phone: string): Pro
   }
 }
 
+// Get group avatar from WhatsApp
+export async function getGroupAvatar(sessionId: string, groupId: string): Promise<AvatarResponse> {
+  const params = new URLSearchParams({ groupId })
+  return apiRequest<AvatarResponse>(`/${sessionId}/group/avatar?${params}`)
+}
+
+// Cached version for UI components
+export async function getGroupAvatarUrl(sessionId: string, groupId: string): Promise<string | null> {
+  const cacheKey = `${sessionId}:group:${groupId}`
+  
+  if (avatarCache.has(cacheKey)) {
+    return avatarCache.get(cacheKey) || null
+  }
+  
+  try {
+    const response = await getGroupAvatar(sessionId, groupId)
+    const url = response.url || null
+    avatarCache.set(cacheKey, url)
+    return url
+  } catch {
+    avatarCache.set(cacheKey, null)
+    return null
+  }
+}
+
+// Universal function to get avatar for contact or group
+export async function getChatAvatarUrl(sessionId: string, jid: string, isGroup: boolean): Promise<string | null> {
+  const id = jid.split('@')[0]
+  if (isGroup) {
+    return getGroupAvatarUrl(sessionId, id)
+  }
+  return getContactAvatarUrl(sessionId, id)
+}
+
 export async function getBlocklist(sessionId: string): Promise<string[]> {
   const data = await apiRequest<{ jids: string[] }>(`/${sessionId}/contact/blocklist`)
   return data.jids || []

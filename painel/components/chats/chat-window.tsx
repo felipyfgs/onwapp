@@ -47,12 +47,21 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
 
   const phone = chat.jid.split('@')[0]
   
-  // Resolve display name: chat.name > pushName (only from received messages) > phone
-  const displayName = (chat.name && chat.name.trim()) 
-    ? chat.name 
-    : (!chat.isGroup && !chat.lastMessage?.fromMe && chat.lastMessage?.pushName) 
-      ? chat.lastMessage.pushName 
-      : phone
+  // Resolve display name: chat.name > contactName > pushName > phone
+  // Same priority as chat-list-item.tsx (using Chatwoot logic)
+  const displayName = (() => {
+    if (chat.name && chat.name.trim() && chat.name.trim() !== phone) {
+      return chat.name
+    }
+    // contactName works for both contacts and groups (from server)
+    if (chat.contactName && chat.contactName.trim()) {
+      return chat.contactName
+    }
+    if (!chat.isGroup && !chat.lastMessage?.fromMe && chat.lastMessage?.pushName) {
+      return chat.lastMessage.pushName
+    }
+    return phone
+  })()
 
   useEffect(() => {
     if (!chat.isGroup) {
