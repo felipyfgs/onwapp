@@ -1,8 +1,18 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { Plus } from 'lucide-react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
+import { Plus, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import {
   SessionHeader,
   SessionStats,
@@ -12,47 +22,43 @@ import {
   Session,
   StatusFilter,
 } from '@/components/sessions'
-
-const mockSessions: Session[] = [
-  {
-    id: '1',
-    session: 'vendas',
-    phone: '5511999991234',
-    status: 'connected',
-    pushName: 'Atendimento Vendas',
-    stats: { messages: 1234, chats: 42, contacts: 156, groups: 12 },
-    createdAt: '2025-01-01T00:00:00Z',
-    updatedAt: '2025-01-01T00:00:00Z',
-  },
-  {
-    id: '2',
-    session: 'suporte',
-    phone: '5511988885678',
-    status: 'connected',
-    pushName: 'Suporte Técnico',
-    stats: { messages: 567, chats: 28, contacts: 89, groups: 5 },
-    createdAt: '2025-01-01T00:00:00Z',
-    updatedAt: '2025-01-01T00:00:00Z',
-  },
-  {
-    id: '3',
-    session: 'marketing',
-    status: 'disconnected',
-    pushName: 'Marketing',
-    createdAt: '2025-01-01T00:00:00Z',
-    updatedAt: '2025-01-01T00:00:00Z',
-  },
-  {
-    id: '4',
-    session: 'financeiro',
-    status: 'connecting',
-    createdAt: '2025-01-01T00:00:00Z',
-    updatedAt: '2025-01-01T00:00:00Z',
-  },
-]
+import { 
+  getSessions, 
+  createSession, 
+  deleteSession,
+  connectSession,
+  disconnectSession,
+} from '@/lib/api/sessions'
 
 export default function SessionsPage() {
-  const [sessions] = useState<Session[]>(mockSessions)
+  const router = useRouter()
+  const [sessions, setSessions] = useState<Session[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [showNewDialog, setShowNewDialog] = useState(false)
+  const [newSessionName, setNewSessionName] = useState('')
+  const [creating, setCreating] = useState(false)
+
+  const fetchSessions = useCallback(async () => {
+    try {
+      const data = await getSessions()
+      setSessions(data.map(s => ({
+        ...s,
+        stats: s.stats || { messages: 0, chats: 0, contacts: 0, groups: 0 },
+      })))
+      setError(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao carregar sessões')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchSessions()
+    const interval = setInterval(fetchSessions, 10000)
+    return () => clearInterval(interval)
+  }, [fetchSessions])
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [search, setSearch] = useState('')
 
@@ -74,24 +80,64 @@ export default function SessionsPage() {
     })
   }, [sessions, statusFilter, search])
 
-  const handleConnect = (id: string) => {
-    console.log('Connect:', id)
-    // TODO: POST /:session/connect
+  const handleConnect = async (id: string) => {
+    const session = sessions.find(s => s.id === id)
+    if (!session) return
+    try {
+      await connectSession(session.session)
+      fetchSessions()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erro ao conectar')
+    }
   }
 
-  const handleDisconnect = (id: string) => {
-    console.log('Disconnect:', id)
-    // TODO: POST /:session/disconnect
+  const handleDisconnect = async (id: string) => {
+    const session = sessions.find(s => s.id === id)
+    if (!session) return
+    try {
+      await disconnectSession(session.session)
+      fetchSessions()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erro ao desconectar')
+    }
   }
 
-  const handleDelete = (id: string) => {
-    console.log('Delete:', id)
-    // TODO: DELETE /:session
+  const handleDelete = async (id: string) => {
+    const session = sessions.find(s => s.id === id)
+    if (!session) return
+    if (!confirm(`Deseja excluir a sessão "${session.session}"?`)) return
+    try {
+      await deleteSession(session.session)
+      fetchSessions()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erro ao excluir')
+    }
   }
 
   const handleNewSession = () => {
-    console.log('New session')
-    // TODO: POST /sessions
+    setNewSessionName('')
+    setShowNewDialog(true)
+  }
+
+  const handleCreateSession = async () => {
+    if (!newSessionName.trim()) return
+    setCreating(true)
+    try {
+      await createSession(newSessionName.trim())
+      setShowNewDialog(false)
+      fetchSessions()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erro ao criar sessão')
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  const handleSessionClick = (id: string) => {
+    const session = sessions.find(s => s.id === id)
+    if (session) {
+      router.push(`/sessions/${session.session}`)
+    }
   }
 
   return (
@@ -104,40 +150,81 @@ export default function SessionsPage() {
           <p className="text-sm text-muted-foreground">Gerencie suas conexões do WhatsApp</p>
         </div>
 
-        <SessionStats
-          total={counts.all}
-          connected={counts.connected}
-          disconnected={counts.disconnected}
-        />
+        {error && (
+          <div className="bg-destructive/10 text-destructive px-4 py-2 rounded-lg text-sm mb-4">
+            {error}
+          </div>
+        )}
 
-        <div className="flex items-center justify-between gap-2 mb-3">
-          <SessionFilters
-            value={statusFilter}
-            onChange={setStatusFilter}
-            counts={counts}
-          />
-          <Button onClick={handleNewSession} size="sm" className="shrink-0">
-            <Plus className="mr-2 h-4 w-4" />
-            Nova Sessão
-          </Button>
-        </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="size-8 animate-spin" />
+          </div>
+        ) : (
+          <>
+            <SessionStats
+              total={counts.all}
+              connected={counts.connected}
+              disconnected={counts.disconnected}
+            />
 
-        <SessionSearch value={search} onChange={setSearch} />
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <SessionFilters
+                value={statusFilter}
+                onChange={setStatusFilter}
+                counts={counts}
+              />
+              <Button onClick={handleNewSession} size="sm" className="shrink-0">
+                <Plus className="mr-2 h-4 w-4" />
+                Nova Sessão
+              </Button>
+            </div>
 
-        <SessionList
-          sessions={filteredSessions}
-          onConnect={handleConnect}
-          onDisconnect={handleDisconnect}
-          onDelete={handleDelete}
-          emptyMessage={
-            statusFilter !== 'all'
-              ? `Nenhuma sessao ${statusFilter === 'connected' ? 'conectada' : statusFilter === 'disconnected' ? 'desconectada' : 'conectando'}`
-              : search
-              ? 'Nenhuma sessao encontrada para esta busca'
-              : undefined
-          }
-        />
+            <SessionSearch value={search} onChange={setSearch} />
+
+            <SessionList
+              sessions={filteredSessions}
+              onConnect={handleConnect}
+              onDisconnect={handleDisconnect}
+              onDelete={handleDelete}
+              onSessionClick={handleSessionClick}
+              emptyMessage={
+                statusFilter !== 'all'
+                  ? `Nenhuma sessao ${statusFilter === 'connected' ? 'conectada' : statusFilter === 'disconnected' ? 'desconectada' : 'conectando'}`
+                  : search
+                  ? 'Nenhuma sessao encontrada para esta busca'
+                  : undefined
+              }
+            />
+          </>
+        )}
       </main>
+
+      <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nova Sessão</DialogTitle>
+            <DialogDescription>
+              Digite um nome para identificar a sessão WhatsApp
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            placeholder="Ex: vendas, suporte, marketing"
+            value={newSessionName}
+            onChange={(e) => setNewSessionName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleCreateSession()}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCreateSession} disabled={creating || !newSessionName.trim()}>
+              {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Criar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

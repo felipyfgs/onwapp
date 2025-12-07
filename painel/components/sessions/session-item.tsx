@@ -49,11 +49,23 @@ interface SessionItemProps {
   onConnect?: (id: string) => void
   onDisconnect?: (id: string) => void
   onDelete?: (id: string) => void
+  onClick?: (id: string) => void
 }
 
-export function SessionItem({ session, isLast, onConnect, onDisconnect, onDelete }: SessionItemProps) {
+export function SessionItem({ session, isLast, onConnect, onDisconnect, onDelete, onClick }: SessionItemProps) {
   const displayName = session.pushName || session.session
   const initials = displayName.slice(0, 2).toUpperCase()
+
+  const handleClick = () => {
+    if (onClick) {
+      onClick(session.id)
+    }
+  }
+
+  const ContentWrapper = onClick ? 'div' : Link
+  const wrapperProps = onClick 
+    ? { onClick: handleClick, className: "flex items-center gap-3 flex-1 min-w-0 cursor-pointer" }
+    : { href: `/sessions/${session.session}`, className: "flex items-center gap-3 flex-1 min-w-0" }
 
   return (
     <div
@@ -61,7 +73,7 @@ export function SessionItem({ session, isLast, onConnect, onDisconnect, onDelete
         !isLast ? 'border-b' : ''
       }`}
     >
-      <Link href={`/sessions/${session.session}`} className="flex items-center gap-3 flex-1 min-w-0">
+      <ContentWrapper {...wrapperProps as any}>
         <div className="relative shrink-0">
           <Avatar className="h-10 w-10">
             {session.profilePicture && <AvatarImage src={session.profilePicture} alt={displayName} />}

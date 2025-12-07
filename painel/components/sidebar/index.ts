@@ -1,4 +1,6 @@
 export { AppSidebar } from './app-sidebar'
+export { SessionSwitcher } from './session-switcher'
+export type { SessionItem } from './session-switcher'
 export { NavMain } from './nav-main'
 export { NavProjects } from './nav-projects'
 export { NavUser } from './nav-user'
