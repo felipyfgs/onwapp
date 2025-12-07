@@ -13,7 +13,7 @@ import type { ChatMessage } from "@/lib/api/chats"
 interface ChatInputProps {
   onSendMessage: (text: string) => Promise<void>
   onSendAudio?: (audioBlob: Blob) => Promise<void>
-  onSendFile?: (type: AttachmentType, file: File) => Promise<void>
+  onSelectFiles?: (type: AttachmentType, files: File[]) => void
   onLocationRequest?: () => void
   onContactRequest?: () => void
   disabled?: boolean
@@ -26,7 +26,7 @@ interface ChatInputProps {
 export function ChatInput({ 
   onSendMessage,
   onSendAudio,
-  onSendFile,
+  onSelectFiles,
   onLocationRequest,
   onContactRequest,
   disabled,
@@ -91,7 +91,7 @@ export function ChatInput({
     textareaRef.current?.focus()
   }
 
-  const handleAttachmentSelect = async (type: AttachmentType, file?: File) => {
+  const handleAttachmentSelect = (type: AttachmentType, files?: File[]) => {
     if (type === "location" && onLocationRequest) {
       onLocationRequest()
       return
@@ -100,8 +100,8 @@ export function ChatInput({
       onContactRequest()
       return
     }
-    if (file && onSendFile) {
-      await onSendFile(type, file)
+    if (files && files.length > 0 && onSelectFiles) {
+      onSelectFiles(type, files)
     }
   }
 

@@ -14,7 +14,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { ChatMessageItem } from "./chat-message-item"
 import { ChatInput } from "./chat-input"
-import { getChatMessages, sendTextMessage, sendAudioMessage, markChatRead, deleteMessage, editMessage, sendReaction, type Chat, type ChatMessage, type QuotedMessage } from "@/lib/api/chats"
+import { MediaPreviewModal, createMediaFiles, type MediaFile } from "./media-preview-modal"
+import { getChatMessages, sendTextMessage, sendAudioMessage, sendImageMessage, sendVideoMessage, sendDocumentMessage, markChatRead, deleteMessage, editMessage, sendReaction, type Chat, type ChatMessage, type QuotedMessage } from "@/lib/api/chats"
 import { getContactAvatarUrl } from "@/lib/api/contacts"
 import { useRealtime, type NewMessageData, type MessageStatusData } from "@/hooks/use-realtime"
 import { cn } from "@/lib/utils"
@@ -38,6 +39,7 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
   const [sending, setSending] = useState(false)
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null)
   const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(null)
+  const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const topSentinelRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -514,15 +516,70 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
             setSending(false)
           }
         }}
-        onSendFile={async (type, file) => {
-          console.log('File:', type, file)
-          alert(`Envio de ${type} sera implementado em breve!`)
+        onSelectFiles={(type, files) => {
+          const mediaFilesData = createMediaFiles(files)
+          setMediaFiles(mediaFilesData)
         }}
         disabled={loading || sending}
         replyingTo={replyingTo}
         editingMessage={editingMessage}
         onCancelReplyOrEdit={cancelReplyOrEdit}
       />
+
+      {/* Media Preview Modal */}
+      {mediaFiles.length > 0 && (
+        <MediaPreviewModal
+          files={mediaFiles}
+          onFilesChange={setMediaFiles}
+          onSend={async (filesToSend) => {
+            try {
+              setSending(true)
+              
+              for (const mediaFile of filesToSend) {
+                const reader = new FileReader()
+                const base64Promise = new Promise<string>((resolve, reject) => {
+                  reader.onload = () => {
+                    const result = reader.result as string
+                    const base64 = result.split(',')[1]
+                    resolve(base64)
+                  }
+                  reader.onerror = reject
+                })
+                reader.readAsDataURL(mediaFile.file)
+                const fileBase64 = await base64Promise
+                
+                switch (mediaFile.type) {
+                  case 'image':
+                    await sendImageMessage(sessionId, phone, fileBase64, mediaFile.caption, mediaFile.file.type)
+                    break
+                  case 'video':
+                    await sendVideoMessage(sessionId, phone, fileBase64, mediaFile.caption, mediaFile.file.type)
+                    break
+                  case 'audio':
+                    await sendAudioMessage(sessionId, phone, fileBase64, false, mediaFile.file.type)
+                    break
+                  case 'document':
+                    await sendDocumentMessage(sessionId, phone, fileBase64, mediaFile.file.name, mediaFile.caption, mediaFile.file.type)
+                    break
+                }
+              }
+              
+              await loadMessages()
+              setMediaFiles([])
+            } catch (err) {
+              console.error('Erro ao enviar arquivos:', err)
+              setError(err instanceof Error ? err.message : 'Erro ao enviar arquivos')
+            } finally {
+              setSending(false)
+            }
+          }}
+          onClose={() => {
+            mediaFiles.forEach(f => URL.revokeObjectURL(f.preview))
+            setMediaFiles([])
+          }}
+          disabled={sending}
+        />
+      )}
     </div>
   )
 }

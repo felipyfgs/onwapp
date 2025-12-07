@@ -236,4 +236,27 @@ export async function sendAudioMessage(
   })
 }
 
+export async function sendVideoMessage(
+  sessionId: string,
+  phone: string,
+  video: string,
+  caption?: string,
+  mimeType?: string
+): Promise<SendMessageResponse> {
+  return apiRequest<SendMessageResponse>(`/${sessionId}/message/send/video`, {
+    method: 'POST',
+    body: JSON.stringify({ phone, video, caption, mimeType }),
+  })
+}
 
+export async function sendStickerMessage(
+  sessionId: string,
+  phone: string,
+  sticker: string,
+  mimeType?: string
+): Promise<SendMessageResponse> {
+  return apiRequest<SendMessageResponse>(`/${sessionId}/message/send/sticker`, {
+    method: 'POST',
+    body: JSON.stringify({ phone, sticker, mimeType }),
+  })
+}
