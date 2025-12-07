@@ -38,11 +38,11 @@ function isValidApiKey(key: string): boolean {
   return /^[a-zA-Z0-9_\-\.]+$/.test(key)
 }
 
-// Use sessionStorage for better security (clears on browser close)
+// Use localStorage to persist auth across browser sessions
 function getStoredAuth(): string | null {
   if (typeof window === "undefined") return null
   try {
-    return sessionStorage.getItem(STORAGE_KEY)
+    return localStorage.getItem(STORAGE_KEY)
   } catch {
     return null
   }
@@ -51,7 +51,7 @@ function getStoredAuth(): string | null {
 function setStoredAuth(key: string): void {
   if (typeof window === "undefined") return
   try {
-    sessionStorage.setItem(STORAGE_KEY, key)
+    localStorage.setItem(STORAGE_KEY, key)
   } catch {
     // Storage might be full or disabled
   }
@@ -60,9 +60,9 @@ function setStoredAuth(key: string): void {
 function clearStoredAuth(): void {
   if (typeof window === "undefined") return
   try {
+    localStorage.removeItem(STORAGE_KEY)
+    // Also clear sessionStorage in case it was used before
     sessionStorage.removeItem(STORAGE_KEY)
-    // Also clear localStorage in case it was used before
-    localStorage.removeItem("onwapp_api_key")
   } catch {
     // Ignore errors
   }
