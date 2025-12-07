@@ -110,7 +110,7 @@ export function ChatMessageItem({
                 <img 
                   src={imageUrl} 
                   alt="Imagem" 
-                  className="max-w-[330px] max-h-[330px] w-auto h-auto rounded"
+                  className="max-w-[330px] max-h-[330px] w-auto h-auto rounded bg-muted/50"
                   loading="lazy"
                 />
               </div>
@@ -144,6 +144,7 @@ export function ChatMessageItem({
               controls 
               className="max-w-[330px] max-h-[330px] w-auto h-auto rounded"
               preload="metadata"
+              poster=""
             />
           ) : (
             <div className="flex items-center gap-2 p-3 bg-secondary rounded">

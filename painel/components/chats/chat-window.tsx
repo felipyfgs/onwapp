@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react"
 import { ArrowLeft, MoreVertical, Search, Users, Loader2, Phone, Video } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -44,6 +44,7 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
   const topSentinelRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const offsetRef = useRef(0)
+  const [initialScrollDone, setInitialScrollDone] = useState(false)
 
   const phone = chat.jid.split('@')[0]
   
@@ -179,18 +180,33 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
   }, [loadMessages])
 
   // Scroll to bottom when messages are loaded for the first time or chat changes
-  useEffect(() => {
-    if (!loading && messages.length > 0) {
-      // Use requestAnimationFrame to ensure DOM is updated
+  useLayoutEffect(() => {
+    if (!loading && messages.length > 0 && !initialScrollDone) {
+      // Use requestAnimationFrame to ensure layout is calculated
+      const scrollToEnd = () => {
+        if (containerRef.current) {
+          containerRef.current.scrollTop = containerRef.current.scrollHeight
+        }
+      }
+      // Double RAF to ensure paint is complete
       requestAnimationFrame(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'instant' })
+        requestAnimationFrame(() => {
+          scrollToEnd()
+          setInitialScrollDone(true)
+        })
       })
     }
-  }, [loading, chat.jid]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loading, messages.length, initialScrollDone])
+  
+  // Reset initial scroll flag when chat changes
+  useEffect(() => {
+    setInitialScrollDone(false)
+  }, [chat.jid])
 
   useEffect(() => {
     const sentinel = topSentinelRef.current
-    if (!sentinel || loading) return
+    // Only observe AFTER initial scroll is done
+    if (!sentinel || loading || !initialScrollDone) return
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -203,7 +219,7 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
 
     observer.observe(sentinel)
     return () => observer.disconnect()
-  }, [hasMore, loadingMore, loading, loadMoreMessages])
+  }, [hasMore, loadingMore, loading, loadMoreMessages, initialScrollDone])
 
   // Mark received messages as read (sends blue ticks)
   useEffect(() => {
@@ -357,7 +373,7 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
   const messageGroups = groupMessagesByDate(messages)
 
   return (
-    <div className="flex flex-col h-full min-h-0 overflow-hidden bg-muted/20">
+    <div className="relative flex flex-col h-full min-h-0 overflow-hidden bg-muted/20">
       {/* Header */}
       <div className="flex items-center gap-2 px-2 py-2 border-b bg-card shrink-0">
         {onBack && (
