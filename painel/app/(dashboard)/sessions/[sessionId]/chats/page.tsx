@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, use } from "react"
-import { MessageSquare, Search, X } from "lucide-react"
+import { MessageSquare, Search, X, Filter } from "lucide-react"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -44,7 +44,6 @@ export default function ChatsPage({
     load()
   }, [sessionId])
 
-  // Refresh chats periodically
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
@@ -90,7 +89,7 @@ export default function ChatsPage({
   const totalUnread = chats.reduce((sum, c) => sum + (c.unreadCount || 0), 0)
 
   const headerContent = (
-    <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 border-b bg-background">
+    <header className="flex h-14 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 border-b bg-card">
       <div className="flex items-center gap-2 px-4">
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
@@ -129,42 +128,28 @@ export default function ChatsPage({
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Chat list sidebar */}
         <div className={cn(
-          "w-full md:w-96 md:min-w-96 flex flex-col border-r bg-background overflow-hidden",
+          "w-full md:w-[400px] md:min-w-[340px] md:max-w-[500px] flex flex-col border-r bg-card overflow-hidden",
           selectedChat && "hidden md:flex"
         )}>
-          {/* Title bar */}
-          <div className="flex items-center justify-between px-4 py-3 border-b">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="size-5 text-primary" />
-              <h1 className="text-lg font-semibold">Conversas</h1>
-              {totalUnread > 0 && (
-                <span className="flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-xs font-medium">
-                  {totalUnread > 99 ? '99+' : totalUnread}
-                </span>
-              )}
-            </div>
-            <span className="text-sm text-muted-foreground">
-              {counts.all}
-            </span>
-          </div>
-
-          {/* Search */}
-          <div className="px-2 py-2 border-b bg-muted/30">
+          {/* Search header */}
+          <div className="px-3 py-2 bg-card">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-[18px] text-muted-foreground pointer-events-none" />
               <Input
-                placeholder="Pesquisar conversas"
+                placeholder="Pesquisar ou comecar uma nova conversa"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 pr-8 bg-background border-0 focus-visible:ring-1"
+                className="pl-10 pr-10 h-[35px] bg-muted/50 border-0 rounded-lg text-[15px] placeholder:text-muted-foreground focus-visible:ring-1"
               />
-              {search && (
+              {search ? (
                 <button 
                   onClick={() => setSearch("")}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
-                  <X className="size-4" />
+                  <X className="size-[18px]" />
                 </button>
+              ) : (
+                <Filter className="absolute right-3 top-1/2 -translate-y-1/2 size-[18px] text-muted-foreground" />
               )}
             </div>
           </div>
@@ -185,9 +170,9 @@ export default function ChatsPage({
           {/* Chat list */}
           <div className="flex-1 overflow-y-auto">
             {filteredChats.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                <MessageSquare className="size-12 mb-4 opacity-50" />
-                <p className="text-sm">
+              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                <MessageSquare className="size-16 mb-4 opacity-30" />
+                <p className="text-[15px]">
                   {search 
                     ? 'Nenhuma conversa encontrada' 
                     : filter === 'archived'
@@ -201,6 +186,7 @@ export default function ChatsPage({
                   <ChatListItem
                     key={chat.jid}
                     chat={chat}
+                    sessionId={sessionId}
                     selected={selectedChat?.jid === chat.jid}
                     onClick={() => setSelectedChat(chat)}
                   />
@@ -222,12 +208,19 @@ export default function ChatsPage({
               onBack={() => setSelectedChat(null)}
             />
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center bg-muted/20 text-muted-foreground">
-              <MessageSquare className="size-16 mb-4 opacity-30" />
-              <h2 className="text-xl font-medium mb-2">OnWapp Web</h2>
-              <p className="text-sm text-center max-w-md">
-                Selecione uma conversa para ver as mensagens
-              </p>
+            <div className="flex-1 flex flex-col items-center justify-center bg-muted/10 text-muted-foreground">
+              <div className="w-[320px] text-center">
+                <div className="size-[180px] mx-auto mb-6 rounded-full bg-muted/30 flex items-center justify-center">
+                  <MessageSquare className="size-20 opacity-30" />
+                </div>
+                <h2 className="text-[28px] font-light text-foreground/80 mb-3">OnWapp Web</h2>
+                <p className="text-[14px] text-muted-foreground leading-[20px]">
+                  Envie e receba mensagens sem precisar manter seu celular online.
+                </p>
+                <p className="text-[14px] text-muted-foreground leading-[20px] mt-4">
+                  Use o WhatsApp em ate 4 dispositivos ao mesmo tempo.
+                </p>
+              </div>
             </div>
           )}
         </div>

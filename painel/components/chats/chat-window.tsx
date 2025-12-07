@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { ArrowLeft, MoreVertical, Search, Users, Loader2 } from "lucide-react"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { ArrowLeft, MoreVertical, Search, Users, Loader2, Phone, Video } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
@@ -15,6 +15,7 @@ import {
 import { ChatMessageItem } from "./chat-message-item"
 import { ChatInput } from "./chat-input"
 import { getChatMessages, sendTextMessage, sendAudioMessage, markChatRead, type Chat, type ChatMessage } from "@/lib/api/chats"
+import { getContactAvatarUrl } from "@/lib/api/contacts"
 import { cn } from "@/lib/utils"
 
 const PAGE_SIZE = 50
@@ -29,6 +30,7 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
@@ -37,8 +39,20 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const offsetRef = useRef(0)
 
-  const displayName = chat.name || chat.jid.split('@')[0]
   const phone = chat.jid.split('@')[0]
+  
+  // Resolve display name: chat.name > pushName > phone
+  const displayName = (chat.name && chat.name.trim()) 
+    ? chat.name 
+    : (!chat.isGroup && chat.lastMessage?.pushName) 
+      ? chat.lastMessage.pushName 
+      : phone
+
+  useEffect(() => {
+    if (!chat.isGroup) {
+      getContactAvatarUrl(sessionId, phone).then(url => setAvatarUrl(url))
+    }
+  }, [sessionId, phone, chat.isGroup])
 
   const scrollToBottom = useCallback((smooth = true) => {
     messagesEndRef.current?.scrollIntoView({ 
@@ -82,7 +96,6 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
       offsetRef.current = newOffset
       setMessages(prev => [...older, ...prev])
       
-      // Manter posicao do scroll
       requestAnimationFrame(() => {
         if (containerRef.current) {
           const scrollHeightAfter = containerRef.current.scrollHeight
@@ -100,7 +113,6 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
     loadMessages()
   }, [loadMessages])
 
-  // Intersection Observer para carregar mais mensagens ao rolar para cima
   useEffect(() => {
     const sentinel = topSentinelRef.current
     if (!sentinel || loading) return
@@ -118,7 +130,6 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
     return () => observer.disconnect()
   }, [hasMore, loadingMore, loading, loadMoreMessages])
 
-  // Mark as read when opening
   useEffect(() => {
     if (chat.unreadCount && chat.unreadCount > 0 && messages.length > 0) {
       const lastMessages = messages.slice(-5).map(m => m.msgId)
@@ -129,10 +140,8 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
   const handleSendMessage = async (text: string) => {
     setSending(true)
     try {
-      // Para grupos, usa o JID completo; para contatos, usa apenas o numero
       const recipient = chat.isGroup ? chat.jid : phone
       const response = await sendTextMessage(sessionId, recipient, text, chat.isGroup)
-      // Add optimistic message
       const newMessage: ChatMessage = {
         msgId: response.messageId,
         chatJid: chat.jid,
@@ -154,8 +163,6 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
 
   const groupMessagesByDate = (msgs: ChatMessage[]) => {
     const groupMap = new Map<string, ChatMessage[]>()
-    
-    // Ordenar mensagens por timestamp
     const sortedMsgs = [...msgs].sort((a, b) => a.timestamp - b.timestamp)
 
     sortedMsgs.forEach(msg => {
@@ -171,7 +178,6 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
       groupMap.get(date)!.push(msg)
     })
 
-    // Converter Map para array mantendo ordem
     return Array.from(groupMap.entries()).map(([date, messages]) => ({
       date,
       messages
@@ -181,69 +187,76 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
   const messageGroups = groupMessagesByDate(messages)
 
   return (
-    <div className="flex flex-col h-full min-h-0 overflow-hidden">
+    <div className="flex flex-col h-full min-h-0 overflow-hidden bg-muted/20">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b bg-background shrink-0">
+      <div className="flex items-center gap-2 px-2 py-2 border-b bg-card shrink-0">
         {onBack && (
-          <Button variant="ghost" size="icon" onClick={onBack} className="md:hidden">
+          <Button variant="ghost" size="icon" onClick={onBack} className="md:hidden size-10">
             <ArrowLeft className="size-5" />
           </Button>
         )}
         
-        <Avatar className="size-10">
+        <Avatar className="size-10 cursor-pointer">
+          {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
           <AvatarFallback className={cn(
-            "text-white",
-            chat.isGroup ? "bg-emerald-600" : "bg-slate-400"
+            "text-white font-medium",
+            chat.isGroup ? "bg-emerald-600" : "bg-slate-500"
           )}>
             {chat.isGroup ? <Users className="size-5" /> : displayName[0]?.toUpperCase()}
           </AvatarFallback>
         </Avatar>
 
-        <div className="flex-1 min-w-0">
-          <h2 className="font-semibold truncate">{displayName}</h2>
-          <p className="text-xs text-muted-foreground truncate">
-            {chat.isGroup ? 'Grupo' : phone}
+        <div className="flex-1 min-w-0 cursor-pointer">
+          <h2 className="font-medium text-[16px] truncate leading-tight">{displayName}</h2>
+          <p className="text-[13px] text-muted-foreground truncate leading-tight">
+            {chat.isGroup ? 'toque para info do grupo' : 'toque para info do contato'}
           </p>
         </div>
 
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="text-muted-foreground">
+        <div className="flex items-center">
+          <Button variant="ghost" size="icon" className="text-muted-foreground size-10">
+            <Video className="size-5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="text-muted-foreground size-10">
+            <Phone className="size-5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="text-muted-foreground size-10">
             <Search className="size-5" />
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-muted-foreground">
+              <Button variant="ghost" size="icon" className="text-muted-foreground size-10">
                 <MoreVertical className="size-5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>Ver contato</DropdownMenuItem>
-              <DropdownMenuItem>Buscar mensagens</DropdownMenuItem>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuItem>Dados do contato</DropdownMenuItem>
+              <DropdownMenuItem>Selecionar mensagens</DropdownMenuItem>
+              <DropdownMenuItem>Fechar conversa</DropdownMenuItem>
+              <DropdownMenuItem>Silenciar notificacoes</DropdownMenuItem>
+              <DropdownMenuItem>Mensagens temporarias</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Silenciar</DropdownMenuItem>
-              <DropdownMenuItem>Arquivar conversa</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">
-                Limpar conversa
-              </DropdownMenuItem>
+              <DropdownMenuItem>Limpar conversa</DropdownMenuItem>
+              <DropdownMenuItem className="text-destructive">Apagar conversa</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
 
-      {/* Messages area */}
+      {/* Messages area with doodle pattern */}
       <div 
         ref={containerRef}
-        className="flex-1 min-h-0 overflow-y-auto p-4 bg-muted/30"
+        className="flex-1 min-h-0 overflow-y-auto px-3 md:px-4 py-2"
         style={{
-          backgroundImage: 'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%239C92AC" fill-opacity="0.05"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80' width='80' height='80'%3E%3Cg fill-opacity='0.03'%3E%3Cpath fill='%23888' d='M20 20h8v8h-8zM50 10h10v10H50zM10 50h10v10H10zM60 55h8v8h-8zM35 35h10v10H35zM70 25h6v6h-6zM5 70h8v8H5zM45 65h10v10H45z'/%3E%3Ccircle fill='%23888' cx='25' cy='65' r='4'/%3E%3Ccircle fill='%23888' cx='65' cy='15' r='3'/%3E%3Ccircle fill='%23888' cx='75' cy='70' r='5'/%3E%3C/g%3E%3C/svg%3E")`,
+          backgroundColor: 'hsl(var(--muted) / 0.3)',
         }}
       >
         {loading ? (
-          <div className="space-y-4">
+          <div className="space-y-3 py-4">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className={cn("flex", i % 2 === 0 ? "justify-start" : "justify-end")}>
-                <Skeleton className={cn("h-12 rounded-lg", i % 2 === 0 ? "w-48" : "w-36")} />
+                <Skeleton className={cn("h-10 rounded-lg", i % 2 === 0 ? "w-48" : "w-32")} />
               </div>
             ))}
           </div>
@@ -257,34 +270,31 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
             <p className="text-xs mt-1">Envie uma mensagem para iniciar a conversa</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {/* Sentinel para detectar scroll no topo */}
+          <div className="py-2">
             <div ref={topSentinelRef} className="h-1" />
             
-            {/* Loader de mensagens antigas */}
             {loadingMore && (
-              <div className="flex justify-center py-2">
+              <div className="flex justify-center py-3">
                 <Loader2 className="size-5 animate-spin text-muted-foreground" />
               </div>
             )}
             
-            {/* Indicador de fim do historico */}
             {!hasMore && messages.length > 0 && (
-              <div className="flex justify-center py-2">
-                <span className="text-xs text-muted-foreground bg-background/80 px-3 py-1 rounded-full">
+              <div className="flex justify-center py-3 mb-2">
+                <span className="text-xs text-muted-foreground bg-card/90 px-3 py-1.5 rounded-lg shadow-sm">
                   Inicio da conversa
                 </span>
               </div>
             )}
             
             {messageGroups.map(group => (
-              <div key={group.date}>
-                <div className="flex justify-center mb-3">
-                  <span className="text-xs text-muted-foreground bg-background/80 px-3 py-1 rounded-full shadow-sm">
+              <div key={group.date} className="mb-2">
+                <div className="flex justify-center my-3">
+                  <span className="text-[12.5px] text-muted-foreground bg-card/90 px-3 py-1.5 rounded-lg shadow-sm">
                     {group.date}
                   </span>
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-0.5">
                   {group.messages.map(msg => (
                     <ChatMessageItem 
                       key={msg.msgId} 
@@ -307,14 +317,10 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
         onSendAudio={async (blob) => {
           try {
             setSending(true)
-            console.log('Enviando audio:', blob.type, blob.size, 'bytes')
-            
-            // Convert blob to base64
             const reader = new FileReader()
             const base64Promise = new Promise<string>((resolve, reject) => {
               reader.onload = () => {
                 const result = reader.result as string
-                // Remove data URL prefix (data:audio/webm;base64,)
                 const base64 = result.split(',')[1]
                 resolve(base64)
               }
@@ -323,13 +329,7 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
             reader.readAsDataURL(blob)
             const audioBase64 = await base64Promise
             
-            console.log('Base64 length:', audioBase64.length)
-            
-            // Send as PTT (Push to Talk / voice note)
-            const result = await sendAudioMessage(sessionId, phone, audioBase64, true, blob.type)
-            console.log('Audio enviado:', result)
-            
-            // Reload messages to show the sent audio
+            await sendAudioMessage(sessionId, phone, audioBase64, true, blob.type)
             await loadMessages()
           } catch (err) {
             console.error('Erro ao enviar audio:', err)
@@ -339,7 +339,6 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
           }
         }}
         onSendFile={async (type, file) => {
-          // TODO: Implement file sending when API is ready
           console.log('File:', type, file)
           alert(`Envio de ${type} sera implementado em breve!`)
         }}

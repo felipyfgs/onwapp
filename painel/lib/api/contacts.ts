@@ -103,9 +103,31 @@ export async function getContactsInfo(
   })
 }
 
+// Avatar cache to avoid repeated requests
+const avatarCache = new Map<string, string | null>()
+
 export async function getContactAvatar(sessionId: string, phone: string): Promise<AvatarResponse> {
   const params = new URLSearchParams({ phone })
   return apiRequest<AvatarResponse>(`/${sessionId}/contact/avatar?${params}`)
+}
+
+// Cached version for UI components
+export async function getContactAvatarUrl(sessionId: string, phone: string): Promise<string | null> {
+  const cacheKey = `${sessionId}:${phone}`
+  
+  if (avatarCache.has(cacheKey)) {
+    return avatarCache.get(cacheKey) || null
+  }
+  
+  try {
+    const response = await getContactAvatar(sessionId, phone)
+    const url = response.url || null
+    avatarCache.set(cacheKey, url)
+    return url
+  } catch {
+    avatarCache.set(cacheKey, null)
+    return null
+  }
 }
 
 export async function getBlocklist(sessionId: string): Promise<string[]> {
