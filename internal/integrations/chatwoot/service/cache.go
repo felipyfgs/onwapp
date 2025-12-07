@@ -140,6 +140,10 @@ var (
 	// cwToWAProcessingCache prevents duplicate CW->WA message processing (2 minute TTL)
 	// Used when NATS redelivers messages due to slow ACK (e.g., sending multiple large files)
 	cwToWAProcessingCache = NewCache[string](2 * time.Minute)
+
+	// mediaHashCache prevents duplicate media processing for the same file
+	// Key: sessionId:chatJid:sha256hash, used to detect LID vs phone number duplicates
+	mediaHashCache = NewCache[string](2 * time.Minute)
 )
 
 // MarkPendingSentFromChatwoot marks a message as being sent from Chatwoot webhook.
