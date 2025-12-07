@@ -33,15 +33,8 @@ export default function ChatsPage({
     async function load() {
       try {
         const data = await getChats(sessionId)
-        // Sort: pinned first, then by lastMessageTime
-        const sorted = data.sort((a, b) => {
-          if (a.pinned && !b.pinned) return -1
-          if (!a.pinned && b.pinned) return 1
-          const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0
-          const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0
-          return timeB - timeA
-        })
-        setChats(sorted)
+        // API already returns sorted (pinned first, then by timestamp)
+        setChats(data)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erro ao carregar')
       } finally {
@@ -62,9 +55,8 @@ export default function ChatsPage({
     // Search filter
     const matchesSearch = !search || 
       chat.name?.toLowerCase().includes(search.toLowerCase()) ||
-      chat.pushName?.toLowerCase().includes(search.toLowerCase()) ||
       chat.jid.includes(search) ||
-      chat.lastMessage?.toLowerCase().includes(search.toLowerCase())
+      chat.lastMessage?.content?.toLowerCase().includes(search.toLowerCase())
     
     // Type filter
     let matchesFilter = true
@@ -195,7 +187,6 @@ export default function ChatsPage({
                 <ChatListItem
                   key={chat.jid}
                   chat={chat}
-                  sessionId={sessionId}
                   selected={selectedChat === chat.jid}
                   onClick={() => setSelectedChat(chat.jid)}
                 />
