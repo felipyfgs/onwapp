@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, use, useCallback } from "react"
-import { Loader2, AlertCircle } from "lucide-react"
+import { AlertCircle } from "lucide-react"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { ProfileCard, PrivacyCard, BehaviorCard } from "@/components/settings"
+import { ProfileCard, PrivacyCard, BehaviorCard, SettingsSkeleton } from "@/components/settings"
 import {
   getSessionProfile,
   getSessionSettings,
@@ -87,37 +87,42 @@ export default function SettingsPage({
     }
   }
 
+  const headerContent = (
+    <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+      <div className="flex items-center gap-2 px-4">
+        <SidebarTrigger className="-ml-1" />
+        <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem className="hidden md:block">
+              <BreadcrumbLink href="/sessions">Sessoes</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator className="hidden md:block" />
+            <BreadcrumbItem className="hidden md:block">
+              <BreadcrumbLink href={`/sessions/${sessionId}`}>{sessionId}</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator className="hidden md:block" />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Configuracoes</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
+    </header>
+  )
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="size-8 animate-spin text-muted-foreground" />
-      </div>
+      <>
+        {headerContent}
+        <SettingsSkeleton />
+      </>
     )
   }
 
   return (
     <>
-      <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-        <div className="flex items-center gap-2 px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href="/sessions">Sessoes</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator className="hidden md:block" />
-              <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href={`/sessions/${sessionId}`}>{sessionId}</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator className="hidden md:block" />
-              <BreadcrumbItem>
-                <BreadcrumbPage>Configuracoes</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </div>
-      </header>
+      {headerContent}
 
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
         {/* Header */}
