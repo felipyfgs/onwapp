@@ -78,18 +78,26 @@ changelog:
 
 dockers:
   - image_templates:
-      - "docker.io/onwapp/onwapp:{{ .Version }}"
-      - "docker.io/onwapp/onwapp:latest"
+      - "docker.io/felipyfgs17/onwapp:{{ .Version }}"
+      - "docker.io/felipyfgs17/onwapp:latest"
     dockerfile: Dockerfile
     goos: linux
     goarch: amd64
+    use: buildx
+    extra_files:
+      - go.mod
+      - go.sum
+      - cmd
+      - internal
+      - painel
+      - docker/entrypoint.sh
     build_flag_templates:
       - "--pull"
+      - "--platform=linux/amd64"
       - "--label=org.opencontainers.image.created={{.Date}}"
       - "--label=org.opencontainers.image.title={{.ProjectName}}"
       - "--label=org.opencontainers.image.revision={{.FullCommit}}"
       - "--label=org.opencontainers.image.version={{.Version}}"
-    skip_push: auto
 
 release:
   github:
