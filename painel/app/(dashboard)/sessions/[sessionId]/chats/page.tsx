@@ -70,20 +70,28 @@ export default function ChatsPage({
         ])
         setMyJid(session.deviceJid || undefined)
         
+        // Populate contactName from lastMessage pushName for non-group chats
+        const enrichedData = data.map(chat => {
+          if (!chat.isGroup && !chat.lastMessage?.fromMe && chat.lastMessage?.pushName) {
+            return { ...chat, contactName: chat.lastMessage.pushName }
+          }
+          return chat
+        })
+        
         // Restore selected chat from URL and clear its unread count
-        if (chatIdFromUrl && data.length > 0) {
-          const chatFromUrl = findChatById(data, chatIdFromUrl)
+        if (chatIdFromUrl && enrichedData.length > 0) {
+          const chatFromUrl = findChatById(enrichedData, chatIdFromUrl)
           if (chatFromUrl) {
             setSelectedChat(chatFromUrl)
             // Clear unread for the selected chat
-            setChats(data.map(c => 
+            setChats(enrichedData.map(c => 
               c.jid === chatFromUrl.jid ? { ...c, unreadCount: 0, markedAsUnread: false } : c
             ))
           } else {
-            setChats(data)
+            setChats(enrichedData)
           }
         } else {
-          setChats(data)
+          setChats(enrichedData)
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erro ao carregar')
@@ -119,6 +127,11 @@ export default function ChatsPage({
       }
       chat.conversationTimestamp = data.timestamp
       
+      // Cache contact name from received messages (preserves name when we send)
+      if (!data.fromMe && data.pushName && data.pushName.trim() && !chat.isGroup) {
+        chat.contactName = data.pushName
+      }
+      
       // Only increment unread if message is not from us AND chat is not currently open
       const isChatOpen = selectedChat?.jid === data.chatJid
       if (!data.fromMe && !isChatOpen) {
@@ -143,12 +156,27 @@ export default function ChatsPage({
     const interval = setInterval(async () => {
       try {
         const data = await getChats(sessionId)
-        // Preserve unreadCount=0 for currently open chat (already marked as read locally)
+        // Preserve local state: unreadCount=0 for open chat, contactName from previous messages
         setChats(prev => data.map(chat => {
-          if (selectedChat?.jid === chat.jid) {
-            return { ...chat, unreadCount: 0, markedAsUnread: false }
+          const prevChat = prev.find(c => c.jid === chat.jid)
+          const result = { ...chat }
+          
+          // Preserve contactName from previous state
+          if (prevChat?.contactName && !chat.isGroup) {
+            result.contactName = prevChat.contactName
           }
-          return chat
+          // If we have a received message with pushName, cache it
+          if (!chat.isGroup && !chat.lastMessage?.fromMe && chat.lastMessage?.pushName) {
+            result.contactName = chat.lastMessage.pushName
+          }
+          
+          // Preserve unreadCount=0 for currently open chat
+          if (selectedChat?.jid === chat.jid) {
+            result.unreadCount = 0
+            result.markedAsUnread = false
+          }
+          
+          return result
         }))
       } catch {}
     }, 30000)

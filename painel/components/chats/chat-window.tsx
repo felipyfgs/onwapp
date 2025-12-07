@@ -69,8 +69,6 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
 
   // Real-time updates via SSE
   const handleNewMessage = useCallback((data: NewMessageData) => {
-    console.log('[SSE] New message received:', data.chatJid, 'current chat:', chat.jid, 'match:', data.chatJid === chat.jid)
-    
     // Only add message if it's for this chat
     if (data.chatJid !== chat.jid) return
     

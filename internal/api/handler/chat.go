@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.mau.fi/whatsmeow/types"
 
 	"onwapp/internal/api/dto"
 	"onwapp/internal/db"
@@ -506,14 +507,47 @@ func (h *ChatHandler) GetAllChats(c *gin.Context) {
 		return
 	}
 
+	// Helper to get contact name from WhatsApp ContactStore
+	// Priority: FullName > FirstName > PushName > BusinessName (same as Chatwoot)
+	getContactName := func(jid string) string {
+		if session.Client == nil || session.Client.Store == nil || session.Client.Store.Contacts == nil {
+			return ""
+		}
+		parsedJID, parseErr := types.ParseJID(jid)
+		if parseErr != nil {
+			return ""
+		}
+		contact, contactErr := session.Client.Store.Contacts.GetContact(c.Request.Context(), parsedJID)
+		if contactErr != nil || !contact.Found {
+			return ""
+		}
+		if contact.FullName != "" {
+			return contact.FullName
+		}
+		if contact.FirstName != "" {
+			return contact.FirstName
+		}
+		if contact.PushName != "" {
+			return contact.PushName
+		}
+		return contact.BusinessName
+	}
+
 	response := make([]dto.ChatResponse, 0, len(chats))
 	for _, chatData := range chats {
 		chat := chatData.Chat
 		isGroup := len(chat.ChatJID) > 12 && chat.ChatJID[len(chat.ChatJID)-5:] == "@g.us"
 
+		// Get contact name from WhatsApp contacts (for non-group chats)
+		contactName := ""
+		if !isGroup {
+			contactName = getContactName(chat.ChatJID)
+		}
+
 		resp := dto.ChatResponse{
 			JID:                 chat.ChatJID,
 			Name:                chat.Name,
+			ContactName:         contactName,
 			UnreadCount:         chat.UnreadCount,
 			MarkedAsUnread:      chat.MarkedAsUnread,
 			EphemeralExpiration: chat.EphemeralExpiration,

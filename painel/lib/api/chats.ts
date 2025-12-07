@@ -26,6 +26,7 @@ export interface Chat {
   pinned?: boolean
   muted?: string
   lastMessage?: LastMessageInfo
+  contactName?: string // Cached contact name from received messages (preserves name when we send)
 }
 
 export interface ChatMessage {

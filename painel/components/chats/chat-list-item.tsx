@@ -29,7 +29,13 @@ function getDisplayName(chat: Chat): string {
     return chat.lastMessage.pushName
   }
   
-  // 3. Fallback to phone number
+  // 3. For private chats, if last message is from us, check if we have a cached contact name
+  // This preserves the contact name even when we send messages
+  if (!chat.isGroup && chat.lastMessage?.fromMe && chat.contactName && chat.contactName.trim()) {
+    return chat.contactName
+  }
+  
+  // 4. Fallback to phone number
   return phone
 }
 
