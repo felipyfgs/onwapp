@@ -251,10 +251,26 @@ export function SessionDashboard({
     }
   }
 
-  const copyToClipboard = (text: string, key: string) => {
-    navigator.clipboard.writeText(text)
-    setCopied(key)
-    setTimeout(() => setCopied(null), 2000)
+  const copyToClipboard = async (text: string, key: string) => {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text)
+      } else {
+        // Fallback for HTTP
+        const textArea = document.createElement('textarea')
+        textArea.value = text
+        textArea.style.position = 'fixed'
+        textArea.style.left = '-999999px'
+        document.body.appendChild(textArea)
+        textArea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textArea)
+      }
+      setCopied(key)
+      setTimeout(() => setCopied(null), 2000)
+    } catch {
+      console.error('Failed to copy')
+    }
   }
 
   const closeConnectDialog = () => {
@@ -341,106 +357,104 @@ export function SessionDashboard({
           </div>
         )}
 
-        {/* Session Overview Card */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row gap-6">
-              {/* Avatar e Status */}
-              <div className="flex flex-col items-center gap-3">
-                <div className="relative">
-                  <Avatar className="size-24 border-4 border-background shadow-lg">
-                    <AvatarImage src={profilePicture} />
-                    <AvatarFallback className="text-2xl bg-primary/10">
-                      {pushName?.[0]?.toUpperCase() || sessionId[0]?.toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span 
-                    className={`absolute bottom-1 right-1 size-5 rounded-full border-2 border-background ${currentStatus.badge}`}
-                    title={currentStatus.text}
-                  />
-                </div>
-                <Badge variant="outline" className={`${currentStatus.color} ${currentStatus.bg}`}>
-                  <StatusIcon className={`size-3 mr-1 ${status === 'connecting' ? 'animate-spin' : ''}`} />
+        {/* Session Overview Card - Compact */}
+        <Card className="overflow-hidden">
+          <div className="flex flex-col sm:flex-row">
+            {/* Left: Avatar + Status */}
+            <div className={`flex items-center gap-4 p-4 sm:pr-6 ${currentStatus.bg} border-b sm:border-b-0 sm:border-r`}>
+              <div className="relative">
+                <Avatar className="size-14 border-2 border-background shadow">
+                  <AvatarImage src={profilePicture} />
+                  <AvatarFallback className="text-lg font-semibold bg-background">
+                    {pushName?.[0]?.toUpperCase() || sessionId[0]?.toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <span 
+                  className={`absolute -bottom-0.5 -right-0.5 size-4 rounded-full border-2 border-background ${currentStatus.badge}`}
+                />
+              </div>
+              <div className="sm:hidden flex-1">
+                <h1 className="font-semibold">{pushName || sessionId}</h1>
+                <div className={`text-sm flex items-center gap-1 ${currentStatus.color}`}>
+                  <StatusIcon className={`size-3 ${status === 'connecting' ? 'animate-spin' : ''}`} />
                   {currentStatus.text}
-                </Badge>
-              </div>
-
-              {/* Info */}
-              <div className="flex-1 space-y-4">
-                <div>
-                  <h1 className="text-2xl font-bold">{pushName || sessionId}</h1>
-                  {formatPhone(phone) && (
-                    <p className="text-muted-foreground flex items-center gap-1 mt-1">
-                      <Phone className="size-4" />
-                      {formatPhone(phone)}
-                    </p>
-                  )}
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Key className="size-4" />
-                    <span>API Key:</span>
-                    <code className="bg-muted px-2 py-0.5 rounded text-xs font-mono flex-1 truncate">
-                      {showApiKey ? (initialApiKey || '••••••••') : '••••••••••••••••'}
-                    </code>
-                    <button onClick={() => setShowApiKey(!showApiKey)} className="hover:text-foreground">
-                      {showApiKey ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                    </button>
-                    <button 
-                      onClick={() => copyToClipboard(initialApiKey || '', 'apiKey')} 
-                      className="hover:text-foreground"
-                    >
-                      {copied === 'apiKey' ? <Check className="size-4 text-green-500" /> : <Copy className="size-4" />}
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar className="size-4" />
-                    <span>Criado em:</span>
-                    <span className="text-foreground">{formatDate(initialCreatedAt)}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex flex-col gap-2 min-w-[160px]">
-                {status === 'disconnected' && (
-                  <Button onClick={handleConnect} disabled={loading !== null} className="gap-2">
-                    {loading === 'connect' ? <Loader2 className="size-4 animate-spin" /> : <Power className="size-4" />}
-                    Conectar
-                  </Button>
-                )}
-                {status === 'connecting' && (
-                  <>
-                    <Button onClick={() => setShowConnectDialog(true)} className="gap-2">
-                      <QrCode className="size-4" />
-                      Ver QR Code
-                    </Button>
-                    <Button variant="outline" onClick={handleDisconnect} disabled={loading !== null} className="gap-2">
-                      {loading === 'disconnect' ? <Loader2 className="size-4 animate-spin" /> : <X className="size-4" />}
-                      Cancelar
-                    </Button>
-                  </>
-                )}
-                {status === 'connected' && (
-                  <>
-                    <Button variant="outline" onClick={handleRestart} disabled={loading !== null} className="gap-2">
-                      {loading === 'restart' ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
-                      Reiniciar
-                    </Button>
-                    <Button variant="outline" onClick={handleDisconnect} disabled={loading !== null} className="gap-2">
-                      {loading === 'disconnect' ? <Loader2 className="size-4 animate-spin" /> : <PowerOff className="size-4" />}
-                      Desconectar
-                    </Button>
-                    <Button variant="destructive" onClick={() => setShowLogoutDialog(true)} disabled={loading !== null} className="gap-2">
-                      <LogOut className="size-4" />
-                      Logout
-                    </Button>
-                  </>
-                )}
               </div>
             </div>
-          </CardContent>
+
+            {/* Center: Info */}
+            <div className="flex-1 p-4 space-y-3">
+              <div className="hidden sm:block">
+                <div className="flex items-center gap-2">
+                  <h1 className="text-xl font-semibold">{pushName || sessionId}</h1>
+                  <Badge variant="outline" className={`${currentStatus.color} text-xs`}>
+                    <StatusIcon className={`size-3 mr-1 ${status === 'connecting' ? 'animate-spin' : ''}`} />
+                    {currentStatus.text}
+                  </Badge>
+                </div>
+                {formatPhone(phone) && (
+                  <p className="text-sm text-muted-foreground">{formatPhone(phone)}</p>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <Key className="size-3.5 text-muted-foreground" />
+                  <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono max-w-[180px] truncate">
+                    {showApiKey ? (initialApiKey || '-') : '••••••••••••'}
+                  </code>
+                  <button onClick={() => setShowApiKey(!showApiKey)} className="text-muted-foreground hover:text-foreground">
+                    {showApiKey ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                  </button>
+                  <button onClick={() => copyToClipboard(initialApiKey || '', 'apiKey')} className="text-muted-foreground hover:text-foreground">
+                    {copied === 'apiKey' ? <Check className="size-3.5 text-green-500" /> : <Copy className="size-3.5" />}
+                  </button>
+                </div>
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <Calendar className="size-3.5" />
+                  <span className="text-xs">{formatDate(initialCreatedAt)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Actions */}
+            <div className="flex sm:flex-col gap-2 p-4 pt-0 sm:pt-4 sm:pl-0 border-t sm:border-t-0 sm:border-l bg-muted/30">
+              {status === 'disconnected' && (
+                <Button onClick={handleConnect} disabled={loading !== null} size="sm" className="flex-1 sm:flex-none gap-1.5">
+                  {loading === 'connect' ? <Loader2 className="size-3.5 animate-spin" /> : <Power className="size-3.5" />}
+                  Conectar
+                </Button>
+              )}
+              {status === 'connecting' && (
+                <>
+                  <Button onClick={() => setShowConnectDialog(true)} size="sm" className="flex-1 sm:flex-none gap-1.5">
+                    <QrCode className="size-3.5" />
+                    QR Code
+                  </Button>
+                  <Button variant="ghost" onClick={handleDisconnect} disabled={loading !== null} size="sm" className="gap-1.5">
+                    {loading === 'disconnect' ? <Loader2 className="size-3.5 animate-spin" /> : <X className="size-3.5" />}
+                    Cancelar
+                  </Button>
+                </>
+              )}
+              {status === 'connected' && (
+                <div className="flex sm:flex-col gap-1.5">
+                  <Button variant="ghost" onClick={handleRestart} disabled={loading !== null} size="sm" className="gap-1.5 flex-1">
+                    {loading === 'restart' ? <Loader2 className="size-3.5 animate-spin" /> : <RefreshCw className="size-3.5" />}
+                    <span className="hidden sm:inline">Reiniciar</span>
+                  </Button>
+                  <Button variant="ghost" onClick={handleDisconnect} disabled={loading !== null} size="sm" className="gap-1.5 flex-1">
+                    {loading === 'disconnect' ? <Loader2 className="size-3.5 animate-spin" /> : <PowerOff className="size-3.5" />}
+                    <span className="hidden sm:inline">Desconectar</span>
+                  </Button>
+                  <Button variant="ghost" onClick={() => setShowLogoutDialog(true)} disabled={loading !== null} size="sm" className="gap-1.5 text-destructive hover:text-destructive flex-1">
+                    <LogOut className="size-3.5" />
+                    <span className="hidden sm:inline">Logout</span>
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
         </Card>
 
         {/* Stats Cards */}

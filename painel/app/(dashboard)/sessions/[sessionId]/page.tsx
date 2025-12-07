@@ -37,6 +37,8 @@ export default async function SessionPage({
       pushName={session?.pushName}
       profilePicture={session?.profilePicture}
       stats={session?.stats}
+      apiKey={session?.apiKey}
+      createdAt={session?.createdAt}
     />
   )
 }
