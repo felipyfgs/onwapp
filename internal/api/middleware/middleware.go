@@ -12,6 +12,7 @@ type SessionKeyLookup func(ctx context.Context, apiKey string) (sessionName stri
 
 // Auth creates a middleware that validates the Authorization header
 // It supports both global key (full access) and session-specific keys (session-only access)
+// Also accepts auth via query param for SSE connections (EventSource doesn't support headers)
 func Auth(globalKey string, sessionLookup SessionKeyLookup) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// If no global key configured, skip auth
@@ -20,7 +21,11 @@ func Auth(globalKey string, sessionLookup SessionKeyLookup) gin.HandlerFunc {
 			return
 		}
 
+		// Try Authorization header first, then query param (for SSE)
 		token := c.GetHeader("Authorization")
+		if token == "" {
+			token = c.Query("auth")
+		}
 		if token == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error": "missing Authorization header",
@@ -97,15 +102,13 @@ func CORS(allowedOrigins []string) gin.HandlerFunc {
 			}
 		}
 
-		if allowed {
-			if len(allowedOrigins) > 0 && allowedOrigins[0] == "*" {
-				c.Header("Access-Control-Allow-Origin", "*")
-			} else {
-				c.Header("Access-Control-Allow-Origin", origin)
-			}
-			c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-			c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization")
+		// Always set CORS headers for allowed origins
+		if allowed || len(allowedOrigins) == 0 || (len(allowedOrigins) > 0 && allowedOrigins[0] == "*") {
+			c.Header("Access-Control-Allow-Origin", "*")
+			c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+			c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization, Cache-Control")
 			c.Header("Access-Control-Max-Age", "86400")
+			c.Header("Access-Control-Expose-Headers", "Content-Length, Content-Type")
 		}
 
 		if c.Request.Method == "OPTIONS" {

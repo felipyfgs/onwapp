@@ -40,7 +40,9 @@ export interface ChatMessage {
   fromMe: boolean
   isGroup: boolean
   quotedId?: string
+  quotedSender?: string
   status?: string
+  deleted?: boolean
 }
 
 async function getApiKey(): Promise<string> {
@@ -70,7 +72,8 @@ async function apiRequest<T>(
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({ error: 'Request failed' }))
-    throw new Error(error.error || 'Request failed')
+    console.error(`API Error [${res.status}] ${endpoint}:`, error)
+    throw new Error(error.error || `Request failed (${res.status})`)
   }
 
   return res.json()
@@ -129,21 +132,67 @@ export interface SendMessageResponse {
   timestamp: number
 }
 
+export interface QuotedMessage {
+  messageId: string
+  chatJid?: string
+  senderJid?: string
+}
+
 export async function sendTextMessage(
   sessionId: string, 
   phone: string, 
   text: string,
-  isGroup = false
+  isGroup = false,
+  quoted?: QuotedMessage
 ): Promise<SendMessageResponse> {
   if (isGroup) {
     return apiRequest<SendMessageResponse>(`/${sessionId}/group/send/text`, {
       method: 'POST',
-      body: JSON.stringify({ groupId: phone, text }),
+      body: JSON.stringify({ groupId: phone, text, quoted }),
     })
   }
   return apiRequest<SendMessageResponse>(`/${sessionId}/message/send/text`, {
     method: 'POST',
-    body: JSON.stringify({ phone, text }),
+    body: JSON.stringify({ phone, text, quoted }),
+  })
+}
+
+// Delete a message
+export async function deleteMessage(
+  sessionId: string,
+  phone: string,
+  messageId: string,
+  forMe = false
+): Promise<SendMessageResponse> {
+  return apiRequest<SendMessageResponse>(`/${sessionId}/message/delete`, {
+    method: 'POST',
+    body: JSON.stringify({ phone, messageId, forMe }),
+  })
+}
+
+// Edit a message (only your own messages)
+export async function editMessage(
+  sessionId: string,
+  phone: string,
+  messageId: string,
+  newText: string
+): Promise<SendMessageResponse> {
+  return apiRequest<SendMessageResponse>(`/${sessionId}/message/edit`, {
+    method: 'POST',
+    body: JSON.stringify({ phone, messageId, newText }),
+  })
+}
+
+// Send reaction to a message
+export async function sendReaction(
+  sessionId: string,
+  phone: string,
+  messageId: string,
+  emoji: string
+): Promise<SendMessageResponse> {
+  return apiRequest<SendMessageResponse>(`/${sessionId}/message/react`, {
+    method: 'POST',
+    body: JSON.stringify({ phone, messageId, emoji }),
   })
 }
 

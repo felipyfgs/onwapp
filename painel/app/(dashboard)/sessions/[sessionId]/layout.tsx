@@ -81,10 +81,12 @@ export default async function SessionLayout({
   const { sessionId } = await params
   const cookieStore = await cookies()
   const apiKey = cookieStore.get('api_key')?.value || ''
+  const sidebarState = cookieStore.get('sidebar_state')?.value
+  const defaultOpen = sidebarState === 'true'
   const sessions = await getSessions(apiKey)
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={defaultOpen}>
       <AppSidebar sessions={sessions} currentSessionId={sessionId} />
       <SidebarInset>{children}</SidebarInset>
     </SidebarProvider>

@@ -106,6 +106,38 @@ export async function getContactsInfo(
 // Avatar cache to avoid repeated requests
 const avatarCache = new Map<string, string | null>()
 
+// Session profile cache (our own avatar)
+const sessionProfileCache = new Map<string, { phone: string; avatar: string | null }>()
+
+// Get our own profile (phone and avatar) for the session
+export async function getMyProfile(sessionId: string): Promise<{ phone: string; avatar: string | null }> {
+  if (sessionProfileCache.has(sessionId)) {
+    return sessionProfileCache.get(sessionId)!
+  }
+  
+  try {
+    const response = await apiRequest<{
+      profile: {
+        jid?: string
+        pushName?: string
+        status?: string
+        pictureUrl?: string
+      }
+    }>(`/${sessionId}/profile`)
+    
+    const profile = {
+      phone: response.profile?.jid?.split('@')[0] || '',
+      avatar: response.profile?.pictureUrl || null
+    }
+    sessionProfileCache.set(sessionId, profile)
+    return profile
+  } catch {
+    const fallback = { phone: '', avatar: null }
+    sessionProfileCache.set(sessionId, fallback)
+    return fallback
+  }
+}
+
 export async function getContactAvatar(sessionId: string, phone: string): Promise<AvatarResponse> {
   const params = new URLSearchParams({ phone })
   return apiRequest<AvatarResponse>(`/${sessionId}/contact/avatar?${params}`)

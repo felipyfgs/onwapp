@@ -14,8 +14,9 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { ChatMessageItem } from "./chat-message-item"
 import { ChatInput } from "./chat-input"
-import { getChatMessages, sendTextMessage, sendAudioMessage, markChatRead, type Chat, type ChatMessage } from "@/lib/api/chats"
+import { getChatMessages, sendTextMessage, sendAudioMessage, markChatRead, deleteMessage, editMessage, sendReaction, type Chat, type ChatMessage, type QuotedMessage } from "@/lib/api/chats"
 import { getContactAvatarUrl } from "@/lib/api/contacts"
+import { useRealtime, type NewMessageData, type MessageStatusData } from "@/hooks/use-realtime"
 import { cn } from "@/lib/utils"
 
 const PAGE_SIZE = 50
@@ -23,10 +24,11 @@ const PAGE_SIZE = 50
 interface ChatWindowProps {
   sessionId: string
   chat: Chat
+  myJid?: string
   onBack?: () => void
 }
 
-export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
+export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -34,6 +36,8 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
   const [hasMore, setHasMore] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
+  const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null)
+  const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const topSentinelRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -41,10 +45,10 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
 
   const phone = chat.jid.split('@')[0]
   
-  // Resolve display name: chat.name > pushName > phone
+  // Resolve display name: chat.name > pushName (only from received messages) > phone
   const displayName = (chat.name && chat.name.trim()) 
     ? chat.name 
-    : (!chat.isGroup && chat.lastMessage?.pushName) 
+    : (!chat.isGroup && !chat.lastMessage?.fromMe && chat.lastMessage?.pushName) 
       ? chat.lastMessage.pushName 
       : phone
 
@@ -60,6 +64,66 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
     })
   }, [])
 
+  // Real-time updates via SSE
+  const handleNewMessage = useCallback((data: NewMessageData) => {
+    // Only add message if it's for this chat
+    if (data.chatJid !== chat.jid) return
+    
+    // Check if message already exists (avoid duplicates)
+    setMessages(prev => {
+      if (prev.some(m => m.msgId === data.msgId)) return prev
+      
+      const newMessage: ChatMessage = {
+        msgId: data.msgId,
+        chatJid: data.chatJid,
+        senderJid: data.senderJid,
+        pushName: data.pushName,
+        timestamp: data.timestamp,
+        type: data.type,
+        mediaType: data.mediaType,
+        content: data.content,
+        fromMe: data.fromMe,
+        isGroup: data.isGroup,
+        status: data.fromMe ? 'sent' : undefined,
+      }
+      return [...prev, newMessage]
+    })
+    
+    // Mark received message as read immediately (sends blue tick)
+    if (!data.fromMe) {
+      markChatRead(sessionId, phone, [data.msgId]).catch(() => {})
+    }
+    
+    // Auto-scroll to bottom for new messages
+    setTimeout(() => scrollToBottom(), 100)
+  }, [chat.jid, scrollToBottom, sessionId, phone])
+
+  const handleMessageStatus = useCallback((data: MessageStatusData) => {
+    if (data.chatJid !== chat.jid) return
+    
+    // Handle deleted messages - mark as deleted instead of removing
+    if (data.status === 'deleted') {
+      setMessages(prev => prev.map(msg => 
+        msg.msgId === data.msgId 
+          ? { ...msg, deleted: true, content: '', mediaType: undefined }
+          : msg
+      ))
+      return
+    }
+    
+    setMessages(prev => prev.map(msg => 
+      msg.msgId === data.msgId 
+        ? { ...msg, status: data.status }
+        : msg
+    ))
+  }, [chat.jid])
+
+  useRealtime({
+    sessionId,
+    onMessage: handleNewMessage,
+    onMessageStatus: handleMessageStatus,
+  })
+
   const loadMessages = useCallback(async () => {
     try {
       setLoading(true)
@@ -69,13 +133,12 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
       const data = await getChatMessages(sessionId, chat.jid, PAGE_SIZE, 0)
       setMessages(data)
       if (data.length < PAGE_SIZE) setHasMore(false)
-      setTimeout(() => scrollToBottom(false), 100)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar mensagens')
     } finally {
       setLoading(false)
     }
-  }, [sessionId, chat.jid, scrollToBottom])
+  }, [sessionId, chat.jid])
 
   const loadMoreMessages = useCallback(async () => {
     if (loadingMore || !hasMore) return
@@ -113,6 +176,16 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
     loadMessages()
   }, [loadMessages])
 
+  // Scroll to bottom when messages are loaded for the first time or chat changes
+  useEffect(() => {
+    if (!loading && messages.length > 0) {
+      // Use requestAnimationFrame to ensure DOM is updated
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'instant' })
+      })
+    }
+  }, [loading, chat.jid]) // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     const sentinel = topSentinelRef.current
     if (!sentinel || loading) return
@@ -130,18 +203,44 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
     return () => observer.disconnect()
   }, [hasMore, loadingMore, loading, loadMoreMessages])
 
+  // Mark received messages as read (sends blue ticks)
   useEffect(() => {
-    if (chat.unreadCount && chat.unreadCount > 0 && messages.length > 0) {
-      const lastMessages = messages.slice(-5).map(m => m.msgId)
-      markChatRead(sessionId, phone, lastMessages).catch(() => {})
+    if (messages.length === 0 || loading) return
+    
+    // Filter only received messages (not from me) to mark as read
+    const receivedMessages = messages
+      .filter(m => !m.fromMe)
+      .slice(-20) // Last 20 received messages
+      .map(m => m.msgId)
+    
+    if (receivedMessages.length > 0) {
+      markChatRead(sessionId, phone, receivedMessages).catch(() => {})
     }
-  }, [sessionId, phone, chat.unreadCount, messages])
+  }, [sessionId, phone, messages, loading])
 
   const handleSendMessage = async (text: string) => {
     setSending(true)
     try {
       const recipient = chat.isGroup ? chat.jid : phone
-      const response = await sendTextMessage(sessionId, recipient, text, chat.isGroup)
+      
+      // If editing, update the message instead
+      if (editingMessage) {
+        await editMessage(sessionId, phone, editingMessage.msgId, text)
+        setMessages(prev => prev.map(m => 
+          m.msgId === editingMessage.msgId ? { ...m, content: text } : m
+        ))
+        setEditingMessage(null)
+        return
+      }
+      
+      // Build quoted message if replying
+      const quoted: QuotedMessage | undefined = replyingTo ? {
+        messageId: replyingTo.msgId,
+        chatJid: replyingTo.chatJid,
+        senderJid: replyingTo.senderJid,
+      } : undefined
+      
+      const response = await sendTextMessage(sessionId, recipient, text, chat.isGroup, quoted)
       const newMessage: ChatMessage = {
         msgId: response.messageId,
         chatJid: chat.jid,
@@ -151,8 +250,10 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
         fromMe: true,
         isGroup: chat.isGroup,
         status: 'sent',
+        quotedId: replyingTo?.msgId,
       }
       setMessages(prev => [...prev, newMessage])
+      setReplyingTo(null)
       setTimeout(() => scrollToBottom(), 100)
     } catch (err) {
       throw err
@@ -161,9 +262,76 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
     }
   }
 
+  // Message action handlers
+  const handleReply = (message: ChatMessage) => {
+    setReplyingTo(message)
+    setEditingMessage(null)
+  }
+
+  const handleReact = async (message: ChatMessage, emoji: string) => {
+    try {
+      await sendReaction(sessionId, phone, message.msgId, emoji)
+    } catch (err) {
+      console.error('Failed to send reaction:', err)
+    }
+  }
+
+  const handleEdit = (message: ChatMessage) => {
+    setEditingMessage(message)
+    setReplyingTo(null)
+  }
+
+  const handleDelete = async (message: ChatMessage, forMe: boolean) => {
+    const markAsDeleted = () => {
+      setMessages(prev => prev.map(m => 
+        m.msgId === message.msgId 
+          ? { ...m, deleted: true, content: '', mediaType: undefined }
+          : m
+      ))
+    }
+    
+    try {
+      await deleteMessage(sessionId, phone, message.msgId, forMe)
+      // Mark as deleted in UI if deleted for everyone
+      if (!forMe) {
+        markAsDeleted()
+      }
+    } catch (err) {
+      // Error 479 means message was already deleted on WhatsApp - mark as deleted anyway
+      const errorMsg = err instanceof Error ? err.message : ''
+      if (errorMsg.includes('479')) {
+        markAsDeleted()
+      } else {
+        console.error('Failed to delete message:', err)
+      }
+    }
+  }
+
+  const cancelReplyOrEdit = () => {
+    setReplyingTo(null)
+    setEditingMessage(null)
+  }
+
+  const handleScrollToMessage = useCallback((msgId: string) => {
+    const element = document.getElementById(`msg-${msgId}`)
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      // Highlight effect
+      element.classList.add('bg-[#2a3942]')
+      setTimeout(() => {
+        element.classList.remove('bg-[#2a3942]')
+      }, 1500)
+    }
+  }, [])
+
   const groupMessagesByDate = (msgs: ChatMessage[]) => {
+    // Deduplicate messages by msgId first
+    const uniqueMsgs = Array.from(
+      new Map(msgs.map(m => [m.msgId, m])).values()
+    )
+    
     const groupMap = new Map<string, ChatMessage[]>()
-    const sortedMsgs = [...msgs].sort((a, b) => a.timestamp - b.timestamp)
+    const sortedMsgs = uniqueMsgs.sort((a, b) => a.timestamp - b.timestamp)
 
     sortedMsgs.forEach(msg => {
       const date = new Date(msg.timestamp * 1000).toLocaleDateString('pt-BR', {
@@ -288,20 +456,28 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
             )}
             
             {messageGroups.map(group => (
-              <div key={group.date} className="mb-2">
+              <div key={group.date}>
                 <div className="flex justify-center my-3">
-                  <span className="text-[12.5px] text-muted-foreground bg-card/90 px-3 py-1.5 rounded-lg shadow-sm">
+                  <span className="text-[12.5px] text-[#8696a0] bg-[#182229] px-3 py-1.5 rounded-lg shadow-sm">
                     {group.date}
                   </span>
                 </div>
-                <div className="space-y-0.5">
+                <div>
                   {group.messages.map(msg => (
-                    <ChatMessageItem 
-                      key={msg.msgId} 
-                      message={msg} 
-                      showSender={chat.isGroup}
-                      sessionId={sessionId}
-                    />
+                    <div key={msg.msgId} id={`msg-${msg.msgId}`} className="transition-colors duration-500">
+                      <ChatMessageItem 
+                        message={msg} 
+                        showSender={chat.isGroup}
+                        sessionId={sessionId}
+                        myJid={myJid}
+                        allMessages={messages}
+                        onReply={handleReply}
+                        onReact={handleReact}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                        onScrollToMessage={handleScrollToMessage}
+                      />
+                    </div>
                   ))}
                 </div>
               </div>
@@ -343,6 +519,9 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
           alert(`Envio de ${type} sera implementado em breve!`)
         }}
         disabled={loading || sending}
+        replyingTo={replyingTo}
+        editingMessage={editingMessage}
+        onCancelReplyOrEdit={cancelReplyOrEdit}
       />
     </div>
   )

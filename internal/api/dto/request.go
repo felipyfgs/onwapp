@@ -12,9 +12,17 @@ type CreateSessionRequest struct {
 
 // Message requests
 
+// QuotedMessageDTO represents a message being quoted/replied to
+type QuotedMessageDTO struct {
+	MessageID string `json:"messageId" binding:"required" example:"3EB0ABC123"`
+	ChatJID   string `json:"chatJid,omitempty" example:"5511999999999@s.whatsapp.net"`
+	SenderJID string `json:"senderJid,omitempty" example:"5511888888888@s.whatsapp.net"`
+}
+
 type SendTextRequest struct {
-	Phone string `json:"phone" binding:"required" example:"5511999999999"`
-	Text  string `json:"text" binding:"required" example:"Hello World"`
+	Phone  string            `json:"phone" binding:"required" example:"5511999999999"`
+	Text   string            `json:"text" binding:"required" example:"Hello World"`
+	Quoted *QuotedMessageDTO `json:"quoted,omitempty"`
 }
 
 type SendImageRequest struct {

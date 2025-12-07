@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { Play, Pause, Mic } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { getContactAvatarUrl } from "@/lib/api/contacts"
+import { getContactAvatarUrl, getMyProfile } from "@/lib/api/contacts"
 
 interface AudioPlayerProps {
   src: string
@@ -25,9 +25,17 @@ export function AudioPlayer({ src, duration = 0, senderName, senderJid, sessionI
 
   // Fetch avatar
   useEffect(() => {
-    if (senderJid && sessionId && !isMe) {
+    if (!sessionId) return
+    
+    if (isMe) {
+      getMyProfile(sessionId)
+        .then(profile => setAvatarUrl(profile.avatar))
+        .catch(() => setAvatarUrl(null))
+    } else if (senderJid) {
       const phone = senderJid.split('@')[0]
-      getContactAvatarUrl(sessionId, phone).then(url => setAvatarUrl(url))
+      getContactAvatarUrl(sessionId, phone)
+        .then(url => setAvatarUrl(url))
+        .catch(() => setAvatarUrl(null))
     }
   }, [senderJid, sessionId, isMe])
 
@@ -94,7 +102,7 @@ export function AudioPlayer({ src, duration = 0, senderName, senderJid, sessionI
   })
 
   return (
-    <div className={cn("flex items-center gap-2 min-w-[180px]", className)}>
+    <div className={cn("flex items-center gap-2 min-w-[200px]", className)}>
       <audio ref={audioRef} src={src} preload="metadata" />
       
       {/* Avatar with mic badge */}
@@ -103,73 +111,67 @@ export function AudioPlayer({ src, duration = 0, senderName, senderJid, sessionI
           <img 
             src={avatarUrl} 
             alt={senderName || ""} 
-            className="size-10 rounded-full object-cover"
+            className="size-[46px] rounded-full object-cover"
           />
         ) : (
           <div className={cn(
-            "size-10 rounded-full flex items-center justify-center text-white font-medium",
-            isMe ? "bg-[#00a884]" : "bg-[#8696a0]"
+            "size-[46px] rounded-full flex items-center justify-center text-primary-foreground font-medium text-lg",
+            isMe ? "bg-primary" : "bg-muted-foreground"
           )}>
             {senderName?.[0]?.toUpperCase() || "?"}
           </div>
         )}
         <div className={cn(
-          "absolute -bottom-0.5 -right-0.5 size-4 rounded-full flex items-center justify-center",
-          isMe ? "bg-[#075e54]" : "bg-[#667781]"
+          "absolute -bottom-0.5 -right-0.5 size-[18px] rounded-full flex items-center justify-center",
+          isMe ? "bg-primary/80" : "bg-muted-foreground/80"
         )}>
-          <Mic className="size-2.5 text-white" />
+          <Mic className="size-3 text-primary-foreground" />
         </div>
       </div>
       
-      {/* Play button */}
-      <button
-        onClick={togglePlay}
-        className={cn(
-          "size-8 rounded-full flex items-center justify-center shrink-0",
-          isMe 
-            ? "text-[#075e54] hover:bg-white/10" 
-            : "text-[#00a884]"
-        )}
-      >
-        {playing ? (
-          <Pause className="size-5" fill="currentColor" />
-        ) : (
-          <Play className="size-5 ml-0.5" fill="currentColor" />
-        )}
-      </button>
-      
-      {/* Waveform and time */}
+      {/* Play button + Waveform + Time */}
       <div className="flex-1 flex flex-col gap-1 min-w-0">
-        <div className="flex items-center gap-[2px] h-5">
-          {waveformData.map((height, i) => {
-            const barProgress = (i / bars) * 100
-            const isPlayed = barProgress < progress
-            return (
-              <div
-                key={i}
-                className={cn(
-                  "w-[3px] rounded-full transition-colors",
-                  isPlayed 
-                    ? isMe ? "bg-[#075e54]" : "bg-[#00a884]"
-                    : isMe ? "bg-[#075e54]/40" : "bg-[#8696a0]"
-                )}
-                style={{ height: `${height * 100}%` }}
-              />
-            )
-          })}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={togglePlay}
+            className="size-8 rounded-full flex items-center justify-center shrink-0 text-muted-foreground hover:text-foreground"
+          >
+            {playing ? (
+              <Pause className="size-6" fill="currentColor" />
+            ) : (
+              <Play className="size-6 ml-0.5" fill="currentColor" />
+            )}
+          </button>
+          
+          <div className="flex-1 flex items-center gap-[2px] h-[26px]">
+            {waveformData.map((height, i) => {
+              const barProgress = (i / bars) * 100
+              const isPlayed = barProgress < progress
+              return (
+                <div
+                  key={i}
+                  className={cn(
+                    "w-[3px] rounded-full transition-colors",
+                    isPlayed 
+                      ? "bg-primary" 
+                      : "bg-muted-foreground/40"
+                  )}
+                  style={{ height: `${height * 100}%` }}
+                />
+              )
+            })}
+          </div>
         </div>
         
-        <div className="flex items-center justify-between text-[10px]">
-          <span className={isMe ? "text-[#075e54]/70" : "text-[#667781]"}>
+        {/* Time row */}
+        <div className="flex items-center pl-10 text-[11px]">
+          <span className={isMe ? "text-primary-foreground/60" : "text-muted-foreground"}>
             {formatTime(playing ? currentTime : audioDuration)}
           </span>
           {playing && (
             <button
               onClick={toggleSpeed}
-              className={cn(
-                "font-semibold px-1 rounded",
-                isMe ? "text-[#075e54]" : "text-[#667781] bg-[#e9edef]"
-              )}
+              className="ml-auto font-semibold px-1.5 py-0.5 rounded text-[10px] bg-secondary text-secondary-foreground"
             >
               {playbackRate}x
             </button>

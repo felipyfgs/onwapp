@@ -241,7 +241,7 @@ func main() {
 	}
 
 	// Initialize Chat handler with dependencies
-	chatHandler := handler.NewChatHandler(wppService)
+	chatHandler := handler.NewChatHandler(wppService, database)
 	chatHandler.SetSessionService(sessionService)
 	chatHandler.SetHistorySyncService(historySyncService)
 
@@ -258,6 +258,7 @@ func main() {
 		Status:     handler.NewStatusHandler(wppService),
 		Settings:   handler.NewSettingsHandler(database.Settings, wppService),
 		Webhook:    webhookHandler,
+		SSE:        handler.NewSSEHandler(),
 	}
 
 	// Create session lookup function for session-level API keys

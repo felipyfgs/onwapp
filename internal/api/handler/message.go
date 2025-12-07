@@ -50,14 +50,22 @@ func (h *MessageHandler) SendText(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.wpp.SendText(c.Request.Context(), sessionId, req.Phone, req.Text)
+	var quoted *wpp.QuotedMessage
+	if req.Quoted != nil {
+		quoted = &wpp.QuotedMessage{
+			MessageID: req.Quoted.MessageID,
+			ChatJID:   req.Quoted.ChatJID,
+			SenderJID: req.Quoted.SenderJID,
+		}
+	}
+
+	resp, err := h.wpp.SendTextQuoted(c.Request.Context(), sessionId, req.Phone, req.Text, quoted)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, dto.SendResponse{
-
 		MessageID: resp.ID,
 		Timestamp: resp.Timestamp.Unix(),
 	})

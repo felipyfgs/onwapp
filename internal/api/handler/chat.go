@@ -1,24 +1,31 @@
 package handler
 
 import (
+	"context"
+	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"onwapp/internal/api/dto"
+	"onwapp/internal/db"
+	"onwapp/internal/model"
 	"onwapp/internal/service"
 	"onwapp/internal/service/wpp"
 )
 
 type ChatHandler struct {
 	wpp                *wpp.Service
+	database           *db.Database
 	sessionService     *service.SessionService
 	historySyncService *service.HistorySyncService
 }
 
-func NewChatHandler(wpp *wpp.Service) *ChatHandler {
-	return &ChatHandler{wpp: wpp}
+func NewChatHandler(wpp *wpp.Service, database *db.Database) *ChatHandler {
+	return &ChatHandler{wpp: wpp, database: database}
 }
 
 func (h *ChatHandler) SetSessionService(s *service.SessionService) {
@@ -27,6 +34,34 @@ func (h *ChatHandler) SetSessionService(s *service.SessionService) {
 
 func (h *ChatHandler) SetHistorySyncService(s *service.HistorySyncService) {
 	h.historySyncService = s
+}
+
+// saveDeleteUpdate saves a delete event to the database
+func (h *ChatHandler) saveDeleteUpdate(ctx context.Context, sessionId, phone, messageID string) {
+	if h.database == nil {
+		return
+	}
+
+	session, err := h.sessionService.Get(sessionId)
+	if err != nil {
+		return
+	}
+
+	data, _ := json.Marshal(map[string]interface{}{
+		"deletedBy": "user",
+		"phone":     phone,
+	})
+
+	update := &model.MessageUpdate{
+		SessionID: session.ID,
+		MsgID:     messageID,
+		Type:      model.UpdateTypeDelete,
+		Actor:     phone,
+		Data:      data,
+		EventAt:   time.Now(),
+	}
+
+	h.database.MessageUpdates.Save(ctx, update)
 }
 
 // =============================================================================
@@ -153,6 +188,15 @@ func (h *ChatHandler) MarkRead(c *gin.Context) {
 	if err := h.wpp.MarkRead(c.Request.Context(), sessionId, req.Phone, req.MessageIDs); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
+	}
+
+	// Mark chat as read in database (zero unread count)
+	if h.database != nil {
+		chatJID := req.Phone
+		if !strings.Contains(chatJID, "@") {
+			chatJID = req.Phone + "@s.whatsapp.net"
+		}
+		_ = h.database.Chats.MarkAsRead(c.Request.Context(), sessionId, chatJID)
 	}
 
 	c.JSON(http.StatusOK, gin.H{})
@@ -289,7 +333,21 @@ func (h *ChatHandler) DeleteMessage(c *gin.Context) {
 	}
 
 	resp, err := h.wpp.DeleteMessage(c.Request.Context(), sessionId, req.Phone, req.MessageID, req.ForMe)
+	
+	// Save delete to database (even if WhatsApp returns error like 479 = already deleted)
+	if h.database != nil && !req.ForMe {
+		h.saveDeleteUpdate(c.Request.Context(), sessionId, req.Phone, req.MessageID)
+	}
+
 	if err != nil {
+		// Error 479 means message was already deleted - treat as success
+		if strings.Contains(err.Error(), "479") {
+			c.JSON(http.StatusOK, dto.SendResponse{
+				MessageID: req.MessageID,
+				Timestamp: time.Now().Unix(),
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
@@ -519,22 +577,41 @@ func (h *ChatHandler) GetChatMessages(c *gin.Context) {
 		return
 	}
 
+	// Get deleted message IDs
+	msgIDs := make([]string, len(messages))
+	for i, msg := range messages {
+		msgIDs[i] = msg.MsgId
+	}
+	deletedMsgs := make(map[string]bool)
+	if h.database != nil && len(msgIDs) > 0 {
+		deletedMsgs, _ = h.database.MessageUpdates.GetDeletedMsgIDs(c.Request.Context(), session.ID, msgIDs)
+	}
+
 	response := make([]dto.ChatMessageResponse, 0, len(messages))
 	for _, msg := range messages {
-		response = append(response, dto.ChatMessageResponse{
-			MsgId:     msg.MsgId,
-			ChatJID:   msg.ChatJID,
-			SenderJID: msg.SenderJID,
-			PushName:  msg.PushName,
-			Timestamp: msg.Timestamp.Unix(),
-			Type:      msg.Type,
-			MediaType: msg.MediaType,
-			Content:   msg.Content,
-			FromMe:    msg.FromMe,
-			IsGroup:   msg.IsGroup,
-			QuotedID:  msg.QuotedID,
-			Status:    string(msg.Status),
-		})
+		isDeleted := deletedMsgs[msg.MsgId]
+		resp := dto.ChatMessageResponse{
+			MsgId:        msg.MsgId,
+			ChatJID:      msg.ChatJID,
+			SenderJID:    msg.SenderJID,
+			PushName:     msg.PushName,
+			Timestamp:    msg.Timestamp.Unix(),
+			Type:         msg.Type,
+			MediaType:    msg.MediaType,
+			Content:      msg.Content,
+			FromMe:       msg.FromMe,
+			IsGroup:      msg.IsGroup,
+			QuotedID:     msg.QuotedID,
+			QuotedSender: msg.QuotedSender,
+			Status:       string(msg.Status),
+			Deleted:      isDeleted,
+		}
+		// Clear content for deleted messages
+		if isDeleted {
+			resp.Content = ""
+			resp.MediaType = ""
+		}
+		response = append(response, resp)
 	}
 
 	c.JSON(http.StatusOK, response)

@@ -211,6 +211,17 @@ func (r *ChatRepository) MarkAsRead(ctx context.Context, sessionID, chatJID stri
 	return err
 }
 
+func (r *ChatRepository) IncrementUnreadCount(ctx context.Context, sessionID, chatJID string) error {
+	now := time.Now()
+	_, err := r.pool.Exec(ctx, `
+		UPDATE "onWappChat"
+		SET "unreadCount" = "unreadCount" + 1, "updatedAt" = $3
+		WHERE "sessionId" = $1 AND "chatJid" = $2`,
+		sessionID, chatJID, now,
+	)
+	return err
+}
+
 func (r *ChatRepository) UpdateEphemeralSettings(ctx context.Context, sessionID, chatJID string, expiration int, timestamp int64) error {
 	now := time.Now()
 	_, err := r.pool.Exec(ctx, `

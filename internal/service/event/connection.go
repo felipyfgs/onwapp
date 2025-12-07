@@ -406,6 +406,8 @@ func (s *Service) handleHistorySync(ctx context.Context, session *model.Session,
 				StubParams:    stubParams,
 				MessageSecret: messageSecret,
 				Broadcast:     broadcast,
+				QuotedID:      extractQuotedID(webMsg.GetMessage()),
+				QuotedSender:  extractQuotedSender(webMsg.GetMessage()),
 			}
 
 			allMessages = append(allMessages, msg)

@@ -23,8 +23,9 @@ function getDisplayName(chat: Chat): string {
     return chat.name
   }
   
-  // 2. For private chats, try pushName from last message (even if fromMe, backend should return contact's pushName)
-  if (!chat.isGroup && chat.lastMessage?.pushName && chat.lastMessage.pushName.trim()) {
+  // 2. For private chats, try pushName from last message ONLY if it's a received message (not from us)
+  // When fromMe is true, pushName is OUR name, not the contact's name
+  if (!chat.isGroup && !chat.lastMessage?.fromMe && chat.lastMessage?.pushName && chat.lastMessage.pushName.trim()) {
     return chat.lastMessage.pushName
   }
   

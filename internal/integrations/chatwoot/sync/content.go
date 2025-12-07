@@ -529,8 +529,14 @@ func extractInteractiveMessageContent(message map[string]interface{}) string {
 	return ""
 }
 
-// ExtractQuotedID extracts the quoted message ID (stanzaID) from rawEvent
+// ExtractQuotedID extracts the quoted message ID (stanzaID)
 func ExtractQuotedID(msg *model.Message) string {
+	// First check the QuotedID field directly (populated by extractQuotedID function)
+	if msg.QuotedID != "" {
+		return msg.QuotedID
+	}
+
+	// Fallback: try to extract from rawEvent for older messages
 	if len(msg.RawEvent) == 0 {
 		return ""
 	}

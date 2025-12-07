@@ -48,3 +48,30 @@ func (r *MessageUpdateRepository) GetByMsgID(ctx context.Context, sessionID, msg
 	}
 	return updates, rows.Err()
 }
+
+// GetDeletedMsgIDs returns a set of message IDs that have been deleted
+func (r *MessageUpdateRepository) GetDeletedMsgIDs(ctx context.Context, sessionID string, msgIDs []string) (map[string]bool, error) {
+	if len(msgIDs) == 0 {
+		return make(map[string]bool), nil
+	}
+
+	rows, err := r.pool.Query(ctx, `
+		SELECT DISTINCT "msgId"
+		FROM "onWappMessageUpdate" 
+		WHERE "sessionId" = $1 AND "msgId" = ANY($2) AND "type" = 'delete'`,
+		sessionID, msgIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	deleted := make(map[string]bool)
+	for rows.Next() {
+		var msgID string
+		if err := rows.Scan(&msgID); err != nil {
+			return nil, err
+		}
+		deleted[msgID] = true
+	}
+	return deleted, rows.Err()
+}

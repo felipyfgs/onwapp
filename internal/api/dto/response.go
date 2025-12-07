@@ -195,18 +195,20 @@ type ChatActionResponse struct {
 }
 
 type ChatMessageResponse struct {
-	MsgId     string `json:"msgId" example:"3EB0ABC123"`
-	ChatJID   string `json:"chatJid" example:"5511999999999@s.whatsapp.net"`
-	SenderJID string `json:"senderJid,omitempty" example:"5511999999999@s.whatsapp.net"`
-	PushName  string `json:"pushName,omitempty" example:"John Doe"`
-	Timestamp int64  `json:"timestamp" example:"1701619200"`
-	Type      string `json:"type" example:"text"`
-	MediaType string `json:"mediaType,omitempty" example:"image"`
-	Content   string `json:"content,omitempty" example:"Hello!"`
-	FromMe    bool   `json:"fromMe" example:"false"`
-	IsGroup   bool   `json:"isGroup" example:"false"`
-	QuotedID  string `json:"quotedId,omitempty" example:"3EB0DEF456"`
-	Status    string `json:"status,omitempty" example:"sent"`
+	MsgId        string `json:"msgId" example:"3EB0ABC123"`
+	ChatJID      string `json:"chatJid" example:"5511999999999@s.whatsapp.net"`
+	SenderJID    string `json:"senderJid,omitempty" example:"5511999999999@s.whatsapp.net"`
+	PushName     string `json:"pushName,omitempty" example:"John Doe"`
+	Timestamp    int64  `json:"timestamp" example:"1701619200"`
+	Type         string `json:"type" example:"text"`
+	MediaType    string `json:"mediaType,omitempty" example:"image"`
+	Content      string `json:"content,omitempty" example:"Hello!"`
+	FromMe       bool   `json:"fromMe" example:"false"`
+	IsGroup      bool   `json:"isGroup" example:"false"`
+	QuotedID     string `json:"quotedId,omitempty" example:"3EB0DEF456"`
+	QuotedSender string `json:"quotedSender,omitempty" example:"5511999999999@s.whatsapp.net"`
+	Status       string `json:"status,omitempty" example:"sent"`
+	Deleted      bool   `json:"deleted,omitempty" example:"false"`
 }
 
 // Newsletter responses

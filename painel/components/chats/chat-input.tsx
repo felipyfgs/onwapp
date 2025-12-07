@@ -1,13 +1,14 @@
 "use client"
 
-import { useState, useRef, useCallback } from "react"
-import { Send, X } from "lucide-react"
+import { useState, useRef, useCallback, useEffect } from "react"
+import { Send, X, Reply, Pencil } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { EmojiPicker } from "./emoji-picker"
 import { AttachmentMenu, type AttachmentType } from "./attachment-menu"
 import { AudioRecorder } from "./audio-recorder"
 import { cn } from "@/lib/utils"
+import type { ChatMessage } from "@/lib/api/chats"
 
 interface ChatInputProps {
   onSendMessage: (text: string) => Promise<void>
@@ -17,6 +18,9 @@ interface ChatInputProps {
   onContactRequest?: () => void
   disabled?: boolean
   placeholder?: string
+  replyingTo?: ChatMessage | null
+  editingMessage?: ChatMessage | null
+  onCancelReplyOrEdit?: () => void
 }
 
 export function ChatInput({ 
@@ -26,12 +30,28 @@ export function ChatInput({
   onLocationRequest,
   onContactRequest,
   disabled,
-  placeholder = "Digite uma mensagem" 
+  placeholder = "Digite uma mensagem",
+  replyingTo,
+  editingMessage,
+  onCancelReplyOrEdit,
 }: ChatInputProps) {
   const [message, setMessage] = useState("")
   const [sending, setSending] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    if (editingMessage) {
+      setMessage(editingMessage.content || "")
+      textareaRef.current?.focus()
+    }
+  }, [editingMessage])
+
+  useEffect(() => {
+    if (replyingTo) {
+      textareaRef.current?.focus()
+    }
+  }, [replyingTo])
 
   const handleSend = useCallback(async () => {
     const text = message.trim()
@@ -53,6 +73,9 @@ export function ChatInput({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSend()
+    }
+    if (e.key === 'Escape' && (replyingTo || editingMessage)) {
+      onCancelReplyOrEdit?.()
     }
   }
 
@@ -90,10 +113,12 @@ export function ChatInput({
   }
 
   const hasText = message.trim().length > 0
+  const isReplying = !!replyingTo
+  const isEditing = !!editingMessage
 
   if (isRecording) {
     return (
-      <div className="border-t bg-background p-3">
+      <div className="border-t border-border bg-card p-3">
         <AudioRecorder
           onSend={handleAudioSend}
           onCancel={() => setIsRecording(false)}
@@ -104,15 +129,38 @@ export function ChatInput({
   }
 
   return (
-    <div className="border-t bg-background p-3">
-      <div className="flex items-end gap-2">
-        {/* Emoji picker */}
-        <EmojiPicker onEmojiSelect={handleEmojiSelect} disabled={disabled} />
+    <div className="border-t border-border bg-card">
+      {/* Reply/Edit preview bar */}
+      {(isReplying || isEditing) && (
+        <div className="flex items-center gap-3 px-4 py-2 bg-muted/50 border-b border-border">
+          <div className="p-1.5 rounded-full bg-primary/20">
+            {isEditing ? (
+              <Pencil className="size-4 text-primary" />
+            ) : (
+              <Reply className="size-4 text-primary" />
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-medium text-primary">
+              {isEditing ? "Editando mensagem" : `Respondendo ${replyingTo?.fromMe ? "a voce" : replyingTo?.pushName || "mensagem"}`}
+            </p>
+            <p className="text-[13px] text-muted-foreground truncate">
+              {isEditing ? editingMessage?.content : replyingTo?.content}
+            </p>
+          </div>
+          <button
+            onClick={onCancelReplyOrEdit}
+            className="p-1.5 rounded-full hover:bg-muted transition-colors"
+          >
+            <X className="size-5 text-muted-foreground" />
+          </button>
+        </div>
+      )}
 
-        {/* Attachment menu */}
+      <div className="flex items-end gap-2 p-3">
+        <EmojiPicker onEmojiSelect={handleEmojiSelect} disabled={disabled} />
         <AttachmentMenu onSelect={handleAttachmentSelect} disabled={disabled} />
 
-        {/* Message input */}
         <div className="flex-1 relative">
           <Textarea
             ref={textareaRef}
@@ -121,7 +169,7 @@ export function ChatInput({
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             disabled={disabled || sending}
-            className="min-h-[44px] max-h-[150px] resize-none py-3 pr-10 rounded-2xl bg-muted/50 border-0 focus-visible:ring-1"
+            className="min-h-[44px] max-h-[150px] resize-none py-3 pr-10 rounded-lg bg-muted border-0 text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary"
             rows={1}
           />
           {message && (
@@ -134,13 +182,12 @@ export function ChatInput({
           )}
         </div>
 
-        {/* Send or Mic button */}
         {hasText ? (
           <Button
             onClick={handleSend}
             disabled={sending || disabled}
             size="icon"
-            className="shrink-0 rounded-full bg-primary hover:bg-primary/90"
+            className="shrink-0 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground"
           >
             {sending ? (
               <div className="size-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
@@ -152,7 +199,7 @@ export function ChatInput({
           <Button
             variant="ghost"
             size="icon"
-            className="shrink-0 text-muted-foreground hover:text-foreground"
+            className="shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted"
             disabled={disabled}
             onClick={() => setIsRecording(true)}
           >
