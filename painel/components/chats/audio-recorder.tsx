@@ -33,12 +33,21 @@ export function AudioRecorder({ onSend, onCancel, disabled }: AudioRecorderProps
 
   const startRecording = useCallback(async () => {
     try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert("Gravacao de audio nao suportada. Use HTTPS ou localhost.")
+        return
+      }
+      
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       streamRef.current = stream
       
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4"
-      })
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm") 
+        ? "audio/webm" 
+        : MediaRecorder.isTypeSupported("audio/mp4") 
+          ? "audio/mp4" 
+          : ""
+      
+      const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
       mediaRecorderRef.current = mediaRecorder
       chunksRef.current = []
 
