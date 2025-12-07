@@ -290,6 +290,7 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
                       key={msg.msgId} 
                       message={msg} 
                       showSender={chat.isGroup}
+                      sessionId={sessionId}
                     />
                   ))}
                 </div>

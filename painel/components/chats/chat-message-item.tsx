@@ -10,10 +10,10 @@ import type { ChatMessage } from "@/lib/api/chats"
 interface ChatMessageItemProps {
   message: ChatMessage
   showSender?: boolean
-  mediaBaseUrl?: string
+  sessionId?: string
 }
 
-export function ChatMessageItem({ message, showSender, mediaBaseUrl }: ChatMessageItemProps) {
+export function ChatMessageItem({ message, showSender, sessionId }: ChatMessageItemProps) {
   const [imageViewerOpen, setImageViewerOpen] = useState(false)
   const isMe = message.fromMe
 
@@ -35,9 +35,11 @@ export function ChatMessageItem({ message, showSender, mediaBaseUrl }: ChatMessa
     }
   }
 
-  const getMediaUrl = (mediaId?: string) => {
-    if (!mediaId || !mediaBaseUrl) return null
-    return `${mediaBaseUrl}/${mediaId}`
+  const getMediaUrl = (msgId?: string) => {
+    if (!msgId || !sessionId) return null
+    // Use the public media stream endpoint (no auth required for browser playback)
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+    return `${apiUrl}/public/${sessionId}/media/stream?messageId=${msgId}`
   }
 
   const renderContent = () => {

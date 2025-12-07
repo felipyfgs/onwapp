@@ -66,6 +66,112 @@ func (h *MediaHandler) GetMedia(c *gin.Context) {
 	c.JSON(http.StatusOK, media)
 }
 
+// StreamMedia godoc
+// @Summary      Stream media file
+// @Description  Stream media file directly (redirects to storage URL or proxies the file)
+// @Tags         media
+// @Produce      application/octet-stream
+// @Param        session   path     string  true  "Session ID"
+// @Param        messageId  query     string  true  "Message ID"
+// @Success      200  {file}    binary
+// @Failure      404  {object}  dto.ErrorResponse
+// @Security     Authorization
+// @Router       /{session}/media/stream [get]
+func (h *MediaHandler) StreamMedia(c *gin.Context) {
+	sessionId := c.Param("session")
+	messageID := c.Query("messageId")
+	if messageID == "" {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "messageId query parameter is required"})
+		return
+	}
+
+	session, err := h.sessionSvc.Get(sessionId)
+	if err != nil || session == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
+		return
+	}
+
+	media, err := h.database.Media.GetByMsgID(c.Request.Context(), session.ID, messageID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if media == nil || media.StorageURL == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": "media not found or not yet downloaded"})
+		return
+	}
+
+	// If storage URL is external (S3, etc), redirect to it
+	if strings.HasPrefix(media.StorageURL, "http://") || strings.HasPrefix(media.StorageURL, "https://") {
+		c.Redirect(http.StatusFound, media.StorageURL)
+		return
+	}
+
+	// If it's a local file, proxy it
+	resp, err := http.Get(media.StorageURL)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch media"})
+		return
+	}
+	defer resp.Body.Close()
+
+	// Set content type
+	contentType := media.MimeType
+	if contentType == "" {
+		contentType = "application/octet-stream"
+	}
+	c.Header("Content-Type", contentType)
+
+	// Copy the response body to the client
+	io.Copy(c.Writer, resp.Body)
+}
+
+// StreamMediaPublic godoc
+// @Summary      Stream media file (public)
+// @Description  Stream media file directly without authentication (for browser audio/video playback)
+// @Tags         media
+// @Produce      application/octet-stream
+// @Param        session   path     string  true  "Session ID"
+// @Param        messageId  query     string  true  "Message ID"
+// @Success      200  {file}    binary
+// @Failure      404  {object}  dto.ErrorResponse
+// @Router       /public/{session}/media/stream [get]
+func (h *MediaHandler) StreamMediaPublic(c *gin.Context) {
+	sessionId := c.Param("session")
+	messageID := c.Query("messageId")
+	if messageID == "" {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "messageId query parameter is required"})
+		return
+	}
+
+	session, err := h.sessionSvc.Get(sessionId)
+	if err != nil || session == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "session not found"})
+		return
+	}
+
+	media, err := h.database.Media.GetByMsgID(c.Request.Context(), session.ID, messageID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if media == nil || media.StorageURL == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": "media not found or not yet downloaded"})
+		return
+	}
+
+	// If storage URL is external (S3, etc), redirect to it
+	if strings.HasPrefix(media.StorageURL, "http://") || strings.HasPrefix(media.StorageURL, "https://") {
+		c.Redirect(http.StatusFound, media.StorageURL)
+		return
+	}
+
+	// If it's a local file path, serve it
+	c.File(media.StorageURL)
+}
+
 // ListPendingMedia godoc
 // @Summary      List pending media downloads
 // @Description  Get list of media files pending download

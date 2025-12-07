@@ -86,6 +86,11 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	r.GET("/events", middleware.Auth(cfg.GlobalAPIKey, cfg.SessionLookup), h.Webhook.GetEvents)
 
+	// Public media streaming endpoint (no auth required for audio/video playback in browser)
+	if h.Media != nil {
+		r.GET("/public/:session/media/stream", h.Media.StreamMediaPublic)
+	}
+
 	// ============================================================
 	// SESSIONS MANAGEMENT
 	// ============================================================
@@ -245,6 +250,7 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 			session.GET("/media/pending", h.Media.ListPendingMedia)
 			session.POST("/media/process", h.Media.ProcessPendingMedia)
 			session.GET("/media/download", h.Media.GetMedia)
+			session.GET("/media/stream", h.Media.StreamMedia)
 		}
 
 		// ----------------------------------------------------------
