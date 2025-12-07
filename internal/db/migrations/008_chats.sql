@@ -42,12 +42,20 @@ CREATE TABLE IF NOT EXISTS "onWappChat" (
     "pHash" VARCHAR(100),
     "notSpam" BOOLEAN DEFAULT TRUE,
     
+    -- Chat Settings (archived, pinned, muted)
+    "archived" BOOLEAN NOT NULL DEFAULT FALSE,
+    "pinned" BOOLEAN NOT NULL DEFAULT FALSE,
+    "muted" TIMESTAMPTZ,
+    
     -- Timestamps
     "syncedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     CONSTRAINT "onWappChat_session_chat_unique" UNIQUE ("sessionId", "chatJid")
 );
+
+-- Index for sorting by pinned status
+CREATE INDEX IF NOT EXISTS "idx_onWappChat_pinned" ON "onWappChat" ("sessionId", "pinned" DESC, "conversationTimestamp" DESC);
 
 COMMENT ON TABLE "onWappChat" IS 'Extended chat metadata from History Sync';
 COMMENT ON COLUMN "onWappChat"."ephemeralExpiration" IS 'Disappearing message timer in seconds (0=off)';

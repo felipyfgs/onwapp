@@ -1,3 +1,6 @@
 export { ChatListItem } from './chat-list-item'
 export { ChatsSkeleton } from './chats-skeleton'
 export { ChatFilters, type FilterType } from './chat-filters'
+export { ChatMessageItem } from './chat-message-item'
+export { ChatInput } from './chat-input'
+export { ChatWindow } from './chat-window'

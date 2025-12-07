@@ -123,3 +123,58 @@ export async function archiveChat(sessionId: string, phone: string, archive: boo
     body: JSON.stringify({ phone, archive }),
   })
 }
+
+export interface SendMessageResponse {
+  messageId: string
+  timestamp: number
+}
+
+export async function sendTextMessage(
+  sessionId: string, 
+  phone: string, 
+  text: string
+): Promise<SendMessageResponse> {
+  return apiRequest<SendMessageResponse>(`/${sessionId}/message/send/text`, {
+    method: 'POST',
+    body: JSON.stringify({ phone, text }),
+  })
+}
+
+export async function sendImageMessage(
+  sessionId: string,
+  phone: string,
+  image: string,
+  caption?: string,
+  mimeType?: string
+): Promise<SendMessageResponse> {
+  return apiRequest<SendMessageResponse>(`/${sessionId}/message/send/image`, {
+    method: 'POST',
+    body: JSON.stringify({ phone, image, caption, mimeType }),
+  })
+}
+
+export async function sendDocumentMessage(
+  sessionId: string,
+  phone: string,
+  document: string,
+  filename: string,
+  caption?: string,
+  mimeType?: string
+): Promise<SendMessageResponse> {
+  return apiRequest<SendMessageResponse>(`/${sessionId}/message/send/document`, {
+    method: 'POST',
+    body: JSON.stringify({ phone, document, filename, caption, mimeType }),
+  })
+}
+
+export async function sendAudioMessage(
+  sessionId: string,
+  phone: string,
+  audio: string,
+  ptt?: boolean
+): Promise<SendMessageResponse> {
+  return apiRequest<SendMessageResponse>(`/${sessionId}/message/send/audio`, {
+    method: 'POST',
+    body: JSON.stringify({ phone, audio, ptt }),
+  })
+}

@@ -285,7 +285,7 @@ type LastMessageData struct {
 	PushName  string
 }
 
-// GetBySessionWithLastMessage returns chats with last message and settings from whatsmeow
+// GetBySessionWithLastMessage returns chats with last message from own tables
 func (r *ChatRepository) GetBySessionWithLastMessage(ctx context.Context, sessionID string, limit, offset int, unreadOnly bool) ([]*ChatWithLastMessage, error) {
 	query := `
 		WITH last_messages AS (
@@ -302,16 +302,6 @@ func (r *ChatRepository) GetBySessionWithLastMessage(ctx context.Context, sessio
 			FROM "onWappMessage"
 			WHERE "sessionId" = $1
 			ORDER BY "chatJid", "timestamp" DESC
-		),
-		chat_settings AS (
-			SELECT 
-				"ourJid" || '@' || CASE WHEN "chatJid" LIKE '%@g.us' THEN 'g.us' ELSE 's.whatsapp.net' END as full_jid,
-				"chatJid",
-				COALESCE("archived", false) as archived,
-				COALESCE("pinned", '1970-01-01'::timestamp) > '1970-01-01'::timestamp as pinned,
-				CASE WHEN "mutedUntil" > NOW() THEN 'muted' ELSE '' END as muted
-			FROM "whatsmeow_chat_settings"
-			WHERE "ourJid" = (SELECT "deviceJid" FROM "onWappSession" WHERE "id" = $1)
 		)
 		SELECT 
 			c."id", c."sessionId", c."chatJid", COALESCE(c."name", ''),
@@ -323,17 +313,16 @@ func (r *ChatRepository) GetBySessionWithLastMessage(ctx context.Context, sessio
 			c."conversationTimestamp", COALESCE(c."pHash", ''), c."notSpam",
 			c."syncedAt", c."updatedAt",
 			lm."content", lm."timestamp", lm."fromMe", lm."type", lm."mediaType", lm."status", lm."senderJid", lm."pushName",
-			COALESCE(cs.archived, false), COALESCE(cs.pinned, false), COALESCE(cs.muted, '')
+			COALESCE(c."archived", false), COALESCE(c."pinned", false), CASE WHEN c."muted" > NOW() THEN 'muted' ELSE '' END
 		FROM "onWappChat" c
 		LEFT JOIN last_messages lm ON lm."chatJid" = c."chatJid"
-		LEFT JOIN chat_settings cs ON cs."chatJid" = c."chatJid"
 		WHERE c."sessionId" = $1`
 
 	if unreadOnly {
 		query += ` AND (c."unreadCount" > 0 OR c."markedAsUnread" = true)`
 	}
 
-	query += ` ORDER BY COALESCE(cs.pinned, false) DESC, c."conversationTimestamp" DESC NULLS LAST LIMIT $2 OFFSET $3`
+	query += ` ORDER BY c."pinned" DESC, c."conversationTimestamp" DESC NULLS LAST LIMIT $2 OFFSET $3`
 
 	rows, err := r.pool.Query(ctx, query, sessionID, limit, offset)
 	if err != nil {
