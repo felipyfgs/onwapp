@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { ArrowLeft, MoreVertical, Phone, Video, Search, Users, User } from "lucide-react"
+import { ArrowLeft, MoreVertical, Search, Users, Loader2 } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -17,6 +17,8 @@ import { ChatInput } from "./chat-input"
 import { getChatMessages, sendTextMessage, markChatRead, type Chat, type ChatMessage } from "@/lib/api/chats"
 import { cn } from "@/lib/utils"
 
+const PAGE_SIZE = 50
+
 interface ChatWindowProps {
   sessionId: string
   chat: Chat
@@ -26,10 +28,14 @@ interface ChatWindowProps {
 export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const topSentinelRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const offsetRef = useRef(0)
 
   const displayName = chat.name || chat.jid.split('@')[0]
   const phone = chat.jid.split('@')[0]
@@ -44,9 +50,11 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
     try {
       setLoading(true)
       setError(null)
-      const data = await getChatMessages(sessionId, chat.jid, 100)
-      // Messages come oldest first from API, we keep that order
+      setHasMore(true)
+      offsetRef.current = 0
+      const data = await getChatMessages(sessionId, chat.jid, PAGE_SIZE, 0)
       setMessages(data)
+      if (data.length < PAGE_SIZE) setHasMore(false)
       setTimeout(() => scrollToBottom(false), 100)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar mensagens')
@@ -55,9 +63,60 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
     }
   }, [sessionId, chat.jid, scrollToBottom])
 
+  const loadMoreMessages = useCallback(async () => {
+    if (loadingMore || !hasMore) return
+    
+    setLoadingMore(true)
+    const scrollHeightBefore = containerRef.current?.scrollHeight || 0
+    
+    try {
+      const newOffset = offsetRef.current + PAGE_SIZE
+      const older = await getChatMessages(sessionId, chat.jid, PAGE_SIZE, newOffset)
+      
+      if (older.length < PAGE_SIZE) setHasMore(false)
+      if (older.length === 0) {
+        setLoadingMore(false)
+        return
+      }
+      
+      offsetRef.current = newOffset
+      setMessages(prev => [...older, ...prev])
+      
+      // Manter posicao do scroll
+      requestAnimationFrame(() => {
+        if (containerRef.current) {
+          const scrollHeightAfter = containerRef.current.scrollHeight
+          containerRef.current.scrollTop = scrollHeightAfter - scrollHeightBefore
+        }
+      })
+    } catch (err) {
+      console.error('Erro ao carregar mais mensagens:', err)
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [sessionId, chat.jid, loadingMore, hasMore])
+
   useEffect(() => {
     loadMessages()
   }, [loadMessages])
+
+  // Intersection Observer para carregar mais mensagens ao rolar para cima
+  useEffect(() => {
+    const sentinel = topSentinelRef.current
+    if (!sentinel || loading) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore) {
+          loadMoreMessages()
+        }
+      },
+      { threshold: 0.1, root: containerRef.current }
+    )
+
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [hasMore, loadingMore, loading, loadMoreMessages])
 
   // Mark as read when opening
   useEffect(() => {
@@ -70,7 +129,9 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
   const handleSendMessage = async (text: string) => {
     setSending(true)
     try {
-      const response = await sendTextMessage(sessionId, phone, text)
+      // Para grupos, usa o JID completo; para contatos, usa apenas o numero
+      const recipient = chat.isGroup ? chat.jid : phone
+      const response = await sendTextMessage(sessionId, recipient, text, chat.isGroup)
       // Add optimistic message
       const newMessage: ChatMessage = {
         msgId: response.messageId,
@@ -92,25 +153,29 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
   }
 
   const groupMessagesByDate = (msgs: ChatMessage[]) => {
-    const groups: { date: string; messages: ChatMessage[] }[] = []
-    let currentDate = ''
+    const groupMap = new Map<string, ChatMessage[]>()
+    
+    // Ordenar mensagens por timestamp
+    const sortedMsgs = [...msgs].sort((a, b) => a.timestamp - b.timestamp)
 
-    msgs.forEach(msg => {
+    sortedMsgs.forEach(msg => {
       const date = new Date(msg.timestamp * 1000).toLocaleDateString('pt-BR', {
         day: '2-digit',
         month: 'long',
         year: 'numeric'
       })
       
-      if (date !== currentDate) {
-        currentDate = date
-        groups.push({ date, messages: [msg] })
-      } else {
-        groups[groups.length - 1].messages.push(msg)
+      if (!groupMap.has(date)) {
+        groupMap.set(date, [])
       }
+      groupMap.get(date)!.push(msg)
     })
 
-    return groups
+    // Converter Map para array mantendo ordem
+    return Array.from(groupMap.entries()).map(([date, messages]) => ({
+      date,
+      messages
+    }))
   }
 
   const messageGroups = groupMessagesByDate(messages)
@@ -193,6 +258,25 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
           </div>
         ) : (
           <div className="space-y-4">
+            {/* Sentinel para detectar scroll no topo */}
+            <div ref={topSentinelRef} className="h-1" />
+            
+            {/* Loader de mensagens antigas */}
+            {loadingMore && (
+              <div className="flex justify-center py-2">
+                <Loader2 className="size-5 animate-spin text-muted-foreground" />
+              </div>
+            )}
+            
+            {/* Indicador de fim do historico */}
+            {!hasMore && messages.length > 0 && (
+              <div className="flex justify-center py-2">
+                <span className="text-xs text-muted-foreground bg-background/80 px-3 py-1 rounded-full">
+                  Inicio da conversa
+                </span>
+              </div>
+            )}
+            
             {messageGroups.map(group => (
               <div key={group.date}>
                 <div className="flex justify-center mb-3">
@@ -219,6 +303,16 @@ export function ChatWindow({ sessionId, chat, onBack }: ChatWindowProps) {
       {/* Input area */}
       <ChatInput
         onSendMessage={handleSendMessage}
+        onSendAudio={async (blob) => {
+          // TODO: Implement audio sending when API is ready
+          console.log('Audio blob:', blob)
+          alert('Envio de audio sera implementado em breve!')
+        }}
+        onSendFile={async (type, file) => {
+          // TODO: Implement file sending when API is ready
+          console.log('File:', type, file)
+          alert(`Envio de ${type} sera implementado em breve!`)
+        }}
         disabled={loading || sending}
       />
     </div>

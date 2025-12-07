@@ -132,8 +132,15 @@ export interface SendMessageResponse {
 export async function sendTextMessage(
   sessionId: string, 
   phone: string, 
-  text: string
+  text: string,
+  isGroup = false
 ): Promise<SendMessageResponse> {
+  if (isGroup) {
+    return apiRequest<SendMessageResponse>(`/${sessionId}/group/send/text`, {
+      method: 'POST',
+      body: JSON.stringify({ groupId: phone, text }),
+    })
+  }
   return apiRequest<SendMessageResponse>(`/${sessionId}/message/send/text`, {
     method: 'POST',
     body: JSON.stringify({ phone, text }),

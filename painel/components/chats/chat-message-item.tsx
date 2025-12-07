@@ -1,15 +1,20 @@
 "use client"
 
-import { Check, CheckCheck, Clock, Image, Video, Mic, FileText, MapPin, Contact2, Sticker, Reply } from "lucide-react"
+import { useState } from "react"
+import { Check, CheckCheck, Clock, Image as ImageIcon, Video, Mic, FileText, MapPin, Contact2, Sticker, Download, Play, ExternalLink } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { AudioPlayer } from "./audio-player"
+import { ImageViewer } from "./image-viewer"
 import type { ChatMessage } from "@/lib/api/chats"
 
 interface ChatMessageItemProps {
   message: ChatMessage
   showSender?: boolean
+  mediaBaseUrl?: string
 }
 
-export function ChatMessageItem({ message, showSender }: ChatMessageItemProps) {
+export function ChatMessageItem({ message, showSender, mediaBaseUrl }: ChatMessageItemProps) {
+  const [imageViewerOpen, setImageViewerOpen] = useState(false)
   const isMe = message.fromMe
 
   const formatTime = (timestamp: number) => {
@@ -30,65 +35,207 @@ export function ChatMessageItem({ message, showSender }: ChatMessageItemProps) {
     }
   }
 
-  const getMediaIcon = () => {
-    const type = message.mediaType || message.type
-    switch (type) {
-      case 'image': return <Image className="size-4" />
-      case 'video': return <Video className="size-4" />
-      case 'audio':
-      case 'ptt': return <Mic className="size-4" />
-      case 'document': return <FileText className="size-4" />
-      case 'sticker': return <Sticker className="size-4" />
-      case 'location': return <MapPin className="size-4" />
-      case 'contact':
-      case 'vcard': return <Contact2 className="size-4" />
-      default: return null
-    }
+  const getMediaUrl = (mediaId?: string) => {
+    if (!mediaId || !mediaBaseUrl) return null
+    return `${mediaBaseUrl}/${mediaId}`
   }
 
   const renderContent = () => {
     const type = message.mediaType || message.type
     
+    // System message
     if (type === 'system' || message.type === 'system') {
+      return null // Handled separately
+    }
+
+    // Text message with link detection
+    if (type === 'text' || !type) {
       return (
-        <div className="text-center py-1">
-          <span className="text-xs text-muted-foreground bg-muted/50 px-3 py-1 rounded-full">
-            {message.content || 'Mensagem do sistema'}
+        <p className="whitespace-pre-wrap break-words">
+          {renderTextWithLinks(message.content || '')}
+        </p>
+      )
+    }
+
+    // Image
+    if (type === 'image') {
+      const imageUrl = getMediaUrl(message.msgId) || message.content
+      return (
+        <div className="space-y-1">
+          {imageUrl ? (
+            <>
+              <div 
+                className="relative cursor-pointer rounded-lg overflow-hidden max-w-[280px]"
+                onClick={() => setImageViewerOpen(true)}
+              >
+                <img 
+                  src={imageUrl} 
+                  alt="Imagem" 
+                  className="w-full h-auto rounded-lg"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors" />
+              </div>
+              <ImageViewer
+                src={imageUrl}
+                alt="Imagem"
+                open={imageViewerOpen}
+                onClose={() => setImageViewerOpen(false)}
+              />
+            </>
+          ) : (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <ImageIcon className="size-4" />
+              <span className="italic">Foto</span>
+            </div>
+          )}
+          {message.content && (
+            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+          )}
+        </div>
+      )
+    }
+
+    // Video
+    if (type === 'video') {
+      const videoUrl = getMediaUrl(message.msgId)
+      return (
+        <div className="space-y-1">
+          {videoUrl ? (
+            <div className="relative rounded-lg overflow-hidden max-w-[280px] bg-black">
+              <video 
+                src={videoUrl} 
+                controls 
+                className="w-full h-auto rounded-lg"
+                preload="metadata"
+              />
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+              <div className="size-10 bg-primary/20 rounded-full flex items-center justify-center">
+                <Play className="size-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <span className="text-sm">Video</span>
+              </div>
+            </div>
+          )}
+          {message.content && (
+            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+          )}
+        </div>
+      )
+    }
+
+    // Audio / Voice note (PTT)
+    if (type === 'audio' || type === 'ptt') {
+      const audioUrl = getMediaUrl(message.msgId)
+      if (audioUrl) {
+        return (
+          <AudioPlayer
+            src={audioUrl}
+            senderName={type === 'ptt' ? message.pushName : undefined}
+            isMe={isMe}
+          />
+        )
+      }
+      return (
+        <div className="flex items-center gap-2">
+          <Mic className="size-4" />
+          <span className="italic text-muted-foreground">
+            {type === 'ptt' ? 'Mensagem de voz' : 'Audio'}
           </span>
         </div>
       )
     }
-    
-    if (type === 'text' || !type) {
-      return message.content
+
+    // Document
+    if (type === 'document') {
+      return (
+        <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg min-w-[200px]">
+          <div className="size-10 bg-purple-500/20 rounded-lg flex items-center justify-center shrink-0">
+            <FileText className="size-5 text-purple-500" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">
+              {message.content || 'Documento'}
+            </p>
+            <p className="text-xs text-muted-foreground">PDF</p>
+          </div>
+          <button className="shrink-0 text-muted-foreground hover:text-foreground">
+            <Download className="size-5" />
+          </button>
+        </div>
+      )
     }
 
-    const mediaIcon = getMediaIcon()
-    const labels: Record<string, string> = {
-      image: 'Foto',
-      video: 'Video',
-      audio: 'Audio',
-      ptt: 'Mensagem de voz',
-      document: 'Documento',
-      sticker: 'Figurinha',
-      location: 'Localizacao',
-      contact: 'Contato',
-      vcard: 'Contato',
+    // Sticker
+    if (type === 'sticker') {
+      const stickerUrl = getMediaUrl(message.msgId)
+      return stickerUrl ? (
+        <img 
+          src={stickerUrl} 
+          alt="Sticker" 
+          className="size-32 object-contain"
+          loading="lazy"
+        />
+      ) : (
+        <div className="flex items-center gap-2">
+          <Sticker className="size-4" />
+          <span className="italic text-muted-foreground">Figurinha</span>
+        </div>
+      )
     }
 
+    // Location
+    if (type === 'location') {
+      return (
+        <div className="space-y-2">
+          <div className="w-[250px] h-[150px] bg-muted rounded-lg flex items-center justify-center">
+            <MapPin className="size-8 text-green-500" />
+          </div>
+          {message.content && (
+            <p className="text-sm">{message.content}</p>
+          )}
+          <a 
+            href={`https://maps.google.com/?q=${message.content}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-xs text-primary hover:underline"
+          >
+            <ExternalLink className="size-3" />
+            Abrir no Maps
+          </a>
+        </div>
+      )
+    }
+
+    // Contact
+    if (type === 'contact' || type === 'vcard') {
+      return (
+        <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg min-w-[200px]">
+          <div className="size-10 bg-sky-500/20 rounded-full flex items-center justify-center shrink-0">
+            <Contact2 className="size-5 text-sky-500" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">
+              {message.content || 'Contato'}
+            </p>
+            <p className="text-xs text-muted-foreground">Contato</p>
+          </div>
+        </div>
+      )
+    }
+
+    // Default/Unknown type
     return (
-      <div className="flex items-center gap-2">
-        {mediaIcon}
-        <span className="text-muted-foreground italic">
-          {labels[type] || type}
-        </span>
-        {message.content && (
-          <span className="ml-1">{message.content}</span>
-        )}
+      <div className="flex items-center gap-2 text-muted-foreground italic">
+        <span>{message.content || type || 'Mensagem'}</span>
       </div>
     )
   }
 
+  // System message - special rendering
   if (message.type === 'system') {
     return (
       <div className="flex justify-center my-2">
@@ -115,7 +262,7 @@ export function ChatMessageItem({ message, showSender }: ChatMessageItemProps) {
           </p>
         )}
         
-        <div className="text-sm break-words whitespace-pre-wrap">
+        <div className="text-sm">
           {renderContent()}
         </div>
         
@@ -129,4 +276,27 @@ export function ChatMessageItem({ message, showSender }: ChatMessageItemProps) {
       </div>
     </div>
   )
+}
+
+// Helper to render text with clickable links
+function renderTextWithLinks(text: string) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g
+  const parts = text.split(urlRegex)
+  
+  return parts.map((part, i) => {
+    if (part.match(urlRegex)) {
+      return (
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-400 hover:underline break-all"
+        >
+          {part}
+        </a>
+      )
+    }
+    return part
+  })
 }

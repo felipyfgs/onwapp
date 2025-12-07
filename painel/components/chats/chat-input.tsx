@@ -1,34 +1,37 @@
 "use client"
 
 import { useState, useRef, useCallback } from "react"
-import { Send, Paperclip, Smile, Mic, X, Image, FileText, Camera } from "lucide-react"
+import { Send, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { EmojiPicker } from "./emoji-picker"
+import { AttachmentMenu, type AttachmentType } from "./attachment-menu"
+import { AudioRecorder } from "./audio-recorder"
 import { cn } from "@/lib/utils"
 
 interface ChatInputProps {
   onSendMessage: (text: string) => Promise<void>
-  onSendFile?: (file: File) => Promise<void>
+  onSendAudio?: (audioBlob: Blob) => Promise<void>
+  onSendFile?: (type: AttachmentType, file: File) => Promise<void>
+  onLocationRequest?: () => void
+  onContactRequest?: () => void
   disabled?: boolean
   placeholder?: string
 }
 
 export function ChatInput({ 
-  onSendMessage, 
+  onSendMessage,
+  onSendAudio,
   onSendFile,
+  onLocationRequest,
+  onContactRequest,
   disabled,
   placeholder = "Digite uma mensagem" 
 }: ChatInputProps) {
   const [message, setMessage] = useState("")
   const [sending, setSending] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleSend = useCallback(async () => {
     const text = message.trim()
@@ -55,60 +58,59 @@ export function ChatInput({
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessage(e.target.value)
-    // Auto-resize
     const textarea = e.target
     textarea.style.height = 'auto'
     textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px'
   }
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+  const handleEmojiSelect = (emoji: string) => {
+    setMessage((prev) => prev + emoji)
+    textareaRef.current?.focus()
+  }
+
+  const handleAttachmentSelect = async (type: AttachmentType, file?: File) => {
+    if (type === "location" && onLocationRequest) {
+      onLocationRequest()
+      return
+    }
+    if (type === "contact" && onContactRequest) {
+      onContactRequest()
+      return
+    }
     if (file && onSendFile) {
-      await onSendFile(file)
+      await onSendFile(type, file)
     }
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
+  }
+
+  const handleAudioSend = async (audioBlob: Blob) => {
+    if (onSendAudio) {
+      await onSendAudio(audioBlob)
     }
+    setIsRecording(false)
+  }
+
+  const hasText = message.trim().length > 0
+
+  if (isRecording) {
+    return (
+      <div className="border-t bg-background p-3">
+        <AudioRecorder
+          onSend={handleAudioSend}
+          onCancel={() => setIsRecording(false)}
+          disabled={disabled}
+        />
+      </div>
+    )
   }
 
   return (
     <div className="border-t bg-background p-3">
       <div className="flex items-end gap-2">
-        {/* Attachment button */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="shrink-0 text-muted-foreground hover:text-foreground"
-              disabled={disabled}
-            >
-              <Paperclip className="size-5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-48">
-            <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-              <Image className="size-4 mr-2 text-blue-500" />
-              Foto ou Video
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-              <FileText className="size-4 mr-2 text-purple-500" />
-              Documento
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-              <Camera className="size-4 mr-2 text-pink-500" />
-              Camera
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Emoji picker */}
+        <EmojiPicker onEmojiSelect={handleEmojiSelect} disabled={disabled} />
 
-        <input
-          ref={fileInputRef}
-          type="file"
-          className="hidden"
-          accept="image/*,video/*,application/*,.pdf,.doc,.docx,.xls,.xlsx"
-          onChange={handleFileSelect}
-        />
+        {/* Attachment menu */}
+        <AttachmentMenu onSelect={handleAttachmentSelect} disabled={disabled} />
 
         {/* Message input */}
         <div className="flex-1 relative">
@@ -119,7 +121,7 @@ export function ChatInput({
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             disabled={disabled || sending}
-            className="min-h-[44px] max-h-[150px] resize-none pr-10 py-3"
+            className="min-h-[44px] max-h-[150px] resize-none py-3 pr-10 rounded-2xl bg-muted/50 border-0 focus-visible:ring-1"
             rows={1}
           />
           {message && (
@@ -132,22 +134,44 @@ export function ChatInput({
           )}
         </div>
 
-        {/* Send button */}
-        <Button
-          onClick={handleSend}
-          disabled={!message.trim() || sending || disabled}
-          size="icon"
-          className={cn(
-            "shrink-0 transition-all",
-            message.trim() ? "bg-primary" : "bg-muted text-muted-foreground"
-          )}
-        >
-          {sending ? (
-            <div className="size-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <Send className="size-5" />
-          )}
-        </Button>
+        {/* Send or Mic button */}
+        {hasText ? (
+          <Button
+            onClick={handleSend}
+            disabled={sending || disabled}
+            size="icon"
+            className="shrink-0 rounded-full bg-primary hover:bg-primary/90"
+          >
+            {sending ? (
+              <div className="size-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Send className="size-5" />
+            )}
+          </Button>
+        ) : (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="shrink-0 text-muted-foreground hover:text-foreground"
+            disabled={disabled}
+            onClick={() => setIsRecording(true)}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="size-5"
+            >
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+              <line x1="12" x2="12" y1="19" y2="22" />
+            </svg>
+          </Button>
+        )}
       </div>
     </div>
   )
