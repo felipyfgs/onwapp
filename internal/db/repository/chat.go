@@ -263,3 +263,146 @@ func (r *ChatRepository) CountBySession(ctx context.Context, sessionID string) (
 	err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM "onWappChat" WHERE "sessionId" = $1::uuid`, sessionID).Scan(&count)
 	return count, err
 }
+
+// ChatWithLastMessage represents a chat with its last message and settings
+type ChatWithLastMessage struct {
+	Chat        *model.Chat
+	LastMessage *LastMessageData
+	Archived    bool
+	Pinned      bool
+	Muted       string
+}
+
+// LastMessageData represents the last message of a chat
+type LastMessageData struct {
+	Content   string
+	Timestamp int64
+	FromMe    bool
+	Type      string
+	MediaType string
+	Status    string
+	SenderJID string
+	PushName  string
+}
+
+// GetBySessionWithLastMessage returns chats with last message and settings from whatsmeow
+func (r *ChatRepository) GetBySessionWithLastMessage(ctx context.Context, sessionID string, limit, offset int, unreadOnly bool) ([]*ChatWithLastMessage, error) {
+	query := `
+		WITH last_messages AS (
+			SELECT DISTINCT ON ("chatJid") 
+				"chatJid",
+				"content",
+				EXTRACT(EPOCH FROM "timestamp")::bigint as timestamp,
+				"fromMe",
+				"type",
+				COALESCE("mediaType", '') as "mediaType",
+				COALESCE("status", '') as "status",
+				COALESCE("senderJid", '') as "senderJid",
+				COALESCE("pushName", '') as "pushName"
+			FROM "onWappMessage"
+			WHERE "sessionId" = $1
+			ORDER BY "chatJid", "timestamp" DESC
+		),
+		chat_settings AS (
+			SELECT 
+				"ourJid" || '@' || CASE WHEN "chatJid" LIKE '%@g.us' THEN 'g.us' ELSE 's.whatsapp.net' END as full_jid,
+				"chatJid",
+				COALESCE("archived", false) as archived,
+				COALESCE("pinned", '1970-01-01'::timestamp) > '1970-01-01'::timestamp as pinned,
+				CASE WHEN "mutedUntil" > NOW() THEN 'muted' ELSE '' END as muted
+			FROM "whatsmeow_chat_settings"
+			WHERE "ourJid" = (SELECT "deviceJid" FROM "onWappSession" WHERE "id" = $1)
+		)
+		SELECT 
+			c."id", c."sessionId", c."chatJid", COALESCE(c."name", ''),
+			c."unreadCount", c."unreadMentionCount", c."markedAsUnread",
+			COALESCE(c."ephemeralExpiration", 0), COALESCE(c."ephemeralSettingTimestamp", 0), COALESCE(c."disappearingInitiator", 0),
+			c."readOnly", c."suspended", c."locked",
+			c."limitSharing", COALESCE(c."limitSharingTimestamp", 0), COALESCE(c."limitSharingTrigger", 0), COALESCE(c."limitSharingInitiatedByMe", false),
+			c."isDefaultSubgroup", COALESCE(c."commentsCount", 0),
+			c."conversationTimestamp", COALESCE(c."pHash", ''), c."notSpam",
+			c."syncedAt", c."updatedAt",
+			lm."content", lm."timestamp", lm."fromMe", lm."type", lm."mediaType", lm."status", lm."senderJid", lm."pushName",
+			COALESCE(cs.archived, false), COALESCE(cs.pinned, false), COALESCE(cs.muted, '')
+		FROM "onWappChat" c
+		LEFT JOIN last_messages lm ON lm."chatJid" = c."chatJid"
+		LEFT JOIN chat_settings cs ON cs."chatJid" = c."chatJid"
+		WHERE c."sessionId" = $1`
+
+	if unreadOnly {
+		query += ` AND (c."unreadCount" > 0 OR c."markedAsUnread" = true)`
+	}
+
+	query += ` ORDER BY COALESCE(cs.pinned, false) DESC, c."conversationTimestamp" DESC NULLS LAST LIMIT $2 OFFSET $3`
+
+	rows, err := r.pool.Query(ctx, query, sessionID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	results := make([]*ChatWithLastMessage, 0, 50)
+	for rows.Next() {
+		c := &model.Chat{}
+		lm := &LastMessageData{}
+		var archived, pinned bool
+		var muted string
+		var lmContent, lmType, lmMediaType, lmStatus, lmSenderJID, lmPushName *string
+		var lmTimestamp *int64
+		var lmFromMe *bool
+
+		err := rows.Scan(
+			&c.ID, &c.SessionID, &c.ChatJID, &c.Name,
+			&c.UnreadCount, &c.UnreadMentionCount, &c.MarkedAsUnread,
+			&c.EphemeralExpiration, &c.EphemeralSettingTimestamp, &c.DisappearingModeInitiator,
+			&c.ReadOnly, &c.Suspended, &c.Locked,
+			&c.LimitSharing, &c.LimitSharingTimestamp, &c.LimitSharingTrigger, &c.LimitSharingInitiatedByMe,
+			&c.IsDefaultSubgroup, &c.CommentsCount,
+			&c.ConversationTimestamp, &c.PHash, &c.NotSpam,
+			&c.SyncedAt, &c.UpdatedAt,
+			&lmContent, &lmTimestamp, &lmFromMe, &lmType, &lmMediaType, &lmStatus, &lmSenderJID, &lmPushName,
+			&archived, &pinned, &muted,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		result := &ChatWithLastMessage{
+			Chat:     c,
+			Archived: archived,
+			Pinned:   pinned,
+			Muted:    muted,
+		}
+
+		// Populate last message if exists
+		if lmTimestamp != nil {
+			lm.Timestamp = *lmTimestamp
+			if lmContent != nil {
+				lm.Content = *lmContent
+			}
+			if lmFromMe != nil {
+				lm.FromMe = *lmFromMe
+			}
+			if lmType != nil {
+				lm.Type = *lmType
+			}
+			if lmMediaType != nil {
+				lm.MediaType = *lmMediaType
+			}
+			if lmStatus != nil {
+				lm.Status = *lmStatus
+			}
+			if lmSenderJID != nil {
+				lm.SenderJID = *lmSenderJID
+			}
+			if lmPushName != nil {
+				lm.PushName = *lmPushName
+			}
+			result.LastMessage = lm
+		}
+
+		results = append(results, result)
+	}
+
+	return results, rows.Err()
+}

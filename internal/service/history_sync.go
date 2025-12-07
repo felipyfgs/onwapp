@@ -11,6 +11,10 @@ import (
 	"onwapp/internal/model"
 )
 
+// Re-export ChatWithLastMessage for external use
+type ChatWithLastMessage = repository.ChatWithLastMessage
+type LastMessageData = repository.LastMessageData
+
 type HistorySyncService struct {
 	chatRepo    *repository.ChatRepository
 	messageRepo *repository.MessageRepository
@@ -107,6 +111,17 @@ func (s *HistorySyncService) GetAllChats(ctx context.Context, sessionID string, 
 		limit = 500
 	}
 	return s.chatRepo.GetBySession(ctx, sessionID, limit, offset, unreadOnly)
+}
+
+// GetAllChatsWithLastMessage returns chats with last message and settings
+func (s *HistorySyncService) GetAllChatsWithLastMessage(ctx context.Context, sessionID string, limit, offset int, unreadOnly bool) ([]*repository.ChatWithLastMessage, error) {
+	if limit <= 0 {
+		limit = 100
+	}
+	if limit > 500 {
+		limit = 500
+	}
+	return s.chatRepo.GetBySessionWithLastMessage(ctx, sessionID, limit, offset, unreadOnly)
 }
 
 // GetChatByJID returns a chat by its JID with additional context

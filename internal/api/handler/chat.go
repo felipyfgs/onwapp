@@ -434,15 +434,18 @@ func (h *ChatHandler) GetAllChats(c *gin.Context) {
 		return
 	}
 
-	chats, err := h.historySyncService.GetAllChats(c.Request.Context(), session.ID, limit, offset, unreadOnly)
+	chats, err := h.historySyncService.GetAllChatsWithLastMessage(c.Request.Context(), session.ID, limit, offset, unreadOnly)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	response := make([]dto.ChatResponse, 0, len(chats))
-	for _, chat := range chats {
-		response = append(response, dto.ChatResponse{
+	for _, chatData := range chats {
+		chat := chatData.Chat
+		isGroup := len(chat.ChatJID) > 12 && chat.ChatJID[len(chat.ChatJID)-5:] == "@g.us"
+
+		resp := dto.ChatResponse{
 			JID:                 chat.ChatJID,
 			Name:                chat.Name,
 			UnreadCount:         chat.UnreadCount,
@@ -452,7 +455,27 @@ func (h *ChatHandler) GetAllChats(c *gin.Context) {
 			ReadOnly:            chat.ReadOnly,
 			Suspended:           chat.Suspended,
 			Locked:              chat.Locked,
-		})
+			IsGroup:             isGroup,
+			Archived:            chatData.Archived,
+			Pinned:              chatData.Pinned,
+			Muted:               chatData.Muted,
+		}
+
+		// Add last message if available
+		if chatData.LastMessage != nil {
+			resp.LastMessage = &dto.LastMessageInfo{
+				Content:   chatData.LastMessage.Content,
+				Timestamp: chatData.LastMessage.Timestamp,
+				FromMe:    chatData.LastMessage.FromMe,
+				Type:      chatData.LastMessage.Type,
+				MediaType: chatData.LastMessage.MediaType,
+				Status:    chatData.LastMessage.Status,
+				SenderJID: chatData.LastMessage.SenderJID,
+				PushName:  chatData.LastMessage.PushName,
+			}
+		}
+
+		response = append(response, resp)
 	}
 
 	c.JSON(http.StatusOK, response)

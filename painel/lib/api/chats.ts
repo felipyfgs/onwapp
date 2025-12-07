@@ -1,24 +1,45 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
 
+export interface LastMessageInfo {
+  content?: string
+  timestamp: number
+  fromMe: boolean
+  type: string
+  mediaType?: string
+  status?: string
+  senderJid?: string
+  pushName?: string
+}
+
 export interface Chat {
   jid: string
   name?: string
-  pushName?: string
-  isGroup: boolean
-  lastMessage?: string
-  lastMessageTime?: string
   unreadCount?: number
+  markedAsUnread?: boolean
+  ephemeralExpiration?: number
+  conversationTimestamp?: number
+  readOnly?: boolean
+  suspended?: boolean
+  locked?: boolean
+  isGroup: boolean
   archived?: boolean
+  pinned?: boolean
+  muted?: string
+  lastMessage?: LastMessageInfo
 }
 
 export interface ChatMessage {
-  id: string
+  msgId: string
   chatJid: string
   senderJid?: string
-  content: string
-  timestamp: string
-  fromMe: boolean
+  pushName?: string
+  timestamp: number
   type: string
+  mediaType?: string
+  content?: string
+  fromMe: boolean
+  isGroup: boolean
+  quotedId?: string
   status?: string
 }
 
@@ -55,40 +76,50 @@ async function apiRequest<T>(
   return res.json()
 }
 
-export async function getChats(sessionId: string): Promise<Chat[]> {
-  const data = await apiRequest<{ chats: Chat[] }>(`/${sessionId}/chat/list`)
-  return data.chats || []
+export async function getChats(sessionId: string, limit = 100, offset = 0): Promise<Chat[]> {
+  const params = new URLSearchParams({
+    limit: limit.toString(),
+    offset: offset.toString(),
+  })
+  return apiRequest<Chat[]>(`/${sessionId}/chat/list?${params}`)
 }
 
 export async function getChatMessages(
   sessionId: string, 
-  chatJid: string,
-  limit?: number
+  chatId: string,
+  limit = 50,
+  offset = 0
 ): Promise<ChatMessage[]> {
-  const params = new URLSearchParams({ jid: chatJid })
-  if (limit) params.append('limit', limit.toString())
-  
-  const data = await apiRequest<{ messages: ChatMessage[] }>(
-    `/${sessionId}/chat/messages?${params}`
-  )
-  return data.messages || []
+  const params = new URLSearchParams({ 
+    chatId,
+    limit: limit.toString(),
+    offset: offset.toString(),
+  })
+  return apiRequest<ChatMessage[]>(`/${sessionId}/chat/messages?${params}`)
 }
 
-export async function getChatInfo(sessionId: string, chatJid: string): Promise<Chat> {
-  const params = new URLSearchParams({ jid: chatJid })
+export async function getChatInfo(sessionId: string, chatId: string): Promise<Chat> {
+  const params = new URLSearchParams({ chatId })
   return apiRequest<Chat>(`/${sessionId}/chat/info?${params}`)
 }
 
-export async function markChatRead(sessionId: string, chatJid: string, messageIds: string[]): Promise<void> {
+export async function markChatRead(sessionId: string, phone: string, messageIds: string[]): Promise<void> {
   await apiRequest(`/${sessionId}/chat/markread`, {
     method: 'POST',
-    body: JSON.stringify({ jid: chatJid, messageIds }),
+    body: JSON.stringify({ phone, messageIds }),
   })
 }
 
-export async function archiveChat(sessionId: string, chatJid: string, archive: boolean): Promise<void> {
+export async function markChatUnread(sessionId: string, phone: string): Promise<void> {
+  await apiRequest(`/${sessionId}/chat/unread`, {
+    method: 'POST',
+    body: JSON.stringify({ phone }),
+  })
+}
+
+export async function archiveChat(sessionId: string, phone: string, archive: boolean): Promise<void> {
   await apiRequest(`/${sessionId}/chat/archive`, {
     method: 'POST',
-    body: JSON.stringify({ jid: chatJid, archive }),
+    body: JSON.stringify({ phone, archive }),
   })
 }

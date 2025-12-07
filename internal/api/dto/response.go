@@ -250,16 +250,33 @@ type MediaResponse struct {
 
 // Chat responses
 
+// LastMessageInfo represents the last message in a chat
+type LastMessageInfo struct {
+	Content   string `json:"content,omitempty" example:"Hello!"`
+	Timestamp int64  `json:"timestamp" example:"1699999999"`
+	FromMe    bool   `json:"fromMe" example:"false"`
+	Type      string `json:"type" example:"text"`
+	MediaType string `json:"mediaType,omitempty" example:"image"`
+	Status    string `json:"status,omitempty" example:"sent"`
+	SenderJID string `json:"senderJid,omitempty" example:"5511999999999@s.whatsapp.net"`
+	PushName  string `json:"pushName,omitempty" example:"John"`
+}
+
 type ChatResponse struct {
-	JID                 string `json:"jid" example:"5511999999999@s.whatsapp.net"`
-	Name                string `json:"name,omitempty" example:"John Doe"`
-	UnreadCount         int    `json:"unreadCount,omitempty" example:"5"`
-	MarkedAsUnread      bool   `json:"markedAsUnread,omitempty" example:"false"`
-	EphemeralExpiration int    `json:"ephemeralExpiration,omitempty" example:"86400"`
-	ConversationTS      int64  `json:"conversationTimestamp,omitempty" example:"1699999999"`
-	ReadOnly            bool   `json:"readOnly,omitempty" example:"false"`
-	Suspended           bool   `json:"suspended,omitempty" example:"false"`
-	Locked              bool   `json:"locked,omitempty" example:"false"`
+	JID                 string           `json:"jid" example:"5511999999999@s.whatsapp.net"`
+	Name                string           `json:"name,omitempty" example:"John Doe"`
+	UnreadCount         int              `json:"unreadCount,omitempty" example:"5"`
+	MarkedAsUnread      bool             `json:"markedAsUnread,omitempty" example:"false"`
+	EphemeralExpiration int              `json:"ephemeralExpiration,omitempty" example:"86400"`
+	ConversationTS      int64            `json:"conversationTimestamp,omitempty" example:"1699999999"`
+	ReadOnly            bool             `json:"readOnly,omitempty" example:"false"`
+	Suspended           bool             `json:"suspended,omitempty" example:"false"`
+	Locked              bool             `json:"locked,omitempty" example:"false"`
+	IsGroup             bool             `json:"isGroup" example:"false"`
+	Archived            bool             `json:"archived,omitempty" example:"false"`
+	Pinned              bool             `json:"pinned,omitempty" example:"false"`
+	Muted               string           `json:"muted,omitempty" example:""`
+	LastMessage         *LastMessageInfo `json:"lastMessage,omitempty"`
 }
 
 // Newsletter extra responses
