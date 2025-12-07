@@ -1,6 +1,6 @@
 "use client"
 
-import { Check, ChevronDown } from "lucide-react"
+import { Check, Minus, ChevronDown } from "lucide-react"
 import {
   Collapsible,
   CollapsibleContent,
@@ -28,12 +28,14 @@ export function EventCategory({
 }: EventCategoryProps) {
   const selectedCount = events.filter(e => selectedEvents.includes(e)).length
   const allSelected = selectedCount === events.length
+  const someSelected = selectedCount > 0 && selectedCount < events.length
+  const hasSelection = selectedCount > 0
 
   return (
-    <Collapsible open={isOpen} onOpenChange={onToggle}>
+    <Collapsible open={isOpen} onOpenChange={onToggle} className="border-b last:border-b-0">
       <div className="flex items-center">
         <CollapsibleTrigger className="flex-1 flex items-center gap-2 p-3 text-left hover:bg-muted/50 transition-colors">
-          <ChevronDown className={`size-4 transition-transform ${isOpen ? '' : '-rotate-90'}`} />
+          <ChevronDown className={`size-4 shrink-0 transition-transform ${isOpen ? '' : '-rotate-90'}`} />
           <span className="text-sm capitalize">{category}</span>
           <span className="text-xs text-muted-foreground ml-auto mr-2">
             {selectedCount}/{events.length}
@@ -41,11 +43,12 @@ export function EventCategory({
         </CollapsibleTrigger>
         <button
           onClick={(e) => { e.stopPropagation(); onToggleAll() }}
-          className={`mr-3 size-5 rounded border flex items-center justify-center transition-colors ${
-            allSelected ? 'bg-primary border-primary' : 'border-muted-foreground/30'
+          className={`mr-3 size-5 rounded border flex items-center justify-center shrink-0 transition-colors ${
+            hasSelection ? 'bg-primary border-primary' : 'border-muted-foreground/30'
           }`}
         >
           {allSelected && <Check className="size-3 text-primary-foreground" />}
+          {someSelected && <Minus className="size-3 text-primary-foreground" />}
         </button>
       </div>
       <CollapsibleContent>

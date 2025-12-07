@@ -44,7 +44,7 @@ export function EventsCard({
           </div>
         </div>
 
-        <div className="divide-y">
+        <div>
           {Object.entries(categories).map(([category, events]) => (
             <EventCategory
               key={category}
