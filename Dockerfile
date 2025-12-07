@@ -28,8 +28,9 @@ RUN npm ci
 
 COPY painel/ .
 
-# Remove .env.local to use runtime config
+# Remove .env.local and set basePath for production
 RUN rm -f .env.local
+ENV NEXT_PUBLIC_BASE_PATH=/painel
 
 RUN npm run build
 

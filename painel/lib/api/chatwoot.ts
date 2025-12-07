@@ -6,18 +6,16 @@ import type {
   OrphanStats,
   MessageResponse 
 } from "@/lib/types/chatwoot"
-import { RateLimitError } from "./sessions"
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
-const API_KEY = process.env.NEXT_PUBLIC_API_KEY || ""
+import { RateLimitError, getApiConfig } from "./sessions"
 
 async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  const { apiUrl, apiKey } = getApiConfig()
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(`${apiUrl}${endpoint}`, {
       ...options,
       headers: {
         "Content-Type": "application/json",
-        ...(API_KEY ? { "Authorization": API_KEY } : {}),
+        ...(apiKey ? { "Authorization": apiKey } : {}),
         ...options?.headers,
       },
     })
