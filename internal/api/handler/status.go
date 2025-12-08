@@ -1,7 +1,11 @@
 package handler
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.mau.fi/whatsmeow/proto/waE2E"
@@ -11,12 +15,83 @@ import (
 	"onwapp/internal/service/wpp"
 )
 
+const (
+	errImageStatusNotSupported = "image status not yet supported - use text status"
+	errTextOrImageRequired     = "text or image required"
+	errSessionIDRequired       = "session ID is required"
+	errStatusSendFailed        = "failed to send status"
+	errStatusPrivacyFailed     = "failed to get status privacy"
+	statusContextTimeout       = 30 * time.Second
+)
+
 type StatusHandler struct {
 	wpp *wpp.Service
 }
 
 func NewStatusHandler(wpp *wpp.Service) *StatusHandler {
 	return &StatusHandler{wpp: wpp}
+}
+
+// validateSessionID validates and returns the session ID from URL params
+func validateSessionID(c *gin.Context) (string, error) {
+	sessionID := c.Param("session")
+	if sessionID == "" {
+		return "", errors.New(errSessionIDRequired)
+	}
+	return sessionID, nil
+}
+
+// respondError sends an error response with the given status code
+func respondError(c *gin.Context, statusCode int, message string, err error) {
+	if err != nil {
+		message = fmt.Sprintf("%s: %v", message, err)
+	}
+	c.JSON(statusCode, dto.ErrorResponse{Error: message})
+}
+
+// parseJSONStatus parses status data from JSON request
+func (h *StatusHandler) parseJSONStatus(c *gin.Context) (text, image string, err error) {
+	var req dto.SendStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		return "", "", fmt.Errorf("invalid JSON: %w", err)
+	}
+	return req.Text, req.Image, nil
+}
+
+// parseMultipartStatus parses status data from multipart form request
+func (h *StatusHandler) parseMultipartStatus(c *gin.Context) (text, image string, err error) {
+	text = c.PostForm("text")
+
+	// Check if file was provided
+	if _, _, err := c.Request.FormFile("file"); err == nil {
+		return "", "", errors.New(errImageStatusNotSupported)
+	}
+
+	return text, "", nil
+}
+
+// parseStatusInput routes to the appropriate parser based on content type
+func (h *StatusHandler) parseStatusInput(c *gin.Context) (text, image string, err error) {
+	if IsMultipartRequest(c) {
+		return h.parseMultipartStatus(c)
+	}
+	return h.parseJSONStatus(c)
+}
+
+// buildStatusMessage constructs a WhatsApp status message from input
+func (h *StatusHandler) buildStatusMessage(text, image string) (*waE2E.Message, error) {
+	if text == "" && image == "" {
+		return nil, errors.New(errTextOrImageRequired)
+	}
+
+	if text != "" {
+		return &waE2E.Message{
+			Conversation: proto.String(text),
+		}, nil
+	}
+
+	// Image status not yet supported
+	return nil, errors.New(errImageStatusNotSupported)
 }
 
 // SendStory godoc
@@ -35,55 +110,40 @@ func NewStatusHandler(wpp *wpp.Service) *StatusHandler {
 // @Security     Authorization
 // @Router       /{session}/status/send [post]
 func (h *StatusHandler) SendStory(c *gin.Context) {
-	sessionId := c.Param("session")
-
-	var text, image string
-	var imageData []byte
-
-	if IsMultipartRequest(c) {
-		text = c.PostForm("text")
-		if file, _, err := c.Request.FormFile("file"); err == nil {
-			defer file.Close()
-			// Image from form-data - not yet fully supported
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "image status requires upload - use text status for now"})
-			return
-		}
-	} else {
-		var req dto.SendStatusRequest
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-			return
-		}
-		text = req.Text
-		image = req.Image
-	}
-
-	var msg *waE2E.Message
-
-	if text != "" {
-		msg = &waE2E.Message{
-			Conversation: proto.String(text),
-		}
-	} else if image != "" {
-		imageData, _, _ = GetMediaData(image, "image")
-		_ = imageData
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "image status requires upload - use text status for now"})
-		return
-	} else {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "text or image required"})
-		return
-	}
-
-	resp, err := h.wpp.SendStatus(c.Request.Context(), sessionId, msg)
+	sessionID, err := validateSessionID(c)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		respondError(c, http.StatusBadRequest, errSessionIDRequired, err)
+		return
+	}
+
+	text, image, err := h.parseStatusInput(c)
+	if err != nil {
+		respondError(c, http.StatusBadRequest, "invalid input", err)
+		return
+	}
+
+	statusMessage, err := h.buildStatusMessage(text, image)
+	if err != nil {
+		respondError(c, http.StatusBadRequest, "", err)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), statusContextTimeout)
+	defer cancel()
+
+	sendResult, err := h.wpp.SendStatus(ctx, sessionID, statusMessage)
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			respondError(c, http.StatusGatewayTimeout, "status send timeout", err)
+			return
+		}
+		respondError(c, http.StatusInternalServerError, errStatusSendFailed, err)
 		return
 	}
 
 	c.JSON(http.StatusOK, dto.SendResponse{
-
-		MessageID: resp.ID,
-		Timestamp: resp.Timestamp.Unix(),
+		MessageID: sendResult.ID,
+		Timestamp: sendResult.Timestamp.Unix(),
 	})
 }
 
@@ -98,16 +158,26 @@ func (h *StatusHandler) SendStory(c *gin.Context) {
 // @Security     Authorization
 // @Router       /{session}/status/privacy [get]
 func (h *StatusHandler) GetStatusPrivacy(c *gin.Context) {
-	sessionId := c.Param("session")
-
-	privacy, err := h.wpp.GetStatusPrivacy(c.Request.Context(), sessionId)
+	sessionID, err := validateSessionID(c)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		respondError(c, http.StatusBadRequest, errSessionIDRequired, err)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), statusContextTimeout)
+	defer cancel()
+
+	privacySettings, err := h.wpp.GetStatusPrivacy(ctx, sessionID)
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			respondError(c, http.StatusGatewayTimeout, "status privacy fetch timeout", err)
+			return
+		}
+		respondError(c, http.StatusInternalServerError, errStatusPrivacyFailed, err)
 		return
 	}
 
 	c.JSON(http.StatusOK, dto.StatusPrivacyResponse{
-
-		Privacy: privacy,
+		Privacy: privacySettings,
 	})
 }
