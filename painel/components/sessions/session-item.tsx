@@ -53,8 +53,9 @@ interface SessionItemProps {
 }
 
 export function SessionItem({ session, isLast, onConnect, onDisconnect, onDelete, onClick }: SessionItemProps) {
-  const displayName = session.pushName || session.session
-  const initials = displayName.slice(0, 2).toUpperCase()
+  // ALWAYS show session name as main title
+  const sessionName = session.session
+  const initials = sessionName.slice(0, 2).toUpperCase()
 
   const handleClick = () => {
     if (onClick) {
@@ -76,7 +77,7 @@ export function SessionItem({ session, isLast, onConnect, onDisconnect, onDelete
       <ContentWrapper {...wrapperProps as any}>
         <div className="relative shrink-0">
           <Avatar className="h-10 w-10">
-            {session.profilePicture && <AvatarImage src={session.profilePicture} alt={displayName} />}
+            {session.profilePicture && <AvatarImage src={session.profilePicture} alt={sessionName} />}
             <AvatarFallback className="bg-primary/10 text-primary text-sm">
               {initials}
             </AvatarFallback>
@@ -88,12 +89,23 @@ export function SessionItem({ session, isLast, onConnect, onDisconnect, onDelete
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <h3 className="text-sm font-medium truncate">{displayName}</h3>
+            <h3 className="text-sm font-medium truncate">{sessionName}</h3>
             {getStatusIcon(session.status)}
           </div>
-          <p className="text-xs text-muted-foreground truncate">
-            {session.phone ? `+${session.phone}` : getStatusLabel(session.status)}
-          </p>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            {session.pushName && (
+              <span className="truncate">{session.pushName}</span>
+            )}
+            {session.phone && (
+              <span className="truncate">
+                {session.pushName && <span className="mx-1">•</span>}
+                +{session.phone}
+              </span>
+            )}
+            {!session.pushName && !session.phone && (
+              <span className="truncate">{getStatusLabel(session.status)}</span>
+            )}
+          </div>
         </div>
 
         {session.stats && session.status === 'connected' && (
