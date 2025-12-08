@@ -2,12 +2,7 @@
 linters:
   disable:
     - unused
-
-linters-settings:
-  govet:
-    settings:
-      shadow:
-        strict: false
+    - govet
 
 issues:
   exclude-rules:
