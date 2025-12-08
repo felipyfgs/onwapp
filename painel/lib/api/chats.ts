@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+import { apiRequest } from './config'
 
 export interface LastMessageInfo {
   content?: string
@@ -45,40 +45,6 @@ export interface ChatMessage {
   quotedSender?: string
   status?: string
   deleted?: boolean
-}
-
-async function getApiKey(): Promise<string> {
-  if (typeof window !== 'undefined') {
-    const cookie = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('api_key='))
-    return cookie?.split('=')[1] || ''
-  }
-  return ''
-}
-
-async function apiRequest<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const apiKey = await getApiKey()
-  
-  const res = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': apiKey,
-      ...options.headers,
-    },
-  })
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ error: 'Request failed' }))
-    console.error(`API Error [${res.status}] ${endpoint}:`, error)
-    throw new Error(error.error || `Request failed (${res.status})`)
-  }
-
-  return res.json()
 }
 
 export async function getChats(sessionId: string, limit = 100, offset = 0): Promise<Chat[]> {

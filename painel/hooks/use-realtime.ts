@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useCallback } from "react"
+import { getApiKey } from "@/lib/api/config"
 
 // Use Next.js API proxy to avoid CORS issues with SSE
 const SSE_URL = typeof window !== 'undefined' ? window.location.origin : ''
@@ -50,15 +51,7 @@ interface UseRealtimeOptions {
   enabled?: boolean
 }
 
-async function getApiKey(): Promise<string> {
-  if (typeof window !== "undefined") {
-    const cookie = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("api_key="))
-    return cookie?.split("=")[1] || ""
-  }
-  return ""
-}
+
 
 export function useRealtime({
   sessionId,
