@@ -1,4 +1,4 @@
-# GoReleaser configuration for OnWapp
+# GoReleaser configuration for OnWapp (Server-only builds)
 # Documentation: https://goreleaser.com
 
 version: 2
@@ -8,18 +8,15 @@ project_name: onwapp
 before:
   hooks:
     - go mod tidy
-    - go generate ./...
 
 builds:
-  - id: onwapp
+  - id: onwapp-server
     main: ./cmd/onwapp
     binary: onwapp
     env:
       - CGO_ENABLED=0
     goos:
       - linux
-      - darwin
-      - windows
     goarch:
       - amd64
       - arm64
@@ -32,15 +29,10 @@ builds:
 archives:
   - id: default
     format: tar.gz
-    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    format_overrides:
-      - goos: windows
-        format: zip
+    name_template: "{{ .ProjectName }}_{{ .Version }}_linux_{{ .Arch }}"
     files:
       - README.md
-      - CHANGELOG.md
-      - LICENSE*
-      - docs/*
+      - LICENSE
 
 checksum:
   name_template: "checksums.txt"
@@ -57,24 +49,14 @@ changelog:
       - "^docs:"
       - "^test:"
       - "^ci:"
-      - "^chore:"
       - Merge pull request
       - Merge branch
   groups:
-    - title: "New Features"
-      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+    - title: "Features & Fixes"
+      regexp: '^.*?(feat|fix)(\([[:word:]]+\))??!?:.+$'
       order: 0
-    - title: "Bug Fixes"
-      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+    - title: "Other Changes"
       order: 1
-    - title: "Performance"
-      regexp: '^.*?perf(\([[:word:]]+\))??!?:.+$'
-      order: 2
-    - title: "Refactoring"
-      regexp: '^.*?refactor(\([[:word:]]+\))??!?:.+$'
-      order: 3
-    - title: "Other"
-      order: 999
 
 dockers:
   - image_templates:
