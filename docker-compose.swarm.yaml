@@ -1,16 +1,16 @@
 version: "3.7"
 
 # ===========================================
-# OnWapp Production Stack - Portainer/Swarm
+# OnWapp Production Stack - Docker Swarm
 # ===========================================
 # Domains:
 #   - api.xapza.com     → API Backend
 #   - app.xapza.com     → Frontend (Painel)
 #   - minio.xapza.com   → MinIO Console
 #   - s3.xapza.com      → MinIO S3 API
-# Network: public_network (external - Traefik)
+# Network: infraNet (external - Traefik)
 #
-# IMPORTANT: Edit the values below before deploying!
+# Deploy: docker stack deploy -c docker-compose.swarm.yaml onwapp
 
 services:
   # ==========================================
@@ -18,11 +18,10 @@ services:
   # ==========================================
   postgres:
     image: postgres:16-alpine
-    container_name: onwapp_postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - public_network
+      - infraNet
     environment:
       - POSTGRES_DB=onwapp
       - POSTGRES_USER=onwapp
@@ -48,7 +47,6 @@ services:
   # ==========================================
   nats:
     image: nats:latest
-    container_name: onwapp_nats
     command:
       - "--http_port=8222"
       - "--js"
@@ -56,9 +54,9 @@ services:
     volumes:
       - nats_data:/data
     networks:
-      - public_network
+      - infraNet
     environment:
-      TZ: America/Sao_Paulo
+      - TZ=America/Sao_Paulo
     deploy:
       mode: replicated
       replicas: 1
@@ -79,12 +77,11 @@ services:
   # ==========================================
   minio:
     image: quay.io/minio/minio:RELEASE.2024-01-13T07-53-03Z-cpuv1
-    container_name: onwapp_minio
     command: server /data --console-address ":9001"
     volumes:
       - minio_data:/data
     networks:
-      - public_network
+      - infraNet
     environment:
       - MINIO_ROOT_USER=onwappadmin
       - MINIO_ROOT_PASSWORD=onwappminio2024
@@ -107,59 +104,56 @@ services:
         max_attempts: 3
       labels:
         - traefik.enable=true
-        - traefik.docker.network=public_network
+        - traefik.docker.network=infraNet
         # MinIO S3 API (s3.xapza.com)
-        - traefik.http.routers.onwapp_s3.rule=Host(`s3.xapza.com`)
-        - traefik.http.routers.onwapp_s3.entrypoints=websecure
-        - traefik.http.routers.onwapp_s3.tls.certresolver=letsencryptresolver
-        - traefik.http.routers.onwapp_s3.service=onwapp_s3
-        - traefik.http.services.onwapp_s3.loadbalancer.server.port=9000
-        - traefik.http.services.onwapp_s3.loadbalancer.passHostHeader=true
+        - traefik.http.routers.onwapp-s3.rule=Host(`s3.xapza.com`)
+        - traefik.http.routers.onwapp-s3.entrypoints=websecure
+        - traefik.http.routers.onwapp-s3.tls.certresolver=letsencryptresolver
+        - traefik.http.services.onwapp-s3.loadbalancer.server.port=9000
         # MinIO Console (minio.xapza.com)
-        - traefik.http.routers.onwapp_minio.rule=Host(`minio.xapza.com`)
-        - traefik.http.routers.onwapp_minio.entrypoints=websecure
-        - traefik.http.routers.onwapp_minio.tls.certresolver=letsencryptresolver
-        - traefik.http.routers.onwapp_minio.service=onwapp_minio
-        - traefik.http.services.onwapp_minio.loadbalancer.server.port=9001
-        - traefik.http.services.onwapp_minio.loadbalancer.passHostHeader=true
+        - traefik.http.routers.onwapp-minio.rule=Host(`minio.xapza.com`)
+        - traefik.http.routers.onwapp-minio.entrypoints=websecure
+        - traefik.http.routers.onwapp-minio.tls.certresolver=letsencryptresolver
+        - traefik.http.services.onwapp-minio.loadbalancer.server.port=9001
 
   # ==========================================
   # OnWapp API Backend (api.xapza.com)
   # ==========================================
   api:
-    image: felipyfgs17/onwapp-api:${VERSION:-latest}
-    container_name: onwapp_api
+    image: felipyfgs17/onwapp-api:1.0.2
     volumes:
       - app_data:/app/data
     networks:
-      - public_network
+      - infraNet
     depends_on:
       - postgres
       - nats
       - minio
     environment:
       # Database
-      DATABASE_URL: postgres://${POSTGRES_USER:-onwapp}:${POSTGRES_PASSWORD}@onwapp_postgres:5432/${POSTGRES_DB:-onwapp}?sslmode=disable
+      - DATABASE_URL=postgres://onwapp:onwapp2024secure@postgres:5432/onwapp?sslmode=disable
       # Server
-      PORT: "8080"
-      GLOBAL_API_KEY: ${GLOBAL_API_KEY}
-      SERVER_URL: https://api.xapza.com
+      - PORT=8080
+      - GLOBAL_API_KEY=5A292B35A83212BF
+      - SERVER_URL=https://api.xapza.com
       # Logging
-      LOG_LEVEL: info
-      LOG_FORMAT: json
+      - LOG_LEVEL=info
+      - LOG_FORMAT=json
       # MinIO (S3 Storage)
-      MINIO_ENDPOINT: s3.xapza.com
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
-      MINIO_BUCKET: onwapp-media
-      MINIO_USE_SSL: "true"
-      MINIO_PUBLIC_URL: https://s3.xapza.com
+      - MINIO_ENDPOINT=s3.xapza.com
+      - MINIO_ACCESS_KEY=onwappadmin
+      - MINIO_SECRET_KEY=onwappminio2024
+      - MINIO_BUCKET=onwapp-media
+      - MINIO_USE_SSL=true
+      - MINIO_PUBLIC_URL=https://s3.xapza.com
       # NATS (Message Queue)
-      NATS_ENABLED: "true"
-      NATS_URL: nats://onwapp_nats:4222
-      NATS_STREAM_PREFIX: ONWAPP
+      - NATS_ENABLED=true
+      - NATS_URL=nats://nats:4222
+      - NATS_STREAM_PREFIX=ONWAPP
+      # WhatsApp
+      - DEVICE_NAME=OnWApp
       # Timezone
-      TZ: America/Sao_Paulo
+      - TZ=America/Sao_Paulo
     deploy:
       mode: replicated
       replicas: 1
@@ -176,44 +170,34 @@ services:
         max_attempts: 3
       labels:
         - traefik.enable=true
-        - traefik.docker.network=public_network
+        - traefik.docker.network=infraNet
         # API Backend (api.xapza.com)
-        - traefik.http.routers.onwapp_api.rule=Host(`api.xapza.com`)
-        - traefik.http.routers.onwapp_api.entrypoints=websecure
-        - traefik.http.routers.onwapp_api.tls.certresolver=letsencryptresolver
-        - traefik.http.routers.onwapp_api.service=onwapp_api
-        - traefik.http.services.onwapp_api.loadbalancer.server.port=8080
-        - traefik.http.services.onwapp_api.loadbalancer.passHostHeader=true
-        # HTTPS header middleware
-        - traefik.http.middlewares.onwapp_sslheader.headers.customrequestheaders.X-Forwarded-Proto=https
-        - traefik.http.routers.onwapp_api.middlewares=onwapp_sslheader@docker
-        # CORS headers
-        - traefik.http.middlewares.onwapp_cors.headers.accesscontrolallowmethods=GET,POST,PUT,DELETE,OPTIONS,PATCH
-        - traefik.http.middlewares.onwapp_cors.headers.accesscontrolalloworigin=https://app.xapza.com
-        - traefik.http.middlewares.onwapp_cors.headers.accesscontrolallowcredentials=true
-        - traefik.http.middlewares.onwapp_cors.headers.accesscontrolallowheaders=*
+        - traefik.http.routers.onwapp-api.rule=Host(`api.xapza.com`)
+        - traefik.http.routers.onwapp-api.entrypoints=websecure
+        - traefik.http.routers.onwapp-api.tls.certresolver=letsencryptresolver
+        - traefik.http.services.onwapp-api.loadbalancer.server.port=8080
 
   # ==========================================
   # OnWapp Frontend (app.xapza.com)
   # ==========================================
   painel:
-    image: felipyfgs17/onwapp-painel:${VERSION:-latest}
-    container_name: onwapp_painel
+    image: felipyfgs17/onwapp-painel:1.0.2
     networks:
-      - public_network
+      - infraNet
     depends_on:
       - api
     environment:
       # API URL (public for browser)
-      NEXT_PUBLIC_API_URL: https://api.xapza.com
+      - NEXT_PUBLIC_API_URL=https://api.xapza.com
+      - API_URL=http://api:8080
       # Authentication (same as API)
-      GLOBAL_API_KEY: ${GLOBAL_API_KEY}
+      - GLOBAL_API_KEY=5A292B35A83212BF
       # Next.js
-      NODE_ENV: production
-      HOSTNAME: "0.0.0.0"
-      PORT: "3000"
+      - NODE_ENV=production
+      - HOSTNAME=0.0.0.0
+      - PORT=3000
       # Timezone
-      TZ: America/Sao_Paulo
+      - TZ=America/Sao_Paulo
     deploy:
       mode: replicated
       replicas: 1
@@ -229,14 +213,12 @@ services:
         delay: 5s
       labels:
         - traefik.enable=true
-        - traefik.docker.network=public_network
+        - traefik.docker.network=infraNet
         # Frontend (app.xapza.com)
-        - traefik.http.routers.onwapp_painel.rule=Host(`app.xapza.com`)
-        - traefik.http.routers.onwapp_painel.entrypoints=websecure
-        - traefik.http.routers.onwapp_painel.tls.certresolver=letsencryptresolver
-        - traefik.http.routers.onwapp_painel.service=onwapp_painel
-        - traefik.http.services.onwapp_painel.loadbalancer.server.port=3000
-        - traefik.http.services.onwapp_painel.loadbalancer.passHostHeader=true
+        - traefik.http.routers.onwapp-painel.rule=Host(`app.xapza.com`)
+        - traefik.http.routers.onwapp-painel.entrypoints=websecure
+        - traefik.http.routers.onwapp-painel.tls.certresolver=letsencryptresolver
+        - traefik.http.services.onwapp-painel.loadbalancer.server.port=3000
 
 # ==========================================
 # Volumes
@@ -255,5 +237,5 @@ volumes:
 # Networks
 # ==========================================
 networks:
-  public_network:
+  infraNet:
     external: true

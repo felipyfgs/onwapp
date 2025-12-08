@@ -1,71 +1,68 @@
-# ================================
-# OnWapp API - Backend (Go)
-# ================================
-# Build: docker build -f Dockerfile.api -t onwapp-api:latest .
-# Run: docker run -p 8080:8080 onwapp-api:latest
+# ===========================================
+# OnWapp API - Multi-stage Dockerfile
+# ===========================================
 
-# Stage 1: Builder
+# Build stage
 FROM golang:1.24-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache git ca-certificates tzdata
 
-WORKDIR /build
+WORKDIR /app
 
-# Download dependencies first (better caching)
+# Cache dependencies
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy source code
-COPY . .
-
-# Build arguments for version info
+# Build args for version info
 ARG VERSION=dev
 ARG GIT_COMMIT=unknown
 ARG BUILD_DATE=unknown
 
-# Build the Go binary
+# Copy source code
+COPY . .
+
+# Build static binary
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
-    -ldflags "-s -w -X onwapp/internal/version.Version=${VERSION} -X onwapp/internal/version.GitCommit=${GIT_COMMIT} -X onwapp/internal/version.BuildDate=${BUILD_DATE}" \
+    -ldflags="-s -w -X onwapp/internal/version.Version=${VERSION} -X onwapp/internal/version.GitCommit=${GIT_COMMIT} -X onwapp/internal/version.BuildDate=${BUILD_DATE}" \
     -o onwapp ./cmd/onwapp
 
-# Stage 2: Runtime (minimal)
-FROM alpine:latest
+# ===========================================
+# Runtime stage
+# ===========================================
+FROM alpine:3.19
 
 # Install runtime dependencies
 RUN apk add --no-cache \
     ca-certificates \
     tzdata \
-    bash \
     ffmpeg
 
-# Set timezone
-ENV TZ=America/Sao_Paulo
-
 # Create non-root user
-RUN addgroup -g 1000 onwapp && \
-    adduser -D -u 1000 -G onwapp onwapp
+RUN adduser -D -u 1001 onwapp
 
 WORKDIR /app
 
-# Copy binary from builder
-COPY --from=builder /build/onwapp .
+# Copy binary and docs from builder
+COPY --from=builder /app/onwapp .
+COPY --from=builder /app/docs ./docs
 
-# Copy Swagger documentation
-COPY --from=builder /build/docs ./docs
-
-# Change ownership
-RUN chown -R onwapp:onwapp /app
+# Create data directory
+RUN mkdir -p /app/data && chown -R onwapp:onwapp /app
 
 # Switch to non-root user
 USER onwapp
 
-# Expose API port
+# Expose port
 EXPOSE 8080
 
+# Environment defaults
+ENV PORT=8080
+ENV TZ=America/Sao_Paulo
+
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
 
-# Run the binary
+# Run
 CMD ["./onwapp"]

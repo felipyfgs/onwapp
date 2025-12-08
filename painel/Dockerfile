@@ -1,19 +1,24 @@
-# ================================
-# OnWapp Painel - Frontend (Next.js)
-# ================================
-# Build: docker build -t onwapp-painel:latest .
-# Run: docker run -p 3000:3000 onwapp-painel:latest
+# ===========================================
+# OnWapp Painel - Multi-stage Dockerfile
+# ===========================================
 
 # Stage 1: Dependencies
 FROM node:20-alpine AS deps
 
+# Add libc6-compat for Alpine compatibility
+RUN apk add --no-cache libc6-compat
+
 WORKDIR /app
 
-# Install dependencies
-COPY package.json package-lock.json ./
-RUN npm ci && npm cache clean --force
+# Copy package files
+COPY package.json package-lock.json* ./
 
-# Stage 2: Builder
+# Install dependencies
+RUN npm ci
+
+# ===========================================
+# Stage 2: Build
+# ===========================================
 FROM node:20-alpine AS builder
 
 WORKDIR /app
@@ -24,38 +29,48 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copy source code
 COPY . .
 
-# Remove local env file (use container env vars)
-RUN rm -f .env.local
+# Disable telemetry during build
+ENV NEXT_TELEMETRY_DISABLED=1
 
-# Build Next.js app
+# Build the application
 RUN npm run build
 
-# Stage 3: Runner (minimal)
+# ===========================================
+# Stage 3: Runner (Production)
+# ===========================================
 FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# Set Node environment
+# Set production environment
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
 # Create non-root user
-RUN addgroup -g 1001 nodejs && \
-    adduser -D -u 1001 -G nodejs nextjs
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
 
-# Copy necessary files from builder
+# Copy public assets
+COPY --from=builder /app/public ./public
+
+# Copy standalone build output
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 # Switch to non-root user
 USER nextjs
 
-# Expose frontend port
+# Expose port
 EXPOSE 3000
 
+# Environment defaults
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+ENV TZ=America/Sao_Paulo
+
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
 
-# Run with Node.js (Node 20+ has proper signal handling built-in)
+# Run
 CMD ["node", "server.js"]

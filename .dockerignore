@@ -1,59 +1,39 @@
 # Git
-.git/
+.git
 .gitignore
-.gitattributes
 
-# GitHub
-.github/
+# Documentation (keep README for reference)
+*.md
+!README.md
+CHANGELOG.md
 
-# Factory AI
-.factory/
-
-# Local development
-.local/
+# Frontend (built separately)
+painel/
 
 # Environment files
 .env
 .env.*
-!.env.example
-
-# Docker files (not needed in build context)
-docker-compose*.yaml
-docker-compose*.yml
-Dockerfile*
-.dockerignore
-# Keep docker/entrypoint.sh but ignore the rest
-docker/*.yaml
-docker/*.yml
-
-# Documentation (keep docs/ for swagger)
-*.md
-LICENSE*
-
-# Development tools
-Makefile
-.goreleaser.yml
-scripts/
+!.env.prod.example
 
 # IDE
-.idea/
 .vscode/
-*.swp
-*.swo
+.idea/
 
-# OS files
-.DS_Store
-Thumbs.db
+# Test and coverage
+coverage.*
+*.test
+coverage.out
+coverage.html
 
 # Build artifacts
-dist/
-build/
-tmp/
+onwapp
+*.exe
 
-# Test files
-*_test.go
-coverage.out
-*.test
+# Docker files (not needed in image)
+docker-compose*.yaml
+Dockerfile*
+.dockerignore
 
-# Config examples (not needed in image)
-chatwoot-config.json
+# Factory/CI
+.factory/
+.github/
