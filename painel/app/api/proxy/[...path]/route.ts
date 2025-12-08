@@ -83,7 +83,7 @@ async function handleProxyRequest(
 
     // Get response data
     const contentType = response.headers.get('content-type')
-    let data: any
+    let data: unknown
 
     if (contentType?.includes('application/json')) {
       data = await response.json()
