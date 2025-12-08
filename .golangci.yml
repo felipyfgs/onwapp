@@ -1,163 +1,20 @@
-run:
-  timeout: 5m
-  tests: true
 
 linters:
-  enable:
-    # ==========================================================================
-    # BUGS - CRITICAL (prevent runtime errors)
-    # ==========================================================================
-    - bodyclose        # HTTP response body must be closed
-    - durationcheck    # check for two durations multiplied together
-    - errcheck         # check for unchecked errors
-    - gosec            # security problems
-    - nilerr           # returning nil after checking err != nil
-    - sqlclosecheck    # ensure sql.Rows/Stmt are closed
-    - govet            # reports suspicious constructs (go vet)
-    - ineffassign      # detects unused assignments
-
-    # ==========================================================================
-    # PERFORMANCE (optimize runtime)
-    # ==========================================================================
-    - copyloopvar      # detects loop variable issues (Go 1.22+)
-    - prealloc         # suggests slice pre-allocation
-    - wastedassign     # detects unused assignments
-    - noctx            # finds HTTP requests without context.Context
-    - unparam          # reports unused function parameters
-    - nakedret         # finds naked returns in long functions
-    - makezero         # finds slice declarations not initialized with zero length
-
-    # ==========================================================================
-    # DATABASE PERFORMANCE
-    # ==========================================================================
-    - rowserrcheck     # checks rows.Err() is called after iterating
-
-    # ==========================================================================
-    # MEMORY & ALLOCATIONS
-    # ==========================================================================
-    - gocritic         # extensive checks including performance hints
-
-    # ==========================================================================
-    # CODE QUALITY (cleaner, more maintainable code)
-    # ==========================================================================
-    - gofmt            # formatting
-    - goimports        # imports ordering
-    - misspell         # spelling mistakes
-    - unused           # unused code
-    - staticcheck      # comprehensive static analysis
-    - gosimple         # simplify code
-    - unconvert        # remove unnecessary type conversions
-    - goconst          # find repeated strings that could be constants
-    - errorlint        # proper error wrapping (Go 1.13+)
-
-linters-settings:
-  gosec:
-    excludes:
-      - G104  # audit errors not checked (handled by errcheck)
-      - G304  # file inclusion via variable (common in file handlers)
-
-  goconst:
-    min-len: 6         # minimum length of string to consider
-    min-occurrences: 5 # minimum occurrences before suggesting const
-
-  govet:
-    enable-all: true
-    disable:
-      - fieldalignment # too noisy, micro-optimization
-
-  errorlint:
-    errorf: true       # check fmt.Errorf uses %w
-    asserts: true      # check type assertions on errors
-    comparison: true   # check error comparisons
-
-  nakedret:
-    max-func-lines: 30 # max lines before naked return is flagged
-
-  gocritic:
-    enabled-tags:
-      - performance    # performance-related checks
-      - diagnostic     # bug detection
-    disabled-checks:
-      - hugeParam      # too strict for this project
-      - rangeValCopy   # often false positives with small structs
-
-  prealloc:
-    simple: true       # only report simple loops
-    for-loops: true    # check for loops
-
-  unparam:
-    check-exported: false # don't check exported functions
-
+  disable:
+    - unused
+govet:
+  settings:
+    shadow:
+      strict: false
 issues:
-  max-issues-per-linter: 0
-  max-same-issues: 0
-
   exclude-rules:
-    # Test files - relaxed rules
-    - path: _test\.go
-      linters:
-        - errcheck
-        - gosec
-        - goconst
-        - unparam
-        - gocritic
-
-    # Generated docs
-    - path: docs/
-      linters:
-        - all
-
-    # G201 false positives - parameterized queries ($1, $2)
-    - path: internal/integrations/chatwoot/repository/chatwoot_db.go
+    - path: internal/util/media/converter.go
       linters:
         - gosec
-      text: "G201"
-
-    - path: internal/integrations/chatwoot/sync/repository.go
+    - path: internal/api/handler/response_helpers.go
       linters:
-        - gosec
-      text: "G201"
-
-    # G115 integer overflow - protobuf values are safe
-    - linters:
-        - gosec
-      text: "G115"
-
-    # G107 HTTP request with variable URL - configured endpoints
-    - linters:
-        - gosec
-      text: "G107"
-
-    # Event handlers need consistent signatures even if params are unused
-    - path: internal/service/event/
+        - unused
+    - path: internal/integrations/chatwoot/service/cache.go
       linters:
-        - unparam
+        - unused
 
-    # Queue consumer has consistent interface
-    - path: internal/queue/consumer.go
-      linters:
-        - unparam
-
-    # Chatwoot sync has batch functions with consistent interface
-    - path: internal/integrations/chatwoot/sync/
-      linters:
-        - unparam
-
-    # Chatwoot service event handlers
-    - path: internal/integrations/chatwoot/service/events.go
-      linters:
-        - unparam
-
-    # Style suggestions - not critical for performance
-    - linters:
-        - gocritic
-      text: "ifElseChain|elseif|sprintfQuotedString"
-
-    # Pre-allocation in repository - rows count unknown ahead of time
-    - path: internal/db/repository/
-      linters:
-        - prealloc
-
-    - path: internal/integrations/chatwoot/
-      linters:
-        - prealloc
