@@ -101,7 +101,7 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 		phone = c.PostForm("phone")
 		caption = c.PostForm("caption")
 		mimeType = c.PostForm("mimeType")
-		imageData, detectedMime, err = GetMediaFromForm(c, "file")
+		imageData, detectedMime, err = GetMediaFromForm(c.Request, "file")
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
@@ -115,7 +115,7 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 		phone = req.Phone
 		caption = req.Caption
 		mimeType = req.MimeType
-		imageData, detectedMime, err = GetMediaData(c, req.Image, "image")
+		imageData, detectedMime, err = GetMediaData(req.Image, "image")
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
@@ -177,7 +177,7 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 		phone = c.PostForm("phone")
 		mimeType = c.PostForm("mimeType")
 		ptt = c.PostForm("ptt") == "true"
-		audioData, detectedMime, err = GetMediaFromForm(c, "file")
+		audioData, detectedMime, err = GetMediaFromForm(c.Request, "file")
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
@@ -191,7 +191,7 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 		phone = req.Phone
 		mimeType = req.MimeType
 		ptt = req.PTT
-		audioData, detectedMime, err = GetMediaData(c, req.Audio, "audio")
+		audioData, detectedMime, err = GetMediaData(req.Audio, "audio")
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
@@ -257,14 +257,15 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 	var phone, caption, mimeType string
 	var videoData []byte
 	var detectedMime string
-	var ok bool
+	var err error
 
 	if IsMultipartRequest(c) {
 		phone = c.PostForm("phone")
 		caption = c.PostForm("caption")
 		mimeType = c.PostForm("mimeType")
-		videoData, detectedMime, ok = GetMediaFromForm(c, "file")
-		if !ok {
+		videoData, detectedMime, err = GetMediaFromForm(c.Request, "file")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
 	} else {
@@ -276,8 +277,9 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 		phone = req.Phone
 		caption = req.Caption
 		mimeType = req.MimeType
-		videoData, detectedMime, ok = GetMediaData(c, req.Video, "video")
-		if !ok {
+		videoData, detectedMime, err = GetMediaData(req.Video, "video")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
 	}
@@ -330,14 +332,15 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 	var phone, filename, mimeType string
 	var docData []byte
 	var detectedMime string
-	var ok bool
+	var err error
 
 	if IsMultipartRequest(c) {
 		phone = c.PostForm("phone")
 		filename = c.PostForm("filename")
 		mimeType = c.PostForm("mimeType")
-		docData, detectedMime, ok = GetMediaFromForm(c, "file")
-		if !ok {
+		docData, detectedMime, err = GetMediaFromForm(c.Request, "file")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
 	} else {
@@ -349,8 +352,9 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 		phone = req.Phone
 		filename = req.Filename
 		mimeType = req.MimeType
-		docData, detectedMime, ok = GetMediaData(c, req.Document, "document")
-		if !ok {
+		docData, detectedMime, err = GetMediaData(req.Document, "document")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
 	}
@@ -402,13 +406,14 @@ func (h *MessageHandler) SendSticker(c *gin.Context) {
 	var phone, mimeType string
 	var stickerData []byte
 	var detectedMime string
-	var ok bool
+	var err error
 
 	if IsMultipartRequest(c) {
 		phone = c.PostForm("phone")
 		mimeType = c.PostForm("mimeType")
-		stickerData, detectedMime, ok = GetMediaFromForm(c, "file")
-		if !ok {
+		stickerData, detectedMime, err = GetMediaFromForm(c.Request, "file")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
 	} else {
@@ -419,8 +424,9 @@ func (h *MessageHandler) SendSticker(c *gin.Context) {
 		}
 		phone = req.Phone
 		mimeType = req.MimeType
-		stickerData, detectedMime, ok = GetMediaData(c, req.Sticker, "sticker")
-		if !ok {
+		stickerData, detectedMime, err = GetMediaData(req.Sticker, "sticker")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
 	}
@@ -781,8 +787,9 @@ func (h *MessageHandler) SendInteractive(c *gin.Context) {
 
 	// Handle optional image (supports URL or base64)
 	if req.Image != "" {
-		imageData, detectedMime, ok := GetMediaData(c, req.Image, "image")
-		if !ok {
+		imageData, detectedMime, err := GetMediaData(c, req.Image, "image")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
 		uploaded, err := h.wpp.UploadMedia(c.Request.Context(), sessionId, imageData, whatsmeow.MediaImage)
@@ -810,8 +817,9 @@ func (h *MessageHandler) SendInteractive(c *gin.Context) {
 
 	// Handle optional video (supports URL or base64)
 	if req.Video != "" {
-		videoData, detectedMime, ok := GetMediaData(c, req.Video, "video")
-		if !ok {
+		videoData, detectedMime, err := GetMediaData(c, req.Video, "video")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
 		uploaded, err := h.wpp.UploadMedia(c.Request.Context(), sessionId, videoData, whatsmeow.MediaVideo)
@@ -906,8 +914,9 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 
 	// Handle optional image (supports URL or base64)
 	if req.Image != "" {
-		imageData, detectedMime, ok := GetMediaData(c, req.Image, "image")
-		if !ok {
+		imageData, detectedMime, err := GetMediaData(c, req.Image, "image")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
 		uploaded, err := h.wpp.UploadMedia(c.Request.Context(), sessionId, imageData, whatsmeow.MediaImage)
@@ -935,8 +944,9 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 
 	// Handle optional video (supports URL or base64)
 	if req.Video != "" {
-		videoData, detectedMime, ok := GetMediaData(c, req.Video, "video")
-		if !ok {
+		videoData, detectedMime, err := GetMediaData(c, req.Video, "video")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
 		uploaded, err := h.wpp.UploadMedia(c.Request.Context(), sessionId, videoData, whatsmeow.MediaVideo)
@@ -964,8 +974,9 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 
 	// Handle optional document (supports URL or base64)
 	if req.Document != "" {
-		docData, detectedMime, ok := GetMediaData(c, req.Document, "document")
-		if !ok {
+		docData, detectedMime, err := GetMediaData(c, req.Document, "document")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
 		uploaded, err := h.wpp.UploadMedia(c.Request.Context(), sessionId, docData, whatsmeow.MediaDocument)

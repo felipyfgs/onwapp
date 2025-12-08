@@ -125,11 +125,12 @@ func (h *ProfileHandler) SetProfilePicture(c *gin.Context) {
 	sessionId := c.Param("session")
 
 	var imageData []byte
-	var ok bool
+	var err error
 
 	if IsMultipartRequest(c) {
-		imageData, _, ok = GetMediaFromForm(c, "file")
-		if !ok {
+		imageData, _, err = GetMediaFromForm(c, "file")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
 	} else {
@@ -138,8 +139,9 @@ func (h *ProfileHandler) SetProfilePicture(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
-		imageData, _, ok = GetMediaData(c, req.Image, "image")
-		if !ok {
+		imageData, _, err = GetMediaData(c, req.Image, "image")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
 	}

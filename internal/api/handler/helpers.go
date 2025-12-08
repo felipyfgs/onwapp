@@ -10,7 +10,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"onwapp/internal/api/dto"
 	"onwapp/internal/util/web"
 )
 
@@ -25,7 +24,7 @@ func DownloadFromURL(url string) ([]byte, string, error) {
 }
 
 // GetMediaData handles URL or base64 input and returns the raw bytes and detected mime type
-func GetMediaData(c *gin.Context, media string, mediaType string) ([]byte, string, error) {
+func GetMediaData(media string, mediaType string) ([]byte, string, error) {
 	if media == "" {
 		return nil, "", fmt.Errorf("%s is required", mediaType)
 	}
@@ -56,8 +55,8 @@ func IsMultipartRequest(c *gin.Context) bool {
 }
 
 // GetMediaFromForm extracts file from multipart form and returns bytes and mime type
-func GetMediaFromForm(c *gin.Context, fieldName string) ([]byte, string, error) {
-	file, header, err := c.Request.FormFile(fieldName)
+func GetMediaFromForm(r *http.Request, fieldName string) ([]byte, string, error) {
+	file, header, err := r.FormFile(fieldName)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to get file from form: %w", err)
 	}

@@ -302,8 +302,9 @@ func (h *ChatHandler) SetDisappearingTimer(c *gin.Context) {
 		return
 	}
 
-	timer, ok := ParseDisappearingTimer(c, req.Timer)
-	if !ok {
+	timer, err := ParseDisappearingTimer(c, req.Timer)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
