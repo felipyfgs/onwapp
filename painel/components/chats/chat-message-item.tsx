@@ -168,8 +168,8 @@ export function ChatMessageItem({
 
   const getMediaUrl = (msgId?: string) => {
     if (!msgId || !sessionId) return null
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
-    return `${apiUrl}/public/${sessionId}/media/stream?messageId=${msgId}`
+    // Use proxy for media URLs to avoid CORS
+    return `/api/proxy/public/${sessionId}/media/stream?messageId=${msgId}`
   }
 
   const isEmojiOnly = (text: string) => {

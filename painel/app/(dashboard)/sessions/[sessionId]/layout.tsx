@@ -27,7 +27,7 @@ async function getSessionProfile(apiUrl: string, sessionName: string, apiKey: st
 }
 
 async function getSessions(apiKey: string): Promise<SessionItem[]> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+  const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
   
   try {
     const res = await fetch(`${apiUrl}/sessions`, {

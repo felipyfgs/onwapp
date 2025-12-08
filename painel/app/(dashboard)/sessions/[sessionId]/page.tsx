@@ -3,7 +3,7 @@ import { SessionDashboard } from "@/components/session"
 import { type Session, type SessionStats } from "@/lib/api/sessions"
 
 async function getSessionStatus(sessionId: string, apiKey: string): Promise<Session | null> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+  const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
   
   try {
     const res = await fetch(`${apiUrl}/${sessionId}/status`, {
@@ -19,7 +19,7 @@ async function getSessionStatus(sessionId: string, apiKey: string): Promise<Sess
 }
 
 async function getSessionProfile(sessionId: string, apiKey: string): Promise<{ pictureUrl?: string; pushName?: string } | null> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+  const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
   
   try {
     const res = await fetch(`${apiUrl}/${sessionId}/profile`, {
