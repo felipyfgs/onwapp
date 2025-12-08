@@ -47,6 +47,9 @@ WORKDIR /app
 # Copy Go binary
 COPY --from=go-builder /build/onwapp ./onwapp
 
+# Copy Swagger documentation
+COPY --from=go-builder /build/docs ./docs
+
 # Copy Next.js standalone
 COPY --from=node-builder /build/.next/standalone ./painel/
 COPY --from=node-builder /build/.next/static ./painel/.next/static
