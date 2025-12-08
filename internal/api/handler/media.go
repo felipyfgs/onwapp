@@ -130,9 +130,7 @@ func (h *MediaHandler) StreamMedia(c *gin.Context) {
 	c.Header("Content-Type", contentType)
 
 	// Copy the response body to the client
-	if _, err := io.Copy(c.Writer, resp.Body); err != nil {
-		h.logger.Error("Failed to copy response body", "error", err)
-	}
+	_, _ = io.Copy(c.Writer, resp.Body)
 }
 
 // StreamMediaPublic godoc
