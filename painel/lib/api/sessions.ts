@@ -21,7 +21,7 @@ export interface Session {
   updatedAt?: string
 }
 
-export interface SessionResponse extends Session {}
+export type SessionResponse = Session
 
 export interface QRResponse {
   qr?: string

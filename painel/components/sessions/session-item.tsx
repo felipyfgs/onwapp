@@ -74,7 +74,7 @@ export function SessionItem({ session, isLast, onConnect, onDisconnect, onDelete
         !isLast ? 'border-b' : ''
       }`}
     >
-      <ContentWrapper {...wrapperProps as any}>
+      <ContentWrapper {...(wrapperProps as React.ComponentProps<typeof ContentWrapper>)}>
         <div className="relative shrink-0">
           <Avatar className="h-10 w-10">
             {session.profilePicture && <AvatarImage src={session.profilePicture} alt={sessionName} />}

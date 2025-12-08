@@ -128,8 +128,8 @@ export function SessionDashboard({
         try {
           const profile = await getSessionProfile(sessionId)
           if (profile.pushName) setPushName(profile.pushName)
-          if ((profile as any).profile?.pictureUrl) {
-            setProfilePicture((profile as any).profile.pictureUrl)
+          if ('profile' in profile && profile.profile && typeof profile.profile === 'object' && 'pictureUrl' in profile.profile) {
+            setProfilePicture(profile.profile.pictureUrl as string)
           }
         } catch {
           // Ignore profile fetch errors
