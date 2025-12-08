@@ -3,12 +3,14 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 	"go.mau.fi/whatsmeow/types"
 
 	"onwapp/internal/api/dto"
@@ -38,20 +40,23 @@ func (h *ChatHandler) SetHistorySyncService(s *service.HistorySyncService) {
 }
 
 // saveDeleteUpdate saves a delete event to the database
-func (h *ChatHandler) saveDeleteUpdate(ctx context.Context, sessionId, phone, messageID string) {
+func (h *ChatHandler) saveDeleteUpdate(ctx context.Context, sessionId, phone, messageID string) error {
 	if h.database == nil {
-		return
+		return fmt.Errorf("database not initialized")
 	}
 
 	session, err := h.sessionService.Get(sessionId)
 	if err != nil {
-		return
+		return fmt.Errorf("failed to get session: %w", err)
 	}
 
-	data, _ := json.Marshal(map[string]interface{}{
+	data, err := json.Marshal(map[string]interface{}{
 		"deletedBy": "user",
 		"phone":     phone,
 	})
+	if err != nil {
+		return fmt.Errorf("failed to marshal delete data: %w", err)
+	}
 
 	update := &model.MessageUpdate{
 		SessionID: session.ID,
@@ -62,7 +67,12 @@ func (h *ChatHandler) saveDeleteUpdate(ctx context.Context, sessionId, phone, me
 		EventAt:   time.Now(),
 	}
 
-	h.database.MessageUpdates.Save(ctx, update)
+	_, err = h.database.MessageUpdates.Save(ctx, update)
+	if err != nil {
+		return fmt.Errorf("failed to save message update: %w", err)
+	}
+
+	return nil
 }
 
 // =============================================================================
@@ -204,7 +214,9 @@ func (h *ChatHandler) MarkRead(c *gin.Context) {
 					chatJID = req.Phone + "@s.whatsapp.net"
 				}
 			}
-			_ = h.database.Chats.MarkAsRead(c.Request.Context(), session.ID, chatJID)
+			if err := h.database.Chats.MarkAsRead(c.Request.Context(), session.ID, chatJID); err != nil {
+				log.Warn().Err(err).Str("chatJID", chatJID).Msg("failed to mark chat as read in database")
+			}
 		}
 	}
 
@@ -346,7 +358,10 @@ func (h *ChatHandler) DeleteMessage(c *gin.Context) {
 	
 	// Save delete to database (even if WhatsApp returns error like 479 = already deleted)
 	if h.database != nil && !req.ForMe {
-		h.saveDeleteUpdate(c.Request.Context(), sessionId, req.Phone, req.MessageID)
+		if saveErr := h.saveDeleteUpdate(c.Request.Context(), sessionId, req.Phone, req.MessageID); saveErr != nil {
+			// Log error but don't fail the request since WhatsApp delete succeeded
+			log.Warn().Err(saveErr).Str("messageID", req.MessageID).Msg("failed to save delete update to database")
+		}
 	}
 
 	if err != nil {

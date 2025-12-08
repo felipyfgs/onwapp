@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -41,13 +40,7 @@ func validateSessionID(c *gin.Context) (string, error) {
 	return sessionID, nil
 }
 
-// respondError sends an error response with the given status code
-func respondError(c *gin.Context, statusCode int, message string, err error) {
-	if err != nil {
-		message = fmt.Sprintf("%s: %v", message, err)
-	}
-	c.JSON(statusCode, dto.ErrorResponse{Error: message})
-}
+
 
 // parseJSONStatus parses status data from JSON request
 func (h *StatusHandler) parseJSONStatus(c *gin.Context) (text, image string, err error) {
@@ -112,19 +105,19 @@ func (h *StatusHandler) buildStatusMessage(text, image string) (*waE2E.Message, 
 func (h *StatusHandler) SendStory(c *gin.Context) {
 	sessionID, err := validateSessionID(c)
 	if err != nil {
-		respondError(c, http.StatusBadRequest, errSessionIDRequired, err)
+		respondBadRequest(c, errSessionIDRequired, err)
 		return
 	}
 
 	text, image, err := h.parseStatusInput(c)
 	if err != nil {
-		respondError(c, http.StatusBadRequest, "invalid input", err)
+		respondBadRequest(c, "invalid input", err)
 		return
 	}
 
 	statusMessage, err := h.buildStatusMessage(text, image)
 	if err != nil {
-		respondError(c, http.StatusBadRequest, "", err)
+		respondBadRequest(c, "invalid status message", err)
 		return
 	}
 
@@ -134,14 +127,14 @@ func (h *StatusHandler) SendStory(c *gin.Context) {
 	sendResult, err := h.wpp.SendStatus(ctx, sessionID, statusMessage)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			respondError(c, http.StatusGatewayTimeout, "status send timeout", err)
+			respondGatewayTimeout(c, "status send timeout", err)
 			return
 		}
-		respondError(c, http.StatusInternalServerError, errStatusSendFailed, err)
+		respondInternalError(c, errStatusSendFailed, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.SendResponse{
+	respondSuccess(c, dto.SendResponse{
 		MessageID: sendResult.ID,
 		Timestamp: sendResult.Timestamp.Unix(),
 	})
@@ -160,7 +153,7 @@ func (h *StatusHandler) SendStory(c *gin.Context) {
 func (h *StatusHandler) GetStatusPrivacy(c *gin.Context) {
 	sessionID, err := validateSessionID(c)
 	if err != nil {
-		respondError(c, http.StatusBadRequest, errSessionIDRequired, err)
+		respondBadRequest(c, errSessionIDRequired, err)
 		return
 	}
 
@@ -170,14 +163,14 @@ func (h *StatusHandler) GetStatusPrivacy(c *gin.Context) {
 	privacySettings, err := h.wpp.GetStatusPrivacy(ctx, sessionID)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			respondError(c, http.StatusGatewayTimeout, "status privacy fetch timeout", err)
+			respondGatewayTimeout(c, "status privacy fetch timeout", err)
 			return
 		}
-		respondError(c, http.StatusInternalServerError, errStatusPrivacyFailed, err)
+		respondInternalError(c, errStatusPrivacyFailed, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.StatusPrivacyResponse{
+	respondSuccess(c, dto.StatusPrivacyResponse{
 		Privacy: privacySettings,
 	})
 }
