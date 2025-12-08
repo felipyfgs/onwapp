@@ -65,7 +65,7 @@ func (h *StatusHandler) SendStory(c *gin.Context) {
 			Conversation: proto.String(text),
 		}
 	} else if image != "" {
-		imageData, _, _ = GetMediaData(c, image, "image")
+		imageData, _, _ = GetMediaData(image, "image")
 		_ = imageData
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "image status requires upload - use text status for now"})
 		return

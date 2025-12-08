@@ -787,7 +787,7 @@ func (h *MessageHandler) SendInteractive(c *gin.Context) {
 
 	// Handle optional image (supports URL or base64)
 	if req.Image != "" {
-		imageData, detectedMime, err := GetMediaData(c, req.Image, "image")
+		imageData, detectedMime, err := GetMediaData(req.Image, "image")
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
@@ -817,7 +817,7 @@ func (h *MessageHandler) SendInteractive(c *gin.Context) {
 
 	// Handle optional video (supports URL or base64)
 	if req.Video != "" {
-		videoData, detectedMime, err := GetMediaData(c, req.Video, "video")
+		videoData, detectedMime, err := GetMediaData(req.Video, "video")
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
@@ -914,7 +914,7 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 
 	// Handle optional image (supports URL or base64)
 	if req.Image != "" {
-		imageData, detectedMime, err := GetMediaData(c, req.Image, "image")
+		imageData, detectedMime, err := GetMediaData(req.Image, "image")
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
@@ -944,7 +944,7 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 
 	// Handle optional video (supports URL or base64)
 	if req.Video != "" {
-		videoData, detectedMime, err := GetMediaData(c, req.Video, "video")
+		videoData, detectedMime, err := GetMediaData(req.Video, "video")
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
@@ -974,7 +974,7 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 
 	// Handle optional document (supports URL or base64)
 	if req.Document != "" {
-		docData, detectedMime, err := GetMediaData(c, req.Document, "document")
+		docData, detectedMime, err := GetMediaData(req.Document, "document")
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return

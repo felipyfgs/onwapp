@@ -128,7 +128,7 @@ func (h *ProfileHandler) SetProfilePicture(c *gin.Context) {
 	var err error
 
 	if IsMultipartRequest(c) {
-		imageData, _, err = GetMediaFromForm(c, "file")
+		imageData, _, err = GetMediaFromForm(c.Request, "file")
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
@@ -139,7 +139,7 @@ func (h *ProfileHandler) SetProfilePicture(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
-		imageData, _, err = GetMediaData(c, req.Image, "image")
+		imageData, _, err = GetMediaData(req.Image, "image")
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return

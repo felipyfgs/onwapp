@@ -602,7 +602,7 @@ func (h *GroupHandler) SetGroupPicture(c *gin.Context) {
 
 	if IsMultipartRequest(c) {
 		groupID = c.PostForm("groupId")
-		imageData, _, err = GetMediaFromForm(c, "file")
+		imageData, _, err = GetMediaFromForm(c.Request, "file")
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
@@ -614,7 +614,7 @@ func (h *GroupHandler) SetGroupPicture(c *gin.Context) {
 			return
 		}
 		groupID = req.GroupID
-		imageData, _, err = GetMediaData(c, req.Image, "image")
+		imageData, _, err = GetMediaData(req.Image, "image")
 		if err != nil {
 			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
