@@ -28,6 +28,28 @@ import {
   EyeOff,
   ExternalLink,
 } from "lucide-react"
+
+/**
+ * Get public API URL for external links (Swagger, etc)
+ * Uses NEXT_PUBLIC_API_URL if available, otherwise constructs from window.location
+ */
+function getPublicApiUrl(): string {
+  const publicUrl = process.env.NEXT_PUBLIC_API_URL
+  if (publicUrl) {
+    return publicUrl
+  }
+  
+  // In production Docker, construct API URL from current domain
+  if (typeof window !== 'undefined') {
+    const protocol = window.location.protocol
+    const hostname = window.location.hostname
+    // If painel is on app.domain.com, API is likely on api.domain.com
+    const apiHostname = hostname.replace(/^(app|painel|panel)\./, 'api.')
+    return `${protocol}//${apiHostname}`
+  }
+  
+  return '/api/proxy'
+}
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -588,7 +610,7 @@ export function SessionDashboard({
                   Chatwoot
                 </Button>
               </Link>
-              <a href={`https://api.xapza.com/docs`} target="_blank" rel="noopener noreferrer">
+              <a href={`${getPublicApiUrl()}/docs`} target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" className="w-full justify-start gap-2">
                   <ExternalLink className="size-4" />
                   API Docs
