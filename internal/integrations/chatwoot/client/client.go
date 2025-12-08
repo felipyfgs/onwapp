@@ -142,17 +142,17 @@ func (c *Client) doRequestSilent404(ctx context.Context, method, endpoint string
 
 // ValidationResult contains the result of credential validation
 type ValidationResult struct {
-	Valid          bool     `json:"valid"`
-	TokenValid     bool     `json:"tokenValid"`
-	AccountValid   bool     `json:"accountValid"`
-	UserID         int      `json:"userId,omitempty"`
-	UserName       string   `json:"userName,omitempty"`
-	UserEmail      string   `json:"userEmail,omitempty"`
-	UserRole       string   `json:"userRole,omitempty"`
-	AccountName    string   `json:"accountName,omitempty"`
+	Valid             bool          `json:"valid"`
+	TokenValid        bool          `json:"tokenValid"`
+	AccountValid      bool          `json:"accountValid"`
+	UserID            int           `json:"userId,omitempty"`
+	UserName          string        `json:"userName,omitempty"`
+	UserEmail         string        `json:"userEmail,omitempty"`
+	UserRole          string        `json:"userRole,omitempty"`
+	AccountName       string        `json:"accountName,omitempty"`
 	AvailableAccounts []AccountInfo `json:"availableAccounts,omitempty"`
-	Error          string   `json:"error,omitempty"`
-	ErrorCode      string   `json:"errorCode,omitempty"`
+	Error             string        `json:"error,omitempty"`
+	ErrorCode         string        `json:"errorCode,omitempty"`
 }
 
 // AccountInfo contains basic account information
@@ -254,7 +254,7 @@ func (c *Client) ValidateCredentials(ctx context.Context) (*ValidationResult, er
 			result.Error = "O token não tem acesso a nenhuma conta"
 			result.ErrorCode = "NO_ACCOUNTS"
 		} else if len(profile.Accounts) == 1 {
-			result.Error = fmt.Sprintf("Account ID incorreto. Use o ID %d (conta: %s)", 
+			result.Error = fmt.Sprintf("Account ID incorreto. Use o ID %d (conta: %s)",
 				profile.Accounts[0].ID, profile.Accounts[0].Name)
 			result.ErrorCode = "WRONG_ACCOUNT"
 		} else {
@@ -265,7 +265,7 @@ func (c *Client) ValidateCredentials(ctx context.Context) (*ValidationResult, er
 				}
 				accountList += fmt.Sprintf("%d (%s)", acc.ID, acc.Name)
 			}
-			result.Error = fmt.Sprintf("Account ID %d não encontrado. Contas disponíveis: %s", 
+			result.Error = fmt.Sprintf("Account ID %d não encontrado. Contas disponíveis: %s",
 				c.accountID, accountList)
 			result.ErrorCode = "WRONG_ACCOUNT"
 		}

@@ -42,19 +42,19 @@ type SessionRecord struct {
 }
 
 type Session struct {
-	ID               string // UUID (database primary key)
-	Session          string // Session identifier (used in API routes)
-	DeviceJID        string
-	Phone            string
-	ApiKey           string // Session-specific API key (optional)
-	Client           *whatsmeow.Client
-	Device           *store.Device
-	Status           SessionStatus
-	QRCode           string
-	CreatedAt        *time.Time
-	UpdatedAt        *time.Time
-	EventHandlerSet  bool // Tracks if event handler was already configured
-	mu               sync.RWMutex
+	ID              string // UUID (database primary key)
+	Session         string // Session identifier (used in API routes)
+	DeviceJID       string
+	Phone           string
+	ApiKey          string // Session-specific API key (optional)
+	Client          *whatsmeow.Client
+	Device          *store.Device
+	Status          SessionStatus
+	QRCode          string
+	CreatedAt       *time.Time
+	UpdatedAt       *time.Time
+	EventHandlerSet bool // Tracks if event handler was already configured
+	mu              sync.RWMutex
 }
 
 func (s *Session) SetStatus(status SessionStatus) {

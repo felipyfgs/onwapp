@@ -45,7 +45,13 @@ export default function SettingsPage({
       // Load profile
       try {
         const profileData = await getSessionProfile(sessionId)
-        const profileObj = (profileData as any).profile || profileData
+        const profileObj = ('profile' in profileData && profileData.profile && typeof profileData.profile === 'object' ? profileData.profile : profileData) as {
+          jid?: string
+          phone?: string
+          pushName?: string
+          status?: string
+          pictureUrl?: string
+        }
         setProfile({
           phone: profileObj.jid?.split(":")[0] || profileObj.phone,
           pushName: profileObj.pushName,

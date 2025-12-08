@@ -29,6 +29,109 @@ interface ChatMessageItemProps {
 
 const QUICK_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏"]
 
+// Action menu component (defined outside to avoid re-creation during render)
+interface ActionMenuProps {
+  message: ChatMessage
+  isMe: boolean
+  isTextMessage: boolean
+  onReply?: (message: ChatMessage) => void
+  onReact?: (message: ChatMessage, emoji: string) => void
+  onEdit?: (message: ChatMessage) => void
+  onDelete?: (message: ChatMessage, forMe: boolean) => void
+}
+
+function ActionMenu({ message, isMe, isTextMessage, onReply, onReact, onEdit, onDelete }: ActionMenuProps) {
+  const handleCopy = () => {
+    if (message.content) {
+      navigator.clipboard.writeText(message.content)
+    }
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className={cn(
+          "absolute top-0 p-1 rounded-bl-md opacity-0 group-hover:opacity-100 transition-opacity z-10",
+          isMe 
+            ? "right-0 bg-gradient-to-bl from-primary via-primary/80 to-transparent" 
+            : "right-0 bg-gradient-to-bl from-card via-card/80 to-transparent"
+        )}>
+          <ChevronDown className={cn("size-3.5", isMe ? "text-primary-foreground/80" : "text-muted-foreground")} />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent 
+        align={isMe ? "end" : "start"} 
+        side="right"
+        sideOffset={4}
+        collisionPadding={8}
+        className="min-w-[160px] p-0 rounded-md shadow-lg border-0 bg-popover overflow-hidden"
+      >
+        {/* Quick reactions bar */}
+        <div className="flex justify-between px-2 py-1.5 bg-muted/50 border-b border-border/50">
+          {QUICK_REACTIONS.map(emoji => (
+            <button
+              key={emoji}
+              onClick={() => onReact?.(message, emoji)}
+              className="text-base hover:scale-110 transition-transform duration-150"
+            >
+              {emoji}
+            </button>
+          ))}
+        </div>
+        
+        {/* Menu items */}
+        <div className="py-0.5">
+          <DropdownMenuItem 
+            onClick={() => onReply?.(message)}
+            className="px-3 py-1.5 text-[13px] cursor-pointer"
+          >
+            <Reply className="size-4 mr-2 text-muted-foreground" />
+            Responder
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem 
+            onClick={handleCopy}
+            className="px-3 py-1.5 text-[13px] cursor-pointer"
+          >
+            <Copy className="size-4 mr-2 text-muted-foreground" />
+            Copiar
+          </DropdownMenuItem>
+          
+          {isMe && isTextMessage && (
+            <DropdownMenuItem 
+              onClick={() => onEdit?.(message)}
+              className="px-3 py-1.5 text-[13px] cursor-pointer"
+            >
+              <Pencil className="size-4 mr-2 text-muted-foreground" />
+              Editar
+            </DropdownMenuItem>
+          )}
+          
+          <DropdownMenuSeparator className="my-0.5" />
+          
+          <DropdownMenuItem 
+            onClick={() => onDelete?.(message, true)}
+            className="px-3 py-1.5 text-[13px] cursor-pointer text-destructive focus:text-destructive"
+          >
+            <Trash2 className="size-4 mr-2" />
+            Apagar para mim
+          </DropdownMenuItem>
+          
+          {isMe && (
+            <DropdownMenuItem 
+              onClick={() => onDelete?.(message, false)}
+              className="px-3 py-1.5 text-[13px] cursor-pointer text-destructive focus:text-destructive"
+            >
+              <Trash2 className="size-4 mr-2" />
+              Apagar para todos
+            </DropdownMenuItem>
+          )}
+        </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 export function ChatMessageItem({ 
   message, 
   showSender, 
@@ -299,91 +402,6 @@ export function ChatMessageItem({
   const content = message.content || ''
   const isEmoji = (message.type === 'text' || !message.mediaType) && isEmojiOnly(content)
 
-  // Action menu (WhatsApp style - compact)
-  const ActionMenu = () => (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button className={cn(
-          "absolute top-0 p-1 rounded-bl-md opacity-0 group-hover:opacity-100 transition-opacity z-10",
-          isMe 
-            ? "right-0 bg-gradient-to-bl from-primary via-primary/80 to-transparent" 
-            : "right-0 bg-gradient-to-bl from-card via-card/80 to-transparent"
-        )}>
-          <ChevronDown className={cn("size-3.5", isMe ? "text-primary-foreground/80" : "text-muted-foreground")} />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent 
-        align={isMe ? "end" : "start"} 
-        side="right"
-        sideOffset={4}
-        collisionPadding={8}
-        className="min-w-[160px] p-0 rounded-md shadow-lg border-0 bg-popover overflow-hidden"
-      >
-        {/* Quick reactions bar */}
-        <div className="flex justify-between px-2 py-1.5 bg-muted/50 border-b border-border/50">
-          {QUICK_REACTIONS.map(emoji => (
-            <button
-              key={emoji}
-              onClick={() => onReact?.(message, emoji)}
-              className="text-base hover:scale-110 transition-transform duration-150"
-            >
-              {emoji}
-            </button>
-          ))}
-        </div>
-        
-        {/* Menu items */}
-        <div className="py-0.5">
-          <DropdownMenuItem 
-            onClick={() => onReply?.(message)}
-            className="px-3 py-1.5 text-[13px] cursor-pointer"
-          >
-            <Reply className="size-4 mr-2 text-muted-foreground" />
-            Responder
-          </DropdownMenuItem>
-          
-          <DropdownMenuItem 
-            onClick={handleCopy}
-            className="px-3 py-1.5 text-[13px] cursor-pointer"
-          >
-            <Copy className="size-4 mr-2 text-muted-foreground" />
-            Copiar
-          </DropdownMenuItem>
-          
-          {isMe && isTextMessage && (
-            <DropdownMenuItem 
-              onClick={() => onEdit?.(message)}
-              className="px-3 py-1.5 text-[13px] cursor-pointer"
-            >
-              <Pencil className="size-4 mr-2 text-muted-foreground" />
-              Editar
-            </DropdownMenuItem>
-          )}
-          
-          <DropdownMenuSeparator className="my-0.5" />
-          
-          <DropdownMenuItem 
-            onClick={() => onDelete?.(message, true)}
-            className="px-3 py-1.5 text-[13px] cursor-pointer text-destructive focus:text-destructive"
-          >
-            <Trash2 className="size-4 mr-2" />
-            Apagar para mim
-          </DropdownMenuItem>
-          
-          {isMe && (
-            <DropdownMenuItem 
-              onClick={() => onDelete?.(message, false)}
-              className="px-3 py-1.5 text-[13px] cursor-pointer text-destructive focus:text-destructive"
-            >
-              <Trash2 className="size-4 mr-2" />
-              Apagar para todos
-            </DropdownMenuItem>
-          )}
-        </div>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-
   // Emoji-only messages (no bubble)
   if (isEmoji) {
     return (
@@ -421,7 +439,15 @@ export function ChatMessageItem({
           </svg>
         </div>
 
-        <ActionMenu />
+        <ActionMenu 
+          message={message}
+          isMe={isMe}
+          isTextMessage={isTextMessage}
+          onReply={onReply}
+          onReact={onReact}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
 
         <div className="pl-[9px] pr-[28px] pt-[6px] pb-[8px]">
           {showSender && !isMe && message.pushName && (

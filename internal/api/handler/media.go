@@ -109,7 +109,13 @@ func (h *MediaHandler) StreamMedia(c *gin.Context) {
 	}
 
 	// If it's a local file, proxy it
-	resp, err := http.Get(media.StorageURL)
+	req, err := http.NewRequestWithContext(c.Request.Context(), http.MethodGet, media.StorageURL, nil)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create request"})
+		return
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch media"})
 		return
@@ -124,7 +130,9 @@ func (h *MediaHandler) StreamMedia(c *gin.Context) {
 	c.Header("Content-Type", contentType)
 
 	// Copy the response body to the client
-	io.Copy(c.Writer, resp.Body)
+	if _, err := io.Copy(c.Writer, resp.Body); err != nil {
+		h.logger.Error("Failed to copy response body", "error", err)
+	}
 }
 
 // StreamMediaPublic godoc

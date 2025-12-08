@@ -267,7 +267,7 @@ type LastMessageInfo struct {
 type ChatResponse struct {
 	JID                 string           `json:"jid" example:"5511999999999@s.whatsapp.net"`
 	Name                string           `json:"name,omitempty" example:"John Doe"`
-	ContactName         string           `json:"contactName,omitempty" example:"John Doe"`    // From WhatsApp contacts (FullName > FirstName > PushName > BusinessName)
+	ContactName         string           `json:"contactName,omitempty" example:"John Doe"`       // From WhatsApp contacts (FullName > FirstName > PushName > BusinessName)
 	ProfilePicture      string           `json:"profilePicture,omitempty" example:"https://..."` // Avatar URL from WhatsApp
 	UnreadCount         int              `json:"unreadCount,omitempty" example:"5"`
 	MarkedAsUnread      bool             `json:"markedAsUnread,omitempty" example:"false"`

@@ -172,7 +172,7 @@ export function useRealtime({
         console.error("[SSE] Max reconnect attempts reached")
       }
     }
-  }, [sessionId, enabled, onMessage, onMessageStatus, onChatUpdate, onConnect, onDisconnect])
+  }, [sessionId, enabled])
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {

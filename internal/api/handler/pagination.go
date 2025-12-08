@@ -34,11 +34,11 @@ func parsePaginationParams(c *gin.Context, defaultLimit, maxLimit int) (*Paginat
 	if err != nil {
 		return nil, fmt.Errorf("invalid limit parameter: must be a number")
 	}
-	
+
 	if limit < 1 {
 		return nil, fmt.Errorf("limit must be at least 1")
 	}
-	
+
 	if limit > maxLimit {
 		return nil, fmt.Errorf("limit exceeds maximum of %d", maxLimit)
 	}
@@ -48,7 +48,7 @@ func parsePaginationParams(c *gin.Context, defaultLimit, maxLimit int) (*Paginat
 	if err != nil {
 		return nil, fmt.Errorf("invalid offset parameter: must be a number")
 	}
-	
+
 	if offset < 0 {
 		return nil, fmt.Errorf("offset cannot be negative")
 	}
