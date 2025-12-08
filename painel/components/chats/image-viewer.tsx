@@ -23,7 +23,10 @@ export function ImageViewer({ src, alt, open, onClose }: ImageViewerProps) {
 
   useEffect(() => {
     if (open) {
+      // Reset state when dialog opens
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setScale(1)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setRotation(0)
     }
   }, [open])
