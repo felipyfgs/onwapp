@@ -588,7 +588,7 @@ export function SessionDashboard({
                   Chatwoot
                 </Button>
               </Link>
-              <a href={`/api/proxy/swagger/index.html`} target="_blank" rel="noopener noreferrer">
+              <a href={`https://api.xapza.com/swagger/index.html`} target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" className="w-full justify-start gap-2">
                   <ExternalLink className="size-4" />
                   API Docs
