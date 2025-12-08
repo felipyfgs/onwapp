@@ -73,6 +73,7 @@ export function useRealtime({
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const reconnectAttempts = useRef(0)
   const isConnecting = useRef(false)
+  const connectRef = useRef<(() => Promise<void>) | null>(null)
   const maxReconnectAttempts = 10
   const baseReconnectDelay = 1000
 
@@ -166,13 +167,16 @@ export function useRealtime({
         
         reconnectTimeoutRef.current = setTimeout(() => {
           reconnectAttempts.current++
-          connect()
+          connectRef.current?.()
         }, delay)
       } else {
         console.error("[SSE] Max reconnect attempts reached")
       }
     }
   }, [sessionId, enabled])
+
+  // Store connect function in ref so it can be called recursively
+  connectRef.current = connect
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {
