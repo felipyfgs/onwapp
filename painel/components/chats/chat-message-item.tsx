@@ -146,7 +146,7 @@ export function ChatMessageItem({
 }: ChatMessageItemProps) {
   const [imageViewerOpen, setImageViewerOpen] = useState(false)
   const isMe = message.fromMe
-  const isTextMessage = message.type === 'text' || (!message.mediaType && message.content)
+  const isTextMessage = message.type === 'text' || (!message.mediaType && !!message.content)
 
   const formatTime = (timestamp: number) => {
     return new Date(timestamp * 1000).toLocaleTimeString('pt-BR', { 

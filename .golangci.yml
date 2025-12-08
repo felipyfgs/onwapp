@@ -2,10 +2,13 @@
 linters:
   disable:
     - unused
-govet:
-  settings:
-    shadow:
-      strict: false
+
+linters-settings:
+  govet:
+    settings:
+      shadow:
+        strict: false
+
 issues:
   exclude-rules:
     - path: internal/util/media/converter.go
