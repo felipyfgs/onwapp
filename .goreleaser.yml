@@ -76,30 +76,6 @@ changelog:
     - title: "Other"
       order: 999
 
-dockers:
-  - image_templates:
-      - "docker.io/felipyfgs17/onwapp:{{ .Version }}"
-      - "docker.io/felipyfgs17/onwapp:latest"
-    dockerfile: Dockerfile
-    goos: linux
-    goarch: amd64
-    use: buildx
-    extra_files:
-      - go.mod
-      - go.sum
-      - cmd
-      - internal
-      - docs
-      - painel
-      - docker/entrypoint.sh
-    build_flag_templates:
-      - "--pull"
-      - "--platform=linux/amd64"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.title={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-
 release:
   github:
     owner: "{{ .Env.GITHUB_REPOSITORY_OWNER }}"
