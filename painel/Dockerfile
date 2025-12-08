@@ -33,9 +33,6 @@ RUN npm run build
 # Stage 3: Runner (minimal)
 FROM node:20-alpine AS runner
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
-
 WORKDIR /app
 
 # Set Node environment
@@ -60,5 +57,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
 
-# Run with dumb-init for proper signal handling
-CMD ["dumb-init", "node", "server.js"]
+# Run with Node.js (Node 20+ has proper signal handling built-in)
+CMD ["node", "server.js"]
