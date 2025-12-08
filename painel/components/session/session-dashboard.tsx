@@ -31,24 +31,11 @@ import {
 
 /**
  * Get public API URL for external links (Swagger, etc)
- * Uses NEXT_PUBLIC_API_URL if available, otherwise constructs from window.location
+ * Uses NEXT_PUBLIC_API_URL directly (should be set in environment)
  */
 function getPublicApiUrl(): string {
-  const publicUrl = process.env.NEXT_PUBLIC_API_URL
-  if (publicUrl) {
-    return publicUrl
-  }
-  
-  // In production Docker, construct API URL from current domain
-  if (typeof window !== 'undefined') {
-    const protocol = window.location.protocol
-    const hostname = window.location.hostname
-    // If painel is on app.domain.com, API is likely on api.domain.com
-    const apiHostname = hostname.replace(/^(app|painel|panel)\./, 'api.')
-    return `${protocol}//${apiHostname}`
-  }
-  
-  return '/api/proxy'
+  // Use NEXT_PUBLIC_API_URL if available (set in .env.local or docker-compose)
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
 }
 import {
   Breadcrumb,
