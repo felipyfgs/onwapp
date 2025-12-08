@@ -1,0 +1,185 @@
+# ================================
+# OnWapp Production Stack
+# ================================
+# Usage: docker compose -f docker-compose.prod.yaml up -d
+# Note: Make sure to configure .env file with production values
+
+version: '3.8'
+
+services:
+  # ================================
+  # Backend API (Go)
+  # ================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+      args:
+        VERSION: ${VERSION:-latest}
+        GIT_COMMIT: ${GIT_COMMIT:-unknown}
+        BUILD_DATE: ${BUILD_DATE:-unknown}
+    image: onwapp-api:${VERSION:-latest}
+    container_name: onwapp-api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-8080}:8080"
+    environment:
+      # Server
+      - PORT=8080
+      - GIN_MODE=release
+      
+      # Database
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-onwapp}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-onwapp}?sslmode=disable
+      
+      # NATS
+      - NATS_URL=nats://nats:4222
+      
+      # S3/MinIO
+      - S3_ENDPOINT=${S3_ENDPOINT:-minio:9000}
+      - S3_ACCESS_KEY=${MINIO_ROOT_USER:-onwapp}
+      - S3_SECRET_KEY=${MINIO_ROOT_PASSWORD:-postgres}
+      - S3_BUCKET=${S3_BUCKET:-onwapp-media}
+      - S3_USE_SSL=${S3_USE_SSL:-false}
+      - S3_PUBLIC_URL=${S3_PUBLIC_URL:-http://localhost:9000}
+      
+      # Security
+      - GLOBAL_API_KEY=${GLOBAL_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      
+      # WhatsApp
+      - WA_LOG_LEVEL=${WA_LOG_LEVEL:-INFO}
+      
+      # Timezone
+      - TZ=America/Sao_Paulo
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+      minio:
+        condition: service_started
+    networks:
+      - onwapp-network
+    volumes:
+      - api_data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  # ================================
+  # Frontend Painel (Next.js)
+  # ================================
+  painel:
+    build:
+      context: ./painel
+      dockerfile: Dockerfile
+    image: onwapp-painel:${VERSION:-latest}
+    container_name: onwapp-painel
+    restart: unless-stopped
+    ports:
+      - "${PAINEL_PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+      - TZ=America/Sao_Paulo
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - onwapp-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  # ================================
+  # PostgreSQL Database
+  # ================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: onwapp-postgres
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      - TZ=America/Sao_Paulo
+      - POSTGRES_USER=${POSTGRES_USER:-onwapp}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-onwapp}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - onwapp-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-onwapp} -d ${POSTGRES_DB:-onwapp}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ================================
+  # NATS JetStream
+  # ================================
+  nats:
+    image: nats:latest
+    container_name: onwapp-nats
+    restart: unless-stopped
+    ports:
+      - "${NATS_PORT:-4222}:4222"
+      - "${NATS_HTTP_PORT:-8222}:8222"
+    environment:
+      - TZ=America/Sao_Paulo
+    command:
+      - "--http_port=8222"
+      - "--js"
+      - "--store_dir=/data"
+    volumes:
+      - nats_data:/data
+    networks:
+      - onwapp-network
+
+  # ================================
+  # MinIO (S3-compatible storage)
+  # ================================
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: onwapp-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    environment:
+      - TZ=America/Sao_Paulo
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-onwapp}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-postgres}
+    volumes:
+      - minio_data:/data
+    networks:
+      - onwapp-network
+
+# ================================
+# Volumes
+# ================================
+volumes:
+  postgres_data:
+    name: onwapp_postgres_data
+  nats_data:
+    name: onwapp_nats_data
+  minio_data:
+    name: onwapp_minio_data
+  api_data:
+    name: onwapp_api_data
+
+# ================================
+# Networks
+# ================================
+networks:
+  onwapp-network:
+    name: onwapp-network
+    driver: bridge

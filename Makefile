@@ -32,7 +32,7 @@ lint:
 fmt:
 	$(GO) fmt ./... && gofmt -s -w .
 
-# === DOCKER ===
+# === DOCKER - Development (dependencies only) ===
 
 up:
 	docker compose up -d
@@ -42,6 +42,36 @@ down:
 
 logs:
 	docker compose logs -f
+
+# === DOCKER - Production (separate images) ===
+
+docker-build-api:
+	docker build -f Dockerfile.api -t onwapp-api:latest \
+		--build-arg VERSION=$(VERSION) \
+		--build-arg GIT_COMMIT=$(GIT_COMMIT) \
+		--build-arg BUILD_DATE=$(BUILD_DATE) \
+		.
+
+docker-build-painel:
+	docker build -f painel/Dockerfile -t onwapp-painel:latest ./painel
+
+docker-build: docker-build-api docker-build-painel
+
+docker-prod-up:
+	docker compose -f docker-compose.prod.yaml up -d
+
+docker-prod-down:
+	docker compose -f docker-compose.prod.yaml down
+
+docker-prod-logs:
+	docker compose -f docker-compose.prod.yaml logs -f
+
+docker-prod-restart:
+	docker compose -f docker-compose.prod.yaml restart
+
+docker-clean:
+	docker compose -f docker-compose.prod.yaml down -v
+	docker rmi onwapp-api:latest onwapp-painel:latest || true
 
 # === OTHER ===
 
