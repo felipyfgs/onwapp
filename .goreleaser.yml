@@ -29,7 +29,7 @@ builds:
 archives:
   - id: default
     format: tar.gz
-    name_template: "{{ .ProjectName }}_{{ .Version }}_linux_{{ .Arch }}"
+    name_template: "onwapp_{{ .Version }}_linux_{{ .Arch }}"
     files:
       - README.md
       - LICENSE
