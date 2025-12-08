@@ -63,10 +63,53 @@ export function SessionItem({ session, isLast, onConnect, onDisconnect, onDelete
     }
   }
 
-  const ContentWrapper = onClick ? 'div' : Link
-  const wrapperProps = onClick 
-    ? { onClick: handleClick, className: "flex items-center gap-3 flex-1 min-w-0 cursor-pointer" }
-    : { href: `/sessions/${session.session}`, className: "flex items-center gap-3 flex-1 min-w-0" }
+  const contentClassName = "flex items-center gap-3 flex-1 min-w-0"
+
+  const renderContent = () => (
+    <>
+      <div className="relative shrink-0">
+        <Avatar className="h-10 w-10">
+          {session.profilePicture && <AvatarImage src={session.profilePicture} alt={sessionName} />}
+          <AvatarFallback className="bg-primary/10 text-primary text-sm">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
+        <span
+          className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-card ${getStatusColor(session.status)}`}
+        />
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5">
+          <h3 className="text-sm font-medium truncate">{sessionName}</h3>
+          {getStatusIcon(session.status)}
+        </div>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          {session.pushName && (
+            <span className="truncate">{session.pushName}</span>
+          )}
+          {session.phone && (
+            <span className="truncate">
+              {session.pushName && <span className="mx-1">•</span>}
+              +{session.phone}
+            </span>
+          )}
+          {!session.pushName && !session.phone && (
+            <span className="truncate">{getStatusLabel(session.status)}</span>
+          )}
+        </div>
+      </div>
+
+      {session.stats && session.status === 'connected' && (
+        <div className="hidden sm:flex gap-3 text-xs text-muted-foreground shrink-0">
+          <span>{session.stats.chats} chats</span>
+          <span>{session.stats.contacts} contatos</span>
+        </div>
+      )}
+
+      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+    </>
+  )
 
   return (
     <div
@@ -74,49 +117,15 @@ export function SessionItem({ session, isLast, onConnect, onDisconnect, onDelete
         !isLast ? 'border-b' : ''
       }`}
     >
-      <ContentWrapper {...(wrapperProps as React.ComponentProps<typeof ContentWrapper>)}>
-        <div className="relative shrink-0">
-          <Avatar className="h-10 w-10">
-            {session.profilePicture && <AvatarImage src={session.profilePicture} alt={sessionName} />}
-            <AvatarFallback className="bg-primary/10 text-primary text-sm">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          <span
-            className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-card ${getStatusColor(session.status)}`}
-          />
+      {onClick ? (
+        <div onClick={handleClick} className={`${contentClassName} cursor-pointer`}>
+          {renderContent()}
         </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <h3 className="text-sm font-medium truncate">{sessionName}</h3>
-            {getStatusIcon(session.status)}
-          </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            {session.pushName && (
-              <span className="truncate">{session.pushName}</span>
-            )}
-            {session.phone && (
-              <span className="truncate">
-                {session.pushName && <span className="mx-1">•</span>}
-                +{session.phone}
-              </span>
-            )}
-            {!session.pushName && !session.phone && (
-              <span className="truncate">{getStatusLabel(session.status)}</span>
-            )}
-          </div>
-        </div>
-
-        {session.stats && session.status === 'connected' && (
-          <div className="hidden sm:flex gap-3 text-xs text-muted-foreground shrink-0">
-            <span>{session.stats.chats} chats</span>
-            <span>{session.stats.contacts} contatos</span>
-          </div>
-        )}
-
-        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-      </ContentWrapper>
+      ) : (
+        <Link href={`/sessions/${session.session}`} className={contentClassName}>
+          {renderContent()}
+        </Link>
+      )}
 
       <div className="flex items-center gap-1 shrink-0">
         {session.status === 'disconnected' ? (
