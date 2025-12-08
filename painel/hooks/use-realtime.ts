@@ -84,12 +84,14 @@ export function useRealtime({
   const onConnectRef = useRef(onConnect)
   const onDisconnectRef = useRef(onDisconnect)
 
-  // Keep refs updated
-  onMessageRef.current = onMessage
-  onMessageStatusRef.current = onMessageStatus
-  onChatUpdateRef.current = onChatUpdate
-  onConnectRef.current = onConnect
-  onDisconnectRef.current = onDisconnect
+  // Keep refs updated in effect to avoid updating during render
+  useEffect(() => {
+    onMessageRef.current = onMessage
+    onMessageStatusRef.current = onMessageStatus
+    onChatUpdateRef.current = onChatUpdate
+    onConnectRef.current = onConnect
+    onDisconnectRef.current = onDisconnect
+  })
 
   const connect = useCallback(async () => {
     if (!enabled || !sessionId) return
@@ -176,7 +178,9 @@ export function useRealtime({
   }, [sessionId, enabled])
 
   // Store connect function in ref so it can be called recursively
-  connectRef.current = connect
+  useEffect(() => {
+    connectRef.current = connect
+  }, [connect])
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {

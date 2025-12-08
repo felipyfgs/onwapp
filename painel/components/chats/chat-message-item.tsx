@@ -177,12 +177,6 @@ export function ChatMessageItem({
     return emojiRegex.test(text.trim())
   }
 
-  const handleCopy = () => {
-    if (message.content) {
-      navigator.clipboard.writeText(message.content)
-    }
-  }
-
   const renderContent = () => {
     const type = message.mediaType || message.type
     
