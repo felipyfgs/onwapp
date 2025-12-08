@@ -40,8 +40,6 @@ func validateSessionID(c *gin.Context) (string, error) {
 	return sessionID, nil
 }
 
-
-
 // parseJSONStatus parses status data from JSON request
 func (h *StatusHandler) parseJSONStatus(c *gin.Context) (text, image string, err error) {
 	var req dto.SendStatusRequest

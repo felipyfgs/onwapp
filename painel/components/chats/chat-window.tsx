@@ -44,6 +44,7 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
   const topSentinelRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const offsetRef = useRef(0)
+  const currentChatJidRef = useRef(chat.jid)
 
   const phone = chat.jid.split('@')[0]
   
@@ -62,6 +63,19 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
     }
     return phone
   })()
+
+  // Update current chat ref and reset state when chat changes
+  useEffect(() => {
+    currentChatJidRef.current = chat.jid
+    // Reset state to avoid showing previous chat's messages
+    setMessages([])
+    setLoading(true)
+    setError(null)
+    setHasMore(true)
+    offsetRef.current = 0
+    setReplyingTo(null)
+    setEditingMessage(null)
+  }, [chat.jid])
 
   useEffect(() => {
     getChatAvatarUrl(sessionId, chat.jid, chat.isGroup).then(url => setAvatarUrl(url))
@@ -174,24 +188,36 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
   }, [sessionId, chat.jid, loading, messages.length])
 
   const loadMessages = useCallback(async () => {
+    const chatJidAtStart = chat.jid
     try {
       setLoading(true)
       setError(null)
       setHasMore(true)
       offsetRef.current = 0
       const data = await getChatMessages(sessionId, chat.jid, PAGE_SIZE, 0)
-      setMessages(data)
-      if (data.length < PAGE_SIZE) setHasMore(false)
+      
+      // Only update state if we're still on the same chat
+      if (currentChatJidRef.current === chatJidAtStart) {
+        setMessages(data)
+        if (data.length < PAGE_SIZE) setHasMore(false)
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar mensagens')
+      // Only show error if we're still on the same chat
+      if (currentChatJidRef.current === chatJidAtStart) {
+        setError(err instanceof Error ? err.message : 'Erro ao carregar mensagens')
+      }
     } finally {
-      setLoading(false)
+      // Only clear loading if we're still on the same chat
+      if (currentChatJidRef.current === chatJidAtStart) {
+        setLoading(false)
+      }
     }
   }, [sessionId, chat.jid])
 
   const loadMoreMessages = useCallback(async () => {
     if (loadingMore || !hasMore) return
     
+    const chatJidAtStart = chat.jid
     setLoadingMore(true)
     // With flex-col-reverse, we need to preserve scroll position from bottom
     const scrollTopBefore = containerRef.current?.scrollTop || 0
@@ -199,6 +225,12 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
     try {
       const newOffset = offsetRef.current + PAGE_SIZE
       const older = await getChatMessages(sessionId, chat.jid, PAGE_SIZE, newOffset)
+      
+      // Only update state if we're still on the same chat
+      if (currentChatJidRef.current !== chatJidAtStart) {
+        setLoadingMore(false)
+        return
+      }
       
       if (older.length < PAGE_SIZE) setHasMore(false)
       if (older.length === 0) {
@@ -218,7 +250,9 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
     } catch (err) {
       console.error('Erro ao carregar mais mensagens:', err)
     } finally {
-      setLoadingMore(false)
+      if (currentChatJidRef.current === chatJidAtStart) {
+        setLoadingMore(false)
+      }
     }
   }, [sessionId, chat.jid, loadingMore, hasMore])
 

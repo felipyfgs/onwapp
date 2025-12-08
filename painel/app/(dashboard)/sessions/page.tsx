@@ -19,6 +19,7 @@ import {
   SessionSearch,
   SessionFilters,
   SessionList,
+  SessionsSkeleton,
   Session,
   StatusFilter,
 } from '@/components/sessions'
@@ -157,9 +158,7 @@ export default function SessionsPage() {
         )}
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="size-8 animate-spin" />
-          </div>
+          <SessionsSkeleton />
         ) : (
           <>
             <SessionStats

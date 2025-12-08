@@ -28,6 +28,188 @@ func NewMessageHandler(wpp *wpp.Service) *MessageHandler {
 	return &MessageHandler{wpp: wpp}
 }
 
+// mediaConfig configures how to handle a specific media type
+type mediaConfig struct {
+	mediaType   string
+	defaultMime string
+	formField   string
+}
+
+// mediaRequest holds parsed media request data
+type mediaRequest struct {
+	Phone        string
+	Data         []byte
+	Caption      string
+	MimeType     string
+	DetectedMime string
+	PTT          bool // for audio
+}
+
+// parseMediaRequest extracts media data from JSON or multipart form
+func (h *MessageHandler) parseMediaRequest(c *gin.Context, config mediaConfig) (*mediaRequest, error) {
+	var req mediaRequest
+
+	if IsMultipartRequest(c) {
+		req.Phone = c.PostForm("phone")
+		req.Caption = c.PostForm("caption")
+		req.MimeType = c.PostForm("mimeType")
+		req.PTT = c.PostForm("ptt") == "true"
+
+		data, detectedMime, err := GetMediaFromForm(c.Request, config.formField)
+		if err != nil {
+			return nil, err
+		}
+		req.Data = data
+		req.DetectedMime = detectedMime
+	} else {
+		// Parse JSON based on media type
+		var jsonErr error
+		switch config.mediaType {
+		case "image":
+			var imageReq dto.SendImageRequest
+			jsonErr = c.ShouldBindJSON(&imageReq)
+			if jsonErr == nil {
+				req.Phone = imageReq.Phone
+				req.Caption = imageReq.Caption
+				req.MimeType = imageReq.MimeType
+				data, detectedMime, err := GetMediaData(imageReq.Image, "image")
+				if err != nil {
+					return nil, err
+				}
+				req.Data = data
+				req.DetectedMime = detectedMime
+			}
+		case "audio":
+			var audioReq dto.SendAudioRequest
+			jsonErr = c.ShouldBindJSON(&audioReq)
+			if jsonErr == nil {
+				req.Phone = audioReq.Phone
+				req.PTT = audioReq.PTT
+				data, detectedMime, err := GetMediaData(audioReq.Audio, "audio")
+				if err != nil {
+					return nil, err
+				}
+				req.Data = data
+				req.DetectedMime = detectedMime
+			}
+		case "video":
+			var videoReq dto.SendVideoRequest
+			jsonErr = c.ShouldBindJSON(&videoReq)
+			if jsonErr == nil {
+				req.Phone = videoReq.Phone
+				req.Caption = videoReq.Caption
+				req.MimeType = videoReq.MimeType
+				data, detectedMime, err := GetMediaData(videoReq.Video, "video")
+				if err != nil {
+					return nil, err
+				}
+				req.Data = data
+				req.DetectedMime = detectedMime
+			}
+		case "document":
+			var docReq dto.SendDocumentRequest
+			jsonErr = c.ShouldBindJSON(&docReq)
+			if jsonErr == nil {
+				req.Phone = docReq.Phone
+				req.MimeType = docReq.MimeType
+				data, detectedMime, err := GetMediaData(docReq.Document, "document")
+				if err != nil {
+					return nil, err
+				}
+				req.Data = data
+				req.DetectedMime = detectedMime
+			}
+		case "sticker":
+			var stickerReq dto.SendStickerRequest
+			jsonErr = c.ShouldBindJSON(&stickerReq)
+			if jsonErr == nil {
+				req.Phone = stickerReq.Phone
+				req.MimeType = stickerReq.MimeType
+				data, detectedMime, err := GetMediaData(stickerReq.Sticker, "sticker")
+				if err != nil {
+					return nil, err
+				}
+				req.Data = data
+				req.DetectedMime = detectedMime
+			}
+		}
+
+		if jsonErr != nil {
+			return nil, jsonErr
+		}
+	}
+
+	return &req, nil
+}
+
+// resolveMimeType resolves MIME type with fallbacks
+func resolveMimeType(requested, detected, defaultMime string) string {
+	if requested != "" {
+		return requested
+	}
+	if detected != "" {
+		return detected
+	}
+	return defaultMime
+}
+
+// sendMediaMessage handles sending any media type
+func (h *MessageHandler) sendMediaMessage(c *gin.Context, config mediaConfig) {
+	sessionID := c.Param("session")
+
+	// Parse media request
+	mediaReq, err := h.parseMediaRequest(c, config)
+	if err != nil {
+		respondBadRequest(c, "invalid media request", err)
+		return
+	}
+
+	// Validate phone
+	if mediaReq.Phone == "" {
+		respondBadRequest(c, "phone is required", nil)
+		return
+	}
+
+	// Resolve MIME type
+	mimeType := resolveMimeType(mediaReq.MimeType, mediaReq.DetectedMime, config.defaultMime)
+
+	// Send based on media type
+	var resp whatsmeow.SendResponse
+	switch config.mediaType {
+	case "image":
+		resp, err = h.wpp.SendImage(c.Request.Context(), sessionID, mediaReq.Phone, mediaReq.Data, mediaReq.Caption, mimeType, nil)
+	case "audio":
+		// Convert WebM to OGG for WhatsApp compatibility
+		audioData := mediaReq.Data
+		if media.IsWebMFormat(audioData, mimeType) {
+			convertedData, convErr := media.ConvertWebMToOgg(audioData)
+			if convErr != nil {
+				respondInternalError(c, "failed to convert audio", convErr)
+				return
+			}
+			audioData = convertedData
+			mimeType = "audio/ogg; codecs=opus"
+		}
+		resp, err = h.wpp.SendAudio(c.Request.Context(), sessionID, mediaReq.Phone, audioData, mimeType, mediaReq.PTT, nil)
+	case "video":
+		resp, err = h.wpp.SendVideo(c.Request.Context(), sessionID, mediaReq.Phone, mediaReq.Data, mediaReq.Caption, mimeType, nil)
+	case "document":
+		resp, err = h.wpp.SendDocument(c.Request.Context(), sessionID, mediaReq.Phone, mediaReq.Data, "", mimeType, nil)
+	case "sticker":
+		resp, err = h.wpp.SendSticker(c.Request.Context(), sessionID, mediaReq.Phone, mediaReq.Data, mimeType)
+	}
+
+	if err != nil {
+		respondInternalError(c, "failed to send "+config.mediaType, err)
+		return
+	}
+
+	respondSuccess(c, dto.SendResponse{
+		MessageID: resp.ID,
+		Timestamp: resp.Timestamp.Unix(),
+	})
+}
+
 // SendText godoc
 // @Summary      Send text message
 // @Description  Send a text message to a phone number
@@ -90,60 +272,10 @@ func (h *MessageHandler) SendText(c *gin.Context) {
 // @Security     Authorization
 // @Router       /{session}/message/send/image [post]
 func (h *MessageHandler) SendImage(c *gin.Context) {
-	sessionId := c.Param("session")
-
-	var phone, caption, mimeType string
-	var imageData []byte
-	var detectedMime string
-	var err error
-
-	if IsMultipartRequest(c) {
-		phone = c.PostForm("phone")
-		caption = c.PostForm("caption")
-		mimeType = c.PostForm("mimeType")
-		imageData, detectedMime, err = GetMediaFromForm(c.Request, "file")
-		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-			return
-		}
-	} else {
-		var req dto.SendImageRequest
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-			return
-		}
-		phone = req.Phone
-		caption = req.Caption
-		mimeType = req.MimeType
-		imageData, detectedMime, err = GetMediaData(req.Image, "image")
-		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-			return
-		}
-	}
-
-	if phone == "" {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "phone is required"})
-		return
-	}
-
-	if mimeType == "" {
-		mimeType = detectedMime
-	}
-	if mimeType == "" {
-		mimeType = mimeJPEG
-	}
-
-	resp, err := h.wpp.SendImage(c.Request.Context(), sessionId, phone, imageData, caption, mimeType, nil)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, dto.SendResponse{
-
-		MessageID: resp.ID,
-		Timestamp: resp.Timestamp.Unix(),
+	h.sendMediaMessage(c, mediaConfig{
+		mediaType:   "image",
+		defaultMime: mimeJPEG,
+		formField:   "file",
 	})
 }
 
@@ -165,72 +297,10 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 // @Security     Authorization
 // @Router       /{session}/message/send/audio [post]
 func (h *MessageHandler) SendAudio(c *gin.Context) {
-	sessionId := c.Param("session")
-
-	var phone, mimeType string
-	var ptt bool
-	var audioData []byte
-	var detectedMime string
-	var err error
-
-	if IsMultipartRequest(c) {
-		phone = c.PostForm("phone")
-		mimeType = c.PostForm("mimeType")
-		ptt = c.PostForm("ptt") == "true"
-		audioData, detectedMime, err = GetMediaFromForm(c.Request, "file")
-		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-			return
-		}
-	} else {
-		var req dto.SendAudioRequest
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-			return
-		}
-		phone = req.Phone
-		mimeType = req.MimeType
-		ptt = req.PTT
-		audioData, detectedMime, err = GetMediaData(req.Audio, "audio")
-		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-			return
-		}
-	}
-
-	if phone == "" {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "phone is required"})
-		return
-	}
-
-	if mimeType == "" {
-		mimeType = detectedMime
-	}
-	if mimeType == "" {
-		mimeType = "audio/ogg; codecs=opus"
-	}
-
-	// Convert WebM to OGG for WhatsApp compatibility (WhatsApp requires OGG Opus for PTT)
-	if media.IsWebMFormat(audioData, mimeType) {
-		convertedData, err := media.ConvertWebMToOgg(audioData)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to convert audio: " + err.Error()})
-			return
-		}
-		audioData = convertedData
-		mimeType = "audio/ogg; codecs=opus"
-	}
-
-	resp, err := h.wpp.SendAudio(c.Request.Context(), sessionId, phone, audioData, mimeType, ptt, nil)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, dto.SendResponse{
-
-		MessageID: resp.ID,
-		Timestamp: resp.Timestamp.Unix(),
+	h.sendMediaMessage(c, mediaConfig{
+		mediaType:   "audio",
+		defaultMime: "audio/ogg; codecs=opus",
+		formField:   "file",
 	})
 }
 
@@ -252,60 +322,10 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 // @Security     Authorization
 // @Router       /{session}/message/send/video [post]
 func (h *MessageHandler) SendVideo(c *gin.Context) {
-	sessionId := c.Param("session")
-
-	var phone, caption, mimeType string
-	var videoData []byte
-	var detectedMime string
-	var err error
-
-	if IsMultipartRequest(c) {
-		phone = c.PostForm("phone")
-		caption = c.PostForm("caption")
-		mimeType = c.PostForm("mimeType")
-		videoData, detectedMime, err = GetMediaFromForm(c.Request, "file")
-		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-			return
-		}
-	} else {
-		var req dto.SendVideoRequest
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-			return
-		}
-		phone = req.Phone
-		caption = req.Caption
-		mimeType = req.MimeType
-		videoData, detectedMime, err = GetMediaData(req.Video, "video")
-		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-			return
-		}
-	}
-
-	if phone == "" {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "phone is required"})
-		return
-	}
-
-	if mimeType == "" {
-		mimeType = detectedMime
-	}
-	if mimeType == "" {
-		mimeType = mimeMP4
-	}
-
-	resp, err := h.wpp.SendVideo(c.Request.Context(), sessionId, phone, videoData, caption, mimeType, nil)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, dto.SendResponse{
-
-		MessageID: resp.ID,
-		Timestamp: resp.Timestamp.Unix(),
+	h.sendMediaMessage(c, mediaConfig{
+		mediaType:   "video",
+		defaultMime: mimeMP4,
+		formField:   "file",
 	})
 }
 
@@ -327,60 +347,10 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 // @Security     Authorization
 // @Router       /{session}/message/send/document [post]
 func (h *MessageHandler) SendDocument(c *gin.Context) {
-	sessionId := c.Param("session")
-
-	var phone, filename, mimeType string
-	var docData []byte
-	var detectedMime string
-	var err error
-
-	if IsMultipartRequest(c) {
-		phone = c.PostForm("phone")
-		filename = c.PostForm("filename")
-		mimeType = c.PostForm("mimeType")
-		docData, detectedMime, err = GetMediaFromForm(c.Request, "file")
-		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-			return
-		}
-	} else {
-		var req dto.SendDocumentRequest
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-			return
-		}
-		phone = req.Phone
-		filename = req.Filename
-		mimeType = req.MimeType
-		docData, detectedMime, err = GetMediaData(req.Document, "document")
-		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-			return
-		}
-	}
-
-	if phone == "" {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "phone is required"})
-		return
-	}
-
-	if mimeType == "" {
-		mimeType = detectedMime
-	}
-	if mimeType == "" {
-		mimeType = "application/octet-stream"
-	}
-
-	resp, err := h.wpp.SendDocument(c.Request.Context(), sessionId, phone, docData, filename, mimeType, nil)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, dto.SendResponse{
-
-		MessageID: resp.ID,
-		Timestamp: resp.Timestamp.Unix(),
+	h.sendMediaMessage(c, mediaConfig{
+		mediaType:   "document",
+		defaultMime: "application/octet-stream",
+		formField:   "file",
 	})
 }
 
@@ -401,58 +371,10 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 // @Security     Authorization
 // @Router       /{session}/message/send/sticker [post]
 func (h *MessageHandler) SendSticker(c *gin.Context) {
-	sessionId := c.Param("session")
-
-	var phone, mimeType string
-	var stickerData []byte
-	var detectedMime string
-	var err error
-
-	if IsMultipartRequest(c) {
-		phone = c.PostForm("phone")
-		mimeType = c.PostForm("mimeType")
-		stickerData, detectedMime, err = GetMediaFromForm(c.Request, "file")
-		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-			return
-		}
-	} else {
-		var req dto.SendStickerRequest
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-			return
-		}
-		phone = req.Phone
-		mimeType = req.MimeType
-		stickerData, detectedMime, err = GetMediaData(req.Sticker, "sticker")
-		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-			return
-		}
-	}
-
-	if phone == "" {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "phone is required"})
-		return
-	}
-
-	if mimeType == "" {
-		mimeType = detectedMime
-	}
-	if mimeType == "" {
-		mimeType = "image/webp"
-	}
-
-	resp, err := h.wpp.SendSticker(c.Request.Context(), sessionId, phone, stickerData, mimeType)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, dto.SendResponse{
-
-		MessageID: resp.ID,
-		Timestamp: resp.Timestamp.Unix(),
+	h.sendMediaMessage(c, mediaConfig{
+		mediaType:   "sticker",
+		defaultMime: "image/webp",
+		formField:   "file",
 	})
 }
 

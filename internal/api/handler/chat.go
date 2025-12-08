@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
+	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/types"
 
 	"onwapp/internal/api/dto"
@@ -355,7 +355,7 @@ func (h *ChatHandler) DeleteMessage(c *gin.Context) {
 	}
 
 	resp, err := h.wpp.DeleteMessage(c.Request.Context(), sessionId, req.Phone, req.MessageID, req.ForMe)
-	
+
 	// Save delete to database (even if WhatsApp returns error like 479 = already deleted)
 	if h.database != nil && !req.ForMe {
 		if saveErr := h.saveDeleteUpdate(c.Request.Context(), sessionId, req.Phone, req.MessageID); saveErr != nil {
@@ -490,6 +490,68 @@ func (h *ChatHandler) RejectCall(c *gin.Context) {
 // CHAT HISTORY (synced data)
 // =============================================================================
 
+// isGroupJID checks if a JID is a group JID
+func isGroupJID(jid string) bool {
+	return len(jid) > 5 && jid[len(jid)-5:] == "@g.us"
+}
+
+// batchFetchContactNames fetches contact names for multiple JIDs in batch
+func (h *ChatHandler) batchFetchContactNames(ctx context.Context, client *whatsmeow.Client, jids []string) map[string]string {
+	names := make(map[string]string, len(jids))
+
+	if client == nil || client.Store == nil || client.Store.Contacts == nil || len(jids) == 0 {
+		return names
+	}
+
+	for _, jid := range jids {
+		parsedJID, err := types.ParseJID(jid)
+		if err != nil {
+			continue
+		}
+
+		contact, err := client.Store.Contacts.GetContact(ctx, parsedJID)
+		if err != nil || !contact.Found {
+			continue
+		}
+
+		// Priority: FullName > FirstName > PushName > BusinessName (same as Chatwoot)
+		if contact.FullName != "" {
+			names[jid] = contact.FullName
+		} else if contact.FirstName != "" {
+			names[jid] = contact.FirstName
+		} else if contact.PushName != "" {
+			names[jid] = contact.PushName
+		} else if contact.BusinessName != "" {
+			names[jid] = contact.BusinessName
+		}
+	}
+
+	return names
+}
+
+// batchFetchGroupNames fetches group names for multiple JIDs in batch
+func (h *ChatHandler) batchFetchGroupNames(ctx context.Context, client *whatsmeow.Client, jids []string) map[string]string {
+	names := make(map[string]string, len(jids))
+
+	if client == nil || len(jids) == 0 {
+		return names
+	}
+
+	for _, jid := range jids {
+		parsedJID, err := types.ParseJID(jid)
+		if err != nil {
+			continue
+		}
+
+		groupInfo, err := client.GetGroupInfo(ctx, parsedJID)
+		if err == nil && groupInfo != nil && groupInfo.Name != "" {
+			names[jid] = groupInfo.Name
+		}
+	}
+
+	return names
+}
+
 // GetAllChats godoc
 // @Summary      Get all chats
 // @Description  Get list of chats from synced data with pagination and optional filters
@@ -507,78 +569,54 @@ func (h *ChatHandler) RejectCall(c *gin.Context) {
 func (h *ChatHandler) GetAllChats(c *gin.Context) {
 	sessionId := c.Param("session")
 
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "100"))
-	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+	// Parse and validate pagination
+	pagination, err := ParseChatsPagination(c)
+	if err != nil {
+		respondBadRequest(c, "invalid pagination", err)
+		return
+	}
+
 	unreadOnly := c.Query("unread") == "true"
 
-	session, err := h.sessionService.Get(sessionId)
-	if err != nil {
-		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "session not found"})
+	session, sessionErr := h.sessionService.Get(sessionId)
+	if sessionErr != nil {
+		respondNotFound(c, "session not found")
 		return
 	}
 
-	chats, err := h.historySyncService.GetAllChatsWithLastMessage(c.Request.Context(), session.ID, limit, offset, unreadOnly)
+	chats, err := h.historySyncService.GetAllChatsWithLastMessage(c.Request.Context(), session.ID, pagination.Limit, pagination.Offset, unreadOnly)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		respondInternalError(c, "failed to fetch chats", err)
 		return
 	}
 
-	// Helper to get contact name from WhatsApp ContactStore
-	// Priority: FullName > FirstName > PushName > BusinessName (same as Chatwoot)
-	getContactName := func(jid string) string {
-		if session.Client == nil || session.Client.Store == nil || session.Client.Store.Contacts == nil {
-			return ""
+	// Separate contact and group JIDs for batch fetching (eliminates N+1 queries)
+	contactJIDs := make([]string, 0, len(chats))
+	groupJIDs := make([]string, 0, len(chats))
+
+	for _, chatData := range chats {
+		if isGroupJID(chatData.Chat.ChatJID) {
+			groupJIDs = append(groupJIDs, chatData.Chat.ChatJID)
+		} else {
+			contactJIDs = append(contactJIDs, chatData.Chat.ChatJID)
 		}
-		parsedJID, parseErr := types.ParseJID(jid)
-		if parseErr != nil {
-			return ""
-		}
-		contact, contactErr := session.Client.Store.Contacts.GetContact(c.Request.Context(), parsedJID)
-		if contactErr != nil || !contact.Found {
-			return ""
-		}
-		if contact.FullName != "" {
-			return contact.FullName
-		}
-		if contact.FirstName != "" {
-			return contact.FirstName
-		}
-		if contact.PushName != "" {
-			return contact.PushName
-		}
-		return contact.BusinessName
 	}
 
-	// Helper to get group name from WhatsApp
-	// Note: Avatar is fetched separately via /group/avatar endpoint to avoid slow list loading
-	getGroupName := func(groupJID string) string {
-		if session.Client == nil {
-			return ""
-		}
-		parsedJID, parseErr := types.ParseJID(groupJID)
-		if parseErr != nil {
-			return ""
-		}
-		groupInfo, err := session.Client.GetGroupInfo(c.Request.Context(), parsedJID)
-		if err == nil && groupInfo != nil {
-			return groupInfo.Name
-		}
-		return ""
-	}
+	// Batch fetch names (2 calls total instead of N calls)
+	contactNames := h.batchFetchContactNames(c.Request.Context(), session.Client, contactJIDs)
+	groupNames := h.batchFetchGroupNames(c.Request.Context(), session.Client, groupJIDs)
 
+	// Build response with O(1) lookups
 	response := make([]dto.ChatResponse, 0, len(chats))
 	for _, chatData := range chats {
 		chat := chatData.Chat
-		isGroup := len(chat.ChatJID) > 12 && chat.ChatJID[len(chat.ChatJID)-5:] == "@g.us"
+		isGroup := isGroupJID(chat.ChatJID)
 
 		var contactName string
-
 		if isGroup {
-			// Get group name from WhatsApp (avatar is fetched separately via /group/avatar)
-			contactName = getGroupName(chat.ChatJID)
+			contactName = groupNames[chat.ChatJID]
 		} else {
-			// Get contact name from WhatsApp contacts
-			contactName = getContactName(chat.ChatJID)
+			contactName = contactNames[chat.ChatJID]
 		}
 
 		resp := dto.ChatResponse{
@@ -615,7 +653,7 @@ func (h *ChatHandler) GetAllChats(c *gin.Context) {
 		response = append(response, resp)
 	}
 
-	c.JSON(http.StatusOK, response)
+	respondSuccess(c, response)
 }
 
 // GetChatMessages godoc
@@ -637,22 +675,26 @@ func (h *ChatHandler) GetChatMessages(c *gin.Context) {
 	sessionId := c.Param("session")
 	chatID := c.Query("chatId")
 	if chatID == "" {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "chatId query parameter is required"})
+		respondBadRequest(c, "chatId query parameter is required", nil)
 		return
 	}
 
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
-	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+	// Parse and validate pagination
+	pagination, err := ParseMessagesPagination(c)
+	if err != nil {
+		respondBadRequest(c, "invalid pagination", err)
+		return
+	}
 
 	session, err := h.sessionService.Get(sessionId)
 	if err != nil {
-		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "session not found"})
+		respondNotFound(c, "session not found")
 		return
 	}
 
-	messages, err := h.historySyncService.GetMessagesByChat(c.Request.Context(), session.ID, chatID, limit, offset)
+	messages, err := h.historySyncService.GetMessagesByChat(c.Request.Context(), session.ID, chatID, pagination.Limit, pagination.Offset)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		respondInternalError(c, "failed to fetch messages", err)
 		return
 	}
 
@@ -693,7 +735,7 @@ func (h *ChatHandler) GetChatMessages(c *gin.Context) {
 		response = append(response, resp)
 	}
 
-	c.JSON(http.StatusOK, response)
+	respondSuccess(c, response)
 }
 
 // GetChatInfo godoc

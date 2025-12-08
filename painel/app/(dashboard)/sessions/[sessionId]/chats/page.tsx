@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, use, useCallback } from "react"
+import { useState, useEffect, use, useCallback, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { MessageSquare, Search, X, Filter } from "lucide-react"
 import {
@@ -37,6 +37,9 @@ export default function ChatsPage({
   const [filter, setFilter] = useState<FilterType>('all')
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null)
   const [myJid, setMyJid] = useState<string | undefined>()
+  
+  // Track if we've done the initial load to avoid restoring from URL on every URL change
+  const initialLoadDoneRef = useRef(false)
 
   // Extract phone/group id from JID (removes @s.whatsapp.net or @g.us)
   const getIdFromJid = (jid: string) => jid.split('@')[0]
@@ -70,7 +73,8 @@ export default function ChatsPage({
         ])
         setMyJid(session.deviceJid || undefined)
         
-        // Restore selected chat from URL and clear its unread count
+        // Only restore selected chat from URL on FIRST load (mount)
+        // After that, user clicks control the selectedChat state via selectChat()
         if (chatIdFromUrl && data.length > 0) {
           const chatFromUrl = findChatById(data, chatIdFromUrl)
           if (chatFromUrl) {
@@ -91,8 +95,14 @@ export default function ChatsPage({
         setLoading(false)
       }
     }
-    load()
-  }, [sessionId, chatIdFromUrl])
+    
+    // Only run on mount (sessionId shouldn't change in practice)
+    if (!initialLoadDoneRef.current) {
+      initialLoadDoneRef.current = true
+      load()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId])
 
   // Refresh chats when new message arrives via SSE
   const handleNewMessage = useCallback((data: NewMessageData) => {
