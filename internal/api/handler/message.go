@@ -11,6 +11,7 @@ import (
 
 	"onwapp/internal/api/dto"
 	"onwapp/internal/service/wpp"
+	"onwapp/internal/util/media"
 )
 
 // Default MIME types for media
@@ -94,14 +95,15 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 	var phone, caption, mimeType string
 	var imageData []byte
 	var detectedMime string
-	var ok bool
+	var err error
 
 	if IsMultipartRequest(c) {
 		phone = c.PostForm("phone")
 		caption = c.PostForm("caption")
 		mimeType = c.PostForm("mimeType")
-		imageData, detectedMime, ok = GetMediaFromForm(c, "file")
-		if !ok {
+		imageData, detectedMime, err = GetMediaFromForm(c, "file")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
 	} else {
@@ -113,8 +115,9 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 		phone = req.Phone
 		caption = req.Caption
 		mimeType = req.MimeType
-		imageData, detectedMime, ok = GetMediaData(c, req.Image, "image")
-		if !ok {
+		imageData, detectedMime, err = GetMediaData(c, req.Image, "image")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
 	}
@@ -168,14 +171,15 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 	var ptt bool
 	var audioData []byte
 	var detectedMime string
-	var ok bool
+	var err error
 
 	if IsMultipartRequest(c) {
 		phone = c.PostForm("phone")
 		mimeType = c.PostForm("mimeType")
 		ptt = c.PostForm("ptt") == "true"
-		audioData, detectedMime, ok = GetMediaFromForm(c, "file")
-		if !ok {
+		audioData, detectedMime, err = GetMediaFromForm(c, "file")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
 	} else {
@@ -187,8 +191,9 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 		phone = req.Phone
 		mimeType = req.MimeType
 		ptt = req.PTT
-		audioData, detectedMime, ok = GetMediaData(c, req.Audio, "audio")
-		if !ok {
+		audioData, detectedMime, err = GetMediaData(c, req.Audio, "audio")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 			return
 		}
 	}
@@ -206,8 +211,8 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 	}
 
 	// Convert WebM to OGG for WhatsApp compatibility (WhatsApp requires OGG Opus for PTT)
-	if IsWebMFormat(audioData, mimeType) {
-		convertedData, err := ConvertWebMToOgg(audioData)
+	if media.IsWebMFormat(audioData, mimeType) {
+		convertedData, err := media.ConvertWebMToOgg(audioData)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to convert audio: " + err.Error()})
 			return

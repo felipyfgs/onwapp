@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"context"
 	"encoding/base64"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -11,13 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"onwapp/internal/api/dto"
-	"onwapp/internal/validator"
-)
-
-const (
-	maxDownloadSize = 100 * 1024 * 1024 // 100MB max file size
-	downloadTimeout = 30 * time.Second
-	maxUploadSize   = 100 * 1024 * 1024 // 100MB max upload
+	"onwapp/internal/util/web"
 )
 
 // IsURL checks if a string is a URL
@@ -27,93 +21,32 @@ func IsURL(s string) bool {
 
 // DownloadFromURL downloads content from a URL with SSRF protection and size limits
 func DownloadFromURL(url string) ([]byte, string, error) {
-	// Validate URL for SSRF
-	if err := validator.ValidateURL(url); err != nil {
-		return nil, "", err
-	}
-
-	// Create HTTP client with timeout
-	client := &http.Client{
-		Timeout: downloadTimeout,
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			// Validate redirect URLs for SSRF
-			if err := validator.ValidateURL(req.URL.String()); err != nil {
-				return err
-			}
-			if len(via) >= 5 {
-				return http.ErrUseLastResponse
-			}
-			return nil
-		},
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), downloadTimeout)
-	defer cancel()
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return nil, "", err
-	}
-
-	req.Header.Set("User-Agent", "OnWapp/1.0")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, "", err
-	}
-	defer resp.Body.Close()
-
-	// Check response status
-	if resp.StatusCode != http.StatusOK {
-		return nil, "", &validator.ValidationError{Field: "url", Message: "failed to download: " + resp.Status}
-	}
-
-	// Limit read size to prevent memory exhaustion
-	limitedReader := io.LimitReader(resp.Body, maxDownloadSize+1)
-	data, err := io.ReadAll(limitedReader)
-	if err != nil {
-		return nil, "", err
-	}
-
-	// Check if we hit the limit
-	if int64(len(data)) > maxDownloadSize {
-		return nil, "", &validator.ValidationError{Field: "file", Message: "file size exceeds 100MB limit"}
-	}
-
-	mimeType := resp.Header.Get("Content-Type")
-	if mimeType == "" {
-		mimeType = http.DetectContentType(data)
-	}
-
-	return data, mimeType, nil
+	return web.DownloadFromURL(url)
 }
 
 // GetMediaData handles URL or base64 input and returns the raw bytes and detected mime type
-func GetMediaData(c *gin.Context, media string, mediaType string) ([]byte, string, bool) {
+func GetMediaData(c *gin.Context, media string, mediaType string) ([]byte, string, error) {
 	if media == "" {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: mediaType + " is required"})
-		return nil, "", false
+		return nil, "", fmt.Errorf("%s is required", mediaType)
 	}
 
 	if IsURL(media) {
-		data, mimeType, err := DownloadFromURL(media)
+		data, mimeType, err := web.DownloadFromURL(media)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "failed to download " + mediaType + " from URL: " + err.Error()})
-			return nil, "", false
+			return nil, "", fmt.Errorf("failed to download %s from URL: %w", mediaType, err)
 		}
-		return data, mimeType, true
+		return data, mimeType, nil
 	}
 
 	// Try base64 decode
 	data, err := base64.StdEncoding.DecodeString(media)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 " + mediaType})
-		return nil, "", false
+		return nil, "", fmt.Errorf("invalid base64 %s", mediaType)
 	}
 
 	// Detect mime type from content
 	mimeType := http.DetectContentType(data)
-	return data, mimeType, true
+	return data, mimeType, nil
 }
 
 // IsMultipartRequest checks if the request is multipart/form-data
@@ -123,18 +56,16 @@ func IsMultipartRequest(c *gin.Context) bool {
 }
 
 // GetMediaFromForm extracts file from multipart form and returns bytes and mime type
-func GetMediaFromForm(c *gin.Context, fieldName string) ([]byte, string, bool) {
+func GetMediaFromForm(c *gin.Context, fieldName string) ([]byte, string, error) {
 	file, header, err := c.Request.FormFile(fieldName)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "failed to get file from form: " + err.Error()})
-		return nil, "", false
+		return nil, "", fmt.Errorf("failed to get file from form: %w", err)
 	}
 	defer file.Close()
 
 	data, err := io.ReadAll(file)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "failed to read file: " + err.Error()})
-		return nil, "", false
+		return nil, "", fmt.Errorf("failed to read file: %w", err)
 	}
 
 	// Get mime type from header or detect from content
@@ -143,27 +74,24 @@ func GetMediaFromForm(c *gin.Context, fieldName string) ([]byte, string, bool) {
 		mimeType = http.DetectContentType(data)
 	}
 
-	return data, mimeType, true
+	return data, mimeType, nil
 }
 
-func ParseDisappearingTimer(c *gin.Context, timer string) (time.Duration, bool) {
+func ParseDisappearingTimer(c *gin.Context, timer string) (time.Duration, error) {
 	switch timer {
 	case "24h":
-		return 24 * time.Hour, true
+		return 24 * time.Hour, nil
 	case "7d":
-		return 7 * 24 * time.Hour, true
+		return 7 * 24 * time.Hour, nil
 	case "90d":
-		return 90 * 24 * time.Hour, true
+		return 90 * 24 * time.Hour, nil
 	case "off", "0":
-		return 0, true
+		return 0, nil
 	default:
 		parsed, err := time.ParseDuration(timer)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-				Error: "invalid timer format. Use: 24h, 7d, 90d, off, or Go duration",
-			})
-			return 0, false
+			return 0, fmt.Errorf("invalid timer format. Use: 24h, 7d, 90d, off, or Go duration")
 		}
-		return parsed, true
+		return parsed, nil
 	}
 }
