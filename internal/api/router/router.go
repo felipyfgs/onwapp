@@ -85,6 +85,9 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 	r.GET("/", healthHandler(cfg))
 	r.GET("/health", healthHandler(cfg))
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	r.GET("/docs", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/swagger/index.html")
+	})
 	r.GET("/events", middleware.Auth(cfg.GlobalAPIKey, cfg.SessionLookup), h.Webhook.GetEvents)
 
 	// Public media streaming endpoint (no auth required for audio/video playback in browser)
