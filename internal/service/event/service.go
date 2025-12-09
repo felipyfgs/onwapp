@@ -11,7 +11,6 @@ import (
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/types/events"
 
-	"onwapp/internal/api/sse"
 	"onwapp/internal/db"
 	"onwapp/internal/logger"
 	"onwapp/internal/model"
@@ -267,17 +266,6 @@ func (s *Service) sendWebhook(ctx context.Context, session *model.Session, event
 	}
 
 	s.webhookService.Send(ctx, session.ID, session.Session, event, rawEvent)
-}
-
-// broadcastSSE sends an event to all connected SSE clients for a session
-func (s *Service) broadcastSSE(eventType sse.EventType, session *model.Session, chatJID string, data interface{}) {
-	hub := sse.GetHub()
-	hub.Broadcast(&sse.Event{
-		Type:      eventType,
-		SessionID: session.Session,
-		ChatJID:   chatJID,
-		Data:      data,
-	})
 }
 
 // saveHistorySyncToJSON saves history sync to JSON for debugging

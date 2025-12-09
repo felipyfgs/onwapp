@@ -36,7 +36,7 @@ type Handlers struct {
 	Status     *handler.StatusHandler
 	Settings   *handler.SettingsHandler
 	Webhook    WebhookHandlerInterface
-	SSE        *handler.SSEHandler
+
 }
 
 type Config struct {
@@ -95,12 +95,7 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 		r.GET("/public/:session/media/stream", h.Media.StreamMediaPublic)
 	}
 
-	// SSE endpoints for real-time updates
-	if h.SSE != nil {
-		r.GET("/sse/status", h.SSE.Status)
-		r.GET("/sse/:session/events", middleware.Auth(cfg.GlobalAPIKey, cfg.SessionLookup), h.SSE.Events)
-		r.POST("/sse/:session/test", middleware.Auth(cfg.GlobalAPIKey, cfg.SessionLookup), h.SSE.TestEvent)
-	}
+
 
 	// ============================================================
 	// SESSIONS MANAGEMENT

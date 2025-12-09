@@ -10,7 +10,6 @@ import (
 	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
 
-	"onwapp/internal/api/sse"
 	"onwapp/internal/logger"
 	"onwapp/internal/model"
 )
@@ -128,20 +127,6 @@ func (s *Service) handleMessage(ctx context.Context, session *model.Session, e *
 	}
 
 	s.sendWebhook(ctx, session, string(model.EventMessageReceived), e)
-
-	// Broadcast to SSE clients for real-time updates
-	s.broadcastSSE(sse.EventMessageNew, session, e.Info.Chat.String(), map[string]interface{}{
-		"msgId":     e.Info.ID,
-		"chatJid":   e.Info.Chat.String(),
-		"senderJid": e.Info.Sender.String(),
-		"pushName":  e.Info.PushName,
-		"timestamp": e.Info.Timestamp.Unix(),
-		"type":      msgType,
-		"mediaType": e.Info.MediaType,
-		"content":   content,
-		"fromMe":    e.Info.IsFromMe,
-		"isGroup":   e.Info.IsGroup,
-	})
 }
 
 func (s *Service) handleReaction(ctx context.Context, session *model.Session, e *events.Message, reaction *waE2E.ReactionMessage) {
@@ -228,15 +213,6 @@ func (s *Service) handleProtocolMessage(ctx context.Context, session *model.Sess
 		}
 
 		s.sendWebhook(ctx, session, string(model.EventMessageDeleted), e)
-
-		// Broadcast delete event via SSE
-		s.broadcastSSE(sse.EventMessageStatus, session, e.Info.Chat.String(), map[string]interface{}{
-			"msgId":     targetMsgID,
-			"chatJid":   e.Info.Chat.String(),
-			"status":    "deleted",
-			"deletedBy": senderJid,
-			"timestamp": e.Info.Timestamp.Unix(),
-		})
 		return
 	}
 
@@ -339,14 +315,6 @@ func (s *Service) handleReceipt(ctx context.Context, session *model.Session, e *
 		if _, err := s.database.MessageUpdates.Save(ctx, update); err != nil {
 			logger.WPP().Warn().Err(err).Str("msgId", msgID).Msg("Failed to save receipt update")
 		}
-
-		// Broadcast status update to SSE clients
-		s.broadcastSSE(sse.EventMessageStatus, session, e.Chat.String(), map[string]interface{}{
-			"msgId":     msgID,
-			"chatJid":   e.Chat.String(),
-			"status":    string(status),
-			"timestamp": e.Timestamp.Unix(),
-		})
 	}
 
 	s.sendWebhook(ctx, session, string(model.EventMessageReceipt), e)

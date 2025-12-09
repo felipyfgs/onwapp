@@ -258,7 +258,6 @@ func main() {
 		Status:     handler.NewStatusHandler(wppService),
 		Settings:   handler.NewSettingsHandler(database.Settings, wppService),
 		Webhook:    webhookHandler,
-		SSE:        handler.NewSSEHandler(),
 	}
 
 	// Create session lookup function for session-level API keys
