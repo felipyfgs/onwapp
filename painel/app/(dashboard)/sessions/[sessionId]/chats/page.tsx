@@ -283,26 +283,43 @@ export default function ChatsPage({
           {/* Chat list */}
           <div className="flex-1 overflow-y-auto">
             {filteredChats.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                <MessageSquare className="size-16 mb-4 opacity-30" />
-                <p className="text-[15px]">
+              <div className="flex flex-col items-center justify-center py-16 px-6 text-center animate-in fade-in-0 duration-500">
+                <div className="relative mb-6">
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-purple-500/20 to-pink-500/20 blur-3xl rounded-full" />
+                  <div className="relative bg-gradient-to-br from-primary/10 to-purple-500/10 p-8 rounded-full">
+                    <MessageSquare className="size-16 text-primary/70" strokeWidth={1.5} />
+                  </div>
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">
                   {search 
                     ? 'Nenhuma conversa encontrada' 
                     : filter === 'archived'
                       ? 'Nenhuma conversa arquivada'
-                      : 'Nenhuma conversa'}
+                      : 'Nenhuma conversa ainda'}
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-[280px] leading-relaxed">
+                  {search 
+                    ? 'Tente buscar por outro termo ou limpe o filtro'
+                    : filter === 'archived'
+                      ? 'As conversas arquivadas aparecerao aqui'
+                      : 'Suas conversas do WhatsApp aparecerao aqui quando voce receber mensagens'}
                 </p>
               </div>
             ) : (
-              <div>
-                {filteredChats.map((chat) => (
-                  <ChatListItem
+              <div className="animate-in fade-in-0 duration-300">
+                {filteredChats.map((chat, index) => (
+                  <div 
                     key={chat.jid}
-                    chat={chat}
-                    sessionId={sessionId}
-                    selected={selectedChat?.jid === chat.jid}
-                    onClick={() => selectChat(chat)}
-                  />
+                    className="animate-in fade-in-0 slide-in-from-bottom-2 duration-200"
+                    style={{ animationDelay: `${index * 30}ms`, animationFillMode: 'backwards' }}
+                  >
+                    <ChatListItem
+                      chat={chat}
+                      sessionId={sessionId}
+                      selected={selectedChat?.jid === chat.jid}
+                      onClick={() => selectChat(chat)}
+                    />
+                  </div>
                 ))}
               </div>
             )}
@@ -322,18 +339,38 @@ export default function ChatsPage({
               onBack={() => selectChat(null)}
             />
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center bg-muted/10 text-muted-foreground">
-              <div className="w-[320px] text-center">
-                <div className="size-[180px] mx-auto mb-6 rounded-full bg-muted/30 flex items-center justify-center">
-                  <MessageSquare className="size-20 opacity-30" />
+            <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-background via-muted/5 to-background text-muted-foreground animate-in fade-in-0 duration-700">
+              <div className="w-[360px] text-center px-6">
+                <div className="relative size-[200px] mx-auto mb-8">
+                  {/* Animated gradient background */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/30 via-purple-500/30 to-pink-500/30 blur-3xl rounded-full animate-pulse" />
+                  
+                  {/* Icon container with gradient border */}
+                  <div className="relative size-full rounded-full bg-gradient-to-br from-primary/20 via-purple-500/10 to-background flex items-center justify-center border border-primary/20 shadow-xl shadow-primary/5">
+                    <div className="bg-gradient-to-br from-background to-muted/50 rounded-full p-12 backdrop-blur-sm">
+                      <MessageSquare className="size-24 text-primary/70" strokeWidth={1.5} />
+                    </div>
+                  </div>
                 </div>
-                <h2 className="text-[28px] font-light text-foreground/80 mb-3">OnWapp Web</h2>
-                <p className="text-[14px] text-muted-foreground leading-[20px]">
+                
+                <h2 className="text-[32px] font-light bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent mb-4">
+                  OnWapp Web
+                </h2>
+                
+                <p className="text-[15px] text-muted-foreground leading-relaxed mb-3">
                   Envie e receba mensagens sem precisar manter seu celular online.
                 </p>
-                <p className="text-[14px] text-muted-foreground leading-[20px] mt-4">
+                
+                <p className="text-[14px] text-muted-foreground/80 leading-relaxed">
                   Use o WhatsApp em ate 4 dispositivos ao mesmo tempo.
                 </p>
+                
+                {/* Decorative dots */}
+                <div className="flex items-center justify-center gap-2 mt-8 opacity-30">
+                  <div className="size-2 rounded-full bg-primary animate-pulse" style={{ animationDelay: '0ms' }} />
+                  <div className="size-2 rounded-full bg-purple-500 animate-pulse" style={{ animationDelay: '150ms' }} />
+                  <div className="size-2 rounded-full bg-pink-500 animate-pulse" style={{ animationDelay: '300ms' }} />
+                </div>
               </div>
             </div>
           )}

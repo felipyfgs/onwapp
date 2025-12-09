@@ -33,18 +33,21 @@ export function ChatFilters({ filter, onFilterChange, counts }: ChatFiltersProps
           key={key}
           onClick={() => onFilterChange(key)}
           className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap",
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap",
+            "hover:scale-105 active:scale-95",
             filter === key 
-              ? "bg-primary text-primary-foreground" 
-              : "bg-muted hover:bg-muted/80 text-muted-foreground"
+              ? "bg-primary text-primary-foreground shadow-md shadow-primary/25" 
+              : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground"
           )}
         >
           {icon}
           {label}
           {counts[key] > 0 && key !== 'all' && (
             <span className={cn(
-              "text-xs",
-              filter === key ? "text-primary-foreground/80" : "text-muted-foreground/60"
+              "text-xs px-1.5 py-0.5 rounded-full transition-colors duration-200",
+              filter === key 
+                ? "text-primary-foreground/90 bg-primary-foreground/20" 
+                : "text-muted-foreground/70"
             )}>
               {counts[key]}
             </span>

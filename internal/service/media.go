@@ -79,8 +79,8 @@ func (s *MediaService) finishDownload(mediaID string) {
 // ErrMediaExpired indicates the media is no longer available on WhatsApp servers (404/410)
 var ErrMediaExpired = errors.New("media expired on WhatsApp servers")
 
-// isMediaExpiredError checks if the error indicates media is no longer available
-func isMediaExpiredError(err error) bool {
+// IsMediaExpiredError checks if the error indicates media is no longer available
+func IsMediaExpiredError(err error) bool {
 	if err == nil {
 		return false
 	}
@@ -93,6 +93,11 @@ func isMediaExpiredError(err error) bool {
 		strings.Contains(errStr, "410") ||
 		strings.Contains(errStr, "not found") ||
 		strings.Contains(errStr, "forbidden")
+}
+
+// Deprecated: Use IsMediaExpiredError instead
+func isMediaExpiredError(err error) bool {
+	return IsMediaExpiredError(err)
 }
 
 // DownloadAndStore downloads media from WhatsApp and stores it in MinIO

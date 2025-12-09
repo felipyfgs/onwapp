@@ -119,17 +119,25 @@ export function ChatListItem({ chat, sessionId, selected, onClick }: ChatListIte
   return (
     <div
       className={cn(
-        "flex items-center gap-3 px-3 py-[10px] cursor-pointer transition-colors",
-        selected ? "bg-muted" : "hover:bg-muted/50",
+        "flex items-center gap-3 px-3 py-[10px] cursor-pointer transition-all duration-200 ease-out",
+        "active:scale-[0.98]",
+        selected 
+          ? "bg-muted border-l-4 border-l-primary shadow-sm" 
+          : "hover:bg-muted/50 border-l-4 border-l-transparent hover:border-l-muted",
       )}
       onClick={onClick}
     >
       {/* Avatar */}
-      <Avatar className="size-[49px] shrink-0">
+      <Avatar className={cn(
+        "size-[49px] shrink-0 transition-transform duration-200",
+        selected && "scale-105"
+      )}>
         {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
         <AvatarFallback className={cn(
-          "text-white text-lg font-medium",
-          chat.isGroup ? "bg-emerald-600" : "bg-slate-500"
+          "text-white text-lg font-medium transition-colors duration-200",
+          chat.isGroup 
+            ? "bg-gradient-to-br from-emerald-500 to-emerald-600" 
+            : "bg-gradient-to-br from-slate-500 to-slate-600"
         )}>
           {chat.isGroup ? (
             <Users className="size-6" />

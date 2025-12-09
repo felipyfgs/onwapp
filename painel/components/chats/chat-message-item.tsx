@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Image from "next/image"
-import { Check, CheckCheck, Clock, Image as ImageIcon, Video, Mic, FileText, MapPin, Contact2, Sticker, Download, Play, ExternalLink, Reply, Pencil, Trash2, ChevronDown, Copy, Ban } from "lucide-react"
+import { Check, CheckCheck, Clock, Image as ImageIcon, Video, Mic, FileText, MapPin, Contact2, Sticker, Download, ExternalLink, Reply, Pencil, Trash2, ChevronDown, Copy, Ban, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { AudioPlayer } from "./audio-player"
 import { ImageViewer } from "./image-viewer"
@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { retryMediaDownload } from "@/lib/api/media"
 import type { ChatMessage } from "@/lib/api/chats"
 
 interface ChatMessageItemProps {
@@ -146,8 +147,40 @@ export function ChatMessageItem({
   onScrollToMessage,
 }: ChatMessageItemProps) {
   const [imageViewerOpen, setImageViewerOpen] = useState(false)
+  const [imageError, setImageError] = useState(false)
+  const [videoError, setVideoError] = useState(false)
+  const [stickerError, setStickerError] = useState(false)
+  const [retryingMedia, setRetryingMedia] = useState<string | null>(null)
   const isMe = message.fromMe
   const isTextMessage = message.type === 'text' || (!message.mediaType && !!message.content)
+
+  const handleRetryMedia = async (mediaType: string) => {
+    if (!message.msgId || !sessionId) return
+    
+    setRetryingMedia(mediaType)
+    try {
+      await retryMediaDownload(sessionId, message.msgId)
+      
+      // Reset error state after successful retry initiation
+      setTimeout(() => {
+        switch (mediaType) {
+          case 'image':
+            setImageError(false)
+            break
+          case 'video':
+            setVideoError(false)
+            break
+          case 'sticker':
+            setStickerError(false)
+            break
+        }
+        setRetryingMedia(null)
+      }, 2000) // Wait 2s before trying to reload
+    } catch (error) {
+      console.error('Failed to retry media:', error)
+      setRetryingMedia(null)
+    }
+  }
 
   const formatTime = (timestamp: number) => {
     return new Date(timestamp * 1000).toLocaleTimeString('pt-BR', { 
@@ -199,20 +232,21 @@ export function ChatMessageItem({
       const imageUrl = getMediaUrl(message.msgId) || message.content
       return (
         <div className="space-y-1">
-          {imageUrl ? (
+          {imageUrl && !imageError ? (
             <>
               <div 
                 className="relative cursor-pointer rounded overflow-hidden"
-                onClick={() => setImageViewerOpen(true)}
+                onClick={() => !imageError && setImageViewerOpen(true)}
               >
                 <Image 
-                src={imageUrl} 
-                alt="Imagem" 
-                width={330}
-                height={330}
-                className="max-w-[330px] max-h-[330px] w-auto h-auto rounded bg-muted/50 object-contain"
-                unoptimized
-              />
+                  src={imageUrl} 
+                  alt="Imagem" 
+                  width={330}
+                  height={330}
+                  className="max-w-[330px] max-h-[330px] w-auto h-auto rounded bg-muted/50 object-contain"
+                  unoptimized
+                  onError={() => setImageError(true)}
+                />
               </div>
               <ImageViewer
                 src={imageUrl}
@@ -222,9 +256,34 @@ export function ChatMessageItem({
               />
             </>
           ) : (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <ImageIcon className="size-4" />
-              <span className="text-sm italic">Foto</span>
+            <div className="flex flex-col gap-2 p-4 bg-muted/30 rounded-lg border border-border/50 min-w-[200px]">
+              <div className="flex items-center gap-3">
+                <div className="size-12 bg-muted/50 rounded-lg flex items-center justify-center shrink-0">
+                  {retryingMedia === 'image' ? (
+                    <Loader2 className="size-6 text-primary animate-spin" />
+                  ) : (
+                    <ImageIcon className="size-6 text-muted-foreground/70" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-foreground">Foto</p>
+                  <p className="text-xs text-muted-foreground">
+                    {retryingMedia === 'image' 
+                      ? 'Tentando baixar...'
+                      : imageError 
+                        ? 'Não foi possível carregar' 
+                        : 'Imagem não disponível'}
+                  </p>
+                </div>
+              </div>
+              {imageError && imageUrl && !retryingMedia && (
+                <button
+                  onClick={() => handleRetryMedia('image')}
+                  className="text-xs text-primary hover:underline text-left font-medium"
+                >
+                  Tentar baixar do WhatsApp
+                </button>
+              )}
             </div>
           )}
           {message.content && !message.content.startsWith('http') && (
@@ -238,20 +297,44 @@ export function ChatMessageItem({
       const videoUrl = getMediaUrl(message.msgId)
       return (
         <div className="space-y-1">
-          {videoUrl ? (
+          {videoUrl && !videoError ? (
             <video 
               src={videoUrl} 
               controls 
-              className="max-w-[330px] max-h-[330px] w-auto h-auto rounded"
+              className="max-w-[330px] max-h-[330px] w-auto h-auto rounded bg-muted/50"
               preload="metadata"
               poster=""
+              onError={() => setVideoError(true)}
             />
           ) : (
-            <div className="flex items-center gap-2 p-3 bg-secondary rounded">
-              <div className="size-10 bg-primary/20 rounded-full flex items-center justify-center">
-                <Play className="size-5 text-primary" />
+            <div className="flex flex-col gap-2 p-4 bg-muted/30 rounded-lg border border-border/50 min-w-[200px]">
+              <div className="flex items-center gap-3">
+                <div className="size-12 bg-muted/50 rounded-lg flex items-center justify-center shrink-0">
+                  {retryingMedia === 'video' ? (
+                    <Loader2 className="size-6 text-primary animate-spin" />
+                  ) : (
+                    <Video className="size-6 text-muted-foreground/70" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-foreground">Vídeo</p>
+                  <p className="text-xs text-muted-foreground">
+                    {retryingMedia === 'video'
+                      ? 'Tentando baixar...'
+                      : videoError 
+                        ? 'Não foi possível carregar' 
+                        : 'Vídeo não disponível'}
+                  </p>
+                </div>
               </div>
-              <span className="text-sm">Video</span>
+              {videoError && videoUrl && !retryingMedia && (
+                <button
+                  onClick={() => handleRetryMedia('video')}
+                  className="text-xs text-primary hover:underline text-left font-medium"
+                >
+                  Tentar baixar do WhatsApp
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -272,45 +355,117 @@ export function ChatMessageItem({
         )
       }
       return (
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Mic className="size-4" />
-          <span className="text-sm italic">{type === 'ptt' ? 'Mensagem de voz' : 'Audio'}</span>
+        <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border border-border/50 min-w-[200px]">
+          <div className="size-10 bg-muted/50 rounded-lg flex items-center justify-center shrink-0">
+            <Mic className="size-5 text-muted-foreground/70" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-foreground">
+              {type === 'ptt' ? 'Mensagem de voz' : 'Áudio'}
+            </p>
+            <p className="text-xs text-muted-foreground">Mídia não disponível</p>
+          </div>
         </div>
       )
     }
 
     if (type === 'document') {
+      const docUrl = getMediaUrl(message.msgId)
       return (
-        <div className="flex items-center gap-3 p-2 bg-secondary rounded min-w-[240px]">
-          <div className="size-10 bg-destructive/20 rounded flex items-center justify-center shrink-0">
-            <FileText className="size-5 text-destructive" />
+        <div 
+          className="flex items-center gap-3 p-3 rounded-lg min-w-[240px]"
+          style={{
+            backgroundColor: isMe ? 'oklch(0.30 0.08 165 / 0.3)' : 'oklch(0.30 0.02 270 / 0.5)',
+            border: isMe ? '1px solid oklch(0.40 0.08 165 / 0.3)' : '1px solid oklch(0.35 0.02 270 / 0.4)',
+          }}
+        >
+          <div 
+            className="size-12 rounded-lg flex items-center justify-center shrink-0"
+            style={{
+              backgroundColor: isMe ? 'oklch(0.40 0.08 165 / 0.4)' : 'oklch(0.35 0.02 270 / 0.6)',
+            }}
+          >
+            <FileText 
+              className="size-6" 
+              style={{ color: isMe ? 'oklch(0.85 0.01 165)' : 'oklch(0.75 0.01 270)' }}
+            />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{message.content || 'Documento'}</p>
-            <p className="text-xs text-muted-foreground">PDF</p>
+            <p 
+              className="text-sm font-medium truncate"
+              style={{ color: isMe ? 'oklch(0.95 0.01 165)' : 'oklch(0.90 0.01 270)' }}
+            >
+              {message.content || 'Documento'}
+            </p>
+            <p 
+              className="text-xs"
+              style={{ color: isMe ? 'oklch(0.80 0.01 165 / 0.7)' : 'oklch(0.75 0.01 270 / 0.8)' }}
+            >
+              {docUrl ? 'Clique para baixar' : 'Documento não disponível'}
+            </p>
           </div>
-          <button className="shrink-0 p-2 rounded-full hover:bg-accent">
-            <Download className="size-5 text-muted-foreground" />
-          </button>
+          {docUrl && (
+            <a 
+              href={docUrl} 
+              download 
+              className="shrink-0 p-2 rounded-full transition-colors hover:brightness-110"
+              title="Baixar documento"
+              style={{
+                backgroundColor: isMe ? 'oklch(0.40 0.08 165 / 0.3)' : 'oklch(0.35 0.02 270 / 0.4)',
+              }}
+            >
+              <Download 
+                className="size-5"
+                style={{ color: isMe ? 'oklch(0.85 0.01 165)' : 'oklch(0.75 0.01 270)' }}
+              />
+            </a>
+          )}
         </div>
       )
     }
 
     if (type === 'sticker') {
       const stickerUrl = getMediaUrl(message.msgId)
-      return stickerUrl ? (
+      
+      return stickerUrl && !stickerError ? (
         <Image 
           src={stickerUrl} 
           alt="Sticker" 
           width={150} 
           height={150} 
-          className="size-[150px] object-contain" 
+          className="size-[150px] object-contain bg-transparent" 
           unoptimized 
+          onError={() => setStickerError(true)}
         />
       ) : (
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Sticker className="size-4" />
-          <span className="text-sm italic">Figurinha</span>
+        <div className="flex flex-col gap-2 p-3 bg-muted/30 rounded-lg border border-border/50">
+          <div className="flex items-center gap-3">
+            <div className="size-10 bg-muted/50 rounded-lg flex items-center justify-center shrink-0">
+              {retryingMedia === 'sticker' ? (
+                <Loader2 className="size-5 text-primary animate-spin" />
+              ) : (
+                <Sticker className="size-5 text-muted-foreground/70" />
+              )}
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-foreground">Figurinha</p>
+              <p className="text-xs text-muted-foreground">
+                {retryingMedia === 'sticker'
+                  ? 'Tentando baixar...'
+                  : stickerError 
+                    ? 'Não foi possível carregar' 
+                    : 'Figurinha não disponível'}
+              </p>
+            </div>
+          </div>
+          {stickerError && stickerUrl && !retryingMedia && (
+            <button
+              onClick={() => handleRetryMedia('sticker')}
+              className="text-xs text-primary hover:underline text-left font-medium"
+            >
+              Tentar baixar do WhatsApp
+            </button>
+          )}
         </div>
       )
     }
@@ -355,7 +510,7 @@ export function ChatMessageItem({
   if (message.type === 'system') {
     return (
       <div className="flex justify-center my-3 px-3">
-        <span className="text-[12.5px] text-muted-foreground bg-secondary px-3 py-1.5 rounded-lg shadow-sm">
+        <span className="text-[12.5px] px-3 py-1.5 rounded-lg shadow-sm message-system">
           {message.content || 'Mensagem do sistema'}
         </span>
       </div>
@@ -368,20 +523,17 @@ export function ChatMessageItem({
       <div className={cn("flex mb-[2px] px-3 sm:px-4 md:px-6", isMe ? "justify-end" : "justify-start")}>
         <div
           className={cn(
-            "relative rounded-[7.5px] shadow-sm",
-            "max-w-[85%] sm:max-w-[75%] md:max-w-[65%]",
-            isMe 
-              ? "bg-primary/50 text-primary-foreground/70" 
-              : "bg-card/50 text-muted-foreground border border-border/50"
+            "relative rounded-lg shadow-sm max-w-[85%] sm:max-w-[75%] md:max-w-[65%]",
+            isMe ? "message-deleted-sent" : "message-deleted-received"
           )}
         >
           {/* Tail SVG */}
           <div className={cn("absolute top-0", isMe ? "-right-[8px]" : "-left-[8px]")}>
             <svg viewBox="0 0 8 13" width="8" height="13">
               {isMe ? (
-                <path className="fill-primary/50" d="M5.188 0H0v11.193l6.467-8.625C7.526 1.156 6.958 0 5.188 0z" />
+                <path className="message-tail-deleted-sent" d="M5.188 0H0v11.193l6.467-8.625C7.526 1.156 6.958 0 5.188 0z" />
               ) : (
-                <path className="fill-card/50" strokeWidth="1" d="M1.533 3.568 8 12.193V0H2.812C1.042 0 .474 1.156 1.533 2.568z" />
+                <path className="message-tail-deleted-received" strokeWidth="1" d="M1.533 3.568 8 12.193V0H2.812C1.042 0 .474 1.156 1.533 2.568z" />
               )}
             </svg>
           </div>
@@ -425,20 +577,18 @@ export function ChatMessageItem({
     <div className={cn("flex mb-[2px] px-3 sm:px-4 md:px-6", isMe ? "justify-end" : "justify-start")}>
       <div
         className={cn(
-          "relative group rounded-[7.5px] shadow-sm",
+          "relative group rounded-lg shadow-md",
           "max-w-[85%] sm:max-w-[75%] md:max-w-[65%]",
-          isMe 
-            ? "bg-primary text-primary-foreground" 
-            : "bg-card text-card-foreground border border-border"
+          isMe ? "message-sent" : "message-received"
         )}
       >
         {/* Tail SVG */}
         <div className={cn("absolute top-0", isMe ? "-right-[8px]" : "-left-[8px]")}>
           <svg viewBox="0 0 8 13" width="8" height="13">
             {isMe ? (
-              <path className="fill-primary" d="M5.188 0H0v11.193l6.467-8.625C7.526 1.156 6.958 0 5.188 0z" />
+              <path className="message-tail-sent" d="M5.188 0H0v11.193l6.467-8.625C7.526 1.156 6.958 0 5.188 0z" />
             ) : (
-              <path className="fill-card" strokeWidth="1" d="M1.533 3.568 8 12.193V0H2.812C1.042 0 .474 1.156 1.533 2.568z" />
+              <path className="message-tail-received" strokeWidth="1" d="M1.533 3.568 8 12.193V0H2.812C1.042 0 .474 1.156 1.533 2.568z" />
             )}
           </svg>
         </div>
@@ -479,9 +629,7 @@ export function ChatMessageItem({
                 onClick={() => onScrollToMessage?.(message.quotedId!)}
                 className={cn(
                   "text-[12px] px-2 py-1.5 mb-1.5 rounded-[5px] border-l-[4px] cursor-pointer hover:brightness-110 transition-all",
-                  isMe 
-                    ? "bg-primary-foreground/10 border-primary-foreground/50" 
-                    : "bg-secondary border-primary"
+                  isMe ? "message-quoted-sent" : "message-quoted-received"
                 )}
               >
                 <p className={cn("text-[12.5px] font-medium mb-0.5", isMe ? "text-primary-foreground/80" : "text-primary")}>{quotedSenderName}</p>

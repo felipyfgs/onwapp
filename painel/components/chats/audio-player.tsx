@@ -118,18 +118,24 @@ export function AudioPlayer({ src, duration = 0, senderName, senderJid, sessionI
             unoptimized
           />
         ) : (
-          <div className={cn(
-            "size-[46px] rounded-full flex items-center justify-center text-primary-foreground font-medium text-lg",
-            isMe ? "bg-primary" : "bg-muted-foreground"
-          )}>
+          <div 
+            className="size-[46px] rounded-full flex items-center justify-center font-medium text-lg"
+            style={isMe 
+              ? { backgroundColor: 'oklch(0.30 0.08 165)', color: 'oklch(0.95 0.01 165)' }
+              : { backgroundColor: 'oklch(0.60 0.03 269.46)', color: 'oklch(0.95 0.01 270)' }
+            }
+          >
             {senderName?.[0]?.toUpperCase() || "?"}
           </div>
         )}
-        <div className={cn(
-          "absolute -bottom-0.5 -right-0.5 size-[18px] rounded-full flex items-center justify-center",
-          isMe ? "bg-primary/80" : "bg-muted-foreground/80"
-        )}>
-          <Mic className="size-3 text-primary-foreground" />
+        <div 
+          className="absolute -bottom-0.5 -right-0.5 size-[18px] rounded-full flex items-center justify-center"
+          style={isMe 
+            ? { backgroundColor: 'oklch(0.30 0.08 165 / 0.8)', color: 'oklch(0.95 0.01 165)' }
+            : { backgroundColor: 'oklch(0.60 0.03 269.46 / 0.8)', color: 'oklch(0.95 0.01 270)' }
+          }
+        >
+          <Mic className="size-3" />
         </div>
       </div>
       
@@ -138,7 +144,11 @@ export function AudioPlayer({ src, duration = 0, senderName, senderJid, sessionI
         <div className="flex items-center gap-2">
           <button
             onClick={togglePlay}
-            className="size-8 rounded-full flex items-center justify-center shrink-0 text-muted-foreground hover:text-foreground"
+            className="size-8 rounded-full flex items-center justify-center shrink-0 transition-colors"
+            style={isMe
+              ? { color: 'oklch(0.90 0.01 165)' }
+              : { color: 'oklch(0.75 0.01 270)' }
+            }
           >
             {playing ? (
               <Pause className="size-6" fill="currentColor" />
@@ -154,13 +164,13 @@ export function AudioPlayer({ src, duration = 0, senderName, senderJid, sessionI
               return (
                 <div
                   key={i}
-                  className={cn(
-                    "w-[3px] rounded-full transition-colors",
-                    isPlayed 
-                      ? "bg-primary" 
-                      : "bg-muted-foreground/40"
-                  )}
-                  style={{ height: `${height * 100}%` }}
+                  className="w-[3px] rounded-full transition-colors"
+                  style={{
+                    height: `${height * 100}%`,
+                    backgroundColor: isPlayed 
+                      ? (isMe ? 'oklch(0.80 0.01 165)' : 'oklch(0.67 0.17 153.85)')
+                      : (isMe ? 'oklch(0.50 0.01 165 / 0.4)' : 'oklch(0.60 0.03 269.46 / 0.4)')
+                  }}
                 />
               )
             })}
@@ -169,13 +179,22 @@ export function AudioPlayer({ src, duration = 0, senderName, senderJid, sessionI
         
         {/* Time row */}
         <div className="flex items-center pl-10 text-[11px]">
-          <span className={isMe ? "text-primary-foreground/60" : "text-muted-foreground"}>
+          <span 
+            style={isMe 
+              ? { color: 'oklch(0.80 0.01 165 / 0.7)' }
+              : { color: 'oklch(0.75 0.01 270 / 0.8)' }
+            }
+          >
             {formatTime(playing ? currentTime : audioDuration)}
           </span>
           {playing && (
             <button
               onClick={toggleSpeed}
-              className="ml-auto font-semibold px-1.5 py-0.5 rounded text-[10px] bg-secondary text-secondary-foreground"
+              className="ml-auto font-semibold px-1.5 py-0.5 rounded text-[10px]"
+              style={{
+                backgroundColor: 'oklch(0.30 0.02 270 / 0.5)',
+                color: 'oklch(0.85 0.01 270)',
+              }}
             >
               {playbackRate}x
             </button>

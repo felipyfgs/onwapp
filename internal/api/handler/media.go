@@ -310,3 +310,71 @@ func (h *MediaHandler) ListMedia(c *gin.Context) {
 		"media":  medias,
 	})
 }
+
+// RetryMediaDownload godoc
+// @Summary      Retry downloading a specific media
+// @Description  Force retry downloading media from WhatsApp (sends retry request if needed)
+// @Tags         media
+// @Produce      json
+// @Param        session    path     string  true  "Session ID"
+// @Param        messageId  query    string  true  "Message ID"
+// @Success      200  {object}  map[string]interface{}
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      404  {object}  dto.ErrorResponse
+// @Security     Authorization
+// @Router       /{session}/media/retry [post]
+func (h *MediaHandler) RetryMediaDownload(c *gin.Context) {
+	sessionId := c.Param("session")
+	messageID := c.Query("messageId")
+	
+	if messageID == "" {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "messageId query parameter is required"})
+		return
+	}
+
+	if h.mediaService == nil {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "media service not configured"})
+		return
+	}
+
+	session, err := h.sessionSvc.Get(sessionId)
+	if err != nil || session == nil {
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "session not found"})
+		return
+	}
+
+	if session.Client == nil || !session.Client.IsConnected() {
+		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "session not connected"})
+		return
+	}
+
+	// Get media from database
+	media, err := h.database.Media.GetByMsgID(c.Request.Context(), session.ID, messageID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	if media == nil {
+		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "media not found"})
+		return
+	}
+
+	// Try to download
+	go func() {
+		ctx := c.Request.Context()
+		
+		// Attempt download
+		err := h.mediaService.DownloadAndStore(ctx, session.Client, media, sessionId)
+		
+		// If media expired, send retry request automatically
+		if err != nil && service.IsMediaExpiredError(err) {
+			_ = h.mediaService.SendMediaRetryRequest(ctx, session.Client, media, sessionId)
+		}
+	}()
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Media download retry initiated",
+		"msgId":   messageID,
+	})
+}

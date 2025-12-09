@@ -260,6 +260,7 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 			session.GET("/media/list", h.Media.ListMedia)
 			session.GET("/media/pending", h.Media.ListPendingMedia)
 			session.POST("/media/process", h.Media.ProcessPendingMedia)
+			session.POST("/media/retry", h.Media.RetryMediaDownload)
 			session.GET("/media/download", h.Media.GetMedia)
 			session.GET("/media/stream", h.Media.StreamMedia)
 		}

@@ -486,14 +486,10 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
         </div>
       </div>
 
-      {/* Messages area with doodle pattern - using flex-col-reverse for auto scroll to bottom */}
+      {/* Messages area with WhatsApp-style pattern - using flex-col-reverse for auto scroll to bottom */}
       <div 
         ref={containerRef}
-        className="flex-1 min-h-0 overflow-y-auto px-3 md:px-4 py-2 flex flex-col-reverse"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80' width='80' height='80'%3E%3Cg fill-opacity='0.03'%3E%3Cpath fill='%23888' d='M20 20h8v8h-8zM50 10h10v10H50zM10 50h10v10H10zM60 55h8v8h-8zM35 35h10v10H35zM70 25h6v6h-6zM5 70h8v8H5zM45 65h10v10H45z'/%3E%3Ccircle fill='%23888' cx='25' cy='65' r='4'/%3E%3Ccircle fill='%23888' cx='65' cy='15' r='3'/%3E%3Ccircle fill='%23888' cx='75' cy='70' r='5'/%3E%3C/g%3E%3C/svg%3E")`,
-          backgroundColor: 'hsl(var(--muted) / 0.3)',
-        }}
+        className="flex-1 min-h-0 overflow-y-auto px-3 md:px-4 py-2 flex flex-col-reverse whatsapp-bg"
       >
         {loading ? (
           <div className="space-y-3 py-4 flex flex-col-reverse">
