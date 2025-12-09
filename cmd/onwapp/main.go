@@ -237,7 +237,7 @@ func main() {
 	// Initialize Media handler
 	var mediaHandler *handler.MediaHandler
 	if mediaService != nil {
-		mediaHandler = handler.NewMediaHandler(database, mediaService, sessionService)
+		mediaHandler = handler.NewMediaHandler(database, mediaService, sessionService, storageService)
 	}
 
 	// Initialize Chat handler with dependencies

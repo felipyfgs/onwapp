@@ -430,7 +430,7 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
   const messageGroups = groupMessagesByDate(messages)
 
   return (
-    <div className="relative flex flex-col h-full min-h-0 overflow-hidden bg-muted/20">
+    <div className="relative flex flex-col h-full min-h-0 overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-2 px-2 py-2 border-b bg-card shrink-0">
         {onBack && (
@@ -489,7 +489,10 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
       {/* Messages area with WhatsApp-style pattern - using flex-col-reverse for auto scroll to bottom */}
       <div 
         ref={containerRef}
-        className="flex-1 min-h-0 overflow-y-auto px-3 md:px-4 py-2 flex flex-col-reverse whatsapp-bg"
+        className="flex-1 min-h-0 overflow-y-auto px-3 md:px-4 py-2 flex flex-col-reverse bg-background"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='whatsapp-pattern' x='0' y='0' width='100' height='100' patternUnits='userSpaceOnUse'%3E%3Cpath d='M25 15c-5.5 0-10 4-10 9 0 1.8.5 3.4 1.4 4.8l-1.4 4.2 4.4-1.3c1.3.7 2.8 1.1 4.4 1.1 5.5 0 10-4 10-9s-4.5-9-9.8-9z' fill='currentColor' opacity='0.015'/%3E%3Cpath d='M75 20h-8c-.6 0-1 .4-1 1v12c0 .6.4 1 1 1h8c.6 0 1-.4 1-1V21c0-.6-.4-1-1-1zm-1 11h-6v-9h6v9z' fill='currentColor' opacity='0.015'/%3E%3Cpath d='M50 60c-4 0-7 2.7-7 6 0 1.2.3 2.3.9 3.3l-.9 2.7 3-1c.9.5 1.9.8 3 .8 4 0 7-2.7 7-6s-3-6-6-6zm3.5 8h-7v-1h7v1zm0-2h-7v-1h7v1z' fill='currentColor' opacity='0.015'/%3E%3Cpath d='M20 65c-2.8 0-5 2.2-5 5v6c0 2.8 2.2 5 5 5h10c2.8 0 5-2.2 5-5v-6c0-2.8-2.2-5-5-5h-1l-1-2h-6l-1 2h-1zm5 12c-2.2 0-4-1.8-4-4s1.8-4 4-4 4 1.8 4 4-1.8 4-4 4z' fill='currentColor' opacity='0.015'/%3E%3Cpath d='M82 70c-1.7 0-3 1.3-3 3v4c0 1.7 1.3 3 3 3s3-1.3 3-3v-4c0-1.7-1.3-3-3-3zm0 11c-2.2 0-4-1.6-4.4-3.6h-1.1c.5 2.5 2.6 4.5 5.2 4.9v2.2h1.6v-2.2c2.6-.4 4.7-2.4 5.2-4.9h-1.1c-.4 2-2.2 3.6-4.4 3.6z' fill='currentColor' opacity='0.015'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23whatsapp-pattern)'/%3E%3C/svg%3E")`,
+        }}
       >
         {loading ? (
           <div className="space-y-3 py-4 flex flex-col-reverse">

@@ -510,7 +510,7 @@ export function ChatMessageItem({
   if (message.type === 'system') {
     return (
       <div className="flex justify-center my-3 px-3">
-        <span className="text-[12.5px] px-3 py-1.5 rounded-lg shadow-sm message-system">
+        <span className="text-[12.5px] px-3 py-1.5 rounded-lg shadow-sm bg-secondary/80 text-secondary-foreground">
           {message.content || 'Mensagem do sistema'}
         </span>
       </div>
@@ -524,16 +524,16 @@ export function ChatMessageItem({
         <div
           className={cn(
             "relative rounded-lg shadow-sm max-w-[85%] sm:max-w-[75%] md:max-w-[65%]",
-            isMe ? "message-deleted-sent" : "message-deleted-received"
+            isMe ? "bg-primary/50 text-primary-foreground/70" : "bg-card/50 text-muted-foreground border border-border/50"
           )}
         >
           {/* Tail SVG */}
           <div className={cn("absolute top-0", isMe ? "-right-[8px]" : "-left-[8px]")}>
             <svg viewBox="0 0 8 13" width="8" height="13">
               {isMe ? (
-                <path className="message-tail-deleted-sent" d="M5.188 0H0v11.193l6.467-8.625C7.526 1.156 6.958 0 5.188 0z" />
+                <path className="fill-primary/50" d="M5.188 0H0v11.193l6.467-8.625C7.526 1.156 6.958 0 5.188 0z" />
               ) : (
-                <path className="message-tail-deleted-received" strokeWidth="1" d="M1.533 3.568 8 12.193V0H2.812C1.042 0 .474 1.156 1.533 2.568z" />
+                <path className="fill-card/50" strokeWidth="1" d="M1.533 3.568 8 12.193V0H2.812C1.042 0 .474 1.156 1.533 2.568z" />
               )}
             </svg>
           </div>
@@ -579,16 +579,16 @@ export function ChatMessageItem({
         className={cn(
           "relative group rounded-lg shadow-md",
           "max-w-[85%] sm:max-w-[75%] md:max-w-[65%]",
-          isMe ? "message-sent" : "message-received"
+          isMe ? "bg-primary text-primary-foreground" : "bg-card text-card-foreground border border-border"
         )}
       >
         {/* Tail SVG */}
         <div className={cn("absolute top-0", isMe ? "-right-[8px]" : "-left-[8px]")}>
           <svg viewBox="0 0 8 13" width="8" height="13">
             {isMe ? (
-              <path className="message-tail-sent" d="M5.188 0H0v11.193l6.467-8.625C7.526 1.156 6.958 0 5.188 0z" />
+              <path className="fill-primary" d="M5.188 0H0v11.193l6.467-8.625C7.526 1.156 6.958 0 5.188 0z" />
             ) : (
-              <path className="message-tail-received" strokeWidth="1" d="M1.533 3.568 8 12.193V0H2.812C1.042 0 .474 1.156 1.533 2.568z" />
+              <path className="fill-card" strokeWidth="1" d="M1.533 3.568 8 12.193V0H2.812C1.042 0 .474 1.156 1.533 2.568z" />
             )}
           </svg>
         </div>
@@ -629,7 +629,7 @@ export function ChatMessageItem({
                 onClick={() => onScrollToMessage?.(message.quotedId!)}
                 className={cn(
                   "text-[12px] px-2 py-1.5 mb-1.5 rounded-[5px] border-l-[4px] cursor-pointer hover:brightness-110 transition-all",
-                  isMe ? "message-quoted-sent" : "message-quoted-received"
+                  isMe ? "bg-primary-foreground/10 border-primary-foreground/50" : "bg-secondary border-primary"
                 )}
               >
                 <p className={cn("text-[12.5px] font-medium mb-0.5", isMe ? "text-primary-foreground/80" : "text-primary")}>{quotedSenderName}</p>

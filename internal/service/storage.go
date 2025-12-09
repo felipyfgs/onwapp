@@ -215,6 +215,46 @@ func (s *StorageService) GetPresignedURL(ctx context.Context, key string, expiry
 	return url.String(), nil
 }
 
+// StreamObject streams a file from storage to an HTTP response writer
+// Supports both full URLs and storage keys
+// URL format: http://localhost:9000/bucket-name/path/to/file.jpg
+func (s *StorageService) StreamObject(ctx context.Context, w io.Writer, storageURL, contentType string, setHeaders func(contentType string, size int64)) error {
+	// Extract object key from URL
+	parts := strings.SplitN(storageURL, "/"+s.bucket+"/", 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("invalid storage URL format: expected '/%s/' in URL", s.bucket)
+	}
+	objectKey := parts[1]
+
+	// Get object from MinIO
+	object, err := s.client.GetObject(ctx, s.bucket, objectKey, minio.GetObjectOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get object from storage: %w", err)
+	}
+	defer object.Close()
+
+	// Get object info for content length
+	stat, err := object.Stat()
+	if err != nil {
+		return fmt.Errorf("failed to stat object: %w", err)
+	}
+
+	// Set headers via callback
+	if contentType == "" {
+		contentType = stat.ContentType
+		if contentType == "" {
+			contentType = "application/octet-stream"
+		}
+	}
+	if setHeaders != nil {
+		setHeaders(contentType, stat.Size)
+	}
+
+	// Stream to client
+	_, err = io.Copy(w, object)
+	return err
+}
+
 // contentTypeExtensions maps content type prefixes to file extensions - O(1) lookup
 var contentTypeExtensions = map[string]string{
 	"image/jpeg":      ".jpg",

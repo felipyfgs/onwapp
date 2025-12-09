@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -14,17 +13,39 @@ import (
 )
 
 type MediaHandler struct {
-	database     *db.Database
-	mediaService *service.MediaService
-	sessionSvc   *service.SessionService
+	database       *db.Database
+	mediaService   *service.MediaService
+	sessionSvc     *service.SessionService
+	storageService *service.StorageService
 }
 
-func NewMediaHandler(database *db.Database, mediaService *service.MediaService, sessionSvc *service.SessionService) *MediaHandler {
+func NewMediaHandler(database *db.Database, mediaService *service.MediaService, sessionSvc *service.SessionService, storageService *service.StorageService) *MediaHandler {
 	return &MediaHandler{
-		database:     database,
-		mediaService: mediaService,
-		sessionSvc:   sessionSvc,
+		database:       database,
+		mediaService:   mediaService,
+		sessionSvc:     sessionSvc,
+		storageService: storageService,
 	}
+}
+
+// shouldProxyMedia checks if we should proxy media or redirect
+// Returns true if URL is internal/localhost (needs proxy)
+func (h *MediaHandler) shouldProxyMedia(storageURL string) bool {
+	if storageURL == "" {
+		return false
+	}
+
+	lower := strings.ToLower(storageURL)
+
+	// Check for localhost/internal URLs
+	isLocal := strings.Contains(lower, "localhost") ||
+		strings.Contains(lower, "127.0.0.1") ||
+		strings.Contains(lower, "::1") ||
+		strings.Contains(lower, "192.168.") ||
+		strings.Contains(lower, "10.0.") ||
+		strings.Contains(lower, "172.16.")
+
+	return isLocal
 }
 
 // GetMedia godoc
@@ -102,35 +123,27 @@ func (h *MediaHandler) StreamMedia(c *gin.Context) {
 		return
 	}
 
-	// If storage URL is external (S3, etc), redirect to it
-	if strings.HasPrefix(media.StorageURL, "http://") || strings.HasPrefix(media.StorageURL, "https://") {
+	// Check if we should proxy or redirect
+	if h.shouldProxyMedia(media.StorageURL) {
+		// PROXY: Download from MinIO and stream to client (for localhost/internal URLs)
+		if h.storageService == nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "storage service not configured"})
+			return
+		}
+
+		err := h.storageService.StreamObject(c.Request.Context(), c.Writer, media.StorageURL, media.MimeType, func(contentType string, size int64) {
+			c.Header("Content-Type", contentType)
+			c.Header("Content-Length", strconv.FormatInt(size, 10))
+			c.Header("Cache-Control", "public, max-age=31536000")
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to stream media"})
+			return
+		}
+	} else {
+		// REDIRECT: Let browser download directly from public URL (more efficient)
 		c.Redirect(http.StatusFound, media.StorageURL)
-		return
 	}
-
-	// If it's a local file, proxy it
-	req, err := http.NewRequestWithContext(c.Request.Context(), http.MethodGet, media.StorageURL, nil)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create request"})
-		return
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch media"})
-		return
-	}
-	defer resp.Body.Close()
-
-	// Set content type
-	contentType := media.MimeType
-	if contentType == "" {
-		contentType = "application/octet-stream"
-	}
-	c.Header("Content-Type", contentType)
-
-	// Copy the response body to the client
-	_, _ = io.Copy(c.Writer, resp.Body)
 }
 
 // StreamMediaPublic godoc
@@ -168,14 +181,27 @@ func (h *MediaHandler) StreamMediaPublic(c *gin.Context) {
 		return
 	}
 
-	// If storage URL is external (S3, etc), redirect to it
-	if strings.HasPrefix(media.StorageURL, "http://") || strings.HasPrefix(media.StorageURL, "https://") {
-		c.Redirect(http.StatusFound, media.StorageURL)
-		return
-	}
+	// Check if we should proxy or redirect
+	if h.shouldProxyMedia(media.StorageURL) {
+		// PROXY: Download from MinIO and stream to client (for localhost/internal URLs)
+		if h.storageService == nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "storage service not configured"})
+			return
+		}
 
-	// If it's a local file path, serve it
-	c.File(media.StorageURL)
+		err := h.storageService.StreamObject(c.Request.Context(), c.Writer, media.StorageURL, media.MimeType, func(contentType string, size int64) {
+			c.Header("Content-Type", contentType)
+			c.Header("Content-Length", strconv.FormatInt(size, 10))
+			c.Header("Cache-Control", "public, max-age=31536000")
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to stream media"})
+			return
+		}
+	} else {
+		// REDIRECT: Let browser download directly from public URL (more efficient)
+		c.Redirect(http.StatusFound, media.StorageURL)
+	}
 }
 
 // ListPendingMedia godoc
