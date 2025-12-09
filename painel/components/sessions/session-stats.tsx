@@ -1,73 +1,58 @@
 "use client"
 
 import { Card, CardContent } from "@/components/ui/card"
-import { Users, Wifi, WifiOff, QrCode } from "lucide-react"
-import { FilterStatus, SessionStats } from "./types"
+import { Smartphone, Wifi, WifiOff } from "lucide-react"
+import { FilterStatus, SessionListStats } from "./types"
 
 interface SessionStatsCardsProps {
-  stats: SessionStats
+  stats: SessionListStats
   onFilterChange: (filter: FilterStatus) => void
 }
 
 export function SessionStatsCards({ stats, onFilterChange }: SessionStatsCardsProps) {
   return (
-    <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-3">
       <Card 
-        className="cursor-pointer transition-colors hover:bg-muted/50" 
+        className="cursor-pointer transition-colors hover:bg-muted/50 border-border/50" 
         onClick={() => onFilterChange("all")}
       >
-        <CardContent className="flex items-center gap-4 p-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            <Users className="h-6 w-6 text-primary" />
+        <CardContent className="flex items-center gap-2.5 p-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+            <Smartphone className="h-4 w-4 text-primary" />
           </div>
           <div>
-            <p className="text-2xl font-bold">{stats.total}</p>
-            <p className="text-sm text-muted-foreground">Total</p>
+            <p className="text-lg font-bold leading-none mb-1">{stats.total}</p>
+            <p className="text-xs text-muted-foreground leading-none">Total</p>
           </div>
         </CardContent>
       </Card>
 
       <Card 
-        className="cursor-pointer transition-colors hover:bg-muted/50" 
+        className="cursor-pointer transition-colors hover:bg-muted/50 border-border/50" 
         onClick={() => onFilterChange("connected")}
       >
-        <CardContent className="flex items-center gap-4 p-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500/10">
-            <Wifi className="h-6 w-6 text-green-500" />
+        <CardContent className="flex items-center gap-2.5 p-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-green-500/10">
+            <Wifi className="h-4 w-4 text-green-500" />
           </div>
           <div>
-            <p className="text-2xl font-bold">{stats.connected}</p>
-            <p className="text-sm text-muted-foreground">Conectadas</p>
+            <p className="text-lg font-bold leading-none mb-1">{stats.connected}</p>
+            <p className="text-xs text-muted-foreground leading-none">Conectadas</p>
           </div>
         </CardContent>
       </Card>
 
       <Card 
-        className="cursor-pointer transition-colors hover:bg-muted/50" 
+        className="cursor-pointer transition-colors hover:bg-muted/50 border-border/50" 
         onClick={() => onFilterChange("disconnected")}
       >
-        <CardContent className="flex items-center gap-4 p-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-500/10">
-            <WifiOff className="h-6 w-6 text-gray-500" />
+        <CardContent className="flex items-center gap-2.5 p-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-red-500/10">
+            <WifiOff className="h-4 w-4 text-red-500" />
           </div>
           <div>
-            <p className="text-2xl font-bold">{stats.disconnected}</p>
-            <p className="text-sm text-muted-foreground">Desconectadas</p>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card 
-        className="cursor-pointer transition-colors hover:bg-muted/50" 
-        onClick={() => onFilterChange("qr_pending")}
-      >
-        <CardContent className="flex items-center gap-4 p-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-yellow-500/10">
-            <QrCode className="h-6 w-6 text-yellow-500" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold">{stats.pending}</p>
-            <p className="text-sm text-muted-foreground">Aguardando QR</p>
+            <p className="text-lg font-bold leading-none mb-1">{stats.disconnected}</p>
+            <p className="text-xs text-muted-foreground leading-none">Desconectadas</p>
           </div>
         </CardContent>
       </Card>
