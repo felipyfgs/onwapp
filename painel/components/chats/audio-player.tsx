@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import Image from "next/image"
 import { Play, Pause, Mic } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getContactAvatarUrl, getMyProfile } from "@/lib/api/contacts"
@@ -108,10 +109,13 @@ export function AudioPlayer({ src, duration = 0, senderName, senderJid, sessionI
       {/* Avatar with mic badge */}
       <div className="relative shrink-0">
         {avatarUrl ? (
-          <img 
+          <Image
             src={avatarUrl} 
-            alt={senderName || ""} 
+            alt={senderName || "Avatar"} 
+            width={46}
+            height={46}
             className="size-[46px] rounded-full object-cover"
+            unoptimized
           />
         ) : (
           <div className={cn(

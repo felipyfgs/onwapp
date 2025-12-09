@@ -178,7 +178,7 @@ export function ChatWindow({ sessionId, chat, myJid, onBack }: ChatWindowProps) 
             return updated ? { ...existing, status: updated.status } : existing
           })
         })
-      } catch (err) {
+      } catch {
         // Silent fail - SSE might be working
       }
     }

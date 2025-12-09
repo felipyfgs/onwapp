@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { Check, CheckCheck, Clock, Image as ImageIcon, Video, Mic, FileText, MapPin, Contact2, Sticker, Download, Play, ExternalLink, Reply, Pencil, Trash2, ChevronDown, Copy, Ban } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { AudioPlayer } from "./audio-player"
@@ -204,12 +205,14 @@ export function ChatMessageItem({
                 className="relative cursor-pointer rounded overflow-hidden"
                 onClick={() => setImageViewerOpen(true)}
               >
-                <img 
-                  src={imageUrl} 
-                  alt="Imagem" 
-                  className="max-w-[330px] max-h-[330px] w-auto h-auto rounded bg-muted/50"
-                  loading="lazy"
-                />
+                <Image 
+                src={imageUrl} 
+                alt="Imagem" 
+                width={330}
+                height={330}
+                className="max-w-[330px] max-h-[330px] w-auto h-auto rounded bg-muted/50 object-contain"
+                unoptimized
+              />
               </div>
               <ImageViewer
                 src={imageUrl}
@@ -296,7 +299,14 @@ export function ChatMessageItem({
     if (type === 'sticker') {
       const stickerUrl = getMediaUrl(message.msgId)
       return stickerUrl ? (
-        <img src={stickerUrl} alt="Sticker" className="size-[150px] object-contain" loading="lazy" />
+        <Image 
+          src={stickerUrl} 
+          alt="Sticker" 
+          width={150} 
+          height={150} 
+          className="size-[150px] object-contain" 
+          unoptimized 
+        />
       ) : (
         <div className="flex items-center gap-2 text-muted-foreground">
           <Sticker className="size-4" />

@@ -222,7 +222,11 @@ function AudioPreviewPlayer({ src, duration }: { src: string; duration: number }
 
   const togglePlay = useCallback(() => {
     if (!audioRef.current) return
-    playing ? audioRef.current.pause() : audioRef.current.play()
+    if (playing) {
+      audioRef.current.pause()
+    } else {
+      audioRef.current.play()
+    }
     setPlaying(!playing)
   }, [playing])
 

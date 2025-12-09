@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, use } from "react"
-import { Loader2, Users, Search, Link as LinkIcon, UserPlus, LogOut } from "lucide-react"
+import { Loader2, Users, Search, Link as LinkIcon, LogOut } from "lucide-react"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -60,7 +60,7 @@ export default function GroupsPage({
       const { link } = await getInviteLink(sessionId, groupJid)
       await navigator.clipboard.writeText(link)
       alert('Link copiado!')
-    } catch (err) {
+    } catch {
       alert('Erro ao obter link')
     }
   }
@@ -70,7 +70,7 @@ export default function GroupsPage({
     try {
       await leaveGroup(sessionId, groupJid)
       setGroups(prev => prev.filter(g => g.jid !== groupJid))
-    } catch (err) {
+    } catch {
       alert('Erro ao sair do grupo')
     }
   }

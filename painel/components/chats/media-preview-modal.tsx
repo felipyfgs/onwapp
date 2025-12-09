@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import Image from "next/image"
 import { X, Send, Plus, FileText, FileSpreadsheet, FileImage, File, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -166,11 +167,16 @@ export function MediaPreviewModal({
             : "max-w-full max-h-full"
         )}>
           {currentFile?.type === "image" && (
-            <img
-              src={currentFile.preview}
-              alt="Preview"
-              className="max-w-full max-h-full object-contain rounded-lg"
-            />
+            <div className="relative w-full h-full flex items-center justify-center">
+              <Image
+                src={currentFile.preview}
+                alt="Preview"
+                width={800}
+                height={600}
+                className="max-w-full max-h-full object-contain rounded-lg w-auto h-auto"
+                unoptimized
+              />
+            </div>
           )}
           {currentFile?.type === "video" && (
             <video
@@ -237,7 +243,7 @@ export function MediaPreviewModal({
               onClick={() => setCurrentIndex(i)}
             >
               {f.type === "image" && (
-                <img src={f.preview} alt="" className="w-full h-full object-cover" />
+                <Image src={f.preview} alt="Thumbnail" fill className="object-cover" unoptimized />
               )}
               {f.type === "video" && (
                 <video src={f.preview} className="w-full h-full object-cover" />

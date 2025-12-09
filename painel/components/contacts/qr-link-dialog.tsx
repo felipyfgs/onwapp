@@ -28,13 +28,7 @@ export function QRLinkDialog({
   const [copying, setCopying] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (open && !link) {
-      loadLink(false)
-    }
-  }, [open])
-
-  const loadLink = async (revoke: boolean) => {
+  const loadLink = useCallback(async (revoke: boolean) => {
     setLoading(true)
     setError(null)
     try {
@@ -45,7 +39,13 @@ export function QRLinkDialog({
     } finally {
       setLoading(false)
     }
-  }
+  }, [sessionId])
+
+  useEffect(() => {
+    if (open && !link) {
+      loadLink(false)
+    }
+  }, [open, link, loadLink])
 
   const handleCopy = async () => {
     if (!link) return

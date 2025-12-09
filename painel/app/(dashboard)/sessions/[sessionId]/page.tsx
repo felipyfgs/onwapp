@@ -1,6 +1,6 @@
 import { cookies } from "next/headers"
 import { SessionDashboard } from "@/components/session"
-import { type Session, type SessionStats } from "@/lib/api/sessions"
+import { type Session } from "@/lib/api/sessions"
 
 async function getSessionStatus(sessionId: string, apiKey: string): Promise<Session | null> {
   const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'

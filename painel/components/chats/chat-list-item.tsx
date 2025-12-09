@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Users, User, Check, CheckCheck, Clock, Archive, Pin, BellOff, Image, Mic, Video, FileText, MapPin, Contact2, Sticker } from "lucide-react"
+import { Users, User, Check, CheckCheck, Clock, Archive, Pin, BellOff, Image as ImageIcon, Mic, Video, FileText, MapPin, Contact2, Sticker } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { type Chat } from "@/lib/api/chats"
@@ -71,7 +71,7 @@ export function ChatListItem({ chat, sessionId, selected, onClick }: ChatListIte
       const type = lastMsg.mediaType || lastMsg.type
       switch (type) {
         case 'image':
-          return { icon: <Image className="size-4 shrink-0" />, text: 'Foto' }
+          return { icon: <ImageIcon className="size-4 shrink-0" />, text: 'Foto' }
         case 'video':
           return { icon: <Video className="size-4 shrink-0" />, text: 'Video' }
         case 'audio':

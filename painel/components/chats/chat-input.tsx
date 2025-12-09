@@ -7,7 +7,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { EmojiPicker } from "./emoji-picker"
 import { AttachmentMenu, type AttachmentType } from "./attachment-menu"
 import { AudioRecorder } from "./audio-recorder"
-import { cn } from "@/lib/utils"
 import type { ChatMessage } from "@/lib/api/chats"
 
 interface ChatInputProps {

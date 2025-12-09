@@ -1,5 +1,4 @@
 import { Skeleton } from "@/components/ui/skeleton"
-import { MessageSquare } from "lucide-react"
 
 export function ChatsSkeleton() {
   return (

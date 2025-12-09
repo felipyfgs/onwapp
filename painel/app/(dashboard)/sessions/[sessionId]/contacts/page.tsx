@@ -41,22 +41,21 @@ export default function ContactsPage({
   const [checkOpen, setCheckOpen] = useState(false)
   const [qrOpen, setQrOpen] = useState(false)
 
-  const loadData = async () => {
-    try {
-      const [contactsData, blocklistData] = await Promise.all([
-        getContacts(sessionId),
-        getBlocklist(sessionId).catch(() => []),
-      ])
-      setContacts(contactsData)
-      setBlockedJids(blocklistData)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [contactsData, blocklistData] = await Promise.all([
+          getContacts(sessionId),
+          getBlocklist(sessionId).catch(() => []),
+        ])
+        setContacts(contactsData)
+        setBlockedJids(blocklistData)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erro ao carregar')
+      } finally {
+        setLoading(false)
+      }
+    }
     loadData()
   }, [sessionId])
 

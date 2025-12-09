@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { 
   Wifi, 
   WifiOff, 
@@ -10,7 +11,6 @@ import {
   PowerOff, 
   RefreshCw,
   QrCode,
-  User,
   MessageSquare,
   Users,
   UsersRound,
@@ -635,10 +635,13 @@ export function SessionDashboard({
                 {qrCode ? (
                   <>
                     <div className="bg-white p-3 rounded-lg shadow-sm">
-                      <img 
+                      <Image 
                         src={qrCode.startsWith('data:') ? qrCode : `data:image/png;base64,${qrCode}`}
                         alt="QR Code"
+                        width={224}
+                        height={224}
                         className="size-56"
+                        unoptimized
                       />
                     </div>
                     <p className="text-sm text-muted-foreground text-center">
