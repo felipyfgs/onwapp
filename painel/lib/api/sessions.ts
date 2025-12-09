@@ -1,154 +1,73 @@
-import { apiRequest } from './config'
-
-export interface SessionStats {
-  messages: number
-  chats: number
-  contacts: number
-  groups: number
-}
+import { useApi } from '~/composables/useApi'
 
 export interface Session {
-  id: string
-  session: string
-  deviceJid?: string
-  phone?: string
-  status: 'connected' | 'disconnected' | 'connecting'
-  apiKey?: string
-  pushName?: string
-  profilePicture?: string
-  stats?: SessionStats
-  createdAt?: string
-  updatedAt?: string
+  session_id: string
+  status: 'connected' | 'disconnected' | 'connecting' | 'qr' | 'pairing'
+  phone_number?: string
+  push_name?: string
+  platform?: string
+  created_at?: string
+  connected_at?: string
+  last_seen?: string
 }
 
-export type SessionResponse = Session
+export interface SessionStatus {
+  authenticated: boolean
+  status: string
+  phone_number?: string
+  push_name?: string
+  platform?: string
+  connection_state?: string
+}
 
 export interface QRResponse {
-  qr?: string
-  status: string
+  qr_code: string
+  timeout: number
 }
 
-export async function getSessions(): Promise<Session[]> {
-  const data = await apiRequest<Session[]>('/sessions')
-  return data || []
-}
+export function useSessions() {
+  const api = useApi()
 
-export async function createSession(session: string): Promise<Session> {
-  return apiRequest<Session>('/sessions', {
-    method: 'POST',
-    body: JSON.stringify({ session }),
-  })
-}
+  const fetchSessions = () => 
+    api.get<{ sessions: Session[] }>('/sessions')
 
-export async function deleteSession(sessionId: string): Promise<void> {
-  await apiRequest(`/${sessionId}`, { method: 'DELETE' })
-}
+  const createSession = (sessionId: string) =>
+    api.post<Session>('/sessions', { session_id: sessionId })
 
-export async function getSessionStatus(sessionId: string): Promise<SessionResponse> {
-  return apiRequest<SessionResponse>(`/${sessionId}/status`)
-}
+  const getSessionStatus = (sessionId: string) =>
+    api.get<SessionStatus>(`/${sessionId}/status`)
 
-export async function connectSession(sessionId: string): Promise<{ message: string }> {
-  return apiRequest(`/${sessionId}/connect`, { method: 'POST' })
-}
+  const connectSession = (sessionId: string) =>
+    api.post(`/${sessionId}/connect`)
 
-export async function disconnectSession(sessionId: string): Promise<{ message: string }> {
-  return apiRequest(`/${sessionId}/disconnect`, { method: 'POST' })
-}
+  const disconnectSession = (sessionId: string) =>
+    api.post(`/${sessionId}/disconnect`)
 
-export async function restartSession(sessionId: string): Promise<{ message: string }> {
-  return apiRequest(`/${sessionId}/restart`, { method: 'POST' })
-}
+  const deleteSession = (sessionId: string) =>
+    api.delete(`/${sessionId}`)
 
-export async function logoutSession(sessionId: string): Promise<{ message: string }> {
-  return apiRequest(`/${sessionId}/logout`, { method: 'POST' })
-}
+  const logoutSession = (sessionId: string) =>
+    api.post(`/${sessionId}/logout`)
 
-export async function getSessionQR(sessionId: string): Promise<QRResponse> {
-  return apiRequest<QRResponse>(`/${sessionId}/qr`)
-}
+  const restartSession = (sessionId: string) =>
+    api.post(`/${sessionId}/restart`)
 
-export async function getSessionProfile(sessionId: string): Promise<{
-  phone: string
-  pushName: string
-  status: string
-  profilePicture?: string
-}> {
-  return apiRequest(`/${sessionId}/profile`)
-}
+  const getQRCode = (sessionId: string) =>
+    api.get<QRResponse>(`/${sessionId}/qr`)
 
-export async function pairPhone(sessionId: string, phone: string): Promise<{ code: string }> {
-  return apiRequest(`/${sessionId}/pairphone`, {
-    method: 'POST',
-    body: JSON.stringify({ phone }),
-  })
-}
+  const pairPhone = (sessionId: string, phoneNumber: string) =>
+    api.post(`/${sessionId}/pairphone`, { phone_number: phoneNumber })
 
-// Settings types
-export interface SessionSettings {
-  sessionId: string
-  alwaysOnline: boolean
-  autoRejectCalls: boolean
-  syncHistory: boolean
-  lastSeen: string
-  online: string
-  profilePhoto: string
-  status: string
-  readReceipts: string
-  groupAdd: string
-  callAdd: string
-  defaultDisappearingTimer: string
-}
-
-export interface UpdateSettingsRequest {
-  alwaysOnline?: boolean
-  autoRejectCalls?: boolean
-  syncHistory?: boolean
-  lastSeen?: string
-  online?: string
-  profilePhoto?: string
-  status?: string
-  readReceipts?: string
-  groupAdd?: string
-  callAdd?: string
-  defaultDisappearingTimer?: string
-}
-
-export async function getSessionSettings(sessionId: string): Promise<SessionSettings> {
-  return apiRequest<SessionSettings>(`/${sessionId}/settings`)
-}
-
-export async function updateSessionSettings(sessionId: string, settings: UpdateSettingsRequest): Promise<SessionSettings> {
-  return apiRequest<SessionSettings>(`/${sessionId}/settings`, {
-    method: 'POST',
-    body: JSON.stringify(settings),
-  })
-}
-
-// Profile update functions
-export async function updatePushName(sessionId: string, name: string): Promise<void> {
-  await apiRequest(`/${sessionId}/profile/name`, {
-    method: 'POST',
-    body: JSON.stringify({ name }),
-  })
-}
-
-export async function updateStatus(sessionId: string, status: string): Promise<void> {
-  await apiRequest(`/${sessionId}/profile/status`, {
-    method: 'POST',
-    body: JSON.stringify({ status }),
-  })
-}
-
-export async function updateProfilePicture(sessionId: string, image: string): Promise<{ pictureId: string }> {
-  return apiRequest(`/${sessionId}/profile/picture`, {
-    method: 'POST',
-    body: JSON.stringify({ image }),
-  })
-}
-
-export async function deleteProfilePicture(sessionId: string): Promise<void> {
-  await apiRequest(`/${sessionId}/profile/picture/remove`, {
-    method: 'POST',
-  })
+  return {
+    fetchSessions,
+    createSession,
+    getSessionStatus,
+    connectSession,
+    disconnectSession,
+    deleteSession,
+    logoutSession,
+    restartSession,
+    getQRCode,
+    pairPhone,
+  }
 }

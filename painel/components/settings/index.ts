@@ -1,7 +1,0 @@
-export { SettingCard } from "./setting-card"
-export { SettingSwitch } from "./setting-switch"
-export { SettingSelect } from "./setting-select"
-export { ProfileCard } from "./profile-card"
-export { PrivacyCard } from "./privacy-card"
-export { BehaviorCard } from "./behavior-card"
-export { SettingsSkeleton } from "./settings-skeleton"
