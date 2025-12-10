@@ -9,8 +9,6 @@ import { db } from "@/lib/db/chats-db"
 export const chatsQueryKey = (sessionId: string) => ["chats", sessionId]
 
 export function useChats(sessionId: string) {
-  const queryClient = useQueryClient()
-
   // 1. Get cached data from IndexedDB (instant)
   const cachedChats = useLiveQuery(
     () => db.getChats(sessionId),
