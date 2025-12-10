@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback, use } from "react"
+import Link from "next/link"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -11,7 +12,17 @@ import {
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { MessageSquare, Users, UserCircle, Plug, Webhook, Bot } from "lucide-react"
+import {
+  MessageSquare,
+  Users,
+  UserCircle,
+  Plug,
+  Webhook,
+  Bot,
+  Settings,
+  ChevronRight,
+  Image,
+} from "lucide-react"
 import {
   ApiSession,
   getSessionStatus,
@@ -26,7 +37,6 @@ import {
   StatCard,
   StatCardSkeleton,
   IntegrationStatCard,
-  QuickAccessCard,
 } from "@/components/session"
 
 interface SessionDetailPageProps {
@@ -87,17 +97,20 @@ export default function SessionDetailPage({ params }: SessionDetailPageProps) {
   const isConnected = session?.status === "connected"
 
   const quickLinks = [
-    { title: "Conversas", href: `/sessions/${id}/chats`, icon: MessageSquare, count: stats.chats },
-    { title: "Contatos", href: `/sessions/${id}/contacts`, icon: UserCircle, count: stats.contacts },
-    { title: "Grupos", href: `/sessions/${id}/groups`, icon: Users, count: stats.groups },
+    { title: "Conversas", href: `/sessions/${id}/chats`, icon: MessageSquare, count: stats.chats, description: "Ver todas as conversas" },
+    { title: "Contatos", href: `/sessions/${id}/contacts`, icon: UserCircle, count: stats.contacts, description: "Gerenciar contatos" },
+    { title: "Grupos", href: `/sessions/${id}/groups`, icon: Users, count: stats.groups, description: "Ver grupos participantes" },
+    { title: "Mídia", href: `/sessions/${id}/media`, icon: Image, description: "Fotos, vídeos e documentos" },
+    { title: "Webhook", href: `/sessions/${id}/webhook`, icon: Webhook, description: "Configurar webhooks" },
+    { title: "Configurações", href: `/sessions/${id}/settings`, icon: Settings, description: "Ajustes da sessão" },
   ]
 
   return (
     <>
-      <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+      <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border">
         <div className="flex items-center gap-2 px-4">
           <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
+          <Separator orientation="vertical" className="mr-2 h-4" />
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem className="hidden md:block">
@@ -112,7 +125,7 @@ export default function SessionDetailPage({ params }: SessionDetailPageProps) {
         </div>
       </header>
 
-      <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+      <div className="flex flex-1 flex-col gap-6 p-6">
         {/* Profile Card */}
         <SessionProfileCard
           session={session}
@@ -126,8 +139,8 @@ export default function SessionDetailPage({ params }: SessionDetailPageProps) {
           }
         />
 
-        {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-4">
+        {/* Stats */}
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
           {statsLoading ? (
             <>
               <StatCardSkeleton />
@@ -141,11 +154,11 @@ export default function SessionDetailPage({ params }: SessionDetailPageProps) {
               <StatCard title="Contatos" value={stats.contacts} icon={UserCircle} />
               <StatCard title="Grupos" value={stats.groups} icon={Users} />
               <IntegrationStatCard
-                title="Integrações"
+                title="integração"
                 icon={Plug}
                 integrations={[
-                  { icon: Webhook, enabled: stats.webhookEnabled },
-                  { icon: Bot, enabled: false },
+                  { icon: Webhook, enabled: stats.webhookEnabled, label: "Webhook" },
+                  { icon: Bot, enabled: false, label: "Chatwoot" },
                 ]}
               />
             </>
@@ -153,7 +166,32 @@ export default function SessionDetailPage({ params }: SessionDetailPageProps) {
         </div>
 
         {/* Quick Access */}
-        <QuickAccessCard links={quickLinks} />
+        <div className="space-y-4">
+          <h3 className="text-sm font-medium text-muted-foreground">Acesso Rápido</h3>
+          <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            {quickLinks.map((link) => (
+              <Link key={link.href} href={link.href}>
+                <div className="group flex items-center justify-between p-4 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-center h-11 w-11 rounded-xl bg-muted group-hover:bg-background transition-colors">
+                      <link.icon className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{link.title}</p>
+                      <p className="text-sm text-muted-foreground">{link.description}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {link.count !== undefined && (
+                      <span className="text-lg font-semibold text-muted-foreground">{link.count}</span>
+                    )}
+                    <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
       </div>
     </>
   )

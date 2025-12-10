@@ -1,18 +1,17 @@
 "use client"
 
 import { ApiSession } from "@/lib/api/sessions"
-import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Phone, Building2, Clock, Copy, Check } from "lucide-react"
+import { Phone, Building2, Copy, Key } from "lucide-react"
 import { useState } from "react"
 
-const statusConfig: Record<string, { label: string; className: string }> = {
-  connected: { label: "Conectado", className: "bg-primary" },
-  connecting: { label: "Conectando", className: "bg-muted-foreground" },
-  disconnected: { label: "Desconectado", className: "bg-destructive" },
-  qr: { label: "Aguardando QR", className: "bg-muted-foreground" },
+const statusConfig: Record<string, { label: string; dotClass: string; bgClass: string }> = {
+  connected: { label: "Conectado", dotClass: "bg-primary", bgClass: "bg-primary/10 text-primary" },
+  connecting: { label: "Conectando", dotClass: "bg-yellow-500", bgClass: "bg-yellow-500/10 text-yellow-600" },
+  disconnected: { label: "Desconectado", dotClass: "bg-destructive", bgClass: "bg-destructive/10 text-destructive" },
+  qr: { label: "Aguardando QR", dotClass: "bg-yellow-500", bgClass: "bg-yellow-500/10 text-yellow-600" },
 }
 
 interface SessionProfileCardProps {
@@ -36,107 +35,94 @@ export function SessionProfileCard({ session, loading, actions }: SessionProfile
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-start gap-6">
-            <Skeleton className="h-20 w-20 rounded-full" />
-            <div className="flex-1 space-y-3">
-              <Skeleton className="h-6 w-48" />
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-4 w-64" />
-            </div>
+      <div className="flex items-center justify-between p-5 rounded-xl border border-border bg-card">
+        <div className="flex items-center gap-5">
+          <Skeleton className="h-16 w-16 rounded-full" />
+          <div className="space-y-2.5">
+            <Skeleton className="h-6 w-40" />
+            <Skeleton className="h-4 w-56" />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="flex gap-2">
+          <Skeleton className="h-9 w-28" />
+          <Skeleton className="h-9 w-28" />
+        </div>
+      </div>
     )
   }
 
   return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="flex flex-col gap-6 md:flex-row md:items-start">
-          <div className="flex items-start gap-4 flex-1">
-            <div className="relative">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={session?.profilePicture} />
-                <AvatarFallback className="text-2xl bg-muted">
-                  {(session?.pushName || session?.session || "?")[0].toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <span className={`absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-background ${statusInfo.className}`} />
-            </div>
+    <div className="flex flex-col gap-5 p-5 rounded-xl border border-border bg-card md:flex-row md:items-center md:justify-between">
+      <div className="flex items-center gap-5">
+        <div className="relative">
+          <Avatar className="h-16 w-16">
+            <AvatarImage src={session?.profilePicture} />
+            <AvatarFallback className="text-xl bg-muted">
+              {(session?.pushName || session?.session || "?")[0].toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <span className={`absolute bottom-0.5 right-0.5 h-4 w-4 rounded-full border-2 border-card ${statusInfo.dotClass}`} />
+        </div>
 
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-xl font-semibold truncate">{session?.pushName || session?.session}</h2>
-                <span className={`px-2 py-0.5 rounded-full text-xs font-medium text-primary-foreground ${statusInfo.className}`}>
-                  {statusInfo.label}
-                </span>
-              </div>
-
-              <div className="mt-2 space-y-1 text-sm text-muted-foreground">
-                {session?.phone && (
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-3.5 w-3.5" />
-                    <span>+{session.phone}</span>
-                  </div>
-                )}
-                {session?.businessName && (
-                  <div className="flex items-center gap-2">
-                    <Building2 className="h-3.5 w-3.5" />
-                    <span>{session.businessName}</span>
-                  </div>
-                )}
-                {session?.about && (
-                  <p className="text-muted-foreground italic">&quot;{session.about}&quot;</p>
-                )}
-                {session?.platform && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs bg-muted px-2 py-0.5 rounded">{session.platform}</span>
-                  </div>
-                )}
-              </div>
-
-              {session?.apiKey && (
-                <div className="mt-3 flex items-center gap-2">
-                  <code className="text-xs bg-muted px-2 py-1 rounded font-mono truncate max-w-[200px]">
-                    {session.apiKey.slice(0, 16)}...
-                  </code>
-                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleCopyApiKey}>
-                    {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                  </Button>
-                </div>
-              )}
-
-              {session?.lastConnectedAt && (
-                <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
-                  <Clock className="h-3 w-3" />
-                  <span>Última conexão: {new Date(session.lastConnectedAt).toLocaleString("pt-BR")}</span>
-                </div>
-              )}
-            </div>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h2 className="text-xl font-semibold truncate">{session?.pushName || session?.session}</h2>
+            <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${statusInfo.bgClass}`}>
+              {statusInfo.label}
+            </span>
           </div>
 
-          {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
+          <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground flex-wrap">
+            {session?.phone && (
+              <span className="flex items-center gap-1.5">
+                <Phone className="h-3.5 w-3.5" />
+                +{session.phone}
+              </span>
+            )}
+            {session?.businessName && (
+              <span className="flex items-center gap-1.5">
+                <Building2 className="h-3.5 w-3.5" />
+                {session.businessName}
+              </span>
+            )}
+            {session?.platform && (
+              <span className="text-xs bg-muted px-2 py-0.5 rounded">{session.platform}</span>
+            )}
+            {session?.apiKey && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                onClick={handleCopyApiKey}
+              >
+                <Key className="h-3.5 w-3.5 mr-1" />
+                {copied ? "Copiado!" : "API Key"}
+                {!copied && <Copy className="h-3.5 w-3.5 ml-1" />}
+              </Button>
+            )}
+          </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
+    </div>
   )
 }
 
 export function SessionProfileCardSkeleton() {
   return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="flex items-start gap-6">
-          <Skeleton className="h-20 w-20 rounded-full" />
-          <div className="flex-1 space-y-3">
-            <Skeleton className="h-6 w-48" />
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-4 w-64" />
-          </div>
+    <div className="flex items-center justify-between p-5 rounded-xl border border-border bg-card">
+      <div className="flex items-center gap-5">
+        <Skeleton className="h-16 w-16 rounded-full" />
+        <div className="space-y-2.5">
+          <Skeleton className="h-6 w-40" />
+          <Skeleton className="h-4 w-56" />
         </div>
-      </CardContent>
-    </Card>
+      </div>
+      <div className="flex gap-2">
+        <Skeleton className="h-9 w-28" />
+        <Skeleton className="h-9 w-28" />
+      </div>
+    </div>
   )
 }
