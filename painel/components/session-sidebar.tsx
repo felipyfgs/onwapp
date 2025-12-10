@@ -16,7 +16,6 @@ import {
 
 import { NavUser } from "@/components/nav-user"
 import { SessionSwitcher } from "@/components/session-switcher"
-import { useSessionContext } from "@/contexts/session-context"
 import {
   Collapsible,
   CollapsibleContent,
@@ -41,13 +40,12 @@ import {
 
 export function SessionSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const params = useParams()
-  const sessionId = params.id as string // UUID from URL
-  const { session } = useSessionContext()
+  const sessionId = params.id as string
 
   const user = {
-    name: session?.session || sessionId,
+    name: sessionId,
     email: "Sessão WhatsApp",
-    avatar: session?.profilePicture || "",
+    avatar: "",
   }
 
   const navItems = [
