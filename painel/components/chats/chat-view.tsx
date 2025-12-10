@@ -397,6 +397,7 @@ export const ChatView = forwardRef<ChatViewRef, ChatViewProps>(function ChatView
                       <ChatMessageBubble
                         key={msg.msgId}
                         message={msg}
+                        sessionId={sessionId}
                         isGroup={chat.isGroup}
                         showSender={showSender}
                       />

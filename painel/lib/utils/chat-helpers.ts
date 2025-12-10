@@ -125,8 +125,12 @@ export function isDocumentMessage(message: ChatMessage): boolean {
   return message.type === "document" || message.mediaType === "document"
 }
 
+export function isStickerMessage(message: ChatMessage): boolean {
+  return message.type === "sticker" || message.mediaType === "sticker"
+}
+
 export function isMediaMessage(message: ChatMessage): boolean {
-  return isImageMessage(message) || isVideoMessage(message) || isDocumentMessage(message) || isAudioMessage(message)
+  return isImageMessage(message) || isVideoMessage(message) || isDocumentMessage(message) || isAudioMessage(message) || isStickerMessage(message)
 }
 
 // ============================================================

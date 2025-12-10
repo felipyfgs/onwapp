@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect, useCallback } from "react"
-import { Play, Pause, Download, FileText, File, FileImage, FileVideo, FileAudio, Loader2 } from "lucide-react"
+import { Play, Pause, Download, FileText, File, FileImage, FileVideo, FileAudio, Loader2, Mic } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface ImageMessageProps {
@@ -121,9 +121,18 @@ export function VideoMessage({ src, caption, onView }: VideoMessageProps) {
 interface AudioMessageProps {
   src: string
   isFromMe?: boolean
+  avatar?: string
 }
 
-export function AudioMessage({ src, isFromMe }: AudioMessageProps) {
+// Pre-generated waveform pattern (deterministic, not random)
+const WAVEFORM_BARS = [
+  0.3, 0.5, 0.7, 0.4, 0.8, 0.6, 0.9, 0.5, 0.7, 0.4,
+  0.6, 0.8, 0.5, 0.9, 0.6, 0.4, 0.7, 0.5, 0.8, 0.6,
+  0.4, 0.7, 0.9, 0.5, 0.6, 0.8, 0.4, 0.7, 0.5, 0.6,
+  0.8, 0.4, 0.6, 0.9, 0.5, 0.7, 0.4, 0.8, 0.6, 0.5,
+]
+
+export function AudioMessage({ src, isFromMe, avatar }: AudioMessageProps) {
   const [playing, setPlaying] = useState(false)
   const [duration, setDuration] = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
@@ -182,66 +191,95 @@ export function AudioMessage({ src, isFromMe }: AudioMessageProps) {
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
 
+  // Calculate which bar the progress indicator should be on
+  const progressBarIndex = Math.floor((progress / 100) * WAVEFORM_BARS.length)
+
   return (
-    <div className="flex items-center gap-3 min-w-[200px]">
+    <div className="min-w-[200px]">
       <audio ref={audioRef} src={src} preload="metadata" />
       
-      <button
-        onClick={togglePlay}
-        disabled={error}
-        className={cn(
-          "h-10 w-10 rounded-full flex items-center justify-center shrink-0 transition-colors",
-          isFromMe 
-            ? "bg-primary-foreground/20 hover:bg-primary-foreground/30" 
-            : "bg-primary/20 hover:bg-primary/30",
-          error && "opacity-50 cursor-not-allowed"
-        )}
-      >
-        {playing ? (
-          <Pause className="h-5 w-5" />
-        ) : (
-          <Play className="h-5 w-5 ml-0.5" />
-        )}
-      </button>
+      {/* Main row - all elements vertically centered */}
+      <div className="flex items-center gap-2 h-[36px]">
+        {/* Play/Pause button */}
+        <button
+          onClick={togglePlay}
+          disabled={error}
+          className={cn(
+            "shrink-0 transition-opacity flex items-center justify-center w-8 h-8",
+            error && "opacity-50 cursor-not-allowed"
+          )}
+        >
+          {playing ? (
+            <Pause className="h-7 w-7" />
+          ) : (
+            <Play className="h-7 w-7" />
+          )}
+        </button>
 
-      <div className="flex-1 min-w-0">
+        {/* Waveform with progress indicator */}
         <div 
-          className="h-1.5 bg-current/20 rounded-full cursor-pointer relative overflow-hidden"
+          className="flex-1 h-[22px] flex items-center gap-[2px] cursor-pointer relative"
           onClick={handleSeek}
         >
-          <div 
-            className={cn(
-              "absolute inset-y-0 left-0 rounded-full transition-all",
-              isFromMe ? "bg-primary-foreground/70" : "bg-primary"
-            )}
-            style={{ width: `${progress}%` }}
-          />
-          {/* Waveform bars */}
-          <div className="absolute inset-0 flex items-center justify-around px-1 opacity-30">
-            {Array.from({ length: 20 }).map((_, i) => (
+          {WAVEFORM_BARS.map((height, i) => {
+            const isPlayed = i < progressBarIndex
+            const isCurrentBar = i === progressBarIndex && playing
+            return (
               <div 
-                key={i} 
+                key={i}
                 className={cn(
-                  "w-0.5 rounded-full",
-                  isFromMe ? "bg-primary-foreground" : "bg-primary"
+                  "w-[2px] rounded-full transition-colors relative",
+                  isPlayed 
+                    ? (isFromMe ? "bg-primary-foreground" : "bg-sky-500")
+                    : (isFromMe ? "bg-primary-foreground/40" : "bg-muted-foreground/50")
                 )}
-                style={{ 
-                  height: `${Math.random() * 100}%`,
-                  minHeight: "20%"
-                }}
-              />
-            ))}
+                style={{ height: `${height * 100}%` }}
+              >
+                {/* Progress indicator dot */}
+                {isCurrentBar && (
+                  <div className={cn(
+                    "absolute -top-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full",
+                    isFromMe ? "bg-primary-foreground" : "bg-sky-500"
+                  )} />
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Avatar with mic overlay */}
+        <div className="relative shrink-0">
+          {avatar ? (
+            <div className="w-[40px] h-[40px] rounded-full overflow-hidden border-2 border-background">
+              <img src={avatar} alt="" className="w-full h-full object-cover" />
+            </div>
+          ) : (
+            <div className={cn(
+              "w-[40px] h-[40px] rounded-full flex items-center justify-center",
+              isFromMe ? "bg-primary-foreground/20" : "bg-muted"
+            )}>
+              <Mic className="h-5 w-5 opacity-60" />
+            </div>
+          )}
+          {/* Mic indicator overlay */}
+          <div className={cn(
+            "absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center",
+            isFromMe ? "bg-primary" : "bg-emerald-500"
+          )}>
+            <Mic className="h-2.5 w-2.5 text-white" />
           </div>
         </div>
-        <div className="flex justify-between mt-1">
-          <span className="text-[10px] opacity-70">
-            {formatTime(currentTime)}
-          </span>
-          <span className="text-[10px] opacity-70">
-            {duration > 0 ? formatTime(duration) : "--:--"}
-          </span>
-        </div>
+
+        {/* Speed indicator when playing */}
+        {playing && (
+          <span className="text-[11px] font-medium opacity-70 shrink-0">1.0x</span>
+        )}
       </div>
+
+      {/* Duration below */}
+      <span className="text-[10px] opacity-70 ml-[40px] block">
+        {playing || currentTime > 0 ? formatTime(currentTime) : (duration > 0 ? formatTime(duration) : "0:00")}
+      </span>
     </div>
   )
 }
@@ -252,35 +290,37 @@ interface DocumentMessageProps {
   isFromMe?: boolean
 }
 
-const getDocumentIcon = (filename?: string) => {
-  if (!filename) return FileText
+function DocumentIcon({ filename, isFromMe }: { filename?: string; isFromMe?: boolean }) {
+  const iconClass = cn("h-5 w-5", isFromMe ? "text-primary-foreground" : "text-destructive")
+  
+  if (!filename) return <FileText className={iconClass} />
+  
   const ext = filename.split(".").pop()?.toLowerCase()
   switch (ext) {
     case "pdf":
-      return FileText
+      return <FileText className={iconClass} />
     case "jpg":
     case "jpeg":
     case "png":
     case "gif":
     case "webp":
-      return FileImage
+      return <FileImage className={iconClass} />
     case "mp4":
     case "avi":
     case "mov":
     case "webm":
-      return FileVideo
+      return <FileVideo className={iconClass} />
     case "mp3":
     case "wav":
     case "ogg":
     case "m4a":
-      return FileAudio
+      return <FileAudio className={iconClass} />
     default:
-      return File
+      return <File className={iconClass} />
   }
 }
 
 export function DocumentMessage({ src, filename, isFromMe }: DocumentMessageProps) {
-  const Icon = getDocumentIcon(filename)
   const displayName = filename || "Documento"
   const ext = filename?.split(".").pop()?.toUpperCase() || "FILE"
 
@@ -300,10 +340,7 @@ export function DocumentMessage({ src, filename, isFromMe }: DocumentMessageProp
         "h-10 w-10 rounded flex items-center justify-center shrink-0",
         isFromMe ? "bg-primary-foreground/20" : "bg-destructive/20"
       )}>
-        <Icon className={cn(
-          "h-5 w-5",
-          isFromMe ? "text-primary-foreground" : "text-destructive"
-        )} />
+        <DocumentIcon filename={filename} isFromMe={isFromMe} />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{displayName}</p>
