@@ -41,7 +41,9 @@ export function useWebSocket({
   const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null)
 
   const callbacksRef = useRef({ onMessage, onConnect, onDisconnect, onError })
-  callbacksRef.current = { onMessage, onConnect, onDisconnect, onError }
+  useEffect(() => {
+    callbacksRef.current = { onMessage, onConnect, onDisconnect, onError }
+  }, [onMessage, onConnect, onDisconnect, onError])
 
   const connect = useCallback(() => {
     if (!enabled || !sessionId) return
@@ -121,14 +123,21 @@ export function useWebSocket({
     shouldReconnectRef.current = true
     if (enabled) {
       connect()
-    } else {
-      disconnect()
     }
 
     return () => {
-      disconnect()
+      // Cleanup: close WebSocket on unmount or when deps change
+      shouldReconnectRef.current = false
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current)
+        reconnectTimeoutRef.current = null
+      }
+      if (wsRef.current) {
+        wsRef.current.close()
+        wsRef.current = null
+      }
     }
-  }, [enabled, sessionId, connect, disconnect])
+  }, [enabled, sessionId, connect])
 
   return {
     isConnected,

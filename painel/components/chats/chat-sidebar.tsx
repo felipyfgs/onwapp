@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useRef } from "react"
+import Link from "next/link"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -18,11 +19,13 @@ import {
 } from "lucide-react"
 import { Chat } from "@/lib/api/chats"
 import { cn } from "@/lib/utils"
+import { extractChatId } from "@/lib/utils/jid"
 
 interface ChatSidebarProps {
   chats: Chat[]
   selectedChat: Chat | null
-  onChatSelect: (chat: Chat) => void
+  onChatSelect?: (chat: Chat) => void
+  sessionId?: string
   loading?: boolean
   highlightChatId?: string | null
 }
@@ -94,20 +97,20 @@ function ChatListItemSkeleton() {
 interface ChatListItemProps {
   chat: Chat
   isSelected: boolean
-  onSelect: () => void
+  onSelect?: () => void
+  href?: string
   highlight?: boolean
 }
 
-function ChatListItem({ chat, isSelected, onSelect, highlight }: ChatListItemProps) {
-  return (
-    <button
-      onClick={onSelect}
-      className={cn(
-        "w-full flex items-center gap-3 px-4 h-[72px] hover:bg-accent transition-colors",
-        isSelected && "bg-accent",
-        highlight && "bg-primary/10 animate-pulse"
-      )}
-    >
+function ChatListItem({ chat, isSelected, onSelect, href, highlight }: ChatListItemProps) {
+  const className = cn(
+    "w-full flex items-center gap-3 px-4 h-[72px] hover:bg-accent transition-colors",
+    isSelected && "bg-accent",
+    highlight && "bg-primary/10 animate-pulse"
+  )
+
+  const content = (
+    <>
       <Avatar className="h-12 w-12 shrink-0">
         <AvatarImage src={chat.profilePicture} alt={getDisplayName(chat)} />
         <AvatarFallback className="bg-muted text-muted-foreground">
@@ -148,11 +151,25 @@ function ChatListItem({ chat, isSelected, onSelect, highlight }: ChatListItemPro
           </div>
         </div>
       </div>
+    </>
+  )
+
+  if (href) {
+    return (
+      <Link href={href} className={className}>
+        {content}
+      </Link>
+    )
+  }
+
+  return (
+    <button onClick={onSelect} className={className}>
+      {content}
     </button>
   )
 }
 
-export function ChatSidebar({ chats, selectedChat, onChatSelect, loading, highlightChatId }: ChatSidebarProps) {
+export function ChatSidebar({ chats, selectedChat, onChatSelect, sessionId, loading, highlightChatId }: ChatSidebarProps) {
   const [search, setSearch] = useState("")
   const [filter, setFilter] = useState<FilterType>("all")
   const parentRef = useRef<HTMLDivElement>(null)
@@ -283,7 +300,8 @@ export function ChatSidebar({ chats, selectedChat, onChatSelect, loading, highli
                   <ChatListItem
                     chat={chat}
                     isSelected={selectedChat?.jid === chat.jid}
-                    onSelect={() => onChatSelect(chat)}
+                    href={sessionId ? `/sessions/${sessionId}/chats/${extractChatId(chat.jid)}` : undefined}
+                    onSelect={onChatSelect ? () => onChatSelect(chat) : undefined}
                     highlight={highlightChatId === chat.jid}
                   />
                 </div>
