@@ -24,6 +24,7 @@ interface ChatViewProps {
   chat: Chat
   sessionId: string
   onBack?: () => void
+  newMessage?: ChatMessage | null
 }
 
 export interface ChatViewRef {
@@ -91,7 +92,7 @@ function groupMessagesByDate(messages: ChatMessage[]): MessageGroup[] {
 }
 
 export const ChatView = forwardRef<ChatViewRef, ChatViewProps>(function ChatView(
-  { chat, sessionId, onBack },
+  { chat, sessionId, onBack, newMessage },
   ref
 ) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -100,16 +101,22 @@ export const ChatView = forwardRef<ChatViewRef, ChatViewProps>(function ChatView
   const scrollRef = useRef<HTMLDivElement>(null)
   const isAtBottomRef = useRef(true)
 
-  // Expose methods to parent component
+  // Handle new message from WebSocket
+  useEffect(() => {
+    if (newMessage && newMessage.chatJid === chat.jid) {
+      setMessages((prev) => {
+        if (prev.some((m) => m.msgId === newMessage.msgId)) return prev
+        return [...prev, newMessage].sort((a, b) => a.timestamp - b.timestamp)
+      })
+    }
+  }, [newMessage, chat.jid])
+
+  // Expose methods to parent component (for status updates)
   useImperativeHandle(ref, () => ({
     addMessage: (message: ChatMessage) => {
-      // Only add if it's for this chat
       if (message.chatJid !== chat.jid) return
-
       setMessages((prev) => {
-        // Check if message already exists
         if (prev.some((m) => m.msgId === message.msgId)) return prev
-        // Add new message and sort by timestamp
         return [...prev, message].sort((a, b) => a.timestamp - b.timestamp)
       })
     },
@@ -120,7 +127,7 @@ export const ChatView = forwardRef<ChatViewRef, ChatViewProps>(function ChatView
         )
       )
     },
-  }))
+  }), [chat.jid])
 
   const fetchMessages = useCallback(async () => {
     setLoading(true)
@@ -135,9 +142,14 @@ export const ChatView = forwardRef<ChatViewRef, ChatViewProps>(function ChatView
     }
   }, [sessionId, chat.jid])
 
+  // Fetch messages only when chat changes
+  const prevChatJidRef = useRef<string | null>(null)
   useEffect(() => {
-    fetchMessages()
-  }, [fetchMessages])
+    if (prevChatJidRef.current !== chat.jid) {
+      prevChatJidRef.current = chat.jid
+      fetchMessages()
+    }
+  }, [chat.jid, fetchMessages])
 
   // Track if user is at bottom of chat
   const handleScroll = useCallback(() => {
@@ -149,10 +161,18 @@ export const ChatView = forwardRef<ChatViewRef, ChatViewProps>(function ChatView
 
   // Scroll to bottom when new messages arrive (if user was at bottom)
   useEffect(() => {
-    if (scrollRef.current && !loading && isAtBottomRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    if (scrollRef.current && !loading) {
+      // Always scroll if was at bottom OR if new message was added
+      const shouldScroll = isAtBottomRef.current || messages.length > 0
+      if (shouldScroll) {
+        setTimeout(() => {
+          if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+          }
+        }, 50)
+      }
     }
-  }, [messages, loading])
+  }, [messages.length, loading])
 
   const messageGroups = groupMessagesByDate(messages)
 

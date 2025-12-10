@@ -40,10 +40,6 @@ export async function getSessions(): Promise<ApiSession[]> {
   return api<ApiSession[]>("/sessions")
 }
 
-export async function getSessionById(id: string): Promise<ApiSession> {
-  return api<ApiSession>(`/sessions/by-id/${id}`)
-}
-
 export async function createSession(data: CreateSessionRequest): Promise<ApiSession> {
   return api<ApiSession>("/sessions", {
     method: "POST",

@@ -106,7 +106,6 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 	sessions.Use(middleware.Auth(cfg.GlobalAPIKey, cfg.SessionLookup))
 	{
 		sessions.GET("", h.Session.Fetch)
-		sessions.GET("/by-id/:id", h.Session.FetchByID)
 		sessions.POST("", h.Session.Create)
 	}
 

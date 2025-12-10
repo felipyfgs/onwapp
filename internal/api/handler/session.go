@@ -96,37 +96,6 @@ func (h *SessionHandler) Fetch(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// FetchByID godoc
-// @Summary      Get session by UUID
-// @Description  Get a WhatsApp session by its UUID
-// @Tags         sessions
-// @Accept       json
-// @Produce      json
-// @Param        id     path      string  true  "Session UUID"
-// @Success      200    {object}  dto.SessionResponse
-// @Failure      401    {object}  dto.ErrorResponse
-// @Failure      404    {object}  dto.ErrorResponse
-// @Security     Authorization
-// @Router       /sessions/by-id/{id} [get]
-func (h *SessionHandler) FetchByID(c *gin.Context) {
-	id := c.Param("id")
-
-	sess, err := h.sessionService.GetByID(id)
-	if err != nil {
-		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "session not found"})
-		return
-	}
-
-	resp := sessionToResponse(sess)
-
-	// For connected sessions, fetch additional data
-	if sess.GetStatus() == model.StatusConnected {
-		h.enrichSessionResponse(c.Request.Context(), sess, &resp)
-	}
-
-	c.JSON(http.StatusOK, resp)
-}
-
 // enrichSessionResponse adds profile, avatar and stats to a connected session response
 func (h *SessionHandler) enrichSessionResponse(ctx context.Context, sess *model.Session, resp *dto.SessionResponse) {
 	// Get data from client store

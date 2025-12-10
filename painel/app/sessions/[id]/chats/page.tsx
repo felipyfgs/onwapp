@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback, use, useRef } from "react"
+import { useEffect, useState, useCallback, use } from "react"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -12,7 +12,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { MessageSquare, Wifi, WifiOff } from "lucide-react"
-import { ChatSidebar, ChatView, ChatViewRef } from "@/components/chats"
+import { ChatSidebar, ChatView } from "@/components/chats"
 import { Chat, ChatMessage, getChats } from "@/lib/api/chats"
 import { useWebSocket, WebSocketMessage } from "@/hooks/use-websocket"
 
@@ -50,7 +50,7 @@ export default function ChatsPage({ params }: ChatsPageProps) {
   const [loading, setLoading] = useState(true)
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null)
   const [newMessageChatId, setNewMessageChatId] = useState<string | null>(null)
-  const chatViewRef = useRef<ChatViewRef>(null)
+  const [newMessage, setNewMessage] = useState<ChatMessage | null>(null)
 
   const fetchChats = useCallback(async () => {
     try {
@@ -98,12 +98,13 @@ export default function ChatsPage({ params }: ChatsPageProps) {
 
   const handleWebSocketMessage = useCallback((message: WebSocketMessage) => {
     const msgData = message.data as WSMessageData
+    console.log("[WS] Message received:", message.event, msgData)
 
     switch (message.event) {
       case "message.received":
       case "message.sent": {
-        // Add message to ChatView in real-time
-        if (chatViewRef.current && msgData) {
+        // Add message to ChatView in real-time via prop
+        if (msgData) {
           const chatMessage: ChatMessage = {
             msgId: msgData.msgId,
             chatJid: msgData.chatJid,
@@ -119,7 +120,7 @@ export default function ChatsPage({ params }: ChatsPageProps) {
             quotedSender: msgData.quotedSender,
             status: msgData.status,
           }
-          chatViewRef.current.addMessage(chatMessage)
+          setNewMessage(chatMessage)
         }
 
         // Update chat list
@@ -204,7 +205,7 @@ export default function ChatsPage({ params }: ChatsPageProps) {
           {/* Chat View - Independent scroll */}
           <div className="flex-1 flex flex-col min-h-0">
             {selectedChat ? (
-              <ChatView ref={chatViewRef} chat={selectedChat} sessionId={id} />
+              <ChatView key={`desktop-${selectedChat.jid}`} chat={selectedChat} sessionId={id} newMessage={newMessage} />
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center bg-background">
                 <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
@@ -220,7 +221,7 @@ export default function ChatsPage({ params }: ChatsPageProps) {
         {/* Mobile Layout */}
         <div className="flex flex-1 md:hidden min-h-0">
           {selectedChat ? (
-            <ChatView ref={chatViewRef} chat={selectedChat} sessionId={id} onBack={() => setSelectedChat(null)} />
+            <ChatView key={`mobile-${selectedChat.jid}`} chat={selectedChat} sessionId={id} newMessage={newMessage} onBack={() => setSelectedChat(null)} />
           ) : (
             <ChatSidebar
               chats={chats}
