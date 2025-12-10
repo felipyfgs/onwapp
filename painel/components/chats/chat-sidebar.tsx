@@ -26,6 +26,7 @@ import {
   formatChatTime, 
   getMessagePreview 
 } from "@/lib/utils/chat-helpers"
+import { useAvatar } from "@/hooks/use-avatar"
 
 interface ChatSidebarProps {
   chats: Chat[]
@@ -66,6 +67,7 @@ interface ChatListItemProps {
   onSelect?: () => void
   href?: string
   highlight?: boolean
+  sessionId?: string
 }
 
 const ChatListItem = memo(function ChatListItem({ 
@@ -73,8 +75,12 @@ const ChatListItem = memo(function ChatListItem({
   isSelected, 
   onSelect, 
   href, 
-  highlight 
+  highlight,
+  sessionId
 }: ChatListItemProps) {
+  // Fetch avatar from API (cached by TanStack Query)
+  const { data: avatar } = useAvatar(sessionId || "", chat.jid)
+
   const className = cn(
     "w-full flex items-center gap-3 px-4 h-[72px] hover:bg-accent transition-colors",
     isSelected && "bg-accent",
@@ -84,7 +90,7 @@ const ChatListItem = memo(function ChatListItem({
   const content = (
     <>
       <Avatar className="h-12 w-12 shrink-0">
-        <AvatarImage src={chat.profilePicture} alt={getDisplayName(chat)} />
+        <AvatarImage src={avatar || chat.profilePicture} alt={getDisplayName(chat)} />
         <AvatarFallback className="bg-muted text-muted-foreground">
           {chat.isGroup ? <Users className="h-5 w-5" /> : getInitials(chat)}
         </AvatarFallback>
@@ -275,6 +281,7 @@ export function ChatSidebar({ chats, selectedChat, onChatSelect, sessionId, load
                     href={sessionId ? `/sessions/${sessionId}/chats/${extractChatId(chat.jid)}` : undefined}
                     onSelect={onChatSelect ? () => onChatSelect(chat) : undefined}
                     highlight={highlightChatId === chat.jid}
+                    sessionId={sessionId}
                   />
                 </div>
               )

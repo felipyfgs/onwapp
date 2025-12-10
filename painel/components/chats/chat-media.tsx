@@ -223,28 +223,29 @@ export function AudioMessage({ src, isFromMe, avatar }: AudioMessageProps) {
         >
           {WAVEFORM_BARS.map((height, i) => {
             const isPlayed = i < progressBarIndex
-            const isCurrentBar = i === progressBarIndex && playing
             return (
               <div 
                 key={i}
                 className={cn(
-                  "w-[2px] rounded-full transition-colors relative",
+                  "w-[2px] rounded-full transition-colors",
                   isPlayed 
                     ? (isFromMe ? "bg-primary-foreground" : "bg-sky-500")
                     : (isFromMe ? "bg-primary-foreground/40" : "bg-muted-foreground/50")
                 )}
                 style={{ height: `${height * 100}%` }}
-              >
-                {/* Progress indicator dot */}
-                {isCurrentBar && (
-                  <div className={cn(
-                    "absolute -top-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full",
-                    isFromMe ? "bg-primary-foreground" : "bg-sky-500"
-                  )} />
-                )}
-              </div>
+              />
             )
           })}
+          {/* Progress indicator dot - positioned at center of waveform */}
+          {(playing || currentTime > 0) && (
+            <div 
+              className={cn(
+                "absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full z-10 pointer-events-none",
+                isFromMe ? "bg-primary-foreground" : "bg-sky-500"
+              )}
+              style={{ left: `${progress}%`, transform: `translateX(-50%) translateY(-50%)` }}
+            />
+          )}
         </div>
 
         {/* Avatar with mic overlay */}

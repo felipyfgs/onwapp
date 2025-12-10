@@ -37,6 +37,7 @@ import {
   fileToBase64,
 } from "@/lib/api/chats"
 import { useChatMessages, useAddMessage, useUpdateMessageStatus } from "@/hooks/use-chat-messages"
+import { useAvatar } from "@/hooks/use-avatar"
 import { ChatMessageBubble } from "./chat-message-bubble"
 import {
   getDisplayName,
@@ -66,6 +67,9 @@ export const ChatView = forwardRef<ChatViewRef, ChatViewProps>(function ChatView
   const { messages } = useChatMessages(sessionId, chat.jid)
   const addMessageToCache = useAddMessage()
   const updateStatusInCache = useUpdateMessageStatus()
+  
+  // Fetch chat avatar (cached by TanStack Query)
+  const { data: chatAvatar } = useAvatar(sessionId, chat.jid)
 
   // Local UI state only
   const [inputValue, setInputValue] = useState("")
@@ -337,7 +341,7 @@ export const ChatView = forwardRef<ChatViewRef, ChatViewProps>(function ChatView
         )}
 
         <Avatar className="h-10 w-10 shrink-0">
-          <AvatarImage src={chat.profilePicture} alt={getDisplayName(chat)} />
+          <AvatarImage src={chatAvatar || chat.profilePicture} alt={getDisplayName(chat)} />
           <AvatarFallback className="bg-muted text-muted-foreground">
             {chat.isGroup ? <Users className="h-5 w-5" /> : getInitials(chat)}
           </AvatarFallback>
@@ -400,7 +404,7 @@ export const ChatView = forwardRef<ChatViewRef, ChatViewProps>(function ChatView
                         sessionId={sessionId}
                         isGroup={chat.isGroup}
                         showSender={showSender}
-                        chatAvatar={chat.profilePicture}
+                        chatAvatar={chatAvatar || chat.profilePicture}
                       />
                     )
                   })}
