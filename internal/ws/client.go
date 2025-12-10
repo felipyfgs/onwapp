@@ -1,19 +1,20 @@
 package ws
 
 import (
-	"context"
+	"encoding/json"
 	"time"
 
-	"github.com/coder/websocket"
-	"github.com/coder/websocket/wsjson"
+	"github.com/gorilla/websocket"
 
 	"onwapp/internal/logger"
 )
 
 const (
-	writeTimeout = 10 * time.Second
-	pingInterval = 30 * time.Second
-	sendBuffer   = 64
+	writeWait      = 10 * time.Second
+	pongWait       = 60 * time.Second
+	pingPeriod     = (pongWait * 9) / 10
+	maxMessageSize = 512 * 1024
+	sendBuffer     = 64
 )
 
 // Client represents a connected WebSocket client
@@ -22,7 +23,6 @@ type Client struct {
 	conn      *websocket.Conn
 	sessionID string
 	send      chan Message
-	done      chan struct{}
 }
 
 // newClient creates a new WebSocket client
@@ -32,29 +32,37 @@ func newClient(hub *Hub, conn *websocket.Conn, sessionID string) *Client {
 		conn:      conn,
 		sessionID: sessionID,
 		send:      make(chan Message, sendBuffer),
-		done:      make(chan struct{}),
 	}
 }
 
 // writePump pumps messages from the hub to the WebSocket connection
 func (c *Client) writePump() {
-	ticker := time.NewTicker(pingInterval)
+	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
-		c.conn.Close(websocket.StatusNormalClosure, "")
+		c.conn.Close()
 		c.hub.unregister <- c
 	}()
 
 	for {
 		select {
 		case message, ok := <-c.send:
+			_ = c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
+				_ = c.conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
-			ctx, cancel := context.WithTimeout(context.Background(), writeTimeout)
-			err := wsjson.Write(ctx, c.conn, message)
-			cancel()
+
+			data, err := json.Marshal(message)
 			if err != nil {
+				logger.Session().Debug().
+					Err(err).
+					Str("sessionId", c.sessionID).
+					Msg("Failed to marshal WebSocket message")
+				continue
+			}
+
+			if err := c.conn.WriteMessage(websocket.TextMessage, data); err != nil {
 				logger.Session().Debug().
 					Err(err).
 					Str("sessionId", c.sessionID).
@@ -63,42 +71,37 @@ func (c *Client) writePump() {
 			}
 
 		case <-ticker.C:
-			ctx, cancel := context.WithTimeout(context.Background(), writeTimeout)
-			err := c.conn.Ping(ctx)
-			cancel()
-			if err != nil {
+			_ = c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}
-
-		case <-c.done:
-			return
 		}
 	}
 }
 
 // readPump pumps messages from the WebSocket connection
 func (c *Client) readPump() {
-	defer close(c.done)
+	defer func() {
+		c.hub.unregister <- c
+		c.conn.Close()
+	}()
+
+	c.conn.SetReadLimit(maxMessageSize)
+	_ = c.conn.SetReadDeadline(time.Now().Add(pongWait))
+	c.conn.SetPongHandler(func(string) error {
+		return c.conn.SetReadDeadline(time.Now().Add(pongWait))
+	})
 
 	for {
-		_, _, err := c.conn.Read(context.Background())
+		_, _, err := c.conn.ReadMessage()
 		if err != nil {
-			if websocket.CloseStatus(err) != websocket.StatusNormalClosure {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				logger.Session().Debug().
 					Err(err).
 					Str("sessionId", c.sessionID).
 					Msg("WebSocket read error")
 			}
-			return
+			break
 		}
-	}
-}
-
-// Close closes the client connection
-func (c *Client) Close() {
-	select {
-	case <-c.done:
-	default:
-		close(c.done)
 	}
 }

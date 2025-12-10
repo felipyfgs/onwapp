@@ -21,6 +21,7 @@ import (
 	"onwapp/internal/service"
 	"onwapp/internal/service/wpp"
 	"onwapp/internal/version"
+	"onwapp/internal/ws"
 
 	_ "onwapp/docs"
 )
@@ -226,6 +227,15 @@ func main() {
 	// Register Chatwoot event handler
 	sessionService.AddEventHandler(chatwootEventHandler.HandleEvent)
 
+	// Initialize WebSocket server
+	wsHub := ws.NewHub()
+	go wsHub.Run()
+	logger.Core().Info().Msg("WebSocket server started")
+
+	// Register WebSocket event handler for real-time updates
+	wsEventHandler := ws.NewEventHandler(wsHub)
+	sessionService.AddEventHandler(wsEventHandler.HandleEvent)
+
 	// Load existing sessions from database
 	if err := sessionService.LoadFromDatabase(ctx); err != nil {
 		logger.Session().Warn().Err(err).Msg("Failed to load sessions from database")
@@ -269,12 +279,16 @@ func main() {
 		return session.Session, true
 	}
 
+	// Create WebSocket handler (hub already started above)
+	wsHandler := ws.NewHandler(wsHub)
+
 	r := router.SetupWithConfig(&router.Config{
 		Handlers:       handlers,
 		GlobalAPIKey:   cfg.GlobalAPIKey,
 		SessionLookup:  sessionLookup,
 		Database:       database,
 		AllowedOrigins: []string{"*"},
+		WebSocket:      wsHandler,
 	})
 
 	// Register Chatwoot routes

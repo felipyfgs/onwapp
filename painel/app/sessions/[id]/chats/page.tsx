@@ -11,10 +11,10 @@ import {
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { MessageSquare } from "lucide-react"
+import { MessageSquare, Wifi, WifiOff } from "lucide-react"
 import { ChatSidebar, ChatView } from "@/components/chats"
 import { Chat, getChats } from "@/lib/api/chats"
-import { useAutoRefresh } from "@/hooks/use-auto-refresh"
+import { useWebSocket, WebSocketMessage } from "@/hooks/use-websocket"
 
 interface ChatsPageProps {
   params: Promise<{ id: string }>
@@ -26,6 +26,7 @@ export default function ChatsPage({ params }: ChatsPageProps) {
   const [chats, setChats] = useState<Chat[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null)
+  const [newMessageChatId, setNewMessageChatId] = useState<string | null>(null)
 
   const fetchChats = useCallback(async () => {
     try {
@@ -38,16 +39,27 @@ export default function ChatsPage({ params }: ChatsPageProps) {
     }
   }, [id])
 
+  const handleWebSocketMessage = useCallback((message: WebSocketMessage) => {
+    if (message.event === "message.received" || message.event === "message.sent") {
+      // Refresh chat list to update last message and order
+      fetchChats()
+      // Highlight the chat that received a new message
+      const data = message.data as { chatId?: string }
+      if (data?.chatId) {
+        setNewMessageChatId(data.chatId)
+        setTimeout(() => setNewMessageChatId(null), 2000)
+      }
+    }
+  }, [fetchChats])
+
+  const { isConnected } = useWebSocket({
+    sessionId: id,
+    onMessage: handleWebSocketMessage,
+  })
+
   useEffect(() => {
     fetchChats()
   }, [fetchChats])
-
-  // Auto-refresh chats every 10 seconds
-  useAutoRefresh({
-    enabled: !loading,
-    interval: 10000,
-    onRefresh: fetchChats,
-  })
 
   return (
     <div className="flex flex-col h-[calc(100vh-var(--header-height,0px))]">
@@ -72,6 +84,13 @@ export default function ChatsPage({ params }: ChatsPageProps) {
             </BreadcrumbList>
           </Breadcrumb>
         </div>
+        <div className="ml-auto px-4 flex items-center gap-2">
+          {isConnected ? (
+            <Wifi className="h-4 w-4 text-green-500" />
+          ) : (
+            <WifiOff className="h-4 w-4 text-muted-foreground" />
+          )}
+        </div>
       </header>
 
       {/* Main Content - Fixed height container */}
@@ -85,6 +104,7 @@ export default function ChatsPage({ params }: ChatsPageProps) {
               selectedChat={selectedChat}
               onChatSelect={setSelectedChat}
               loading={loading}
+              highlightChatId={newMessageChatId}
             />
           </div>
 
@@ -114,6 +134,7 @@ export default function ChatsPage({ params }: ChatsPageProps) {
               selectedChat={selectedChat}
               onChatSelect={setSelectedChat}
               loading={loading}
+              highlightChatId={newMessageChatId}
             />
           )}
         </div>

@@ -1,12 +1,20 @@
 package middleware
 
 import (
+	"strings"
+
 	"github.com/gin-gonic/gin"
 )
 
 // SecurityHeaders adds essential security headers to all responses
 func SecurityHeaders() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Skip for WebSocket connections
+		if strings.HasSuffix(c.Request.URL.Path, "/ws") {
+			c.Next()
+			return
+		}
+
 		// Prevent MIME type sniffing
 		c.Header("X-Content-Type-Options", "nosniff")
 

@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -56,6 +57,37 @@ func Auth(globalKey string, sessionLookup SessionKeyLookup) gin.HandlerFunc {
 	}
 }
 
+// AuthCheck validates the authorization token and returns true if valid
+// Used for WebSocket authentication where middleware pattern doesn't apply
+func AuthCheck(c *gin.Context, globalKey string, sessionLookup SessionKeyLookup) bool {
+	if globalKey == "" && sessionLookup == nil {
+		return true
+	}
+
+	token := c.GetHeader("Authorization")
+	if token == "" {
+		token = c.Query("auth")
+	}
+	if token == "" {
+		return false
+	}
+
+	if globalKey != "" && token == globalKey {
+		c.Set("auth_type", "global")
+		return true
+	}
+
+	if sessionLookup != nil {
+		if sessionName, found := sessionLookup(c.Request.Context(), token); found {
+			c.Set("auth_type", "session")
+			c.Set("auth_session", sessionName)
+			return true
+		}
+	}
+
+	return false
+}
+
 // SessionAuth creates a middleware that validates session access
 // Must be used after Auth middleware on session-specific routes
 func SessionAuth() gin.HandlerFunc {
@@ -92,6 +124,12 @@ func SessionAuth() gin.HandlerFunc {
 
 func CORS(allowedOrigins []string) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Skip CORS for WebSocket connections (they handle their own upgrade)
+		if strings.HasSuffix(c.Request.URL.Path, "/ws") {
+			c.Next()
+			return
+		}
+
 		origin := c.Request.Header.Get("Origin")
 
 		allowed := false

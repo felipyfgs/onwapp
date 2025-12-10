@@ -24,6 +24,7 @@ interface ChatSidebarProps {
   selectedChat: Chat | null
   onChatSelect: (chat: Chat) => void
   loading?: boolean
+  highlightChatId?: string | null
 }
 
 type FilterType = "all" | "unread" | "groups"
@@ -94,15 +95,17 @@ interface ChatListItemProps {
   chat: Chat
   isSelected: boolean
   onSelect: () => void
+  highlight?: boolean
 }
 
-function ChatListItem({ chat, isSelected, onSelect }: ChatListItemProps) {
+function ChatListItem({ chat, isSelected, onSelect, highlight }: ChatListItemProps) {
   return (
     <button
       onClick={onSelect}
       className={cn(
         "w-full flex items-center gap-3 px-4 h-[72px] hover:bg-accent transition-colors",
-        isSelected && "bg-accent"
+        isSelected && "bg-accent",
+        highlight && "bg-primary/10 animate-pulse"
       )}
     >
       <Avatar className="h-12 w-12 shrink-0">
@@ -149,7 +152,7 @@ function ChatListItem({ chat, isSelected, onSelect }: ChatListItemProps) {
   )
 }
 
-export function ChatSidebar({ chats, selectedChat, onChatSelect, loading }: ChatSidebarProps) {
+export function ChatSidebar({ chats, selectedChat, onChatSelect, loading, highlightChatId }: ChatSidebarProps) {
   const [search, setSearch] = useState("")
   const [filter, setFilter] = useState<FilterType>("all")
   const parentRef = useRef<HTMLDivElement>(null)
@@ -281,6 +284,7 @@ export function ChatSidebar({ chats, selectedChat, onChatSelect, loading }: Chat
                     chat={chat}
                     isSelected={selectedChat?.jid === chat.jid}
                     onSelect={() => onChatSelect(chat)}
+                    highlight={highlightChatId === chat.jid}
                   />
                 </div>
               )
