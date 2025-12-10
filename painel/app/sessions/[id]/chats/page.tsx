@@ -15,7 +15,6 @@ import { MessageSquare, Wifi, WifiOff } from "lucide-react"
 import { ChatSidebar, ChatView, ChatViewRef } from "@/components/chats"
 import { Chat, ChatMessage, getChats } from "@/lib/api/chats"
 import { useWebSocket, WebSocketMessage } from "@/hooks/use-websocket"
-import { useSessionContext } from "@/contexts/session-context"
 
 interface ChatsPageProps {
   params: Promise<{ id: string }>
@@ -46,7 +45,6 @@ interface WSStatusData {
 
 export default function ChatsPage({ params }: ChatsPageProps) {
   const { id } = use(params)
-  const { sessionName } = useSessionContext()
 
   const [chats, setChats] = useState<Chat[]>([])
   const [loading, setLoading] = useState(true)
@@ -55,16 +53,15 @@ export default function ChatsPage({ params }: ChatsPageProps) {
   const chatViewRef = useRef<ChatViewRef>(null)
 
   const fetchChats = useCallback(async () => {
-    if (!sessionName) return
     try {
-      const data = await getChats(sessionName)
+      const data = await getChats(id)
       setChats(data || [])
     } catch (error) {
       console.error("Failed to fetch chats:", error)
     } finally {
       setLoading(false)
     }
-  }, [sessionName])
+  }, [id])
 
   // Update chat list when new message arrives
   const updateChatWithMessage = useCallback((msgData: WSMessageData) => {
@@ -149,15 +146,13 @@ export default function ChatsPage({ params }: ChatsPageProps) {
   }, [updateChatWithMessage])
 
   const { isConnected } = useWebSocket({
-    sessionId: sessionName || "",
+    sessionId: id,
     onMessage: handleWebSocketMessage,
   })
 
   useEffect(() => {
-    if (sessionName) {
-      fetchChats()
-    }
-  }, [fetchChats, sessionName])
+    fetchChats()
+  }, [fetchChats])
 
   return (
     <div className="flex flex-col h-[calc(100vh-var(--header-height,0px))]">
@@ -173,7 +168,7 @@ export default function ChatsPage({ params }: ChatsPageProps) {
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href={`/sessions/${id}`}>{sessionName || id}</BreadcrumbLink>
+                <BreadcrumbLink href={`/sessions/${id}`}>{id}</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
@@ -208,8 +203,8 @@ export default function ChatsPage({ params }: ChatsPageProps) {
 
           {/* Chat View - Independent scroll */}
           <div className="flex-1 flex flex-col min-h-0">
-            {selectedChat && sessionName ? (
-              <ChatView ref={chatViewRef} chat={selectedChat} sessionId={sessionName} />
+            {selectedChat ? (
+              <ChatView ref={chatViewRef} chat={selectedChat} sessionId={id} />
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center bg-background">
                 <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
@@ -224,8 +219,8 @@ export default function ChatsPage({ params }: ChatsPageProps) {
 
         {/* Mobile Layout */}
         <div className="flex flex-1 md:hidden min-h-0">
-          {selectedChat && sessionName ? (
-            <ChatView ref={chatViewRef} chat={selectedChat} sessionId={sessionName} onBack={() => setSelectedChat(null)} />
+          {selectedChat ? (
+            <ChatView ref={chatViewRef} chat={selectedChat} sessionId={id} onBack={() => setSelectedChat(null)} />
           ) : (
             <ChatSidebar
               chats={chats}

@@ -38,7 +38,6 @@ import {
   StatCardSkeleton,
   IntegrationStatCard,
 } from "@/components/session"
-import { useSessionContext } from "@/contexts/session-context"
 
 interface SessionDetailPageProps {
   params: Promise<{ id: string }>
@@ -46,7 +45,6 @@ interface SessionDetailPageProps {
 
 export default function SessionDetailPage({ params }: SessionDetailPageProps) {
   const { id } = use(params)
-  const { sessionName } = useSessionContext()
 
   const [session, setSession] = useState<ApiSession | null>(null)
   const [loading, setLoading] = useState(true)
@@ -54,26 +52,24 @@ export default function SessionDetailPage({ params }: SessionDetailPageProps) {
   const [statsLoading, setStatsLoading] = useState(true)
 
   const fetchSession = useCallback(async () => {
-    if (!sessionName) return
     try {
-      const data = await getSessionStatus(sessionName)
+      const data = await getSessionStatus(id)
       setSession(data)
     } catch (error) {
       console.error("Failed to fetch session:", error)
     } finally {
       setLoading(false)
     }
-  }, [sessionName])
+  }, [id])
 
   const fetchStats = useCallback(async () => {
-    if (!sessionName) return
     setStatsLoading(true)
     try {
       const [chats, contacts, groups, webhook] = await Promise.all([
-        getChats(sessionName).catch(() => []),
-        getContacts(sessionName).catch(() => []),
-        getGroups(sessionName).catch(() => []),
-        getWebhook(sessionName).catch(() => null),
+        getChats(id).catch(() => []),
+        getContacts(id).catch(() => []),
+        getGroups(id).catch(() => []),
+        getWebhook(id).catch(() => null),
       ])
       setStats({
         chats: chats.length,
@@ -86,14 +82,12 @@ export default function SessionDetailPage({ params }: SessionDetailPageProps) {
     } finally {
       setStatsLoading(false)
     }
-  }, [sessionName])
+  }, [id])
 
   useEffect(() => {
-    if (sessionName) {
-      fetchSession()
-      fetchStats()
-    }
-  }, [fetchSession, fetchStats, sessionName])
+    fetchSession()
+    fetchStats()
+  }, [fetchSession, fetchStats])
 
   const handleRefresh = () => {
     fetchSession()
@@ -124,7 +118,7 @@ export default function SessionDetailPage({ params }: SessionDetailPageProps) {
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
-                <BreadcrumbPage>{sessionName || id}</BreadcrumbPage>
+                <BreadcrumbPage>{id}</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
