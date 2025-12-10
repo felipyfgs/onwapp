@@ -1,8 +1,12 @@
 "use client"
 
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react"
-import { Chat, ChatMessage, getChats } from "@/lib/api/chats"
+import { createContext, useContext, useState, useCallback, ReactNode } from "react"
+import { useQueryClient } from "@tanstack/react-query"
+import { Chat, ChatMessage } from "@/lib/api/chats"
 import { useWebSocket, WebSocketMessage } from "@/hooks/use-websocket"
+import { useChats, chatsQueryKey } from "@/hooks/use-chats"
+import { useAddMessage } from "@/hooks/use-chat-messages"
+import { db } from "@/lib/db/chats-db"
 
 interface WSMessageData {
   msgId: string
@@ -58,32 +62,27 @@ interface ChatsProviderProps {
 }
 
 export function ChatsProvider({ sessionId, children }: ChatsProviderProps) {
-  const [chats, setChats] = useState<Chat[]>([])
-  const [loading, setLoading] = useState(true)
+  const queryClient = useQueryClient()
+  const addMessage = useAddMessage()
+  
+  const { chats, isLoading, refetch } = useChats(sessionId)
   const [highlightChatId, setHighlightChatId] = useState<string | null>(null)
   const [newMessage, setNewMessage] = useState<ChatMessage | null>(null)
   const [statusUpdate, setStatusUpdate] = useState<StatusUpdate | null>(null)
 
-  const fetchChats = useCallback(async () => {
-    try {
-      const data = await getChats(sessionId)
-      setChats(data || [])
-    } catch (error) {
-      console.error("Failed to fetch chats:", error)
-    } finally {
-      setLoading(false)
-    }
-  }, [sessionId])
-
   const updateChatWithMessage = useCallback((msgData: WSMessageData) => {
-    setChats((prevChats) => {
-      const chatIndex = prevChats.findIndex((c) => c.jid === msgData.chatJid)
+    // Update TanStack Query cache optimistically
+    queryClient.setQueryData<Chat[]>(chatsQueryKey(sessionId), (oldChats) => {
+      if (!oldChats) return oldChats
+
+      const chatIndex = oldChats.findIndex((c) => c.jid === msgData.chatJid)
       if (chatIndex === -1) {
-        fetchChats()
-        return prevChats
+        // New chat - refetch
+        refetch()
+        return oldChats
       }
 
-      const updatedChats = [...prevChats]
+      const updatedChats = [...oldChats]
       const chat = { ...updatedChats[chatIndex] }
       chat.lastMessage = {
         content: msgData.content,
@@ -97,12 +96,16 @@ export function ChatsProvider({ sessionId, children }: ChatsProviderProps) {
       }
       chat.conversationTimestamp = msgData.timestamp
 
+      // Move to top
       updatedChats.splice(chatIndex, 1)
       updatedChats.unshift(chat)
 
+      // Also update IndexedDB
+      db.saveChats(sessionId, updatedChats)
+
       return updatedChats
     })
-  }, [fetchChats])
+  }, [queryClient, sessionId, refetch])
 
   const handleWebSocketMessage = useCallback((message: WebSocketMessage) => {
     const msgData = message.data as WSMessageData
@@ -128,6 +131,9 @@ export function ChatsProvider({ sessionId, children }: ChatsProviderProps) {
           }
           setNewMessage(chatMessage)
           updateChatWithMessage(msgData)
+          
+          // Add message to cache
+          addMessage(sessionId, msgData.chatJid, chatMessage)
         }
 
         if (msgData?.chatJid) {
@@ -145,28 +151,28 @@ export function ChatsProvider({ sessionId, children }: ChatsProviderProps) {
         break
       }
     }
-  }, [updateChatWithMessage])
+  }, [updateChatWithMessage, addMessage, sessionId])
 
   const { isConnected } = useWebSocket({
     sessionId,
     onMessage: handleWebSocketMessage,
   })
 
-  useEffect(() => {
-    fetchChats()
-  }, [fetchChats])
+  const refreshChats = useCallback(async () => {
+    await refetch()
+  }, [refetch])
 
   return (
     <ChatsContext.Provider
       value={{
         sessionId,
         chats,
-        loading,
+        loading: isLoading,
         isConnected,
         highlightChatId,
         newMessage,
         statusUpdate,
-        refreshChats: fetchChats,
+        refreshChats,
       }}
     >
       {children}
