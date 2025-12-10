@@ -400,6 +400,7 @@ export const ChatView = forwardRef<ChatViewRef, ChatViewProps>(function ChatView
                         sessionId={sessionId}
                         isGroup={chat.isGroup}
                         showSender={showSender}
+                        chatAvatar={chat.profilePicture}
                       />
                     )
                   })}

@@ -7,12 +7,14 @@ import { cn } from "@/lib/utils"
 import { formatTime, isAudioMessage, isDocumentMessage, isImageMessage, isVideoMessage, isStickerMessage } from "@/lib/utils/chat-helpers"
 import { ImageMessage, VideoMessage, AudioMessage, DocumentMessage, StickerMessage } from "./chat-media"
 import { MediaViewer } from "./media-viewer"
+import { useAvatar } from "@/hooks/use-avatar"
 
 interface ChatMessageBubbleProps {
   message: ChatMessage
   sessionId: string
   isGroup: boolean
   showSender: boolean
+  chatAvatar?: string // Avatar do chat (usado em conversas 1:1)
 }
 
 function MessageStatus({ status, fromMe }: { status?: string; fromMe: boolean }) {
@@ -34,7 +36,8 @@ export const ChatMessageBubble = memo(function ChatMessageBubble({
   message,
   sessionId,
   isGroup, 
-  showSender 
+  showSender,
+  chatAvatar
 }: ChatMessageBubbleProps) {
   const [viewerOpen, setViewerOpen] = useState(false)
   const [viewerType, setViewerType] = useState<"image" | "video">("image")
@@ -49,6 +52,15 @@ export const ChatMessageBubble = memo(function ChatMessageBubble({
   const isMedia = isImage || isVideo || isAudio || isDocument || isSticker
 
   const mediaUrl = isMedia ? getMediaUrl(sessionId, message.msgId) : ""
+
+  // Get sender avatar for groups (fetches from API and caches)
+  const { data: senderAvatar } = useAvatar(
+    sessionId,
+    isGroup && !isFromMe ? message.senderJid : undefined
+  )
+
+  // Use sender avatar for groups, chat avatar for 1:1
+  const messageAvatar = isGroup ? senderAvatar : chatAvatar
 
   const handleViewMedia = useCallback((type: "image" | "video") => {
     setViewerType(type)
@@ -115,7 +127,11 @@ export const ChatMessageBubble = memo(function ChatMessageBubble({
             {isDeleted ? (
               <p className="text-sm italic">Mensagem apagada</p>
             ) : isAudio ? (
-              <AudioMessage src={mediaUrl} isFromMe={isFromMe} />
+              <AudioMessage 
+                src={mediaUrl} 
+                isFromMe={isFromMe}
+                avatar={isFromMe ? undefined : messageAvatar || undefined}
+              />
             ) : isDocument ? (
               <DocumentMessage 
                 src={mediaUrl} 
