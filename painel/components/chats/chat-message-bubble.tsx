@@ -1,13 +1,16 @@
 "use client"
 
-import { memo } from "react"
-import { Check, CheckCheck, FileText, Play, Download, Clock } from "lucide-react"
-import { ChatMessage } from "@/lib/api/chats"
+import { memo, useState, useCallback } from "react"
+import { Check, CheckCheck, Clock } from "lucide-react"
+import { ChatMessage, getMediaUrl } from "@/lib/api/chats"
 import { cn } from "@/lib/utils"
-import { formatTime, isAudioMessage, isDocumentMessage, isImageMessage, isVideoMessage } from "@/lib/utils/chat-helpers"
+import { formatTime, isAudioMessage, isDocumentMessage, isImageMessage, isVideoMessage, isStickerMessage } from "@/lib/utils/chat-helpers"
+import { ImageMessage, VideoMessage, AudioMessage, DocumentMessage, StickerMessage } from "./chat-media"
+import { MediaViewer } from "./media-viewer"
 
 interface ChatMessageBubbleProps {
   message: ChatMessage
+  sessionId: string
   isGroup: boolean
   showSender: boolean
 }
@@ -27,104 +30,143 @@ function MessageStatus({ status, fromMe }: { status?: string; fromMe: boolean })
   return <Clock className="h-3 w-3 text-muted-foreground" />
 }
 
-function AudioMessage() {
-  return (
-    <div className="flex items-center gap-3 min-w-[200px]">
-      <button className="h-9 w-9 rounded-full bg-background/20 flex items-center justify-center shrink-0 hover:bg-background/30 transition-colors">
-        <Play className="h-4 w-4 ml-0.5" />
-      </button>
-      <div className="flex-1">
-        <div className="h-1 bg-current/30 rounded-full" />
-        <span className="text-[10px] opacity-70 mt-1 block">0:00</span>
-      </div>
-    </div>
-  )
-}
-
-function DocumentMessage({ content }: { content?: string }) {
-  return (
-    <div className="flex items-center gap-3 p-2 bg-background/10 rounded-lg min-w-[200px]">
-      <div className="h-10 w-10 rounded bg-destructive/20 flex items-center justify-center shrink-0">
-        <FileText className="h-5 w-5 text-destructive" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{content || "Documento"}</p>
-        <p className="text-[10px] opacity-70">PDF</p>
-      </div>
-      <button className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 hover:bg-primary/30 transition-colors">
-        <Download className="h-4 w-4 text-primary" />
-      </button>
-    </div>
-  )
-}
-
-function MediaPlaceholder({ type }: { type: string }) {
-  return (
-    <div className="w-[240px] aspect-video bg-background/10 rounded-lg flex items-center justify-center">
-      <div className="text-center">
-        <Play className="h-10 w-10 mx-auto opacity-50" />
-        <span className="text-xs opacity-70 mt-1 block capitalize">{type}</span>
-      </div>
-    </div>
-  )
-}
-
 export const ChatMessageBubble = memo(function ChatMessageBubble({ 
-  message, 
+  message,
+  sessionId,
   isGroup, 
   showSender 
 }: ChatMessageBubbleProps) {
+  const [viewerOpen, setViewerOpen] = useState(false)
+  const [viewerType, setViewerType] = useState<"image" | "video">("image")
+
   const isFromMe = message.fromMe
   const isDeleted = message.deleted
   const isAudio = isAudioMessage(message)
   const isDocument = isDocumentMessage(message)
   const isImage = isImageMessage(message)
   const isVideo = isVideoMessage(message)
+  const isSticker = isStickerMessage(message)
+  const isMedia = isImage || isVideo || isAudio || isDocument || isSticker
+
+  const mediaUrl = isMedia ? getMediaUrl(sessionId, message.msgId) : ""
+
+  const handleViewMedia = useCallback((type: "image" | "video") => {
+    setViewerType(type)
+    setViewerOpen(true)
+  }, [])
+
+  // Stickers have transparent background
+  if (isSticker && !isDeleted) {
+    return (
+      <>
+        <div className={cn("flex", isFromMe ? "justify-end" : "justify-start")}>
+          <div className="relative">
+            <StickerMessage 
+              src={mediaUrl} 
+              onView={() => handleViewMedia("image")} 
+            />
+            <div className={cn(
+              "flex items-center justify-end gap-1 mt-1",
+              isFromMe ? "text-muted-foreground" : "text-muted-foreground"
+            )}>
+              <span className="text-[11px]">
+                {formatTime(message.timestamp)}
+              </span>
+              <MessageStatus status={message.status} fromMe={isFromMe} />
+            </div>
+          </div>
+        </div>
+        <MediaViewer
+          open={viewerOpen}
+          onOpenChange={setViewerOpen}
+          src={mediaUrl}
+          type="image"
+        />
+      </>
+    )
+  }
 
   return (
-    <div className={cn("flex", isFromMe ? "justify-end" : "justify-start")}>
-      <div
-        className={cn(
-          "relative max-w-[85%] sm:max-w-[75%] px-3 py-2 shadow-sm",
-          isFromMe
-            ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm"
-            : "bg-card text-card-foreground rounded-2xl rounded-tl-sm",
-          isDeleted && "opacity-60 italic"
-        )}
-      >
-        {/* Sender name for groups */}
-        {isGroup && !isFromMe && showSender && message.pushName && (
-          <p className="text-xs font-semibold text-primary mb-0.5">{message.pushName}</p>
-        )}
-
-        {/* Message content */}
-        <div className="leading-relaxed">
-          {isDeleted ? (
-            <p className="text-sm italic">Mensagem apagada</p>
-          ) : isAudio ? (
-            <AudioMessage />
-          ) : isDocument ? (
-            <DocumentMessage content={message.content} />
-          ) : isImage || isVideo ? (
-            <MediaPlaceholder type={isImage ? "imagem" : "vídeo"} />
-          ) : (
-            <p className="text-sm whitespace-pre-wrap break-words">
-              {message.content || `[${message.mediaType || message.type}]`}
+    <>
+      <div className={cn("flex", isFromMe ? "justify-end" : "justify-start")}>
+        <div
+          className={cn(
+            "relative max-w-[85%] sm:max-w-[75%] px-3 py-2 shadow-sm",
+            isFromMe
+              ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm"
+              : "bg-card text-card-foreground rounded-2xl rounded-tl-sm",
+            isDeleted && "opacity-60 italic",
+            // Remove padding for media messages
+            (isImage || isVideo) && !isDeleted && "p-1 pb-2"
+          )}
+        >
+          {/* Sender name for groups */}
+          {isGroup && !isFromMe && showSender && message.pushName && (
+            <p className={cn(
+              "text-xs font-semibold text-primary mb-0.5",
+              (isImage || isVideo) && "px-2 pt-1"
+            )}>
+              {message.pushName}
             </p>
           )}
-        </div>
 
-        {/* Timestamp and status */}
-        <div className="flex items-center justify-end gap-1 -mb-0.5 mt-0.5">
-          <span className={cn(
-            "text-[11px]",
-            isFromMe ? "text-primary-foreground/70" : "text-muted-foreground"
+          {/* Message content */}
+          <div className="leading-relaxed">
+            {isDeleted ? (
+              <p className="text-sm italic">Mensagem apagada</p>
+            ) : isAudio ? (
+              <AudioMessage src={mediaUrl} isFromMe={isFromMe} />
+            ) : isDocument ? (
+              <DocumentMessage 
+                src={mediaUrl} 
+                filename={message.content} 
+                isFromMe={isFromMe} 
+              />
+            ) : isImage ? (
+              <ImageMessage 
+                src={mediaUrl} 
+                caption={message.content}
+                onView={() => handleViewMedia("image")} 
+              />
+            ) : isVideo ? (
+              <VideoMessage 
+                src={mediaUrl} 
+                caption={message.content}
+                onView={() => handleViewMedia("video")} 
+              />
+            ) : (
+              <p className="text-sm whitespace-pre-wrap break-words">
+                {message.content || `[${message.mediaType || message.type}]`}
+              </p>
+            )}
+          </div>
+
+          {/* Timestamp and status */}
+          <div className={cn(
+            "flex items-center justify-end gap-1 -mb-0.5 mt-0.5",
+            (isImage || isVideo) && !isDeleted && "px-2"
           )}>
-            {formatTime(message.timestamp)}
-          </span>
-          <MessageStatus status={message.status} fromMe={isFromMe} />
+            <span className={cn(
+              "text-[11px]",
+              isFromMe ? "text-primary-foreground/70" : "text-muted-foreground"
+            )}>
+              {formatTime(message.timestamp)}
+            </span>
+            <MessageStatus status={message.status} fromMe={isFromMe} />
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Media Viewer Dialog */}
+      {(isImage || isVideo) && (
+        <MediaViewer
+          open={viewerOpen}
+          onOpenChange={setViewerOpen}
+          src={mediaUrl}
+          type={viewerType}
+          caption={message.content}
+        />
+      )}
+    </>
   )
 })

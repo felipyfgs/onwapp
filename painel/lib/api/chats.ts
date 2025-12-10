@@ -1,4 +1,5 @@
-import { api } from "./client"
+import { api, API_URL } from "./client"
+import { getStoredApiKey } from "@/lib/auth"
 
 export interface LastMessageInfo {
   content?: string
@@ -170,4 +171,10 @@ export function fileToBase64(file: File): Promise<string> {
     reader.onerror = reject
     reader.readAsDataURL(file)
   })
+}
+
+// Get media stream URL for a message
+export function getMediaUrl(sessionId: string, messageId: string): string {
+  const apiKey = getStoredApiKey()
+  return `${API_URL}/${sessionId}/media/stream?messageId=${messageId}${apiKey ? `&auth=${apiKey}` : ""}`
 }
