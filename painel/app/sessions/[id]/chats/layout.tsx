@@ -13,6 +13,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Wifi, WifiOff } from "lucide-react"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { ChatSidebar } from "@/components/chats"
 import { ChatsProvider, useChatsContext } from "@/lib/contexts/chats-context"
 import { reconstructJid } from "@/lib/utils/jid"
@@ -61,6 +62,7 @@ function ChatsLayoutContent({ children }: { children: React.ReactNode }) {
           </Breadcrumb>
         </div>
         <div className="ml-auto px-4 flex items-center gap-2">
+          <ThemeToggle />
           {isConnected ? (
             <Wifi className="h-4 w-4 text-green-500" />
           ) : (

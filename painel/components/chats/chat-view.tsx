@@ -217,7 +217,11 @@ export const ChatView = forwardRef<ChatViewRef, ChatViewProps>(function ChatView
       </header>
 
       {/* Messages Area */}
-      <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto p-4 bg-background">
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto bg-background"
+      >
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -227,12 +231,12 @@ export const ChatView = forwardRef<ChatViewRef, ChatViewProps>(function ChatView
             <p className="text-muted-foreground text-sm">Nenhuma mensagem</p>
           </div>
         ) : (
-          <div className="max-w-3xl mx-auto space-y-4">
+          <div className="px-3 py-2 sm:px-4 sm:py-3">
             {messageGroups.map((group) => (
-              <div key={group.date}>
+              <div key={group.date} className="mb-4">
                 {/* Date separator */}
-                <div className="flex justify-center mb-4">
-                  <span className="text-xs bg-muted px-3 py-1 rounded-full text-muted-foreground">
+                <div className="flex justify-center mb-3 sticky top-2 z-10">
+                  <span className="text-[11px] bg-muted px-3 py-1.5 rounded-lg text-muted-foreground shadow-sm">
                     {group.date}
                   </span>
                 </div>
@@ -260,25 +264,33 @@ export const ChatView = forwardRef<ChatViewRef, ChatViewProps>(function ChatView
       </div>
 
       {/* Input Bar */}
-      <footer className="flex items-center gap-2 px-4 py-3 bg-card border-t border-border shrink-0">
-        <Button variant="ghost" size="icon" className="text-muted-foreground shrink-0">
-          <Plus className="h-5 w-5" />
+      <footer className="flex items-center gap-2 px-3 py-2 bg-card border-t border-border shrink-0">
+        <Button variant="ghost" size="icon" className="text-muted-foreground shrink-0 h-10 w-10 hover:text-foreground">
+          <Plus className="h-6 w-6" />
         </Button>
 
-        <div className="flex-1 flex items-center gap-2 bg-input rounded-full px-3 py-2">
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground shrink-0">
+        <div className="flex-1 flex items-center gap-1 bg-input rounded-3xl px-2 py-1.5">
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground shrink-0 hover:text-foreground">
             <Smile className="h-5 w-5" />
           </Button>
           <Input
             placeholder="Digite uma mensagem"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            className="flex-1 border-0 bg-transparent focus-visible:ring-0 h-7 px-0 text-sm"
+            className="flex-1 border-0 bg-transparent focus-visible:ring-0 h-8 px-1 text-sm placeholder:text-muted-foreground"
           />
         </div>
 
-        <Button variant="ghost" size="icon" className="text-muted-foreground shrink-0">
-          {inputValue.trim() ? <Send className="h-5 w-5 text-primary" /> : <Mic className="h-5 w-5" />}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="shrink-0 h-10 w-10 text-muted-foreground hover:text-foreground"
+        >
+          {inputValue.trim() ? (
+            <Send className="h-5 w-5 text-primary" />
+          ) : (
+            <Mic className="h-6 w-6" />
+          )}
         </Button>
       </footer>
     </div>
