@@ -197,181 +197,116 @@ export function SessionActions({ sessionId, isConnected, onAction }: SessionActi
       )}
 
       <Dialog open={dialogOpen} onOpenChange={handleDialogClose}>
-        <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
-          <DialogTitle className="sr-only">Conectar WhatsApp</DialogTitle>
-          
-          {/* Header */}
-          <div className="p-6 pb-4 text-center border-b border-border">
-            <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-primary/10 mb-3">
-              <QrCode className="h-6 w-6 text-primary" />
-            </div>
-            <h2 className="text-lg font-semibold">Conectar WhatsApp</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Vincule seu WhatsApp a esta sessão
-            </p>
+        <DialogContent className="sm:max-w-[420px] p-0 gap-0">
+          <div className="p-4 pb-0">
+            <DialogTitle className="text-base font-semibold">Conectar WhatsApp</DialogTitle>
+            <p className="text-sm text-muted-foreground mt-0.5">Vincule seu WhatsApp a esta sessão</p>
           </div>
-
-          <Tabs defaultValue="qrcode" className="w-full">
-            <TabsList className="w-full h-11 rounded-none bg-muted/50 p-1 mx-0">
-              <TabsTrigger 
-                value="qrcode" 
-                className="flex-1 h-full rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm"
-              >
-                <QrCode className="h-4 w-4 mr-2" />
+          
+          <Tabs defaultValue="qrcode" className="w-full p-4">
+            <TabsList className="w-full h-9 mb-4">
+              <TabsTrigger value="qrcode" className="flex-1 text-xs">
+                <QrCode className="h-3.5 w-3.5 mr-1.5" />
                 QR Code
               </TabsTrigger>
-              <TabsTrigger 
-                value="phone" 
-                className="flex-1 h-full rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm"
-              >
-                <Smartphone className="h-4 w-4 mr-2" />
+              <TabsTrigger value="phone" className="flex-1 text-xs">
+                <Smartphone className="h-3.5 w-3.5 mr-1.5" />
                 Código
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="qrcode" className="m-0 p-6">
-              <div className="flex flex-col items-center">
-                {qrLoading && !qrCode ? (
-                  <div className="flex flex-col items-center justify-center py-12 gap-4">
-                    <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center">
-                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <TabsContent value="qrcode" className="m-0">
+              <div className="rounded-lg border border-border p-4">
+                <div className="flex flex-col items-center">
+                  {qrLoading && !qrCode ? (
+                    <div className="flex flex-col items-center justify-center h-64 gap-3">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      <p className="text-sm text-muted-foreground">Gerando QR Code...</p>
                     </div>
-                    <div className="text-center">
-                      <p className="font-medium">Gerando QR Code</p>
-                      <p className="text-sm text-muted-foreground">Aguarde um momento...</p>
-                    </div>
-                  </div>
-                ) : qrCode ? (
-                  <div className="flex flex-col items-center gap-5">
-                    <div className="p-3 bg-white rounded-2xl shadow-sm">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={qrCode} alt="QR Code" className="w-52 h-52" />
-                    </div>
-                    
-                    <div className="text-center space-y-3">
-                      <div className="space-y-1">
-                        <p className="font-medium">Escaneie o código</p>
+                  ) : qrCode ? (
+                    <div className="flex flex-col items-center gap-4">
+                      <div className="p-3 bg-white rounded-lg">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={qrCode} alt="QR Code" className="w-56 h-56" />
+                      </div>
+                      <div className="text-center">
                         <p className="text-sm text-muted-foreground">
-                          Abra o WhatsApp no celular e escaneie
+                          Escaneie com o WhatsApp do celular
                         </p>
-                      </div>
-                      
-                      {qrPolling && (
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm">
-                          <span className="relative flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                          </span>
-                          Aguardando leitura...
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="w-full pt-4 border-t border-border">
-                      <div className="flex items-start gap-3 text-xs text-muted-foreground">
-                        <div className="flex items-center justify-center h-5 w-5 rounded-full bg-muted text-[10px] font-bold shrink-0">1</div>
-                        <p>Abra o WhatsApp no seu celular</p>
-                      </div>
-                      <div className="flex items-start gap-3 text-xs text-muted-foreground mt-2">
-                        <div className="flex items-center justify-center h-5 w-5 rounded-full bg-muted text-[10px] font-bold shrink-0">2</div>
-                        <p>Toque em Menu ou Configurações e selecione Aparelhos conectados</p>
-                      </div>
-                      <div className="flex items-start gap-3 text-xs text-muted-foreground mt-2">
-                        <div className="flex items-center justify-center h-5 w-5 rounded-full bg-muted text-[10px] font-bold shrink-0">3</div>
-                        <p>Toque em Conectar um aparelho e aponte seu celular para esta tela</p>
+                        {qrPolling && (
+                          <div className="flex items-center justify-center gap-1.5 mt-2 text-xs text-primary">
+                            <span className="relative flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                            </span>
+                            Aguardando leitura...
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                    <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
-                      <QrCode className="h-8 w-8 opacity-50" />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
+                      <QrCode className="h-10 w-10 mb-2 opacity-50" />
+                      <p className="text-sm">Aguarde...</p>
                     </div>
-                    <p className="font-medium">Preparando...</p>
-                    <p className="text-sm">O QR Code será exibido em instantes</p>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </TabsContent>
             
-            <TabsContent value="phone" className="m-0 p-6">
-              {!pairCode ? (
-                <div className="space-y-5">
-                  <div className="text-center">
-                    <p className="text-sm text-muted-foreground">
-                      Digite seu número para receber um código de 8 dígitos
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="phone" className="text-sm font-medium">Número com código do país</Label>
-                    <Input
-                      id="phone"
-                      placeholder="5511999999999"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      disabled={pairLoading}
-                      className="h-12 text-base text-center tracking-wider"
-                    />
-                    <p className="text-xs text-muted-foreground text-center">
-                      Exemplo: 55 11 99999-9999
-                    </p>
-                  </div>
-                  
-                  <Button 
-                    onClick={handlePairPhone} 
-                    disabled={pairLoading || !phone.trim()}
-                    className="w-full h-12"
-                  >
-                    {pairLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Gerando...
-                      </>
-                    ) : (
-                      "Gerar código de pareamento"
-                    )}
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-5">
-                  <div className="text-center">
-                    <p className="text-sm text-muted-foreground">
-                      Digite este código no WhatsApp do seu celular
-                    </p>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 px-6 py-4 bg-muted rounded-2xl">
-                    <code className="text-3xl font-mono font-bold tracking-[0.3em]">{pairCode}</code>
-                    <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0" onClick={handleCopyCode}>
-                      {copied ? <Check className="h-5 w-5 text-primary" /> : <Copy className="h-5 w-5" />}
+            <TabsContent value="phone" className="m-0">
+              <div className="rounded-lg border border-border p-4">
+                {!pairCode ? (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="phone" className="text-sm">Número com DDI</Label>
+                      <Input
+                        id="phone"
+                        placeholder="5511999999999"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        disabled={pairLoading}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Ex: 5511999999999 (Brasil)
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={handlePairPhone} 
+                      disabled={pairLoading || !phone.trim()}
+                      className="w-full"
+                    >
+                      {pairLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Gerar código"
+                      )}
                     </Button>
                   </div>
-
-                  <div className="w-full pt-4 border-t border-border">
-                    <div className="flex items-start gap-3 text-xs text-muted-foreground">
-                      <div className="flex items-center justify-center h-5 w-5 rounded-full bg-muted text-[10px] font-bold shrink-0">1</div>
-                      <p>Abra o WhatsApp no seu celular</p>
+                ) : (
+                  <div className="flex flex-col items-center gap-4">
+                    <p className="text-sm text-muted-foreground text-center">
+                      Digite este código no WhatsApp do celular
+                    </p>
+                    <div className="w-full p-4 bg-muted rounded-lg text-center">
+                      <code className="text-2xl font-mono font-bold tracking-[0.2em]">{pairCode}</code>
                     </div>
-                    <div className="flex items-start gap-3 text-xs text-muted-foreground mt-2">
-                      <div className="flex items-center justify-center h-5 w-5 rounded-full bg-muted text-[10px] font-bold shrink-0">2</div>
-                      <p>Vá em Configurações → Aparelhos conectados → Conectar aparelho</p>
-                    </div>
-                    <div className="flex items-start gap-3 text-xs text-muted-foreground mt-2">
-                      <div className="flex items-center justify-center h-5 w-5 rounded-full bg-muted text-[10px] font-bold shrink-0">3</div>
-                      <p>Toque em &quot;Conectar com número de telefone&quot; e digite o código</p>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={handleCopyCode}>
+                        {copied ? <Check className="h-4 w-4 mr-1.5" /> : <Copy className="h-4 w-4 mr-1.5" />}
+                        {copied ? "Copiado!" : "Copiar"}
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => { setPairCode(null); setPhone("") }}
+                      >
+                        Gerar novo
+                      </Button>
                     </div>
                   </div>
-                  
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => { setPairCode(null); setPhone("") }}
-                  >
-                    Gerar novo código
-                  </Button>
-                </div>
-              )}
+                )}
+              </div>
             </TabsContent>
           </Tabs>
         </DialogContent>
