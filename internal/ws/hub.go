@@ -90,11 +90,20 @@ func (h *Hub) unregisterClient(client *Client) {
 func (h *Hub) broadcastMessage(message Message) {
 	h.mu.RLock()
 	clients := h.clients[message.SessionID]
+	clientCount := len(clients)
 	h.mu.RUnlock()
 
+	logger.Session().Debug().
+		Str("sessionId", message.SessionID).
+		Str("event", message.Event).
+		Int("clientCount", clientCount).
+		Msg("WebSocket sending to clients")
+
+	sentCount := 0
 	for client := range clients {
 		select {
 		case client.send <- message:
+			sentCount++
 		default:
 			h.mu.Lock()
 			close(client.send)
@@ -102,11 +111,24 @@ func (h *Hub) broadcastMessage(message Message) {
 			h.mu.Unlock()
 		}
 	}
+
+	logger.Session().Debug().
+		Str("sessionId", message.SessionID).
+		Str("event", message.Event).
+		Int("sentCount", sentCount).
+		Msg("WebSocket message sent")
 }
 
 // Broadcast sends a message to all clients subscribed to a session
 func (h *Hub) Broadcast(sessionID, event string, data interface{}) {
 	msg := NewMessage(sessionID, event, data)
+
+	logger.Session().Debug().
+		Str("sessionId", sessionID).
+		Str("event", event).
+		Int("clientCount", h.GetClientCount(sessionID)).
+		Msg("WebSocket broadcasting message")
+
 	select {
 	case h.broadcast <- msg:
 	default:

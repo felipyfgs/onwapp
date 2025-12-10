@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback, use } from "react"
+import { useEffect, useState, useCallback, use, useRef } from "react"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -12,54 +12,152 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { MessageSquare, Wifi, WifiOff } from "lucide-react"
-import { ChatSidebar, ChatView } from "@/components/chats"
-import { Chat, getChats } from "@/lib/api/chats"
+import { ChatSidebar, ChatView, ChatViewRef } from "@/components/chats"
+import { Chat, ChatMessage, getChats } from "@/lib/api/chats"
 import { useWebSocket, WebSocketMessage } from "@/hooks/use-websocket"
+import { useSessionContext } from "@/contexts/session-context"
 
 interface ChatsPageProps {
   params: Promise<{ id: string }>
 }
 
+// WebSocket message data types
+interface WSMessageData {
+  msgId: string
+  chatJid: string
+  senderJid: string
+  pushName: string
+  timestamp: number
+  type: string
+  content: string
+  fromMe: boolean
+  isGroup: boolean
+  status: string
+  mediaType?: string
+  quotedId?: string
+  quotedSender?: string
+}
+
+interface WSStatusData {
+  chatId: string
+  messageIds: string[]
+  status: string
+}
+
 export default function ChatsPage({ params }: ChatsPageProps) {
   const { id } = use(params)
+  const { sessionName } = useSessionContext()
 
   const [chats, setChats] = useState<Chat[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null)
   const [newMessageChatId, setNewMessageChatId] = useState<string | null>(null)
+  const chatViewRef = useRef<ChatViewRef>(null)
 
   const fetchChats = useCallback(async () => {
+    if (!sessionName) return
     try {
-      const data = await getChats(id)
+      const data = await getChats(sessionName)
       setChats(data || [])
     } catch (error) {
       console.error("Failed to fetch chats:", error)
     } finally {
       setLoading(false)
     }
-  }, [id])
+  }, [sessionName])
 
-  const handleWebSocketMessage = useCallback((message: WebSocketMessage) => {
-    if (message.event === "message.received" || message.event === "message.sent") {
-      // Refresh chat list to update last message and order
-      fetchChats()
-      // Highlight the chat that received a new message
-      const data = message.data as { chatId?: string }
-      if (data?.chatId) {
-        setNewMessageChatId(data.chatId)
-        setTimeout(() => setNewMessageChatId(null), 2000)
+  // Update chat list when new message arrives
+  const updateChatWithMessage = useCallback((msgData: WSMessageData) => {
+    setChats((prevChats) => {
+      const chatIndex = prevChats.findIndex((c) => c.jid === msgData.chatJid)
+      if (chatIndex === -1) {
+        // New chat, fetch full list
+        fetchChats()
+        return prevChats
       }
-    }
+
+      // Update existing chat's last message and move to top
+      const updatedChats = [...prevChats]
+      const chat = { ...updatedChats[chatIndex] }
+      chat.lastMessage = {
+        content: msgData.content,
+        timestamp: msgData.timestamp,
+        fromMe: msgData.fromMe,
+        type: msgData.type,
+        mediaType: msgData.mediaType,
+        status: msgData.status,
+        senderJid: msgData.senderJid,
+        pushName: msgData.pushName,
+      }
+      chat.conversationTimestamp = msgData.timestamp
+
+      // Move to top
+      updatedChats.splice(chatIndex, 1)
+      updatedChats.unshift(chat)
+
+      return updatedChats
+    })
   }, [fetchChats])
 
+  const handleWebSocketMessage = useCallback((message: WebSocketMessage) => {
+    const msgData = message.data as WSMessageData
+
+    switch (message.event) {
+      case "message.received":
+      case "message.sent": {
+        // Add message to ChatView in real-time
+        if (chatViewRef.current && msgData) {
+          const chatMessage: ChatMessage = {
+            msgId: msgData.msgId,
+            chatJid: msgData.chatJid,
+            senderJid: msgData.senderJid,
+            pushName: msgData.pushName,
+            timestamp: msgData.timestamp,
+            type: msgData.type,
+            mediaType: msgData.mediaType,
+            content: msgData.content,
+            fromMe: msgData.fromMe,
+            isGroup: msgData.isGroup,
+            quotedId: msgData.quotedId,
+            quotedSender: msgData.quotedSender,
+            status: msgData.status,
+          }
+          chatViewRef.current.addMessage(chatMessage)
+        }
+
+        // Update chat list
+        if (msgData) {
+          updateChatWithMessage(msgData)
+        }
+
+        // Highlight chat
+        if (msgData?.chatJid) {
+          setNewMessageChatId(msgData.chatJid)
+          setTimeout(() => setNewMessageChatId(null), 2000)
+        }
+        break
+      }
+
+      case "message.status": {
+        const statusData = message.data as WSStatusData
+        if (chatViewRef.current && statusData?.messageIds) {
+          chatViewRef.current.updateMessageStatus(statusData.messageIds, statusData.status)
+        }
+        break
+      }
+    }
+  }, [updateChatWithMessage])
+
   const { isConnected } = useWebSocket({
-    sessionId: id,
+    sessionId: sessionName || "",
     onMessage: handleWebSocketMessage,
   })
 
   useEffect(() => {
-    fetchChats()
-  }, [fetchChats])
+    if (sessionName) {
+      fetchChats()
+    }
+  }, [fetchChats, sessionName])
 
   return (
     <div className="flex flex-col h-[calc(100vh-var(--header-height,0px))]">
@@ -75,7 +173,7 @@ export default function ChatsPage({ params }: ChatsPageProps) {
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href={`/sessions/${id}`}>{id}</BreadcrumbLink>
+                <BreadcrumbLink href={`/sessions/${id}`}>{sessionName || id}</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
@@ -110,8 +208,8 @@ export default function ChatsPage({ params }: ChatsPageProps) {
 
           {/* Chat View - Independent scroll */}
           <div className="flex-1 flex flex-col min-h-0">
-            {selectedChat ? (
-              <ChatView chat={selectedChat} sessionId={id} />
+            {selectedChat && sessionName ? (
+              <ChatView ref={chatViewRef} chat={selectedChat} sessionId={sessionName} />
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center bg-background">
                 <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
@@ -126,8 +224,8 @@ export default function ChatsPage({ params }: ChatsPageProps) {
 
         {/* Mobile Layout */}
         <div className="flex flex-1 md:hidden min-h-0">
-          {selectedChat ? (
-            <ChatView chat={selectedChat} sessionId={id} onBack={() => setSelectedChat(null)} />
+          {selectedChat && sessionName ? (
+            <ChatView ref={chatViewRef} chat={selectedChat} sessionId={sessionName} onBack={() => setSelectedChat(null)} />
           ) : (
             <ChatSidebar
               chats={chats}

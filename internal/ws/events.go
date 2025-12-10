@@ -4,18 +4,20 @@ import "time"
 
 // Event types
 const (
-	EventMessageReceived  = "message.received"
-	EventMessageSent      = "message.sent"
-	EventMessageStatus    = "message.status"
-	EventMessageDeleted   = "message.deleted"
-	EventSessionConnected = "session.connected"
+	EventMessageReceived     = "message.received"
+	EventMessageSent         = "message.sent"
+	EventMessageStatus       = "message.status"
+	EventMessageDeleted      = "message.deleted"
+	EventMessageReaction     = "message.reaction"
+	EventSessionConnected    = "session.connected"
 	EventSessionDisconnected = "session.disconnected"
-	EventSessionQR        = "session.qr"
-	EventChatUpdated      = "chat.updated"
-	EventChatArchived     = "chat.archived"
-	EventPresenceUpdated  = "presence.updated"
-	EventGroupUpdated     = "group.updated"
-	EventCallReceived     = "call.received"
+	EventSessionQR           = "session.qr"
+	EventChatUpdated         = "chat.updated"
+	EventChatArchived        = "chat.archived"
+	EventPresenceUpdated     = "presence.updated"
+	EventChatPresence        = "chat.presence"
+	EventGroupUpdated        = "group.updated"
+	EventCallReceived        = "call.received"
 )
 
 // Message represents a WebSocket message

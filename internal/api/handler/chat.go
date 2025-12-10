@@ -620,6 +620,7 @@ func (h *ChatHandler) GetAllChats(c *gin.Context) {
 		}
 
 		resp := dto.ChatResponse{
+			ID:                  chat.ID,
 			JID:                 chat.ChatJID,
 			Name:                chat.Name,
 			ContactName:         contactName,
@@ -776,6 +777,7 @@ func (h *ChatHandler) GetChatInfo(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.ChatResponse{
+		ID:                  chat.ID,
 		JID:                 chat.ChatJID,
 		Name:                chat.Name,
 		UnreadCount:         chat.UnreadCount,

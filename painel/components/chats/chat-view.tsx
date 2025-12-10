@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback, useRef } from "react"
+import { useEffect, useState, useCallback, useRef, useImperativeHandle, forwardRef } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,6 +24,11 @@ interface ChatViewProps {
   chat: Chat
   sessionId: string
   onBack?: () => void
+}
+
+export interface ChatViewRef {
+  addMessage: (message: ChatMessage) => void
+  updateMessageStatus: (messageIds: string[], status: string) => void
 }
 
 function getDisplayName(chat: Chat) {
@@ -85,11 +90,37 @@ function groupMessagesByDate(messages: ChatMessage[]): MessageGroup[] {
   return groups
 }
 
-export function ChatView({ chat, sessionId, onBack }: ChatViewProps) {
+export const ChatView = forwardRef<ChatViewRef, ChatViewProps>(function ChatView(
+  { chat, sessionId, onBack },
+  ref
+) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(true)
   const [inputValue, setInputValue] = useState("")
   const scrollRef = useRef<HTMLDivElement>(null)
+  const isAtBottomRef = useRef(true)
+
+  // Expose methods to parent component
+  useImperativeHandle(ref, () => ({
+    addMessage: (message: ChatMessage) => {
+      // Only add if it's for this chat
+      if (message.chatJid !== chat.jid) return
+
+      setMessages((prev) => {
+        // Check if message already exists
+        if (prev.some((m) => m.msgId === message.msgId)) return prev
+        // Add new message and sort by timestamp
+        return [...prev, message].sort((a, b) => a.timestamp - b.timestamp)
+      })
+    },
+    updateMessageStatus: (messageIds: string[], status: string) => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          messageIds.includes(msg.msgId) ? { ...msg, status } : msg
+        )
+      )
+    },
+  }))
 
   const fetchMessages = useCallback(async () => {
     setLoading(true)
@@ -108,8 +139,17 @@ export function ChatView({ chat, sessionId, onBack }: ChatViewProps) {
     fetchMessages()
   }, [fetchMessages])
 
+  // Track if user is at bottom of chat
+  const handleScroll = useCallback(() => {
+    if (scrollRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current
+      isAtBottomRef.current = scrollHeight - scrollTop - clientHeight < 100
+    }
+  }, [])
+
+  // Scroll to bottom when new messages arrive (if user was at bottom)
   useEffect(() => {
-    if (scrollRef.current && !loading) {
+    if (scrollRef.current && !loading && isAtBottomRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
   }, [messages, loading])
@@ -157,7 +197,7 @@ export function ChatView({ chat, sessionId, onBack }: ChatViewProps) {
       </header>
 
       {/* Messages Area */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 bg-background">
+      <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto p-4 bg-background">
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -223,4 +263,4 @@ export function ChatView({ chat, sessionId, onBack }: ChatViewProps) {
       </footer>
     </div>
   )
-}
+})

@@ -12,6 +12,7 @@ export interface LastMessageInfo {
 }
 
 export interface Chat {
+  id: string
   jid: string
   name?: string
   contactName?: string

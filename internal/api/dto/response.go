@@ -265,6 +265,7 @@ type LastMessageInfo struct {
 }
 
 type ChatResponse struct {
+	ID                  string           `json:"id" example:"ce270f0c-c3d6-41ad-b481-1587f813c3b1"`
 	JID                 string           `json:"jid" example:"5511999999999@s.whatsapp.net"`
 	Name                string           `json:"name,omitempty" example:"John Doe"`
 	ContactName         string           `json:"contactName,omitempty" example:"John Doe"`       // From WhatsApp contacts (FullName > FirstName > PushName > BusinessName)

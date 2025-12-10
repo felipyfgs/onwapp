@@ -355,6 +355,12 @@ func (s *SessionService) setupEventHandler(session *model.Session) {
 	session.EventHandlerSet = true
 
 	session.Client.AddEventHandler(func(evt interface{}) {
+		logger.Session().Debug().
+			Str("session", session.Session).
+			Int("externalHandlers", len(s.externalHandlers)).
+			Str("eventType", fmt.Sprintf("%T", evt)).
+			Msg("Event received, calling handlers")
+
 		// First, save message to database so UpdateCwFields can work
 		s.eventService.HandleEvent(session, evt)
 
