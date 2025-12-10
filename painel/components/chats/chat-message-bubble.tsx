@@ -1,20 +1,15 @@
 "use client"
 
+import { memo } from "react"
 import { Check, CheckCheck, FileText, Play, Download, Clock } from "lucide-react"
 import { ChatMessage } from "@/lib/api/chats"
 import { cn } from "@/lib/utils"
+import { formatTime, isAudioMessage, isDocumentMessage, isImageMessage, isVideoMessage } from "@/lib/utils/chat-helpers"
 
 interface ChatMessageBubbleProps {
   message: ChatMessage
   isGroup: boolean
   showSender: boolean
-}
-
-function formatTime(timestamp: number) {
-  return new Date(timestamp * 1000).toLocaleTimeString("pt-BR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  })
 }
 
 function MessageStatus({ status, fromMe }: { status?: string; fromMe: boolean }) {
@@ -74,13 +69,17 @@ function MediaPlaceholder({ type }: { type: string }) {
   )
 }
 
-export function ChatMessageBubble({ message, isGroup, showSender }: ChatMessageBubbleProps) {
+export const ChatMessageBubble = memo(function ChatMessageBubble({ 
+  message, 
+  isGroup, 
+  showSender 
+}: ChatMessageBubbleProps) {
   const isFromMe = message.fromMe
   const isDeleted = message.deleted
-  const isAudio = message.type === "audio" || message.type === "ptt" || message.mediaType === "audio"
-  const isDocument = message.type === "document" || message.mediaType === "document"
-  const isImage = message.type === "image" || message.mediaType === "image"
-  const isVideo = message.type === "video" || message.mediaType === "video"
+  const isAudio = isAudioMessage(message)
+  const isDocument = isDocumentMessage(message)
+  const isImage = isImageMessage(message)
+  const isVideo = isVideoMessage(message)
 
   return (
     <div className={cn("flex", isFromMe ? "justify-end" : "justify-start")}>
@@ -128,4 +127,4 @@ export function ChatMessageBubble({ message, isGroup, showSender }: ChatMessageB
       </div>
     </div>
   )
-}
+})

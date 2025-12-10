@@ -85,3 +85,89 @@ export async function markChatUnread(session: string, chatJid: string): Promise<
     body: JSON.stringify({ chatJid }),
   })
 }
+
+// ============================================================
+// SEND MESSAGES
+// ============================================================
+
+export interface SendMessageResponse {
+  messageId: string
+  timestamp: number
+}
+
+export async function sendTextMessage(
+  session: string,
+  phone: string,
+  text: string
+): Promise<SendMessageResponse> {
+  return api<SendMessageResponse>(`/${session}/message/send/text`, {
+    method: "POST",
+    body: JSON.stringify({ phone, text }),
+  })
+}
+
+export async function sendImageMessage(
+  session: string,
+  phone: string,
+  image: string, // base64 or URL
+  caption?: string,
+  mimeType?: string
+): Promise<SendMessageResponse> {
+  return api<SendMessageResponse>(`/${session}/message/send/image`, {
+    method: "POST",
+    body: JSON.stringify({ phone, image, caption, mimeType }),
+  })
+}
+
+export async function sendAudioMessage(
+  session: string,
+  phone: string,
+  audio: string, // base64 or URL
+  ptt: boolean = true // push-to-talk (voice message)
+): Promise<SendMessageResponse> {
+  return api<SendMessageResponse>(`/${session}/message/send/audio`, {
+    method: "POST",
+    body: JSON.stringify({ phone, audio, ptt }),
+  })
+}
+
+export async function sendVideoMessage(
+  session: string,
+  phone: string,
+  video: string, // base64 or URL
+  caption?: string,
+  mimeType?: string
+): Promise<SendMessageResponse> {
+  return api<SendMessageResponse>(`/${session}/message/send/video`, {
+    method: "POST",
+    body: JSON.stringify({ phone, video, caption, mimeType }),
+  })
+}
+
+export async function sendDocumentMessage(
+  session: string,
+  phone: string,
+  document: string, // base64 or URL
+  filename?: string,
+  mimeType?: string
+): Promise<SendMessageResponse> {
+  return api<SendMessageResponse>(`/${session}/message/send/document`, {
+    method: "POST",
+    body: JSON.stringify({ phone, document, filename, mimeType }),
+  })
+}
+
+// Upload file helper - converts File to base64
+export function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string
+      // Remove data:mime;base64, prefix
+      const base64 = result.split(",")[1]
+      resolve(base64)
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}

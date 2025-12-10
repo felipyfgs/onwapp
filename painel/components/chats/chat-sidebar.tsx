@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useRef } from "react"
+import { useState, useMemo, useRef, memo } from "react"
 import Link from "next/link"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -20,6 +20,12 @@ import {
 import { Chat } from "@/lib/api/chats"
 import { cn } from "@/lib/utils"
 import { extractChatId } from "@/lib/utils/jid"
+import { 
+  getDisplayName, 
+  getInitials, 
+  formatChatTime, 
+  getMessagePreview 
+} from "@/lib/utils/chat-helpers"
 
 interface ChatSidebarProps {
   chats: Chat[]
@@ -32,47 +38,7 @@ interface ChatSidebarProps {
 
 type FilterType = "all" | "unread" | "groups"
 
-const ITEM_HEIGHT = 72 // Height of each chat item in pixels
-
-function getDisplayName(chat: Chat) {
-  return chat.contactName || chat.name || formatJid(chat.jid)
-}
-
-function formatJid(jid: string) {
-  if (jid.includes("@g.us")) return "Grupo"
-  const phone = jid.replace("@s.whatsapp.net", "").replace("@c.us", "")
-  return `+${phone}`
-}
-
-function getInitials(chat: Chat) {
-  const name = chat.contactName || chat.name || ""
-  return name.slice(0, 2).toUpperCase() || "?"
-}
-
-function formatTime(timestamp?: number) {
-  if (!timestamp) return ""
-  const date = new Date(timestamp * 1000)
-  const now = new Date()
-  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
-
-  if (diffDays === 0) {
-    return date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-  }
-  if (diffDays === 1) return "Ontem"
-  if (diffDays < 7) return date.toLocaleDateString("pt-BR", { weekday: "short" })
-  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
-}
-
-function getMessagePreview(chat: Chat) {
-  if (!chat.lastMessage) return ""
-  const msg = chat.lastMessage
-  if (msg.type === "image" || msg.mediaType === "image") return "Foto"
-  if (msg.type === "video" || msg.mediaType === "video") return "Vídeo"
-  if (msg.type === "audio" || msg.mediaType === "audio" || msg.type === "ptt") return "Áudio"
-  if (msg.type === "document" || msg.mediaType === "document") return "Documento"
-  if (msg.type === "sticker") return "Figurinha"
-  return msg.content || ""
-}
+const ITEM_HEIGHT = 72
 
 function MessageStatus({ chat }: { chat: Chat }) {
   if (!chat.lastMessage?.fromMe) return null
@@ -102,7 +68,13 @@ interface ChatListItemProps {
   highlight?: boolean
 }
 
-function ChatListItem({ chat, isSelected, onSelect, href, highlight }: ChatListItemProps) {
+const ChatListItem = memo(function ChatListItem({ 
+  chat, 
+  isSelected, 
+  onSelect, 
+  href, 
+  highlight 
+}: ChatListItemProps) {
   const className = cn(
     "w-full flex items-center gap-3 px-4 h-[72px] hover:bg-accent transition-colors",
     isSelected && "bg-accent",
@@ -131,7 +103,7 @@ function ChatListItem({ chat, isSelected, onSelect, href, highlight }: ChatListI
                 : "text-muted-foreground"
             )}
           >
-            {formatTime(chat.lastMessage?.timestamp || chat.conversationTimestamp)}
+            {formatChatTime(chat.lastMessage?.timestamp || chat.conversationTimestamp)}
           </span>
         </div>
 
@@ -167,7 +139,7 @@ function ChatListItem({ chat, isSelected, onSelect, href, highlight }: ChatListI
       {content}
     </button>
   )
-}
+})
 
 export function ChatSidebar({ chats, selectedChat, onChatSelect, sessionId, loading, highlightChatId }: ChatSidebarProps) {
   const [search, setSearch] = useState("")

@@ -55,6 +55,43 @@ class ChatsDatabase extends Dexie {
     await this.chats.where("sessionId").equals(sessionId).delete()
     await this.messages.where("sessionId").equals(sessionId).delete()
   }
+
+  // Limit messages per chat to prevent memory bloat
+  async trimMessages(sessionId: string, chatJid: string, maxMessages: number = 500) {
+    const messages = await this.messages
+      .where("[sessionId+chatJid]")
+      .equals([sessionId, chatJid])
+      .sortBy("timestamp")
+
+    if (messages.length > maxMessages) {
+      const toDelete = messages.slice(0, messages.length - maxMessages)
+      await this.messages.bulkDelete(toDelete.map((m) => m.msgId))
+    }
+  }
+
+  // Clean up old chats (not accessed in X days)
+  async cleanupOldData(maxAgeDays: number = 30) {
+    const cutoff = Date.now() - maxAgeDays * 24 * 60 * 60 * 1000
+    const oldChats = await this.chats.where("updatedAt").below(cutoff).toArray()
+    
+    for (const chat of oldChats) {
+      await this.messages
+        .where("[sessionId+chatJid]")
+        .equals([chat.sessionId, chat.jid])
+        .delete()
+    }
+    
+    await this.chats.where("updatedAt").below(cutoff).delete()
+  }
+
+  // Get database size info
+  async getStats(): Promise<{ chats: number; messages: number }> {
+    const [chats, messages] = await Promise.all([
+      this.chats.count(),
+      this.messages.count(),
+    ])
+    return { chats, messages }
+  }
 }
 
 export const db = new ChatsDatabase()

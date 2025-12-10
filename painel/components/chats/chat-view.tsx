@@ -1,9 +1,15 @@
 "use client"
 
-import { useEffect, useState, useCallback, useRef, useImperativeHandle, forwardRef } from "react"
+import { useEffect, useState, useCallback, useRef, useImperativeHandle, forwardRef, useMemo } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   ArrowLeft,
   Phone,
@@ -16,9 +22,29 @@ import {
   Send,
   Users,
   Loader2,
+  Image as ImageIcon,
+  FileText,
+  X,
 } from "lucide-react"
-import { Chat, ChatMessage, getChatMessages } from "@/lib/api/chats"
+import {
+  Chat,
+  ChatMessage,
+  sendTextMessage,
+  sendImageMessage,
+  sendVideoMessage,
+  sendDocumentMessage,
+  sendAudioMessage,
+  fileToBase64,
+} from "@/lib/api/chats"
+import { useChatMessages, useAddMessage, useUpdateMessageStatus } from "@/hooks/use-chat-messages"
 import { ChatMessageBubble } from "./chat-message-bubble"
+import {
+  getDisplayName,
+  getInitials,
+  formatLastSeen,
+  getPhoneFromJid,
+  groupMessagesByDate,
+} from "@/lib/utils/chat-helpers"
 
 interface ChatViewProps {
   chat: Chat
@@ -32,124 +58,59 @@ export interface ChatViewRef {
   updateMessageStatus: (messageIds: string[], status: string) => void
 }
 
-function getDisplayName(chat: Chat) {
-  return chat.contactName || chat.name || formatJid(chat.jid)
-}
-
-function formatJid(jid: string) {
-  if (jid.includes("@g.us")) return "Grupo"
-  const phone = jid.replace("@s.whatsapp.net", "").replace("@c.us", "")
-  return `+${phone}`
-}
-
-function getInitials(chat: Chat) {
-  const name = chat.contactName || chat.name || ""
-  return name.slice(0, 2).toUpperCase() || "?"
-}
-
-function formatLastSeen(timestamp?: number) {
-  if (!timestamp) return ""
-  const date = new Date(timestamp * 1000)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-
-  if (diffMins < 1) return "online"
-  if (diffMins < 60) return `visto há ${diffMins} min`
-  return `visto às ${date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`
-}
-
-function formatDateSeparator(timestamp: number) {
-  const date = new Date(timestamp * 1000)
-  const now = new Date()
-  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
-
-  if (diffDays === 0) return "Hoje"
-  if (diffDays === 1) return "Ontem"
-  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })
-}
-
-interface MessageGroup {
-  date: string
-  messages: ChatMessage[]
-}
-
-function groupMessagesByDate(messages: ChatMessage[]): MessageGroup[] {
-  const groups: MessageGroup[] = []
-  let currentDate = ""
-
-  messages.forEach((msg) => {
-    const dateStr = formatDateSeparator(msg.timestamp)
-    if (dateStr !== currentDate) {
-      currentDate = dateStr
-      groups.push({ date: dateStr, messages: [msg] })
-    } else {
-      groups[groups.length - 1].messages.push(msg)
-    }
-  })
-
-  return groups
-}
-
 export const ChatView = forwardRef<ChatViewRef, ChatViewProps>(function ChatView(
   { chat, sessionId, onBack, newMessage },
   ref
 ) {
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [loading, setLoading] = useState(true)
+  // Use centralized message hook (TanStack Query + IndexedDB)
+  const { messages, isLoading: loading } = useChatMessages(sessionId, chat.jid)
+  const addMessageToCache = useAddMessage()
+  const updateStatusInCache = useUpdateMessageStatus()
+
+  // Local UI state only
   const [inputValue, setInputValue] = useState("")
+  const [sending, setSending] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
+  const [recordingTime, setRecordingTime] = useState(0)
+  
+  // Refs
   const scrollRef = useRef<HTMLDivElement>(null)
   const isAtBottomRef = useRef(true)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
+  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Handle new message from WebSocket
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      audioChunksRef.current = []
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current)
+      }
+      if (mediaRecorderRef.current?.state === "recording") {
+        mediaRecorderRef.current.stream.getTracks().forEach((t) => t.stop())
+      }
+    }
+  }, [])
+
+  // Handle new message from WebSocket - add to cache
   useEffect(() => {
     if (newMessage && newMessage.chatJid === chat.jid) {
-      setMessages((prev) => {
-        if (prev.some((m) => m.msgId === newMessage.msgId)) return prev
-        return [...prev, newMessage].sort((a, b) => a.timestamp - b.timestamp)
-      })
+      addMessageToCache(sessionId, chat.jid, newMessage)
     }
-  }, [newMessage, chat.jid])
+  }, [newMessage, chat.jid, sessionId, addMessageToCache])
 
-  // Expose methods to parent component (for status updates)
+  // Expose methods to parent component
   useImperativeHandle(ref, () => ({
     addMessage: (message: ChatMessage) => {
       if (message.chatJid !== chat.jid) return
-      setMessages((prev) => {
-        if (prev.some((m) => m.msgId === message.msgId)) return prev
-        return [...prev, message].sort((a, b) => a.timestamp - b.timestamp)
-      })
+      addMessageToCache(sessionId, chat.jid, message)
     },
     updateMessageStatus: (messageIds: string[], status: string) => {
-      setMessages((prev) =>
-        prev.map((msg) =>
-          messageIds.includes(msg.msgId) ? { ...msg, status } : msg
-        )
-      )
+      updateStatusInCache(sessionId, chat.jid, messageIds, status)
     },
-  }), [chat.jid])
-
-  const fetchMessages = useCallback(async () => {
-    setLoading(true)
-    try {
-      const data = await getChatMessages(sessionId, chat.jid, { limit: 100 })
-      setMessages((data || []).sort((a, b) => a.timestamp - b.timestamp))
-    } catch (error) {
-      console.error("Failed to fetch messages:", error)
-      setMessages([])
-    } finally {
-      setLoading(false)
-    }
-  }, [sessionId, chat.jid])
-
-  // Fetch messages only when chat changes
-  const prevChatJidRef = useRef<string | null>(null)
-  useEffect(() => {
-    if (prevChatJidRef.current !== chat.jid) {
-      prevChatJidRef.current = chat.jid
-      fetchMessages()
-    }
-  }, [chat.jid, fetchMessages])
+  }), [chat.jid, sessionId, addMessageToCache, updateStatusInCache])
 
   // Track if user is at bottom of chat
   const handleScroll = useCallback(() => {
@@ -174,7 +135,198 @@ export const ChatView = forwardRef<ChatViewRef, ChatViewProps>(function ChatView
     }
   }, [messages.length, loading])
 
-  const messageGroups = groupMessagesByDate(messages)
+  // Get phone number from JID for API calls
+  const phone = useMemo(() => getPhoneFromJid(chat.jid), [chat.jid])
+
+  // Add optimistic message to cache
+  const addOptimisticMessage = useCallback((msgId: string, content: string, type: string = "text") => {
+    const optimisticMsg: ChatMessage = {
+      msgId,
+      chatJid: chat.jid,
+      timestamp: Math.floor(Date.now() / 1000),
+      type,
+      content,
+      fromMe: true,
+      isGroup: chat.isGroup,
+      status: "pending",
+    }
+    addMessageToCache(sessionId, chat.jid, optimisticMsg)
+  }, [chat.jid, chat.isGroup, sessionId, addMessageToCache])
+
+  // Update optimistic message with real data
+  const updateOptimisticMessage = useCallback((tempId: string, _realId: string, _timestamp: number) => {
+    // The real message will come via WebSocket, just update status
+    updateStatusInCache(sessionId, chat.jid, [tempId], "sent")
+  }, [sessionId, chat.jid, updateStatusInCache])
+
+  // Send text message
+  const handleSendText = useCallback(async () => {
+    const text = inputValue.trim()
+    if (!text || sending) return
+
+    const tempId = `temp-${Date.now()}`
+    setInputValue("")
+    setSending(true)
+    addOptimisticMessage(tempId, text)
+
+    try {
+      const response = await sendTextMessage(sessionId, phone, text)
+      updateOptimisticMessage(tempId, response.messageId, response.timestamp)
+    } catch (error) {
+      console.error("Failed to send message:", error)
+      updateStatusInCache(sessionId, chat.jid, [tempId], "error")
+    } finally {
+      setSending(false)
+    }
+  }, [inputValue, sending, sessionId, phone, chat.jid, addOptimisticMessage, updateOptimisticMessage, updateStatusInCache])
+
+  // Handle Enter key
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      handleSendText()
+    }
+  }, [handleSendText])
+
+  // Handle file selection
+  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || sending) return
+
+    const tempId = `temp-${Date.now()}`
+    setSending(true)
+
+    try {
+      const base64 = await fileToBase64(file)
+      const isImage = file.type.startsWith("image/")
+      const isVideo = file.type.startsWith("video/")
+
+      addOptimisticMessage(tempId, file.name, isImage ? "image" : isVideo ? "video" : "document")
+
+      let response
+      if (isImage) {
+        response = await sendImageMessage(sessionId, phone, base64, "", file.type)
+      } else if (isVideo) {
+        response = await sendVideoMessage(sessionId, phone, base64, "", file.type)
+      } else {
+        response = await sendDocumentMessage(sessionId, phone, base64, file.name, file.type)
+      }
+
+      updateOptimisticMessage(tempId, response.messageId, response.timestamp)
+    } catch (error) {
+      console.error("Failed to send file:", error)
+      updateStatusInCache(sessionId, chat.jid, [tempId], "error")
+    } finally {
+      setSending(false)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    }
+  }, [sending, sessionId, phone, chat.jid, addOptimisticMessage, updateOptimisticMessage, updateStatusInCache])
+
+  // Start audio recording
+  const startRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" })
+      mediaRecorderRef.current = mediaRecorder
+      audioChunksRef.current = []
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          audioChunksRef.current.push(e.data)
+        }
+      }
+
+      mediaRecorder.start()
+      setIsRecording(true)
+      setRecordingTime(0)
+
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingTime((t) => t + 1)
+      }, 1000)
+    } catch (error) {
+      console.error("Failed to start recording:", error)
+    }
+  }, [])
+
+  // Stop and send audio recording
+  const stopRecording = useCallback(async () => {
+    if (!mediaRecorderRef.current) return
+
+    return new Promise<void>((resolve) => {
+      const mediaRecorder = mediaRecorderRef.current!
+      
+      mediaRecorder.onstop = async () => {
+        // Clear interval
+        if (recordingIntervalRef.current) {
+          clearInterval(recordingIntervalRef.current)
+          recordingIntervalRef.current = null
+        }
+
+        // Stop all tracks
+        mediaRecorder.stream.getTracks().forEach((track) => track.stop())
+
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" })
+        const tempId = `temp-${Date.now()}`
+
+        setSending(true)
+        addOptimisticMessage(tempId, "Mensagem de voz", "ptt")
+
+        try {
+          // Convert blob to base64
+          const reader = new FileReader()
+          reader.onloadend = async () => {
+            const base64 = (reader.result as string).split(",")[1]
+            try {
+              const response = await sendAudioMessage(sessionId, phone, base64, true)
+              updateOptimisticMessage(tempId, response.messageId, response.timestamp)
+            } catch (error) {
+              console.error("Failed to send audio:", error)
+              updateStatusInCache(sessionId, chat.jid, [tempId], "error")
+            } finally {
+              setSending(false)
+            }
+          }
+          reader.readAsDataURL(audioBlob)
+        } catch (error) {
+          console.error("Failed to process audio:", error)
+          setSending(false)
+        }
+
+        setIsRecording(false)
+        setRecordingTime(0)
+        mediaRecorderRef.current = null
+        resolve()
+      }
+
+      mediaRecorder.stop()
+    })
+  }, [sessionId, phone, chat.jid, addOptimisticMessage, updateOptimisticMessage, updateStatusInCache])
+
+  // Cancel recording
+  const cancelRecording = useCallback(() => {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop())
+      mediaRecorderRef.current = null
+    }
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current)
+      recordingIntervalRef.current = null
+    }
+    setIsRecording(false)
+    setRecordingTime(0)
+    audioChunksRef.current = []
+  }, [])
+
+  // Format recording time
+  // Format recording time
+  const formatRecordingTime = useCallback((seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, "0")}`
+  }, [])
+
+  // Memoize message groups to avoid recalculation on every render
+  const messageGroups = useMemo(() => groupMessagesByDate(messages), [messages])
 
   return (
     <div className="flex flex-col w-full h-full">
@@ -263,35 +415,127 @@ export const ChatView = forwardRef<ChatViewRef, ChatViewProps>(function ChatView
         )}
       </div>
 
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,video/*,application/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
+        className="hidden"
+        onChange={handleFileSelect}
+      />
+
       {/* Input Bar */}
       <footer className="flex items-center gap-2 px-3 py-2 bg-card border-t border-border shrink-0">
-        <Button variant="ghost" size="icon" className="text-muted-foreground shrink-0 h-10 w-10 hover:text-foreground">
-          <Plus className="h-6 w-6" />
-        </Button>
+        {isRecording ? (
+          // Recording UI
+          <>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={cancelRecording}
+              className="shrink-0 h-10 w-10 text-destructive hover:text-destructive"
+            >
+              <X className="h-6 w-6" />
+            </Button>
 
-        <div className="flex-1 flex items-center gap-1 bg-input rounded-3xl px-2 py-1.5">
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground shrink-0 hover:text-foreground">
-            <Smile className="h-5 w-5" />
-          </Button>
-          <Input
-            placeholder="Digite uma mensagem"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            className="flex-1 border-0 bg-transparent focus-visible:ring-0 h-8 px-1 text-sm placeholder:text-muted-foreground"
-          />
-        </div>
+            <div className="flex-1 flex items-center gap-3 bg-input rounded-3xl px-4 py-2">
+              <div className="h-3 w-3 rounded-full bg-destructive animate-pulse" />
+              <span className="text-sm font-medium text-foreground">
+                {formatRecordingTime(recordingTime)}
+              </span>
+              <span className="text-sm text-muted-foreground">Gravando...</span>
+            </div>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className="shrink-0 h-10 w-10 text-muted-foreground hover:text-foreground"
-        >
-          {inputValue.trim() ? (
-            <Send className="h-5 w-5 text-primary" />
-          ) : (
-            <Mic className="h-6 w-6" />
-          )}
-        </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={stopRecording}
+              disabled={sending}
+              className="shrink-0 h-10 w-10 text-primary hover:text-primary"
+            >
+              {sending ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Send className="h-5 w-5" />
+              )}
+            </Button>
+          </>
+        ) : (
+          // Normal input UI
+          <>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  disabled={sending}
+                  className="text-muted-foreground shrink-0 h-10 w-10 hover:text-foreground"
+                >
+                  <Plus className="h-6 w-6" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" side="top">
+                <DropdownMenuItem onClick={() => {
+                  if (fileInputRef.current) {
+                    fileInputRef.current.accept = "image/*"
+                    fileInputRef.current.click()
+                  }
+                }}>
+                  <ImageIcon className="h-4 w-4 mr-2" />
+                  Imagem
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => {
+                  if (fileInputRef.current) {
+                    fileInputRef.current.accept = "video/*"
+                    fileInputRef.current.click()
+                  }
+                }}>
+                  <Video className="h-4 w-4 mr-2" />
+                  Vídeo
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => {
+                  if (fileInputRef.current) {
+                    fileInputRef.current.accept = ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,application/*"
+                    fileInputRef.current.click()
+                  }
+                }}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Documento
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <div className="flex-1 flex items-center gap-1 bg-input rounded-3xl px-2 py-1.5">
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground shrink-0 hover:text-foreground">
+                <Smile className="h-5 w-5" />
+              </Button>
+              <Input
+                placeholder="Digite uma mensagem"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={sending}
+                className="flex-1 border-0 bg-transparent focus-visible:ring-0 h-8 px-1 text-sm placeholder:text-muted-foreground"
+              />
+            </div>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={inputValue.trim() ? handleSendText : startRecording}
+              disabled={sending}
+              className="shrink-0 h-10 w-10 text-muted-foreground hover:text-foreground"
+            >
+              {sending ? (
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              ) : inputValue.trim() ? (
+                <Send className="h-5 w-5 text-primary" />
+              ) : (
+                <Mic className="h-6 w-6" />
+              )}
+            </Button>
+          </>
+        )}
       </footer>
     </div>
   )
