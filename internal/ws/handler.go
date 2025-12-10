@@ -20,15 +20,6 @@ func NewHandler(hub *Hub) *Handler {
 }
 
 // Handle handles WebSocket upgrade requests
-// @Summary      WebSocket connection
-// @Description  Establish WebSocket connection for real-time events
-// @Tags         websocket
-// @Param        session   path      string  true  "Session ID"
-// @Success      101       "Switching Protocols"
-// @Failure      400       {object}  object{error=string}
-// @Failure      401       {object}  object{error=string}
-// @Security     Authorization
-// @Router       /{session}/ws [get]
 func (h *Handler) Handle(c *gin.Context) {
 	sessionID := c.Param("session")
 	if sessionID == "" {
@@ -54,7 +45,7 @@ func (h *Handler) Handle(c *gin.Context) {
 	go client.readPump()
 }
 
-// GetHub returns the hub instance
-func (h *Handler) GetHub() *Hub {
+// Hub returns the hub instance
+func (h *Handler) Hub() *Hub {
 	return h.hub
 }
