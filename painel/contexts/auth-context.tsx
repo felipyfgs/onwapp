@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, useContext, useEffect, useState } from "react"
+import React, { createContext, useContext, useState } from "react"
 import { useRouter } from "next/navigation"
 import { getStoredApiKey, removeStoredApiKey, setStoredApiKey } from "@/lib/auth"
 
@@ -13,16 +13,14 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [apiKey, setApiKey] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const router = useRouter()
+function getInitialApiKey(): string | null {
+  if (typeof window === "undefined") return null
+  return getStoredApiKey()
+}
 
-  useEffect(() => {
-    const stored = getStoredApiKey()
-    setApiKey(stored)
-    setIsLoading(false)
-  }, [])
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [apiKey, setApiKey] = useState<string | null>(getInitialApiKey)
+  const router = useRouter()
 
   const login = (key: string) => {
     setStoredApiKey(key)
@@ -34,10 +32,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     removeStoredApiKey()
     setApiKey(null)
     router.push("/login")
-  }
-
-  if (isLoading) {
-    return null
   }
 
   return (

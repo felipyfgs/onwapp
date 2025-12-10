@@ -7,22 +7,19 @@ import { SessionEmptyState } from "./session-empty-state"
 interface SessionListProps {
   sessions: Session[]
   hasFilters: boolean
+  onSessionCreated?: () => void
 }
 
-export function SessionList({ sessions, hasFilters }: SessionListProps) {
+export function SessionList({ sessions, hasFilters, onSessionCreated }: SessionListProps) {
   if (sessions.length === 0) {
-    return <SessionEmptyState hasFilters={hasFilters} />
+    return <SessionEmptyState hasFilters={hasFilters} onSessionCreated={onSessionCreated} />
   }
 
   return (
-    <div className="rounded-lg border bg-card overflow-hidden">
-      {sessions.map((session, index) => (
-        <SessionCard 
-          key={session.id} 
-          session={session} 
-          isLast={index === sessions.length - 1}
-        />
+    <ul className="border border-border rounded-md divide-y divide-border">
+      {sessions.map((session) => (
+        <SessionCard key={session.id} session={session} onUpdate={onSessionCreated} />
       ))}
-    </div>
+    </ul>
   )
 }

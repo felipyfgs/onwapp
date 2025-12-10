@@ -16,6 +16,15 @@ export interface Session {
   apiKey?: string
   pushName?: string
   profilePicture?: string
+  about?: string
+  platform?: string
+  businessName?: string
+  lastConnectedAt?: string
+  lastDisconnectedAt?: string
+  lastActivityAt?: string
+  disconnectReason?: string
+  syncHistory?: boolean
+  historySyncStatus?: string
   stats?: SessionApiStats
   createdAt: string
   updatedAt: string
@@ -33,17 +42,17 @@ export interface SessionListStats {
 export const statusConfig = {
   connected: {
     label: "Conectado",
-    color: "bg-green-500",
-    badgeClass: "bg-green-500/10 text-green-600 hover:bg-green-500/20",
+    color: "bg-primary",
+    badgeClass: "bg-muted text-primary hover:bg-accent",
   },
   connecting: {
     label: "Conectando",
-    color: "bg-yellow-500",
-    badgeClass: "bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500/20",
+    color: "bg-muted-foreground",
+    badgeClass: "bg-muted text-muted-foreground hover:bg-accent",
   },
   disconnected: {
     label: "Desconectado",
-    color: "bg-gray-400",
-    badgeClass: "bg-gray-500/10 text-gray-600 hover:bg-gray-500/20",
+    color: "bg-destructive",
+    badgeClass: "bg-muted text-destructive hover:bg-accent",
   },
 } as const
