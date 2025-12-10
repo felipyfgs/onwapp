@@ -63,7 +63,7 @@ export const ChatView = forwardRef<ChatViewRef, ChatViewProps>(function ChatView
   ref
 ) {
   // Use centralized message hook (TanStack Query + IndexedDB)
-  const { messages, isLoading: loading } = useChatMessages(sessionId, chat.jid)
+  const { messages } = useChatMessages(sessionId, chat.jid)
   const addMessageToCache = useAddMessage()
   const updateStatusInCache = useUpdateMessageStatus()
 
@@ -122,9 +122,8 @@ export const ChatView = forwardRef<ChatViewRef, ChatViewProps>(function ChatView
 
   // Scroll to bottom when new messages arrive (if user was at bottom)
   useEffect(() => {
-    if (scrollRef.current && !loading) {
-      // Always scroll if was at bottom OR if new message was added
-      const shouldScroll = isAtBottomRef.current || messages.length > 0
+    if (scrollRef.current && messages.length > 0) {
+      const shouldScroll = isAtBottomRef.current
       if (shouldScroll) {
         setTimeout(() => {
           if (scrollRef.current) {
@@ -133,7 +132,7 @@ export const ChatView = forwardRef<ChatViewRef, ChatViewProps>(function ChatView
         }, 50)
       }
     }
-  }, [messages.length, loading])
+  }, [messages.length])
 
   // Get phone number from JID for API calls
   const phone = useMemo(() => getPhoneFromJid(chat.jid), [chat.jid])
@@ -153,9 +152,9 @@ export const ChatView = forwardRef<ChatViewRef, ChatViewProps>(function ChatView
     addMessageToCache(sessionId, chat.jid, optimisticMsg)
   }, [chat.jid, chat.isGroup, sessionId, addMessageToCache])
 
-  // Update optimistic message with real data
-  const updateOptimisticMessage = useCallback((tempId: string, _realId: string, _timestamp: number) => {
-    // The real message will come via WebSocket, just update status
+  // Update optimistic message with real data (realId and timestamp come from API response but are unused
+  // since the real message arrives via WebSocket with proper data)
+  const updateOptimisticMessage = useCallback((tempId: string) => {
     updateStatusInCache(sessionId, chat.jid, [tempId], "sent")
   }, [sessionId, chat.jid, updateStatusInCache])
 
@@ -170,8 +169,8 @@ export const ChatView = forwardRef<ChatViewRef, ChatViewProps>(function ChatView
     addOptimisticMessage(tempId, text)
 
     try {
-      const response = await sendTextMessage(sessionId, phone, text)
-      updateOptimisticMessage(tempId, response.messageId, response.timestamp)
+      await sendTextMessage(sessionId, phone, text)
+      updateOptimisticMessage(tempId)
     } catch (error) {
       console.error("Failed to send message:", error)
       updateStatusInCache(sessionId, chat.jid, [tempId], "error")
@@ -203,16 +202,15 @@ export const ChatView = forwardRef<ChatViewRef, ChatViewProps>(function ChatView
 
       addOptimisticMessage(tempId, file.name, isImage ? "image" : isVideo ? "video" : "document")
 
-      let response
       if (isImage) {
-        response = await sendImageMessage(sessionId, phone, base64, "", file.type)
+        await sendImageMessage(sessionId, phone, base64, "", file.type)
       } else if (isVideo) {
-        response = await sendVideoMessage(sessionId, phone, base64, "", file.type)
+        await sendVideoMessage(sessionId, phone, base64, "", file.type)
       } else {
-        response = await sendDocumentMessage(sessionId, phone, base64, file.name, file.type)
+        await sendDocumentMessage(sessionId, phone, base64, file.name, file.type)
       }
 
-      updateOptimisticMessage(tempId, response.messageId, response.timestamp)
+      updateOptimisticMessage(tempId)
     } catch (error) {
       console.error("Failed to send file:", error)
       updateStatusInCache(sessionId, chat.jid, [tempId], "error")
@@ -277,8 +275,8 @@ export const ChatView = forwardRef<ChatViewRef, ChatViewProps>(function ChatView
           reader.onloadend = async () => {
             const base64 = (reader.result as string).split(",")[1]
             try {
-              const response = await sendAudioMessage(sessionId, phone, base64, true)
-              updateOptimisticMessage(tempId, response.messageId, response.timestamp)
+              await sendAudioMessage(sessionId, phone, base64, true)
+              updateOptimisticMessage(tempId)
             } catch (error) {
               console.error("Failed to send audio:", error)
               updateStatusInCache(sessionId, chat.jid, [tempId], "error")
@@ -374,11 +372,7 @@ export const ChatView = forwardRef<ChatViewRef, ChatViewProps>(function ChatView
         onScroll={handleScroll}
         className="flex-1 overflow-y-auto bg-background"
       >
-        {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : messages.length === 0 ? (
+        {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <p className="text-muted-foreground text-sm">Nenhuma mensagem</p>
           </div>

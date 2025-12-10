@@ -72,15 +72,19 @@ export function useWebSocket({
         }
       }
 
-      ws.onclose = () => {
-        console.log(`[WS] Disconnected from ${sessionId}`)
+      ws.onclose = (event) => {
+        const reason = event.reason || "unknown"
+        const wasClean = event.wasClean ? "clean" : "unclean"
+        console.log(`[WS] Disconnected from ${sessionId} (code: ${event.code}, ${wasClean}, reason: ${reason})`)
         setIsConnected(false)
         wsRef.current = null
         callbacksRef.current.onDisconnect?.()
       }
 
       ws.onerror = (error) => {
-        console.error("[WS] Error:", error)
+        // WebSocket error events don't contain useful info (browser security)
+        // Log context instead
+        console.warn(`[WS] Connection error for session ${sessionId} (state: ${ws.readyState})`)
         callbacksRef.current.onError?.(error)
       }
 
