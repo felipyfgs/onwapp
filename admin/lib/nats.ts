@@ -18,6 +18,21 @@ export interface SessionEvent {
 
 export type EventCallback = (event: SessionEvent) => void;
 
+function getNatsUrl(): string | null {
+  if (typeof window === "undefined") return null;
+
+  // Se configurado explicitamente, usa
+  const envUrl = process.env.NEXT_PUBLIC_NATS_WS_URL;
+  if (envUrl && envUrl !== "ws://localhost:9222") {
+    return envUrl;
+  }
+
+  // Auto-detect: usa o mesmo host da página
+  const host = window.location.hostname;
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  return `${protocol}//${host}:9222`;
+}
+
 class NatsClient {
   private connection: NatsConnection | null = null;
   private subscriptions: Map<string, Subscription> = new Map();
@@ -100,7 +115,11 @@ class NatsClient {
 export const natsClient = new NatsClient();
 
 export async function connectNats(url?: string): Promise<void> {
-  const natsUrl = url || process.env.NEXT_PUBLIC_NATS_WS_URL || "ws://localhost:9222";
+  const natsUrl = url || getNatsUrl();
+  if (!natsUrl) {
+    console.warn("[NATS] Cannot determine WebSocket URL (SSR)");
+    return;
+  }
   await natsClient.connect(natsUrl);
 }
 
