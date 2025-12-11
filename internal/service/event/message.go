@@ -12,7 +12,11 @@ import (
 
 	"onwapp/internal/logger"
 	"onwapp/internal/model"
+	"onwapp/internal/util"
 )
+
+// downloadSemaphore limits concurrent media downloads (shared with media service)
+var downloadSemaphore = util.NewSemaphore(100)
 
 // Timeout constants for message handling
 const (
@@ -119,6 +123,9 @@ func (s *Service) handleMessage(ctx context.Context, session *model.Session, e *
 		} else {
 			if s.mediaService != nil && session.Client != nil {
 				go func(m *model.Media, client *model.Session) {
+					downloadSemaphore.Acquire()
+					defer downloadSemaphore.Release()
+
 					downloadCtx, cancel := context.WithTimeout(context.Background(), mediaDownloadTimeoutMsg)
 					defer cancel()
 

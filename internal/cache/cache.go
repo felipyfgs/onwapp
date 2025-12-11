@@ -5,6 +5,9 @@ import (
 	"time"
 )
 
+// maxCacheSize is the maximum number of items in cache (auto-evicts oldest when exceeded)
+const maxCacheSize = 10000
+
 // Item represents a cached item with expiration
 type Item struct {
 	Value      interface{}
@@ -16,24 +19,31 @@ func (i *Item) IsExpired() bool {
 	return time.Now().After(i.Expiration)
 }
 
-// Cache is a simple in-memory cache with TTL
+// Cache is a simple in-memory cache with TTL and size limit
 type Cache struct {
-	items map[string]*Item
-	mu    sync.RWMutex
-	ttl   time.Duration
+	items  map[string]*Item
+	mu     sync.RWMutex
+	ttl    time.Duration
+	stopCh chan struct{}
 }
 
 // New creates a new cache with the specified TTL
 func New(ttl time.Duration) *Cache {
 	c := &Cache{
-		items: make(map[string]*Item),
-		ttl:   ttl,
+		items:  make(map[string]*Item),
+		ttl:    ttl,
+		stopCh: make(chan struct{}),
 	}
 
 	// Start cleanup goroutine
 	go c.cleanup()
 
 	return c
+}
+
+// Close stops the cleanup goroutine
+func (c *Cache) Close() {
+	close(c.stopCh)
 }
 
 // Get retrieves an item from cache

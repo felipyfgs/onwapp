@@ -46,7 +46,8 @@ type SessionService struct {
 	database         *db.Database
 	webhookService   WebhookSender
 	eventService     *event.Service
-	sessions         map[string]*model.Session
+	sessions         map[string]*model.Session // indexed by session name
+	sessionsByID     map[string]*model.Session // indexed by UUID for O(1) lookup
 	mu               sync.RWMutex
 	externalHandlers []EventHandler
 }
@@ -59,6 +60,7 @@ func NewSessionService(container *sqlstore.Container, database *db.Database, web
 		webhookService: webhookService,
 		eventService:   eventService,
 		sessions:       make(map[string]*model.Session),
+		sessionsByID:   make(map[string]*model.Session),
 	}
 }
 
@@ -106,6 +108,7 @@ func (s *SessionService) LoadFromDatabase(ctx context.Context) error {
 
 		s.mu.Lock()
 		s.sessions[rec.Session] = session
+		s.sessionsByID[rec.ID] = session
 		s.mu.Unlock()
 
 		logger.Session().Info().Str("session", rec.Session).Str("jid", rec.DeviceJID).Str("phone", rec.Phone).Str("status", rec.Status).Msg("Session loaded from database")
@@ -174,6 +177,7 @@ func (s *SessionService) Create(ctx context.Context, sessionId string, apiKey st
 	}
 
 	s.sessions[sessionId] = session
+	s.sessionsByID[session.ID] = session
 	return session, nil
 }
 
@@ -188,17 +192,16 @@ func (s *SessionService) Get(sessionId string) (*model.Session, error) {
 	return session, nil
 }
 
-// GetByID finds a session by its UUID (session.ID field)
+// GetByID finds a session by its UUID (session.ID field) - O(1) lookup
 func (s *SessionService) GetByID(id string) (*model.Session, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	for _, session := range s.sessions {
-		if session.ID == id {
-			return session, nil
-		}
+	session, exists := s.sessionsByID[id]
+	if !exists {
+		return nil, fmt.Errorf("session with ID %s not found", id)
 	}
-	return nil, fmt.Errorf("session with ID %s not found", id)
+	return session, nil
 }
 
 func (s *SessionService) Delete(ctx context.Context, sessionId string) error {
@@ -243,8 +246,9 @@ func (s *SessionService) Delete(ctx context.Context, sessionId string) error {
 		// Clear QR code
 		session.SetQR("")
 
-		// Remove from in-memory map
+		// Remove from in-memory maps
 		delete(s.sessions, sessionId)
+		delete(s.sessionsByID, session.ID)
 	}
 
 	// Always try to delete from database (even if not in memory)

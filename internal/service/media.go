@@ -16,7 +16,11 @@ import (
 	"onwapp/internal/db"
 	"onwapp/internal/logger"
 	"onwapp/internal/model"
+	"onwapp/internal/util"
 )
+
+// downloadSemaphore limits concurrent media downloads to prevent resource exhaustion
+var downloadSemaphore = util.NewSemaphore(100)
 
 // Timeout and delay constants for media operations
 const (
@@ -323,8 +327,11 @@ func (s *MediaService) HandleMediaRetryResponse(ctx context.Context, client *wha
 		return fmt.Errorf("failed to get updated media: %w", err)
 	}
 
-	// Download with new path
+	// Download with new path (with semaphore to limit concurrent downloads)
 	go func() {
+		downloadSemaphore.Acquire()
+		defer downloadSemaphore.Release()
+
 		downloadCtx, cancel := context.WithTimeout(context.Background(), mediaDownloadTimeout)
 		defer cancel()
 
