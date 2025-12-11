@@ -2,13 +2,12 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { AppSidebar } from "@/components/layout";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SessionCard, QRCodeModal, CreateSessionDialog } from "@/components/session";
-import { PageHeader, StatsCard } from "@/components/common";
+import { StatsCard } from "@/components/common";
+import { ThemeToggle } from "@/components/theme-toggle";
 import {
   getSessions,
   createSession,
@@ -21,7 +20,7 @@ import {
 } from "@/lib/api";
 import { useSessionEvents } from "@/hooks/useSessionEvents";
 import { SessionEvent } from "@/lib/nats";
-import { Plus, RefreshCw, Wifi, WifiOff, Loader2, Search, Smartphone } from "lucide-react";
+import { Plus, RefreshCw, Wifi, WifiOff, Loader2, Search, Smartphone, MessageSquare } from "lucide-react";
 
 type StatusFilter = "all" | "connected" | "disconnected" | "connecting";
 
@@ -145,11 +144,26 @@ export default function SessionsPage() {
   ];
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <PageHeader breadcrumbs={[{ label: "Sessions" }]} showBack={false} />
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="flex h-14 items-center justify-between px-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <MessageSquare className="h-5 w-5" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold leading-none">OnWApp</span>
+              <span className="text-xs text-muted-foreground">Session Manager</span>
+            </div>
+          </div>
+          <ThemeToggle />
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="px-8 py-6 lg:px-12">
+        <div className="mx-auto max-w-6xl space-y-6">
           {/* Stats */}
           <div className="grid gap-4 md:grid-cols-3">
             <StatsCard title="Connected" value={connectedCount} icon={Wifi} variant="primary" />
@@ -168,7 +182,7 @@ export default function SessionsPage() {
                 className="pl-10"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {filterButtons.map((btn) => (
                 <Button
                   key={btn.value}
@@ -239,19 +253,19 @@ export default function SessionsPage() {
             </div>
           )}
         </div>
+      </main>
 
-        <CreateSessionDialog
-          open={showCreateDialog}
-          onClose={() => setShowCreateDialog(false)}
-          onCreate={handleCreate}
-        />
+      <CreateSessionDialog
+        open={showCreateDialog}
+        onClose={() => setShowCreateDialog(false)}
+        onCreate={handleCreate}
+      />
 
-        <QRCodeModal
-          open={!!qrSession}
-          onClose={() => setQrSession(null)}
-          sessionName={qrSession || ""}
-        />
-      </SidebarInset>
-    </SidebarProvider>
+      <QRCodeModal
+        open={!!qrSession}
+        onClose={() => setQrSession(null)}
+        sessionName={qrSession || ""}
+      />
+    </div>
   );
 }
