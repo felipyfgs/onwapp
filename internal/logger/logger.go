@@ -205,6 +205,7 @@ func WPP() *zerolog.Logger      { l := Module("WPP"); return &l }
 func Chatwoot() *zerolog.Logger { l := Module("CHATWOOT"); return &l }
 func API() *zerolog.Logger      { l := Module("API"); return &l }
 func Queue() *zerolog.Logger    { l := Module("QUEUE"); return &l }
+func Admin() *zerolog.Logger    { l := Module("ADMIN"); return &l }
 
 func FilteredDBLogger() zerolog.Logger {
 	return Log.With().Str("module", "DB").Logger().Hook(dbFilterHook{})
