@@ -12,6 +12,12 @@ export function useSessionEvents(onEvent: (event: SessionEvent) => void) {
     let mounted = true;
 
     async function setup() {
+      const natsUrl = process.env.NEXT_PUBLIC_NATS_WS_URL;
+      if (!natsUrl) {
+        console.debug("[useSessionEvents] NATS WebSocket URL not configured, skipping real-time events");
+        return;
+      }
+
       try {
         if (!natsClient.isConnected()) {
           await connectNats();
@@ -25,7 +31,7 @@ export function useSessionEvents(onEvent: (event: SessionEvent) => void) {
           }
         });
       } catch (error) {
-        console.error("[useSessionEvents] Failed to connect:", error);
+        console.warn("[useSessionEvents] NATS connection failed, real-time events disabled");
       }
     }
 

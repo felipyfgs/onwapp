@@ -93,14 +93,14 @@ class NatsClient {
   }
 
   subscribeToSessionEvents(callback: EventCallback): () => void {
-    return this.subscribe("onwapp.admin.>", callback);
+    return this.subscribe("ONWAPP.admin.>", callback);
   }
 }
 
 export const natsClient = new NatsClient();
 
 export async function connectNats(url?: string): Promise<void> {
-  const natsUrl = url || process.env.NEXT_PUBLIC_NATS_WS_URL || "ws://localhost:8080";
+  const natsUrl = url || process.env.NEXT_PUBLIC_NATS_WS_URL || "ws://localhost:9222";
   await natsClient.connect(natsUrl);
 }
 

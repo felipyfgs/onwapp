@@ -16,8 +16,12 @@ import {
 } from "@/lib/api";
 import { useSessionEvents } from "@/hooks/useSessionEvents";
 import { SessionEvent } from "@/lib/nats";
-import { Plus, RefreshCw, Wifi, WifiOff, MessageSquare } from "lucide-react";
+import { Plus, RefreshCw, Wifi, WifiOff, MessageSquare, Search } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { Input } from "@/components/ui/input";
+
+type StatusFilter = "all" | "connected" | "disconnected" | "connecting";
 
 export default function SessionsPage() {
   const router = useRouter();
@@ -25,6 +29,8 @@ export default function SessionsPage() {
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [qrSession, setQrSession] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   const fetchSessions = useCallback(async () => {
     try {
@@ -119,31 +125,33 @@ export default function SessionsPage() {
 
   const connectedCount = sessions.filter((s) => s.status === "connected").length;
   const disconnectedCount = sessions.filter((s) => s.status === "disconnected").length;
+  const connectingCount = sessions.filter((s) => s.status === "connecting").length;
+
+  const filteredSessions = sessions.filter((session) => {
+    const matchesSearch = session.session.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      session.pushName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      session.phone?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesStatus = statusFilter === "all" || session.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2">
             <MessageSquare className="h-6 w-6 text-primary" />
             <span className="text-xl font-bold">OnWApp</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={fetchSessions}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
-            </Button>
-            <Button size="sm" onClick={() => setShowCreateDialog(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Session
-            </Button>
-          </div>
+          <ThemeToggle />
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container py-6">
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-3 mb-6">
           <div className="rounded-xl border bg-card p-4">
@@ -181,33 +189,89 @@ export default function SessionsPage() {
           </div>
         </div>
 
-        {/* Sessions Title */}
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">WhatsApp Sessions</h2>
+        {/* Search and Filters */}
+        <div className="mb-6 space-y-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search sessions by name, phone or push name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant={statusFilter === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setStatusFilter("all")}
+            >
+              All ({sessions.length})
+            </Button>
+            <Button
+              variant={statusFilter === "connected" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setStatusFilter("connected")}
+            >
+              <Wifi className="mr-2 h-4 w-4" />
+              Connected ({connectedCount})
+            </Button>
+            <Button
+              variant={statusFilter === "disconnected" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setStatusFilter("disconnected")}
+            >
+              <WifiOff className="mr-2 h-4 w-4" />
+              Disconnected ({disconnectedCount})
+            </Button>
+            <Button
+              variant={statusFilter === "connecting" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setStatusFilter("connecting")}
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Connecting ({connectingCount})
+            </Button>
+            <div className="flex-1" />
+            <Button variant="outline" size="sm" onClick={fetchSessions}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
+            <Button size="sm" onClick={() => setShowCreateDialog(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Session
+            </Button>
+          </div>
         </div>
 
-        {/* Sessions Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {loading ? (
-            <>
-              <Skeleton className="h-32 rounded-xl" />
-              <Skeleton className="h-32 rounded-xl" />
-              <Skeleton className="h-32 rounded-xl" />
-            </>
-          ) : sessions.length === 0 ? (
-            <div className="col-span-full rounded-xl border bg-muted/50 p-12 text-center">
-              <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-medium mb-2">No sessions yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Create your first WhatsApp session to get started
-              </p>
+        {/* Sessions List */}
+        {loading ? (
+          <div className="rounded-xl border bg-card overflow-hidden">
+            <Skeleton className="h-[72px]" />
+            <Skeleton className="h-[72px]" />
+            <Skeleton className="h-[72px]" />
+          </div>
+        ) : filteredSessions.length === 0 ? (
+          <div className="rounded-xl border bg-muted/50 p-12 text-center">
+            <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-medium mb-2">
+              {sessions.length === 0 ? "No sessions yet" : "No sessions found"}
+            </h3>
+            <p className="text-muted-foreground mb-4">
+              {sessions.length === 0
+                ? "Create your first WhatsApp session to get started"
+                : "Try adjusting your search or filter"}
+            </p>
+            {sessions.length === 0 && (
               <Button onClick={() => setShowCreateDialog(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create Session
               </Button>
-            </div>
-          ) : (
-            sessions.map((session) => (
+            )}
+          </div>
+        ) : (
+          <div className="rounded-xl border bg-card overflow-hidden">
+            {filteredSessions.map((session) => (
               <SessionCard
                 key={session.id}
                 session={session}
@@ -219,9 +283,9 @@ export default function SessionsPage() {
                 onShowQR={setQrSession}
                 onOpen={handleOpenSession}
               />
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </main>
 
       <CreateSessionDialog

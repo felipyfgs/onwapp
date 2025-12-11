@@ -2,18 +2,15 @@
 
 import * as React from "react"
 import {
-  AudioWaveform,
-  BookOpen,
-  Bot,
-  Command,
-  Frame,
-  GalleryVerticalEnd,
-  Map,
   MessageSquare,
-  PieChart,
   Settings2,
-  SquareTerminal,
   Smartphone,
+  Users,
+  MessagesSquare,
+  Image,
+  Webhook,
+  UsersRound,
+  Send,
 } from "lucide-react"
 
 import { NavMain } from "./nav-main"
@@ -28,7 +25,6 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
-// This is sample data.
 const data = {
   user: {
     name: "Admin",
@@ -48,38 +44,45 @@ const data = {
       url: "/sessions",
       icon: Smartphone,
       isActive: true,
-      items: [
-        {
-          title: "All Sessions",
-          url: "/sessions",
-        },
-      ],
     },
     {
-      title: "Dashboard",
-      url: "/dashboard",
-      icon: SquareTerminal,
+      title: "Chats",
+      url: "/chats",
+      icon: MessagesSquare,
+    },
+    {
+      title: "Contacts",
+      url: "/contacts",
+      icon: Users,
+    },
+    {
+      title: "Groups",
+      url: "/groups",
+      icon: UsersRound,
+    },
+    {
+      title: "Messages",
+      url: "/messages",
+      icon: Send,
+    },
+    {
+      title: "Media",
+      url: "/media",
+      icon: Image,
+    },
+    {
+      title: "Integrations",
+      url: "/integrations",
+      icon: Webhook,
       items: [
-        {
-          title: "Overview",
-          url: "/dashboard",
-        },
+        { title: "Webhooks", url: "/webhooks" },
+        { title: "Chatwoot", url: "/integrations/chatwoot" },
       ],
     },
     {
       title: "Settings",
-      url: "#",
+      url: "/settings",
       icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "API Keys",
-          url: "#",
-        },
-      ],
     },
   ],
   projects: [],

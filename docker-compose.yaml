@@ -34,14 +34,15 @@ services:
     ports:
       - '4222:4222'
       - '8222:8222'
+      - '9222:9222'
     environment:
       TZ: America/Sao_Paulo
     command:
-      - "--http_port=8222"
-      - "--js"
-      - "--store_dir=/data"
+      - "-c"
+      - "/etc/nats/nats.conf"
     volumes:
       - dev_nats_data:/data
+      - ./nats.conf:/etc/nats/nats.conf:ro
     networks:
       - onwapp-dev-network
 

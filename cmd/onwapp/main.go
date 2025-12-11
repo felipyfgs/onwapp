@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"onwapp/internal/admin"
 	"onwapp/internal/api/handler"
 	"onwapp/internal/api/router"
 	"onwapp/internal/config"
@@ -134,6 +135,7 @@ func main() {
 	sessionService.SetPresenceSender(wppService)
 
 	var queueService *queue.Service
+	var adminPublisher *admin.Publisher
 	if cfg.NatsEnabled {
 		var err error
 		queueService, err = queue.NewService(cfg)
@@ -146,6 +148,13 @@ func main() {
 				queueService = nil
 			} else {
 				logger.Nats().Info().Msg("Queue service initialized with NATS JetStream")
+
+				adminPublisher = admin.New(queueService.Client())
+				if adminPublisher != nil {
+					if err := adminPublisher.EnsureStream(ctx); err != nil {
+						logger.Nats().Warn().Err(err).Msg("Failed to initialize admin stream")
+					}
+				}
 			}
 		}
 	}
@@ -205,6 +214,11 @@ func main() {
 	}
 
 	sessionService.AddEventHandler(chatwootEventHandler.HandleEvent)
+
+	if adminPublisher != nil {
+		sessionService.AddEventHandler(adminPublisher.HandleEvent)
+		logger.Admin().Info().Msg("Admin event handler registered")
+	}
 
 	if err := sessionService.LoadFromDatabase(ctx); err != nil {
 		logger.Session().Warn().Err(err).Msg("Failed to load sessions from database")
