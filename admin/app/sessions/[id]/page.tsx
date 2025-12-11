@@ -3,22 +3,11 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AppSidebar } from "@/components/layout";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { QRCodeModal } from "@/components/session";
+import { PageHeader, StatsCard } from "@/components/common";
 import {
   getSession,
   connectSession,
@@ -36,15 +25,11 @@ import {
   LogOut,
   RefreshCw,
   QrCode,
-  Wifi,
-  WifiOff,
   MessageSquare,
   Users,
   Phone,
-  ArrowLeft,
+  UsersRound,
 } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function SessionDetailPage() {
   const params = useParams();
@@ -76,7 +61,6 @@ export default function SessionDetailPage() {
     setSession((prev) =>
       prev ? { ...prev, status: event.status as Session["status"] } : prev
     );
-
     if (event.event === "session.qr" && event.data?.qrBase64) {
       setQrCode(event.data.qrBase64);
       setShowQR(true);
@@ -130,40 +114,18 @@ export default function SessionDetailPage() {
   };
 
   const statusColor = session?.status === "connected"
-    ? "text-green-600"
+    ? "text-primary"
     : session?.status === "connecting"
-    ? "text-yellow-600"
-    : "text-red-600";
+    ? "text-chart-4"
+    : "text-destructive";
 
   return (
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center justify-between gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="/sessions">Sessions</BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>{sessionId}</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-          <div className="flex items-center gap-2 px-4">
-            <Button variant="outline" size="sm" onClick={() => router.push("/sessions")}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
-            <ThemeToggle />
-          </div>
-        </header>
-
+        <PageHeader 
+          breadcrumbs={[{ label: "Sessions", href: "/sessions" }, { label: sessionId }]} 
+        />
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           {loading ? (
             <div className="space-y-4">
@@ -179,7 +141,7 @@ export default function SessionDetailPage() {
             <>
               {/* Session Info Card */}
               <div className="rounded-xl border bg-card p-6">
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                   <div className="flex items-center gap-4">
                     <div className="relative">
                       <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center text-2xl font-semibold">
@@ -188,10 +150,10 @@ export default function SessionDetailPage() {
                       <div
                         className={`absolute bottom-0 right-0 h-4 w-4 rounded-full border-2 border-background ${
                           session.status === "connected"
-                            ? "bg-green-500"
+                            ? "bg-primary"
                             : session.status === "connecting"
-                            ? "bg-yellow-500"
-                            : "bg-red-500"
+                            ? "bg-chart-4"
+                            : "bg-destructive"
                         }`}
                       />
                     </div>
@@ -210,7 +172,7 @@ export default function SessionDetailPage() {
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {session.status === "disconnected" && (
                       <Button onClick={handleConnect}>
                         <Power className="mr-2 h-4 w-4" />
@@ -245,53 +207,13 @@ export default function SessionDetailPage() {
 
               {/* Stats Cards */}
               <div className="grid gap-4 md:grid-cols-4">
-                <div className="rounded-xl border bg-card p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-muted p-2">
-                      <MessageSquare className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Messages</p>
-                      <p className="text-2xl font-bold">{session.stats?.messages || 0}</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="rounded-xl border bg-card p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-muted p-2">
-                      <Phone className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Chats</p>
-                      <p className="text-2xl font-bold">{session.stats?.chats || 0}</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="rounded-xl border bg-card p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-muted p-2">
-                      <Users className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Contacts</p>
-                      <p className="text-2xl font-bold">{session.stats?.contacts || 0}</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="rounded-xl border bg-card p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-muted p-2">
-                      <Users className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Groups</p>
-                      <p className="text-2xl font-bold">{session.stats?.groups || 0}</p>
-                    </div>
-                  </div>
-                </div>
+                <StatsCard title="Messages" value={session.stats?.messages || 0} icon={MessageSquare} variant="chart1" />
+                <StatsCard title="Chats" value={session.stats?.chats || 0} icon={Phone} variant="chart2" />
+                <StatsCard title="Contacts" value={session.stats?.contacts || 0} icon={Users} variant="primary" />
+                <StatsCard title="Groups" value={session.stats?.groups || 0} icon={UsersRound} variant="chart4" />
               </div>
 
-              {/* Placeholder for future content */}
+              {/* Placeholder */}
               <div className="rounded-xl border bg-muted/50 p-8 text-center">
                 <p className="text-muted-foreground">
                   Session management features coming soon...

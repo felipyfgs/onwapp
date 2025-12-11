@@ -59,13 +59,15 @@ export function PageHeader({
       </div>
       <div className="flex items-center gap-2 px-4">
         {showBack && (
-          <Button variant="ghost" size="icon" onClick={() => router.push(backUrl)}>
-            <ArrowLeft className="h-4 w-4" />
+          <Button variant="outline" size="sm" onClick={() => router.push(backUrl)}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Sessions
           </Button>
         )}
         {showLogout && onLogout && (
-          <Button variant="ghost" size="icon" onClick={onLogout}>
-            <LogOut className="h-4 w-4" />
+          <Button variant="outline" size="sm" onClick={onLogout}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Logout
           </Button>
         )}
         <ThemeToggle />

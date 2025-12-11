@@ -3,18 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { AppSidebar } from "@/components/layout";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -27,9 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PageHeader, StatsCard } from "@/components/common";
 import { getChats, getSessions, Chat, Session } from "@/lib/api";
 import { Search, MessagesSquare, Users, Archive, RefreshCw } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function ChatsPage() {
   const router = useRouter();
@@ -42,9 +31,10 @@ export default function ChatsPage() {
   useEffect(() => {
     getSessions()
       .then((data) => {
-        setSessions(data.filter((s) => s.status === "connected"));
-        if (data.length > 0 && data.some((s) => s.status === "connected")) {
-          setSelectedSession(data.find((s) => s.status === "connected")?.session || "");
+        const connected = Array.isArray(data) ? data.filter((s) => s.status === "connected") : [];
+        setSessions(connected);
+        if (connected.length > 0) {
+          setSelectedSession(connected[0].session);
         }
       })
       .finally(() => setLoading(false));
@@ -91,28 +81,9 @@ export default function ChatsPage() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center justify-between gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Chats</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-          <div className="flex items-center gap-2 px-4">
-            <Button variant="outline" size="sm" onClick={fetchChats}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
-            </Button>
-            <ThemeToggle />
-          </div>
-        </header>
+        <PageHeader breadcrumbs={[{ label: "Chats" }]} />
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          {/* Session Selector & Search */}
+          {/* Toolbar */}
           <div className="flex flex-col sm:flex-row gap-4">
             <Select value={selectedSession} onValueChange={setSelectedSession}>
               <SelectTrigger className="w-full sm:w-[200px]">
@@ -135,43 +106,17 @@ export default function ChatsPage() {
                 className="pl-10"
               />
             </div>
+            <Button variant="outline" size="sm" onClick={fetchChats}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
           </div>
 
           {/* Stats */}
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl border bg-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-blue-100 dark:bg-blue-900 p-2">
-                  <MessagesSquare className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Chats</p>
-                  <p className="text-2xl font-bold">{chats.length}</p>
-                </div>
-              </div>
-            </div>
-            <div className="rounded-xl border bg-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-green-100 dark:bg-green-900 p-2">
-                  <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Groups</p>
-                  <p className="text-2xl font-bold">{chats.filter((c) => c.isGroup).length}</p>
-                </div>
-              </div>
-            </div>
-            <div className="rounded-xl border bg-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-orange-100 dark:bg-orange-900 p-2">
-                  <Archive className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Archived</p>
-                  <p className="text-2xl font-bold">{chats.filter((c) => c.isArchived).length}</p>
-                </div>
-              </div>
-            </div>
+            <StatsCard title="Total Chats" value={chats.length} icon={MessagesSquare} variant="chart1" />
+            <StatsCard title="Groups" value={chats.filter((c) => c.isGroup).length} icon={Users} variant="primary" />
+            <StatsCard title="Archived" value={chats.filter((c) => c.isArchived).length} icon={Archive} variant="chart4" />
           </div>
 
           {/* Chat List */}
@@ -209,11 +154,11 @@ export default function ChatsPage() {
                 return (
                   <div
                     key={chat.jid}
-                    className="flex items-center gap-4 p-4 border-b last:border-b-0 hover:bg-muted/50 cursor-pointer transition-colors"
+                    className="flex items-center gap-4 p-4 border-b last:border-b-0 hover:bg-accent cursor-pointer transition-colors"
                     onClick={() => router.push(`/chats/${selectedSession}/${encodeURIComponent(chat.jid)}`)}
                   >
                     <Avatar className="h-12 w-12">
-                      <AvatarFallback className={chat.isGroup ? "bg-green-100 text-green-700" : ""}>
+                      <AvatarFallback className={chat.isGroup ? "bg-primary/10 text-primary" : ""}>
                         {chat.isGroup ? <Users className="h-5 w-5" /> : initials}
                       </AvatarFallback>
                     </Avatar>

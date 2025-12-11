@@ -2,20 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { AppSidebar } from "@/components/layout";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,9 +29,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { PageHeader } from "@/components/common";
 import { getSessions, getWebhook, setWebhook, deleteWebhook, Webhook, Session } from "@/lib/api";
 import { Webhook as WebhookIcon, Plus, Trash2, RefreshCw, CheckCircle, XCircle, ExternalLink } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function WebhooksPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -58,7 +45,7 @@ export default function WebhooksPage() {
   useEffect(() => {
     getSessions()
       .then((data) => {
-        const connected = data.filter((s) => s.status === "connected");
+        const connected = Array.isArray(data) ? data.filter((s) => s.status === "connected") : [];
         setSessions(connected);
         if (connected.length > 0) {
           setSelectedSession(connected[0].session);
@@ -132,32 +119,9 @@ export default function WebhooksPage() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center justify-between gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="/integrations">Integrations</BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Webhooks</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-          <div className="flex items-center gap-2 px-4">
-            <Button variant="outline" size="sm" onClick={fetchWebhook}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
-            </Button>
-            <ThemeToggle />
-          </div>
-        </header>
+        <PageHeader breadcrumbs={[{ label: "Integrations", href: "#" }, { label: "Webhooks" }]} />
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          {/* Session Selector */}
+          {/* Toolbar */}
           <div className="flex gap-4">
             <Select value={selectedSession} onValueChange={setSelectedSession}>
               <SelectTrigger className="w-[200px]">
@@ -171,6 +135,10 @@ export default function WebhooksPage() {
                 ))}
               </SelectContent>
             </Select>
+            <Button variant="outline" size="sm" onClick={fetchWebhook}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
           </div>
 
           {/* Webhook Card */}

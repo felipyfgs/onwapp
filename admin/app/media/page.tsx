@@ -2,18 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { AppSidebar } from "@/components/layout";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -23,9 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PageHeader, StatsCard } from "@/components/common";
 import { getMediaList, getSessions, Media, Session } from "@/lib/api";
 import { Image, FileText, Mic, Video, File, RefreshCw, Download } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY || "";
@@ -39,7 +28,7 @@ export default function MediaPage() {
   useEffect(() => {
     getSessions()
       .then((data) => {
-        const connected = data.filter((s) => s.status === "connected");
+        const connected = Array.isArray(data) ? data.filter((s) => s.status === "connected") : [];
         setSessions(connected);
         if (connected.length > 0) {
           setSelectedSession(connected[0].session);
@@ -94,8 +83,6 @@ export default function MediaPage() {
       year: "numeric",
       month: "short",
       day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
     });
   };
 
@@ -108,28 +95,9 @@ export default function MediaPage() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center justify-between gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Media</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-          <div className="flex items-center gap-2 px-4">
-            <Button variant="outline" size="sm" onClick={fetchMedia}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
-            </Button>
-            <ThemeToggle />
-          </div>
-        </header>
+        <PageHeader breadcrumbs={[{ label: "Media" }]} />
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          {/* Session Selector */}
+          {/* Toolbar */}
           <div className="flex gap-4">
             <Select value={selectedSession} onValueChange={setSelectedSession}>
               <SelectTrigger className="w-[200px]">
@@ -143,54 +111,18 @@ export default function MediaPage() {
                 ))}
               </SelectContent>
             </Select>
+            <Button variant="outline" size="sm" onClick={fetchMedia}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
           </div>
 
           {/* Stats */}
           <div className="grid gap-4 md:grid-cols-4">
-            <div className="rounded-xl border bg-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-blue-100 dark:bg-blue-900 p-2">
-                  <Image className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Images</p>
-                  <p className="text-2xl font-bold">{images.length}</p>
-                </div>
-              </div>
-            </div>
-            <div className="rounded-xl border bg-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-purple-100 dark:bg-purple-900 p-2">
-                  <Video className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Videos</p>
-                  <p className="text-2xl font-bold">{videos.length}</p>
-                </div>
-              </div>
-            </div>
-            <div className="rounded-xl border bg-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-green-100 dark:bg-green-900 p-2">
-                  <Mic className="h-5 w-5 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Audio</p>
-                  <p className="text-2xl font-bold">{audios.length}</p>
-                </div>
-              </div>
-            </div>
-            <div className="rounded-xl border bg-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-orange-100 dark:bg-orange-900 p-2">
-                  <FileText className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Documents</p>
-                  <p className="text-2xl font-bold">{documents.length}</p>
-                </div>
-              </div>
-            </div>
+            <StatsCard title="Images" value={images.length} icon={Image} variant="chart1" />
+            <StatsCard title="Videos" value={videos.length} icon={Video} variant="chart2" />
+            <StatsCard title="Audio" value={audios.length} icon={Mic} variant="primary" />
+            <StatsCard title="Documents" value={documents.length} icon={FileText} variant="chart4" />
           </div>
 
           {/* Media Grid */}

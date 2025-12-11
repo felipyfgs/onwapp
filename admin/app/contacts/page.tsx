@@ -2,18 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { AppSidebar } from "@/components/layout";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,9 +22,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { PageHeader, StatsCard } from "@/components/common";
 import { getContacts, getSessions, checkPhone, Contact, Session } from "@/lib/api";
-import { Search, Users, Phone, Building2, RefreshCw, UserPlus } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { Search, Users, Phone, Building2, RefreshCw, UserPlus, CheckCircle, XCircle } from "lucide-react";
 
 export default function ContactsPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -51,9 +40,10 @@ export default function ContactsPage() {
   useEffect(() => {
     getSessions()
       .then((data) => {
-        setSessions(data.filter((s) => s.status === "connected"));
-        if (data.some((s) => s.status === "connected")) {
-          setSelectedSession(data.find((s) => s.status === "connected")?.session || "");
+        const connected = Array.isArray(data) ? data.filter((s) => s.status === "connected") : [];
+        setSessions(connected);
+        if (connected.length > 0) {
+          setSelectedSession(connected[0].session);
         }
       })
       .finally(() => setLoading(false));
@@ -107,61 +97,9 @@ export default function ContactsPage() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center justify-between gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Contacts</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-          <div className="flex items-center gap-2 px-4">
-            <Dialog open={checkPhoneDialog} onOpenChange={setCheckPhoneDialog}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Phone className="mr-2 h-4 w-4" />
-                  Check Number
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Check WhatsApp Number</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <Input
-                    placeholder="Phone number (e.g., 5511999999999)"
-                    value={phoneToCheck}
-                    onChange={(e) => setPhoneToCheck(e.target.value)}
-                  />
-                  <Button onClick={handleCheckPhone} disabled={checking} className="w-full">
-                    {checking ? "Checking..." : "Check"}
-                  </Button>
-                  {checkResult && (
-                    <div className={`p-4 rounded-lg ${checkResult.exists ? "bg-green-100 dark:bg-green-900" : "bg-red-100 dark:bg-red-900"}`}>
-                      <p className="font-medium">
-                        {checkResult.exists ? "Number has WhatsApp" : "Number not on WhatsApp"}
-                      </p>
-                      {checkResult.exists && (
-                        <p className="text-sm text-muted-foreground mt-1">JID: {checkResult.jid}</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
-            <Button variant="outline" size="sm" onClick={fetchContacts}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
-            </Button>
-            <ThemeToggle />
-          </div>
-        </header>
+        <PageHeader breadcrumbs={[{ label: "Contacts" }]} />
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          {/* Session Selector & Search */}
+          {/* Toolbar */}
           <div className="flex flex-col sm:flex-row gap-4">
             <Select value={selectedSession} onValueChange={setSelectedSession}>
               <SelectTrigger className="w-full sm:w-[200px]">
@@ -184,43 +122,53 @@ export default function ContactsPage() {
                 className="pl-10"
               />
             </div>
+            <Dialog open={checkPhoneDialog} onOpenChange={setCheckPhoneDialog}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Phone className="mr-2 h-4 w-4" />
+                  Check
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Check WhatsApp Number</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <Input
+                    placeholder="Phone number (e.g., 5511999999999)"
+                    value={phoneToCheck}
+                    onChange={(e) => setPhoneToCheck(e.target.value)}
+                  />
+                  <Button onClick={handleCheckPhone} disabled={checking} className="w-full">
+                    {checking ? "Checking..." : "Check"}
+                  </Button>
+                  {checkResult && (
+                    <div className={`flex items-center gap-2 p-4 rounded-lg ${checkResult.exists ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"}`}>
+                      {checkResult.exists ? <CheckCircle className="h-5 w-5" /> : <XCircle className="h-5 w-5" />}
+                      <div>
+                        <p className="font-medium">
+                          {checkResult.exists ? "Number has WhatsApp" : "Number not on WhatsApp"}
+                        </p>
+                        {checkResult.exists && (
+                          <p className="text-sm opacity-80">JID: {checkResult.jid}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Button variant="outline" size="sm" onClick={fetchContacts}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
           </div>
 
           {/* Stats */}
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl border bg-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-blue-100 dark:bg-blue-900 p-2">
-                  <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Contacts</p>
-                  <p className="text-2xl font-bold">{contacts.length}</p>
-                </div>
-              </div>
-            </div>
-            <div className="rounded-xl border bg-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-purple-100 dark:bg-purple-900 p-2">
-                  <Building2 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Business</p>
-                  <p className="text-2xl font-bold">{businessCount}</p>
-                </div>
-              </div>
-            </div>
-            <div className="rounded-xl border bg-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-green-100 dark:bg-green-900 p-2">
-                  <UserPlus className="h-5 w-5 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">With Name</p>
-                  <p className="text-2xl font-bold">{contacts.filter((c) => c.name || c.pushName).length}</p>
-                </div>
-              </div>
-            </div>
+            <StatsCard title="Total Contacts" value={contacts.length} icon={Users} variant="chart1" />
+            <StatsCard title="Business" value={businessCount} icon={Building2} variant="chart2" />
+            <StatsCard title="With Name" value={contacts.filter((c) => c.name || c.pushName).length} icon={UserPlus} variant="primary" />
           </div>
 
           {/* Contact List */}
@@ -258,7 +206,7 @@ export default function ContactsPage() {
                 return (
                   <div
                     key={contact.jid}
-                    className="flex items-center gap-4 p-4 border-b last:border-b-0 hover:bg-muted/50 transition-colors"
+                    className="flex items-center gap-4 p-4 border-b last:border-b-0 hover:bg-accent transition-colors"
                   >
                     <Avatar className="h-12 w-12">
                       <AvatarFallback>{initials}</AvatarFallback>

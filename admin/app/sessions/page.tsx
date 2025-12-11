@@ -2,8 +2,13 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { AppSidebar } from "@/components/layout";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { SessionCard, QRCodeModal, CreateSessionDialog } from "@/components/session";
+import { PageHeader, StatsCard } from "@/components/common";
 import {
   getSessions,
   createSession,
@@ -16,10 +21,7 @@ import {
 } from "@/lib/api";
 import { useSessionEvents } from "@/hooks/useSessionEvents";
 import { SessionEvent } from "@/lib/nats";
-import { Plus, RefreshCw, Wifi, WifiOff, MessageSquare, Search } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { Input } from "@/components/ui/input";
+import { Plus, RefreshCw, Wifi, WifiOff, Loader2, Search, Smartphone } from "lucide-react";
 
 type StatusFilter = "all" | "connected" | "disconnected" | "connecting";
 
@@ -56,7 +58,6 @@ export default function SessionsPage() {
           : s
       )
     );
-
     if (event.event === "session.qr") {
       setQrSession(event.session);
     }
@@ -132,174 +133,125 @@ export default function SessionsPage() {
     const matchesSearch = session.session.toLowerCase().includes(searchQuery.toLowerCase()) ||
       session.pushName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       session.phone?.toLowerCase().includes(searchQuery.toLowerCase());
-    
     const matchesStatus = statusFilter === "all" || session.status === statusFilter;
-    
     return matchesSearch && matchesStatus;
   });
 
+  const filterButtons: { label: string; value: StatusFilter; count: number }[] = [
+    { label: "All", value: "all", count: sessions.length },
+    { label: "Connected", value: "connected", count: connectedCount },
+    { label: "Disconnected", value: "disconnected", count: disconnectedCount },
+    { label: "Connecting", value: "connecting", count: connectingCount },
+  ];
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">OnWApp</span>
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <PageHeader breadcrumbs={[{ label: "Sessions" }]} showBack={false} />
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+          {/* Stats */}
+          <div className="grid gap-4 md:grid-cols-3">
+            <StatsCard title="Connected" value={connectedCount} icon={Wifi} variant="primary" />
+            <StatsCard title="Disconnected" value={disconnectedCount} icon={WifiOff} variant="chart4" />
+            <StatsCard title="Connecting" value={connectingCount} icon={Loader2} variant="chart2" />
           </div>
-          <ThemeToggle />
-        </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-3 mb-6">
-          <div className="rounded-xl border bg-card p-4">
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-green-100 dark:bg-green-900 p-2">
-                <Wifi className="h-5 w-5 text-green-600 dark:text-green-400" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Connected</p>
-                <p className="text-2xl font-bold">{connectedCount}</p>
-              </div>
-            </div>
-          </div>
-          <div className="rounded-xl border bg-card p-4">
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-red-100 dark:bg-red-900 p-2">
-                <WifiOff className="h-5 w-5 text-red-600 dark:text-red-400" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Disconnected</p>
-                <p className="text-2xl font-bold">{disconnectedCount}</p>
-              </div>
-            </div>
-          </div>
-          <div className="rounded-xl border bg-card p-4">
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-muted p-2">
-                <MessageSquare className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Sessions</p>
-                <p className="text-2xl font-bold">{sessions.length}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Search and Filters */}
-        <div className="mb-6 space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search sessions by name, phone or push name..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant={statusFilter === "all" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setStatusFilter("all")}
-            >
-              All ({sessions.length})
-            </Button>
-            <Button
-              variant={statusFilter === "connected" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setStatusFilter("connected")}
-            >
-              <Wifi className="mr-2 h-4 w-4" />
-              Connected ({connectedCount})
-            </Button>
-            <Button
-              variant={statusFilter === "disconnected" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setStatusFilter("disconnected")}
-            >
-              <WifiOff className="mr-2 h-4 w-4" />
-              Disconnected ({disconnectedCount})
-            </Button>
-            <Button
-              variant={statusFilter === "connecting" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setStatusFilter("connecting")}
-            >
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Connecting ({connectingCount})
-            </Button>
-            <div className="flex-1" />
-            <Button variant="outline" size="sm" onClick={fetchSessions}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
-            </Button>
-            <Button size="sm" onClick={() => setShowCreateDialog(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Session
-            </Button>
-          </div>
-        </div>
-
-        {/* Sessions List */}
-        {loading ? (
-          <div className="rounded-xl border bg-card overflow-hidden">
-            <Skeleton className="h-[72px]" />
-            <Skeleton className="h-[72px]" />
-            <Skeleton className="h-[72px]" />
-          </div>
-        ) : filteredSessions.length === 0 ? (
-          <div className="rounded-xl border bg-muted/50 p-12 text-center">
-            <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-medium mb-2">
-              {sessions.length === 0 ? "No sessions yet" : "No sessions found"}
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              {sessions.length === 0
-                ? "Create your first WhatsApp session to get started"
-                : "Try adjusting your search or filter"}
-            </p>
-            {sessions.length === 0 && (
-              <Button onClick={() => setShowCreateDialog(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Session
-              </Button>
-            )}
-          </div>
-        ) : (
-          <div className="rounded-xl border bg-card overflow-hidden">
-            {filteredSessions.map((session) => (
-              <SessionCard
-                key={session.id}
-                session={session}
-                onConnect={handleConnect}
-                onDisconnect={handleDisconnect}
-                onLogout={handleLogout}
-                onRestart={handleRestart}
-                onDelete={handleDelete}
-                onShowQR={setQrSession}
-                onOpen={handleOpenSession}
+          {/* Toolbar */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search sessions..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
               />
-            ))}
+            </div>
+            <div className="flex gap-2">
+              {filterButtons.map((btn) => (
+                <Button
+                  key={btn.value}
+                  variant={statusFilter === btn.value ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setStatusFilter(btn.value)}
+                >
+                  {btn.label} ({btn.count})
+                </Button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => setShowCreateDialog(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                New Session
+              </Button>
+              <Button variant="outline" size="sm" onClick={fetchSessions}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Refresh
+              </Button>
+            </div>
           </div>
-        )}
-      </main>
 
-      <CreateSessionDialog
-        open={showCreateDialog}
-        onClose={() => setShowCreateDialog(false)}
-        onCreate={handleCreate}
-      />
+          {/* Session List */}
+          {loading ? (
+            <div className="rounded-xl border bg-card overflow-hidden">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="flex items-center gap-4 p-4 border-b last:border-b-0">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-1/3" />
+                    <Skeleton className="h-3 w-1/4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredSessions.length === 0 ? (
+            <div className="rounded-xl border bg-muted/50 p-12 text-center">
+              <Smartphone className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-medium mb-2">No sessions found</h3>
+              <p className="text-muted-foreground mb-4">
+                {searchQuery || statusFilter !== "all"
+                  ? "Try adjusting your search or filter"
+                  : "Create your first session to get started"}
+              </p>
+              {!searchQuery && statusFilter === "all" && (
+                <Button onClick={() => setShowCreateDialog(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Session
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-xl border bg-card overflow-hidden">
+              {filteredSessions.map((session) => (
+                <SessionCard
+                  key={session.session}
+                  session={session}
+                  onConnect={handleConnect}
+                  onDisconnect={handleDisconnect}
+                  onLogout={handleLogout}
+                  onRestart={handleRestart}
+                  onDelete={handleDelete}
+                  onShowQR={() => setQrSession(session.session)}
+                  onOpen={handleOpenSession}
+                />
+              ))}
+            </div>
+          )}
+        </div>
 
-      <QRCodeModal
-        sessionName={qrSession}
-        open={!!qrSession}
-        onClose={() => setQrSession(null)}
-      />
-    </div>
+        <CreateSessionDialog
+          open={showCreateDialog}
+          onClose={() => setShowCreateDialog(false)}
+          onCreate={handleCreate}
+        />
+
+        <QRCodeModal
+          open={!!qrSession}
+          onClose={() => setQrSession(null)}
+          sessionName={qrSession || ""}
+        />
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

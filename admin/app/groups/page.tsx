@@ -3,18 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { AppSidebar } from "@/components/layout";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -35,9 +24,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { PageHeader, StatsCard } from "@/components/common";
 import { getGroups, getSessions, createGroup, Group, Session } from "@/lib/api";
 import { Search, UsersRound, Plus, Users, Lock, Megaphone, RefreshCw } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function GroupsPage() {
   const router = useRouter();
@@ -53,9 +42,10 @@ export default function GroupsPage() {
   useEffect(() => {
     getSessions()
       .then((data) => {
-        setSessions(data.filter((s) => s.status === "connected"));
-        if (data.some((s) => s.status === "connected")) {
-          setSelectedSession(data.find((s) => s.status === "connected")?.session || "");
+        const connected = Array.isArray(data) ? data.filter((s) => s.status === "connected") : [];
+        setSessions(connected);
+        if (connected.length > 0) {
+          setSelectedSession(connected[0].session);
         }
       })
       .finally(() => setLoading(false));
@@ -107,24 +97,36 @@ export default function GroupsPage() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center justify-between gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Groups</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-          <div className="flex items-center gap-2 px-4">
+        <PageHeader breadcrumbs={[{ label: "Groups" }]} />
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+          {/* Toolbar */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Select value={selectedSession} onValueChange={setSelectedSession}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Select session" />
+              </SelectTrigger>
+              <SelectContent>
+                {sessions.map((s) => (
+                  <SelectItem key={s.session} value={s.session}>
+                    {s.pushName || s.session}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search groups..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
             <Dialog open={createDialog} onOpenChange={setCreateDialog}>
               <DialogTrigger asChild>
                 <Button size="sm">
                   <Plus className="mr-2 h-4 w-4" />
-                  Create Group
+                  Create
                 </Button>
               </DialogTrigger>
               <DialogContent>
@@ -150,70 +152,13 @@ export default function GroupsPage() {
               <RefreshCw className="mr-2 h-4 w-4" />
               Refresh
             </Button>
-            <ThemeToggle />
-          </div>
-        </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          {/* Session Selector & Search */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Select value={selectedSession} onValueChange={setSelectedSession}>
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder="Select session" />
-              </SelectTrigger>
-              <SelectContent>
-                {sessions.map((s) => (
-                  <SelectItem key={s.session} value={s.session}>
-                    {s.pushName || s.session}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search groups..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
           </div>
 
           {/* Stats */}
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl border bg-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-green-100 dark:bg-green-900 p-2">
-                  <UsersRound className="h-5 w-5 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Groups</p>
-                  <p className="text-2xl font-bold">{groups.length}</p>
-                </div>
-              </div>
-            </div>
-            <div className="rounded-xl border bg-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-blue-100 dark:bg-blue-900 p-2">
-                  <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Participants</p>
-                  <p className="text-2xl font-bold">{totalParticipants}</p>
-                </div>
-              </div>
-            </div>
-            <div className="rounded-xl border bg-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-orange-100 dark:bg-orange-900 p-2">
-                  <Megaphone className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Announcement Only</p>
-                  <p className="text-2xl font-bold">{announceCount}</p>
-                </div>
-              </div>
-            </div>
+            <StatsCard title="Total Groups" value={groups.length} icon={UsersRound} variant="primary" />
+            <StatsCard title="Total Participants" value={totalParticipants} icon={Users} variant="chart1" />
+            <StatsCard title="Announcement Only" value={announceCount} icon={Megaphone} variant="chart4" />
           </div>
 
           {/* Group List */}
@@ -250,11 +195,11 @@ export default function GroupsPage() {
                 return (
                   <div
                     key={group.jid}
-                    className="flex items-center gap-4 p-4 border-b last:border-b-0 hover:bg-muted/50 cursor-pointer transition-colors"
+                    className="flex items-center gap-4 p-4 border-b last:border-b-0 hover:bg-accent cursor-pointer transition-colors"
                     onClick={() => router.push(`/groups/${selectedSession}/${encodeURIComponent(group.jid)}`)}
                   >
                     <Avatar className="h-12 w-12">
-                      <AvatarFallback className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                      <AvatarFallback className="bg-primary/10 text-primary">
                         {initials}
                       </AvatarFallback>
                     </Avatar>

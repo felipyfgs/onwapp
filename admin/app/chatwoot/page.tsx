@@ -2,20 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { AppSidebar } from "@/components/layout";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { StatsCard } from "@/components/common";
+import { PageHeader, StatsCard } from "@/components/common";
 import {
   getSessions,
   getChatwootConfig,
@@ -70,10 +57,8 @@ import {
   XCircle,
   Play,
   AlertCircle,
-  Clock,
   Check,
 } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function ChatwootPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -84,7 +69,6 @@ export default function ChatwootPage() {
   const [stats, setStats] = useState<ChatwootStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [configDialog, setConfigDialog] = useState(false);
-
   const [baseUrl, setBaseUrl] = useState("");
   const [apiToken, setApiToken] = useState("");
   const [accountId, setAccountId] = useState("");
@@ -95,7 +79,7 @@ export default function ChatwootPage() {
   useEffect(() => {
     getSessions()
       .then((data) => {
-        const connected = data.filter((s) => s.status === "connected");
+        const connected = Array.isArray(data) ? data.filter((s) => s.status === "connected") : [];
         setSessions(connected);
         if (connected.length > 0) {
           setSelectedSession(connected[0].session);
@@ -118,7 +102,6 @@ export default function ChatwootPage() {
       setSyncStatus(statusData);
       setOverview(overviewData);
       setStats(statsData);
-
       if (configData) {
         setBaseUrl(configData.baseUrl);
         setApiToken(configData.apiAccessToken);
@@ -149,7 +132,7 @@ export default function ChatwootPage() {
       } else {
         alert("Invalid credentials");
       }
-    } catch (error) {
+    } catch {
       alert("Failed to validate credentials");
     } finally {
       setValidating(false);
@@ -168,7 +151,7 @@ export default function ChatwootPage() {
       });
       setConfigDialog(false);
       fetchData();
-    } catch (error) {
+    } catch {
       alert("Failed to save configuration");
     } finally {
       setSaving(false);
@@ -180,7 +163,7 @@ export default function ChatwootPage() {
     try {
       await syncChatwoot(selectedSession);
       fetchData();
-    } catch (error) {
+    } catch {
       alert("Failed to start sync");
     }
   };
@@ -191,17 +174,17 @@ export default function ChatwootPage() {
       const result = await resolveAllChatwootConversations(selectedSession);
       alert(`Resolved ${result.resolved} conversations`);
       fetchData();
-    } catch (error) {
+    } catch {
       alert("Failed to resolve conversations");
     }
   };
 
   const handleReset = async () => {
-    if (!selectedSession || !confirm("Reset Chatwoot integration? This will delete all sync data.")) return;
+    if (!selectedSession || !confirm("Reset Chatwoot integration?")) return;
     try {
       await resetChatwoot(selectedSession);
       fetchData();
-    } catch (error) {
+    } catch {
       alert("Failed to reset");
     }
   };
@@ -214,7 +197,7 @@ export default function ChatwootPage() {
       setSyncStatus(null);
       setOverview(null);
       setStats(null);
-    } catch (error) {
+    } catch {
       alert("Failed to delete configuration");
     }
   };
@@ -223,32 +206,9 @@ export default function ChatwootPage() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center justify-between gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="#">Integrations</BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Chatwoot</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-          <div className="flex items-center gap-2 px-4">
-            <Button variant="outline" size="sm" onClick={fetchData}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
-            </Button>
-            <ThemeToggle />
-          </div>
-        </header>
+        <PageHeader breadcrumbs={[{ label: "Integrations", href: "#" }, { label: "Chatwoot" }]} />
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          {/* Session Selector */}
+          {/* Toolbar */}
           <div className="flex gap-4">
             <Select value={selectedSession} onValueChange={setSelectedSession}>
               <SelectTrigger className="w-[200px]">
@@ -262,6 +222,10 @@ export default function ChatwootPage() {
                 ))}
               </SelectContent>
             </Select>
+            <Button variant="outline" size="sm" onClick={fetchData}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
           </div>
 
           {!selectedSession ? (
@@ -291,20 +255,11 @@ export default function ChatwootPage() {
                     <div className="space-y-4 py-4">
                       <div className="space-y-2">
                         <Label>Chatwoot URL</Label>
-                        <Input
-                          placeholder="https://app.chatwoot.com"
-                          value={baseUrl}
-                          onChange={(e) => setBaseUrl(e.target.value)}
-                        />
+                        <Input placeholder="https://app.chatwoot.com" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} />
                       </div>
                       <div className="space-y-2">
                         <Label>API Access Token</Label>
-                        <Input
-                          type="password"
-                          placeholder="Your API token"
-                          value={apiToken}
-                          onChange={(e) => setApiToken(e.target.value)}
-                        />
+                        <Input type="password" placeholder="Your API token" value={apiToken} onChange={(e) => setApiToken(e.target.value)} />
                       </div>
                       <Button variant="outline" onClick={handleValidate} disabled={validating} className="w-full">
                         {validating ? "Validating..." : "Validate Credentials"}
@@ -312,19 +267,11 @@ export default function ChatwootPage() {
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label>Account ID</Label>
-                          <Input
-                            placeholder="1"
-                            value={accountId}
-                            onChange={(e) => setAccountId(e.target.value)}
-                          />
+                          <Input placeholder="1" value={accountId} onChange={(e) => setAccountId(e.target.value)} />
                         </div>
                         <div className="space-y-2">
                           <Label>Inbox ID</Label>
-                          <Input
-                            placeholder="1"
-                            value={inboxId}
-                            onChange={(e) => setInboxId(e.target.value)}
-                          />
+                          <Input placeholder="1" value={inboxId} onChange={(e) => setInboxId(e.target.value)} />
                         </div>
                       </div>
                       <Button onClick={handleSaveConfig} disabled={saving} className="w-full">
@@ -339,30 +286,10 @@ export default function ChatwootPage() {
             <>
               {/* Stats */}
               <div className="grid gap-4 md:grid-cols-4">
-                <StatsCard
-                  title="Contacts"
-                  value={overview?.contactsCount || 0}
-                  icon={Users}
-                  variant="chart1"
-                />
-                <StatsCard
-                  title="Conversations"
-                  value={overview?.conversationsCount || 0}
-                  icon={MessageSquare}
-                  variant="chart2"
-                />
-                <StatsCard
-                  title="Open"
-                  value={stats?.open || 0}
-                  icon={AlertCircle}
-                  variant="chart4"
-                />
-                <StatsCard
-                  title="Resolved"
-                  value={stats?.resolved || 0}
-                  icon={CheckCircle}
-                  variant="primary"
-                />
+                <StatsCard title="Contacts" value={overview?.contactsCount || 0} icon={Users} variant="chart1" />
+                <StatsCard title="Conversations" value={overview?.conversationsCount || 0} icon={MessageSquare} variant="chart2" />
+                <StatsCard title="Open" value={stats?.open || 0} icon={AlertCircle} variant="chart4" />
+                <StatsCard title="Resolved" value={stats?.resolved || 0} icon={CheckCircle} variant="primary" />
               </div>
 
               {/* Status & Config */}
@@ -413,17 +340,7 @@ export default function ChatwootPage() {
                     <div className="flex items-center justify-between">
                       <CardTitle>Configuration</CardTitle>
                       <Badge variant={config.enabled ? "default" : "secondary"}>
-                        {config.enabled ? (
-                          <>
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Active
-                          </>
-                        ) : (
-                          <>
-                            <XCircle className="h-3 w-3 mr-1" />
-                            Disabled
-                          </>
-                        )}
+                        {config.enabled ? <><CheckCircle className="h-3 w-3 mr-1" />Active</> : <><XCircle className="h-3 w-3 mr-1" />Disabled</>}
                       </Badge>
                     </div>
                   </CardHeader>
@@ -457,37 +374,20 @@ export default function ChatwootPage() {
                           <div className="space-y-4 py-4">
                             <div className="space-y-2">
                               <Label>Chatwoot URL</Label>
-                              <Input
-                                placeholder="https://app.chatwoot.com"
-                                value={baseUrl}
-                                onChange={(e) => setBaseUrl(e.target.value)}
-                              />
+                              <Input placeholder="https://app.chatwoot.com" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} />
                             </div>
                             <div className="space-y-2">
                               <Label>API Access Token</Label>
-                              <Input
-                                type="password"
-                                placeholder="Your API token"
-                                value={apiToken}
-                                onChange={(e) => setApiToken(e.target.value)}
-                              />
+                              <Input type="password" placeholder="Your API token" value={apiToken} onChange={(e) => setApiToken(e.target.value)} />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                               <div className="space-y-2">
                                 <Label>Account ID</Label>
-                                <Input
-                                  placeholder="1"
-                                  value={accountId}
-                                  onChange={(e) => setAccountId(e.target.value)}
-                                />
+                                <Input placeholder="1" value={accountId} onChange={(e) => setAccountId(e.target.value)} />
                               </div>
                               <div className="space-y-2">
                                 <Label>Inbox ID</Label>
-                                <Input
-                                  placeholder="1"
-                                  value={inboxId}
-                                  onChange={(e) => setInboxId(e.target.value)}
-                                />
+                                <Input placeholder="1" value={inboxId} onChange={(e) => setInboxId(e.target.value)} />
                               </div>
                             </div>
                             <Button onClick={handleSaveConfig} disabled={saving} className="w-full">

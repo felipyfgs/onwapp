@@ -2,18 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { AppSidebar } from "@/components/layout";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,9 +21,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { PageHeader } from "@/components/common";
 import { getSessions, sendTextMessage, sendImageMessage, Session } from "@/lib/api";
 import { Send, Image, FileText, MapPin, Mic, Video, CheckCircle, AlertCircle } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 type MessageType = "text" | "image" | "audio" | "video" | "document" | "location";
 
@@ -53,7 +42,7 @@ export default function MessagesPage() {
 
   useEffect(() => {
     getSessions().then((data) => {
-      const connected = data.filter((s) => s.status === "connected");
+      const connected = Array.isArray(data) ? data.filter((s) => s.status === "connected") : [];
       setSessions(connected);
       if (connected.length > 0) {
         setSelectedSession(connected[0].session);
@@ -107,22 +96,7 @@ export default function MessagesPage() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center justify-between gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Send Message</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-          <div className="flex items-center gap-2 px-4">
-            <ThemeToggle />
-          </div>
-        </header>
+        <PageHeader breadcrumbs={[{ label: "Send Message" }]} />
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           <div className="max-w-2xl mx-auto w-full">
             <Card>
@@ -151,7 +125,7 @@ export default function MessagesPage() {
                   <div className="space-y-2">
                     <Label>Recipient (JID or Phone)</Label>
                     <Input
-                      placeholder="5511999999999 or 5511999999999@s.whatsapp.net"
+                      placeholder="5511999999999"
                       value={recipient}
                       onChange={(e) => setRecipient(e.target.value)}
                     />
@@ -236,7 +210,7 @@ export default function MessagesPage() {
 
                 {/* Result */}
                 {result && (
-                  <div className={`flex items-center gap-2 p-4 rounded-lg ${result.success ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200" : "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200"}`}>
+                  <div className={`flex items-center gap-2 p-4 rounded-lg ${result.success ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"}`}>
                     {result.success ? <CheckCircle className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
                     <span>{result.message}</span>
                   </div>
