@@ -18,6 +18,16 @@ import (
 	"onwapp/internal/model"
 )
 
+// Timeout and delay constants for media operations
+const (
+	mediaDownloadTimeout    = 60 * time.Second
+	downloadBatchDelay      = 100 * time.Millisecond
+	historySyncSettleDelay  = 2 * time.Second
+	historySyncTimeout      = 10 * time.Minute
+	batchProcessDelay       = 1 * time.Second
+	pendingRetryMaxAge      = 5 * time.Minute
+)
+
 // MediaRetryInfo stores info needed to process media retry responses
 type MediaRetryInfo struct {
 	SessionID string
@@ -95,10 +105,7 @@ func IsMediaExpiredError(err error) bool {
 		strings.Contains(errStr, "forbidden")
 }
 
-// Deprecated: Use IsMediaExpiredError instead
-func isMediaExpiredError(err error) bool {
-	return IsMediaExpiredError(err)
-}
+
 
 // DownloadAndStore downloads media from WhatsApp and stores it in MinIO
 // Returns ErrMediaExpired if media needs retry request
@@ -138,7 +145,7 @@ func (s *MediaService) DownloadAndStore(ctx context.Context, client *whatsmeow.C
 		_ = s.database.Media.IncrementDownloadAttempts(ctx, media.ID, errMsg)
 
 		// Check if media expired (404/410) - needs retry request
-		if isMediaExpiredError(err) {
+		if IsMediaExpiredError(err) {
 			logger.Storage().Warn().
 				Str("mediaId", media.ID).
 				Str("msgId", media.MsgID).
@@ -318,7 +325,7 @@ func (s *MediaService) HandleMediaRetryResponse(ctx context.Context, client *wha
 
 	// Download with new path
 	go func() {
-		downloadCtx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+		downloadCtx, cancel := context.WithTimeout(context.Background(), mediaDownloadTimeout)
 		defer cancel()
 
 		if err := s.DownloadAndStore(downloadCtx, client, media, sessionID); err != nil {
@@ -332,12 +339,12 @@ func (s *MediaService) HandleMediaRetryResponse(ctx context.Context, client *wha
 	return nil
 }
 
-// CleanupOldPendingRetries removes old pending retries (older than 5 minutes)
+// CleanupOldPendingRetries removes old pending retries (older than pendingRetryMaxAge)
 func (s *MediaService) CleanupOldPendingRetries() {
 	s.pendingRetriesMu.Lock()
 	defer s.pendingRetriesMu.Unlock()
 
-	threshold := time.Now().Add(-5 * time.Minute)
+	threshold := time.Now().Add(-pendingRetryMaxAge)
 	for msgID, info := range s.pendingRetries {
 		if info.CreatedAt.Before(threshold) {
 			delete(s.pendingRetries, msgID)
@@ -406,7 +413,7 @@ func (s *MediaService) ProcessPendingDownloads(ctx context.Context, client *what
 		}
 
 		// Small delay to avoid rate limiting
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(downloadBatchDelay)
 	}
 
 	if skipped > 0 {
@@ -442,9 +449,9 @@ func (s *MediaService) ProcessHistorySyncMedia(ctx context.Context, client *what
 		}()
 
 		// Wait a bit for history sync to settle
-		time.Sleep(2 * time.Second)
+		time.Sleep(historySyncSettleDelay)
 
-		processCtx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+		processCtx, cancel := context.WithTimeout(context.Background(), historySyncTimeout)
 		defer cancel()
 
 		// Process in batches
@@ -472,7 +479,7 @@ func (s *MediaService) ProcessHistorySyncMedia(ctx context.Context, client *what
 			}
 
 			// Delay between batches
-			time.Sleep(1 * time.Second)
+			time.Sleep(batchProcessDelay)
 		}
 
 		if totalSuccess > 0 || totalFailed > 0 {

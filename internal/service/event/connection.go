@@ -15,6 +15,13 @@ import (
 	"onwapp/internal/model"
 )
 
+// Timeout and interval constants for connection events
+const (
+	privacySyncTimeout          = 30 * time.Second
+	keepOnlineInterval          = 4 * time.Minute
+	historySyncMetadataTimeout  = 60 * time.Second
+)
+
 func (s *Service) handleConnected(ctx context.Context, session *model.Session) {
 	session.SetStatus(model.StatusConnected)
 	session.SetQR("")
@@ -46,7 +53,7 @@ func (s *Service) handleConnected(ctx context.Context, session *model.Session) {
 	// Sync privacy settings from WhatsApp to database and check keepOnline
 	if s.settingsProvider != nil {
 		go func() {
-			syncCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			syncCtx, cancel := context.WithTimeout(context.Background(), privacySyncTimeout)
 			defer cancel()
 
 			// Sync privacy settings
@@ -77,7 +84,7 @@ func (s *Service) startKeepOnline(session *model.Session) {
 	logger.WPP().Info().Str("session", session.Session).Msg("Starting keepOnline")
 
 	go func() {
-		ticker := time.NewTicker(4 * time.Minute)
+		ticker := time.NewTicker(keepOnlineInterval)
 		defer ticker.Stop()
 
 		// Send initial presence
@@ -503,7 +510,7 @@ func (s *Service) handleHistorySync(ctx context.Context, session *model.Session,
 
 	if s.historySyncService != nil {
 		go func() {
-			hsCtx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+			hsCtx, cancel := context.WithTimeout(context.Background(), historySyncMetadataTimeout)
 			defer cancel()
 			if err := s.historySyncService.ProcessHistorySync(hsCtx, session.ID, e); err != nil {
 				logger.WPP().Warn().Err(err).Str("session", session.Session).Msg("Failed to process history sync metadata")

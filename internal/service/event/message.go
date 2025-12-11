@@ -14,6 +14,11 @@ import (
 	"onwapp/internal/model"
 )
 
+// Timeout constants for message handling
+const (
+	mediaDownloadTimeoutMsg = 60 * time.Second
+)
+
 func (s *Service) handleMessage(ctx context.Context, session *model.Session, e *events.Message) {
 	if e.Message.GetSenderKeyDistributionMessage() != nil {
 		return
@@ -114,7 +119,7 @@ func (s *Service) handleMessage(ctx context.Context, session *model.Session, e *
 		} else {
 			if s.mediaService != nil && session.Client != nil {
 				go func(m *model.Media, client *model.Session) {
-					downloadCtx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+					downloadCtx, cancel := context.WithTimeout(context.Background(), mediaDownloadTimeoutMsg)
 					defer cancel()
 
 					savedMedia, err := s.database.Media.GetByMsgID(downloadCtx, m.SessionID, m.MsgID)
@@ -583,33 +588,43 @@ func (s *Service) extractMediaInfo(sessionID, msgID string, msg *waE2E.Message) 
 	return nil
 }
 
-// extractQuotedID extracts the quoted message ID from ContextInfo.StanzaID
-func extractQuotedID(msg *waE2E.Message) string {
+// extractContextInfo extracts ContextInfo from various message types
+func extractContextInfo(msg *waE2E.Message) *waE2E.ContextInfo {
 	if msg == nil {
-		return ""
+		return nil
 	}
-
-	var ctxInfo *waE2E.ContextInfo
 
 	if ext := msg.GetExtendedTextMessage(); ext != nil {
-		ctxInfo = ext.GetContextInfo()
-	} else if img := msg.GetImageMessage(); img != nil {
-		ctxInfo = img.GetContextInfo()
-	} else if vid := msg.GetVideoMessage(); vid != nil {
-		ctxInfo = vid.GetContextInfo()
-	} else if aud := msg.GetAudioMessage(); aud != nil {
-		ctxInfo = aud.GetContextInfo()
-	} else if doc := msg.GetDocumentMessage(); doc != nil {
-		ctxInfo = doc.GetContextInfo()
-	} else if stk := msg.GetStickerMessage(); stk != nil {
-		ctxInfo = stk.GetContextInfo()
-	} else if contact := msg.GetContactMessage(); contact != nil {
-		ctxInfo = contact.GetContextInfo()
-	} else if contacts := msg.GetContactsArrayMessage(); contacts != nil {
-		ctxInfo = contacts.GetContextInfo()
+		return ext.GetContextInfo()
+	}
+	if img := msg.GetImageMessage(); img != nil {
+		return img.GetContextInfo()
+	}
+	if vid := msg.GetVideoMessage(); vid != nil {
+		return vid.GetContextInfo()
+	}
+	if aud := msg.GetAudioMessage(); aud != nil {
+		return aud.GetContextInfo()
+	}
+	if doc := msg.GetDocumentMessage(); doc != nil {
+		return doc.GetContextInfo()
+	}
+	if stk := msg.GetStickerMessage(); stk != nil {
+		return stk.GetContextInfo()
+	}
+	if contact := msg.GetContactMessage(); contact != nil {
+		return contact.GetContextInfo()
+	}
+	if contacts := msg.GetContactsArrayMessage(); contacts != nil {
+		return contacts.GetContextInfo()
 	}
 
-	if ctxInfo != nil {
+	return nil
+}
+
+// extractQuotedID extracts the quoted message ID from ContextInfo.StanzaID
+func extractQuotedID(msg *waE2E.Message) string {
+	if ctxInfo := extractContextInfo(msg); ctxInfo != nil {
 		return ctxInfo.GetStanzaID()
 	}
 	return ""
@@ -617,31 +632,7 @@ func extractQuotedID(msg *waE2E.Message) string {
 
 // extractQuotedSender extracts the quoted message sender from ContextInfo.Participant
 func extractQuotedSender(msg *waE2E.Message) string {
-	if msg == nil {
-		return ""
-	}
-
-	var ctxInfo *waE2E.ContextInfo
-
-	if ext := msg.GetExtendedTextMessage(); ext != nil {
-		ctxInfo = ext.GetContextInfo()
-	} else if img := msg.GetImageMessage(); img != nil {
-		ctxInfo = img.GetContextInfo()
-	} else if vid := msg.GetVideoMessage(); vid != nil {
-		ctxInfo = vid.GetContextInfo()
-	} else if aud := msg.GetAudioMessage(); aud != nil {
-		ctxInfo = aud.GetContextInfo()
-	} else if doc := msg.GetDocumentMessage(); doc != nil {
-		ctxInfo = doc.GetContextInfo()
-	} else if stk := msg.GetStickerMessage(); stk != nil {
-		ctxInfo = stk.GetContextInfo()
-	} else if contact := msg.GetContactMessage(); contact != nil {
-		ctxInfo = contact.GetContextInfo()
-	} else if contacts := msg.GetContactsArrayMessage(); contacts != nil {
-		ctxInfo = contacts.GetContextInfo()
-	}
-
-	if ctxInfo != nil {
+	if ctxInfo := extractContextInfo(msg); ctxInfo != nil {
 		return ctxInfo.GetParticipant()
 	}
 	return ""
