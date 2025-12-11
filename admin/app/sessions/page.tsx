@@ -35,9 +35,10 @@ export default function SessionsPage() {
   const fetchSessions = useCallback(async () => {
     try {
       const data = await getSessions();
-      setSessions(data);
+      setSessions(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch sessions:", error);
+      setSessions([]);
     } finally {
       setLoading(false);
     }

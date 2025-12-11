@@ -11,6 +11,7 @@ import {
   Webhook,
   UsersRound,
   Send,
+  List,
 } from "lucide-react"
 
 import { NavMain } from "./nav-main"
@@ -24,8 +25,9 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import { getSessions, Session } from "@/lib/api"
 
-const data = {
+const staticData = {
   user: {
     name: "Admin",
     email: "admin@onwapp.io",
@@ -38,68 +40,82 @@ const data = {
       plan: "WhatsApp API",
     },
   ],
-  navMain: [
-    {
-      title: "Sessions",
-      url: "/sessions",
-      icon: Smartphone,
-      isActive: true,
-    },
-    {
-      title: "Chats",
-      url: "/chats",
-      icon: MessagesSquare,
-    },
-    {
-      title: "Contacts",
-      url: "/contacts",
-      icon: Users,
-    },
-    {
-      title: "Groups",
-      url: "/groups",
-      icon: UsersRound,
-    },
-    {
-      title: "Messages",
-      url: "/messages",
-      icon: Send,
-    },
-    {
-      title: "Media",
-      url: "/media",
-      icon: Image,
-    },
-    {
-      title: "Integrations",
-      url: "/integrations",
-      icon: Webhook,
-      items: [
-        { title: "Webhooks", url: "/webhooks" },
-        { title: "Chatwoot", url: "/integrations/chatwoot" },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "/settings",
-      icon: Settings2,
-    },
-  ],
   projects: [],
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const [sessions, setSessions] = React.useState<Session[]>([])
+
+  React.useEffect(() => {
+    getSessions()
+      .then(setSessions)
+      .catch(() => setSessions([]))
+  }, [])
+
+  const navMain = React.useMemo(() => {
+    const activeSession = sessions.find((s) => s.status === "connected") || sessions[0]
+    const overviewUrl = activeSession ? `/sessions/${activeSession.session}` : "/sessions"
+
+    return [
+      {
+        title: "Overview",
+        url: overviewUrl,
+        icon: Smartphone,
+        isActive: true,
+      },
+      {
+        title: "Chats",
+        url: "/chats",
+        icon: MessagesSquare,
+      },
+      {
+        title: "Contacts",
+        url: "/contacts",
+        icon: Users,
+      },
+      {
+        title: "Groups",
+        url: "/groups",
+        icon: UsersRound,
+      },
+      {
+        title: "Messages",
+        url: "/messages",
+        icon: Send,
+      },
+      {
+        title: "Media",
+        url: "/media",
+        icon: Image,
+      },
+      {
+        title: "Integrations",
+        url: "#",
+        icon: Webhook,
+        items: [
+          { title: "Webhooks", url: "/webhooks" },
+          { title: "Chatwoot", url: "/chatwoot" },
+        ],
+      },
+      {
+        title: "Settings",
+        url: "/settings",
+        icon: Settings2,
+      },
+    ]
+  }, [sessions])
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <TeamSwitcher teams={staticData.teams} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        <NavMain items={navMain} />
+        <NavProjects projects={staticData.projects} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={staticData.user} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

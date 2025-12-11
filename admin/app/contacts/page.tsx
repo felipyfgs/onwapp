@@ -64,9 +64,10 @@ export default function ContactsPage() {
     setLoading(true);
     try {
       const data = await getContacts(selectedSession);
-      setContacts(data);
+      setContacts(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch contacts:", error);
+      setContacts([]);
     } finally {
       setLoading(false);
     }

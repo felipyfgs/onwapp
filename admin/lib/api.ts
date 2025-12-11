@@ -43,6 +43,16 @@ export interface Contact {
   isBusiness?: boolean;
 }
 
+export interface BusinessProfile {
+  jid: string;
+  businessName?: string;
+  description?: string;
+  category?: string;
+  email?: string;
+  website?: string[];
+  address?: string;
+}
+
 export interface Chat {
   jid: string;
   name?: string;
@@ -83,6 +93,8 @@ export interface Group {
   profilePicture?: string;
   isAnnounce?: boolean;
   isLocked?: boolean;
+  isCommunity?: boolean;
+  linkedParent?: string;
 }
 
 export interface GroupParticipant {
@@ -132,6 +144,93 @@ export interface SendMessageRequest {
   longitude?: number;
   name?: string;
   quoted?: string;
+  mentions?: string[];
+}
+
+export interface PollOption {
+  name: string;
+}
+
+export interface SendPollRequest {
+  to: string;
+  name: string;
+  options: PollOption[];
+  selectableCount?: number;
+}
+
+export interface Button {
+  buttonId: string;
+  buttonText: string;
+  type?: number;
+}
+
+export interface SendButtonsRequest {
+  to: string;
+  text: string;
+  footer?: string;
+  buttons: Button[];
+}
+
+export interface ListSection {
+  title: string;
+  rows: { title: string; description?: string; rowId: string }[];
+}
+
+export interface SendListRequest {
+  to: string;
+  title: string;
+  text: string;
+  footer?: string;
+  buttonText: string;
+  sections: ListSection[];
+}
+
+export interface Newsletter {
+  jid: string;
+  name: string;
+  description?: string;
+  subscriberCount?: number;
+  picture?: string;
+  state?: string;
+}
+
+export interface Settings {
+  readReceipts?: boolean;
+  pushName?: string;
+  online?: boolean;
+}
+
+// ============ Chatwoot Types ============
+
+export interface ChatwootConfig {
+  enabled: boolean;
+  baseUrl: string;
+  apiAccessToken: string;
+  accountId: number;
+  inboxId: number;
+  conversationId?: number;
+}
+
+export interface ChatwootSyncStatus {
+  status: string;
+  progress: number;
+  contactsSynced: number;
+  messagesSynced: number;
+  lastSyncAt?: string;
+  error?: string;
+}
+
+export interface ChatwootOverview {
+  contactsCount: number;
+  conversationsCount: number;
+  lastSyncAt?: string;
+}
+
+export interface ChatwootStats {
+  open: number;
+  resolved: number;
+  pending: number;
+  snoozed: number;
 }
 
 // ============ API Client ============
@@ -205,6 +304,13 @@ export async function getQR(name: string): Promise<QRResponse> {
   return fetchApi<QRResponse>(`/${name}/qr`);
 }
 
+export async function pairPhone(name: string, phone: string): Promise<{ code: string }> {
+  return fetchApi(`/${name}/pairphone`, {
+    method: "POST",
+    body: JSON.stringify({ phone }),
+  });
+}
+
 // ============ Profile ============
 
 export async function getProfile(session: string): Promise<Profile> {
@@ -222,6 +328,30 @@ export async function setProfileName(session: string, name: string): Promise<voi
   await fetchApi(`/${session}/profile/name`, {
     method: "POST",
     body: JSON.stringify({ name }),
+  });
+}
+
+export async function setProfilePicture(session: string, url: string): Promise<void> {
+  await fetchApi(`/${session}/profile/picture`, {
+    method: "POST",
+    body: JSON.stringify({ url }),
+  });
+}
+
+export async function deleteProfilePicture(session: string): Promise<void> {
+  await fetchApi(`/${session}/profile/picture/remove`, { method: "POST" });
+}
+
+// ============ Settings ============
+
+export async function getSettings(session: string): Promise<Settings> {
+  return fetchApi<Settings>(`/${session}/settings`);
+}
+
+export async function updateSettings(session: string, settings: Partial<Settings>): Promise<void> {
+  await fetchApi(`/${session}/settings`, {
+    method: "POST",
+    body: JSON.stringify(settings),
   });
 }
 
@@ -257,20 +387,66 @@ export async function updateBlocklist(session: string, jid: string, action: "blo
   });
 }
 
+export async function getBusinessProfile(session: string, jid: string): Promise<BusinessProfile> {
+  return fetchApi<BusinessProfile>(`/${session}/contact/business?jid=${encodeURIComponent(jid)}`);
+}
+
+export async function getContactLID(session: string, jid: string): Promise<{ lid: string }> {
+  return fetchApi(`/${session}/contact/lid?jid=${encodeURIComponent(jid)}`);
+}
+
+export async function getContactQRLink(session: string, jid: string): Promise<{ link: string }> {
+  return fetchApi(`/${session}/contact/qrlink?jid=${encodeURIComponent(jid)}`);
+}
+
+// ============ Presence ============
+
+export async function setPresence(session: string, presence: "available" | "unavailable"): Promise<void> {
+  await fetchApi(`/${session}/presence`, {
+    method: "POST",
+    body: JSON.stringify({ presence }),
+  });
+}
+
+export async function subscribePresence(session: string, jid: string): Promise<void> {
+  await fetchApi(`/${session}/presence/subscribe`, {
+    method: "POST",
+    body: JSON.stringify({ jid }),
+  });
+}
+
 // ============ Chats ============
 
 export async function getChats(session: string): Promise<Chat[]> {
   return fetchApi<Chat[]>(`/${session}/chat/list`);
 }
 
+export async function getChatInfo(session: string, jid: string): Promise<Chat> {
+  return fetchApi<Chat>(`/${session}/chat/info?jid=${encodeURIComponent(jid)}`);
+}
+
 export async function getChatMessages(session: string, jid: string, limit = 50): Promise<Message[]> {
   return fetchApi<Message[]>(`/${session}/chat/messages?jid=${encodeURIComponent(jid)}&limit=${limit}`);
+}
+
+export async function setChatPresence(session: string, jid: string, presence: "composing" | "paused" | "recording"): Promise<void> {
+  await fetchApi(`/${session}/chat/presence`, {
+    method: "POST",
+    body: JSON.stringify({ jid, presence }),
+  });
 }
 
 export async function markRead(session: string, jid: string, messageIds?: string[]): Promise<void> {
   await fetchApi(`/${session}/chat/markread`, {
     method: "POST",
     body: JSON.stringify({ jid, messageIds }),
+  });
+}
+
+export async function markChatUnread(session: string, jid: string): Promise<void> {
+  await fetchApi(`/${session}/chat/unread`, {
+    method: "POST",
+    body: JSON.stringify({ jid }),
   });
 }
 
@@ -281,10 +457,24 @@ export async function archiveChat(session: string, jid: string, archive: boolean
   });
 }
 
+export async function setDisappearingTimer(session: string, jid: string, duration: number): Promise<void> {
+  await fetchApi(`/${session}/chat/disappearing`, {
+    method: "POST",
+    body: JSON.stringify({ jid, duration }),
+  });
+}
+
 export async function deleteMessage(session: string, jid: string, messageId: string, forEveryone = false): Promise<void> {
   await fetchApi(`/${session}/message/delete`, {
     method: "POST",
     body: JSON.stringify({ jid, messageId, forEveryone }),
+  });
+}
+
+export async function editMessage(session: string, jid: string, messageId: string, text: string): Promise<void> {
+  await fetchApi(`/${session}/message/edit`, {
+    method: "POST",
+    body: JSON.stringify({ jid, messageId, text }),
   });
 }
 
@@ -325,8 +515,43 @@ export async function sendDocumentMessage(session: string, data: SendMessageRequ
   });
 }
 
+export async function sendStickerMessage(session: string, data: SendMessageRequest): Promise<Message> {
+  return fetchApi<Message>(`/${session}/message/send/sticker`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
 export async function sendLocationMessage(session: string, data: SendMessageRequest): Promise<Message> {
   return fetchApi<Message>(`/${session}/message/send/location`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function sendContactMessage(session: string, to: string, contact: { name: string; phone: string }): Promise<Message> {
+  return fetchApi<Message>(`/${session}/message/send/contact`, {
+    method: "POST",
+    body: JSON.stringify({ to, contact }),
+  });
+}
+
+export async function sendPollMessage(session: string, data: SendPollRequest): Promise<Message> {
+  return fetchApi<Message>(`/${session}/message/send/poll`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function sendButtonsMessage(session: string, data: SendButtonsRequest): Promise<Message> {
+  return fetchApi<Message>(`/${session}/message/send/buttons`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function sendListMessage(session: string, data: SendListRequest): Promise<Message> {
+  return fetchApi<Message>(`/${session}/message/send/list`, {
     method: "POST",
     body: JSON.stringify(data),
   });
@@ -336,6 +561,13 @@ export async function sendReaction(session: string, jid: string, messageId: stri
   await fetchApi(`/${session}/message/react`, {
     method: "POST",
     body: JSON.stringify({ jid, messageId, emoji }),
+  });
+}
+
+export async function sendPollVote(session: string, jid: string, messageId: string, options: string[]): Promise<void> {
+  await fetchApi(`/${session}/message/poll/vote`, {
+    method: "POST",
+    body: JSON.stringify({ jid, messageId, options }),
   });
 }
 
@@ -377,6 +609,24 @@ export async function updateGroupTopic(session: string, jid: string, topic: stri
   });
 }
 
+export async function setGroupPicture(session: string, jid: string, url: string): Promise<void> {
+  await fetchApi(`/${session}/group/photo`, {
+    method: "POST",
+    body: JSON.stringify({ jid, url }),
+  });
+}
+
+export async function deleteGroupPicture(session: string, jid: string): Promise<void> {
+  await fetchApi(`/${session}/group/photo/remove`, {
+    method: "POST",
+    body: JSON.stringify({ jid }),
+  });
+}
+
+export async function getGroupPicture(session: string, jid: string): Promise<{ url: string }> {
+  return fetchApi(`/${session}/group/avatar?jid=${encodeURIComponent(jid)}`);
+}
+
 export async function addGroupParticipants(session: string, jid: string, participants: string[]): Promise<void> {
   await fetchApi(`/${session}/group/participants/add`, {
     method: "POST",
@@ -405,8 +655,51 @@ export async function demoteParticipants(session: string, jid: string, participa
   });
 }
 
+export async function setGroupAnnounce(session: string, jid: string, announce: boolean): Promise<void> {
+  await fetchApi(`/${session}/group/announce`, {
+    method: "POST",
+    body: JSON.stringify({ jid, announce }),
+  });
+}
+
+export async function setGroupLocked(session: string, jid: string, locked: boolean): Promise<void> {
+  await fetchApi(`/${session}/group/locked`, {
+    method: "POST",
+    body: JSON.stringify({ jid, locked }),
+  });
+}
+
+export async function setGroupApprovalMode(session: string, jid: string, enabled: boolean): Promise<void> {
+  await fetchApi(`/${session}/group/approval`, {
+    method: "POST",
+    body: JSON.stringify({ jid, enabled }),
+  });
+}
+
 export async function getGroupInviteLink(session: string, jid: string): Promise<{ link: string }> {
   return fetchApi(`/${session}/group/invitelink?jid=${encodeURIComponent(jid)}`);
+}
+
+export async function getGroupInfoFromLink(session: string, link: string): Promise<Group> {
+  return fetchApi<Group>(`/${session}/group/inviteinfo?link=${encodeURIComponent(link)}`);
+}
+
+export async function joinGroup(session: string, link: string): Promise<{ jid: string }> {
+  return fetchApi(`/${session}/group/join`, {
+    method: "POST",
+    body: JSON.stringify({ link }),
+  });
+}
+
+export async function getGroupRequests(session: string, jid: string): Promise<{ jid: string; reason?: string }[]> {
+  return fetchApi(`/${session}/group/requests?jid=${encodeURIComponent(jid)}`);
+}
+
+export async function handleGroupRequest(session: string, jid: string, participant: string, action: "approve" | "reject"): Promise<void> {
+  await fetchApi(`/${session}/group/requests/action`, {
+    method: "POST",
+    body: JSON.stringify({ jid, participant, action }),
+  });
 }
 
 // ============ Media ============
@@ -426,8 +719,54 @@ export async function processMedia(session: string, mediaId: string): Promise<vo
   });
 }
 
-export async function getMediaUrl(session: string, mediaId: string): Promise<string> {
-  return `${API_URL}/${session}/media/stream?id=${mediaId}`;
+export async function retryMediaDownload(session: string, mediaId: string): Promise<void> {
+  await fetchApi(`/${session}/media/retry`, {
+    method: "POST",
+    body: JSON.stringify({ mediaId }),
+  });
+}
+
+export function getMediaStreamUrl(session: string, mediaId: string): string {
+  return `${API_URL}/${session}/media/stream?id=${mediaId}&auth=${API_KEY}`;
+}
+
+export function getPublicMediaUrl(session: string, mediaId: string): string {
+  return `${API_URL}/public/${session}/media/stream?id=${mediaId}`;
+}
+
+// ============ Newsletters ============
+
+export async function getNewsletters(session: string): Promise<Newsletter[]> {
+  return fetchApi<Newsletter[]>(`/${session}/newsletter/list`);
+}
+
+export async function getNewsletterInfo(session: string, jid: string): Promise<Newsletter> {
+  return fetchApi<Newsletter>(`/${session}/newsletter/info?jid=${encodeURIComponent(jid)}`);
+}
+
+export async function createNewsletter(session: string, name: string, description?: string): Promise<Newsletter> {
+  return fetchApi<Newsletter>(`/${session}/newsletter/create`, {
+    method: "POST",
+    body: JSON.stringify({ name, description }),
+  });
+}
+
+export async function followNewsletter(session: string, jid: string): Promise<void> {
+  await fetchApi(`/${session}/newsletter/follow`, {
+    method: "POST",
+    body: JSON.stringify({ jid }),
+  });
+}
+
+export async function unfollowNewsletter(session: string, jid: string): Promise<void> {
+  await fetchApi(`/${session}/newsletter/unfollow`, {
+    method: "POST",
+    body: JSON.stringify({ jid }),
+  });
+}
+
+export async function getNewsletterMessages(session: string, jid: string, limit = 50): Promise<Message[]> {
+  return fetchApi<Message[]>(`/${session}/newsletter/messages?jid=${encodeURIComponent(jid)}&limit=${limit}`);
 }
 
 // ============ Webhooks ============
@@ -456,4 +795,73 @@ export async function updateWebhook(session: string, webhook: Partial<Webhook>):
 
 export async function deleteWebhook(session: string): Promise<void> {
   await fetchApi(`/${session}/webhook`, { method: "DELETE" });
+}
+
+// ============ Chatwoot Integration ============
+
+export async function validateChatwootCredentials(baseUrl: string, apiAccessToken: string): Promise<{ valid: boolean; account?: { id: number; name: string } }> {
+  return fetchApi(`/chatwoot/validate`, {
+    method: "POST",
+    body: JSON.stringify({ baseUrl, apiAccessToken }),
+  });
+}
+
+export async function getChatwootConfig(session: string): Promise<ChatwootConfig | null> {
+  try {
+    return await fetchApi<ChatwootConfig>(`/sessions/${session}/chatwoot/find`);
+  } catch {
+    return null;
+  }
+}
+
+export async function setChatwootConfig(session: string, config: Omit<ChatwootConfig, "enabled">): Promise<ChatwootConfig> {
+  return fetchApi<ChatwootConfig>(`/sessions/${session}/chatwoot/set`, {
+    method: "POST",
+    body: JSON.stringify(config),
+  });
+}
+
+export async function deleteChatwootConfig(session: string): Promise<void> {
+  await fetchApi(`/sessions/${session}/chatwoot`, { method: "DELETE" });
+}
+
+export async function syncChatwoot(session: string): Promise<{ message: string }> {
+  return fetchApi(`/sessions/${session}/chatwoot/sync`, { method: "POST" });
+}
+
+export async function syncChatwootContacts(session: string): Promise<{ message: string }> {
+  return fetchApi(`/sessions/${session}/chatwoot/sync/contacts`, { method: "POST" });
+}
+
+export async function syncChatwootMessages(session: string): Promise<{ message: string }> {
+  return fetchApi(`/sessions/${session}/chatwoot/sync/messages`, { method: "POST" });
+}
+
+export async function getChatwootSyncStatus(session: string): Promise<ChatwootSyncStatus> {
+  return fetchApi<ChatwootSyncStatus>(`/sessions/${session}/chatwoot/sync/status`);
+}
+
+export async function getChatwootOverview(session: string): Promise<ChatwootOverview> {
+  return fetchApi<ChatwootOverview>(`/sessions/${session}/chatwoot/overview`);
+}
+
+export async function resolveAllChatwootConversations(session: string): Promise<{ resolved: number }> {
+  return fetchApi(`/sessions/${session}/chatwoot/resolve-all`, { method: "POST" });
+}
+
+export async function getChatwootConversationStats(session: string): Promise<ChatwootStats> {
+  return fetchApi<ChatwootStats>(`/sessions/${session}/chatwoot/conversations/stats`);
+}
+
+export async function resetChatwoot(session: string): Promise<{ message: string }> {
+  return fetchApi(`/sessions/${session}/chatwoot/reset`, { method: "POST" });
+}
+
+// ============ Calls ============
+
+export async function rejectCall(session: string, callId: string, from: string): Promise<void> {
+  await fetchApi(`/${session}/call/reject`, {
+    method: "POST",
+    body: JSON.stringify({ callId, from }),
+  });
 }

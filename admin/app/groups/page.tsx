@@ -66,9 +66,10 @@ export default function GroupsPage() {
     setLoading(true);
     try {
       const data = await getGroups(selectedSession);
-      setGroups(data);
+      setGroups(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch groups:", error);
+      setGroups([]);
     } finally {
       setLoading(false);
     }

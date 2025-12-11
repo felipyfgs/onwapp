@@ -41,6 +41,7 @@ import {
   MessageSquare,
   Users,
   Phone,
+  ArrowLeft,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -154,7 +155,11 @@ export default function SessionDetailPage() {
               </BreadcrumbList>
             </Breadcrumb>
           </div>
-          <div className="px-4">
+          <div className="flex items-center gap-2 px-4">
+            <Button variant="outline" size="sm" onClick={() => router.push("/sessions")}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
             <ThemeToggle />
           </div>
         </header>

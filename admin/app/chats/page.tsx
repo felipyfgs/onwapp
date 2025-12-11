@@ -55,9 +55,10 @@ export default function ChatsPage() {
     setLoading(true);
     try {
       const data = await getChats(selectedSession);
-      setChats(data);
+      setChats(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch chats:", error);
+      setChats([]);
     } finally {
       setLoading(false);
     }
