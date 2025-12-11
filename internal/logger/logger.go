@@ -50,9 +50,9 @@ func Init(level, format string) {
 			if ll, ok := i.(string); ok {
 				switch ll {
 				case "debug":
-					l, color = "DEBUG", 33
+					l, color = "DEBUG", 90
 				case "info":
-					l, color = "INFO ", 32
+					l, color = "INFO ", 36
 				case "warn":
 					l, color = "WARN ", 33
 				case "error":
