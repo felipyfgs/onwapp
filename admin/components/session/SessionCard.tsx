@@ -9,6 +9,7 @@ import {
   RefreshCw,
   Trash2,
   QrCode,
+  ExternalLink,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -27,6 +28,7 @@ interface SessionCardProps {
   onRestart: (name: string) => void;
   onDelete: (name: string) => void;
   onShowQR: (name: string) => void;
+  onOpen?: (name: string) => void;
 }
 
 export function SessionCard({
@@ -37,6 +39,7 @@ export function SessionCard({
   onRestart,
   onDelete,
   onShowQR,
+  onOpen,
 }: SessionCardProps) {
   const statusColor = {
     connected: "bg-green-500",
@@ -50,8 +53,21 @@ export function SessionCard({
     connecting: "Connecting...",
   }[session.status];
 
+  const handleCardClick = () => {
+    if (onOpen && session.status === "connected") {
+      onOpen(session.session);
+    }
+  };
+
   return (
-    <div className="rounded-lg border bg-card p-4 shadow-sm">
+    <div
+      className={`rounded-lg border bg-card p-4 shadow-sm transition-colors ${
+        onOpen && session.status === "connected"
+          ? "cursor-pointer hover:bg-accent/50"
+          : ""
+      }`}
+      onClick={handleCardClick}
+    >
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -71,12 +87,21 @@ export function SessionCard({
         </div>
 
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
             <Button variant="ghost" size="icon">
               <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            {onOpen && session.status === "connected" && (
+              <>
+                <DropdownMenuItem onClick={() => onOpen(session.session)}>
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  Open
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
+            )}
             {session.status === "disconnected" && (
               <DropdownMenuItem onClick={() => onConnect(session.session)}>
                 <Power className="mr-2 h-4 w-4" />

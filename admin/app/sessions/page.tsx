@@ -1,19 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { AppSidebar } from "@/components/layout";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { SessionCard, QRCodeModal, CreateSessionDialog } from "@/components/session";
 import {
@@ -28,10 +16,11 @@ import {
 } from "@/lib/api";
 import { useSessionEvents } from "@/hooks/useSessionEvents";
 import { SessionEvent } from "@/lib/nats";
-import { Plus, RefreshCw, Wifi, WifiOff } from "lucide-react";
+import { Plus, RefreshCw, Wifi, WifiOff, MessageSquare } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SessionsPage() {
+  const router = useRouter();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -124,128 +113,128 @@ export default function SessionsPage() {
     }
   };
 
+  const handleOpenSession = (name: string) => {
+    router.push(`/sessions/${name}`);
+  };
+
   const connectedCount = sessions.filter((s) => s.status === "connected").length;
   const disconnectedCount = sessions.filter((s) => s.status === "disconnected").length;
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Sessions</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center justify-between">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-6 w-6 text-primary" />
+            <span className="text-xl font-bold">OnWApp</span>
           </div>
-        </header>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={fetchSessions}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
+            <Button size="sm" onClick={() => setShowCreateDialog(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Session
+            </Button>
+          </div>
+        </div>
+      </header>
 
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          {/* Stats Cards */}
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl border bg-card p-4">
-              <div className="flex items-center gap-2">
-                <div className="rounded-lg bg-muted p-2">
-                  <Wifi className="h-4 w-4 text-green-500" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Connected</p>
-                  <p className="text-2xl font-bold">{connectedCount}</p>
-                </div>
+      {/* Main Content */}
+      <main className="container py-6">
+        {/* Stats Cards */}
+        <div className="grid gap-4 md:grid-cols-3 mb-6">
+          <div className="rounded-xl border bg-card p-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-green-100 dark:bg-green-900 p-2">
+                <Wifi className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
-            </div>
-            <div className="rounded-xl border bg-card p-4">
-              <div className="flex items-center gap-2">
-                <div className="rounded-lg bg-muted p-2">
-                  <WifiOff className="h-4 w-4 text-red-500" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Disconnected</p>
-                  <p className="text-2xl font-bold">{disconnectedCount}</p>
-                </div>
-              </div>
-            </div>
-            <div className="rounded-xl border bg-card p-4">
-              <div className="flex items-center gap-2">
-                <div className="rounded-lg bg-muted p-2">
-                  <RefreshCw className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total</p>
-                  <p className="text-2xl font-bold">{sessions.length}</p>
-                </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Connected</p>
+                <p className="text-2xl font-bold">{connectedCount}</p>
               </div>
             </div>
           </div>
-
-          {/* Actions */}
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">WhatsApp Sessions</h2>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={fetchSessions}>
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Refresh
-              </Button>
-              <Button size="sm" onClick={() => setShowCreateDialog(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                New Session
-              </Button>
+          <div className="rounded-xl border bg-card p-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-red-100 dark:bg-red-900 p-2">
+                <WifiOff className="h-5 w-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Disconnected</p>
+                <p className="text-2xl font-bold">{disconnectedCount}</p>
+              </div>
             </div>
           </div>
-
-          {/* Sessions Grid */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {loading ? (
-              <>
-                <Skeleton className="h-32 rounded-xl" />
-                <Skeleton className="h-32 rounded-xl" />
-                <Skeleton className="h-32 rounded-xl" />
-              </>
-            ) : sessions.length === 0 ? (
-              <div className="col-span-full rounded-xl border bg-muted/50 p-8 text-center">
-                <p className="text-muted-foreground">No sessions yet</p>
-                <Button
-                  className="mt-4"
-                  onClick={() => setShowCreateDialog(true)}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create your first session
-                </Button>
+          <div className="rounded-xl border bg-card p-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-muted p-2">
+                <MessageSquare className="h-5 w-5" />
               </div>
-            ) : (
-              sessions.map((session) => (
-                <SessionCard
-                  key={session.id}
-                  session={session}
-                  onConnect={handleConnect}
-                  onDisconnect={handleDisconnect}
-                  onLogout={handleLogout}
-                  onRestart={handleRestart}
-                  onDelete={handleDelete}
-                  onShowQR={setQrSession}
-                />
-              ))
-            )}
+              <div>
+                <p className="text-sm text-muted-foreground">Total Sessions</p>
+                <p className="text-2xl font-bold">{sessions.length}</p>
+              </div>
+            </div>
           </div>
         </div>
 
-        <CreateSessionDialog
-          open={showCreateDialog}
-          onClose={() => setShowCreateDialog(false)}
-          onCreate={handleCreate}
-        />
+        {/* Sessions Title */}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold">WhatsApp Sessions</h2>
+        </div>
 
-        <QRCodeModal
-          sessionName={qrSession}
-          open={!!qrSession}
-          onClose={() => setQrSession(null)}
-        />
-      </SidebarInset>
-    </SidebarProvider>
+        {/* Sessions Grid */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {loading ? (
+            <>
+              <Skeleton className="h-32 rounded-xl" />
+              <Skeleton className="h-32 rounded-xl" />
+              <Skeleton className="h-32 rounded-xl" />
+            </>
+          ) : sessions.length === 0 ? (
+            <div className="col-span-full rounded-xl border bg-muted/50 p-12 text-center">
+              <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-medium mb-2">No sessions yet</h3>
+              <p className="text-muted-foreground mb-4">
+                Create your first WhatsApp session to get started
+              </p>
+              <Button onClick={() => setShowCreateDialog(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Create Session
+              </Button>
+            </div>
+          ) : (
+            sessions.map((session) => (
+              <SessionCard
+                key={session.id}
+                session={session}
+                onConnect={handleConnect}
+                onDisconnect={handleDisconnect}
+                onLogout={handleLogout}
+                onRestart={handleRestart}
+                onDelete={handleDelete}
+                onShowQR={setQrSession}
+                onOpen={handleOpenSession}
+              />
+            ))
+          )}
+        </div>
+      </main>
+
+      <CreateSessionDialog
+        open={showCreateDialog}
+        onClose={() => setShowCreateDialog(false)}
+        onCreate={handleCreate}
+      />
+
+      <QRCodeModal
+        sessionName={qrSession}
+        open={!!qrSession}
+        onClose={() => setQrSession(null)}
+      />
+    </div>
   );
 }
