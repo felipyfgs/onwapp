@@ -128,7 +128,7 @@ curl -X POST http://localhost:8080/my-session/message/send/text \
 ```
 onwapp/
 ├── cmd/
-│   └── server/          # Application entrypoint
+│   └── onwapp/          # Application entrypoint
 ├── internal/
 │   ├── api/             # HTTP handlers and routing
 │   ├── config/          # Configuration management
@@ -139,8 +139,7 @@ onwapp/
 │   ├── service/         # Business logic
 │   └── version/         # Version info
 ├── docs/                # Documentation
-├── docker/              # Docker configs
-└── painel/              # Web dashboard (Next.js)
+└── docker/              # Docker configs
 ```
 
 ## Development

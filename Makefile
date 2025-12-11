@@ -52,10 +52,7 @@ docker-build-api:
 		--build-arg BUILD_DATE=$(BUILD_DATE) \
 		.
 
-docker-build-painel:
-	docker build -f painel/Dockerfile -t onwapp-painel:latest ./painel
-
-docker-build: docker-build-api docker-build-painel
+docker-build: docker-build-api
 
 docker-prod-up:
 	docker compose -f docker-compose.prod.yaml up -d
@@ -71,7 +68,7 @@ docker-prod-restart:
 
 docker-clean:
 	docker compose -f docker-compose.prod.yaml down -v
-	docker rmi onwapp-api:latest onwapp-painel:latest || true
+	docker rmi onwapp-api:latest || true
 
 # === OTHER ===
 
