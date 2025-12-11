@@ -69,9 +69,40 @@ func (c *Cache) SetWithTTL(key string, value interface{}, ttl time.Duration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	// Evict oldest items if cache is full
+	if len(c.items) >= maxCacheSize {
+		c.evictOldest(maxCacheSize / 10) // Remove 10% of items
+	}
+
 	c.items[key] = &Item{
 		Value:      value,
 		Expiration: time.Now().Add(ttl),
+	}
+}
+
+// evictOldest removes n oldest/expired items (must be called with lock held)
+func (c *Cache) evictOldest(n int) {
+	count := 0
+	now := time.Now()
+
+	// First pass: remove expired items
+	for key, item := range c.items {
+		if count >= n {
+			return
+		}
+		if now.After(item.Expiration) {
+			delete(c.items, key)
+			count++
+		}
+	}
+
+	// Second pass: remove any items if we still need to evict
+	for key := range c.items {
+		if count >= n {
+			return
+		}
+		delete(c.items, key)
+		count++
 	}
 }
 
@@ -108,14 +139,20 @@ func (c *Cache) cleanup() {
 	ticker := time.NewTicker(1 * time.Minute)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		c.mu.Lock()
-		for key, item := range c.items {
-			if item.IsExpired() {
-				delete(c.items, key)
+	for {
+		select {
+		case <-ticker.C:
+			c.mu.Lock()
+			now := time.Now()
+			for key, item := range c.items {
+				if now.After(item.Expiration) {
+					delete(c.items, key)
+				}
 			}
+			c.mu.Unlock()
+		case <-c.stopCh:
+			return
 		}
-		c.mu.Unlock()
 	}
 }
 

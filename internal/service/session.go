@@ -70,7 +70,7 @@ func (s *SessionService) LoadFromDatabase(ctx context.Context) error {
 		return fmt.Errorf("failed to load sessions from database: %w", err)
 	}
 
-	var sessionsToReconnect []*model.Session
+	sessionsToReconnect := make([]*model.Session, 0, len(records))
 
 	for _, rec := range records {
 		var device *store.Device
