@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Phone } from "lucide-react";
+import { Phone, CheckCircle, XCircle } from "lucide-react";
 
 interface CheckPhoneDialogProps {
   sessionId: string;
@@ -69,13 +69,16 @@ export function CheckPhoneDialog({ sessionId, trigger }: CheckPhoneDialogProps) 
             {checking ? "Checking..." : "Check"}
           </Button>
           {result && (
-            <div className={`p-4 rounded-lg ${result.exists ? "bg-green-100 dark:bg-green-900" : "bg-red-100 dark:bg-red-900"}`}>
-              <p className="font-medium">
-                {result.exists ? "Number has WhatsApp" : "Number not on WhatsApp"}
-              </p>
-              {result.exists && (
-                <p className="text-sm text-muted-foreground mt-1">JID: {result.jid}</p>
-              )}
+            <div className={`flex items-center gap-2 p-4 rounded-lg ${result.exists ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"}`}>
+              {result.exists ? <CheckCircle className="h-5 w-5" /> : <XCircle className="h-5 w-5" />}
+              <div>
+                <p className="font-medium">
+                  {result.exists ? "Number has WhatsApp" : "Number not on WhatsApp"}
+                </p>
+                {result.exists && (
+                  <p className="text-sm opacity-80">JID: {result.jid}</p>
+                )}
+              </div>
             </div>
           )}
         </div>

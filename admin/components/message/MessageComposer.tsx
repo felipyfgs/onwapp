@@ -82,7 +82,6 @@ export function MessageComposer({ sessionId, defaultRecipient = "" }: MessageCom
         <CardDescription>Send WhatsApp messages through your connected sessions</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Recipient */}
         <div className="space-y-2">
           <Label>Recipient (JID or Phone)</Label>
           <Input
@@ -92,7 +91,6 @@ export function MessageComposer({ sessionId, defaultRecipient = "" }: MessageCom
           />
         </div>
 
-        {/* Message Type */}
         <div className="space-y-2">
           <Label>Message Type</Label>
           <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
@@ -111,7 +109,6 @@ export function MessageComposer({ sessionId, defaultRecipient = "" }: MessageCom
           </div>
         </div>
 
-        {/* Message Content */}
         {messageType === "text" && (
           <div className="space-y-2">
             <Label>Message</Label>
@@ -168,15 +165,13 @@ export function MessageComposer({ sessionId, defaultRecipient = "" }: MessageCom
           </div>
         )}
 
-        {/* Result */}
         {result && (
-          <div className={`flex items-center gap-2 p-4 rounded-lg ${result.success ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200" : "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200"}`}>
+          <div className={`flex items-center gap-2 p-4 rounded-lg ${result.success ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"}`}>
             {result.success ? <CheckCircle className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
             <span>{result.message}</span>
           </div>
         )}
 
-        {/* Send Button */}
         <Button onClick={handleSend} disabled={sending || !sessionId} className="w-full">
           <Send className="mr-2 h-4 w-4" />
           {sending ? "Sending..." : "Send Message"}

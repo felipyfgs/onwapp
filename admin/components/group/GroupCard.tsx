@@ -16,12 +16,12 @@ export function GroupCard({ group, onClick }: GroupCardProps) {
   return (
     <div
       className={`flex items-center gap-4 p-4 border-b last:border-b-0 transition-colors ${
-        onClick ? "hover:bg-muted/50 cursor-pointer" : ""
+        onClick ? "hover:bg-accent cursor-pointer" : ""
       }`}
       onClick={() => onClick?.(group)}
     >
       <Avatar className="h-12 w-12">
-        <AvatarFallback className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+        <AvatarFallback className="bg-primary/10 text-primary">
           {initials}
         </AvatarFallback>
       </Avatar>

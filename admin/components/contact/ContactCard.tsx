@@ -16,7 +16,7 @@ export function ContactCard({ contact, onClick }: ContactCardProps) {
   return (
     <div
       className={`flex items-center gap-4 p-4 border-b last:border-b-0 transition-colors ${
-        onClick ? "hover:bg-muted/50 cursor-pointer" : ""
+        onClick ? "hover:bg-accent cursor-pointer" : ""
       }`}
       onClick={() => onClick?.(contact)}
     >

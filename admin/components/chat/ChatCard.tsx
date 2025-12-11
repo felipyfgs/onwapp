@@ -29,12 +29,12 @@ export function ChatCard({ chat, onClick }: ChatCardProps) {
   return (
     <div
       className={`flex items-center gap-4 p-4 border-b last:border-b-0 transition-colors ${
-        onClick ? "hover:bg-muted/50 cursor-pointer" : ""
+        onClick ? "hover:bg-accent cursor-pointer" : ""
       }`}
       onClick={() => onClick?.(chat)}
     >
       <Avatar className="h-12 w-12">
-        <AvatarFallback className={chat.isGroup ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : ""}>
+        <AvatarFallback className={chat.isGroup ? "bg-primary/10 text-primary" : ""}>
           {chat.isGroup ? <Users className="h-5 w-5" /> : initials}
         </AvatarFallback>
       </Avatar>

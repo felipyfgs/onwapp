@@ -53,9 +53,10 @@ export default function MediaPage() {
     setLoading(true);
     try {
       const data = await getMediaList(selectedSession, 100);
-      setMedia(data);
+      setMedia(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch media:", error);
+      setMedia([]);
     } finally {
       setLoading(false);
     }
