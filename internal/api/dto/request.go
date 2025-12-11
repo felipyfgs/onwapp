@@ -110,7 +110,7 @@ type ChatPresenceRequest struct {
 
 type MarkReadRequest struct {
 	Phone      string   `json:"phone" binding:"required" example:"5511999999999"`
-	MessageIDs []string `json:"messageIds"` // Optional - if empty, only resets unread count
+	MessageIDs []string `json:"messageIds"`
 }
 
 // Group requests
@@ -205,14 +205,14 @@ type SendPollVoteRequest struct {
 
 type BlocklistRequest struct {
 	Phone  string `json:"phone" binding:"required" example:"5511999999999"`
-	Action string `json:"action" binding:"required" example:"block"` // block or unblock
+	Action string `json:"action" binding:"required" example:"block"`
 }
 
 // Disappearing messages requests
 
 type DisappearingRequest struct {
 	Phone string `json:"phone" binding:"required" example:"5511999999999"`
-	Timer string `json:"timer" binding:"required" example:"24h"` // 24h, 7d, 90d, or off
+	Timer string `json:"timer" binding:"required" example:"24h"`
 }
 
 // Group settings requests
@@ -239,18 +239,18 @@ type GroupApprovalRequest struct {
 
 type GroupMemberAddModeRequest struct {
 	GroupID string `json:"groupId" binding:"required" example:"123456789@g.us"`
-	Mode    string `json:"mode" binding:"required" example:"admin_add"` // admin_add or all_member_add
+	Mode    string `json:"mode" binding:"required" example:"admin_add"`
 }
 
 type GroupRequestActionRequest struct {
 	GroupID      string   `json:"groupId" binding:"required" example:"123456789@g.us"`
 	Participants []string `json:"participants" binding:"required"`
-	Action       string   `json:"action" binding:"required" example:"approve"` // approve or reject
+	Action       string   `json:"action" binding:"required" example:"approve"`
 }
 
 type GroupRequestActionBodyRequest struct {
 	Participants []string `json:"participants" binding:"required"`
-	Action       string   `json:"action" binding:"required" example:"approve"` // approve or reject
+	Action       string   `json:"action" binding:"required" example:"approve"`
 }
 
 // Newsletter requests

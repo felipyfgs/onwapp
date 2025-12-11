@@ -180,7 +180,7 @@ func (r *Repository) GetInboxID(ctx context.Context) (int, error) {
 	var inboxID int
 	err := r.db.QueryRowContext(ctx, `SELECT id FROM inboxes WHERE id = $1`, r.inboxID).Scan(&inboxID)
 	if errors.Is(err, sql.ErrNoRows) {
-		return 0, nil // Inbox not found
+		return 0, nil
 	}
 	if err != nil {
 		return 0, wrapErr("get inbox id", err)
@@ -484,10 +484,10 @@ type SyncOverview struct {
 type ContactsOverview struct {
 	TotalChatwoot  int `json:"totalChatwoot"`
 	WhatsAppSynced int `json:"whatsAppSynced"`
-	Groups         int `json:"groups"`      // Contacts with @g.us identifier (groups)
-	Private        int `json:"private"`     // Contacts with @s.whatsapp.net (private chats)
-	WithName       int `json:"withName"`    // Contacts that have a name (saved in agenda)
-	WithoutName    int `json:"withoutName"` // Contacts that only have phone number as name
+	Groups         int `json:"groups"`
+	Private        int `json:"private"`
+	WithName       int `json:"withName"`
+	WithoutName    int `json:"withoutName"`
 }
 
 type ConversationsOverview struct {
@@ -495,8 +495,8 @@ type ConversationsOverview struct {
 	Open         int `json:"open"`
 	Resolved     int `json:"resolved"`
 	Pending      int `json:"pending"`
-	GroupChats   int `json:"groupChats"`   // Conversations with group contacts
-	PrivateChats int `json:"privateChats"` // Conversations with private contacts
+	GroupChats   int `json:"groupChats"`
+	PrivateChats int `json:"privateChats"`
 }
 
 type MessagesOverview struct {
@@ -838,7 +838,7 @@ type MessageInsertData struct {
 	SenderID            int
 	SourceID            string
 	Timestamp           time.Time
-	InReplyToExternalID string // "WAID:stanzaID" for quoted messages
+	InReplyToExternalID string
 }
 
 // InsertMessagesBatch inserts multiple messages in a single query (bulk INSERT)

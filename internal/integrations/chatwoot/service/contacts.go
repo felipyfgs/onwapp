@@ -25,8 +25,8 @@ type ContactNameFetcher func(ctx context.Context, jid string) string
 
 // ContactManager handles contact and conversation management with caching
 type ContactManager struct {
-	conversationCache sync.Map // map[cacheKey]conversationID
-	conversationLocks sync.Map // map[lockKey]bool
+	conversationCache sync.Map
+	conversationLocks sync.Map
 	cacheTTL          time.Duration
 }
 

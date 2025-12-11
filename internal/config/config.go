@@ -61,7 +61,7 @@ type Config struct {
 	Port         string
 	LogLevel     LogLevel
 	LogFormat    LogFormat
-	GlobalAPIKey string // Global API key for admin access to all sessions
+	GlobalAPIKey string
 	ServerURL    string
 
 	// MinIO configuration
@@ -70,10 +70,10 @@ type Config struct {
 	MinioSecretKey string
 	MinioBucket    string
 	MinioUseSSL    bool
-	MinioPublicURL string // Optional: public URL for media files (defaults to endpoint)
+	MinioPublicURL string
 
 	// Debug options
-	DebugHistorySync bool // Save history sync JSON dumps to files
+	DebugHistorySync bool
 
 	// NATS Configuration
 	NatsURL          string
@@ -84,15 +84,15 @@ type Config struct {
 	NatsAckWait      time.Duration
 
 	// Security Configuration
-	AllowedOrigins        []string // CORS allowed origins
-	RateLimitPerSecond    float64  // Rate limit requests per second
-	RateLimitBurst        int      // Rate limit burst size
-	EnableSecurityHeaders bool     // Enable security headers middleware
-	TrustedProxies        []string // Trusted proxy IPs
+	AllowedOrigins        []string
+	RateLimitPerSecond    float64
+	RateLimitBurst        int
+	EnableSecurityHeaders bool
+	TrustedProxies        []string
 }
 
 func Load() *Config {
-	_ = godotenv.Load() // ignore error, .env file is optional
+	_ = godotenv.Load()
 
 	port := getEnv("PORT", "3000")
 	serverURL := getEnv("SERVER_URL", "")

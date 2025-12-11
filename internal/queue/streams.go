@@ -2,9 +2,9 @@ package queue
 
 // Stream names
 const (
-	StreamWAToCW = "WA_TO_CW" // WhatsApp -> Chatwoot
-	StreamCWToWA = "CW_TO_WA" // Chatwoot -> WhatsApp
-	StreamDLQ    = "DLQ"      // Dead Letter Queue
+	StreamWAToCW = "WA_TO_CW"
+	StreamCWToWA = "CW_TO_WA"
+	StreamDLQ    = "DLQ"
 )
 
 // Consumer names

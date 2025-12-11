@@ -30,8 +30,7 @@ func ParseVCardPhones(vcard string) []string {
 			// TEL:+5511999999999
 			// TEL;type=CELL:+5511999999999
 			// TEL;TYPE=CELL;TYPE=VOICE;WAID=5511999999999:+5511999999999
-			// item1.TEL:+5511999999999
-			// item1.TEL;waid=5511999999999:+55 11 99999-9999
+
 			parts := strings.SplitN(line, ":", 2)
 			if len(parts) == 2 {
 				phone := strings.TrimSpace(parts[1])

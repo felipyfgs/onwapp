@@ -42,7 +42,7 @@ type mediaRequest struct {
 	Caption      string
 	MimeType     string
 	DetectedMime string
-	PTT          bool // for audio
+	PTT          bool
 }
 
 // parseMediaRequest extracts media data from JSON or multipart form

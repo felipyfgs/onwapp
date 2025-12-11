@@ -24,12 +24,12 @@ var downloadSemaphore = util.NewSemaphore(100)
 
 // Timeout and delay constants for media operations
 const (
-	mediaDownloadTimeout    = 60 * time.Second
-	downloadBatchDelay      = 100 * time.Millisecond
-	historySyncSettleDelay  = 2 * time.Second
-	historySyncTimeout      = 10 * time.Minute
-	batchProcessDelay       = 1 * time.Second
-	pendingRetryMaxAge      = 5 * time.Minute
+	mediaDownloadTimeout   = 60 * time.Second
+	downloadBatchDelay     = 100 * time.Millisecond
+	historySyncSettleDelay = 2 * time.Second
+	historySyncTimeout     = 10 * time.Minute
+	batchProcessDelay      = 1 * time.Second
+	pendingRetryMaxAge     = 5 * time.Minute
 )
 
 // MediaRetryInfo stores info needed to process media retry responses
@@ -49,11 +49,11 @@ type MediaService struct {
 	storage  *StorageService
 
 	// Track pending media retries
-	pendingRetries   map[string]*MediaRetryInfo // key: msgID
+	pendingRetries   map[string]*MediaRetryInfo
 	pendingRetriesMu sync.RWMutex
 
 	// Track downloads in progress to prevent duplicates
-	downloading   map[string]bool // key: mediaID or msgID
+	downloading   map[string]bool
 	downloadingMu sync.Mutex
 
 	// Track if history sync processing is running
@@ -108,8 +108,6 @@ func IsMediaExpiredError(err error) bool {
 		strings.Contains(errStr, "not found") ||
 		strings.Contains(errStr, "forbidden")
 }
-
-
 
 // DownloadAndStore downloads media from WhatsApp and stores it in MinIO
 // Returns ErrMediaExpired if media needs retry request

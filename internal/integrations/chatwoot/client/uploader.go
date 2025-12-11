@@ -30,14 +30,14 @@ func NewMediaUploader(c *Client) *MediaUploader {
 type MediaUploadRequest struct {
 	ConversationID int
 	MediaURL       string
-	MediaType      string // image, video, audio, document
+	MediaType      string
 	Filename       string
 	MimeType       string
 	Caption        string
-	MessageType    string // incoming or outgoing
+	MessageType    string
 	ContentAttrs   map[string]interface{}
 	Timestamp      *time.Time // Optional: original message timestamp for correct ordering
-	SourceID       string     // Optional: source_id to prevent webhook loops (e.g., "WAID:msgid")
+	SourceID       string
 }
 
 // UploadFromURL downloads media from URL and uploads to Chatwoot

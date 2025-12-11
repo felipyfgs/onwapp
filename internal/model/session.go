@@ -31,29 +31,29 @@ const (
 )
 
 type SessionRecord struct {
-	ID        string // UUID (database primary key)
-	Session   string // Session identifier (used in API routes)
+	ID        string
+	Session   string
 	DeviceJID string
 	Phone     string
 	Status    string
-	ApiKey    string // Session-specific API key (optional)
+	ApiKey    string
 	CreatedAt *time.Time
 	UpdatedAt *time.Time
 }
 
 type Session struct {
-	ID              string // UUID (database primary key)
-	Session         string // Session identifier (used in API routes)
+	ID              string
+	Session         string
 	DeviceJID       string
 	Phone           string
-	ApiKey          string // Session-specific API key (optional)
+	ApiKey          string
 	Client          *whatsmeow.Client
 	Device          *store.Device
 	Status          SessionStatus
 	QRCode          string
 	CreatedAt       *time.Time
 	UpdatedAt       *time.Time
-	EventHandlerSet bool // Tracks if event handler was already configured
+	EventHandlerSet bool
 	mu              sync.RWMutex
 }
 

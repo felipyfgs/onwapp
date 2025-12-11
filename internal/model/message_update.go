@@ -13,16 +13,16 @@ type UpdateType string
 
 const (
 	// Content Updates
-	UpdateTypeEdit   UpdateType = "edit"   // Message edited
-	UpdateTypeDelete UpdateType = "delete" // Message deleted/revoked
+	UpdateTypeEdit   UpdateType = "edit"
+	UpdateTypeDelete UpdateType = "delete"
 
 	// Reaction Updates
-	UpdateTypeReaction UpdateType = "reaction" // Reaction added/removed
+	UpdateTypeReaction UpdateType = "reaction"
 
 	// Delivery Status Updates
-	UpdateTypeDelivered UpdateType = "delivered" // Message delivered to recipient
-	UpdateTypeRead      UpdateType = "read"      // Message read by recipient
-	UpdateTypePlayed    UpdateType = "played"    // Audio/video played by recipient
+	UpdateTypeDelivered UpdateType = "delivered"
+	UpdateTypeRead      UpdateType = "read"
+	UpdateTypePlayed    UpdateType = "played"
 )
 
 // =============================================================================
@@ -34,12 +34,12 @@ const (
 type MessageUpdate struct {
 	ID        string          `json:"id"`
 	SessionID string          `json:"sessionId"`
-	MsgID     string          `json:"msgId"` // WhatsApp message ID (references zpMessages.messageId)
+	MsgID     string          `json:"msgId"`
 	Type      UpdateType      `json:"type"`
-	Actor     string          `json:"actor,omitempty"` // Who performed the action (JID)
-	Data      json.RawMessage `json:"data,omitempty"`  // Type-specific data (see below)
-	EventAt   time.Time       `json:"eventAt"`         // When the event occurred (WhatsApp time)
-	CreatedAt time.Time       `json:"createdAt"`       // When we recorded it
+	Actor     string          `json:"actor,omitempty"`
+	Data      json.RawMessage `json:"data,omitempty"`
+	EventAt   time.Time       `json:"eventAt"`
+	CreatedAt time.Time       `json:"createdAt"`
 }
 
 // =============================================================================
@@ -48,24 +48,24 @@ type MessageUpdate struct {
 
 // ReactionData is stored in MessageUpdate.Data for reaction updates
 type ReactionData struct {
-	Action    string `json:"action"`    // "add" or "remove"
-	Emoji     string `json:"emoji"`     // The emoji
-	Timestamp int64  `json:"timestamp"` // Reaction timestamp (ms)
+	Action    string `json:"action"`
+	Emoji     string `json:"emoji"`
+	Timestamp int64  `json:"timestamp"`
 }
 
 // EditData is stored in MessageUpdate.Data for edit updates
 type EditData struct {
-	OldContent string `json:"oldContent,omitempty"` // Previous content
-	NewContent string `json:"newContent"`           // New content
+	OldContent string `json:"oldContent,omitempty"`
+	NewContent string `json:"newContent"`
 }
 
 // DeleteData is stored in MessageUpdate.Data for delete updates
 type DeleteData struct {
-	DeletedBy string `json:"deletedBy"` // "sender" or "admin"
+	DeletedBy string `json:"deletedBy"`
 }
 
 // ReceiptData is stored in MessageUpdate.Data for delivery/read/played updates
 type ReceiptData struct {
-	Chat      string `json:"chat"`      // Chat JID
-	Timestamp int64  `json:"timestamp"` // Event timestamp (ms)
+	Chat      string `json:"chat"`
+	Timestamp int64  `json:"timestamp"`
 }

@@ -19,15 +19,15 @@ const (
 
 // Worker pool constants for parallel processing
 const (
-	MediaWorkers       = 3   // Number of concurrent media upload workers
+	MediaWorkers       = 3
 	MediaRatePerSecond = 3.0 // Max media uploads per second (across all workers)
-	MediaBatchSize     = 50  // Process media in batches of this size
-	CwFieldsBatchSize  = 500 // Batch size for CwFields updates
+	MediaBatchSize     = 50
+	CwFieldsBatchSize  = 500
 )
 
 // Pipeline constants
 const (
-	PipelineBufferSize = 100 // Channel buffer size for pipeline stages
+	PipelineBufferSize = 100
 )
 
 // Cache TTL constants

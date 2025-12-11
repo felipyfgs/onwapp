@@ -166,44 +166,44 @@ type SyncStats struct {
 // ContactSyncDetails provides detailed breakdown of contact sync
 type ContactSyncDetails struct {
 	// Imported breakdown
-	SavedContacts    int `json:"savedContacts"`    // Contacts saved in agenda (with FullName/FirstName)
-	BusinessContacts int `json:"businessContacts"` // Business/verified contacts
+	SavedContacts    int `json:"savedContacts"`
+	BusinessContacts int `json:"businessContacts"`
 
 	// Skipped breakdown
-	AlreadyExists   int `json:"alreadyExists"`   // Contact already in Chatwoot
-	Groups          int `json:"groups"`          // Group JIDs (not synced as contacts)
-	StatusBroadcast int `json:"statusBroadcast"` // Status broadcast
-	Newsletters     int `json:"newsletters"`     // Newsletter channels
-	NotInAgenda     int `json:"notInAgenda"`     // Contacts not saved (only PushName)
-	LidContacts     int `json:"lidContacts"`     // LID contacts that couldn't be resolved
-	InvalidPhone    int `json:"invalidPhone"`    // Invalid phone numbers
+	AlreadyExists   int `json:"alreadyExists"`
+	Groups          int `json:"groups"`
+	StatusBroadcast int `json:"statusBroadcast"`
+	Newsletters     int `json:"newsletters"`
+	NotInAgenda     int `json:"notInAgenda"`
+	LidContacts     int `json:"lidContacts"`
+	InvalidPhone    int `json:"invalidPhone"`
 
 	// Source info
-	TotalWhatsApp int `json:"totalWhatsApp"` // Total contacts from WhatsApp
+	TotalWhatsApp int `json:"totalWhatsApp"`
 }
 
 // MessageSyncDetails provides detailed breakdown of message sync
 type MessageSyncDetails struct {
 	// Imported breakdown
-	TextMessages  int `json:"textMessages"`  // Regular text messages
-	MediaMessages int `json:"mediaMessages"` // Images, videos, audio, documents
-	GroupMessages int `json:"groupMessages"` // Messages in groups
+	TextMessages  int `json:"textMessages"`
+	MediaMessages int `json:"mediaMessages"`
+	GroupMessages int `json:"groupMessages"`
 
 	// Skipped breakdown
-	AlreadySynced   int `json:"alreadySynced"`   // Already in Chatwoot
-	OldMessages     int `json:"oldMessages"`     // Before date limit
-	StatusBroadcast int `json:"statusBroadcast"` // Status/stories
-	Newsletters     int `json:"newsletters"`     // Newsletter messages
-	Protocol        int `json:"protocol"`        // Protocol messages
-	Reactions       int `json:"reactions"`       // Reaction messages
-	System          int `json:"system"`          // System messages
-	EmptyContent    int `json:"emptyContent"`    // No content
-	NoMedia         int `json:"noMedia"`         // Media not found
-	LidChats        int `json:"lidChats"`        // LID chats not resolved
+	AlreadySynced   int `json:"alreadySynced"`
+	OldMessages     int `json:"oldMessages"`
+	StatusBroadcast int `json:"statusBroadcast"`
+	Newsletters     int `json:"newsletters"`
+	Protocol        int `json:"protocol"`
+	Reactions       int `json:"reactions"`
+	System          int `json:"system"`
+	EmptyContent    int `json:"emptyContent"`
+	NoMedia         int `json:"noMedia"`
+	LidChats        int `json:"lidChats"`
 
 	// Conversations breakdown
-	PrivateChats int `json:"privateChats"` // 1:1 conversations
-	GroupChats   int `json:"groupChats"`   // Group conversations
+	PrivateChats int `json:"privateChats"`
+	GroupChats   int `json:"groupChats"`
 }
 
 // ResetStats tracks reset operation statistics
@@ -217,8 +217,8 @@ type ResetStats struct {
 // SyncStatus represents the current sync status
 type SyncStatus struct {
 	SessionID string     `json:"sessionId"`
-	Status    string     `json:"status"` // idle, running, completed, failed
-	Type      string     `json:"type"`   // contacts, messages, all
+	Status    string     `json:"status"`
+	Type      string     `json:"type"`
 	StartedAt *time.Time `json:"startedAt,omitempty"`
 	EndedAt   *time.Time `json:"endedAt,omitempty"`
 	Stats     SyncStats  `json:"stats"`

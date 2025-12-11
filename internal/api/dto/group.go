@@ -50,13 +50,13 @@ type GroupApprovalReq struct {
 
 // GroupMemberAddModeReq is the request to set member add mode
 type GroupMemberAddModeReq struct {
-	Mode string `json:"mode" binding:"required" example:"admin_add"` // admin_add or all_member_add
+	Mode string `json:"mode" binding:"required" example:"admin_add"`
 }
 
 // GroupRequestActionReq is the request to approve/reject join requests
 type GroupRequestActionReq struct {
 	Participants []string `json:"participants" binding:"required"`
-	Action       string   `json:"action" binding:"required" example:"approve"` // approve or reject
+	Action       string   `json:"action" binding:"required" example:"approve"`
 }
 
 // SendGroupMessageReq is the request to send a message to a group

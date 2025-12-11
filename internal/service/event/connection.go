@@ -17,9 +17,9 @@ import (
 
 // Timeout and interval constants for connection events
 const (
-	privacySyncTimeout          = 30 * time.Second
-	keepOnlineInterval          = 4 * time.Minute
-	historySyncMetadataTimeout  = 60 * time.Second
+	privacySyncTimeout         = 30 * time.Second
+	keepOnlineInterval         = 4 * time.Minute
+	historySyncMetadataTimeout = 60 * time.Second
 )
 
 func (s *Service) handleConnected(ctx context.Context, session *model.Session) {

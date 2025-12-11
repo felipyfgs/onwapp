@@ -12,12 +12,12 @@ import (
 type MessageStatus string
 
 const (
-	MessageStatusPending   MessageStatus = "pending"   // Waiting for server
-	MessageStatusSent      MessageStatus = "sent"      // Server received (single check)
-	MessageStatusDelivered MessageStatus = "delivered" // Delivered to recipient (double check)
-	MessageStatusRead      MessageStatus = "read"      // Read by recipient (blue checks)
-	MessageStatusPlayed    MessageStatus = "played"    // Audio/video played
-	MessageStatusFailed    MessageStatus = "failed"    // Failed to send
+	MessageStatusPending   MessageStatus = "pending"
+	MessageStatusSent      MessageStatus = "sent"
+	MessageStatusDelivered MessageStatus = "delivered"
+	MessageStatusRead      MessageStatus = "read"
+	MessageStatusPlayed    MessageStatus = "played"
+	MessageStatusFailed    MessageStatus = "failed"
 )
 
 // =============================================================================
@@ -51,8 +51,8 @@ const (
 type MessageDirection string
 
 const (
-	DirectionIncoming MessageDirection = "incoming" // Received from others
-	DirectionOutgoing MessageDirection = "outgoing" // Sent by us
+	DirectionIncoming MessageDirection = "incoming"
+	DirectionOutgoing MessageDirection = "outgoing"
 )
 
 // =============================================================================
@@ -62,26 +62,26 @@ const (
 type MessageStubType int
 
 const (
-	StubTypeRevoke                  MessageStubType = 1   // Message revoked/deleted
-	StubTypeGroupCreate             MessageStubType = 4   // Group created
-	StubTypeGroupSubjectChange      MessageStubType = 7   // Group subject changed
-	StubTypeGroupIconChange         MessageStubType = 9   // Group icon changed
-	StubTypeGroupDescChange         MessageStubType = 12  // Group description changed
-	StubTypeGroupParticipantAdd     MessageStubType = 28  // Participant added
-	StubTypeGroupParticipantRemove  MessageStubType = 31  // Participant removed
-	StubTypeGroupParticipantLeave   MessageStubType = 32  // Participant left
-	StubTypeGroupParticipantPromote MessageStubType = 29  // Participant promoted to admin
-	StubTypeGroupParticipantDemote  MessageStubType = 30  // Participant demoted from admin
-	StubTypeCrypt                   MessageStubType = 39  // E2E encryption notification
-	StubTypeIdentityChange          MessageStubType = 40  // Identity key changed
-	StubTypeGroupInviteLink         MessageStubType = 46  // Group invite link
-	StubTypeEphemeralSetting        MessageStubType = 64  // Disappearing messages setting changed
-	StubTypeEphemeralSync           MessageStubType = 65  // Disappearing messages sync
-	StubTypeBlockContact            MessageStubType = 73  // Contact blocked
-	StubTypeEphemeralNotification   MessageStubType = 74  // Ephemeral notification
-	StubTypeCommunityCreate         MessageStubType = 130 // Community created
-	StubTypeCommunitySubgroupAdd    MessageStubType = 131 // Subgroup added to community
-	StubTypeMessageDeleted          MessageStubType = 132 // Message deleted notification
+	StubTypeRevoke                  MessageStubType = 1
+	StubTypeGroupCreate             MessageStubType = 4
+	StubTypeGroupSubjectChange      MessageStubType = 7
+	StubTypeGroupIconChange         MessageStubType = 9
+	StubTypeGroupDescChange         MessageStubType = 12
+	StubTypeGroupParticipantAdd     MessageStubType = 28
+	StubTypeGroupParticipantRemove  MessageStubType = 31
+	StubTypeGroupParticipantLeave   MessageStubType = 32
+	StubTypeGroupParticipantPromote MessageStubType = 29
+	StubTypeGroupParticipantDemote  MessageStubType = 30
+	StubTypeCrypt                   MessageStubType = 39
+	StubTypeIdentityChange          MessageStubType = 40
+	StubTypeGroupInviteLink         MessageStubType = 46
+	StubTypeEphemeralSetting        MessageStubType = 64
+	StubTypeEphemeralSync           MessageStubType = 65
+	StubTypeBlockContact            MessageStubType = 73
+	StubTypeEphemeralNotification   MessageStubType = 74
+	StubTypeCommunityCreate         MessageStubType = 130
+	StubTypeCommunitySubgroupAdd    MessageStubType = 131
+	StubTypeMessageDeleted          MessageStubType = 132
 )
 
 // =============================================================================
@@ -94,43 +94,43 @@ type Message struct {
 	SessionID string `json:"sessionId"`
 
 	// WhatsApp Identifiers
-	MsgId     string    `json:"msgId"`     // WhatsApp message ID
-	ChatJID   string    `json:"chatJid"`   // Chat JID
-	SenderJID string    `json:"senderJid"` // Sender JID
-	Timestamp time.Time `json:"timestamp"` // Message timestamp
+	MsgId     string    `json:"msgId"`
+	ChatJID   string    `json:"chatJid"`
+	SenderJID string    `json:"senderJid"`
+	Timestamp time.Time `json:"timestamp"`
 
 	// Sender Info
-	PushName     string  `json:"pushName,omitempty"`     // Display name
-	SenderAlt    string  `json:"senderAlt,omitempty"`    // LID (alternative ID)
-	ServerId     *int64  `json:"serverId,omitempty"`     // WhatsApp server ID
-	VerifiedName *string `json:"verifiedName,omitempty"` // Business verified name
+	PushName     string  `json:"pushName,omitempty"`
+	SenderAlt    string  `json:"senderAlt,omitempty"`
+	ServerId     *int64  `json:"serverId,omitempty"`
+	VerifiedName *string `json:"verifiedName,omitempty"`
 
 	// Message Classification
-	Type      string `json:"type"`                // text, image, video, audio, etc.
-	MediaType string `json:"mediaType,omitempty"` // ptt, image, video, document, etc.
-	Category  string `json:"category,omitempty"`  // Message category
+	Type      string `json:"type"`
+	MediaType string `json:"mediaType,omitempty"`
+	Category  string `json:"category,omitempty"`
 
 	// Content
-	Content string `json:"content,omitempty"` // Text or caption
+	Content string `json:"content,omitempty"`
 
 	// Direction & Context Flags
-	FromMe    bool `json:"fromMe"`    // true = outgoing
-	IsGroup   bool `json:"isGroup"`   // true = group message
-	Ephemeral bool `json:"ephemeral"` // Disappearing message
-	ViewOnce  bool `json:"viewOnce"`  // View once media
-	IsEdit    bool `json:"isEdit"`    // Edited message
+	FromMe    bool `json:"fromMe"`
+	IsGroup   bool `json:"isGroup"`
+	Ephemeral bool `json:"ephemeral"`
+	ViewOnce  bool `json:"viewOnce"`
+	IsEdit    bool `json:"isEdit"`
 
 	// Edit Context
-	EditTargetID string `json:"editTargetId,omitempty"` // Original message ID if edit
+	EditTargetID string `json:"editTargetId,omitempty"`
 
 	// Reply/Quote Context
-	QuotedID     string `json:"quotedId,omitempty"`     // Replied message ID
-	QuotedSender string `json:"quotedSender,omitempty"` // Replied message sender
+	QuotedID     string `json:"quotedId,omitempty"`
+	QuotedSender string `json:"quotedSender,omitempty"`
 
 	// Chatwoot Integration
-	CwMsgId    *int   `json:"cwMsgId,omitempty"`    // Chatwoot message ID
-	CwConvId   *int   `json:"cwConvId,omitempty"`   // Chatwoot conversation ID
-	CwSourceId string `json:"cwSourceId,omitempty"` // Source ID (WAID:xxx)
+	CwMsgId    *int   `json:"cwMsgId,omitempty"`
+	CwConvId   *int   `json:"cwConvId,omitempty"`
+	CwSourceId string `json:"cwSourceId,omitempty"`
 
 	// Delivery Status (for outgoing messages)
 	Status      MessageStatus `json:"status"`
@@ -144,11 +144,11 @@ type Message struct {
 	RawEvent json.RawMessage `json:"rawEvent,omitempty"`
 
 	// History Sync Fields
-	MsgOrderID    *int64   `json:"msgOrderId,omitempty"`    // Server-assigned sequence for ordering
-	StubType      *int     `json:"stubType,omitempty"`      // System message type (28=add, 31=remove, etc.)
-	StubParams    []string `json:"stubParams,omitempty"`    // Parameters for system messages (JIDs)
-	MessageSecret []byte   `json:"messageSecret,omitempty"` // Decryption key for view-once
-	Broadcast     bool     `json:"broadcast,omitempty"`     // Is broadcast list message
+	MsgOrderID    *int64   `json:"msgOrderId,omitempty"`
+	StubType      *int     `json:"stubType,omitempty"`
+	StubParams    []string `json:"stubParams,omitempty"`
+	MessageSecret []byte   `json:"messageSecret,omitempty"`
+	Broadcast     bool     `json:"broadcast,omitempty"`
 
 	// Metadata
 	CreatedAt time.Time `json:"createdAt"`

@@ -46,8 +46,8 @@ type SessionService struct {
 	database         *db.Database
 	webhookService   WebhookSender
 	eventService     *event.Service
-	sessions         map[string]*model.Session // indexed by session name
-	sessionsByID     map[string]*model.Session // indexed by UUID for O(1) lookup
+	sessions         map[string]*model.Session
+	sessionsByID     map[string]*model.Session
 	mu               sync.RWMutex
 	externalHandlers []EventHandler
 }
@@ -239,7 +239,7 @@ func (s *SessionService) Delete(ctx context.Context, sessionId string) error {
 		} else {
 			// No credentials - always disconnect to stop QR generation goroutine
 			// Disconnect() is safe to call even if not connected, and it will
-			// close the QR channel which stops the startClientWithQR goroutine
+
 			session.Client.Disconnect()
 		}
 

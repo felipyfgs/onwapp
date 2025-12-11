@@ -36,7 +36,6 @@ type Handlers struct {
 	Status     *handler.StatusHandler
 	Settings   *handler.SettingsHandler
 	Webhook    WebhookHandlerInterface
-
 }
 
 type Config struct {
@@ -94,8 +93,6 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 	if h.Media != nil {
 		r.GET("/public/:session/media/stream", h.Media.StreamMediaPublic)
 	}
-
-
 
 	// ============================================================
 	// SESSIONS MANAGEMENT
@@ -237,7 +234,7 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 		session.POST("/group/join", h.Group.JoinGroup)
 		session.GET("/group/requests", h.Group.GetGroupRequestParticipants)
 		session.POST("/group/requests/action", h.Group.UpdateGroupRequestParticipants)
-		session.POST("/group/send/text", h.Group.SendGroupMessage) // legacy
+		session.POST("/group/send/text", h.Group.SendGroupMessage)
 
 		// ----------------------------------------------------------
 		// COMMUNITY

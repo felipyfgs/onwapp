@@ -89,7 +89,7 @@ func (r *ChatwootDBRepository) GetExistingSourceIDs(ctx context.Context, message
 type InsertMessageRequest struct {
 	Content        string
 	ConversationID int
-	MessageType    int // 0=incoming, 1=outgoing
+	MessageType    int
 	SenderType     string
 	SenderID       int
 	SourceID       string

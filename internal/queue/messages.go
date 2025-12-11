@@ -12,16 +12,16 @@ type MessageType string
 
 const (
 	// WhatsApp -> Chatwoot
-	MsgTypeIncoming     MessageType = "incoming"      // Mensagem recebida
-	MsgTypeOutgoingSent MessageType = "outgoing_sent" // Mensagem enviada pelo WA
-	MsgTypeReceipt      MessageType = "receipt"       // Read/Delivered
-	MsgTypeReaction     MessageType = "reaction"      // Reação
-	MsgTypeDelete       MessageType = "delete"        // Mensagem deletada
+	MsgTypeIncoming     MessageType = "incoming"
+	MsgTypeOutgoingSent MessageType = "outgoing_sent"
+	MsgTypeReceipt      MessageType = "receipt"
+	MsgTypeReaction     MessageType = "reaction"
+	MsgTypeDelete       MessageType = "delete"
 
 	// Chatwoot -> WhatsApp
-	MsgTypeSendText  MessageType = "send_text"  // Enviar texto
-	MsgTypeSendMedia MessageType = "send_media" // Enviar mídia
-	MsgTypeDeleteWA  MessageType = "delete_wa"  // Deletar no WA
+	MsgTypeSendText  MessageType = "send_text"
+	MsgTypeSendMedia MessageType = "send_media"
+	MsgTypeDeleteWA  MessageType = "delete_wa"
 )
 
 // QueueMessage é a estrutura base para todas as mensagens
@@ -45,7 +45,7 @@ type MediaInfo struct {
 // WAToCWMessage - dados específicos WhatsApp -> Chatwoot
 type WAToCWMessage struct {
 	MessageID     string          `json:"message_id"`
-	SessionName   string          `json:"session_name"` // Session name (used for media download)
+	SessionName   string          `json:"session_name"`
 	ChatJID       string          `json:"chat_jid"`
 	SenderJID     string          `json:"sender_jid"`
 	PushName      string          `json:"push_name"`
@@ -54,15 +54,15 @@ type WAToCWMessage struct {
 	IsGroup       bool            `json:"is_group"`
 	ParticipantID string          `json:"participant_id,omitempty"`
 	MediaInfo     *MediaInfo      `json:"media_info,omitempty"`
-	RawEvent      []byte          `json:"raw_event"`       // Protobuf serialized message for Chatwoot processing
-	FullEventJSON json.RawMessage `json:"full_event_json"` // Complete event JSON for webhook payload
+	RawEvent      []byte          `json:"raw_event"`
+	FullEventJSON json.RawMessage `json:"full_event_json"`
 }
 
 // WAToCWReceiptMessage - dados de recibo (read/delivered)
 type WAToCWReceiptMessage struct {
 	MessageIDs  []string `json:"message_ids"`
 	ChatJID     string   `json:"chat_jid"`
-	ReceiptType string   `json:"receipt_type"` // "read", "delivered"
+	ReceiptType string   `json:"receipt_type"`
 }
 
 // WAToCWReactionMessage - dados de reação

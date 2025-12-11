@@ -24,15 +24,15 @@ var (
 func init() {
 	// Initialize private IP blocks
 	privateCIDRs := []string{
-		"127.0.0.0/8",    // Loopback
-		"10.0.0.0/8",     // Private Class A
-		"172.16.0.0/12",  // Private Class B
-		"192.168.0.0/16", // Private Class C
-		"169.254.0.0/16", // Link-local
-		"::1/128",        // IPv6 loopback
-		"fc00::/7",       // IPv6 private
-		"fe80::/10",      // IPv6 link-local
-		"0.0.0.0/8",      // Current network
+		"127.0.0.0/8",
+		"10.0.0.0/8",
+		"172.16.0.0/12",
+		"192.168.0.0/16",
+		"169.254.0.0/16",
+		"::1/128",
+		"fc00::/7",
+		"fe80::/10",
+		"0.0.0.0/8",
 	}
 
 	for _, cidr := range privateCIDRs {
@@ -80,7 +80,7 @@ func ValidateSessionName(name string) error {
 // IsPrivateIP checks if an IP is in a private/internal range
 func IsPrivateIP(ip net.IP) bool {
 	if ip == nil {
-		return true // Treat nil as private (block it)
+		return true
 	}
 
 	// Check loopback
@@ -134,7 +134,7 @@ func ValidateURL(rawURL string) error {
 	if err != nil {
 		// If we can't resolve, allow the URL (might be temporary DNS issue)
 		// This is intentional - we don't want to block valid URLs due to DNS hiccups
-		return nil //nolint:nilerr // intentionally returning nil on DNS error
+		return nil
 	}
 
 	for _, ip := range ips {
@@ -183,7 +183,7 @@ func ValidateURLWithTimeout(rawURL string, timeout time.Duration) error {
 
 	ips, err := resolver.LookupIP(ctx, "ip", hostname)
 	if err != nil {
-		return nil // Allow if DNS fails (might be temporary)
+		return nil
 	}
 
 	for _, ip := range ips {
@@ -256,7 +256,7 @@ var AllowedMimeTypes = map[string][]string{
 func ValidateMimeType(mimeType, mediaType string) error {
 	allowed, exists := AllowedMimeTypes[mediaType]
 	if !exists {
-		return nil // Unknown media type, allow
+		return nil
 	}
 
 	for _, a := range allowed {

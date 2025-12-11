@@ -352,7 +352,7 @@ func (h *MediaHandler) ListMedia(c *gin.Context) {
 func (h *MediaHandler) RetryMediaDownload(c *gin.Context) {
 	sessionId := c.Param("session")
 	messageID := c.Query("messageId")
-	
+
 	if messageID == "" {
 		c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "messageId query parameter is required"})
 		return
@@ -389,10 +389,10 @@ func (h *MediaHandler) RetryMediaDownload(c *gin.Context) {
 	// Try to download
 	go func() {
 		ctx := c.Request.Context()
-		
+
 		// Attempt download
 		err := h.mediaService.DownloadAndStore(ctx, session.Client, media, sessionId)
-		
+
 		// If media expired, send retry request automatically
 		if err != nil && service.IsMediaExpiredError(err) {
 			_ = h.mediaService.SendMediaRetryRequest(ctx, session.Client, media, sessionId)
