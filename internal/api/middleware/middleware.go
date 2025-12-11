@@ -123,12 +123,6 @@ func SessionAuth() gin.HandlerFunc {
 
 func CORS(allowedOrigins []string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Skip CORS for WebSocket connections (they handle their own upgrade)
-		if strings.HasSuffix(c.Request.URL.Path, "/ws") {
-			c.Next()
-			return
-		}
-
 		origin := c.Request.Header.Get("Origin")
 
 		allowed := false
