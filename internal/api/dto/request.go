@@ -110,7 +110,7 @@ type ChatPresenceRequest struct {
 
 type MarkReadRequest struct {
 	Phone      string   `json:"phone" binding:"required" example:"5511999999999"`
-	MessageIDs []string `json:"messageIds" binding:"required"`
+	MessageIDs []string `json:"messageIds"` // Optional - if empty, only resets unread count
 }
 
 // Group requests

@@ -30,8 +30,11 @@ export function useChats(sessionId: string) {
     }
   }, [query.data, sessionId])
 
+  // Filter out status@broadcast (WhatsApp status channel, not a real chat)
+  const filterChats = (chats: Chat[]) => chats.filter(c => c.jid !== 'status@broadcast')
+
   return {
-    chats: query.data || cachedChats || [],
+    chats: filterChats(query.data || cachedChats || []),
     isLoading: query.isLoading && !cachedChats?.length,
     isFetching: query.isFetching,
     error: query.error,
@@ -48,16 +51,24 @@ export function useInvalidateChats() {
   }
 }
 
-// Utility to update a single chat optimistically
+// Utility to update a single chat optimistically (TanStack Query + IndexedDB)
 export function useUpdateChat() {
   const queryClient = useQueryClient()
 
   return (sessionId: string, chatJid: string, updates: Partial<Chat>) => {
+    // 1. Update TanStack Query cache (immediate UI update)
     queryClient.setQueryData<Chat[]>(chatsQueryKey(sessionId), (old) => {
       if (!old) return old
       return old.map((chat) =>
         chat.jid === chatJid ? { ...chat, ...updates } : chat
       )
+    })
+
+    // 2. Update IndexedDB directly (async, persists across navigations)
+    db.chats.get(chatJid).then((existingChat) => {
+      if (existingChat) {
+        db.chats.update(chatJid, { ...updates, updatedAt: Date.now() })
+      }
     })
   }
 }

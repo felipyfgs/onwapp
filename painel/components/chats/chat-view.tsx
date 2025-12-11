@@ -35,8 +35,10 @@ import {
   sendDocumentMessage,
   sendAudioMessage,
   fileToBase64,
+  markRead,
 } from "@/lib/api/chats"
 import { useChatMessages, useAddMessage, useUpdateMessageStatus } from "@/hooks/use-chat-messages"
+import { useUpdateChat } from "@/hooks/use-chats"
 import { useAvatar } from "@/hooks/use-avatar"
 import { ChatMessageBubble } from "./chat-message-bubble"
 import {
@@ -67,9 +69,22 @@ export const ChatView = forwardRef<ChatViewRef, ChatViewProps>(function ChatView
   const { messages } = useChatMessages(sessionId, chat.jid)
   const addMessageToCache = useAddMessage()
   const updateStatusInCache = useUpdateMessageStatus()
+  const updateChat = useUpdateChat()
   
   // Fetch chat avatar (cached by TanStack Query)
   const { data: chatAvatar } = useAvatar(sessionId, chat.jid)
+
+  // Mark chat as read when opened (persists across navigations using Set)
+  const markedChatsRef = useRef<Set<string>>(new Set())
+  useEffect(() => {
+    // Only mark if not already marked in this session AND has unread messages
+    if (!markedChatsRef.current.has(chat.jid) && (chat.unreadCount ?? 0) > 0) {
+      markedChatsRef.current.add(chat.jid)
+      markRead(sessionId, chat.jid, []).catch(console.error)
+      updateChat(sessionId, chat.jid, { unreadCount: 0, markedAsUnread: false })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chat.unreadCount intentionally excluded to prevent infinite loops
+  }, [chat.jid, sessionId, updateChat])
 
   // Local UI state only
   const [inputValue, setInputValue] = useState("")
@@ -370,11 +385,11 @@ export const ChatView = forwardRef<ChatViewRef, ChatViewProps>(function ChatView
         </div>
       </header>
 
-      {/* Messages Area */}
+      {/* Messages Area - WhatsApp style background */}
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto bg-background"
+        className="flex-1 overflow-y-auto bg-[url('/img/chat-bg-light.jpg')] dark:bg-[url('/img/chat-bg-dark.jpg')] bg-[length:412.5px_749.25px]"
       >
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">

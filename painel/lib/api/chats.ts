@@ -66,10 +66,10 @@ export async function getChatMessages(
   return api<ChatMessage[]>(`/${session}/chat/messages?${params.toString()}`)
 }
 
-export async function markRead(session: string, chatJid: string, messageIds: string[]): Promise<void> {
+export async function markRead(session: string, phone: string, messageIds: string[]): Promise<void> {
   await api(`/${session}/chat/markread`, {
     method: "POST",
-    body: JSON.stringify({ chatJid, messageIds }),
+    body: JSON.stringify({ phone, messageIds }),
   })
 }
 

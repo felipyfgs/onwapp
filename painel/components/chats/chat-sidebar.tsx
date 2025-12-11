@@ -165,7 +165,11 @@ export function ChatSidebar({ chats, selectedChat, onChatSelect, sessionId, load
     }
 
     if (filter === "unread") {
-      filtered = filtered.filter((c) => (c.unreadCount && c.unreadCount > 0) || c.markedAsUnread)
+      filtered = filtered.filter((c) => 
+        (c.unreadCount && c.unreadCount > 0) || 
+        c.markedAsUnread || 
+        c.jid === selectedChat?.jid // Keep selected chat visible
+      )
     } else if (filter === "groups") {
       filtered = filtered.filter((c) => c.isGroup)
     }
@@ -177,7 +181,7 @@ export function ChatSidebar({ chats, selectedChat, onChatSelect, sessionId, load
       const tsB = b.lastMessage?.timestamp || b.conversationTimestamp || 0
       return tsB - tsA
     })
-  }, [chats, search, filter])
+  }, [chats, search, filter, selectedChat])
 
   const archivedCount = chats.filter((c) => c.archived).length
   const nonArchivedChats = filteredChats.filter((c) => !c.archived)

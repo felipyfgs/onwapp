@@ -6,6 +6,7 @@ import { Chat, ChatMessage } from "@/lib/api/chats"
 import { useWebSocket, WebSocketMessage } from "@/hooks/use-websocket"
 import { useChats, chatsQueryKey } from "@/hooks/use-chats"
 import { useAddMessage } from "@/hooks/use-chat-messages"
+import { avatarQueryKey } from "@/hooks/use-avatar"
 import { db } from "@/lib/db/chats-db"
 
 interface WSMessageData {
@@ -28,6 +29,11 @@ interface WSStatusData {
   chatId: string
   messageIds: string[]
   status: string
+}
+
+interface WSPictureData {
+  JID: string
+  Remove: boolean
 }
 
 interface StatusUpdate {
@@ -96,6 +102,11 @@ export function ChatsProvider({ sessionId, children }: ChatsProviderProps) {
       }
       chat.conversationTimestamp = msgData.timestamp
 
+      // Increment unread count for received messages (not from us)
+      if (!msgData.fromMe) {
+        chat.unreadCount = (chat.unreadCount || 0) + 1
+      }
+
       // Move to top
       updatedChats.splice(chatIndex, 1)
       updatedChats.unshift(chat)
@@ -150,8 +161,19 @@ export function ChatsProvider({ sessionId, children }: ChatsProviderProps) {
         }
         break
       }
+
+      case "contact.picture": {
+        const pictureData = message.data as WSPictureData
+        if (pictureData?.JID) {
+          // Invalidate avatar cache - will trigger refetch
+          queryClient.invalidateQueries({ queryKey: avatarQueryKey(sessionId, pictureData.JID) })
+          // Also clear from IndexedDB so next load fetches fresh
+          db.avatars.delete(`${sessionId}:${pictureData.JID}`)
+        }
+        break
+      }
     }
-  }, [updateChatWithMessage, addMessage, sessionId])
+  }, [updateChatWithMessage, addMessage, sessionId, queryClient])
 
   const { isConnected } = useWebSocket({
     sessionId,

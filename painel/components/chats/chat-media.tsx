@@ -124,12 +124,11 @@ interface AudioMessageProps {
   avatar?: string
 }
 
-// Pre-generated waveform pattern (deterministic, not random)
+// Pre-generated waveform pattern (deterministic)
 const WAVEFORM_BARS = [
-  0.3, 0.5, 0.7, 0.4, 0.8, 0.6, 0.9, 0.5, 0.7, 0.4,
-  0.6, 0.8, 0.5, 0.9, 0.6, 0.4, 0.7, 0.5, 0.8, 0.6,
-  0.4, 0.7, 0.9, 0.5, 0.6, 0.8, 0.4, 0.7, 0.5, 0.6,
-  0.8, 0.4, 0.6, 0.9, 0.5, 0.7, 0.4, 0.8, 0.6, 0.5,
+  0.4, 0.6, 0.8, 0.5, 0.9, 0.7, 1.0, 0.6, 0.8, 0.5,
+  0.7, 0.9, 0.6, 1.0, 0.7, 0.5, 0.8, 0.6, 0.9, 0.7,
+  0.5, 0.8, 1.0, 0.6, 0.7, 0.9, 0.5, 0.8, 0.6, 0.7,
 ]
 
 export function AudioMessage({ src, isFromMe, avatar }: AudioMessageProps) {
@@ -138,6 +137,7 @@ export function AudioMessage({ src, isFromMe, avatar }: AudioMessageProps) {
   const [currentTime, setCurrentTime] = useState(0)
   const [error, setError] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
+  const sliderRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const audio = audioRef.current
@@ -175,13 +175,12 @@ export function AudioMessage({ src, isFromMe, avatar }: AudioMessageProps) {
     }
   }, [playing])
 
-  const handleSeek = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (!audioRef.current || !duration) return
-    const rect = e.currentTarget.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const percentage = x / rect.width
-    audioRef.current.currentTime = percentage * duration
-  }, [duration])
+  const handleSliderChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!audioRef.current) return
+    const value = parseFloat(e.target.value)
+    audioRef.current.currentTime = value
+    setCurrentTime(value)
+  }, [])
 
   const formatTime = (time: number) => {
     const mins = Math.floor(time / 60)
@@ -191,21 +190,18 @@ export function AudioMessage({ src, isFromMe, avatar }: AudioMessageProps) {
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
 
-  // Calculate which bar the progress indicator should be on
-  const progressBarIndex = Math.floor((progress / 100) * WAVEFORM_BARS.length)
-
   return (
     <div className="min-w-[200px]">
       <audio ref={audioRef} src={src} preload="metadata" />
       
-      {/* Main row - all elements vertically centered */}
-      <div className="flex items-center gap-2 h-[36px]">
+      {/* Main row */}
+      <div className="flex items-center gap-2">
         {/* Play/Pause button */}
         <button
           onClick={togglePlay}
           disabled={error}
           className={cn(
-            "shrink-0 transition-opacity flex items-center justify-center w-8 h-8",
+            "shrink-0 flex items-center justify-center w-8 h-8",
             error && "opacity-50 cursor-not-allowed"
           )}
         >
@@ -216,71 +212,88 @@ export function AudioMessage({ src, isFromMe, avatar }: AudioMessageProps) {
           )}
         </button>
 
-        {/* Waveform with progress indicator */}
-        <div 
-          className="flex-1 h-[22px] flex items-center gap-[2px] cursor-pointer relative"
-          onClick={handleSeek}
-        >
-          {WAVEFORM_BARS.map((height, i) => {
-            const isPlayed = i < progressBarIndex
-            return (
-              <div 
-                key={i}
-                className={cn(
-                  "w-[2px] rounded-full transition-colors",
-                  isPlayed 
-                    ? (isFromMe ? "bg-primary-foreground" : "bg-sky-500")
-                    : (isFromMe ? "bg-primary-foreground/40" : "bg-muted-foreground/50")
-                )}
-                style={{ height: `${height * 100}%` }}
-              />
-            )
-          })}
-          {/* Progress indicator dot - positioned at center of waveform */}
-          {(playing || currentTime > 0) && (
-            <div 
-              className={cn(
-                "absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full z-10 pointer-events-none",
-                isFromMe ? "bg-primary-foreground" : "bg-sky-500"
-              )}
-              style={{ left: `${progress}%`, transform: `translateX(-50%) translateY(-50%)` }}
-            />
-          )}
+        {/* Waveform container with slider */}
+        <div className="flex-1 relative h-[32px]">
+          {/* Waveform bars (visual only) */}
+          <div className="absolute inset-0 flex items-center gap-[2px] pointer-events-none">
+            {WAVEFORM_BARS.map((height, i) => {
+              const barProgress = ((i + 0.5) / WAVEFORM_BARS.length) * 100
+              const isPlayed = barProgress <= progress
+              return (
+                <div 
+                  key={i}
+                  className={cn(
+                    "flex-1 rounded-full transition-colors duration-150",
+                    isPlayed 
+                      ? (isFromMe ? "bg-primary-foreground" : "bg-sky-500")
+                      : (isFromMe ? "bg-primary-foreground/30" : "bg-muted-foreground/40")
+                  )}
+                  style={{ height: `${height * 70}%`, minHeight: '4px' }}
+                />
+              )
+            })}
+          </div>
+          
+          {/* Range slider (transparent, handles interaction) */}
+          <input
+            ref={sliderRef}
+            type="range"
+            min={0}
+            max={duration || 100}
+            step={0.1}
+            value={currentTime}
+            onChange={handleSliderChange}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+          />
+          
+          {/* Custom thumb indicator */}
+          <div 
+            className={cn(
+              "absolute top-1/2 w-3 h-3 rounded-full pointer-events-none transition-opacity",
+              isFromMe ? "bg-primary-foreground" : "bg-sky-500",
+              "shadow-sm"
+            )}
+            style={{ 
+              left: `${progress}%`,
+              transform: 'translate(-50%, -50%)',
+              opacity: playing || currentTime > 0 ? 1 : 0
+            }}
+          />
         </div>
 
         {/* Avatar with mic overlay */}
         <div className="relative shrink-0">
           {avatar ? (
-            <div className="w-[40px] h-[40px] rounded-full overflow-hidden border-2 border-background">
+            <div className="w-[36px] h-[36px] rounded-full overflow-hidden border-2 border-background">
               <img src={avatar} alt="" className="w-full h-full object-cover" />
             </div>
           ) : (
             <div className={cn(
-              "w-[40px] h-[40px] rounded-full flex items-center justify-center",
+              "w-[36px] h-[36px] rounded-full flex items-center justify-center",
               isFromMe ? "bg-primary-foreground/20" : "bg-muted"
             )}>
-              <Mic className="h-5 w-5 opacity-60" />
+              <Mic className="h-4 w-4 opacity-60" />
             </div>
           )}
           {/* Mic indicator overlay */}
           <div className={cn(
-            "absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center",
+            "absolute -bottom-0.5 -right-0.5 w-[14px] h-[14px] rounded-full flex items-center justify-center",
             isFromMe ? "bg-primary" : "bg-emerald-500"
           )}>
-            <Mic className="h-2.5 w-2.5 text-white" />
+            <Mic className="h-2 w-2 text-white" />
           </div>
         </div>
-
-        {/* Speed indicator when playing */}
-        {playing && (
-          <span className="text-[11px] font-medium opacity-70 shrink-0">1.0x</span>
-        )}
       </div>
 
       {/* Duration below */}
-      <span className="text-[10px] opacity-70 ml-[40px] block">
-        {playing || currentTime > 0 ? formatTime(currentTime) : (duration > 0 ? formatTime(duration) : "0:00")}
-      </span>
+      <div className="flex items-center justify-between mt-0.5 ml-10 mr-[44px]">
+        <span className="text-[10px] opacity-70">
+          {playing || currentTime > 0 ? formatTime(currentTime) : (duration > 0 ? formatTime(duration) : "0:00")}
+        </span>
+        {playing && (
+          <span className="text-[10px] font-medium opacity-70">1.0x</span>
+        )}
+      </div>
     </div>
   )
 }

@@ -196,24 +196,31 @@ func (h *ChatHandler) MarkRead(c *gin.Context) {
 		return
 	}
 
-	if err := h.wpp.MarkRead(c.Request.Context(), sessionId, req.Phone, req.MessageIDs); err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
-		return
+	// Build chatJID from phone if needed
+	chatJID := req.Phone
+	if !strings.Contains(chatJID, "@") {
+		if strings.Contains(req.Phone, "-") {
+			chatJID = req.Phone + "@g.us"
+		} else {
+			chatJID = req.Phone + "@s.whatsapp.net"
+		}
 	}
 
-	// Mark chat as read in database (zero unread count)
+	// Send read receipts to WhatsApp only if messageIds provided
+	if len(req.MessageIDs) > 0 {
+		if err := h.wpp.MarkRead(c.Request.Context(), sessionId, req.Phone, req.MessageIDs); err != nil {
+			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+			return
+		}
+	}
+
+	// Always mark chat as read in database (zero unread count)
 	if h.database != nil && h.sessionService != nil {
 		session, err := h.sessionService.Get(sessionId)
-		if err == nil {
-			chatJID := req.Phone
-			if !strings.Contains(chatJID, "@") {
-				// Check if it's a group (contains hyphen) or individual chat
-				if strings.Contains(req.Phone, "-") {
-					chatJID = req.Phone + "@g.us"
-				} else {
-					chatJID = req.Phone + "@s.whatsapp.net"
-				}
-			}
+		if err != nil {
+			log.Error().Err(err).Str("sessionId", sessionId).Msg("failed to get session for markRead")
+		} else {
+			log.Debug().Str("sessionID", session.ID).Str("chatJID", chatJID).Msg("marking chat as read in database")
 			if err := h.database.Chats.MarkAsRead(c.Request.Context(), session.ID, chatJID); err != nil {
 				log.Warn().Err(err).Str("chatJID", chatJID).Msg("failed to mark chat as read in database")
 			}

@@ -172,7 +172,7 @@ func (r *ChatRepository) GetBySession(ctx context.Context, sessionID string, lim
 			"conversationTimestamp", COALESCE("pHash", ''), "notSpam",
 			"syncedAt", "updatedAt"
 		FROM "onWappChat"
-		WHERE "sessionId" = $1`
+		WHERE "sessionId" = $1 AND "chatJid" != 'status@broadcast'`
 
 	if unreadOnly {
 		query += ` AND ("unreadCount" > 0 OR "markedAsUnread" = true)`
@@ -229,6 +229,17 @@ func (r *ChatRepository) UpdateEphemeralSettings(ctx context.Context, sessionID,
 		SET "ephemeralExpiration" = $3, "ephemeralSettingTimestamp" = $4, "updatedAt" = $5
 		WHERE "sessionId" = $1 AND "chatJid" = $2`,
 		sessionID, chatJID, expiration, timestamp, now,
+	)
+	return err
+}
+
+func (r *ChatRepository) UpdateConversationTimestamp(ctx context.Context, sessionID, chatJID string, timestamp int64) error {
+	now := time.Now()
+	_, err := r.pool.Exec(ctx, `
+		UPDATE "onWappChat"
+		SET "conversationTimestamp" = $3, "updatedAt" = $4
+		WHERE "sessionId" = $1 AND "chatJid" = $2 AND ("conversationTimestamp" IS NULL OR "conversationTimestamp" < $3)`,
+		sessionID, chatJID, timestamp, now,
 	)
 	return err
 }
@@ -327,7 +338,7 @@ func (r *ChatRepository) GetBySessionWithLastMessage(ctx context.Context, sessio
 			COALESCE(c."archived", false), COALESCE(c."pinned", false), CASE WHEN c."muted" > NOW() THEN 'muted' ELSE '' END
 		FROM "onWappChat" c
 		LEFT JOIN last_messages lm ON lm."chatJid" = c."chatJid"
-		WHERE c."sessionId" = $1`
+		WHERE c."sessionId" = $1 AND c."chatJid" != 'status@broadcast'`
 
 	if unreadOnly {
 		query += ` AND (c."unreadCount" > 0 OR c."markedAsUnread" = true)`

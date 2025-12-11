@@ -96,6 +96,11 @@ func (s *Service) handleMessage(ctx context.Context, session *model.Session, e *
 		logger.WPP().Warn().Err(err).Str("session", session.Session).Str("messageId", e.Info.ID).Msg("Failed to save message")
 	}
 
+	// Update conversation timestamp so chat appears at top of list
+	if err := s.database.Chats.UpdateConversationTimestamp(ctx, session.ID, e.Info.Chat.String(), e.Info.Timestamp.Unix()); err != nil {
+		logger.WPP().Warn().Err(err).Str("session", session.Session).Str("chat", e.Info.Chat.String()).Msg("Failed to update conversation timestamp")
+	}
+
 	// Increment unread count for received messages (not from us)
 	if !e.Info.IsFromMe {
 		if err := s.database.Chats.IncrementUnreadCount(ctx, session.ID, e.Info.Chat.String()); err != nil {
