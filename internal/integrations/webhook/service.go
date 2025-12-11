@@ -19,7 +19,6 @@ const (
 	timeout    = 10 * time.Second
 )
 
-// ChatwootInfo contains Chatwoot metadata to include in webhook payload
 type ChatwootInfo struct {
 	Account        int `json:"chatwootAccount,omitempty"`
 	InboxID        int `json:"chatwootInboxId,omitempty"`
@@ -27,20 +26,17 @@ type ChatwootInfo struct {
 	MessageID      int `json:"chatwootMessageId,omitempty"`
 }
 
-// ChatwootProvider fetches Chatwoot config for a session
 type ChatwootProvider interface {
 	GetChatwootInfo(ctx context.Context, sessionID string) *ChatwootInfo
 	GetChatwootInfoForMessage(ctx context.Context, sessionID, msgID string) *ChatwootInfo
 }
 
-// Service handles webhook business logic
 type Service struct {
 	repo             *Repository
 	httpClient       *http.Client
 	chatwootProvider ChatwootProvider
 }
 
-// NewService creates a new Webhook service
 func NewService(repo *Repository) *Service {
 	return &Service{
 		repo: repo,
@@ -50,18 +46,14 @@ func NewService(repo *Repository) *Service {
 	}
 }
 
-// SetChatwootProvider sets the provider for Chatwoot metadata
 func (s *Service) SetChatwootProvider(provider ChatwootProvider) {
 	s.chatwootProvider = provider
 }
 
-// Send sends a webhook notification with flat payload structure
 func (s *Service) Send(ctx context.Context, sessionID, sessionId, event string, rawEvent interface{}) {
 	s.SendWithChatwoot(ctx, sessionID, sessionId, event, rawEvent, nil)
 }
 
-// SendWithPreserializedJSON sends webhook using pre-serialized JSON (most performant)
-// Avoids re-serialization when JSON is already available (e.g., from queue processing)
 func (s *Service) SendWithPreserializedJSON(ctx context.Context, sessionID, sessionId, event string, eventJSON []byte, cwInfo *ChatwootInfo) {
 	wh, err := s.repo.GetEnabledBySession(ctx, sessionID)
 	if err != nil {
@@ -77,7 +69,6 @@ func (s *Service) SendWithPreserializedJSON(ctx context.Context, sessionID, sess
 		return
 	}
 
-	// Parse existing JSON and inject metadata (single parse, single serialize)
 	var payload map[string]interface{}
 	if len(eventJSON) > 0 {
 		if unmarshalErr := json.Unmarshal(eventJSON, &payload); unmarshalErr != nil {
@@ -87,12 +78,10 @@ func (s *Service) SendWithPreserializedJSON(ctx context.Context, sessionID, sess
 		payload = make(map[string]interface{})
 	}
 
-	// Inject metadata
 	payload["event"] = event
 	payload["sessionId"] = sessionID
 	payload["sessionId"] = sessionId
 
-	// Add Chatwoot metadata
 	if cwInfo != nil {
 		if cwInfo.Account > 0 {
 			payload["chatwootAccount"] = cwInfo.Account
@@ -117,7 +106,6 @@ func (s *Service) SendWithPreserializedJSON(ctx context.Context, sessionID, sess
 	go s.sendWebhook(*wh, jsonPayload)
 }
 
-// SendWithChatwoot sends a webhook notification with Chatwoot IDs included
 func (s *Service) SendWithChatwoot(ctx context.Context, sessionID, sessionId, event string, rawEvent interface{}, cwInfo *ChatwootInfo) {
 	wh, err := s.repo.GetEnabledBySession(ctx, sessionID)
 	if err != nil {
@@ -133,13 +121,11 @@ func (s *Service) SendWithChatwoot(ctx context.Context, sessionID, sessionId, ev
 		return
 	}
 
-	// Build flat payload: metadata + event fields at same level
 	payload := make(map[string]interface{})
 	payload["event"] = event
 	payload["sessionId"] = sessionID
 	payload["sessionId"] = sessionId
 
-	// Add Chatwoot metadata if provided directly
 	if cwInfo != nil {
 		if cwInfo.Account > 0 {
 			payload["chatwootAccount"] = cwInfo.Account
@@ -154,7 +140,6 @@ func (s *Service) SendWithChatwoot(ctx context.Context, sessionID, sessionId, ev
 			payload["chatwootMessageId"] = cwInfo.MessageID
 		}
 	} else if s.chatwootProvider != nil {
-		// Try to get message-specific info if msgID is available
 		msgID := extractMsgIDFromEvent(rawEvent)
 		if msgID != "" {
 			if providerInfo := s.chatwootProvider.GetChatwootInfoForMessage(ctx, sessionID, msgID); providerInfo != nil {
@@ -172,7 +157,6 @@ func (s *Service) SendWithChatwoot(ctx context.Context, sessionID, sessionId, ev
 				}
 			}
 		} else {
-			// Fallback to session-level info
 			if providerInfo := s.chatwootProvider.GetChatwootInfo(ctx, sessionID); providerInfo != nil {
 				if providerInfo.Account > 0 {
 					payload["chatwootAccount"] = providerInfo.Account
@@ -184,7 +168,6 @@ func (s *Service) SendWithChatwoot(ctx context.Context, sessionID, sessionId, ev
 		}
 	}
 
-	// Merge event fields into payload (flatten)
 	if rawEvent != nil {
 		rawEventJSON, marshalErr := json.Marshal(rawEvent)
 		if marshalErr == nil {
@@ -280,7 +263,6 @@ func (s *Service) generateSignature(payload []byte, secret string) string {
 	return "sha256=" + hex.EncodeToString(h.Sum(nil))
 }
 
-// Set creates or updates the webhook for a session (one webhook per session)
 func (s *Service) Set(ctx context.Context, sessionID string, url string, events []string, enabled bool, secret string) (*Webhook, error) {
 	wh := &Webhook{
 		SessionID: sessionID,
@@ -292,23 +274,19 @@ func (s *Service) Set(ctx context.Context, sessionID string, url string, events 
 	return s.repo.Upsert(ctx, wh)
 }
 
-// GetBySession returns the webhook for a session (or nil if none)
 func (s *Service) GetBySession(ctx context.Context, sessionID string) (*Webhook, error) {
 	return s.repo.GetBySession(ctx, sessionID)
 }
 
-// Delete removes the webhook for a session
 func (s *Service) Delete(ctx context.Context, sessionID string) error {
 	return s.repo.Delete(ctx, sessionID)
 }
 
-// extractMsgIDFromEvent extracts the message ID from a WhatsApp event
 func extractMsgIDFromEvent(rawEvent interface{}) string {
 	if rawEvent == nil {
 		return ""
 	}
 
-	// Try to extract from map (after JSON marshaling)
 	if m, ok := rawEvent.(map[string]interface{}); ok {
 		if info, ok := m["Info"].(map[string]interface{}); ok {
 			if id, ok := info["ID"].(string); ok {
@@ -317,7 +295,6 @@ func extractMsgIDFromEvent(rawEvent interface{}) string {
 		}
 	}
 
-	// Try type assertion for whatsmeow events.Message
 	type messageEvent interface {
 		GetInfo() interface{}
 	}
@@ -330,7 +307,6 @@ func extractMsgIDFromEvent(rawEvent interface{}) string {
 		}
 	}
 
-	// Use reflection as last resort
 	eventJSON, err := json.Marshal(rawEvent)
 	if err != nil {
 		return ""

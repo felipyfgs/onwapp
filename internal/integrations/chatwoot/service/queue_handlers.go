@@ -16,7 +16,6 @@ import (
 	"onwapp/internal/queue"
 )
 
-// ProcessIncomingFromQueue processes an incoming message from the queue
 func (s *Service) ProcessIncomingFromQueue(ctx context.Context, sessionID string, data *queue.WAToCWMessage) error {
 	sessionName := data.SessionName
 	if sessionName == "" {
@@ -28,13 +27,11 @@ func (s *Service) ProcessIncomingFromQueue(ctx context.Context, sessionID string
 		Session: sessionName,
 	}
 
-	// Deserialize the raw protobuf message
 	msg := &waE2E.Message{}
 	if err := proto.Unmarshal(data.RawEvent, msg); err != nil {
 		return fmt.Errorf("failed to unmarshal protobuf message: %w", err)
 	}
 
-	// Parse JIDs
 	chatJID, err := types.ParseJID(data.ChatJID)
 	if err != nil {
 		return fmt.Errorf("failed to parse chat JID: %w", err)
@@ -42,7 +39,6 @@ func (s *Service) ProcessIncomingFromQueue(ctx context.Context, sessionID string
 
 	senderJID, _ := types.ParseJID(data.SenderJID)
 
-	// Reconstruct the event for Chatwoot processing
 	evt := &events.Message{
 		Info: types.MessageInfo{
 			MessageSource: types.MessageSource{
@@ -57,13 +53,11 @@ func (s *Service) ProcessIncomingFromQueue(ctx context.Context, sessionID string
 		Message: msg,
 	}
 
-	// Process for Chatwoot and get IDs
 	cwMsgID, cwConvID, cfg, err := s.processIncomingMessageInternal(ctx, session, evt)
 	if err != nil {
 		return err
 	}
 
-	// Send webhook with pre-serialized JSON (no re-serialization needed)
 	if cfg != nil && cwMsgID > 0 {
 		s.sendWebhookWithPreserializedJSON(ctx, session, cfg, data.IsFromMe, data.FullEventJSON, cwMsgID, cwConvID)
 	}
@@ -71,7 +65,6 @@ func (s *Service) ProcessIncomingFromQueue(ctx context.Context, sessionID string
 	return nil
 }
 
-// ProcessOutgoingFromQueue processes an outgoing message from the queue
 func (s *Service) ProcessOutgoingFromQueue(ctx context.Context, sessionID string, data *queue.WAToCWMessage) error {
 	sessionName := data.SessionName
 	if sessionName == "" {
@@ -83,13 +76,11 @@ func (s *Service) ProcessOutgoingFromQueue(ctx context.Context, sessionID string
 		Session: sessionName,
 	}
 
-	// Deserialize the raw protobuf message
 	msg := &waE2E.Message{}
 	if err := proto.Unmarshal(data.RawEvent, msg); err != nil {
 		return fmt.Errorf("failed to unmarshal protobuf message: %w", err)
 	}
 
-	// Parse JIDs
 	chatJID, err := types.ParseJID(data.ChatJID)
 	if err != nil {
 		return fmt.Errorf("failed to parse chat JID: %w", err)
@@ -97,7 +88,6 @@ func (s *Service) ProcessOutgoingFromQueue(ctx context.Context, sessionID string
 
 	senderJID, _ := types.ParseJID(data.SenderJID)
 
-	// Reconstruct the event for Chatwoot processing
 	evt := &events.Message{
 		Info: types.MessageInfo{
 			MessageSource: types.MessageSource{
@@ -112,13 +102,11 @@ func (s *Service) ProcessOutgoingFromQueue(ctx context.Context, sessionID string
 		Message: msg,
 	}
 
-	// Process for Chatwoot and get IDs
 	cwMsgID, cwConvID, cfg, err := s.processOutgoingMessageInternal(ctx, session, evt)
 	if err != nil {
 		return err
 	}
 
-	// Send webhook with pre-serialized JSON (no re-serialization needed)
 	if cfg != nil && cwMsgID > 0 {
 		s.sendWebhookWithPreserializedJSON(ctx, session, cfg, data.IsFromMe, data.FullEventJSON, cwMsgID, cwConvID)
 	}
@@ -126,7 +114,6 @@ func (s *Service) ProcessOutgoingFromQueue(ctx context.Context, sessionID string
 	return nil
 }
 
-// ProcessReactionFromQueue processes a reaction message from the queue
 func (s *Service) ProcessReactionFromQueue(ctx context.Context, sessionID string, data *queue.WAToCWReactionMessage) error {
 	session := &model.Session{
 		ID:      sessionID,
@@ -136,7 +123,6 @@ func (s *Service) ProcessReactionFromQueue(ctx context.Context, sessionID string
 	return s.ProcessReactionMessage(ctx, session, data.Emoji, data.TargetMsgID, data.ChatJID, data.SenderJID, data.IsFromMe)
 }
 
-// ProcessDeleteFromQueue processes a message deletion from the queue
 func (s *Service) ProcessDeleteFromQueue(ctx context.Context, sessionID string, data *queue.WAToCWDeleteMessage) error {
 	session := &model.Session{
 		ID:      sessionID,
@@ -146,13 +132,11 @@ func (s *Service) ProcessDeleteFromQueue(ctx context.Context, sessionID string, 
 	return s.ProcessMessageDelete(ctx, session, data.DeletedMsgID)
 }
 
-// RegisterQueueHandlers registers all queue handlers for WhatsApp -> Chatwoot messages
 func RegisterQueueHandlers(queueSvc *queue.Service, chatwootSvc *Service) {
 	if queueSvc == nil || !queueSvc.IsEnabled() {
 		return
 	}
 
-	// Handler for incoming messages (WhatsApp -> Chatwoot)
 	queueSvc.RegisterHandler(queue.MsgTypeIncoming, func(ctx context.Context, msg *queue.QueueMessage) error {
 		var data queue.WAToCWMessage
 		if err := json.Unmarshal(msg.Data, &data); err != nil {
@@ -167,7 +151,6 @@ func RegisterQueueHandlers(queueSvc *queue.Service, chatwootSvc *Service) {
 		return chatwootSvc.ProcessIncomingFromQueue(ctx, msg.SessionID, &data)
 	})
 
-	// Handler for outgoing messages sent directly from WhatsApp
 	queueSvc.RegisterHandler(queue.MsgTypeOutgoingSent, func(ctx context.Context, msg *queue.QueueMessage) error {
 		var data queue.WAToCWMessage
 		if err := json.Unmarshal(msg.Data, &data); err != nil {
@@ -182,7 +165,6 @@ func RegisterQueueHandlers(queueSvc *queue.Service, chatwootSvc *Service) {
 		return chatwootSvc.ProcessOutgoingFromQueue(ctx, msg.SessionID, &data)
 	})
 
-	// Handler for reactions
 	queueSvc.RegisterHandler(queue.MsgTypeReaction, func(ctx context.Context, msg *queue.QueueMessage) error {
 		var data queue.WAToCWReactionMessage
 		if err := json.Unmarshal(msg.Data, &data); err != nil {
@@ -198,7 +180,6 @@ func RegisterQueueHandlers(queueSvc *queue.Service, chatwootSvc *Service) {
 		return chatwootSvc.ProcessReactionFromQueue(ctx, msg.SessionID, &data)
 	})
 
-	// Handler for message deletions
 	queueSvc.RegisterHandler(queue.MsgTypeDelete, func(ctx context.Context, msg *queue.QueueMessage) error {
 		var data queue.WAToCWDeleteMessage
 		if err := json.Unmarshal(msg.Data, &data); err != nil {
@@ -216,21 +197,17 @@ func RegisterQueueHandlers(queueSvc *queue.Service, chatwootSvc *Service) {
 	logger.Chatwoot().Info().Msg("Registered WhatsApp -> Chatwoot queue handlers")
 }
 
-// RegisterCWToWAQueueHandlers registers queue handlers for Chatwoot -> WhatsApp messages
 func RegisterCWToWAQueueHandlers(queueSvc *queue.Service, handler CWToWAHandler) {
 	if queueSvc == nil || !queueSvc.IsEnabled() {
 		return
 	}
 
-	// Handler for sending messages to WhatsApp
 	queueSvc.RegisterHandler(queue.MsgTypeSendText, func(ctx context.Context, msg *queue.QueueMessage) error {
 		var data queue.CWToWAMessage
 		if err := json.Unmarshal(msg.Data, &data); err != nil {
 			return fmt.Errorf("failed to unmarshal CWToWAMessage: %w", err)
 		}
 
-		// Prevent duplicate processing (NATS may redeliver on slow ACK)
-		// DO NOT release the lock - let it expire naturally to block redeliveries
 		cacheKey := fmt.Sprintf("cw2wa:text:%s:%d", msg.SessionID, data.ChatwootMsgID)
 		if !TryAcquireCWToWAProcessing(cacheKey) {
 			logger.Chatwoot().Debug().
@@ -249,15 +226,12 @@ func RegisterCWToWAQueueHandlers(queueSvc *queue.Service, handler CWToWAHandler)
 		return handler.SendToWhatsAppFromQueue(ctx, msg.SessionID, &data)
 	})
 
-	// Handler for sending media to WhatsApp
 	queueSvc.RegisterHandler(queue.MsgTypeSendMedia, func(ctx context.Context, msg *queue.QueueMessage) error {
 		var data queue.CWToWAMessage
 		if err := json.Unmarshal(msg.Data, &data); err != nil {
 			return fmt.Errorf("failed to unmarshal CWToWAMessage: %w", err)
 		}
 
-		// Prevent duplicate processing (NATS may redeliver on slow ACK)
-		// DO NOT release the lock - let it expire naturally to block redeliveries
 		cacheKey := fmt.Sprintf("cw2wa:media:%s:%d", msg.SessionID, data.ChatwootMsgID)
 		if !TryAcquireCWToWAProcessing(cacheKey) {
 			logger.Chatwoot().Debug().
@@ -280,12 +254,10 @@ func RegisterCWToWAQueueHandlers(queueSvc *queue.Service, handler CWToWAHandler)
 	logger.Chatwoot().Info().Msg("Registered Chatwoot -> WhatsApp queue handlers")
 }
 
-// CWToWAHandler interface for handling Chatwoot -> WhatsApp messages
 type CWToWAHandler interface {
 	SendToWhatsAppFromQueue(ctx context.Context, sessionID string, data *queue.CWToWAMessage) error
 }
 
-// QuotedMessageFromQueue converts queue QuotedInfo to core QuotedMessageInfo
 func QuotedMessageFromQueue(qi *queue.QuotedInfo) *core.QuotedMessageInfo {
 	if qi == nil {
 		return nil

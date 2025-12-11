@@ -13,7 +13,6 @@ import (
 	"onwapp/internal/model"
 )
 
-// MediaUploadJob represents a single media upload task
 type MediaUploadJob struct {
 	Msg            *model.Message
 	Media          *model.Media
@@ -22,7 +21,6 @@ type MediaUploadJob struct {
 	SourceID       string
 }
 
-// MediaUploadResult represents the result of a media upload
 type MediaUploadResult struct {
 	SourceID  string
 	CwMsgID   int
@@ -32,7 +30,6 @@ type MediaUploadResult struct {
 	Error     error
 }
 
-// MediaWorkerPool manages concurrent media uploads with rate limiting
 type MediaWorkerPool struct {
 	client      *client.Client
 	workers     int
@@ -40,7 +37,6 @@ type MediaWorkerPool struct {
 	wg          sync.WaitGroup
 }
 
-// NewMediaWorkerPool creates a new media worker pool
 func NewMediaWorkerPool(cli *client.Client, workers int, ratePerSecond float64) *MediaWorkerPool {
 	if workers <= 0 {
 		workers = core.MediaWorkers
@@ -56,7 +52,6 @@ func NewMediaWorkerPool(cli *client.Client, workers int, ratePerSecond float64) 
 	}
 }
 
-// ProcessBatch processes multiple media uploads concurrently
 func (p *MediaWorkerPool) ProcessBatch(ctx context.Context, jobs []MediaUploadJob) []MediaUploadResult {
 	if len(jobs) == 0 {
 		return nil
@@ -66,13 +61,11 @@ func (p *MediaWorkerPool) ProcessBatch(ctx context.Context, jobs []MediaUploadJo
 	jobsCh := make(chan indexedJob, len(jobs))
 	resultsCh := make(chan indexedResult, len(jobs))
 
-	// Start workers
 	for i := 0; i < p.workers; i++ {
 		p.wg.Add(1)
 		go p.worker(ctx, jobsCh, resultsCh)
 	}
 
-	// Send jobs
 	go func() {
 		for i, job := range jobs {
 			select {
@@ -84,7 +77,6 @@ func (p *MediaWorkerPool) ProcessBatch(ctx context.Context, jobs []MediaUploadJo
 		close(jobsCh)
 	}()
 
-	// Collect results
 	go func() {
 		p.wg.Wait()
 		close(resultsCh)
@@ -127,7 +119,6 @@ func (p *MediaWorkerPool) worker(ctx context.Context, jobs <-chan indexedJob, re
 		default:
 		}
 
-		// Wait for rate limiter
 		if err := p.rateLimiter.Wait(ctx); err != nil {
 			results <- indexedResult{
 				index: ij.index,
@@ -187,14 +178,12 @@ func (p *MediaWorkerPool) processJob(ctx context.Context, uploader *client.Media
 	return result
 }
 
-// MediaBatchCollector collects media jobs for batch processing
 type MediaBatchCollector struct {
 	jobs       []MediaUploadJob
 	mediaInfos map[string]*model.Media
 	mu         sync.Mutex
 }
 
-// NewMediaBatchCollector creates a new collector
 func NewMediaBatchCollector() *MediaBatchCollector {
 	return &MediaBatchCollector{
 		jobs:       make([]MediaUploadJob, 0, 100),
@@ -202,21 +191,18 @@ func NewMediaBatchCollector() *MediaBatchCollector {
 	}
 }
 
-// SetMediaInfos sets prefetched media info
 func (c *MediaBatchCollector) SetMediaInfos(infos map[string]*model.Media) {
 	c.mu.Lock()
 	c.mediaInfos = infos
 	c.mu.Unlock()
 }
 
-// Add adds a job to the collector
 func (c *MediaBatchCollector) Add(job MediaUploadJob) {
 	c.mu.Lock()
 	c.jobs = append(c.jobs, job)
 	c.mu.Unlock()
 }
 
-// GetJobs returns all collected jobs and clears the collector
 func (c *MediaBatchCollector) GetJobs() []MediaUploadJob {
 	c.mu.Lock()
 	jobs := c.jobs
@@ -225,14 +211,12 @@ func (c *MediaBatchCollector) GetJobs() []MediaUploadJob {
 	return jobs
 }
 
-// GetMediaInfo returns media info for a message ID
 func (c *MediaBatchCollector) GetMediaInfo(msgID string) *model.Media {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.mediaInfos[msgID]
 }
 
-// Count returns the number of jobs
 func (c *MediaBatchCollector) Count() int {
 	c.mu.Lock()
 	defer c.mu.Unlock()

@@ -18,7 +18,6 @@ func NewNewsletterHandler(wpp *wpp.Service) *NewsletterHandler {
 	return &NewsletterHandler{wpp: wpp}
 }
 
-// CreateNewsletter godoc
 // @Summary      Create a newsletter/channel
 // @Description  Create a new WhatsApp newsletter/channel
 // @Tags         newsletter
@@ -52,7 +51,6 @@ func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
 	})
 }
 
-// FollowNewsletter godoc
 // @Summary      Follow a newsletter
 // @Description  Follow/subscribe to a WhatsApp newsletter
 // @Tags         newsletter
@@ -82,7 +80,6 @@ func (h *NewsletterHandler) FollowNewsletter(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
-// UnfollowNewsletter godoc
 // @Summary      Unfollow a newsletter
 // @Description  Unfollow/unsubscribe from a WhatsApp newsletter
 // @Tags         newsletter
@@ -112,7 +109,6 @@ func (h *NewsletterHandler) UnfollowNewsletter(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
-// GetNewsletterInfo godoc
 // @Summary      Get newsletter info
 // @Description  Get information about a WhatsApp newsletter
 // @Tags         newsletter
@@ -142,7 +138,6 @@ func (h *NewsletterHandler) GetNewsletterInfo(c *gin.Context) {
 	})
 }
 
-// GetSubscribedNewsletters godoc
 // @Summary      List subscribed newsletters
 // @Description  Get list of newsletters the session is subscribed to
 // @Tags         newsletter
@@ -164,7 +159,6 @@ func (h *NewsletterHandler) GetSubscribedNewsletters(c *gin.Context) {
 	c.JSON(http.StatusOK, newsletters)
 }
 
-// GetNewsletterMessages godoc
 // @Summary      Get newsletter messages
 // @Description  Get messages from a WhatsApp newsletter
 // @Tags         newsletter
@@ -200,7 +194,6 @@ func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
 	})
 }
 
-// NewsletterSendReaction godoc
 // @Summary      React to newsletter message
 // @Description  Send a reaction to a newsletter message
 // @Tags         newsletter
@@ -233,7 +226,6 @@ func (h *NewsletterHandler) NewsletterSendReaction(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
-// NewsletterToggleMute godoc
 // @Summary      Mute/unmute newsletter
 // @Description  Toggle mute status of a newsletter
 // @Tags         newsletter
@@ -263,7 +255,6 @@ func (h *NewsletterHandler) NewsletterToggleMute(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
-// NewsletterMarkViewed godoc
 // @Summary      Mark newsletter messages as viewed
 // @Description  Mark newsletter messages as viewed
 // @Tags         newsletter
@@ -297,7 +288,6 @@ func (h *NewsletterHandler) NewsletterMarkViewed(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "messages marked as viewed"})
 }
 
-// NewsletterSubscribeLiveUpdates godoc
 // @Summary      Subscribe to live updates
 // @Description  Subscribe to receive live updates from a newsletter
 // @Tags         newsletter

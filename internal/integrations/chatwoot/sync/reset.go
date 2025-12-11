@@ -7,19 +7,16 @@ import (
 	"onwapp/internal/logger"
 )
 
-// DataResetter handles data reset operations
 type DataResetter struct {
 	repo *Repository
 }
 
-// NewDataResetter creates a new data resetter
 func NewDataResetter(repo *Repository) *DataResetter {
 	return &DataResetter{
 		repo: repo,
 	}
 }
 
-// Reset deletes all Chatwoot data except the bot contact (id=1)
 func (r *DataResetter) Reset(ctx context.Context) (*core.ResetStats, error) {
 	stats := &core.ResetStats{}
 

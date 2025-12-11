@@ -15,6 +15,52 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/chatwoot/validate": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Validate Chatwoot URL, token and account ID before saving configuration",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chatwoot"
+                ],
+                "summary": "Validate Chatwoot credentials",
+                "parameters": [
+                    {
+                        "description": "Chatwoot credentials to validate",
+                        "name": "credentials",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ValidateCredentialsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/ValidationResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/chatwoot/webhook/{sessionId}": {
             "post": {
                 "description": "Receive webhook events from Chatwoot",
@@ -68,6 +114,48 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/EventsResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/public/{session}/media/stream": {
+            "get": {
+                "description": "Stream media file directly without authentication (for browser audio/video playback)",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "media"
+                ],
+                "summary": "Stream media file (public)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "session",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Message ID",
+                        "name": "messageId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     }
                 }
@@ -2502,6 +2590,59 @@ const docTemplate = `{
                 }
             }
         },
+        "/{session}/group/avatar": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get group profile picture URL",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "group"
+                ],
+                "summary": "Get group picture",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "session",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "groupId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/AvatarResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/{session}/group/create": {
             "post": {
                 "security": [
@@ -3802,6 +3943,107 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/MediaResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/{session}/media/retry": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Force retry downloading media from WhatsApp (sends retry request if needed)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "media"
+                ],
+                "summary": "Retry downloading a specific media",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "session",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Message ID",
+                        "name": "messageId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/{session}/media/stream": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Stream media file directly (redirects to storage URL or proxies the file)",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "media"
+                ],
+                "summary": "Stream media file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "session",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Message ID",
+                        "name": "messageId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
                         }
                     },
                     "404": {
@@ -6485,6 +6727,20 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "AccountInfo": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                }
+            }
+        },
         "ArchiveChatRequest": {
             "type": "object",
             "required": [
@@ -6535,7 +6791,6 @@ const docTemplate = `{
             ],
             "properties": {
                 "action": {
-                    "description": "block or unblock",
                     "type": "string",
                     "example": "block"
                 },
@@ -6648,6 +6903,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "Hello!"
                 },
+                "deleted": {
+                    "type": "boolean",
+                    "example": false
+                },
                 "fromMe": {
                     "type": "boolean",
                     "example": false
@@ -6671,6 +6930,10 @@ const docTemplate = `{
                 "quotedId": {
                     "type": "string",
                     "example": "3EB0DEF456"
+                },
+                "quotedSender": {
+                    "type": "string",
+                    "example": "5511999999999@s.whatsapp.net"
                 },
                 "senderJid": {
                     "type": "string",
@@ -6723,6 +6986,14 @@ const docTemplate = `{
         "ChatResponse": {
             "type": "object",
             "properties": {
+                "archived": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "contactName": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
                 "conversationTimestamp": {
                     "type": "integer",
                     "example": 1699999999
@@ -6731,9 +7002,20 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 86400
                 },
+                "id": {
+                    "type": "string",
+                    "example": "ce270f0c-c3d6-41ad-b481-1587f813c3b1"
+                },
+                "isGroup": {
+                    "type": "boolean",
+                    "example": false
+                },
                 "jid": {
                     "type": "string",
                     "example": "5511999999999@s.whatsapp.net"
+                },
+                "lastMessage": {
+                    "$ref": "#/definitions/LastMessageInfo"
                 },
                 "locked": {
                     "type": "boolean",
@@ -6743,9 +7025,21 @@ const docTemplate = `{
                     "type": "boolean",
                     "example": false
                 },
+                "muted": {
+                    "type": "string",
+                    "example": ""
+                },
                 "name": {
                     "type": "string",
                     "example": "John Doe"
+                },
+                "pinned": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "profilePicture": {
+                    "type": "string",
+                    "example": "https://..."
                 },
                 "readOnly": {
                     "type": "boolean",
@@ -6918,43 +7212,33 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "alreadyExists": {
-                    "description": "Skipped breakdown",
                     "type": "integer"
                 },
                 "businessContacts": {
-                    "description": "Business/verified contacts",
                     "type": "integer"
                 },
                 "groups": {
-                    "description": "Group JIDs (not synced as contacts)",
                     "type": "integer"
                 },
                 "invalidPhone": {
-                    "description": "Invalid phone numbers",
                     "type": "integer"
                 },
                 "lidContacts": {
-                    "description": "LID contacts that couldn't be resolved",
                     "type": "integer"
                 },
                 "newsletters": {
-                    "description": "Newsletter channels",
                     "type": "integer"
                 },
                 "notInAgenda": {
-                    "description": "Contacts not saved (only PushName)",
                     "type": "integer"
                 },
                 "savedContacts": {
-                    "description": "Imported breakdown",
                     "type": "integer"
                 },
                 "statusBroadcast": {
-                    "description": "Status broadcast",
                     "type": "integer"
                 },
                 "totalWhatsApp": {
-                    "description": "Source info",
                     "type": "integer"
                 }
             }
@@ -6963,11 +7247,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "groups": {
-                    "description": "Contacts with @g.us identifier (groups)",
                     "type": "integer"
                 },
                 "private": {
-                    "description": "Contacts with @s.whatsapp.net (private chats)",
                     "type": "integer"
                 },
                 "totalChatwoot": {
@@ -6977,11 +7259,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "withName": {
-                    "description": "Contacts that have a name (saved in agenda)",
                     "type": "integer"
                 },
                 "withoutName": {
-                    "description": "Contacts that only have phone number as name",
                     "type": "integer"
                 }
             }
@@ -6990,7 +7270,6 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "groupChats": {
-                    "description": "Conversations with group contacts",
                     "type": "integer"
                 },
                 "open": {
@@ -7000,7 +7279,6 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "privateChats": {
-                    "description": "Conversations with private contacts",
                     "type": "integer"
                 },
                 "resolved": {
@@ -7057,12 +7335,10 @@ const docTemplate = `{
             ],
             "properties": {
                 "apiKey": {
-                    "description": "Optional API key for session-level authentication. If not provided, one will be generated automatically.",
                     "type": "string",
                     "example": "my-custom-api-key"
                 },
                 "session": {
-                    "description": "Session name/identifier (unique)",
                     "type": "string",
                     "example": "my-session"
                 }
@@ -7101,7 +7377,6 @@ const docTemplate = `{
                     "example": "5511999999999"
                 },
                 "timer": {
-                    "description": "24h, 7d, 90d, or off",
                     "type": "string",
                     "example": "24h"
                 }
@@ -7263,7 +7538,6 @@ const docTemplate = `{
                     "example": "123456789@g.us"
                 },
                 "mode": {
-                    "description": "admin_add or all_member_add",
                     "type": "string",
                     "example": "admin_add"
                 }
@@ -7312,7 +7586,6 @@ const docTemplate = `{
             ],
             "properties": {
                 "action": {
-                    "description": "approve or reject",
                     "type": "string",
                     "example": "approve"
                 },
@@ -7372,6 +7645,43 @@ const docTemplate = `{
                 "phone": {
                     "type": "string",
                     "example": "5511999999999"
+                }
+            }
+        },
+        "LastMessageInfo": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "example": "Hello!"
+                },
+                "fromMe": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "mediaType": {
+                    "type": "string",
+                    "example": "image"
+                },
+                "pushName": {
+                    "type": "string",
+                    "example": "John"
+                },
+                "senderJid": {
+                    "type": "string",
+                    "example": "5511999999999@s.whatsapp.net"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "sent"
+                },
+                "timestamp": {
+                    "type": "integer",
+                    "example": 1699999999
+                },
+                "type": {
+                    "type": "string",
+                    "example": "text"
                 }
             }
         },
@@ -7448,7 +7758,6 @@ const docTemplate = `{
         "MarkReadRequest": {
             "type": "object",
             "required": [
-                "messageIds",
                 "phone"
             ],
             "properties": {
@@ -7554,63 +7863,48 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "alreadySynced": {
-                    "description": "Skipped breakdown",
                     "type": "integer"
                 },
                 "emptyContent": {
-                    "description": "No content",
                     "type": "integer"
                 },
                 "groupChats": {
-                    "description": "Group conversations",
                     "type": "integer"
                 },
                 "groupMessages": {
-                    "description": "Messages in groups",
                     "type": "integer"
                 },
                 "lidChats": {
-                    "description": "LID chats not resolved",
                     "type": "integer"
                 },
                 "mediaMessages": {
-                    "description": "Images, videos, audio, documents",
                     "type": "integer"
                 },
                 "newsletters": {
-                    "description": "Newsletter messages",
                     "type": "integer"
                 },
                 "noMedia": {
-                    "description": "Media not found",
                     "type": "integer"
                 },
                 "oldMessages": {
-                    "description": "Before date limit",
                     "type": "integer"
                 },
                 "privateChats": {
-                    "description": "Conversations breakdown",
                     "type": "integer"
                 },
                 "protocol": {
-                    "description": "Protocol messages",
                     "type": "integer"
                 },
                 "reactions": {
-                    "description": "Reaction messages",
                     "type": "integer"
                 },
                 "statusBroadcast": {
-                    "description": "Status/stories",
                     "type": "integer"
                 },
                 "system": {
-                    "description": "System messages",
                     "type": "integer"
                 },
                 "textMessages": {
-                    "description": "Imported breakdown",
                     "type": "integer"
                 }
             }
@@ -7825,6 +8119,26 @@ const docTemplate = `{
                 "status": {
                     "type": "string",
                     "example": "connecting"
+                }
+            }
+        },
+        "QuotedMessageDTO": {
+            "type": "object",
+            "required": [
+                "messageId"
+            ],
+            "properties": {
+                "chatJid": {
+                    "type": "string",
+                    "example": "5511999999999@s.whatsapp.net"
+                },
+                "messageId": {
+                    "type": "string",
+                    "example": "3EB0ABC123"
+                },
+                "senderJid": {
+                    "type": "string",
+                    "example": "5511888888888@s.whatsapp.net"
                 }
             }
         },
@@ -8366,6 +8680,9 @@ const docTemplate = `{
                     "type": "string",
                     "example": "5511999999999"
                 },
+                "quoted": {
+                    "$ref": "#/definitions/QuotedMessageDTO"
+                },
                 "text": {
                     "type": "string",
                     "example": "Hello World"
@@ -8401,60 +8718,45 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "apiKey": {
-                    "description": "Session-specific API key for authentication (use in Authorization header)",
                     "type": "string",
                     "example": "a1b2c3d4e5f6..."
                 },
                 "createdAt": {
-                    "description": "Session creation timestamp",
                     "type": "string",
                     "example": "2025-11-29T14:18:15.324706Z"
                 },
                 "deviceJid": {
-                    "description": "WhatsApp device JID after connection",
                     "type": "string",
                     "example": "5511999999999@s.whatsapp.net"
                 },
                 "id": {
-                    "description": "Unique session UUID (database primary key)",
                     "type": "string",
                     "example": "ce270f0c-c3d6-41ad-b481-1587f813c3b1"
                 },
                 "phone": {
-                    "description": "Phone number associated with the session",
                     "type": "string",
                     "example": "5511999999999"
                 },
                 "profilePicture": {
-                    "description": "Profile picture URL",
                     "type": "string",
                     "example": "https://pps.whatsapp.net/..."
                 },
                 "pushName": {
-                    "description": "WhatsApp push name (display name)",
                     "type": "string",
                     "example": "John Doe"
                 },
                 "session": {
-                    "description": "Session name/identifier (used in API routes)",
                     "type": "string",
                     "example": "my-session"
                 },
                 "stats": {
-                    "description": "Session statistics (only for connected sessions)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/SessionStats"
-                        }
-                    ]
+                    "$ref": "#/definitions/SessionStats"
                 },
                 "status": {
-                    "description": "Connection status: disconnected, connecting, connected",
                     "type": "string",
                     "example": "connected"
                 },
                 "updatedAt": {
-                    "description": "Last update timestamp",
                     "type": "string",
                     "example": "2025-11-29T14:18:15.324706Z"
                 }
@@ -8513,22 +8815,18 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "chats": {
-                    "description": "Total number of chats",
                     "type": "integer",
                     "example": 42
                 },
                 "contacts": {
-                    "description": "Total number of contacts",
                     "type": "integer",
                     "example": 156
                 },
                 "groups": {
-                    "description": "Total number of groups",
                     "type": "integer",
                     "example": 12
                 },
                 "messages": {
-                    "description": "Total number of messages",
                     "type": "integer",
                     "example": 1234
                 }
@@ -8544,7 +8842,6 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "autoReopen": {
-                    "description": "AutoReopen configures Chatwoot inbox settings for conversation management.\nWhen true: sets lock_to_single_conversation=true and allow_messages_after_resolved=true\nThis means Chatwoot will automatically reopen resolved conversations when new messages arrive.\nWhen false: creates new conversations for each interaction (default Chatwoot behavior).",
                     "type": "boolean"
                 },
                 "chatwootDbHost": {
@@ -8807,12 +9104,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "contactDetails": {
-                    "description": "Detailed breakdowns",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/ContactSyncDetails"
-                        }
-                    ]
+                    "$ref": "#/definitions/ContactSyncDetails"
                 },
                 "contactsErrors": {
                     "type": "integer"
@@ -8862,11 +9154,9 @@ const docTemplate = `{
                     "$ref": "#/definitions/SyncStats"
                 },
                 "status": {
-                    "description": "idle, running, completed, failed",
                     "type": "string"
                 },
                 "type": {
-                    "description": "contacts, messages, all",
                     "type": "string"
                 }
             }
@@ -8937,6 +9227,66 @@ const docTemplate = `{
                 "url": {
                     "type": "string",
                     "example": "https://example.com"
+                }
+            }
+        },
+        "ValidateCredentialsRequest": {
+            "type": "object",
+            "required": [
+                "account",
+                "token",
+                "url"
+            ],
+            "properties": {
+                "account": {
+                    "type": "integer"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "ValidationResult": {
+            "type": "object",
+            "properties": {
+                "accountName": {
+                    "type": "string"
+                },
+                "accountValid": {
+                    "type": "boolean"
+                },
+                "availableAccounts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/AccountInfo"
+                    }
+                },
+                "error": {
+                    "type": "string"
+                },
+                "errorCode": {
+                    "type": "string"
+                },
+                "tokenValid": {
+                    "type": "boolean"
+                },
+                "userEmail": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "integer"
+                },
+                "userName": {
+                    "type": "string"
+                },
+                "userRole": {
+                    "type": "string"
+                },
+                "valid": {
+                    "type": "boolean"
                 }
             }
         }

@@ -12,7 +12,6 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// MarkRead marks messages as read
 func (s *Service) MarkRead(ctx context.Context, sessionId, phone string, messageIDs []string) error {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -30,7 +29,6 @@ func (s *Service) MarkRead(ctx context.Context, sessionId, phone string, message
 	return client.MarkRead(ctx, ids, time.Now(), jid, jid)
 }
 
-// ArchiveChat archives or unarchives a chat
 func (s *Service) ArchiveChat(ctx context.Context, sessionId, phone string, archive bool) error {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -45,7 +43,6 @@ func (s *Service) ArchiveChat(ctx context.Context, sessionId, phone string, arch
 	return client.SendAppState(ctx, appstate.BuildArchive(jid, archive, time.Time{}, nil))
 }
 
-// MarkChatUnread marks a chat as unread
 func (s *Service) MarkChatUnread(ctx context.Context, sessionId, phone string) error {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -60,7 +57,6 @@ func (s *Service) MarkChatUnread(ctx context.Context, sessionId, phone string) e
 	return client.SendAppState(ctx, appstate.BuildMarkChatAsRead(jid, false, time.Time{}, nil))
 }
 
-// DeleteMessage deletes a message
 func (s *Service) DeleteMessage(ctx context.Context, sessionId, phone, messageID string, forMe bool) (whatsmeow.SendResponse, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -78,7 +74,6 @@ func (s *Service) DeleteMessage(ctx context.Context, sessionId, phone, messageID
 	return client.SendMessage(ctx, jid, client.BuildRevoke(jid, jid, messageID))
 }
 
-// EditMessage edits a message
 func (s *Service) EditMessage(ctx context.Context, sessionId, phone, messageID, newText string) (whatsmeow.SendResponse, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -95,7 +90,6 @@ func (s *Service) EditMessage(ctx context.Context, sessionId, phone, messageID, 
 	}))
 }
 
-// SendPresence sends presence status (available/unavailable)
 func (s *Service) SendPresence(ctx context.Context, sessionId string, available bool) error {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -110,7 +104,6 @@ func (s *Service) SendPresence(ctx context.Context, sessionId string, available 
 	return client.SendPresence(ctx, presence)
 }
 
-// SendChatPresenceRaw sends chat presence with string parameters
 func (s *Service) SendChatPresenceRaw(ctx context.Context, sessionId, phone, state, media string) error {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -141,7 +134,6 @@ func (s *Service) SendChatPresenceRaw(ctx context.Context, sessionId, phone, sta
 	return client.SendChatPresence(ctx, jid, chatPresence, chatMedia)
 }
 
-// SetDisappearingTimer sets disappearing messages timer for a chat
 func (s *Service) SetDisappearingTimer(ctx context.Context, sessionId, phone string, timer time.Duration) error {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -156,7 +148,6 @@ func (s *Service) SetDisappearingTimer(ctx context.Context, sessionId, phone str
 	return client.SetDisappearingTimer(ctx, jid, timer, time.Now())
 }
 
-// RequestUnavailableMessage requests an unavailable message from the phone
 func (s *Service) RequestUnavailableMessage(ctx context.Context, sessionId, chatJID, senderJID, messageID string) (whatsmeow.SendResponse, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {

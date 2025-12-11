@@ -19,7 +19,6 @@ import (
 	"onwapp/internal/logger"
 )
 
-// Client provides methods to interact with the Chatwoot API
 type Client struct {
 	baseURL    string
 	token      string
@@ -27,7 +26,6 @@ type Client struct {
 	httpClient *http.Client
 }
 
-// NewClient creates a new Chatwoot API client
 func NewClient(baseURL, token string, accountID int) *Client {
 	baseURL = strings.TrimSuffix(baseURL, "/")
 	return &Client{
@@ -87,8 +85,6 @@ func (c *Client) doRequest(ctx context.Context, method, endpoint string, body in
 	return respBody, nil
 }
 
-// doRequestSilent404 is like doRequest but doesn't log 404 errors (resource not found)
-// Also silences 422 errors for "Phone number has already been taken" (duplicate contact)
 func (c *Client) doRequestSilent404(ctx context.Context, method, endpoint string, body interface{}) ([]byte, error) {
 	var bodyReader io.Reader
 	if body != nil {
@@ -120,7 +116,6 @@ func (c *Client) doRequestSilent404(ctx context.Context, method, endpoint string
 
 	if resp.StatusCode >= 400 {
 		respStr := string(respBody)
-		// Don't log 404 (not found) or 422 with "Phone number has already been taken" (duplicate)
 		shouldLog := resp.StatusCode != 404 &&
 			!(resp.StatusCode == 422 && strings.Contains(respStr, "Phone number has already been taken"))
 		if shouldLog {
@@ -136,11 +131,7 @@ func (c *Client) doRequestSilent404(ctx context.Context, method, endpoint string
 	return respBody, nil
 }
 
-// =============================================================================
-// CREDENTIAL VALIDATION
-// =============================================================================
-
-// ValidationResult contains the result of credential validation
+// ValidationResult represents the result of Chatwoot credential validation
 type ValidationResult struct {
 	Valid             bool          `json:"valid"`
 	TokenValid        bool          `json:"tokenValid"`
@@ -155,14 +146,12 @@ type ValidationResult struct {
 	ErrorCode         string        `json:"errorCode,omitempty"`
 }
 
-// AccountInfo contains basic account information
 type AccountInfo struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
 	Role string `json:"role"`
 }
 
-// ProfileResponse represents the Chatwoot profile API response
 type ProfileResponse struct {
 	ID        int    `json:"id"`
 	Name      string `json:"name"`
@@ -176,7 +165,6 @@ type ProfileResponse struct {
 	} `json:"accounts"`
 }
 
-// ValidateCredentials validates the Chatwoot credentials by checking token and account access
 func (c *Client) ValidateCredentials(ctx context.Context) (*ValidationResult, error) {
 	result := &ValidationResult{
 		Valid:        false,
@@ -184,7 +172,6 @@ func (c *Client) ValidateCredentials(ctx context.Context) (*ValidationResult, er
 		AccountValid: false,
 	}
 
-	// Step 1: Validate token by fetching profile
 	profileURL := fmt.Sprintf("%s/api/v1/profile", c.baseURL)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, profileURL, nil)
 	if err != nil {
@@ -229,7 +216,6 @@ func (c *Client) ValidateCredentials(ctx context.Context) (*ValidationResult, er
 	result.UserEmail = profile.Email
 	result.UserRole = profile.Role
 
-	// Collect available accounts
 	for _, acc := range profile.Accounts {
 		result.AvailableAccounts = append(result.AvailableAccounts, AccountInfo{
 			ID:   acc.ID,
@@ -238,7 +224,6 @@ func (c *Client) ValidateCredentials(ctx context.Context) (*ValidationResult, er
 		})
 	}
 
-	// Step 2: Check if user has access to the specified account
 	hasAccountAccess := false
 	for _, acc := range profile.Accounts {
 		if acc.ID == c.accountID {
@@ -272,7 +257,6 @@ func (c *Client) ValidateCredentials(ctx context.Context) (*ValidationResult, er
 		return result, nil
 	}
 
-	// Step 3: Test account access by listing inboxes
 	_, err = c.ListInboxes(ctx)
 	if err != nil {
 		result.Error = "Token não tem permissão para gerenciar inboxes nesta conta"
@@ -284,11 +268,6 @@ func (c *Client) ValidateCredentials(ctx context.Context) (*ValidationResult, er
 	return result, nil
 }
 
-// =============================================================================
-// INBOX OPERATIONS
-// =============================================================================
-
-// ListInboxes returns all inboxes for the account
 func (c *Client) ListInboxes(ctx context.Context) ([]core.Inbox, error) {
 	data, err := c.doRequest(ctx, http.MethodGet, "/inboxes", nil)
 	if err != nil {
@@ -305,7 +284,6 @@ func (c *Client) ListInboxes(ctx context.Context) ([]core.Inbox, error) {
 	return result.Payload, nil
 }
 
-// GetInbox returns an inbox by ID
 func (c *Client) GetInbox(ctx context.Context, inboxID int) (*core.Inbox, error) {
 	data, err := c.doRequest(ctx, http.MethodGet, fmt.Sprintf("/inboxes/%d", inboxID), nil)
 	if err != nil {
@@ -320,14 +298,6 @@ func (c *Client) GetInbox(ctx context.Context, inboxID int) (*core.Inbox, error)
 	return &inbox, nil
 }
 
-// CreateInboxWithOptions creates a new API inbox with conversation management options
-// When autoReopen is true:
-//   - lock_to_single_conversation: true (one conversation per contact)
-//   - allow_messages_after_resolved: true (Chatwoot auto-reopens resolved conversations)
-//
-// When autoReopen is false:
-//   - lock_to_single_conversation: false
-//   - allow_messages_after_resolved: false (new messages create new conversations)
 func (c *Client) CreateInboxWithOptions(ctx context.Context, name, webhookURL string, autoReopen bool) (*core.Inbox, error) {
 	body := map[string]interface{}{
 		"name":                          name,
@@ -352,14 +322,6 @@ func (c *Client) CreateInboxWithOptions(ctx context.Context, name, webhookURL st
 	return &inbox, nil
 }
 
-// UpdateInboxConversationSettings updates conversation management settings of an inbox
-// When autoReopen is true:
-//   - lock_to_single_conversation: true (one conversation per contact)
-//   - allow_messages_after_resolved: true (Chatwoot auto-reopens resolved conversations)
-//
-// When autoReopen is false:
-//   - lock_to_single_conversation: false
-//   - allow_messages_after_resolved: false (new messages create new conversations)
 func (c *Client) UpdateInboxConversationSettings(ctx context.Context, inboxID int, autoReopen bool) (*core.Inbox, error) {
 	body := map[string]interface{}{
 		"lock_to_single_conversation":   autoReopen,
@@ -379,7 +341,6 @@ func (c *Client) UpdateInboxConversationSettings(ctx context.Context, inboxID in
 	return &inbox, nil
 }
 
-// UpdateInboxWebhook updates the webhook URL of an inbox
 func (c *Client) UpdateInboxWebhook(ctx context.Context, inboxID int, webhookURL string) (*core.Inbox, error) {
 	body := map[string]interface{}{
 		"channel": map[string]interface{}{
@@ -400,7 +361,6 @@ func (c *Client) UpdateInboxWebhook(ctx context.Context, inboxID int, webhookURL
 	return &inbox, nil
 }
 
-// GetInboxByName finds an inbox by name
 func (c *Client) GetInboxByName(ctx context.Context, name string) (*core.Inbox, error) {
 	inboxes, err := c.ListInboxes(ctx)
 	if err != nil {
@@ -416,10 +376,6 @@ func (c *Client) GetInboxByName(ctx context.Context, name string) (*core.Inbox, 
 	return nil, nil
 }
 
-// GetOrCreateInboxWithOptions gets an existing inbox or creates one with conversation management options
-// The autoReopen parameter controls:
-//   - lock_to_single_conversation: ensures one conversation per contact
-//   - allow_messages_after_resolved: Chatwoot auto-reopens resolved conversations on new messages
 func (c *Client) GetOrCreateInboxWithOptions(ctx context.Context, name, webhookURL string, autoReopen bool) (*core.Inbox, error) {
 	inbox, err := c.GetInboxByName(ctx, name)
 	if err != nil {
@@ -427,7 +383,6 @@ func (c *Client) GetOrCreateInboxWithOptions(ctx context.Context, name, webhookU
 	}
 
 	if inbox != nil {
-		// Always update inbox settings to ensure they match the current config
 		_, err := c.UpdateInboxConversationSettings(ctx, inbox.ID, autoReopen)
 		if err != nil {
 			logger.Chatwoot().Warn().Err(err).Int("inboxId", inbox.ID).Bool("autoReopen", autoReopen).Msg("Chatwoot: failed to update inbox conversation settings")
@@ -438,11 +393,6 @@ func (c *Client) GetOrCreateInboxWithOptions(ctx context.Context, name, webhookU
 	return c.CreateInboxWithOptions(ctx, name, webhookURL, autoReopen)
 }
 
-// =============================================================================
-// CONTACT OPERATIONS
-// =============================================================================
-
-// FindContactByPhone searches for a contact by phone number
 func (c *Client) FindContactByPhone(ctx context.Context, phone string) (*core.Contact, error) {
 	filterPayload := map[string]interface{}{
 		"payload": []map[string]interface{}{
@@ -473,7 +423,6 @@ func (c *Client) FindContactByPhone(ctx context.Context, phone string) (*core.Co
 	return &result.Payload[0], nil
 }
 
-// FindContactByPhoneWithMerge searches for a contact with Brazilian phone number merge support
 func (c *Client) FindContactByPhoneWithMerge(ctx context.Context, phone string, mergeBrPhones bool) (*core.Contact, error) {
 	contact, err := c.FindContactByPhone(ctx, phone)
 	if err != nil {
@@ -500,8 +449,6 @@ func (c *Client) FindContactByPhoneWithMerge(ctx context.Context, phone string, 
 	return altContact, nil
 }
 
-// FindContactWithBrazilianOR searches for Brazilian contacts using OR filter
-// This is more efficient as it searches both phone formats in a single API call
 func (c *Client) FindContactWithBrazilianOR(ctx context.Context, phone string) ([]core.Contact, error) {
 	phones := util.GetBrazilianPhoneVariants(phone)
 
@@ -537,8 +484,6 @@ func (c *Client) FindContactWithBrazilianOR(ctx context.Context, phone string) (
 	return result.Payload, nil
 }
 
-// SearchContactsForBrazilianMerge searches for both Brazilian number formats and merges if needed
-// Uses single API call with OR filter for efficiency
 func (c *Client) SearchContactsForBrazilianMerge(ctx context.Context, phone string) ([]*core.Contact, error) {
 	contacts, err := c.FindContactWithBrazilianOR(ctx, phone)
 	if err != nil {
@@ -557,7 +502,6 @@ func (c *Client) SearchContactsForBrazilianMerge(ctx context.Context, phone stri
 	return result, nil
 }
 
-// FindContactByIdentifier searches for a contact by identifier
 func (c *Client) FindContactByIdentifier(ctx context.Context, identifier string) (*core.Contact, error) {
 	searchURL := fmt.Sprintf("/contacts/search?q=%s", url.QueryEscape(identifier))
 	data, err := c.doRequest(ctx, http.MethodGet, searchURL, nil)
@@ -581,7 +525,6 @@ func (c *Client) FindContactByIdentifier(ctx context.Context, identifier string)
 	return nil, nil
 }
 
-// GetContact returns a contact by ID
 func (c *Client) GetContact(ctx context.Context, contactID int) (*core.Contact, error) {
 	data, err := c.doRequest(ctx, http.MethodGet, fmt.Sprintf("/contacts/%d", contactID), nil)
 	if err != nil {
@@ -596,7 +539,6 @@ func (c *Client) GetContact(ctx context.Context, contactID int) (*core.Contact, 
 	return &contact, nil
 }
 
-// CreateContactRequest for Chatwoot API calls
 type CreateContactRequest struct {
 	InboxID     int               `json:"inbox_id"`
 	Name        string            `json:"name,omitempty"`
@@ -607,7 +549,6 @@ type CreateContactRequest struct {
 	CustomAttrs map[string]string `json:"custom_attributes,omitempty"`
 }
 
-// CreateContact creates a new contact
 func (c *Client) CreateContact(ctx context.Context, req *CreateContactRequest) (*core.Contact, error) {
 	data, err := c.doRequest(ctx, http.MethodPost, "/contacts", req)
 	if err != nil {
@@ -630,14 +571,9 @@ func (c *Client) CreateContact(ctx context.Context, req *CreateContactRequest) (
 	return &result.Payload.Contact, nil
 }
 
-// UpdateContact updates a contact
-// Silently ignores "Phone number has already been taken" errors (422) as these
-// indicate a duplicate contact exists and the update is not necessary
 func (c *Client) UpdateContact(ctx context.Context, contactID int, updates map[string]interface{}) (*core.Contact, error) {
-	// Use doRequestSilent404 to avoid logging 404 and 422 duplicate phone errors
 	data, err := c.doRequestSilent404(ctx, http.MethodPut, fmt.Sprintf("/contacts/%d", contactID), updates)
 	if err != nil {
-		// Silently ignore "Phone number has already been taken" error
 		if strings.Contains(err.Error(), "Phone number has already been taken") {
 			return nil, nil
 		}
@@ -652,12 +588,9 @@ func (c *Client) UpdateContact(ctx context.Context, contactID int, updates map[s
 	return &contact, nil
 }
 
-// UpdateContactSilent404 updates a contact without logging 404 errors (deleted contacts)
-// Also silently ignores "Phone number has already been taken" errors (422)
 func (c *Client) UpdateContactSilent404(ctx context.Context, contactID int, updates map[string]interface{}) (*core.Contact, error) {
 	data, err := c.doRequestSilent404(ctx, http.MethodPut, fmt.Sprintf("/contacts/%d", contactID), updates)
 	if err != nil {
-		// Silently ignore "Phone number has already been taken" error
 		if strings.Contains(err.Error(), "Phone number has already been taken") {
 			return nil, nil
 		}
@@ -672,7 +605,6 @@ func (c *Client) UpdateContactSilent404(ctx context.Context, contactID int, upda
 	return &contact, nil
 }
 
-// ListContactConversations lists all conversations for a contact
 func (c *Client) ListContactConversations(ctx context.Context, contactID int) ([]core.Conversation, error) {
 	data, err := c.doRequest(ctx, http.MethodGet, fmt.Sprintf("/contacts/%d/conversations", contactID), nil)
 	if err != nil {
@@ -689,7 +621,6 @@ func (c *Client) ListContactConversations(ctx context.Context, contactID int) ([
 	return result.Payload, nil
 }
 
-// MergeContacts merges two contacts
 func (c *Client) MergeContacts(ctx context.Context, baseContactID, mergeContactID int) error {
 	body := map[string]interface{}{
 		"base_contact_id":   baseContactID,
@@ -700,12 +631,10 @@ func (c *Client) MergeContacts(ctx context.Context, baseContactID, mergeContactI
 	return err
 }
 
-// GetOrCreateContact gets or creates a contact
 func (c *Client) GetOrCreateContact(ctx context.Context, inboxID int, phoneNumber, identifier, name, avatarURL string, isGroup bool) (*core.Contact, error) {
 	return c.GetOrCreateContactWithMerge(ctx, inboxID, phoneNumber, identifier, name, avatarURL, isGroup, false)
 }
 
-// GetOrCreateContactWithMerge gets or creates a contact with optional Brazilian number merge
 func (c *Client) GetOrCreateContactWithMerge(ctx context.Context, inboxID int, phoneNumber, identifier, name, avatarURL string, isGroup bool, mergeBrPhones bool) (*core.Contact, error) {
 	var contact *core.Contact
 	var err error
@@ -722,7 +651,6 @@ func (c *Client) GetOrCreateContactWithMerge(ctx context.Context, inboxID int, p
 			}
 
 			if len(contacts) == 2 {
-				// Auto-merge Brazilian contacts (prefer the one with 9 = 14 chars with +)
 				baseContact := contacts[0]
 				mergeContact := contacts[1]
 				if len(contacts[1].PhoneNumber) == 14 {
@@ -745,7 +673,6 @@ func (c *Client) GetOrCreateContactWithMerge(ctx context.Context, inboxID int, p
 			contact, err = c.FindContactByPhone(ctx, phone)
 		}
 
-		// If not found by phone, also search by identifier to avoid duplicate identifier errors
 		if err == nil && contact == nil && identifier != "" {
 			contact, err = c.FindContactByIdentifier(ctx, identifier)
 		}
@@ -756,7 +683,6 @@ func (c *Client) GetOrCreateContactWithMerge(ctx context.Context, inboxID int, p
 	}
 
 	if contact != nil {
-		// Update identifier if different (for LID migration)
 		if !isGroup && contact.Identifier != identifier && identifier != "" {
 			updates := map[string]interface{}{
 				"identifier": identifier,
@@ -800,11 +726,6 @@ func (c *Client) GetOrCreateContactWithMerge(ctx context.Context, inboxID int, p
 	return c.CreateContact(ctx, req)
 }
 
-// =============================================================================
-// CONVERSATION OPERATIONS
-// =============================================================================
-
-// GetConversation returns a conversation by ID
 func (c *Client) GetConversation(ctx context.Context, conversationID int) (*core.Conversation, error) {
 	data, err := c.doRequest(ctx, http.MethodGet, fmt.Sprintf("/conversations/%d", conversationID), nil)
 	if err != nil {
@@ -819,7 +740,6 @@ func (c *Client) GetConversation(ctx context.Context, conversationID int) (*core
 	return &conv, nil
 }
 
-// CreateConversationRequest for Chatwoot API calls
 type CreateConversationRequest struct {
 	SourceID   string `json:"source_id,omitempty"`
 	InboxID    string `json:"inbox_id"`
@@ -828,7 +748,6 @@ type CreateConversationRequest struct {
 	AssigneeID int    `json:"assignee_id,omitempty"`
 }
 
-// CreateConversation creates a new conversation
 func (c *Client) CreateConversation(ctx context.Context, req *CreateConversationRequest) (*core.Conversation, error) {
 	data, err := c.doRequest(ctx, http.MethodPost, "/conversations", req)
 	if err != nil {
@@ -843,7 +762,6 @@ func (c *Client) CreateConversation(ctx context.Context, req *CreateConversation
 	return &conv, nil
 }
 
-// ToggleConversationStatus changes the status of a conversation
 func (c *Client) ToggleConversationStatus(ctx context.Context, conversationID int, status string) (*core.Conversation, error) {
 	body := map[string]interface{}{
 		"status": status,
@@ -862,16 +780,12 @@ func (c *Client) ToggleConversationStatus(ctx context.Context, conversationID in
 	return &conv, nil
 }
 
-// ConversationResult holds the result of GetOrCreateConversation with metadata
 type ConversationResult struct {
 	Conversation *core.Conversation
 	WasReopened  bool
 	WasCreated   bool
 }
 
-// GetOrCreateConversation gets an existing conversation or creates a new one
-// Note: Conversation reopening is now handled natively by Chatwoot via allow_messages_after_resolved
-// inbox setting, configured when autoReopen=true in GetOrCreateInboxWithOptions
 func (c *Client) GetOrCreateConversation(ctx context.Context, contactID, inboxID int, status string, autoReopen bool) (*core.Conversation, error) {
 	result, err := c.GetOrCreateConversationWithInfo(ctx, contactID, inboxID, status, autoReopen)
 	if err != nil {
@@ -880,10 +794,6 @@ func (c *Client) GetOrCreateConversation(ctx context.Context, contactID, inboxID
 	return result.Conversation, nil
 }
 
-// GetOrCreateConversationWithInfo gets an existing conversation or creates a new one, returning metadata
-// Note: When autoReopen=true, the inbox is configured with allow_messages_after_resolved=true,
-// which means Chatwoot automatically reopens resolved conversations when new messages arrive.
-// We simply return the existing conversation and let Chatwoot handle the status management.
 func (c *Client) GetOrCreateConversationWithInfo(ctx context.Context, contactID, inboxID int, status string, autoReopen bool) (*ConversationResult, error) {
 	conversations, err := c.ListContactConversations(ctx, contactID)
 	if err != nil {
@@ -895,20 +805,15 @@ func (c *Client) GetOrCreateConversationWithInfo(ctx context.Context, contactID,
 			continue
 		}
 
-		// When autoReopen=true: Chatwoot handles reopening via allow_messages_after_resolved
-		// Just return the conversation (even if resolved) - Chatwoot will reopen it automatically
 		if autoReopen {
 			return &ConversationResult{Conversation: &conv, WasReopened: false}, nil
 		}
 
-		// When autoReopen=false: Only use non-resolved conversations
-		// Resolved conversations are skipped, and a new one will be created
 		if conv.Status != "resolved" {
 			return &ConversationResult{Conversation: &conv, WasReopened: false}, nil
 		}
 	}
 
-	// No suitable conversation found, create a new one
 	req := &CreateConversationRequest{
 		InboxID:   strconv.Itoa(inboxID),
 		ContactID: strconv.Itoa(contactID),
@@ -927,7 +832,6 @@ func (c *Client) GetOrCreateConversationWithInfo(ctx context.Context, contactID,
 	return &ConversationResult{Conversation: newConv, WasCreated: true}, nil
 }
 
-// GetConversationWithContactInbox gets a conversation with contact inbox details
 func (c *Client) GetConversationWithContactInbox(ctx context.Context, conversationID int) (*core.Conversation, string, error) {
 	data, err := c.doRequest(ctx, http.MethodGet, fmt.Sprintf("/conversations/%d", conversationID), nil)
 	if err != nil {
@@ -958,11 +862,6 @@ func (c *Client) GetConversationWithContactInbox(ctx context.Context, conversati
 	return &result.Conversation, sourceID, nil
 }
 
-// =============================================================================
-// MESSAGE OPERATIONS
-// =============================================================================
-
-// CreateMessageRequest for Chatwoot API calls
 type CreateMessageRequest struct {
 	Content           string                 `json:"content,omitempty"`
 	MessageType       string                 `json:"message_type"`
@@ -972,7 +871,6 @@ type CreateMessageRequest struct {
 	CreatedAt         *time.Time             `json:"created_at,omitempty"`
 }
 
-// CreateMessage creates a new message in a conversation
 func (c *Client) CreateMessage(ctx context.Context, conversationID int, req *CreateMessageRequest) (*core.Message, error) {
 	endpoint := fmt.Sprintf("/conversations/%d/messages", conversationID)
 	data, err := c.doRequest(ctx, http.MethodPost, endpoint, req)
@@ -988,24 +886,20 @@ func (c *Client) CreateMessage(ctx context.Context, conversationID int, req *Cre
 	return &msg, nil
 }
 
-// DeleteMessage deletes a message from a conversation
 func (c *Client) DeleteMessage(ctx context.Context, conversationID, messageID int) error {
 	endpoint := fmt.Sprintf("/conversations/%d/messages/%d", conversationID, messageID)
 	_, err := c.doRequest(ctx, http.MethodDelete, endpoint, nil)
 	return err
 }
 
-// CreateMessageWithAttachment creates a message with an attachment
 func (c *Client) CreateMessageWithAttachment(ctx context.Context, conversationID int, content, messageType string, attachment io.Reader, filename string, contentAttributes map[string]interface{}) (*core.Message, error) {
 	return c.CreateMessageWithAttachmentAndMime(ctx, conversationID, content, messageType, attachment, filename, "", contentAttributes)
 }
 
-// CreateMessageWithAttachmentAndMime creates a message with an attachment and specific MIME type
 func (c *Client) CreateMessageWithAttachmentAndMime(ctx context.Context, conversationID int, content, messageType string, attachment io.Reader, filename, mimeType string, contentAttributes map[string]interface{}) (*core.Message, error) {
 	return c.CreateMessageWithAttachmentAndMimeAndTime(ctx, conversationID, content, messageType, attachment, filename, mimeType, contentAttributes, nil)
 }
 
-// CreateMessageWithAttachmentAndMimeAndTime creates a message with an attachment, MIME type, and custom timestamp
 func (c *Client) CreateMessageWithAttachmentAndMimeAndTime(ctx context.Context, conversationID int, content, messageType string, attachment io.Reader, filename, mimeType string, contentAttributes map[string]interface{}, createdAt *time.Time) (*core.Message, error) {
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
@@ -1078,7 +972,6 @@ func (c *Client) CreateMessageWithAttachmentAndMimeAndTime(ctx context.Context, 
 	return &msg, nil
 }
 
-// AttachmentUploadRequest contains all parameters for uploading a message with attachment
 type AttachmentUploadRequest struct {
 	ConversationID    int
 	Content           string
@@ -1091,7 +984,6 @@ type AttachmentUploadRequest struct {
 	SourceID          string
 }
 
-// CreateMessageWithAttachmentFull creates a message with attachment and all options including timestamp
 func (c *Client) CreateMessageWithAttachmentFull(ctx context.Context, req AttachmentUploadRequest) (*core.Message, error) {
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
@@ -1177,7 +1069,6 @@ func (c *Client) CreateMessageWithAttachmentFull(ctx context.Context, req Attach
 	return &msg, nil
 }
 
-// UpdateLastSeen marks a conversation as read/seen in Chatwoot using the public API
 func (c *Client) UpdateLastSeen(ctx context.Context, inboxIdentifier, contactSourceID string, conversationID int) error {
 	if inboxIdentifier == "" || contactSourceID == "" {
 		return fmt.Errorf("inbox_identifier and contact_source_id are required")

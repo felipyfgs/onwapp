@@ -13,19 +13,14 @@ import (
 	"onwapp/internal/model"
 )
 
-// sanitizeString removes null bytes and other problematic Unicode characters
-// that PostgreSQL doesn't accept in TEXT fields
 func sanitizeString(s string) string {
-	// Remove null bytes (\u0000) which cause "unsupported Unicode escape sequence" error
 	return strings.ReplaceAll(s, "\x00", "")
 }
 
-// sanitizeBytes removes null bytes from byte slices (for json.RawMessage)
 func sanitizeBytes(b []byte) []byte {
 	if b == nil {
 		return nil
 	}
-	// Use strings.ReplaceAll via conversion for simplicity
 	return []byte(strings.ReplaceAll(string(b), "\x00", ""))
 }
 
@@ -74,7 +69,6 @@ func (r *MessageRepository) Save(ctx context.Context, msg *model.Message) (strin
 		msg.CwMsgId, msg.CwConvId, msg.CwSourceId,
 	).Scan(&id)
 
-	// Handle case where ID already exists
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", nil
 	}
@@ -89,10 +83,8 @@ func (r *MessageRepository) SaveBatch(ctx context.Context, msgs []*model.Message
 	now := time.Now()
 	saved := 0
 
-	// Use batch for efficiency
 	batch := &pgx.Batch{}
 	for _, msg := range msgs {
-		// Sanitize string fields to remove null bytes that PostgreSQL doesn't accept
 		content := sanitizeString(msg.Content)
 		rawEvent := sanitizeBytes(msg.RawEvent)
 		pushName := sanitizeString(msg.PushName)
@@ -239,7 +231,6 @@ func (r *MessageRepository) scanMessages(rows interface {
 	return messages, rows.Err()
 }
 
-// AddReaction adds a reaction to a message (upsert by senderJid)
 func (r *MessageRepository) AddReaction(ctx context.Context, sessionID, msgId, emoji, senderJid string, timestamp int64) error {
 	_, err := r.pool.Exec(ctx, `
 		UPDATE "onWappMessage" 
@@ -256,7 +247,6 @@ func (r *MessageRepository) AddReaction(ctx context.Context, sessionID, msgId, e
 	return err
 }
 
-// RemoveReaction removes a reaction from a message by senderJid
 func (r *MessageRepository) RemoveReaction(ctx context.Context, sessionID, msgId, senderJid string) error {
 	_, err := r.pool.Exec(ctx, `
 		UPDATE "onWappMessage" 
@@ -269,7 +259,6 @@ func (r *MessageRepository) RemoveReaction(ctx context.Context, sessionID, msgId
 	return err
 }
 
-// UpdateCwFields updates Chatwoot-related fields for a message
 func (r *MessageRepository) UpdateCwFields(ctx context.Context, sessionID, msgId string, cwMsgId, cwConvId int, cwSourceId string) error {
 	result, err := r.pool.Exec(ctx, `
 		UPDATE "onWappMessage" 
@@ -280,7 +269,6 @@ func (r *MessageRepository) UpdateCwFields(ctx context.Context, sessionID, msgId
 		return err
 	}
 
-	// Log if no rows were affected (message not found in DB)
 	if result.RowsAffected() == 0 {
 		return fmt.Errorf("message not found in database: sessionID=%s, msgId=%s", sessionID, msgId)
 	}
@@ -288,7 +276,6 @@ func (r *MessageRepository) UpdateCwFields(ctx context.Context, sessionID, msgId
 	return nil
 }
 
-// GetByCwMsgId finds a message by its Chatwoot message ID
 func (r *MessageRepository) GetByCwMsgId(ctx context.Context, sessionID string, cwMsgId int) (*model.Message, error) {
 	row := r.pool.QueryRow(ctx,
 		`SELECT `+messageSelectFields+` FROM "onWappMessage" WHERE "sessionId" = $1::uuid AND "cwMsgId" = $2`,
@@ -313,8 +300,6 @@ func (r *MessageRepository) GetByCwMsgId(ctx context.Context, sessionID string, 
 	return &m, nil
 }
 
-// GetAllByCwMsgId finds ALL messages with the same Chatwoot message ID
-// This is needed because multiple attachments in Chatwoot become multiple WhatsApp messages
 func (r *MessageRepository) GetAllByCwMsgId(ctx context.Context, sessionID string, cwMsgId int) ([]*model.Message, error) {
 	rows, err := r.pool.Query(ctx,
 		`SELECT `+messageSelectFields+` FROM "onWappMessage" WHERE "sessionId" = $1::uuid AND "cwMsgId" = $2`,
@@ -344,7 +329,6 @@ func (r *MessageRepository) GetAllByCwMsgId(ctx context.Context, sessionID strin
 	return messages, rows.Err()
 }
 
-// Delete removes a message from the database
 func (r *MessageRepository) Delete(ctx context.Context, sessionID, msgId string) error {
 	_, err := r.pool.Exec(ctx, `
 		DELETE FROM "onWappMessage" 
@@ -353,8 +337,6 @@ func (r *MessageRepository) Delete(ctx context.Context, sessionID, msgId string)
 	return err
 }
 
-// ClearCwConversation clears Chatwoot conversation reference for all messages in a conversation
-// This is used when a conversation is deleted in Chatwoot (404 error)
 func (r *MessageRepository) ClearCwConversation(ctx context.Context, sessionID string, cwConvId int) (int64, error) {
 	result, err := r.pool.Exec(ctx, `
 		UPDATE "onWappMessage" 
@@ -367,8 +349,6 @@ func (r *MessageRepository) ClearCwConversation(ctx context.Context, sessionID s
 	return result.RowsAffected(), nil
 }
 
-// UpdatePushNameByJID updates pushName for messages with specific senderJid
-// Only updates messages that have empty pushName
 func (r *MessageRepository) UpdatePushNameByJID(ctx context.Context, sessionID, senderJID, pushName string) (int64, error) {
 	result, err := r.pool.Exec(ctx, `
 		UPDATE "onWappMessage" 
@@ -383,8 +363,6 @@ func (r *MessageRepository) UpdatePushNameByJID(ctx context.Context, sessionID, 
 	return result.RowsAffected(), nil
 }
 
-// UpdatePushNameByLIDPattern updates pushName for messages where senderJid matches LID pattern
-// Uses LIKE pattern to match LID JIDs with device suffix variations
 func (r *MessageRepository) UpdatePushNameByLIDPattern(ctx context.Context, sessionID, lidPattern, pushName string) (int64, error) {
 	result, err := r.pool.Exec(ctx, `
 		UPDATE "onWappMessage" 
@@ -399,8 +377,6 @@ func (r *MessageRepository) UpdatePushNameByLIDPattern(ctx context.Context, sess
 	return result.RowsAffected(), nil
 }
 
-// UpdatePushNamesBatch updates pushName for multiple JIDs efficiently
-// Returns total number of rows affected
 func (r *MessageRepository) UpdatePushNamesBatch(ctx context.Context, sessionID string, jidToName map[string]string) (int64, error) {
 	if len(jidToName) == 0 {
 		return 0, nil
@@ -417,8 +393,6 @@ func (r *MessageRepository) UpdatePushNamesBatch(ctx context.Context, sessionID 
 	return total, nil
 }
 
-// GetUnreadIncomingByChat returns incoming messages (fromMe=false) that haven't been marked as read yet
-// This is used to send read receipts to WhatsApp when agent responds in Chatwoot
 func (r *MessageRepository) GetUnreadIncomingByChat(ctx context.Context, sessionID, chatJID string, limit int) ([]model.Message, error) {
 	rows, err := r.pool.Query(ctx,
 		`SELECT `+messageSelectFields+` FROM "onWappMessage" 
@@ -433,8 +407,6 @@ func (r *MessageRepository) GetUnreadIncomingByChat(ctx context.Context, session
 	return r.scanMessages(rows)
 }
 
-// MarkAsReadByAgent marks incoming messages as read (sets readAt timestamp)
-// This is called when we send read receipts to WhatsApp
 func (r *MessageRepository) MarkAsReadByAgent(ctx context.Context, sessionID string, msgIds []string) (int64, error) {
 	if len(msgIds) == 0 {
 		return 0, nil

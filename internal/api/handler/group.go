@@ -25,7 +25,6 @@ func NewGroupHandler(wpp *wpp.Service) *GroupHandler {
 	}
 }
 
-// CreateGroup godoc
 // @Summary      Create a new group
 // @Description  Create a new WhatsApp group with participants
 // @Tags         group
@@ -54,7 +53,6 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 		return
 	}
 
-	// Invalidate groups cache
 	h.cache.InvalidateGroups(sessionId)
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
@@ -64,7 +62,6 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 	})
 }
 
-// GetGroupInfo godoc
 // @Summary      Get group info
 // @Description  Get information about a WhatsApp group
 // @Tags         group
@@ -98,7 +95,6 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 	})
 }
 
-// GetJoinedGroups godoc
 // @Summary      Get joined groups
 // @Description  Get list of groups the session is part of
 // @Tags         group
@@ -114,13 +110,11 @@ func (h *GroupHandler) GetJoinedGroups(c *gin.Context) {
 	sessionId := c.Param("session")
 	cacheKey := sessionId
 
-	// Check cache first (30s TTL)
 	if cached, ok := h.cache.GetGroups(cacheKey); ok {
 		if items, ok := cached.([]dto.GroupListItem); ok {
 			c.JSON(http.StatusOK, dto.GroupListResponse{Data: items})
 			return
 		}
-		// Check if it's a cached error (rate limit protection)
 		if errMsg, ok := cached.(string); ok {
 			c.JSON(http.StatusTooManyRequests, dto.ErrorResponse{Error: errMsg})
 			return
@@ -130,7 +124,6 @@ func (h *GroupHandler) GetJoinedGroups(c *gin.Context) {
 	groups, err := h.wpp.GetJoinedGroups(c.Request.Context(), sessionId)
 	if err != nil {
 		errMsg := err.Error()
-		// If rate limited by WhatsApp, cache the error for 30s to avoid hammering
 		if strings.Contains(errMsg, "rate") || strings.Contains(errMsg, "429") {
 			h.cache.SetGroups(cacheKey, errMsg)
 			c.JSON(http.StatusTooManyRequests, dto.ErrorResponse{Error: "WhatsApp rate limit - aguarde 30 segundos"})
@@ -140,7 +133,6 @@ func (h *GroupHandler) GetJoinedGroups(c *gin.Context) {
 		return
 	}
 
-	// Convert to DTO with proper JSON field names (lowercase)
 	items := make([]dto.GroupListItem, len(groups))
 	for i, g := range groups {
 		items[i] = dto.GroupListItem{
@@ -154,13 +146,11 @@ func (h *GroupHandler) GetJoinedGroups(c *gin.Context) {
 		}
 	}
 
-	// Cache the result for 30 seconds
 	h.cache.SetGroups(cacheKey, items)
 
 	c.JSON(http.StatusOK, dto.GroupListResponse{Data: items})
 }
 
-// LeaveGroup godoc
 // @Summary      Leave group
 // @Description  Leave a WhatsApp group
 // @Tags         group
@@ -187,7 +177,6 @@ func (h *GroupHandler) LeaveGroup(c *gin.Context) {
 		return
 	}
 
-	// Invalidate groups cache
 	h.cache.InvalidateGroups(sessionId)
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
@@ -195,7 +184,6 @@ func (h *GroupHandler) LeaveGroup(c *gin.Context) {
 	})
 }
 
-// UpdateGroupName godoc
 // @Summary      Update group name
 // @Description  Update the name of a WhatsApp group
 // @Tags         group
@@ -229,7 +217,6 @@ func (h *GroupHandler) UpdateGroupName(c *gin.Context) {
 	})
 }
 
-// UpdateGroupTopic godoc
 // @Summary      Update group description
 // @Description  Update the description/topic of a WhatsApp group
 // @Tags         group
@@ -263,7 +250,6 @@ func (h *GroupHandler) UpdateGroupTopic(c *gin.Context) {
 	})
 }
 
-// AddParticipants godoc
 // @Summary      Add participants to group
 // @Description  Add participants to a WhatsApp group
 // @Tags         group
@@ -299,7 +285,6 @@ func (h *GroupHandler) AddParticipants(c *gin.Context) {
 	})
 }
 
-// RemoveParticipants godoc
 // @Summary      Remove participants from group
 // @Description  Remove participants from a WhatsApp group
 // @Tags         group
@@ -335,7 +320,6 @@ func (h *GroupHandler) RemoveParticipants(c *gin.Context) {
 	})
 }
 
-// PromoteParticipants godoc
 // @Summary      Promote participants to admin
 // @Description  Promote participants to admin in a WhatsApp group
 // @Tags         group
@@ -371,7 +355,6 @@ func (h *GroupHandler) PromoteParticipants(c *gin.Context) {
 	})
 }
 
-// DemoteParticipants godoc
 // @Summary      Demote participants from admin
 // @Description  Demote participants from admin in a WhatsApp group
 // @Tags         group
@@ -407,7 +390,6 @@ func (h *GroupHandler) DemoteParticipants(c *gin.Context) {
 	})
 }
 
-// GetInviteLink godoc
 // @Summary      Get group invite link
 // @Description  Get the invite link for a WhatsApp group
 // @Tags         group
@@ -442,7 +424,6 @@ func (h *GroupHandler) GetInviteLink(c *gin.Context) {
 	})
 }
 
-// JoinGroup godoc
 // @Summary      Join group via link
 // @Description  Join a WhatsApp group using an invite link
 // @Tags         group
@@ -471,7 +452,6 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 		return
 	}
 
-	// Invalidate groups cache
 	h.cache.InvalidateGroups(sessionId)
 
 	c.JSON(http.StatusOK, dto.GroupActionResponse{
@@ -480,7 +460,6 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 	})
 }
 
-// SendGroupMessage godoc
 // @Summary      Send message to group
 // @Description  Send a text message to a WhatsApp group
 // @Tags         group
@@ -516,7 +495,6 @@ func (h *GroupHandler) SendGroupMessage(c *gin.Context) {
 	})
 }
 
-// SetGroupAnnounce godoc
 // @Summary      Set group announce mode
 // @Description  Set whether only admins can send messages
 // @Tags         group
@@ -547,7 +525,6 @@ func (h *GroupHandler) SetGroupAnnounce(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
-// SetGroupLocked godoc
 // @Summary      Set group locked mode
 // @Description  Set whether only admins can edit group info
 // @Tags         group
@@ -578,7 +555,6 @@ func (h *GroupHandler) SetGroupLocked(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
-// SetGroupPicture godoc
 // @Summary      Set group picture
 // @Description  Set the group profile picture (supports JSON with base64/URL or multipart/form-data)
 // @Tags         group
@@ -631,7 +607,6 @@ func (h *GroupHandler) SetGroupPicture(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SetPictureResponse{PictureID: pictureID})
 }
 
-// DeleteGroupPicture godoc
 // @Summary      Delete group picture
 // @Description  Remove the group profile picture
 // @Tags         group
@@ -661,7 +636,6 @@ func (h *GroupHandler) DeleteGroupPicture(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.MessageOnlyResponse{Message: "group picture deleted"})
 }
 
-// GetGroupPicture godoc
 // @Summary      Get group picture
 // @Description  Get group profile picture URL
 // @Tags         group
@@ -684,7 +658,6 @@ func (h *GroupHandler) GetGroupPicture(c *gin.Context) {
 	groupID = strings.TrimSuffix(groupID, "@g.us")
 	pic, err := h.wpp.GetGroupPicture(c.Request.Context(), sessionId, groupID)
 	if err != nil || pic == nil {
-		// Group might not have a profile picture - return empty URL instead of error
 		c.JSON(http.StatusOK, dto.AvatarResponse{URL: ""})
 		return
 	}
@@ -692,7 +665,6 @@ func (h *GroupHandler) GetGroupPicture(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.AvatarResponse{URL: pic.URL, ID: pic.ID})
 }
 
-// SetGroupApprovalMode godoc
 // @Summary      Set group join approval mode
 // @Description  Set whether join requests need admin approval
 // @Tags         group
@@ -723,7 +695,6 @@ func (h *GroupHandler) SetGroupApprovalMode(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
-// SetGroupMemberAddMode godoc
 // @Summary      Set who can add members
 // @Description  Set whether only admins or all members can add participants
 // @Tags         group
@@ -765,7 +736,6 @@ func (h *GroupHandler) SetGroupMemberAddMode(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
-// GetGroupRequestParticipants godoc
 // @Summary      Get pending join requests
 // @Description  Get list of pending join requests for a group
 // @Tags         group
@@ -797,7 +767,6 @@ func (h *GroupHandler) GetGroupRequestParticipants(c *gin.Context) {
 	})
 }
 
-// UpdateGroupRequestParticipants godoc
 // @Summary      Approve or reject join requests
 // @Description  Approve or reject pending join requests
 // @Tags         group
@@ -845,7 +814,6 @@ func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
 	})
 }
 
-// GetGroupInfoFromLink godoc
 // @Summary      Get group info from invite link
 // @Description  Get group information using an invite link
 // @Tags         group
@@ -866,7 +834,6 @@ func (h *GroupHandler) GetGroupInfoFromLink(c *gin.Context) {
 		return
 	}
 
-	// Extract code from link
 	code := link
 	if strings.Contains(code, "chat.whatsapp.com/") {
 		parts := strings.Split(code, "chat.whatsapp.com/")

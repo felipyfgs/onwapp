@@ -10,13 +10,11 @@ import (
 	"onwapp/internal/service"
 )
 
-// Handler handles HTTP requests for Webhook integration
 type Handler struct {
 	service        *Service
 	sessionService *service.SessionService
 }
 
-// NewHandler creates a new Webhook handler
 func NewHandler(svc *Service, sessionSvc *service.SessionService) *Handler {
 	return &Handler{
 		service:        svc,
@@ -24,7 +22,6 @@ func NewHandler(svc *Service, sessionSvc *service.SessionService) *Handler {
 	}
 }
 
-// GetWebhookResponse represents the webhook response
 type GetWebhookResponse struct {
 	ID        string   `json:"id,omitempty"`
 	SessionID string   `json:"sessionId"`
@@ -33,7 +30,6 @@ type GetWebhookResponse struct {
 	Enabled   bool     `json:"enabled"`
 }
 
-// SetWebhookRequest represents the request to set a webhook
 type SetWebhookRequest struct {
 	URL     string   `json:"url"`
 	Events  []string `json:"events"`
@@ -41,12 +37,10 @@ type SetWebhookRequest struct {
 	Secret  string   `json:"secret,omitempty"`
 }
 
-// ErrorResponse represents an error response
 type ErrorResponse struct {
 	Error string `json:"error"`
 }
 
-// GetWebhook godoc
 // @Summary Get webhook
 // @Description Get the webhook configuration for a session
 // @Tags         webhook
@@ -88,7 +82,6 @@ func (h *Handler) GetWebhook(c *gin.Context) {
 	})
 }
 
-// SetWebhook godoc
 // @Summary Set webhook
 // @Description Set or update the webhook configuration for a session (one webhook per session)
 // @Tags         webhook
@@ -139,7 +132,6 @@ func (h *Handler) SetWebhook(c *gin.Context) {
 	})
 }
 
-// UpdateWebhook godoc
 // @Summary Update webhook
 // @Description Update an existing webhook configuration for a session
 // @Tags         webhook
@@ -175,7 +167,6 @@ func (h *Handler) UpdateWebhook(c *gin.Context) {
 		return
 	}
 
-	// Check if webhook exists
 	existing, err := h.service.GetBySession(c.Request.Context(), session.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
@@ -201,7 +192,6 @@ func (h *Handler) UpdateWebhook(c *gin.Context) {
 	})
 }
 
-// DeleteWebhook godoc
 // @Summary Delete webhook
 // @Description Delete the webhook configuration for a session
 // @Tags         webhook
@@ -220,7 +210,6 @@ func (h *Handler) DeleteWebhook(c *gin.Context) {
 		return
 	}
 
-	// Check if webhook exists
 	existing, err := h.service.GetBySession(c.Request.Context(), session.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
@@ -239,12 +228,10 @@ func (h *Handler) DeleteWebhook(c *gin.Context) {
 	c.JSON(http.StatusOK, MessageResponse{Message: "webhook deleted"})
 }
 
-// MessageResponse represents a success message response
 type MessageResponse struct {
 	Message string `json:"message"`
 }
 
-// GetEvents godoc
 // @Summary List available webhook events
 // @Description Get a list of all available webhook event types organized by category
 // @Tags         webhook
@@ -274,7 +261,6 @@ func (h *Handler) GetEvents(c *gin.Context) {
 	})
 }
 
-// EventsResponse represents the available events response
 type EventsResponse struct {
 	Categories map[string][]string `json:"categories"`
 	All        []string            `json:"all"`

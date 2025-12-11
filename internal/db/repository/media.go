@@ -132,7 +132,6 @@ func (r *MediaRepository) GetByMsgID(ctx context.Context, sessionID, msgID strin
 	return m, err
 }
 
-// GetByMsgIDWithContext returns media with denormalized fields from zpMessages (chatJid, fromMe, caption)
 func (r *MediaRepository) GetByMsgIDWithContext(ctx context.Context, sessionID, msgID string) (*model.Media, error) {
 	m := &model.Media{}
 	err := r.pool.QueryRow(ctx, `
@@ -247,7 +246,6 @@ func (r *MediaRepository) IncrementDownloadAttempts(ctx context.Context, id stri
 	return err
 }
 
-// UpdateDirectPath updates the direct path for a media after a successful MediaRetry
 func (r *MediaRepository) UpdateDirectPath(ctx context.Context, sessionID, msgID, newDirectPath string) error {
 	now := time.Now()
 	_, err := r.pool.Exec(ctx, `
@@ -261,7 +259,6 @@ func (r *MediaRepository) UpdateDirectPath(ctx context.Context, sessionID, msgID
 	return err
 }
 
-// MarkAsRetryRequested marks media as having a retry request sent
 func (r *MediaRepository) MarkAsRetryRequested(ctx context.Context, id string) error {
 	now := time.Now()
 	_, err := r.pool.Exec(ctx, `
@@ -274,7 +271,6 @@ func (r *MediaRepository) MarkAsRetryRequested(ctx context.Context, id string) e
 	return err
 }
 
-// GetPendingRetries gets media that needs retry request (failed with 404/410)
 func (r *MediaRepository) GetPendingRetries(ctx context.Context, sessionID string, limit int) ([]*model.Media, error) {
 	rows, err := r.pool.Query(ctx, `
 		SELECT 

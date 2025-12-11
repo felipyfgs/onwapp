@@ -8,7 +8,6 @@ import (
 	"onwapp/internal/logger"
 )
 
-// ContactSyncer handles contact synchronization
 type ContactSyncer struct {
 	repo           *Repository
 	contactsGetter ContactsGetter
@@ -16,7 +15,6 @@ type ContactSyncer struct {
 	sessionID      string
 }
 
-// NewContactSyncer creates a new contact syncer
 func NewContactSyncer(repo *Repository, contactsGetter ContactsGetter, lidResolver util.LIDResolver, sessionID string) *ContactSyncer {
 	return &ContactSyncer{
 		repo:           repo,
@@ -26,7 +24,6 @@ func NewContactSyncer(repo *Repository, contactsGetter ContactsGetter, lidResolv
 	}
 }
 
-// Sync synchronizes contacts to Chatwoot
 func (s *ContactSyncer) Sync(ctx context.Context, daysLimit int) (*core.SyncStats, error) {
 	stats := &core.SyncStats{
 		ContactDetails: &core.ContactSyncDetails{},
@@ -65,15 +62,12 @@ func (s *ContactSyncer) Sync(ctx context.Context, daysLimit int) (*core.SyncStat
 	return stats, nil
 }
 
-// filterValidContacts filters out invalid contacts and deduplicates by JID
-// Only includes contacts that are saved in agenda (have a name) or have message history
 func (s *ContactSyncer) filterValidContacts(ctx context.Context, contacts []core.WhatsAppContact, stats *core.SyncStats) []core.WhatsAppContact {
 	valid := make([]core.WhatsAppContact, 0, len(contacts)/2)
 	seen := make(map[string]bool)
 	details := stats.ContactDetails
 
 	for _, c := range contacts {
-		// Check for groups, status, newsletters
 		if util.IsGroupJID(c.JID) {
 			details.Groups++
 			stats.ContactsSkipped++
@@ -90,7 +84,6 @@ func (s *ContactSyncer) filterValidContacts(ctx context.Context, contacts []core
 			continue
 		}
 
-		// Handle LID JIDs - try to resolve to phone number
 		if util.IsLIDJID(c.JID) {
 			phone := util.ResolveLIDToPhone(ctx, s.lidResolver, c.JID)
 			if phone == "" {
@@ -107,24 +100,18 @@ func (s *ContactSyncer) filterValidContacts(ctx context.Context, contacts []core
 			continue
 		}
 
-		// Only sync contacts that are saved in agenda (have FullName or BusinessName)
-		// PushName alone is not enough - it's just the name the user set on their WhatsApp
-		// FullName/FirstName indicates the contact is saved in your phone's agenda
-		// BusinessName indicates it's a verified business contact
 		if !s.isContactSaved(c) {
 			details.NotInAgenda++
 			stats.ContactsSkipped++
 			continue
 		}
 
-		// Deduplicate by JID (can happen after LID conversion)
 		if seen[c.JID] {
 			stats.ContactsSkipped++
 			continue
 		}
 		seen[c.JID] = true
 
-		// Track type of contact being imported
 		if c.BusinessName != "" {
 			details.BusinessContacts++
 		} else {
@@ -136,25 +123,15 @@ func (s *ContactSyncer) filterValidContacts(ctx context.Context, contacts []core
 	return valid
 }
 
-// isContactSaved checks if a contact is saved in the phone's agenda
-// A contact is considered "saved" if:
-// - It has a FullName that is different from PushName (indicating it was saved with a custom name)
-// - OR it has a FirstName (indicates explicit save with first/last name split)
-// - OR it has a BusinessName (verified business account)
-// PushName alone doesn't count as it's just the user's WhatsApp display name
 func (s *ContactSyncer) isContactSaved(c core.WhatsAppContact) bool {
-	// BusinessName always counts (verified business)
 	if c.BusinessName != "" {
 		return true
 	}
 
-	// FirstName indicates contact was saved with first/last name split
 	if c.FirstName != "" {
 		return true
 	}
 
-	// FullName must exist AND be different from PushName to count as "saved"
-	// If FullName == PushName, it was likely auto-filled, not explicitly saved
 	if c.FullName != "" && c.FullName != c.PushName {
 		return true
 	}
@@ -162,7 +139,6 @@ func (s *ContactSyncer) isContactSaved(c core.WhatsAppContact) bool {
 	return false
 }
 
-// insertContactsInBatches inserts contacts in batches with accurate stats
 func (s *ContactSyncer) insertContactsInBatches(ctx context.Context, contacts []core.WhatsAppContact, stats *core.SyncStats) error {
 	details := stats.ContactDetails
 
@@ -177,7 +153,6 @@ func (s *ContactSyncer) insertContactsInBatches(ctx context.Context, contacts []
 			stats.ContactsErrors += len(batch)
 		} else {
 			stats.ContactsImported += result.Inserted
-			// Track already existing contacts
 			alreadyExisted := result.Skipped + result.Updated
 			stats.ContactsSkipped += alreadyExisted
 			details.AlreadyExists += alreadyExisted
@@ -188,7 +163,6 @@ func (s *ContactSyncer) insertContactsInBatches(ctx context.Context, contacts []
 	return nil
 }
 
-// prepareContactsForInsert prepares contacts for database insertion
 func (s *ContactSyncer) prepareContactsForInsert(contacts []core.WhatsAppContact) []ContactInsertData {
 	data := make([]ContactInsertData, 0, len(contacts))
 
@@ -210,7 +184,6 @@ func (s *ContactSyncer) prepareContactsForInsert(contacts []core.WhatsAppContact
 	return data
 }
 
-// LoadWhatsAppContactsCache loads all WhatsApp contacts into a cache map
 func (s *ContactSyncer) LoadWhatsAppContactsCache(ctx context.Context) map[string]*core.ContactNameInfo {
 	cache := make(map[string]*core.ContactNameInfo)
 	if s.contactsGetter == nil {

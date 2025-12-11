@@ -266,7 +266,6 @@ func (r *ChatRepository) scanChats(rows pgx.Rows) ([]*model.Chat, error) {
 	return chats, rows.Err()
 }
 
-// GetWithContext returns chat with full metadata (same as GetByJID for now)
 func (r *ChatRepository) GetWithContext(ctx context.Context, sessionID, chatJID string) (*model.Chat, error) {
 	return r.GetByJID(ctx, sessionID, chatJID)
 }
@@ -286,7 +285,6 @@ func (r *ChatRepository) CountBySession(ctx context.Context, sessionID string) (
 	return count, err
 }
 
-// ChatWithLastMessage represents a chat with its last message and settings
 type ChatWithLastMessage struct {
 	Chat        *model.Chat
 	LastMessage *LastMessageData
@@ -295,7 +293,6 @@ type ChatWithLastMessage struct {
 	Muted       string
 }
 
-// LastMessageData represents the last message of a chat
 type LastMessageData struct {
 	Content   string
 	Timestamp int64
@@ -307,7 +304,6 @@ type LastMessageData struct {
 	PushName  string
 }
 
-// GetBySessionWithLastMessage returns chats with last message from own tables
 func (r *ChatRepository) GetBySessionWithLastMessage(ctx context.Context, sessionID string, limit, offset int, unreadOnly bool) ([]*ChatWithLastMessage, error) {
 	query := `
 		WITH last_messages AS (
@@ -385,7 +381,6 @@ func (r *ChatRepository) GetBySessionWithLastMessage(ctx context.Context, sessio
 			Muted:    muted,
 		}
 
-		// Populate last message if exists
 		if lmTimestamp != nil {
 			lm.Timestamp = *lmTimestamp
 			if lmContent != nil {

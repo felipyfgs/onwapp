@@ -1,9 +1,7 @@
 package model
 
-// EventType represents a webhook event type
 type EventType string
 
-// Connection events
 const (
 	EventSessionConnected    EventType = "session.connected"
 	EventSessionDisconnected EventType = "session.disconnected"
@@ -20,7 +18,6 @@ const (
 	EventPairError           EventType = "session.pair_error"
 )
 
-// Message events
 const (
 	EventMessageReceived      EventType = "message.received"
 	EventMessageSent          EventType = "message.sent"
@@ -32,13 +29,11 @@ const (
 	EventMediaRetry           EventType = "message.media_retry"
 )
 
-// Presence events
 const (
 	EventPresenceUpdate EventType = "presence.update"
 	EventChatPresence   EventType = "chat.presence"
 )
 
-// Sync events
 const (
 	EventHistorySync          EventType = "history.sync"
 	EventOfflineSyncPreview   EventType = "sync.offline_preview"
@@ -47,7 +42,6 @@ const (
 	EventAppStateSyncComplete EventType = "sync.app_state_complete"
 )
 
-// Contact events
 const (
 	EventContactPushName     EventType = "contact.push_name"
 	EventContactPicture      EventType = "contact.picture"
@@ -56,7 +50,6 @@ const (
 	EventContactAbout        EventType = "contact.about"
 )
 
-// Call events
 const (
 	EventCallOffer        EventType = "call.offer"
 	EventCallOfferNotice  EventType = "call.offer_notice"
@@ -68,21 +61,18 @@ const (
 	EventCallRelayLatency EventType = "call.relay_latency"
 )
 
-// Group events
 const (
 	EventGroupUpdate       EventType = "group.update"
 	EventGroupJoined       EventType = "group.joined"
 	EventGroupParticipants EventType = "group.participants"
 )
 
-// Privacy events
 const (
 	EventPrivacySettings EventType = "privacy.settings"
 	EventIdentityChange  EventType = "privacy.identity_change"
 	EventBlocklist       EventType = "privacy.blocklist"
 )
 
-// Newsletter (Channel) events
 const (
 	EventNewsletterJoin       EventType = "newsletter.join"
 	EventNewsletterLeave      EventType = "newsletter.leave"
@@ -90,7 +80,6 @@ const (
 	EventNewsletterLiveUpdate EventType = "newsletter.live_update"
 )
 
-// Chat management events (AppState)
 const (
 	EventChatArchive      EventType = "chat.archive"
 	EventChatPin          EventType = "chat.pin"
@@ -104,15 +93,12 @@ const (
 	EventLabelAssociation EventType = "chat.label_association"
 )
 
-// Wildcard event
 const (
 	EventAll EventType = "*"
 )
 
-// AllEvents returns all available event types for documentation/validation
 func AllEvents() []EventType {
 	return []EventType{
-		// Connection
 		EventSessionConnected,
 		EventSessionDisconnected,
 		EventSessionLoggedOut,
@@ -126,7 +112,6 @@ func AllEvents() []EventType {
 		EventKeepAliveRestored,
 		EventPairSuccess,
 		EventPairError,
-		// Messages
 		EventMessageReceived,
 		EventMessageSent,
 		EventMessageReceipt,
@@ -135,22 +120,18 @@ func AllEvents() []EventType {
 		EventMessageEdited,
 		EventMessageUndecryptable,
 		EventMediaRetry,
-		// Presence
 		EventPresenceUpdate,
 		EventChatPresence,
-		// Sync
 		EventHistorySync,
 		EventOfflineSyncPreview,
 		EventOfflineSyncCompleted,
 		EventAppStateSync,
 		EventAppStateSyncComplete,
-		// Contacts
 		EventContactPushName,
 		EventContactPicture,
 		EventContactUpdate,
 		EventContactBusinessName,
 		EventContactAbout,
-		// Calls
 		EventCallOffer,
 		EventCallOfferNotice,
 		EventCallAccept,
@@ -159,20 +140,16 @@ func AllEvents() []EventType {
 		EventCallTerminate,
 		EventCallTransport,
 		EventCallRelayLatency,
-		// Groups
 		EventGroupUpdate,
 		EventGroupJoined,
 		EventGroupParticipants,
-		// Privacy
 		EventPrivacySettings,
 		EventIdentityChange,
 		EventBlocklist,
-		// Newsletter
 		EventNewsletterJoin,
 		EventNewsletterLeave,
 		EventNewsletterMuteChange,
 		EventNewsletterLiveUpdate,
-		// Chat management
 		EventChatArchive,
 		EventChatPin,
 		EventChatMute,
@@ -186,7 +163,6 @@ func AllEvents() []EventType {
 	}
 }
 
-// EventCategories groups events by category for documentation
 var EventCategories = map[string][]EventType{
 	"session": {
 		EventSessionConnected,

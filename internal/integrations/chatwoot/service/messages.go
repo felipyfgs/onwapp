@@ -18,8 +18,6 @@ import (
 	"onwapp/internal/model"
 )
 
-// resolveLIDToStandardJID converts a @lid JID to @s.whatsapp.net JID
-// Uses WhatsApp client's native LID store (Client.Store.LIDs.GetPNForLID)
 func resolveLIDToStandardJID(ctx context.Context, waClient *whatsmeow.Client, jid string) string {
 	if !util.IsLIDJID(jid) {
 		return jid
@@ -47,18 +45,12 @@ func resolveLIDToStandardJID(ctx context.Context, waClient *whatsmeow.Client, ji
 	return convertedJID
 }
 
-// =============================================================================
-// INCOMING MESSAGE PROCESSING (WhatsApp -> Chatwoot)
-// =============================================================================
-
-// ProcessIncomingMessage processes a WhatsApp message and sends to Chatwoot (includes webhook)
 func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Session, evt *events.Message) error {
 	cwMsgID, cwConvID, cfg, err := s.processIncomingMessageInternal(ctx, session, evt)
 	if err != nil {
 		return err
 	}
 
-	// Send webhook with Chatwoot IDs
 	if cfg != nil && cwMsgID > 0 {
 		s.sendWebhookWithChatwootIds(ctx, session, cfg, evt, cwMsgID, cwConvID)
 	}
@@ -66,7 +58,6 @@ func (s *Service) ProcessIncomingMessage(ctx context.Context, session *model.Ses
 	return nil
 }
 
-// processIncomingMessageInternal processes a WhatsApp message and returns Chatwoot IDs (no webhook)
 func (s *Service) processIncomingMessageInternal(ctx context.Context, session *model.Session, evt *events.Message) (cwMsgID int, cwConvID int, cfg *core.Config, err error) {
 	cfg, err = s.repo.GetEnabledBySessionID(ctx, session.ID)
 	if err != nil {
@@ -77,7 +68,6 @@ func (s *Service) processIncomingMessageInternal(ctx context.Context, session *m
 		return 0, 0, nil, nil
 	}
 
-	// Prevent duplicate processing with in-memory lock
 	cacheKey := fmt.Sprintf("in:%d:%s", cfg.InboxID, evt.Info.ID)
 	if !TryAcquireMsgProcessing(cacheKey) {
 		logger.Chatwoot().Debug().Str("msgId", evt.Info.ID).Int("inboxId", cfg.InboxID).Msg("Chatwoot: skipping duplicate incoming processing")
@@ -87,7 +77,6 @@ func (s *Service) processIncomingMessageInternal(ctx context.Context, session *m
 
 	remoteJid := evt.Info.Chat.String()
 
-	// Resolve LID to standard JID using WhatsApp client's native store
 	remoteJid = resolveLIDToStandardJID(ctx, session.Client, remoteJid)
 
 	if s.ShouldIgnoreJid(cfg, remoteJid) {
@@ -108,7 +97,6 @@ func (s *Service) processIncomingMessageInternal(ctx context.Context, session *m
 		participantJid = evt.Info.Sender.String()
 	}
 
-	// Create contact name fetcher using whatsmeow's native ContactStore
 	var contactNameFetcher ContactNameFetcher
 	if session.Client != nil && session.Client.Store != nil && session.Client.Store.Contacts != nil {
 		contactNameFetcher = func(ctx context.Context, jid string) string {
@@ -120,7 +108,6 @@ func (s *Service) processIncomingMessageInternal(ctx context.Context, session *m
 			if contactErr != nil || !contact.Found {
 				return ""
 			}
-			// Return best available name: FullName > FirstName > PushName > BusinessName
 			if contact.FullName != "" {
 				return contact.FullName
 			}
@@ -199,7 +186,6 @@ func (s *Service) processIncomingMessageInternal(ctx context.Context, session *m
 	return 0, convID, cfg, nil
 }
 
-// processIncomingMediaMessageInternal handles media messages and returns Chatwoot IDs (no webhook)
 func (s *Service) processIncomingMediaMessageInternal(ctx context.Context, session *model.Session, evt *events.Message, c *client.Client, conversationID int, sourceID string, cfg *core.Config) (cwMsgID int, cwConvID int, retCfg *core.Config, err error) {
 	mediaInfo := util.GetMediaInfo(evt.Message)
 	if mediaInfo == nil {
@@ -263,7 +249,6 @@ func (s *Service) processIncomingMediaMessageInternal(ctx context.Context, sessi
 	return 0, conversationID, cfg, nil
 }
 
-// sendWebhookWithChatwootIds sends a webhook notification with Chatwoot message and conversation IDs
 func (s *Service) sendWebhookWithChatwootIds(ctx context.Context, session *model.Session, cfg *core.Config, evt *events.Message, cwMsgID, cwConvID int) {
 	if s.webhookSender == nil {
 		return
@@ -284,7 +269,6 @@ func (s *Service) sendWebhookWithChatwootIds(ctx context.Context, session *model
 	s.webhookSender.SendWithChatwoot(ctx, session.ID, session.Session, event, evt, cwInfo)
 }
 
-// sendWebhookWithPreserializedJSON sends webhook using pre-serialized JSON (optimized for queue processing)
 func (s *Service) sendWebhookWithPreserializedJSON(ctx context.Context, session *model.Session, cfg *core.Config, isFromMe bool, fullEventJSON []byte, cwMsgID, cwConvID int) {
 	if s.webhookSender == nil || len(fullEventJSON) == 0 {
 		return
@@ -305,18 +289,12 @@ func (s *Service) sendWebhookWithPreserializedJSON(ctx context.Context, session 
 	s.webhookSender.SendWithPreserializedJSON(ctx, session.ID, session.Session, event, fullEventJSON, cwInfo)
 }
 
-// =============================================================================
-// OUTGOING MESSAGE PROCESSING (WhatsApp direct -> Chatwoot)
-// =============================================================================
-
-// ProcessOutgoingMessage processes outgoing messages sent directly from WhatsApp (includes webhook)
 func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Session, evt *events.Message) error {
 	cwMsgID, cwConvID, cfg, err := s.processOutgoingMessageInternal(ctx, session, evt)
 	if err != nil {
 		return err
 	}
 
-	// Send webhook with Chatwoot IDs
 	if cfg != nil && cwMsgID > 0 {
 		s.sendWebhookWithChatwootIds(ctx, session, cfg, evt, cwMsgID, cwConvID)
 	}
@@ -324,7 +302,6 @@ func (s *Service) ProcessOutgoingMessage(ctx context.Context, session *model.Ses
 	return nil
 }
 
-// processOutgoingMessageInternal processes outgoing messages and returns Chatwoot IDs (no webhook)
 func (s *Service) processOutgoingMessageInternal(ctx context.Context, session *model.Session, evt *events.Message) (cwMsgID int, cwConvID int, cfg *core.Config, err error) {
 	cfg, err = s.repo.GetEnabledBySessionID(ctx, session.ID)
 	if err != nil {
@@ -334,7 +311,6 @@ func (s *Service) processOutgoingMessageInternal(ctx context.Context, session *m
 		return 0, 0, nil, nil
 	}
 
-	// Prevent duplicate processing with in-memory lock
 	cacheKey := fmt.Sprintf("out:%d:%s", cfg.InboxID, evt.Info.ID)
 	if !TryAcquireMsgProcessing(cacheKey) {
 		logger.Chatwoot().Debug().Str("msgId", evt.Info.ID).Int("inboxId", cfg.InboxID).Msg("Chatwoot: skipping duplicate outgoing processing")
@@ -344,7 +320,6 @@ func (s *Service) processOutgoingMessageInternal(ctx context.Context, session *m
 
 	remoteJid := evt.Info.Chat.String()
 
-	// Resolve LID to standard JID using WhatsApp client's native store
 	remoteJid = resolveLIDToStandardJID(ctx, session.Client, remoteJid)
 
 	if s.ShouldIgnoreJid(cfg, remoteJid) {
@@ -381,7 +356,6 @@ func (s *Service) processOutgoingMessageInternal(ctx context.Context, session *m
 		return 0, 0, nil, fmt.Errorf("failed to get/create conversation: %w", err)
 	}
 
-	// Handle media messages (audio, image, video, document, sticker)
 	if util.IsMediaMessage(evt.Message) && s.mediaDownloader != nil {
 		return s.processOutgoingMediaMessageInternal(ctx, session, evt, c, conv.ID, sourceID, cfg)
 	}
@@ -424,7 +398,6 @@ func (s *Service) processOutgoingMessageInternal(ctx context.Context, session *m
 	return 0, conv.ID, cfg, nil
 }
 
-// processOutgoingMediaMessageInternal handles outgoing media messages and returns Chatwoot IDs (no webhook)
 func (s *Service) processOutgoingMediaMessageInternal(ctx context.Context, session *model.Session, evt *events.Message, c *client.Client, conversationID int, sourceID string, cfg *core.Config) (cwMsgID int, cwConvID int, retCfg *core.Config, err error) {
 	mediaInfo := util.GetMediaInfo(evt.Message)
 	if mediaInfo == nil {
@@ -488,11 +461,6 @@ func (s *Service) processOutgoingMediaMessageInternal(ctx context.Context, sessi
 	return 0, conversationID, cfg, nil
 }
 
-// =============================================================================
-// REACTION PROCESSING
-// =============================================================================
-
-// ProcessReactionMessage handles reaction events from WhatsApp
 func (s *Service) ProcessReactionMessage(ctx context.Context, session *model.Session, emoji, targetMsgID, remoteJid, senderJid string, isFromMe bool) error {
 	cfg, err := s.repo.GetEnabledBySessionID(ctx, session.ID)
 	if err != nil {
@@ -568,11 +536,6 @@ func (s *Service) ProcessReactionMessage(ctx context.Context, session *model.Ses
 	return nil
 }
 
-// =============================================================================
-// RECEIPT PROCESSING
-// =============================================================================
-
-// ProcessReceipt handles message receipt (delivered/read) events
 func (s *Service) ProcessReceipt(ctx context.Context, session *model.Session, evt *events.Receipt) error {
 	cfg, err := s.repo.GetEnabledBySessionID(ctx, session.ID)
 	if err != nil {
@@ -594,7 +557,6 @@ func (s *Service) ProcessReceipt(ctx context.Context, session *model.Session, ev
 	return nil
 }
 
-// HandleMessageRead processes read receipts and updates Chatwoot last_seen
 func (s *Service) HandleMessageRead(ctx context.Context, session *model.Session, messageID string) error {
 	cfg, err := s.repo.GetEnabledBySessionID(ctx, session.ID)
 	if err != nil {
@@ -654,11 +616,6 @@ func (s *Service) HandleMessageRead(ctx context.Context, session *model.Session,
 	return nil
 }
 
-// =============================================================================
-// MESSAGE DELETE PROCESSING
-// =============================================================================
-
-// ProcessMessageDelete handles message deletion from WhatsApp
 func (s *Service) ProcessMessageDelete(ctx context.Context, session *model.Session, messageID string) error {
 	cfg, err := s.repo.GetEnabledBySessionID(ctx, session.ID)
 	if err != nil {
@@ -694,11 +651,6 @@ func (s *Service) ProcessMessageDelete(ctx context.Context, session *model.Sessi
 	return nil
 }
 
-// =============================================================================
-// CONTENT EXTRACTION
-// =============================================================================
-
-// extractMessageContent extracts text content from WhatsApp message
 func (s *Service) extractMessageContent(evt *events.Message) string {
 	msg := evt.Message
 	if msg == nil {
@@ -746,10 +698,8 @@ func (s *Service) extractMessageContent(evt *events.Message) string {
 	return ""
 }
 
-// contextExtractor extracts ContextInfo from a message type
 type contextExtractor func(*waE2E.Message) *waE2E.ContextInfo
 
-// contextExtractors defines all message types that can have ContextInfo
 var contextExtractors = []contextExtractor{
 	func(m *waE2E.Message) *waE2E.ContextInfo {
 		if ext := m.GetExtendedTextMessage(); ext != nil {
@@ -801,7 +751,6 @@ var contextExtractors = []contextExtractor{
 	},
 }
 
-// extractReplyInfo extracts reply/quote information from a WhatsApp message
 func (s *Service) extractReplyInfo(ctx context.Context, sessionID string, evt *events.Message) *core.ReplyInfo {
 	if s.database == nil || evt.Message == nil {
 		return nil
@@ -810,7 +759,6 @@ func (s *Service) extractReplyInfo(ctx context.Context, sessionID string, evt *e
 	var stanzaID string
 	var foundExtractor string
 
-	// Debug: Check each extractor explicitly for contact messages
 	if contact := evt.Message.GetContactMessage(); contact != nil {
 		if ctxInfo := contact.GetContextInfo(); ctxInfo != nil {
 			logger.Chatwoot().Debug().
@@ -853,7 +801,6 @@ func (s *Service) extractReplyInfo(ctx context.Context, sessionID string, evt *e
 		}
 	}
 
-	// If not found in contact messages, try other extractors
 	if stanzaID == "" {
 		for i, extract := range contextExtractors {
 			if ctxInfo := extract(evt.Message); ctxInfo != nil {
@@ -915,11 +862,6 @@ func (s *Service) extractReplyInfo(ctx context.Context, sessionID string, evt *e
 	}
 }
 
-// =============================================================================
-// CONTACT MESSAGE FORMATTING
-// =============================================================================
-
-// formatContactMessage formats a single contact message with vCard details
 func formatContactMessage(contact *waE2E.ContactMessage) string {
 	name := contact.GetDisplayName()
 	vcard := contact.GetVcard()
@@ -953,7 +895,6 @@ func formatContactMessage(contact *waE2E.ContactMessage) string {
 	return sb.String()
 }
 
-// formatContactsArrayMessage formats multiple contacts
 func formatContactsArrayMessage(contacts *waE2E.ContactsArrayMessage) string {
 	contactList := contacts.GetContacts()
 	if len(contactList) == 0 {

@@ -1,26 +1,42 @@
 package handler
 
-// ValidateCredentialsRequest represents the request to validate Chatwoot credentials
+// ValidationResult represents the result of Chatwoot credential validation
+type ValidationResult struct {
+	Valid             bool          `json:"valid"`
+	TokenValid        bool          `json:"tokenValid"`
+	AccountValid      bool          `json:"accountValid"`
+	UserID            int           `json:"userId,omitempty"`
+	UserName          string        `json:"userName,omitempty"`
+	UserEmail         string        `json:"userEmail,omitempty"`
+	UserRole          string        `json:"userRole,omitempty"`
+	AccountName       string        `json:"accountName,omitempty"`
+	AvailableAccounts []AccountInfo `json:"availableAccounts,omitempty"`
+	Error             string        `json:"error,omitempty"`
+	ErrorCode         string        `json:"errorCode,omitempty"`
+}
+
+// AccountInfo represents a Chatwoot account
+type AccountInfo struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+	Role string `json:"role"`
+}
+
 type ValidateCredentialsRequest struct {
 	URL     string `json:"url" binding:"required"`
 	Token   string `json:"token" binding:"required"`
 	Account int    `json:"account" binding:"required"`
 }
 
-// SetConfigRequest represents the request to set Chatwoot config
 type SetConfigRequest struct {
-	Enabled       bool   `json:"enabled"`
-	URL           string `json:"url" binding:"required_if=Enabled true"`
-	Token         string `json:"token" binding:"required_if=Enabled true"`
-	Account       int    `json:"account" binding:"required_if=Enabled true"`
-	InboxID       int    `json:"inboxId,omitempty"`
-	Inbox         string `json:"inbox,omitempty"`
-	SignAgent     bool   `json:"signAgent"`
-	SignSeparator string `json:"signSeparator,omitempty"`
-	// AutoReopen configures Chatwoot inbox settings for conversation management.
-	// When true: sets lock_to_single_conversation=true and allow_messages_after_resolved=true
-	// This means Chatwoot will automatically reopen resolved conversations when new messages arrive.
-	// When false: creates new conversations for each interaction (default Chatwoot behavior).
+	Enabled        bool     `json:"enabled"`
+	URL            string   `json:"url" binding:"required_if=Enabled true"`
+	Token          string   `json:"token" binding:"required_if=Enabled true"`
+	Account        int      `json:"account" binding:"required_if=Enabled true"`
+	InboxID        int      `json:"inboxId,omitempty"`
+	Inbox          string   `json:"inbox,omitempty"`
+	SignAgent      bool     `json:"signAgent"`
+	SignSeparator  string   `json:"signSeparator,omitempty"`
 	AutoReopen     bool     `json:"autoReopen"`
 	StartPending   bool     `json:"startPending"`
 	MergeBrPhones  bool     `json:"mergeBrPhones"`

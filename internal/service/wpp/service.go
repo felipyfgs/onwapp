@@ -13,13 +13,11 @@ import (
 	"onwapp/internal/util"
 )
 
-// SessionProvider defines interface for session management
 type SessionProvider interface {
 	Get(sessionId string) (*model.Session, error)
 	EmitSyntheticEvent(sessionId string, evt interface{})
 }
 
-// QuotedMessage holds information for quoting a previous message
 type QuotedMessage struct {
 	MessageID string
 	ChatJID   string
@@ -28,17 +26,14 @@ type QuotedMessage struct {
 	IsFromMe  bool
 }
 
-// Service handles WhatsApp operations
 type Service struct {
 	sessions SessionProvider
 }
 
-// New creates a new WhatsApp service
 func New(sessions SessionProvider) *Service {
 	return &Service{sessions: sessions}
 }
 
-// getClient returns the WhatsApp client for a session
 func (s *Service) getClient(sessionId string) (*whatsmeow.Client, error) {
 	session, err := s.sessions.Get(sessionId)
 	if err != nil {
@@ -50,17 +45,14 @@ func (s *Service) getClient(sessionId string) (*whatsmeow.Client, error) {
 	return session.Client, nil
 }
 
-// parseJID parses a phone number or JID string into a JID
 func parseJID(phone string) (types.JID, error) {
 	return util.ParseRecipientJID(phone)
 }
 
-// parseGroupJID parses a group ID string into a JID
 func parseGroupJID(groupID string) (types.JID, error) {
 	return util.ParseGroupJID(groupID)
 }
 
-// buildQuoteContext creates a ContextInfo for quoted messages
 func buildQuoteContext(quoted *QuotedMessage) *waE2E.ContextInfo {
 	if quoted == nil {
 		return nil
@@ -75,7 +67,6 @@ func buildQuoteContext(quoted *QuotedMessage) *waE2E.ContextInfo {
 	return ctx
 }
 
-// emitSentEvent emits a synthetic event for messages sent via API
 func (s *Service) emitSentEvent(sessionId string, resp whatsmeow.SendResponse, jid types.JID, msg *waE2E.Message) {
 	session, err := s.sessions.Get(sessionId)
 	if err != nil || session.Client.Store.ID == nil {

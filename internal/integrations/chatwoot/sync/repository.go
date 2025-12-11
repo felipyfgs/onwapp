@@ -13,7 +13,6 @@ import (
 	"onwapp/internal/integrations/chatwoot/core"
 )
 
-// Repository handles all Chatwoot database operations for sync
 type Repository struct {
 	db               *sql.DB
 	accountID        int
@@ -21,7 +20,6 @@ type Repository struct {
 	importAsResolved bool
 }
 
-// NewRepository creates a new sync repository
 func NewRepository(db *sql.DB, accountID, inboxID int) *Repository {
 	return &Repository{
 		db:        db,
@@ -30,19 +28,16 @@ func NewRepository(db *sql.DB, accountID, inboxID int) *Repository {
 	}
 }
 
-// SetImportAsResolved sets whether new conversations should be created as resolved
 func (r *Repository) SetImportAsResolved(resolved bool) {
 	r.importAsResolved = resolved
 }
 
-// OrphanCleanupResult holds the result of orphan cleanup
 type OrphanCleanupResult struct {
 	ContactInboxes int `json:"contactInboxes"`
 	Conversations  int `json:"conversations"`
 	Messages       int `json:"messages"`
 }
 
-// OrphanStats holds count of orphan records (for preview before cleanup)
 type OrphanStats struct {
 	ContactInboxes int  `json:"contactInboxes"`
 	Conversations  int  `json:"conversations"`
@@ -50,12 +45,9 @@ type OrphanStats struct {
 	InboxExists    bool `json:"inboxExists"`
 }
 
-// GetOrphanStats returns count of orphan records for OUR inbox only (preview before cleanup)
-// This is SCOPED to our inbox_id to avoid affecting other integrations
 func (r *Repository) GetOrphanStats(ctx context.Context) (*OrphanStats, error) {
 	stats := &OrphanStats{}
 
-	// Check if our inbox still exists
 	var exists bool
 	err := r.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM inboxes WHERE id = $1)`, r.inboxID).Scan(&exists)
 	if err != nil {
@@ -64,14 +56,9 @@ func (r *Repository) GetOrphanStats(ctx context.Context) (*OrphanStats, error) {
 	stats.InboxExists = exists
 
 	if exists {
-		// Inbox exists, no orphans from our inbox
 		return stats, nil
 	}
 
-	// Count orphan records that were from OUR inbox (now deleted)
-	// We can identify them by inbox_id matching our configured inbox
-
-	// Count orphan contact_inboxes from our inbox
 	err = r.db.QueryRowContext(ctx, `
 		SELECT COUNT(*) FROM contact_inboxes WHERE inbox_id = $1
 	`, r.inboxID).Scan(&stats.ContactInboxes)
@@ -79,7 +66,6 @@ func (r *Repository) GetOrphanStats(ctx context.Context) (*OrphanStats, error) {
 		return nil, wrapErr("count orphan contact_inboxes", err)
 	}
 
-	// Count orphan conversations from our inbox
 	err = r.db.QueryRowContext(ctx, `
 		SELECT COUNT(*) FROM conversations WHERE inbox_id = $1
 	`, r.inboxID).Scan(&stats.Conversations)
@@ -87,7 +73,6 @@ func (r *Repository) GetOrphanStats(ctx context.Context) (*OrphanStats, error) {
 		return nil, wrapErr("count orphan conversations", err)
 	}
 
-	// Count orphan messages from our inbox conversations
 	err = r.db.QueryRowContext(ctx, `
 		SELECT COUNT(*) FROM messages WHERE conversation_id IN (
 			SELECT id FROM conversations WHERE inbox_id = $1
@@ -100,13 +85,9 @@ func (r *Repository) GetOrphanStats(ctx context.Context) (*OrphanStats, error) {
 	return stats, nil
 }
 
-// CleanOurOrphanRecords removes orphan records ONLY from OUR inbox
-// This is safe to call as it won't affect other inboxes in the Chatwoot instance
-// Should only be called when our inbox has been deleted
 func (r *Repository) CleanOurOrphanRecords(ctx context.Context) (*OrphanCleanupResult, error) {
 	result := &OrphanCleanupResult{}
 
-	// First check if inbox exists - if it does, there are no orphans from us
 	var exists bool
 	err := r.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM inboxes WHERE id = $1)`, r.inboxID).Scan(&exists)
 	if err != nil {
@@ -114,14 +95,9 @@ func (r *Repository) CleanOurOrphanRecords(ctx context.Context) (*OrphanCleanupR
 	}
 
 	if exists {
-		// Inbox exists, nothing to clean
 		return result, nil
 	}
 
-	// Our inbox was deleted - clean up orphan records that belong to it
-	// Order matters due to foreign key constraints: messages -> conversations -> contact_inboxes
-
-	// 1. Delete messages from our inbox's conversations
 	res, err := r.db.ExecContext(ctx, `
 		DELETE FROM messages WHERE conversation_id IN (
 			SELECT id FROM conversations WHERE inbox_id = $1
@@ -133,7 +109,6 @@ func (r *Repository) CleanOurOrphanRecords(ctx context.Context) (*OrphanCleanupR
 	rows, _ := res.RowsAffected()
 	result.Messages = int(rows)
 
-	// 2. Delete conversations from our inbox
 	res, err = r.db.ExecContext(ctx, `
 		DELETE FROM conversations WHERE inbox_id = $1
 	`, r.inboxID)
@@ -143,7 +118,6 @@ func (r *Repository) CleanOurOrphanRecords(ctx context.Context) (*OrphanCleanupR
 	rows, _ = res.RowsAffected()
 	result.Conversations = int(rows)
 
-	// 3. Delete contact_inboxes from our inbox
 	res, err = r.db.ExecContext(ctx, `
 		DELETE FROM contact_inboxes WHERE inbox_id = $1
 	`, r.inboxID)
@@ -156,7 +130,6 @@ func (r *Repository) CleanOurOrphanRecords(ctx context.Context) (*OrphanCleanupR
 	return result, nil
 }
 
-// GetChatwootUser gets the user ID and type from the API token
 func (r *Repository) GetChatwootUser(ctx context.Context, token string) (userID int, userType string, err error) {
 	err = r.db.QueryRowContext(ctx, `
 		SELECT u.id, 'User' 
@@ -171,7 +144,6 @@ func (r *Repository) GetChatwootUser(ctx context.Context, token string) (userID 
 	return userID, userType, nil
 }
 
-// GetInboxID verifies and returns the inbox ID
 func (r *Repository) GetInboxID(ctx context.Context) (int, error) {
 	if r.inboxID == 0 {
 		return 0, nil
@@ -188,10 +160,8 @@ func (r *Repository) GetInboxID(ctx context.Context) (int, error) {
 	return inboxID, nil
 }
 
-// ErrInboxNotFound is returned when the configured inbox doesn't exist
 var ErrInboxNotFound = errors.New("inbox not found - it may have been deleted in Chatwoot")
 
-// ValidateInbox checks if the configured inbox still exists
 func (r *Repository) ValidateInbox(ctx context.Context) error {
 	if r.inboxID == 0 {
 		return errors.New("inbox ID not configured")
@@ -208,7 +178,6 @@ func (r *Repository) ValidateInbox(ctx context.Context) error {
 	return nil
 }
 
-// GetExistingSourceIDs returns a map of existing source IDs
 func (r *Repository) GetExistingSourceIDs(ctx context.Context, messageIDs []string) (map[string]bool, error) {
 	existing := make(map[string]bool)
 	if len(messageIDs) == 0 {
@@ -247,13 +216,11 @@ func (r *Repository) GetExistingSourceIDs(ctx context.Context, messageIDs []stri
 	return existing, nil
 }
 
-// ContactWithoutAvatar represents a contact without avatar
 type ContactWithoutAvatar struct {
 	ID         int
 	Identifier string
 }
 
-// GetContactsWithoutAvatar returns contacts that don't have avatars
 func (r *Repository) GetContactsWithoutAvatar(ctx context.Context) ([]ContactWithoutAvatar, error) {
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT c.id, c.identifier 
@@ -284,15 +251,12 @@ func (r *Repository) GetContactsWithoutAvatar(ctx context.Context) ([]ContactWit
 	return contacts, rows.Err()
 }
 
-// ContactSyncResult holds the result of a contact sync operation
 type ContactSyncResult struct {
 	Inserted int
 	Updated  int
 	Skipped  int
 }
 
-// UpsertContactsBatch inserts or updates contacts in batch
-// Returns accurate counts: inserted (new), updated (changed), skipped (unchanged)
 func (r *Repository) UpsertContactsBatch(ctx context.Context, contacts []ContactInsertData) (int, error) {
 	result, err := r.UpsertContactsBatchDetailed(ctx, contacts)
 	if err != nil {
@@ -301,14 +265,12 @@ func (r *Repository) UpsertContactsBatch(ctx context.Context, contacts []Contact
 	return result.Inserted, nil
 }
 
-// UpsertContactsBatchDetailed inserts or updates contacts with detailed stats
 func (r *Repository) UpsertContactsBatchDetailed(ctx context.Context, contacts []ContactInsertData) (*ContactSyncResult, error) {
 	result := &ContactSyncResult{}
 	if len(contacts) == 0 {
 		return result, nil
 	}
 
-	// Get existing contacts by identifier
 	identifiers := make([]string, len(contacts))
 	for i, c := range contacts {
 		identifiers[i] = c.Identifier
@@ -318,7 +280,6 @@ func (r *Repository) UpsertContactsBatchDetailed(ctx context.Context, contacts [
 		return nil, err
 	}
 
-	// Separate new vs existing
 	var newContacts, existingContacts []ContactInsertData
 	for _, c := range contacts {
 		if existing[c.Identifier] {
@@ -328,7 +289,6 @@ func (r *Repository) UpsertContactsBatchDetailed(ctx context.Context, contacts [
 		}
 	}
 
-	// Insert only new contacts
 	if len(newContacts) > 0 {
 		inserted, err := r.insertNewContacts(ctx, newContacts)
 		if err != nil {
@@ -337,7 +297,6 @@ func (r *Repository) UpsertContactsBatchDetailed(ctx context.Context, contacts [
 		result.Inserted = inserted
 	}
 
-	// Update existing contacts (only if name changed)
 	if len(existingContacts) > 0 {
 		updated, err := r.updateExistingContacts(ctx, existingContacts)
 		if err != nil {
@@ -350,7 +309,6 @@ func (r *Repository) UpsertContactsBatchDetailed(ctx context.Context, contacts [
 	return result, nil
 }
 
-// getExistingContactIdentifiers returns a map of identifiers that already exist
 func (r *Repository) getExistingContactIdentifiers(ctx context.Context, identifiers []string) (map[string]bool, error) {
 	existing := make(map[string]bool)
 	if len(identifiers) == 0 {
@@ -373,7 +331,6 @@ func (r *Repository) getExistingContactIdentifiers(ctx context.Context, identifi
 	return existing, rows.Err()
 }
 
-// insertNewContacts inserts only new contacts
 func (r *Repository) insertNewContacts(ctx context.Context, contacts []ContactInsertData) (int, error) {
 	if len(contacts) == 0 {
 		return 0, nil
@@ -404,7 +361,6 @@ func (r *Repository) insertNewContacts(ctx context.Context, contacts []ContactIn
 	return int(rows), nil
 }
 
-// updateExistingContacts updates existing contacts only if name is better
 func (r *Repository) updateExistingContacts(ctx context.Context, contacts []ContactInsertData) (int, error) {
 	if len(contacts) == 0 {
 		return 0, nil
@@ -419,7 +375,6 @@ func (r *Repository) updateExistingContacts(ctx context.Context, contacts []Cont
 		values = append(values, fmt.Sprintf("($%d, $%d)", idx, idx+1))
 	}
 
-	// Only update if current name is just phone number or empty
 	query := fmt.Sprintf(`
 		WITH new_data AS (
 			SELECT name, identifier FROM (VALUES %s) AS t (name, identifier)
@@ -446,7 +401,6 @@ func (r *Repository) updateExistingContacts(ctx context.Context, contacts []Cont
 	return int(rows), nil
 }
 
-// GetContactsCount returns total contacts count in Chatwoot for this account
 func (r *Repository) GetContactsCount(ctx context.Context) (int, error) {
 	var count int
 	err := r.db.QueryRowContext(ctx, `
@@ -458,7 +412,6 @@ func (r *Repository) GetContactsCount(ctx context.Context) (int, error) {
 	return count, nil
 }
 
-// GetContactsWithIdentifierCount returns count of contacts with WhatsApp identifier
 func (r *Repository) GetContactsWithIdentifierCount(ctx context.Context) (int, error) {
 	var count int
 	err := r.db.QueryRowContext(ctx, `
@@ -474,7 +427,6 @@ func (r *Repository) GetContactsWithIdentifierCount(ctx context.Context) (int, e
 	return count, nil
 }
 
-// SyncOverview holds comprehensive sync statistics
 type SyncOverview struct {
 	Contacts      ContactsOverview      `json:"contacts"`
 	Conversations ConversationsOverview `json:"conversations"`
@@ -505,11 +457,9 @@ type MessagesOverview struct {
 	Outgoing int `json:"outgoing"`
 }
 
-// GetSyncOverview returns comprehensive sync statistics
 func (r *Repository) GetSyncOverview(ctx context.Context) (*SyncOverview, error) {
 	overview := &SyncOverview{}
 
-	// Contacts - detailed breakdown
 	if err := r.db.QueryRowContext(ctx, `
 		SELECT 
 			COUNT(*),
@@ -532,7 +482,6 @@ func (r *Repository) GetSyncOverview(ctx context.Context) (*SyncOverview, error)
 	}
 	overview.Contacts.WhatsAppSynced = overview.Contacts.Private + overview.Contacts.Groups
 
-	// Conversations by status and type
 	if r.inboxID > 0 {
 		if err := r.db.QueryRowContext(ctx, `
 			SELECT 
@@ -555,7 +504,6 @@ func (r *Repository) GetSyncOverview(ctx context.Context) (*SyncOverview, error)
 			return nil, wrapErr("get conversations stats", err)
 		}
 
-		// Messages
 		if err := r.db.QueryRowContext(ctx, `
 			SELECT 
 				COUNT(*),
@@ -612,21 +560,18 @@ func (r *Repository) GetSyncOverview(ctx context.Context) (*SyncOverview, error)
 	return overview, nil
 }
 
-// ContactInsertData holds data for contact insertion
 type ContactInsertData struct {
 	Name       string
 	Phone      string
 	Identifier string
 }
 
-// CreateContactsAndConversations creates contacts, contact_inboxes, and conversations in batch
 func (r *Repository) CreateContactsAndConversations(ctx context.Context, phoneData []core.PhoneTimestamp) (map[string]*core.ChatFKs, error) {
 	result := make(map[string]*core.ChatFKs)
 	if len(phoneData) == 0 {
 		return result, nil
 	}
 
-	// Build query values
 	values1 := make([]string, 0, len(phoneData))
 	values2 := make([]string, 0, len(phoneData))
 	args1 := make([]interface{}, 1, 1+len(phoneData)*4)
@@ -647,28 +592,22 @@ func (r *Repository) CreateContactsAndConversations(ctx context.Context, phoneDa
 			idx2, pd.FirstTS, pd.LastTS, idx2+1, idx2+2))
 	}
 
-	// Step 1: Upsert contacts
 	if err := r.upsertContactsWithTimestamp(ctx, values1, args1); err != nil {
 		return nil, err
 	}
 
-	// Step 2: Create contact_inboxes
 	if err := r.createContactInboxes(ctx, values2, args2); err != nil {
 		return nil, err
 	}
 
-	// Step 3: Create conversations
 	if err := r.createConversations(ctx, values2, args2); err != nil {
 		return nil, err
 	}
 
-	// Step 4: Query FKs
 	return r.queryFKs(ctx, values2, args2)
 }
 
 func (r *Repository) upsertContactsWithTimestamp(ctx context.Context, values []string, args []interface{}) error {
-	// Step 1: Update identifier for existing contacts matched by phone_number (non-groups only)
-	// This prevents creating duplicate contacts when identifier differs but phone is the same
 	updateQuery := fmt.Sprintf(`
 		WITH phone_data AS (
 			SELECT phone_number, identifier, is_group FROM (
@@ -686,7 +625,6 @@ func (r *Repository) upsertContactsWithTimestamp(ctx context.Context, values []s
 
 	_, _ = r.db.ExecContext(ctx, updateQuery, args...)
 
-	// Step 2: Now do the upsert - existing contacts will match by identifier
 	query := fmt.Sprintf(`
 		WITH phone_data AS (
 			SELECT phone_number, created_at, last_activity_at, contact_name, identifier, is_group FROM (
@@ -710,7 +648,6 @@ func (r *Repository) upsertContactsWithTimestamp(ctx context.Context, values []s
 }
 
 func (r *Repository) createContactInboxes(ctx context.Context, values []string, args []interface{}) error {
-	// Only create contact_inbox if none exists for that contact+inbox combination
 	query := fmt.Sprintf(`
 		WITH phone_data AS (
 			SELECT identifier FROM (VALUES %s) AS t (phone_number, created_at, last_activity_at, contact_name, identifier)
@@ -739,9 +676,6 @@ func (r *Repository) createContactInboxes(ctx context.Context, values []string, 
 }
 
 func (r *Repository) createConversations(ctx context.Context, values []string, args []interface{}) error {
-	// Only create conversation if none exists for that contact in that inbox
-	// This checks by contact_id + inbox_id, NOT just contact_inbox_id
-	// Status: 0=open, 1=resolved
 	status := 0
 	if r.importAsResolved {
 		status = 1
@@ -778,8 +712,6 @@ func (r *Repository) createConversations(ctx context.Context, values []string, a
 func (r *Repository) queryFKs(ctx context.Context, values []string, args []interface{}) (map[string]*core.ChatFKs, error) {
 	result := make(map[string]*core.ChatFKs)
 
-	// Query existing conversations by contact_id + inbox_id
-	// If multiple conversations exist, prefer the one with most messages (or oldest)
 	query := fmt.Sprintf(`
 		WITH phone_data AS (
 			SELECT phone_number, identifier FROM (VALUES %s) AS t (phone_number, created_at, last_activity_at, contact_name, identifier)
@@ -815,7 +747,6 @@ func (r *Repository) queryFKs(ctx context.Context, values []string, args []inter
 	return result, rows.Err()
 }
 
-// InsertMessage inserts a single message
 func (r *Repository) InsertMessage(ctx context.Context, msg MessageInsertData) error {
 	_, err := r.db.ExecContext(ctx, `
 		INSERT INTO messages (content, processed_message_content, account_id, inbox_id, conversation_id, 
@@ -829,7 +760,6 @@ func (r *Repository) InsertMessage(ctx context.Context, msg MessageInsertData) e
 	return nil
 }
 
-// MessageInsertData holds data for message insertion
 type MessageInsertData struct {
 	Content             string
 	ConversationID      int
@@ -841,9 +771,6 @@ type MessageInsertData struct {
 	InReplyToExternalID string
 }
 
-// InsertMessagesBatch inserts multiple messages in a single query (bulk INSERT)
-// Note: Chatwoot's messages table doesn't have a UNIQUE constraint on source_id,
-// so we filter duplicates beforehand using GetExistingSourceIDs
 func (r *Repository) InsertMessagesBatch(ctx context.Context, messages []MessageInsertData) (int, error) {
 	if len(messages) == 0 {
 		return 0, nil
@@ -877,13 +804,11 @@ func (r *Repository) InsertMessagesBatch(ctx context.Context, messages []Message
 	return int(rows), nil
 }
 
-// GetInsertedMessageIDs returns a map of source_id -> chatwoot_id for the given source IDs
 func (r *Repository) GetInsertedMessageIDs(ctx context.Context, sourceIDs []string) (map[string]int, error) {
 	if len(sourceIDs) == 0 {
 		return nil, nil
 	}
 
-	// Build placeholders for IN clause
 	placeholders := make([]string, len(sourceIDs))
 	args := make([]interface{}, len(sourceIDs)+1)
 	args[0] = r.inboxID
@@ -915,31 +840,21 @@ func (r *Repository) GetInsertedMessageIDs(ctx context.Context, sourceIDs []stri
 	return result, rows.Err()
 }
 
-// ResolveQuotedMessages updates content_attributes for messages with quoted references
-// It resolves in_reply_to_external_id to find the actual message ID
 func (r *Repository) ResolveQuotedMessages(ctx context.Context, quotedRefs map[string]string) (int, error) {
 	if len(quotedRefs) == 0 {
 		return 0, nil
 	}
 
-	// quotedRefs is map[source_id]quoted_source_id
-	// We need to update messages where source_id matches and set content_attributes
-	// with both in_reply_to (resolved message.id) and in_reply_to_external_id
-
 	var totalUpdated int
 	for sourceID, quotedSourceID := range quotedRefs {
-		// Find the quoted message ID
 		var quotedMsgID int
 		err := r.db.QueryRowContext(ctx,
 			`SELECT id FROM messages WHERE source_id = $1 AND inbox_id = $2 LIMIT 1`,
 			quotedSourceID, r.inboxID).Scan(&quotedMsgID)
 		if err != nil {
-			// Quoted message not found, skip
 			continue
 		}
 
-		// Update the message with resolved content_attributes
-		// Chatwoot stores content_attributes as a JSON string (not object), so we need to double-encode
 		innerJSON := fmt.Sprintf(`{"in_reply_to":%d,"in_reply_to_external_id":null}`, quotedMsgID)
 		result, err := r.db.ExecContext(ctx,
 			`UPDATE messages SET content_attributes = to_json($1::text) WHERE source_id = $2 AND inbox_id = $3`,
@@ -954,7 +869,6 @@ func (r *Repository) ResolveQuotedMessages(ctx context.Context, quotedRefs map[s
 	return totalUpdated, nil
 }
 
-// UpdateConversationTimestampsBatch updates timestamps for multiple conversations in a single query
 func (r *Repository) UpdateConversationTimestampsBatch(ctx context.Context, timestamps map[int]time.Time) error {
 	if len(timestamps) == 0 {
 		return nil
@@ -983,7 +897,6 @@ func (r *Repository) UpdateConversationTimestampsBatch(ctx context.Context, time
 	return nil
 }
 
-// UpdateMessageTimestamp updates the timestamp of a message
 func (r *Repository) UpdateMessageTimestamp(ctx context.Context, messageID int, timestamp time.Time) error {
 	_, err := r.db.ExecContext(ctx,
 		`UPDATE messages SET created_at = $1, updated_at = $1 WHERE id = $2`,
@@ -994,7 +907,6 @@ func (r *Repository) UpdateMessageTimestamp(ctx context.Context, messageID int, 
 	return nil
 }
 
-// UpdateConversationTimestamp updates the last_activity_at for a conversation
 func (r *Repository) UpdateConversationTimestamp(ctx context.Context, conversationID int, timestamp time.Time) error {
 	_, err := r.db.ExecContext(ctx,
 		`UPDATE conversations SET last_activity_at = $1, updated_at = $1 WHERE id = $2 AND (last_activity_at IS NULL OR last_activity_at < $1)`,
@@ -1005,7 +917,6 @@ func (r *Repository) UpdateConversationTimestamp(ctx context.Context, conversati
 	return nil
 }
 
-// TouchInboxConversations updates updated_at on all inbox conversations to invalidate Chatwoot cache
 func (r *Repository) TouchInboxConversations(ctx context.Context) error {
 	_, err := r.db.ExecContext(ctx,
 		`UPDATE conversations SET updated_at = NOW() WHERE inbox_id = $1`,
@@ -1016,18 +927,13 @@ func (r *Repository) TouchInboxConversations(ctx context.Context) error {
 	return nil
 }
 
-// UpdateConversationTimestamps updates timestamps for multiple conversations (best-effort)
 func (r *Repository) UpdateConversationTimestamps(ctx context.Context, timestamps map[int]time.Time) {
 	for convID, ts := range timestamps {
 		_ = r.UpdateConversationTimestamp(ctx, convID, ts)
 	}
 }
 
-// FixConversationCreatedAt updates conversation and contact_inbox created_at to match oldest message
-// This is needed because Chatwoot UI ignores messages with created_at before conversation/contact_inbox creation
-// Uses CTE for better performance (avoids correlated subquery per row)
 func (r *Repository) FixConversationCreatedAt(ctx context.Context) (int, error) {
-	// Fix conversations using CTE (more efficient than correlated subquery)
 	result, err := r.db.ExecContext(ctx, `
 		WITH oldest_messages AS (
 			SELECT m.conversation_id, MIN(m.created_at) as oldest_at
@@ -1049,7 +955,6 @@ func (r *Repository) FixConversationCreatedAt(ctx context.Context) (int, error) 
 	}
 	rows, _ := result.RowsAffected()
 
-	// Fix contact_inboxes to match conversation created_at
 	_, _ = r.db.ExecContext(ctx, `
 		UPDATE contact_inboxes ci
 		SET created_at = c.created_at
@@ -1063,7 +968,6 @@ func (r *Repository) FixConversationCreatedAt(ctx context.Context) (int, error) 
 	return int(rows), nil
 }
 
-// DeleteMessages deletes messages for the account
 func (r *Repository) DeleteMessages(ctx context.Context, inboxID int) (int, error) {
 	var query string
 	var args []interface{}
@@ -1089,7 +993,6 @@ func (r *Repository) DeleteMessages(ctx context.Context, inboxID int) (int, erro
 	return int(rows), nil
 }
 
-// DeleteConversations deletes conversations for the account
 func (r *Repository) DeleteConversations(ctx context.Context, inboxID int) (int, error) {
 	var query string
 	var args []interface{}
@@ -1111,7 +1014,6 @@ func (r *Repository) DeleteConversations(ctx context.Context, inboxID int) (int,
 	return int(rows), nil
 }
 
-// DeleteContactInboxes deletes contact_inboxes for the account
 func (r *Repository) DeleteContactInboxes(ctx context.Context, inboxID int) (int, error) {
 	var query string
 	var args []interface{}
@@ -1135,7 +1037,6 @@ func (r *Repository) DeleteContactInboxes(ctx context.Context, inboxID int) (int
 	return int(rows), nil
 }
 
-// DeleteContacts deletes contacts for the account
 func (r *Repository) DeleteContacts(ctx context.Context) (int, error) {
 	result, err := r.db.ExecContext(ctx,
 		`DELETE FROM contacts WHERE account_id = $1 AND id > 1`,
@@ -1148,19 +1049,15 @@ func (r *Repository) DeleteContacts(ctx context.Context) (int, error) {
 	return int(rows), nil
 }
 
-// ResolveAllConversations sets all open and pending conversations to resolved status
-// Chatwoot status: 0=open, 1=resolved, 2=pending
 func (r *Repository) ResolveAllConversations(ctx context.Context) (int, error) {
 	var query string
 	var args []interface{}
 
 	if r.inboxID > 0 {
-		// Resolve both open (0) and pending (2) conversations
 		query = `UPDATE conversations SET status = 1, updated_at = NOW() 
 			WHERE account_id = $1 AND inbox_id = $2 AND status IN (0, 2)`
 		args = []interface{}{r.accountID, r.inboxID}
 	} else {
-		// Resolve both open (0) and pending (2) conversations from ALL inboxes
 		query = `UPDATE conversations SET status = 1, updated_at = NOW() 
 			WHERE account_id = $1 AND status IN (0, 2)`
 		args = []interface{}{r.accountID}
@@ -1175,7 +1072,6 @@ func (r *Repository) ResolveAllConversations(ctx context.Context) (int, error) {
 	return int(rows), nil
 }
 
-// GetOpenConversationsCount returns count of open conversations
 func (r *Repository) GetOpenConversationsCount(ctx context.Context) (int, error) {
 	var count int
 	var query string
@@ -1196,7 +1092,6 @@ func (r *Repository) GetOpenConversationsCount(ctx context.Context) (int, error)
 	return count, nil
 }
 
-// UpdateMessageTimestampsBatch updates timestamps for multiple messages in a single query
 func (r *Repository) UpdateMessageTimestampsBatch(ctx context.Context, timestamps map[int]time.Time) error {
 	if len(timestamps) == 0 {
 		return nil
@@ -1225,15 +1120,12 @@ func (r *Repository) UpdateMessageTimestampsBatch(ctx context.Context, timestamp
 	return nil
 }
 
-// CreateContactsAndConversationsOptimized creates contacts, contact_inboxes, and conversations
-// in a single optimized transaction using CTEs
 func (r *Repository) CreateContactsAndConversationsOptimized(ctx context.Context, phoneData []core.PhoneTimestamp) (map[string]*core.ChatFKs, error) {
 	result := make(map[string]*core.ChatFKs)
 	if len(phoneData) == 0 {
 		return result, nil
 	}
 
-	// Build VALUES clause
 	values := make([]string, 0, len(phoneData))
 	args := make([]interface{}, 2, 2+len(phoneData)*6)
 	args[0] = r.accountID
@@ -1251,7 +1143,6 @@ func (r *Repository) CreateContactsAndConversationsOptimized(ctx context.Context
 		status = 1
 	}
 
-	// Single query with CTEs for all operations
 	query := fmt.Sprintf(`
 		WITH phone_data AS (
 			SELECT phone_number, contact_name, identifier, is_group, first_ts, last_ts 

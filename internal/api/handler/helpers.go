@@ -13,17 +13,14 @@ import (
 	"onwapp/internal/util/web"
 )
 
-// IsURL checks if a string is a URL
 func IsURL(s string) bool {
 	return strings.HasPrefix(s, "http://") || strings.HasPrefix(s, "https://")
 }
 
-// DownloadFromURL downloads content from a URL with SSRF protection and size limits
 func DownloadFromURL(url string) ([]byte, string, error) {
 	return web.DownloadFromURL(url)
 }
 
-// GetMediaData handles URL or base64 input and returns the raw bytes and detected mime type
 func GetMediaData(media string, mediaType string) ([]byte, string, error) {
 	if media == "" {
 		return nil, "", fmt.Errorf("%s is required", mediaType)
@@ -37,24 +34,20 @@ func GetMediaData(media string, mediaType string) ([]byte, string, error) {
 		return data, mimeType, nil
 	}
 
-	// Try base64 decode
 	data, err := base64.StdEncoding.DecodeString(media)
 	if err != nil {
 		return nil, "", fmt.Errorf("invalid base64 %s", mediaType)
 	}
 
-	// Detect mime type from content
 	mimeType := http.DetectContentType(data)
 	return data, mimeType, nil
 }
 
-// IsMultipartRequest checks if the request is multipart/form-data
 func IsMultipartRequest(c *gin.Context) bool {
 	contentType := c.GetHeader("Content-Type")
 	return strings.HasPrefix(contentType, "multipart/form-data")
 }
 
-// GetMediaFromForm extracts file from multipart form and returns bytes and mime type
 func GetMediaFromForm(r *http.Request, fieldName string) ([]byte, string, error) {
 	file, header, err := r.FormFile(fieldName)
 	if err != nil {
@@ -67,7 +60,6 @@ func GetMediaFromForm(r *http.Request, fieldName string) ([]byte, string, error)
 		return nil, "", fmt.Errorf("failed to read file: %w", err)
 	}
 
-	// Get mime type from header or detect from content
 	mimeType := header.Header.Get("Content-Type")
 	if mimeType == "" {
 		mimeType = http.DetectContentType(data)

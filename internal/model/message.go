@@ -5,10 +5,6 @@ import (
 	"time"
 )
 
-// =============================================================================
-// MESSAGE STATUS
-// =============================================================================
-
 type MessageStatus string
 
 const (
@@ -19,10 +15,6 @@ const (
 	MessageStatusPlayed    MessageStatus = "played"
 	MessageStatusFailed    MessageStatus = "failed"
 )
-
-// =============================================================================
-// MESSAGE TYPE
-// =============================================================================
 
 type MessageType string
 
@@ -44,20 +36,12 @@ const (
 	MessageTypeUnknown      MessageType = "unknown"
 )
 
-// =============================================================================
-// MESSAGE DIRECTION
-// =============================================================================
-
 type MessageDirection string
 
 const (
 	DirectionIncoming MessageDirection = "incoming"
 	DirectionOutgoing MessageDirection = "outgoing"
 )
-
-// =============================================================================
-// MESSAGE STUB TYPES (System Messages)
-// =============================================================================
 
 type MessageStubType int
 
@@ -84,89 +68,63 @@ const (
 	StubTypeMessageDeleted          MessageStubType = 132
 )
 
-// =============================================================================
-// MESSAGE
-// =============================================================================
-
 type Message struct {
-	// Primary Key
 	ID        string `json:"id"`
 	SessionID string `json:"sessionId"`
 
-	// WhatsApp Identifiers
 	MsgId     string    `json:"msgId"`
 	ChatJID   string    `json:"chatJid"`
 	SenderJID string    `json:"senderJid"`
 	Timestamp time.Time `json:"timestamp"`
 
-	// Sender Info
 	PushName     string  `json:"pushName,omitempty"`
 	SenderAlt    string  `json:"senderAlt,omitempty"`
 	ServerId     *int64  `json:"serverId,omitempty"`
 	VerifiedName *string `json:"verifiedName,omitempty"`
 
-	// Message Classification
 	Type      string `json:"type"`
 	MediaType string `json:"mediaType,omitempty"`
 	Category  string `json:"category,omitempty"`
 
-	// Content
 	Content string `json:"content,omitempty"`
 
-	// Direction & Context Flags
 	FromMe    bool `json:"fromMe"`
 	IsGroup   bool `json:"isGroup"`
 	Ephemeral bool `json:"ephemeral"`
 	ViewOnce  bool `json:"viewOnce"`
 	IsEdit    bool `json:"isEdit"`
 
-	// Edit Context
 	EditTargetID string `json:"editTargetId,omitempty"`
 
-	// Reply/Quote Context
 	QuotedID     string `json:"quotedId,omitempty"`
 	QuotedSender string `json:"quotedSender,omitempty"`
 
-	// Chatwoot Integration
 	CwMsgId    *int   `json:"cwMsgId,omitempty"`
 	CwConvId   *int   `json:"cwConvId,omitempty"`
 	CwSourceId string `json:"cwSourceId,omitempty"`
 
-	// Delivery Status (for outgoing messages)
 	Status      MessageStatus `json:"status"`
 	DeliveredAt *time.Time    `json:"deliveredAt,omitempty"`
 	ReadAt      *time.Time    `json:"readAt,omitempty"`
 
-	// Reactions Array
 	Reactions json.RawMessage `json:"reactions,omitempty"`
 
-	// Full Event Data
 	RawEvent json.RawMessage `json:"rawEvent,omitempty"`
 
-	// History Sync Fields
 	MsgOrderID    *int64   `json:"msgOrderId,omitempty"`
 	StubType      *int     `json:"stubType,omitempty"`
 	StubParams    []string `json:"stubParams,omitempty"`
 	MessageSecret []byte   `json:"messageSecret,omitempty"`
 	Broadcast     bool     `json:"broadcast,omitempty"`
 
-	// Metadata
 	CreatedAt time.Time `json:"createdAt"`
 }
-
-// =============================================================================
-// REACTION
-// =============================================================================
 
 type Reaction struct {
 	Emoji     string `json:"emoji"`
 	SenderJID string `json:"senderJid"`
 	Timestamp int64  `json:"timestamp"`
 }
-
-// =============================================================================
-// HELPER METHODS
-// =============================================================================
 
 func (m *Message) Direction() MessageDirection {
 	if m.FromMe {
@@ -183,12 +141,10 @@ func (m *Message) IsMedia() bool {
 	return false
 }
 
-// IsSystemMessage returns true if this is a system/stub message
 func (m *Message) IsSystemMessage() bool {
 	return m.StubType != nil && *m.StubType > 0
 }
 
-// IsParticipantEvent returns true if this is a participant add/remove/leave event
 func (m *Message) IsParticipantEvent() bool {
 	if m.StubType == nil {
 		return false
@@ -202,7 +158,6 @@ func (m *Message) IsParticipantEvent() bool {
 	return false
 }
 
-// IsValid checks if the MessageStatus is a valid status
 func (s MessageStatus) IsValid() bool {
 	switch s {
 	case MessageStatusPending, MessageStatusSent, MessageStatusDelivered,
@@ -212,7 +167,6 @@ func (s MessageStatus) IsValid() bool {
 	return false
 }
 
-// IsValid checks if the MessageType is a valid type
 func (t MessageType) IsValid() bool {
 	switch t {
 	case MessageTypeText, MessageTypeImage, MessageTypeVideo, MessageTypeAudio,

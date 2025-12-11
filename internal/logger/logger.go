@@ -18,7 +18,6 @@ import (
 	"onwapp/internal/version"
 )
 
-// Format aliases for convenience
 const (
 	Console = config.LogFormatConsole
 	JSON    = config.LogFormatJSON
@@ -112,7 +111,6 @@ func GinMiddleware() gin.HandlerFunc {
 		path := c.Request.URL.Path
 		query := c.Request.URL.RawQuery
 
-		// Generate or use existing request ID
 		requestID := c.GetHeader(RequestIDKey)
 		if requestID == "" {
 			requestID = uuid.New().String()
@@ -125,7 +123,6 @@ func GinMiddleware() gin.HandlerFunc {
 		latency := time.Since(start)
 		status := c.Writer.Status()
 
-		// Use DEBUG for high-frequency webhook routes
 		isWebhook := strings.HasPrefix(path, "/chatwoot/webhook/")
 
 		event := Log.Info()
@@ -191,17 +188,14 @@ func Fatal() *zerolog.Event {
 	return Log.Fatal()
 }
 
-// Module returns a logger with module context
 func Module(name string) zerolog.Logger {
 	return Log.With().Str("module", name).Logger()
 }
 
-// ModuleLevel returns a logger with module context and specific level (filters verbose logs)
 func ModuleLevel(name string, level zerolog.Level) zerolog.Logger {
 	return Log.With().Str("module", name).Logger().Level(level)
 }
 
-// Pre-configured module loggers
 func Core() *zerolog.Logger     { l := Module("CORE"); return &l }
 func DB() *zerolog.Logger       { l := Module("DB"); return &l }
 func Storage() *zerolog.Logger  { l := Module("STORAGE"); return &l }
@@ -212,12 +206,10 @@ func Chatwoot() *zerolog.Logger { l := Module("CHATWOOT"); return &l }
 func API() *zerolog.Logger      { l := Module("API"); return &l }
 func Queue() *zerolog.Logger    { l := Module("QUEUE"); return &l }
 
-// FilteredDBLogger returns a logger that filters noisy whatsmeow messages
 func FilteredDBLogger() zerolog.Logger {
 	return Log.With().Str("module", "DB").Logger().Hook(dbFilterHook{})
 }
 
-// dbFilterHook filters specific noisy messages from whatsmeow
 type dbFilterHook struct{}
 
 func (h dbFilterHook) Run(e *zerolog.Event, level zerolog.Level, msg string) {
@@ -226,7 +218,6 @@ func (h dbFilterHook) Run(e *zerolog.Event, level zerolog.Level, msg string) {
 	}
 }
 
-// Sensitive data patterns to sanitize in logs
 var sensitivePatterns = []string{
 	"password",
 	"apiKey",
@@ -239,7 +230,6 @@ var sensitivePatterns = []string{
 	"access_key",
 }
 
-// SanitizeForLog removes sensitive data from a map before logging
 func SanitizeForLog(data map[string]interface{}) map[string]interface{} {
 	sanitized := make(map[string]interface{}, len(data))
 	for k, v := range data {
@@ -262,16 +252,13 @@ func SanitizeForLog(data map[string]interface{}) map[string]interface{} {
 	return sanitized
 }
 
-// SanitizeString masks sensitive data in a string
 func SanitizeString(s string) string {
-	// Mask API keys (hex strings longer than 16 chars)
 	if len(s) > 16 {
 		return s[:4] + "***" + s[len(s)-4:]
 	}
 	return s
 }
 
-// RedactAuthHeader redacts authorization header for logging
 func RedactAuthHeader(header string) string {
 	if header == "" {
 		return ""

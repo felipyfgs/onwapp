@@ -96,7 +96,6 @@ func main() {
 		logger.DB().Fatal().Err(err).Msg("Failed to initialize database")
 	}
 
-	// Initialize Storage service (MinIO)
 	storageService, err := service.NewStorageService(cfg)
 	if err != nil {
 		logger.Storage().Warn().Err(err).Msg("Failed to initialize storage service, media storage disabled")
@@ -109,37 +108,31 @@ func main() {
 		}
 	}
 
-	// Initialize Media service
 	var mediaService *service.MediaService
 	if storageService != nil {
 		mediaService = service.NewMediaService(database, storageService)
 	}
 
-	// Initialize Webhook integration
 	webhookRepo := webhook.NewRepository(database.Pool)
 	webhookService := webhook.NewService(webhookRepo)
 	sessionService := service.NewSessionService(database.Container, database, webhookService)
 	wppService := wpp.New(sessionService)
 
-	// Set media service for automatic media download to storage
 	if mediaService != nil {
 		sessionService.SetMediaService(mediaService)
 		logger.Storage().Info().Msg("Media service configured for automatic downloads")
 	}
 
-	// Initialize History Sync service
 	historySyncService := service.NewHistorySyncService(database.Chats)
 	historySyncService.SetMessageRepository(database.Messages)
 	sessionService.SetHistorySyncService(historySyncService)
 
-	// Initialize Settings adapter for auto-reject calls, privacy sync, and keepOnline
 	settingsAdapter := service.NewSettingsAdapter(database.Settings)
 	sessionService.SetSettingsProvider(settingsAdapter)
 	sessionService.SetCallRejecter(wppService)
 	sessionService.SetPrivacyGetter(wppService)
 	sessionService.SetPresenceSender(wppService)
 
-	// Initialize Queue service (NATS JetStream)
 	var queueService *queue.Service
 	if cfg.NatsEnabled {
 		var err error
@@ -157,31 +150,23 @@ func main() {
 		}
 	}
 
-	// Initialize Chatwoot integration
 	chatwootRepo := chatwoot.NewRepository(database.Pool)
 	chatwootService := chatwoot.NewService(chatwootRepo, database, cfg.ServerURL)
 
-	// Connect Chatwoot provider to webhook service (with database for message IDs)
 	webhookService.SetChatwootProvider(chatwoot.NewWebhookProvider(chatwootRepo, database))
-	// Connect webhook sender to Chatwoot service (for dispatching webhooks with CW IDs after message processing)
 	chatwootService.SetWebhookSender(chatwoot.NewWebhookSenderAdapter(webhookService))
 	chatwootService.SetMediaDownloader(wppService.DownloadMedia) // Enable media upload to Chatwoot
 
-	// Configure webhook skip checker: skip message webhooks from EventService when Chatwoot is enabled
-	// (Chatwoot service will send its own webhook with enriched data including CW IDs)
 	sessionService.SetWebhookSkipChecker(func(sessionID string, event string) bool {
-		// Only skip message events - other events (session, presence, etc.) should still be sent by EventService
 		if event != "message.received" && event != "message.sent" {
 			return false
 		}
-		// Check if Chatwoot is enabled for this session
 		cfg, err := chatwootRepo.GetEnabledBySessionID(ctx, sessionID)
 		if err != nil || cfg == nil {
 			return false // Chatwoot not enabled, don't skip
 		}
 		return true // Chatwoot is enabled, skip (Chatwoot service will send the webhook)
 	})
-	// Set profile picture fetcher for contact management
 	chatwootService.SetProfilePictureFetcher(func(ctx context.Context, sessionName string, jid string) (string, error) {
 		pic, err := wppService.GetProfilePicture(ctx, sessionName, jid)
 		if err != nil {
@@ -192,7 +177,6 @@ func main() {
 		}
 		return "", nil
 	})
-	// Set group info fetcher for getting real group names
 	chatwootService.SetGroupInfoFetcher(func(ctx context.Context, sessionName string, groupJid string) (string, error) {
 		info, err := wppService.GetGroupInfo(ctx, sessionName, groupJid)
 		if err != nil {
@@ -206,16 +190,13 @@ func main() {
 	chatwootEventHandler := chatwoot.NewEventHandler(chatwootService)
 	chatwootHandler := chatwoot.NewHandler(chatwootService, sessionService, wppService, database)
 
-	// Set queue producer on Chatwoot handlers if queue is enabled
 	if queueService != nil && queueService.IsEnabled() {
 		chatwootEventHandler.SetQueueProducer(queueService.Producer())
 		chatwootHandler.SetQueueProducer(queueService.Producer())
 
-		// Register queue handlers
 		chatwoot.RegisterQueueHandlers(queueService, chatwootService)
 		chatwoot.RegisterCWToWAQueueHandlers(queueService, chatwootHandler)
 
-		// Start queue consumers
 		if err := queueService.Start(ctx); err != nil {
 			logger.Nats().Warn().Err(err).Msg("Failed to start queue consumers")
 		} else {
@@ -223,24 +204,19 @@ func main() {
 		}
 	}
 
-	// Register Chatwoot event handler
 	sessionService.AddEventHandler(chatwootEventHandler.HandleEvent)
 
-	// Load existing sessions from database
 	if err := sessionService.LoadFromDatabase(ctx); err != nil {
 		logger.Session().Warn().Err(err).Msg("Failed to load sessions from database")
 	}
 
-	// Initialize Webhook handler
 	webhookHandler := webhook.NewHandler(webhookService, sessionService)
 
-	// Initialize Media handler
 	var mediaHandler *handler.MediaHandler
 	if mediaService != nil {
 		mediaHandler = handler.NewMediaHandler(database, mediaService, sessionService, storageService)
 	}
 
-	// Initialize Chat handler with dependencies
 	chatHandler := handler.NewChatHandler(wppService, database)
 	chatHandler.SetSessionService(sessionService)
 	chatHandler.SetHistorySyncService(historySyncService)
@@ -260,7 +236,6 @@ func main() {
 		Webhook:    webhookHandler,
 	}
 
-	// Create session lookup function for session-level API keys
 	sessionLookup := func(ctx context.Context, apiKey string) (string, bool) {
 		session, err := database.Sessions.GetByApiKey(ctx, apiKey)
 		if err != nil || session == nil {
@@ -277,7 +252,6 @@ func main() {
 		AllowedOrigins: []string{"*"},
 	})
 
-	// Register Chatwoot routes
 	chatwoot.RegisterRoutes(r, chatwootHandler, cfg.GlobalAPIKey, sessionLookup)
 
 	srv := &http.Server{
@@ -286,7 +260,6 @@ func main() {
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
-	// Start server in goroutine
 	go func() {
 		logger.API().Info().Str("port", cfg.Port).Msg("Server starting")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -294,14 +267,12 @@ func main() {
 		}
 	}()
 
-	// Wait for interrupt signal
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
 	logger.Core().Info().Msg("Shutting down server...")
 
-	// Give outstanding requests 10 seconds to complete
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -309,7 +280,6 @@ func main() {
 		logger.API().Error().Err(err).Msg("Server forced to shutdown")
 	}
 
-	// Close queue service
 	if queueService != nil {
 		queueService.Close()
 		logger.Nats().Info().Msg("Queue service closed")

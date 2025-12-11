@@ -2,11 +2,6 @@ package core
 
 import "time"
 
-// =============================================================================
-// CONFIGURATION
-// =============================================================================
-
-// Config represents the Chatwoot integration configuration for a session
 type Config struct {
 	ID               string     `json:"id"`
 	SessionID        string     `json:"sessionId"`
@@ -37,11 +32,6 @@ type Config struct {
 	UpdatedAt        *time.Time `json:"updatedAt,omitempty"`
 }
 
-// =============================================================================
-// CHATWOOT API MODELS
-// =============================================================================
-
-// Contact represents a Chatwoot contact
 type Contact struct {
 	ID                 int            `json:"id"`
 	Name               string         `json:"name"`
@@ -55,13 +45,11 @@ type Contact struct {
 	AvailabilityStatus string         `json:"availability_status,omitempty"`
 }
 
-// ContactInbox represents a contact's inbox association
 type ContactInbox struct {
 	SourceID string `json:"source_id"`
 	Inbox    *Inbox `json:"inbox,omitempty"`
 }
 
-// Inbox represents a Chatwoot inbox
 type Inbox struct {
 	ID              int    `json:"id"`
 	Name            string `json:"name"`
@@ -74,7 +62,6 @@ type Inbox struct {
 	InboxIdentifier string `json:"inbox_identifier,omitempty"`
 }
 
-// Conversation represents a Chatwoot conversation
 type Conversation struct {
 	ID               int                    `json:"id"`
 	InboxID          int                    `json:"inbox_id"`
@@ -87,7 +74,6 @@ type Conversation struct {
 	CustomAttributes map[string]interface{} `json:"custom_attributes,omitempty"`
 }
 
-// Message represents a Chatwoot message
 type Message struct {
 	ID                int                    `json:"id"`
 	Content           string                 `json:"content,omitempty"`
@@ -101,7 +87,6 @@ type Message struct {
 	SourceID          string                 `json:"source_id,omitempty"`
 }
 
-// Attachment represents a Chatwoot message attachment
 type Attachment struct {
 	ID        int    `json:"id,omitempty"`
 	MessageID int    `json:"message_id,omitempty"`
@@ -116,7 +101,6 @@ type Attachment struct {
 	Height    int    `json:"height,omitempty"`
 }
 
-// Sender represents a Chatwoot message sender
 type Sender struct {
 	ID            int    `json:"id,omitempty"`
 	Name          string `json:"name,omitempty"`
@@ -126,17 +110,11 @@ type Sender struct {
 	AvatarURL     string `json:"avatar_url,omitempty"`
 }
 
-// Account represents a Chatwoot account
 type Account struct {
 	ID   int    `json:"id"`
 	Name string `json:"name,omitempty"`
 }
 
-// =============================================================================
-// MEDIA INFO
-// =============================================================================
-
-// MediaInfo holds information about media in a message
 type MediaInfo struct {
 	IsMedia  bool
 	MimeType string
@@ -144,32 +122,23 @@ type MediaInfo struct {
 	Caption  string
 }
 
-// =============================================================================
-// SYNC MODELS
-// =============================================================================
-
-// SyncStats tracks synchronization statistics
 type SyncStats struct {
-	ContactsImported  int `json:"contactsImported"`
-	ContactsSkipped   int `json:"contactsSkipped"`
-	ContactsErrors    int `json:"contactsErrors"`
-	MessagesImported  int `json:"messagesImported"`
-	MessagesSkipped   int `json:"messagesSkipped"`
-	MessagesErrors    int `json:"messagesErrors"`
-	ConversationsUsed int `json:"conversationsUsed"`
-	Errors            int `json:"errors"`
-	// Detailed breakdowns
-	ContactDetails *ContactSyncDetails `json:"contactDetails,omitempty"`
-	MessageDetails *MessageSyncDetails `json:"messageDetails,omitempty"`
+	ContactsImported  int                 `json:"contactsImported"`
+	ContactsSkipped   int                 `json:"contactsSkipped"`
+	ContactsErrors    int                 `json:"contactsErrors"`
+	MessagesImported  int                 `json:"messagesImported"`
+	MessagesSkipped   int                 `json:"messagesSkipped"`
+	MessagesErrors    int                 `json:"messagesErrors"`
+	ConversationsUsed int                 `json:"conversationsUsed"`
+	Errors            int                 `json:"errors"`
+	ContactDetails    *ContactSyncDetails `json:"contactDetails,omitempty"`
+	MessageDetails    *MessageSyncDetails `json:"messageDetails,omitempty"`
 }
 
-// ContactSyncDetails provides detailed breakdown of contact sync
 type ContactSyncDetails struct {
-	// Imported breakdown
 	SavedContacts    int `json:"savedContacts"`
 	BusinessContacts int `json:"businessContacts"`
 
-	// Skipped breakdown
 	AlreadyExists   int `json:"alreadyExists"`
 	Groups          int `json:"groups"`
 	StatusBroadcast int `json:"statusBroadcast"`
@@ -178,18 +147,14 @@ type ContactSyncDetails struct {
 	LidContacts     int `json:"lidContacts"`
 	InvalidPhone    int `json:"invalidPhone"`
 
-	// Source info
 	TotalWhatsApp int `json:"totalWhatsApp"`
 }
 
-// MessageSyncDetails provides detailed breakdown of message sync
 type MessageSyncDetails struct {
-	// Imported breakdown
 	TextMessages  int `json:"textMessages"`
 	MediaMessages int `json:"mediaMessages"`
 	GroupMessages int `json:"groupMessages"`
 
-	// Skipped breakdown
 	AlreadySynced   int `json:"alreadySynced"`
 	OldMessages     int `json:"oldMessages"`
 	StatusBroadcast int `json:"statusBroadcast"`
@@ -201,12 +166,10 @@ type MessageSyncDetails struct {
 	NoMedia         int `json:"noMedia"`
 	LidChats        int `json:"lidChats"`
 
-	// Conversations breakdown
 	PrivateChats int `json:"privateChats"`
 	GroupChats   int `json:"groupChats"`
 }
 
-// ResetStats tracks reset operation statistics
 type ResetStats struct {
 	ContactsDeleted      int `json:"contactsDeleted"`
 	ConversationsDeleted int `json:"conversationsDeleted"`
@@ -214,7 +177,6 @@ type ResetStats struct {
 	ContactInboxDeleted  int `json:"contactInboxDeleted"`
 }
 
-// SyncStatus represents the current sync status
 type SyncStatus struct {
 	SessionID string     `json:"sessionId"`
 	Status    string     `json:"status"`
@@ -225,7 +187,6 @@ type SyncStatus struct {
 	Error     string     `json:"error,omitempty"`
 }
 
-// WhatsAppContact represents a contact from WhatsApp
 type WhatsAppContact struct {
 	JID          string
 	PushName     string
@@ -234,17 +195,11 @@ type WhatsAppContact struct {
 	FirstName    string
 }
 
-// =============================================================================
-// INTERNAL MODELS
-// =============================================================================
-
-// ReplyInfo holds information about a reply reference for Chatwoot
 type ReplyInfo struct {
 	CwMsgId           int
 	WhatsAppMessageID string
 }
 
-// QuotedMessageInfo holds information about a quoted message for WhatsApp
 type QuotedMessageInfo struct {
 	MsgId     string `json:"msgId"`
 	ChatJID   string `json:"chatJid"`
@@ -253,20 +208,16 @@ type QuotedMessageInfo struct {
 	FromMe    bool   `json:"fromMe"`
 }
 
-// ContactCacheEntry holds cached contact data with expiry
-// Note: We cache ContactID instead of ConversationID to ensure autoReopen works
 type ContactCacheEntry struct {
 	ContactID int
 	ExpiresAt time.Time
 }
 
-// ChatFKs holds foreign keys for a chat in sync operations
 type ChatFKs struct {
 	ContactID      int
 	ConversationID int
 }
 
-// PhoneTimestamp holds timestamp range for a phone number
 type PhoneTimestamp struct {
 	Phone      string
 	FirstTS    int64
@@ -276,7 +227,6 @@ type PhoneTimestamp struct {
 	IsGroup    bool
 }
 
-// ContactNameInfo holds name information from various sources
 type ContactNameInfo struct {
 	FullName     string
 	FirstName    string

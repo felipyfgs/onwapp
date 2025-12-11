@@ -77,7 +77,6 @@ func (r *SessionRepository) GetByApiKey(ctx context.Context, apiKey string) (*mo
 	return &s, nil
 }
 
-// GetByName is deprecated, use GetBySessionId instead
 func (r *SessionRepository) GetByName(ctx context.Context, name string) (*model.SessionRecord, error) {
 	return r.GetBySessionId(ctx, name)
 }

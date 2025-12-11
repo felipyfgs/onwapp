@@ -49,7 +49,6 @@ func (r *MessageUpdateRepository) GetByMsgID(ctx context.Context, sessionID, msg
 	return updates, rows.Err()
 }
 
-// GetDeletedMsgIDs returns a set of message IDs that have been deleted
 func (r *MessageUpdateRepository) GetDeletedMsgIDs(ctx context.Context, sessionID string, msgIDs []string) (map[string]bool, error) {
 	if len(msgIDs) == 0 {
 		return make(map[string]bool), nil

@@ -10,7 +10,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// LogLevel represents valid logging levels
 type LogLevel string
 
 const (
@@ -20,7 +19,6 @@ const (
 	LogLevelError LogLevel = "error"
 )
 
-// IsValid checks if the LogLevel is valid
 func (l LogLevel) IsValid() bool {
 	switch l {
 	case LogLevelDebug, LogLevelInfo, LogLevelWarn, LogLevelError:
@@ -29,12 +27,10 @@ func (l LogLevel) IsValid() bool {
 	return false
 }
 
-// String returns the string representation
 func (l LogLevel) String() string {
 	return string(l)
 }
 
-// LogFormat represents valid log output formats
 type LogFormat string
 
 const (
@@ -42,7 +38,6 @@ const (
 	LogFormatJSON    LogFormat = "json"
 )
 
-// IsValid checks if the LogFormat is valid
 func (f LogFormat) IsValid() bool {
 	switch f {
 	case LogFormatConsole, LogFormatJSON:
@@ -51,7 +46,6 @@ func (f LogFormat) IsValid() bool {
 	return false
 }
 
-// String returns the string representation
 func (f LogFormat) String() string {
 	return string(f)
 }
@@ -64,7 +58,6 @@ type Config struct {
 	GlobalAPIKey string
 	ServerURL    string
 
-	// MinIO configuration
 	MinioEndpoint  string
 	MinioAccessKey string
 	MinioSecretKey string
@@ -72,10 +65,8 @@ type Config struct {
 	MinioUseSSL    bool
 	MinioPublicURL string
 
-	// Debug options
 	DebugHistorySync bool
 
-	// NATS Configuration
 	NatsURL          string
 	NatsEnabled      bool
 	NatsStreamPrefix string
@@ -83,7 +74,6 @@ type Config struct {
 	NatsRetryDelay   time.Duration
 	NatsAckWait      time.Duration
 
-	// Security Configuration
 	AllowedOrigins        []string
 	RateLimitPerSecond    float64
 	RateLimitBurst        int

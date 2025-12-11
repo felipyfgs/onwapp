@@ -14,7 +14,6 @@ import (
 	"onwapp/internal/util/media"
 )
 
-// Default MIME types for media
 const (
 	mimeJPEG = "image/jpeg"
 	mimeMP4  = "video/mp4"
@@ -28,14 +27,12 @@ func NewMessageHandler(wpp *wpp.Service) *MessageHandler {
 	return &MessageHandler{wpp: wpp}
 }
 
-// mediaConfig configures how to handle a specific media type
 type mediaConfig struct {
 	mediaType   string
 	defaultMime string
 	formField   string
 }
 
-// mediaRequest holds parsed media request data
 type mediaRequest struct {
 	Phone        string
 	Data         []byte
@@ -45,7 +42,6 @@ type mediaRequest struct {
 	PTT          bool
 }
 
-// parseMediaRequest extracts media data from JSON or multipart form
 func (h *MessageHandler) parseMediaRequest(c *gin.Context, config mediaConfig) (*mediaRequest, error) {
 	var req mediaRequest
 
@@ -62,7 +58,6 @@ func (h *MessageHandler) parseMediaRequest(c *gin.Context, config mediaConfig) (
 		req.Data = data
 		req.DetectedMime = detectedMime
 	} else {
-		// Parse JSON based on media type
 		var jsonErr error
 		switch config.mediaType {
 		case "image":
@@ -142,7 +137,6 @@ func (h *MessageHandler) parseMediaRequest(c *gin.Context, config mediaConfig) (
 	return &req, nil
 }
 
-// resolveMimeType resolves MIME type with fallbacks
 func resolveMimeType(requested, detected, defaultMime string) string {
 	if requested != "" {
 		return requested
@@ -153,33 +147,27 @@ func resolveMimeType(requested, detected, defaultMime string) string {
 	return defaultMime
 }
 
-// sendMediaMessage handles sending any media type
 func (h *MessageHandler) sendMediaMessage(c *gin.Context, config mediaConfig) {
 	sessionID := c.Param("session")
 
-	// Parse media request
 	mediaReq, err := h.parseMediaRequest(c, config)
 	if err != nil {
 		respondBadRequest(c, "invalid media request", err)
 		return
 	}
 
-	// Validate phone
 	if mediaReq.Phone == "" {
 		respondBadRequest(c, "phone is required", nil)
 		return
 	}
 
-	// Resolve MIME type
 	mimeType := resolveMimeType(mediaReq.MimeType, mediaReq.DetectedMime, config.defaultMime)
 
-	// Send based on media type
 	var resp whatsmeow.SendResponse
 	switch config.mediaType {
 	case "image":
 		resp, err = h.wpp.SendImage(c.Request.Context(), sessionID, mediaReq.Phone, mediaReq.Data, mediaReq.Caption, mimeType, nil)
 	case "audio":
-		// Convert WebM to OGG for WhatsApp compatibility
 		audioData := mediaReq.Data
 		if media.IsWebMFormat(audioData, mimeType) {
 			convertedData, convErr := media.ConvertWebMToOgg(audioData)
@@ -210,7 +198,6 @@ func (h *MessageHandler) sendMediaMessage(c *gin.Context, config mediaConfig) {
 	})
 }
 
-// SendText godoc
 // @Summary      Send text message
 // @Description  Send a text message to a phone number
 // @Tags         message
@@ -254,7 +241,6 @@ func (h *MessageHandler) SendText(c *gin.Context) {
 	})
 }
 
-// SendImage godoc
 // @Summary      Send image message
 // @Description  Send an image to a phone number (supports JSON with base64/URL or multipart/form-data)
 // @Tags         message
@@ -279,7 +265,6 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 	})
 }
 
-// SendAudio godoc
 // @Summary      Send audio message
 // @Description  Send an audio to a phone number (supports JSON with base64/URL or multipart/form-data)
 // @Tags         message
@@ -304,7 +289,6 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 	})
 }
 
-// SendVideo godoc
 // @Summary      Send video message
 // @Description  Send a video to a phone number (supports JSON with base64/URL or multipart/form-data)
 // @Tags         message
@@ -329,7 +313,6 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 	})
 }
 
-// SendDocument godoc
 // @Summary      Send document message
 // @Description  Send a document to a phone number (supports JSON with base64/URL or multipart/form-data)
 // @Tags         message
@@ -354,7 +337,6 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 	})
 }
 
-// SendSticker godoc
 // @Summary      Send sticker message
 // @Description  Send a sticker to a phone number (supports JSON with base64/URL or multipart/form-data)
 // @Tags         message
@@ -378,7 +360,6 @@ func (h *MessageHandler) SendSticker(c *gin.Context) {
 	})
 }
 
-// SendLocation godoc
 // @Summary      Send location message
 // @Description  Send a location to a phone number
 // @Tags         message
@@ -414,7 +395,6 @@ func (h *MessageHandler) SendLocation(c *gin.Context) {
 	})
 }
 
-// SendContact godoc
 // @Summary      Send contact message
 // @Description  Send a contact card to a phone number
 // @Tags         message
@@ -450,7 +430,6 @@ func (h *MessageHandler) SendContact(c *gin.Context) {
 	})
 }
 
-// SendReaction godoc
 // @Summary      Send reaction to message
 // @Description  Send a reaction emoji to a message
 // @Tags         message
@@ -486,7 +465,6 @@ func (h *MessageHandler) SendReaction(c *gin.Context) {
 	})
 }
 
-// SendPoll godoc
 // @Summary      Send poll message
 // @Description  Send a poll to a phone number
 // @Tags         message
@@ -522,7 +500,6 @@ func (h *MessageHandler) SendPoll(c *gin.Context) {
 	})
 }
 
-// SendPollVote godoc
 // @Summary      Vote in a poll
 // @Description  Vote for options in an existing poll
 // @Tags         message
@@ -558,7 +535,6 @@ func (h *MessageHandler) SendPollVote(c *gin.Context) {
 	})
 }
 
-// SendButtons godoc
 // @Summary      Send buttons message
 // @Description  Send a message with buttons (max 3 buttons)
 // @Tags         message
@@ -609,7 +585,6 @@ func (h *MessageHandler) SendButtons(c *gin.Context) {
 	})
 }
 
-// SendList godoc
 // @Summary      Send list message
 // @Description  Send a message with a selectable list
 // @Tags         message
@@ -669,7 +644,6 @@ func (h *MessageHandler) SendList(c *gin.Context) {
 	})
 }
 
-// SendInteractive godoc
 // @Summary      Send interactive message with native flow buttons
 // @Description  Send an interactive message with buttons (quick_reply, cta_url, cta_call, cta_copy). Supports optional image/video header.
 // @Tags         message
@@ -707,7 +681,6 @@ func (h *MessageHandler) SendInteractive(c *gin.Context) {
 		Buttons: buttons,
 	}
 
-	// Handle optional image (supports URL or base64)
 	if req.Image != "" {
 		imageData, detectedMime, err := GetMediaData(req.Image, "image")
 		if err != nil {
@@ -737,7 +710,6 @@ func (h *MessageHandler) SendInteractive(c *gin.Context) {
 		}
 	}
 
-	// Handle optional video (supports URL or base64)
 	if req.Video != "" {
 		videoData, detectedMime, err := GetMediaData(req.Video, "video")
 		if err != nil {
@@ -780,7 +752,6 @@ func (h *MessageHandler) SendInteractive(c *gin.Context) {
 	})
 }
 
-// SendTemplate godoc
 // @Summary      Send template message
 // @Description  Send a message with template buttons (URL, Call, QuickReply). Works on Web and Mobile.
 // @Tags         message
@@ -834,7 +805,6 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 		Buttons: buttons,
 	}
 
-	// Handle optional image (supports URL or base64)
 	if req.Image != "" {
 		imageData, detectedMime, err := GetMediaData(req.Image, "image")
 		if err != nil {
@@ -864,7 +834,6 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 		}
 	}
 
-	// Handle optional video (supports URL or base64)
 	if req.Video != "" {
 		videoData, detectedMime, err := GetMediaData(req.Video, "video")
 		if err != nil {
@@ -894,7 +863,6 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 		}
 	}
 
-	// Handle optional document (supports URL or base64)
 	if req.Document != "" {
 		docData, detectedMime, err := GetMediaData(req.Document, "document")
 		if err != nil {
@@ -938,7 +906,6 @@ func (h *MessageHandler) SendTemplate(c *gin.Context) {
 	})
 }
 
-// SendCarousel godoc
 // @Summary      Send carousel message
 // @Description  Send an interactive carousel message with multiple cards, each with image/video and buttons
 // @Tags         message
@@ -975,14 +942,12 @@ func (h *MessageHandler) SendCarousel(c *gin.Context) {
 			Title: card.Header.Title,
 		}
 
-		// Handle card image (supports URL or base64)
 		if card.Header.Image != "" {
 			var imageData []byte
 			var downloadErr error
 			mimeType := card.Header.MimeType
 
 			if IsURL(card.Header.Image) {
-				// Download from URL
 				var detectedMime string
 				imageData, detectedMime, downloadErr = DownloadFromURL(card.Header.Image)
 				if downloadErr != nil {
@@ -993,7 +958,6 @@ func (h *MessageHandler) SendCarousel(c *gin.Context) {
 					mimeType = detectedMime
 				}
 			} else {
-				// Decode base64
 				imageData, downloadErr = base64.StdEncoding.DecodeString(card.Header.Image)
 				if downloadErr != nil {
 					c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 image in card"})
@@ -1020,14 +984,12 @@ func (h *MessageHandler) SendCarousel(c *gin.Context) {
 			}
 		}
 
-		// Handle card video (supports URL or base64)
 		if card.Header.Video != "" {
 			var videoData []byte
 			var downloadErr error
 			mimeType := card.Header.MimeType
 
 			if IsURL(card.Header.Video) {
-				// Download from URL
 				var detectedMime string
 				videoData, detectedMime, downloadErr = DownloadFromURL(card.Header.Video)
 				if downloadErr != nil {
@@ -1038,7 +1000,6 @@ func (h *MessageHandler) SendCarousel(c *gin.Context) {
 					mimeType = detectedMime
 				}
 			} else {
-				// Decode base64
 				videoData, downloadErr = base64.StdEncoding.DecodeString(card.Header.Video)
 				if downloadErr != nil {
 					c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "invalid base64 video in card"})

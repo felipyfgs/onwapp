@@ -42,9 +42,6 @@ func New(ctx context.Context, databaseURL string) (*Database, error) {
 		return nil, fmt.Errorf("failed to ping database: %w", pingErr)
 	}
 
-	// Create whatsmeow sqlstore FIRST - this creates all whatsmeow tables
-	// (whatsmeow_device, whatsmeow_contacts, whatsmeow_chat_settings, etc.)
-	// Our migrations may depend on these tables existing
 	dbLog := waLog.Zerolog(logger.FilteredDBLogger())
 	container, err := sqlstore.New(ctx, "pgx", databaseURL, dbLog)
 	if err != nil {
@@ -52,13 +49,11 @@ func New(ctx context.Context, databaseURL string) (*Database, error) {
 		return nil, fmt.Errorf("failed to create sqlstore: %w", err)
 	}
 
-	// Now run onwapp migrations (safe to reference whatsmeow tables)
 	if err := runMigrations(ctx, pool); err != nil {
 		pool.Close()
 		return nil, fmt.Errorf("failed to run migrations: %w", err)
 	}
 
-	// Ensure whatsmeow FK constraints after sqlstore creates its tables
 	if err := ensureWhatsmeowFKs(ctx, pool); err != nil {
 		logger.DB().Warn().Err(err).Msg("Failed to ensure whatsmeow FK constraints")
 	}

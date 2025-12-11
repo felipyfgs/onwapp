@@ -39,7 +39,6 @@ func (h *ChatHandler) SetHistorySyncService(s *service.HistorySyncService) {
 	h.historySyncService = s
 }
 
-// saveDeleteUpdate saves a delete event to the database
 func (h *ChatHandler) saveDeleteUpdate(ctx context.Context, sessionId, phone, messageID string) error {
 	if h.database == nil {
 		return fmt.Errorf("database not initialized")
@@ -75,11 +74,6 @@ func (h *ChatHandler) saveDeleteUpdate(ctx context.Context, sessionId, phone, me
 	return nil
 }
 
-// =============================================================================
-// PRESENCE
-// =============================================================================
-
-// SetPresence godoc
 // @Summary      Set online presence
 // @Description  Set online/offline presence status
 // @Tags         presence
@@ -114,7 +108,6 @@ func (h *ChatHandler) SetPresence(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.PresenceResponse{Status: status})
 }
 
-// SubscribePresence godoc
 // @Summary      Subscribe to contact presence
 // @Description  Subscribe to receive presence updates from a contact
 // @Tags         presence
@@ -144,7 +137,6 @@ func (h *ChatHandler) SubscribePresence(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
-// SetChatPresence godoc
 // @Summary      Set chat presence (typing/recording)
 // @Description  Set typing or recording presence in a chat
 // @Tags         chat
@@ -174,7 +166,6 @@ func (h *ChatHandler) SetChatPresence(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.ChatPresenceResponse{State: req.State})
 }
 
-// MarkRead godoc
 // @Summary      Mark messages as read
 // @Description  Mark messages as read in a chat
 // @Tags         chat
@@ -196,7 +187,6 @@ func (h *ChatHandler) MarkRead(c *gin.Context) {
 		return
 	}
 
-	// Build chatJID from phone if needed
 	chatJID := req.Phone
 	if !strings.Contains(chatJID, "@") {
 		if strings.Contains(req.Phone, "-") {
@@ -206,7 +196,6 @@ func (h *ChatHandler) MarkRead(c *gin.Context) {
 		}
 	}
 
-	// Send read receipts to WhatsApp only if messageIds provided
 	if len(req.MessageIDs) > 0 {
 		if err := h.wpp.MarkRead(c.Request.Context(), sessionId, req.Phone, req.MessageIDs); err != nil {
 			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
@@ -214,7 +203,6 @@ func (h *ChatHandler) MarkRead(c *gin.Context) {
 		}
 	}
 
-	// Always mark chat as read in database (zero unread count)
 	if h.database != nil && h.sessionService != nil {
 		session, err := h.sessionService.Get(sessionId)
 		if err != nil {
@@ -230,11 +218,6 @@ func (h *ChatHandler) MarkRead(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
-// =============================================================================
-// CHAT ACTIONS
-// =============================================================================
-
-// MarkChatUnread godoc
 // @Summary      Mark chat as unread
 // @Description  Mark a WhatsApp chat as unread
 // @Tags         chat
@@ -264,7 +247,6 @@ func (h *ChatHandler) MarkChatUnread(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.ChatActionResponse{Status: "marked_unread"})
 }
 
-// ArchiveChat godoc
 // @Summary      Archive or unarchive a chat
 // @Description  Archive or unarchive a WhatsApp chat
 // @Tags         chat
@@ -299,7 +281,6 @@ func (h *ChatHandler) ArchiveChat(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.ChatActionResponse{Status: status})
 }
 
-// SetDisappearingTimer godoc
 // @Summary      Set disappearing messages timer
 // @Description  Set the disappearing messages timer for a chat
 // @Tags         chat
@@ -335,11 +316,6 @@ func (h *ChatHandler) SetDisappearingTimer(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.MessageOnlyResponse{Message: "timer set to " + req.Timer})
 }
 
-// =============================================================================
-// MESSAGE ACTIONS
-// =============================================================================
-
-// DeleteMessage godoc
 // @Summary      Delete a message
 // @Description  Delete a message from a chat
 // @Tags         chat
@@ -363,16 +339,13 @@ func (h *ChatHandler) DeleteMessage(c *gin.Context) {
 
 	resp, err := h.wpp.DeleteMessage(c.Request.Context(), sessionId, req.Phone, req.MessageID, req.ForMe)
 
-	// Save delete to database (even if WhatsApp returns error like 479 = already deleted)
 	if h.database != nil && !req.ForMe {
 		if saveErr := h.saveDeleteUpdate(c.Request.Context(), sessionId, req.Phone, req.MessageID); saveErr != nil {
-			// Log error but don't fail the request since WhatsApp delete succeeded
 			log.Warn().Err(saveErr).Str("messageID", req.MessageID).Msg("failed to save delete update to database")
 		}
 	}
 
 	if err != nil {
-		// Error 479 means message was already deleted - treat as success
 		if strings.Contains(err.Error(), "479") {
 			c.JSON(http.StatusOK, dto.SendResponse{
 				MessageID: req.MessageID,
@@ -390,7 +363,6 @@ func (h *ChatHandler) DeleteMessage(c *gin.Context) {
 	})
 }
 
-// EditMessage godoc
 // @Summary      Edit a message
 // @Description  Edit a previously sent message
 // @Tags         chat
@@ -424,7 +396,6 @@ func (h *ChatHandler) EditMessage(c *gin.Context) {
 	})
 }
 
-// RequestUnavailableMessage godoc
 // @Summary      Request unavailable message
 // @Description  Request WhatsApp to resend an unavailable message from phone storage
 // @Tags         chat
@@ -459,11 +430,6 @@ func (h *ChatHandler) RequestUnavailableMessage(c *gin.Context) {
 	})
 }
 
-// =============================================================================
-// CALL
-// =============================================================================
-
-// RejectCall godoc
 // @Summary      Reject incoming call
 // @Description  Reject an incoming WhatsApp call
 // @Tags         call
@@ -493,16 +459,10 @@ func (h *ChatHandler) RejectCall(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
-// =============================================================================
-// CHAT HISTORY (synced data)
-// =============================================================================
-
-// isGroupJID checks if a JID is a group JID
 func isGroupJID(jid string) bool {
 	return len(jid) > 5 && jid[len(jid)-5:] == "@g.us"
 }
 
-// batchFetchContactNames fetches contact names for multiple JIDs in batch
 func (h *ChatHandler) batchFetchContactNames(ctx context.Context, client *whatsmeow.Client, jids []string) map[string]string {
 	names := make(map[string]string, len(jids))
 
@@ -521,7 +481,6 @@ func (h *ChatHandler) batchFetchContactNames(ctx context.Context, client *whatsm
 			continue
 		}
 
-		// Priority: FullName > FirstName > PushName > BusinessName (same as Chatwoot)
 		if contact.FullName != "" {
 			names[jid] = contact.FullName
 		} else if contact.FirstName != "" {
@@ -536,7 +495,6 @@ func (h *ChatHandler) batchFetchContactNames(ctx context.Context, client *whatsm
 	return names
 }
 
-// batchFetchGroupNames fetches group names for multiple JIDs in batch
 func (h *ChatHandler) batchFetchGroupNames(ctx context.Context, client *whatsmeow.Client, jids []string) map[string]string {
 	names := make(map[string]string, len(jids))
 
@@ -559,7 +517,6 @@ func (h *ChatHandler) batchFetchGroupNames(ctx context.Context, client *whatsmeo
 	return names
 }
 
-// GetAllChats godoc
 // @Summary      Get all chats
 // @Description  Get list of chats from synced data with pagination and optional filters
 // @Tags         chat
@@ -576,7 +533,6 @@ func (h *ChatHandler) batchFetchGroupNames(ctx context.Context, client *whatsmeo
 func (h *ChatHandler) GetAllChats(c *gin.Context) {
 	sessionId := c.Param("session")
 
-	// Parse and validate pagination
 	pagination, err := ParseChatsPagination(c)
 	if err != nil {
 		respondBadRequest(c, "invalid pagination", err)
@@ -597,7 +553,6 @@ func (h *ChatHandler) GetAllChats(c *gin.Context) {
 		return
 	}
 
-	// Separate contact and group JIDs for batch fetching (eliminates N+1 queries)
 	contactJIDs := make([]string, 0, len(chats))
 	groupJIDs := make([]string, 0, len(chats))
 
@@ -609,11 +564,9 @@ func (h *ChatHandler) GetAllChats(c *gin.Context) {
 		}
 	}
 
-	// Batch fetch names (2 calls total instead of N calls)
 	contactNames := h.batchFetchContactNames(c.Request.Context(), session.Client, contactJIDs)
 	groupNames := h.batchFetchGroupNames(c.Request.Context(), session.Client, groupJIDs)
 
-	// Build response with O(1) lookups
 	response := make([]dto.ChatResponse, 0, len(chats))
 	for _, chatData := range chats {
 		chat := chatData.Chat
@@ -644,7 +597,6 @@ func (h *ChatHandler) GetAllChats(c *gin.Context) {
 			Muted:               chatData.Muted,
 		}
 
-		// Add last message if available
 		if chatData.LastMessage != nil {
 			resp.LastMessage = &dto.LastMessageInfo{
 				Content:   chatData.LastMessage.Content,
@@ -664,7 +616,6 @@ func (h *ChatHandler) GetAllChats(c *gin.Context) {
 	respondSuccess(c, response)
 }
 
-// GetChatMessages godoc
 // @Summary      Get chat messages
 // @Description  Get messages from a specific chat with pagination
 // @Tags         chat
@@ -687,7 +638,6 @@ func (h *ChatHandler) GetChatMessages(c *gin.Context) {
 		return
 	}
 
-	// Parse and validate pagination
 	pagination, err := ParseMessagesPagination(c)
 	if err != nil {
 		respondBadRequest(c, "invalid pagination", err)
@@ -706,7 +656,6 @@ func (h *ChatHandler) GetChatMessages(c *gin.Context) {
 		return
 	}
 
-	// Get deleted message IDs
 	msgIDs := make([]string, len(messages))
 	for i, msg := range messages {
 		msgIDs[i] = msg.MsgId
@@ -735,7 +684,6 @@ func (h *ChatHandler) GetChatMessages(c *gin.Context) {
 			Status:       string(msg.Status),
 			Deleted:      isDeleted,
 		}
-		// Clear content for deleted messages
 		if isDeleted {
 			resp.Content = ""
 			resp.MediaType = ""
@@ -746,7 +694,6 @@ func (h *ChatHandler) GetChatMessages(c *gin.Context) {
 	respondSuccess(c, response)
 }
 
-// GetChatInfo godoc
 // @Summary      Get chat info
 // @Description  Get detailed chat information from synced data
 // @Tags         chat

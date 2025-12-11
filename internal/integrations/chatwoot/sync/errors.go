@@ -5,7 +5,6 @@ import (
 	"fmt"
 )
 
-// Sync-specific errors
 var (
 	ErrContactsGetterNil = errors.New("contacts getter not available")
 	ErrNoValidContacts   = errors.New("no valid contacts to sync")
@@ -13,7 +12,6 @@ var (
 	ErrUserNotFound      = errors.New("chatwoot user not found for token")
 )
 
-// SyncError wraps an error with operation context
 type SyncError struct {
 	Op  string
 	Err error
@@ -27,7 +25,6 @@ func (e *SyncError) Unwrap() error {
 	return e.Err
 }
 
-// wrapErr wraps an error with operation context
 func wrapErr(op string, err error) error {
 	if err == nil {
 		return nil
@@ -35,7 +32,6 @@ func wrapErr(op string, err error) error {
 	return &SyncError{Op: op, Err: err}
 }
 
-// BatchError represents an error during batch processing
 type BatchError struct {
 	BatchIndex int
 	BatchSize  int

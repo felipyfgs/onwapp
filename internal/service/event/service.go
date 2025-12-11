@@ -16,49 +16,40 @@ import (
 	"onwapp/internal/model"
 )
 
-// WebhookSender defines the interface for sending webhooks
 type WebhookSender interface {
 	Send(ctx context.Context, sessionID, sessionName, event string, rawEvent interface{})
 }
 
-// WebhookSkipChecker checks if webhook should be skipped for a session/event
 type WebhookSkipChecker func(sessionID string, eventName string) bool
 
-// MediaService defines the interface for media operations
 type MediaService interface {
 	DownloadAndStore(ctx context.Context, client *whatsmeow.Client, media *model.Media, sessionName string) error
 	ProcessHistorySyncMedia(ctx context.Context, client *whatsmeow.Client, sessionID string, count int)
 	HandleMediaRetryResponse(ctx context.Context, client *whatsmeow.Client, e *events.MediaRetry, sessionID string) error
 }
 
-// HistorySyncService defines the interface for history sync operations
 type HistorySyncService interface {
 	ProcessHistorySync(ctx context.Context, sessionID string, e *events.HistorySync) error
 }
 
-// SettingsProvider defines the interface for settings operations
 type SettingsProvider interface {
 	GetBySessionID(ctx context.Context, sessionID string) (alwaysOnline, autoRejectCalls bool, err error)
 	EnsureExists(ctx context.Context, sessionID string) error
 	SyncPrivacyFromWhatsApp(ctx context.Context, sessionID string, privacy map[string]string) error
 }
 
-// CallRejecter defines the interface for rejecting calls
 type CallRejecter interface {
 	RejectCall(ctx context.Context, sessionId, callFrom, callID string) error
 }
 
-// PrivacyGetter defines the interface for getting privacy settings from WhatsApp
 type PrivacyGetter interface {
 	GetPrivacySettingsAsStrings(ctx context.Context, sessionId string) (map[string]string, error)
 }
 
-// PresenceSender defines the interface for sending presence
 type PresenceSender interface {
 	SendPresence(ctx context.Context, sessionId string, available bool) error
 }
 
-// Service handles WhatsApp events
 type Service struct {
 	database           *db.Database
 	webhookService     WebhookSender
@@ -71,7 +62,6 @@ type Service struct {
 	presenceSender     PresenceSender
 }
 
-// New creates a new event service
 func New(database *db.Database, webhookService WebhookSender) *Service {
 	return &Service{
 		database:       database,
@@ -79,47 +69,38 @@ func New(database *db.Database, webhookService WebhookSender) *Service {
 	}
 }
 
-// SetMediaService sets the media service for downloading media to storage
 func (s *Service) SetMediaService(mediaService MediaService) {
 	s.mediaService = mediaService
 }
 
-// SetHistorySyncService sets the history sync service for processing sync data
 func (s *Service) SetHistorySyncService(historySyncService HistorySyncService) {
 	s.historySyncService = historySyncService
 }
 
-// SetWebhookSkipChecker sets the function that determines if webhook should be skipped
 func (s *Service) SetWebhookSkipChecker(checker WebhookSkipChecker) {
 	s.webhookSkipChecker = checker
 }
 
-// SetSettingsProvider sets the settings provider for auto-reject calls and privacy sync
 func (s *Service) SetSettingsProvider(provider SettingsProvider) {
 	s.settingsProvider = provider
 }
 
-// SetCallRejecter sets the call rejecter for auto-reject calls
 func (s *Service) SetCallRejecter(rejecter CallRejecter) {
 	s.callRejecter = rejecter
 }
 
-// SetPrivacyGetter sets the privacy getter for syncing privacy settings from WhatsApp
 func (s *Service) SetPrivacyGetter(getter PrivacyGetter) {
 	s.privacyGetter = getter
 }
 
-// SetPresenceSender sets the presence sender for keepOnline feature
 func (s *Service) SetPresenceSender(sender PresenceSender) {
 	s.presenceSender = sender
 }
 
-// HandleEvent routes events to appropriate handlers
 func (s *Service) HandleEvent(session *model.Session, evt interface{}) {
 	ctx := context.Background()
 
 	switch e := evt.(type) {
-	// Connection events
 	case *events.Connected:
 		s.handleConnected(ctx, session)
 	case *events.Disconnected:
@@ -145,7 +126,6 @@ func (s *Service) HandleEvent(session *model.Session, evt interface{}) {
 	case *events.PairError:
 		s.handlePairError(ctx, session, e)
 
-	// Message events
 	case *events.Message:
 		s.handleMessage(ctx, session, e)
 	case *events.Receipt:
@@ -155,13 +135,11 @@ func (s *Service) HandleEvent(session *model.Session, evt interface{}) {
 	case *events.MediaRetry:
 		s.handleMediaRetry(ctx, session, e)
 
-	// Presence events
 	case *events.Presence:
 		s.handlePresence(ctx, session, e)
 	case *events.ChatPresence:
 		s.handleChatPresence(ctx, session, e)
 
-	// Sync events
 	case *events.HistorySync:
 		s.handleHistorySync(ctx, session, e)
 	case *events.OfflineSyncPreview:
@@ -173,7 +151,6 @@ func (s *Service) HandleEvent(session *model.Session, evt interface{}) {
 	case *events.AppStateSyncComplete:
 		s.handleAppStateSyncComplete(ctx, session, e)
 
-	// Contact events
 	case *events.PushName:
 		s.handlePushName(ctx, session, e)
 	case *events.Picture:
@@ -183,7 +160,6 @@ func (s *Service) HandleEvent(session *model.Session, evt interface{}) {
 	case *events.BusinessName:
 		s.handleBusinessName(ctx, session, e)
 
-	// Call events
 	case *events.CallOffer:
 		s.handleCallOffer(ctx, session, e)
 	case *events.CallOfferNotice:
@@ -201,13 +177,11 @@ func (s *Service) HandleEvent(session *model.Session, evt interface{}) {
 	case *events.CallRelayLatency:
 		s.handleCallRelayLatency(ctx, session, e)
 
-	// Group events
 	case *events.GroupInfo:
 		s.handleGroupInfo(ctx, session, e)
 	case *events.JoinedGroup:
 		s.handleJoinedGroup(ctx, session, e)
 
-	// Privacy events
 	case *events.IdentityChange:
 		s.handleIdentityChange(ctx, session, e)
 	case *events.PrivacySettings:
@@ -215,7 +189,6 @@ func (s *Service) HandleEvent(session *model.Session, evt interface{}) {
 	case *events.Blocklist:
 		s.handleBlocklist(ctx, session, e)
 
-	// Newsletter events
 	case *events.NewsletterJoin:
 		s.handleNewsletterJoin(ctx, session, e)
 	case *events.NewsletterLeave:
@@ -225,7 +198,6 @@ func (s *Service) HandleEvent(session *model.Session, evt interface{}) {
 	case *events.NewsletterLiveUpdate:
 		s.handleNewsletterLiveUpdate(ctx, session, e)
 
-	// Chat management events
 	case *events.Mute:
 		s.handleMute(ctx, session, e)
 	case *events.Archive:
@@ -255,7 +227,6 @@ func (s *Service) HandleEvent(session *model.Session, evt interface{}) {
 	}
 }
 
-// sendWebhook sends webhook if configured and not skipped
 func (s *Service) sendWebhook(ctx context.Context, session *model.Session, event string, rawEvent interface{}) {
 	if s.webhookService == nil {
 		return
@@ -268,7 +239,6 @@ func (s *Service) sendWebhook(ctx context.Context, session *model.Session, event
 	s.webhookService.Send(ctx, session.ID, session.Session, event, rawEvent)
 }
 
-// saveHistorySyncToJSON saves history sync to JSON for debugging
 func (s *Service) saveHistorySyncToJSON(sessionId string, e *events.HistorySync, syncType string, chunkOrder uint32) {
 	if os.Getenv("DEBUG_HISTORY_SYNC") != "true" {
 		return

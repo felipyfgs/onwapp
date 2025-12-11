@@ -22,7 +22,6 @@ func NewSettingsHandler(settingsRepo *repository.SettingsRepository, wpp *wpp.Se
 	}
 }
 
-// GetSettings godoc
 // @Summary      Get session settings
 // @Description  Get all settings for a session (local + privacy synced from WhatsApp)
 // @Tags         settings
@@ -45,7 +44,6 @@ func (h *SettingsHandler) GetSettings(c *gin.Context) {
 	c.JSON(http.StatusOK, settings)
 }
 
-// UpdateSettings godoc
 // @Summary      Update session settings
 // @Description  Update settings for a session. Local settings are saved to DB. Privacy settings are applied to WhatsApp AND saved to DB.
 // @Tags         settings
@@ -69,17 +67,14 @@ func (h *SettingsHandler) UpdateSettings(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	// Get current settings
 	currentSettings, err := h.settingsRepo.GetBySessionName(ctx, sessionName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: "settings not found"})
 		return
 	}
 
-	// Build updates map
 	updates := make(map[string]interface{})
 
-	// Local settings (just save to DB)
 	if req.AlwaysOnline != nil {
 		updates["alwaysOnline"] = *req.AlwaysOnline
 	}
@@ -90,7 +85,6 @@ func (h *SettingsHandler) UpdateSettings(c *gin.Context) {
 		updates["syncHistory"] = *req.SyncHistory
 	}
 
-	// Privacy settings (apply to WhatsApp first, then save to DB)
 	privacyUpdates := make(map[string]string)
 
 	if req.LastSeen != nil {
@@ -122,7 +116,6 @@ func (h *SettingsHandler) UpdateSettings(c *gin.Context) {
 		updates["callAdd"] = *req.CallAdd
 	}
 
-	// Apply privacy settings to WhatsApp
 	if len(privacyUpdates) > 0 {
 		for setting, value := range privacyUpdates {
 			if setErr := h.wpp.SetPrivacySettingByName(ctx, sessionName, setting, value); setErr != nil {
@@ -132,7 +125,6 @@ func (h *SettingsHandler) UpdateSettings(c *gin.Context) {
 		}
 	}
 
-	// Apply default disappearing timer to WhatsApp
 	if req.DefaultDisappearingTimer != nil {
 		if timerErr := h.wpp.SetDefaultDisappearingTimerByName(ctx, sessionName, *req.DefaultDisappearingTimer); timerErr != nil {
 			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to set disappearing timer: " + timerErr.Error()})
@@ -141,7 +133,6 @@ func (h *SettingsHandler) UpdateSettings(c *gin.Context) {
 		updates["defaultDisappearingTimer"] = *req.DefaultDisappearingTimer
 	}
 
-	// Save to database
 	updatedSettings, err := h.settingsRepo.Update(ctx, currentSettings.SessionID, updates)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})

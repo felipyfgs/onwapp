@@ -11,7 +11,6 @@ import (
 	"onwapp/internal/logger"
 )
 
-// Client gerencia a conexão NATS e JetStream
 type Client struct {
 	nc           *nats.Conn
 	js           jetstream.JetStream
@@ -19,7 +18,6 @@ type Client struct {
 	config       *ClientConfig
 }
 
-// ClientConfig configuração do cliente NATS
 type ClientConfig struct {
 	URL          string
 	StreamPrefix string
@@ -28,7 +26,6 @@ type ClientConfig struct {
 	AckWait      time.Duration
 }
 
-// NewClient cria um novo cliente NATS com JetStream
 func NewClient(cfg *ClientConfig) (*Client, error) {
 	opts := []nats.Option{
 		nats.RetryOnFailedConnect(true),
@@ -71,7 +68,6 @@ func NewClient(cfg *ClientConfig) (*Client, error) {
 	}, nil
 }
 
-// Close fecha a conexão NATS
 func (c *Client) Close() {
 	if c.nc != nil {
 		if err := c.nc.Drain(); err != nil {
@@ -82,32 +78,26 @@ func (c *Client) Close() {
 	}
 }
 
-// IsConnected verifica se está conectado ao NATS
 func (c *Client) IsConnected() bool {
 	return c.nc != nil && c.nc.IsConnected()
 }
 
-// JetStream retorna o contexto JetStream
 func (c *Client) JetStream() jetstream.JetStream {
 	return c.js
 }
 
-// StreamName retorna o nome completo do stream com prefixo
 func (c *Client) StreamName(name string) string {
 	return fmt.Sprintf("%s_%s", c.streamPrefix, name)
 }
 
-// Subject retorna o subject completo com prefixo
 func (c *Client) Subject(stream, suffix string) string {
 	return fmt.Sprintf("%s.%s.%s", c.streamPrefix, stream, suffix)
 }
 
-// Config retorna a configuração do cliente
 func (c *Client) Config() *ClientConfig {
 	return c.config
 }
 
-// EnsureStreams cria os streams necessários
 func (c *Client) EnsureStreams(ctx context.Context) error {
 	streams := []jetstream.StreamConfig{
 		{

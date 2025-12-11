@@ -8,7 +8,6 @@ import (
 	"onwapp/internal/model"
 )
 
-// Message type placeholders for Chatwoot
 const (
 	msgLocation = "_[📍 Localização]_"
 	msgContact  = "_[👤 Contato]_"
@@ -16,7 +15,6 @@ const (
 	msgResponse = "_[🔘 Resposta]_"
 )
 
-// GetMessageContent extracts displayable content from a message
 func GetMessageContent(msg *model.Message) string {
 	if msg.Content == "" && len(msg.RawEvent) > 0 {
 		if isInteractiveType(msg.Type) {
@@ -29,7 +27,6 @@ func GetMessageContent(msg *model.Message) string {
 	return formatMessageContent(msg)
 }
 
-// isInteractiveType checks if message type requires special content extraction
 func isInteractiveType(msgType string) bool {
 	switch msgType {
 	case "list", "template", "buttons", "interactive", "button_reply", "button_response":
@@ -39,7 +36,6 @@ func isInteractiveType(msgType string) bool {
 	}
 }
 
-// formatMessageContent formats message content based on type
 func formatMessageContent(msg *model.Message) string {
 	switch msg.Type {
 	case "image":
@@ -70,7 +66,6 @@ func formatMessageContent(msg *model.Message) string {
 	}
 }
 
-// extractLocationContent extracts location data and creates Google Maps link
 func extractLocationContent(msg *model.Message) string {
 	if len(msg.RawEvent) == 0 {
 		if msg.Content != "" {
@@ -84,7 +79,6 @@ func extractLocationContent(msg *model.Message) string {
 		return msgLocation
 	}
 
-	// Try to extract from webMessageInfo or historySyncMsg
 	var locationMsg map[string]interface{}
 
 	if webMsgInfo, ok := rawEvent["webMessageInfo"].(map[string]interface{}); ok {
@@ -138,7 +132,6 @@ func extractLocationContent(msg *model.Message) string {
 	return b.String()
 }
 
-// extractContactContent extracts contact name and phone from vCard
 func extractContactContent(msg *model.Message) string {
 	if len(msg.RawEvent) == 0 {
 		if msg.Content != "" {
@@ -152,13 +145,11 @@ func extractContactContent(msg *model.Message) string {
 		return msgContact
 	}
 
-	// Try Message.contactMessage first (real-time format)
 	var contactMsg map[string]interface{}
 	if message, ok := rawEvent["Message"].(map[string]interface{}); ok {
 		contactMsg, _ = message["contactMessage"].(map[string]interface{})
 	}
 
-	// Try webMessageInfo format
 	if contactMsg == nil {
 		if webMsgInfo, ok := rawEvent["webMessageInfo"].(map[string]interface{}); ok {
 			if message, ok := webMsgInfo["message"].(map[string]interface{}); ok {
@@ -167,7 +158,6 @@ func extractContactContent(msg *model.Message) string {
 		}
 	}
 
-	// Try historySyncMsg format
 	if contactMsg == nil {
 		if historySync, ok := rawEvent["historySyncMsg"].(map[string]interface{}); ok {
 			if msgWrapper, ok := historySync["message"].(map[string]interface{}); ok {
@@ -197,7 +187,6 @@ func extractContactContent(msg *model.Message) string {
 		b.WriteString("*")
 	}
 
-	// Extract phone from vCard
 	if phone := extractPhoneFromVCard(vcard); phone != "" {
 		b.WriteString("\n")
 		b.WriteString(phone)
@@ -206,7 +195,6 @@ func extractContactContent(msg *model.Message) string {
 	return b.String()
 }
 
-// extractContactsArrayContent extracts multiple contacts from contactsArrayMessage
 func extractContactsArrayContent(msg *model.Message) string {
 	if len(msg.RawEvent) == 0 {
 		if msg.Content != "" {
@@ -220,7 +208,6 @@ func extractContactsArrayContent(msg *model.Message) string {
 		return msgContacts
 	}
 
-	// Try Message.contactsArrayMessage first (real-time format)
 	var contactsArray []interface{}
 	if message, ok := rawEvent["Message"].(map[string]interface{}); ok {
 		if contactsMsg, ok := message["contactsArrayMessage"].(map[string]interface{}); ok {
@@ -228,7 +215,6 @@ func extractContactsArrayContent(msg *model.Message) string {
 		}
 	}
 
-	// Try webMessageInfo format
 	if contactsArray == nil {
 		if webMsgInfo, ok := rawEvent["webMessageInfo"].(map[string]interface{}); ok {
 			if message, ok := webMsgInfo["message"].(map[string]interface{}); ok {
@@ -239,7 +225,6 @@ func extractContactsArrayContent(msg *model.Message) string {
 		}
 	}
 
-	// Try historySyncMsg format
 	if contactsArray == nil {
 		if historySync, ok := rawEvent["historySyncMsg"].(map[string]interface{}); ok {
 			if msgWrapper, ok := historySync["message"].(map[string]interface{}); ok {
@@ -286,9 +271,7 @@ func extractContactsArrayContent(msg *model.Message) string {
 	return b.String()
 }
 
-// extractButtonReplyContent extracts content from button reply messages
 func extractButtonReplyContent(msg *model.Message) string {
-	// Button replies usually have the selected button text in Content
 	if msg.Content != "" {
 		return msgResponse + " " + msg.Content
 	}
@@ -302,10 +285,8 @@ func extractButtonReplyContent(msg *model.Message) string {
 		return msgResponse
 	}
 
-	// Try to extract selected display text from various formats
 	var selectedText string
 
-	// Real-time format
 	if message, ok := rawEvent["Message"].(map[string]interface{}); ok {
 		if btnReply, ok := message["templateButtonReplyMessage"].(map[string]interface{}); ok {
 			selectedText, _ = btnReply["selectedDisplayText"].(string)
@@ -317,7 +298,6 @@ func extractButtonReplyContent(msg *model.Message) string {
 		}
 	}
 
-	// History sync format
 	if selectedText == "" {
 		if historySync, ok := rawEvent["historySyncMsg"].(map[string]interface{}); ok {
 			if msgWrapper, ok := historySync["message"].(map[string]interface{}); ok {
@@ -342,7 +322,6 @@ func extractButtonReplyContent(msg *model.Message) string {
 	return msgResponse
 }
 
-// extractPhoneFromVCard extracts phone number from vCard string
 func extractPhoneFromVCard(vcard string) string {
 	if vcard == "" {
 		return ""
@@ -350,7 +329,6 @@ func extractPhoneFromVCard(vcard string) string {
 
 	lines := strings.Split(vcard, "\n")
 	for _, line := range lines {
-		// Look for TEL lines: item1.TEL;waid=559992166318:+55 99 9216-6318
 		if strings.Contains(line, "TEL") && strings.Contains(line, ":") {
 			parts := strings.SplitN(line, ":", 2)
 			if len(parts) == 2 {
@@ -361,12 +339,10 @@ func extractPhoneFromVCard(vcard string) string {
 	return ""
 }
 
-// formatFloat formats float to string
 func formatFloat(f float64) string {
 	return fmt.Sprintf("%.6f", f)
 }
 
-// formatMediaContent formats media type label with optional caption
 func formatMediaContent(label, caption string) string {
 	if caption != "" {
 		return "_[" + label + "]_\n" + caption
@@ -374,7 +350,6 @@ func formatMediaContent(label, caption string) string {
 	return "_[" + label + "]_"
 }
 
-// ExtractInteractiveContent extracts content from interactive message types
 func ExtractInteractiveContent(msg *model.Message) string {
 	if len(msg.RawEvent) == 0 {
 		return ""
@@ -404,7 +379,6 @@ func ExtractInteractiveContent(msg *model.Message) string {
 	}
 }
 
-// extractMessageFromRawEvent extracts the message object from raw event
 func extractMessageFromRawEvent(rawEvent map[string]interface{}) map[string]interface{} {
 	webMsgInfo, ok := rawEvent["webMessageInfo"].(map[string]interface{})
 	if !ok {
@@ -418,7 +392,6 @@ func extractMessageFromRawEvent(rawEvent map[string]interface{}) map[string]inte
 	return message
 }
 
-// extractListContent extracts content from list messages
 func extractListContent(message map[string]interface{}) string {
 	listMsg, ok := message["listMessage"].(map[string]interface{})
 	if !ok {
@@ -475,21 +448,18 @@ func extractListContent(message map[string]interface{}) string {
 	return strings.TrimSpace(b.String())
 }
 
-// extractTemplateContent extracts content from template messages
 func extractTemplateContent(message map[string]interface{}) string {
 	templateMsg, ok := message["templateMessage"].(map[string]interface{})
 	if !ok {
 		return ""
 	}
 
-	// Try hydratedTemplate first
 	if ht, ok := templateMsg["hydratedTemplate"].(map[string]interface{}); ok {
 		if text, ok := ht["hydratedContentText"].(string); ok && text != "" {
 			return text
 		}
 	}
 
-	// Try Format > HydratedFourRowTemplate
 	if format, ok := templateMsg["Format"].(map[string]interface{}); ok {
 		if fourRow, ok := format["HydratedFourRowTemplate"].(map[string]interface{}); ok {
 			if text, ok := fourRow["hydratedContentText"].(string); ok && text != "" {
@@ -501,7 +471,6 @@ func extractTemplateContent(message map[string]interface{}) string {
 	return ""
 }
 
-// extractButtonsContent extracts content from buttons messages
 func extractButtonsContent(message map[string]interface{}) string {
 	buttonsMsg, ok := message["buttonsMessage"].(map[string]interface{})
 	if !ok {
@@ -514,7 +483,6 @@ func extractButtonsContent(message map[string]interface{}) string {
 	return ""
 }
 
-// extractInteractiveMessageContent extracts content from interactive messages
 func extractInteractiveMessageContent(message map[string]interface{}) string {
 	interactiveMsg, ok := message["interactiveMessage"].(map[string]interface{})
 	if !ok {
@@ -529,14 +497,11 @@ func extractInteractiveMessageContent(message map[string]interface{}) string {
 	return ""
 }
 
-// ExtractQuotedID extracts the quoted message ID (stanzaID)
 func ExtractQuotedID(msg *model.Message) string {
-	// First check the QuotedID field directly (populated by extractQuotedID function)
 	if msg.QuotedID != "" {
 		return msg.QuotedID
 	}
 
-	// Fallback: try to extract from rawEvent for older messages
 	if len(msg.RawEvent) == 0 {
 		return ""
 	}
@@ -546,12 +511,10 @@ func ExtractQuotedID(msg *model.Message) string {
 		return ""
 	}
 
-	// Try history sync format first
 	if stanzaID := extractStanzaIDFromHistorySync(rawEvent); stanzaID != "" {
 		return stanzaID
 	}
 
-	// Try real-time event format
 	if stanzaID := extractStanzaIDFromRealtime(rawEvent); stanzaID != "" {
 		return stanzaID
 	}
@@ -559,7 +522,6 @@ func ExtractQuotedID(msg *model.Message) string {
 	return ""
 }
 
-// extractStanzaIDFromHistorySync extracts stanzaID from history sync rawEvent
 func extractStanzaIDFromHistorySync(rawEvent map[string]interface{}) string {
 	historySync, ok := rawEvent["historySyncMsg"].(map[string]interface{})
 	if !ok {
@@ -576,7 +538,6 @@ func extractStanzaIDFromHistorySync(rawEvent map[string]interface{}) string {
 		return ""
 	}
 
-	// Check all message types that can have contextInfo
 	messageTypes := []string{
 		"extendedTextMessage",
 		"imageMessage",
@@ -601,9 +562,7 @@ func extractStanzaIDFromHistorySync(rawEvent map[string]interface{}) string {
 	return ""
 }
 
-// extractStanzaIDFromRealtime extracts stanzaID from real-time event rawEvent
 func extractStanzaIDFromRealtime(rawEvent map[string]interface{}) string {
-	// Real-time events may have Info.QuotedID or similar structure
 	if info, ok := rawEvent["Info"].(map[string]interface{}); ok {
 		if quotedID, ok := info["QuotedID"].(string); ok && quotedID != "" {
 			return quotedID

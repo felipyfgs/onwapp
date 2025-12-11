@@ -15,13 +15,11 @@ import (
 	"onwapp/internal/model"
 )
 
-// MessageRepository interface for accessing message data
 type MessageRepository interface {
 	GetBySession(ctx context.Context, sessionID string, limit, offset int) ([]model.Message, error)
 	UpdateCwFields(ctx context.Context, sessionID, msgId string, cwMsgId, cwConvId int, cwSourceId string) error
 }
 
-// ContactsGetter interface for getting WhatsApp contacts
 type ContactsGetter interface {
 	GetAllContacts(ctx context.Context) ([]core.WhatsAppContact, error)
 	GetProfilePictureURL(ctx context.Context, jid string) (string, error)
@@ -29,12 +27,10 @@ type ContactsGetter interface {
 	GetAllGroupNames(ctx context.Context) (map[string]string, error)
 }
 
-// MediaGetter interface for getting media info by message ID
 type MediaGetter interface {
 	GetByMsgID(ctx context.Context, sessionID, msgID string) (*model.Media, error)
 }
 
-// ChatwootDBSync handles direct database sync to Chatwoot PostgreSQL
 type ChatwootDBSync struct {
 	cfg            *core.Config
 	client         *client.Client
@@ -47,7 +43,6 @@ type ChatwootDBSync struct {
 	lidResolver    util.LIDResolver
 }
 
-// NewChatwootDBSync creates a new direct database sync service
 func NewChatwootDBSync(
 	cfg *core.Config,
 	msgRepo MessageRepository,
@@ -87,7 +82,6 @@ func NewChatwootDBSync(
 	}, nil
 }
 
-// Close closes the database connection
 func (s *ChatwootDBSync) Close() error {
 	if s.cwDB != nil {
 		return s.cwDB.Close()
@@ -95,19 +89,13 @@ func (s *ChatwootDBSync) Close() error {
 	return nil
 }
 
-// SyncAll performs full sync (contacts + messages)
 func (s *ChatwootDBSync) SyncAll(ctx context.Context, daysLimit int) (*core.SyncStats, error) {
 	totalStats := &core.SyncStats{}
 
-	// Validate inbox exists before sync to prevent creating orphan records
 	if err := s.repo.ValidateInbox(ctx); err != nil {
 		logger.Chatwoot().Error().Err(err).Int("inboxId", s.cfg.InboxID).Msg("Chatwoot sync: inbox validation failed")
 		return nil, err
 	}
-
-	// NOTE: We intentionally do NOT auto-clean orphan records here
-	// The cleanup could affect other inboxes in the same Chatwoot instance
-	// Use the manual cleanup endpoint if needed: POST /sessions/:id/chatwoot/cleanup
 
 	contactStats, err := s.SyncContacts(ctx, daysLimit)
 	if err != nil {
@@ -134,13 +122,11 @@ func (s *ChatwootDBSync) SyncAll(ctx context.Context, daysLimit int) (*core.Sync
 	return totalStats, nil
 }
 
-// SyncContacts synchronizes contacts to Chatwoot
 func (s *ChatwootDBSync) SyncContacts(ctx context.Context, daysLimit int) (*core.SyncStats, error) {
 	syncer := NewContactSyncer(s.repo, s.contactsGetter, s.lidResolver, s.sessionID)
 	return syncer.Sync(ctx, daysLimit)
 }
 
-// SyncMessages synchronizes messages to Chatwoot
 func (s *ChatwootDBSync) SyncMessages(ctx context.Context, daysLimit int) (*core.SyncStats, error) {
 	syncer := NewMessageSyncer(
 		s.cfg,
@@ -158,14 +144,12 @@ func (s *ChatwootDBSync) SyncMessages(ctx context.Context, daysLimit int) (*core
 		return stats, err
 	}
 
-	// Start background avatar update
 	avatarUpdater := NewAvatarUpdater(s.cfg, s.client, s.contactsGetter)
 	avatarUpdater.UpdateAllAvatarsAsync(s.cfg)
 
 	return stats, nil
 }
 
-// StartSyncAsync starts sync in background
 func (s *ChatwootDBSync) StartSyncAsync(syncType string, daysLimit int) (*core.SyncStatus, error) {
 	if IsSyncRunning(s.sessionID) {
 		return GetSyncStatus(s.sessionID), core.ErrSyncInProgress
@@ -185,7 +169,6 @@ func (s *ChatwootDBSync) StartSyncAsync(syncType string, daysLimit int) (*core.S
 	return status, nil
 }
 
-// runAsyncSync runs the sync operation asynchronously
 func (s *ChatwootDBSync) runAsyncSync(syncType string, daysLimit int, startTime time.Time) {
 	ctx := context.Background()
 	var stats *core.SyncStats
@@ -227,33 +210,27 @@ func (s *ChatwootDBSync) runAsyncSync(syncType string, daysLimit int, startTime 
 		Msg("Chatwoot sync: async completed")
 }
 
-// ResetData deletes all Chatwoot data except the bot contact (id=1)
 func (s *ChatwootDBSync) ResetData(ctx context.Context) (*core.ResetStats, error) {
 	resetter := NewDataResetter(s.repo)
 	return resetter.Reset(ctx)
 }
 
-// ResolveAllConversations sets all open conversations to resolved status
 func (s *ChatwootDBSync) ResolveAllConversations(ctx context.Context) (int, error) {
 	return s.repo.ResolveAllConversations(ctx)
 }
 
-// GetOpenConversationsCount returns the count of open conversations
 func (s *ChatwootDBSync) GetOpenConversationsCount(ctx context.Context) (int, error) {
 	return s.repo.GetOpenConversationsCount(ctx)
 }
 
-// GetSyncOverview returns comprehensive sync statistics
 func (s *ChatwootDBSync) GetSyncOverview(ctx context.Context) (*SyncOverview, error) {
 	return s.repo.GetSyncOverview(ctx)
 }
 
-// GetOrphanStats returns count of orphan records for preview before cleanup
 func (s *ChatwootDBSync) GetOrphanStats(ctx context.Context) (*OrphanStats, error) {
 	return s.repo.GetOrphanStats(ctx)
 }
 
-// CleanOurOrphanRecords removes orphan records ONLY from our inbox
 func (s *ChatwootDBSync) CleanOurOrphanRecords(ctx context.Context) (*OrphanCleanupResult, error) {
 	return s.repo.CleanOurOrphanRecords(ctx)
 }

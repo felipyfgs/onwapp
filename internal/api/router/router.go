@@ -61,11 +61,9 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 	r.Use(gin.Recovery())
 	r.Use(logger.GinMiddleware())
 
-	// Security middleware chain
 	r.Use(middleware.SecurityHeaders())
 	r.Use(middleware.CORS(cfg.AllowedOrigins))
 
-	// Rate limiting (configurable, default 200 req/s for high-volume usage)
 	rlConfig := middleware.DefaultRateLimiterConfig()
 	if cfg.RateLimitPerSecond > 0 {
 		rlConfig.RequestsPerSecond = cfg.RateLimitPerSecond
@@ -78,9 +76,6 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 
 	h := cfg.Handlers
 
-	// ============================================================
-	// HEALTH & DOCS
-	// ============================================================
 	r.GET("/", healthHandler(cfg))
 	r.GET("/health", healthHandler(cfg))
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -89,14 +84,10 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 	})
 	r.GET("/events", middleware.Auth(cfg.GlobalAPIKey, cfg.SessionLookup), h.Webhook.GetEvents)
 
-	// Public media streaming endpoint (no auth required for audio/video playback in browser)
 	if h.Media != nil {
 		r.GET("/public/:session/media/stream", h.Media.StreamMediaPublic)
 	}
 
-	// ============================================================
-	// SESSIONS MANAGEMENT
-	// ============================================================
 	sessions := r.Group("/sessions")
 	sessions.Use(middleware.Auth(cfg.GlobalAPIKey, cfg.SessionLookup))
 	{
@@ -104,15 +95,9 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 		sessions.POST("", h.Session.Create)
 	}
 
-	// ============================================================
-	// SESSION ROUTES (/:session/...)
-	// ============================================================
 	session := r.Group("/:session")
 	session.Use(middleware.Auth(cfg.GlobalAPIKey, cfg.SessionLookup))
 	{
-		// ----------------------------------------------------------
-		// SESSION LIFECYCLE
-		// ----------------------------------------------------------
 		session.GET("/status", h.Session.Info)
 		session.DELETE("", h.Session.Delete)
 		session.POST("/connect", h.Session.Connect)
@@ -122,26 +107,17 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 		session.GET("/qr", h.Session.QR)
 		session.POST("/pairphone", h.Session.PairPhone)
 
-		// ----------------------------------------------------------
-		// PROFILE
-		// ----------------------------------------------------------
 		session.GET("/profile", h.Profile.GetProfile)
 		session.POST("/profile/status", h.Profile.SetStatus)
 		session.POST("/profile/name", h.Profile.SetPushName)
 		session.POST("/profile/picture", h.Profile.SetProfilePicture)
 		session.POST("/profile/picture/remove", h.Profile.DeleteProfilePicture)
 
-		// ----------------------------------------------------------
-		// SETTINGS
-		// ----------------------------------------------------------
 		if h.Settings != nil {
 			session.GET("/settings", h.Settings.GetSettings)
 			session.POST("/settings", h.Settings.UpdateSettings)
 		}
 
-		// ----------------------------------------------------------
-		// CONTACT
-		// ----------------------------------------------------------
 		session.GET("/contact/list", h.Contact.GetContacts)
 		session.POST("/contact/check", h.Contact.CheckPhone)
 		session.GET("/contact/blocklist", h.Contact.GetBlocklist)
@@ -152,15 +128,9 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 		session.GET("/contact/lid", h.Contact.GetContactLID)
 		session.GET("/contact/qrlink", h.Contact.GetContactQRLink)
 
-		// ----------------------------------------------------------
-		// PRESENCE
-		// ----------------------------------------------------------
 		session.POST("/presence", h.Chat.SetPresence)
 		session.POST("/presence/subscribe", h.Chat.SubscribePresence)
 
-		// ----------------------------------------------------------
-		// CHAT
-		// ----------------------------------------------------------
 		session.POST("/chat/presence", h.Chat.SetChatPresence)
 		session.POST("/chat/markread", h.Chat.MarkRead)
 		session.POST("/chat/unread", h.Chat.MarkChatUnread)
@@ -170,9 +140,6 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 		session.GET("/chat/messages", h.Chat.GetChatMessages)
 		session.GET("/chat/info", h.Chat.GetChatInfo)
 
-		// ----------------------------------------------------------
-		// MESSAGE - SEND
-		// ----------------------------------------------------------
 		session.POST("/message/send/text", h.Message.SendText)
 		session.POST("/message/send/image", h.Message.SendImage)
 		session.POST("/message/send/audio", h.Message.SendAudio)
@@ -188,18 +155,12 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 		session.POST("/message/send/template", h.Message.SendTemplate)
 		session.POST("/message/send/carousel", h.Message.SendCarousel)
 
-		// ----------------------------------------------------------
-		// MESSAGE - ACTIONS
-		// ----------------------------------------------------------
 		session.POST("/message/react", h.Message.SendReaction)
 		session.POST("/message/delete", h.Chat.DeleteMessage)
 		session.POST("/message/edit", h.Chat.EditMessage)
 		session.POST("/message/poll/vote", h.Message.SendPollVote)
 		session.POST("/message/request-unavailable", h.Chat.RequestUnavailableMessage)
 
-		// ----------------------------------------------------------
-		// GROUP - CRUD
-		// ----------------------------------------------------------
 		session.POST("/group/create", h.Group.CreateGroup)
 		session.GET("/group/list", h.Group.GetJoinedGroups)
 		session.GET("/group/info", h.Group.GetGroupInfo)
@@ -210,25 +171,16 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 		session.POST("/group/photo/remove", h.Group.DeleteGroupPicture)
 		session.GET("/group/avatar", h.Group.GetGroupPicture)
 
-		// ----------------------------------------------------------
-		// GROUP - PARTICIPANTS
-		// ----------------------------------------------------------
 		session.POST("/group/participants/add", h.Group.AddParticipants)
 		session.POST("/group/participants/remove", h.Group.RemoveParticipants)
 		session.POST("/group/participants/promote", h.Group.PromoteParticipants)
 		session.POST("/group/participants/demote", h.Group.DemoteParticipants)
 
-		// ----------------------------------------------------------
-		// GROUP - SETTINGS
-		// ----------------------------------------------------------
 		session.POST("/group/announce", h.Group.SetGroupAnnounce)
 		session.POST("/group/locked", h.Group.SetGroupLocked)
 		session.POST("/group/approval", h.Group.SetGroupApprovalMode)
 		session.POST("/group/memberadd", h.Group.SetGroupMemberAddMode)
 
-		// ----------------------------------------------------------
-		// GROUP - INVITES
-		// ----------------------------------------------------------
 		session.GET("/group/invitelink", h.Group.GetInviteLink)
 		session.GET("/group/inviteinfo", h.Group.GetGroupInfoFromLink)
 		session.POST("/group/join", h.Group.JoinGroup)
@@ -236,18 +188,12 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 		session.POST("/group/requests/action", h.Group.UpdateGroupRequestParticipants)
 		session.POST("/group/send/text", h.Group.SendGroupMessage)
 
-		// ----------------------------------------------------------
-		// COMMUNITY
-		// ----------------------------------------------------------
 		if h.Community != nil {
 			session.GET("/community/groups", h.Community.GetSubGroups)
 			session.POST("/community/link", h.Community.LinkGroup)
 			session.POST("/community/unlink", h.Community.UnlinkGroup)
 		}
 
-		// ----------------------------------------------------------
-		// MEDIA
-		// ----------------------------------------------------------
 		if h.Media != nil {
 			session.GET("/media/list", h.Media.ListMedia)
 			session.GET("/media/pending", h.Media.ListPendingMedia)
@@ -257,9 +203,6 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 			session.GET("/media/stream", h.Media.StreamMedia)
 		}
 
-		// ----------------------------------------------------------
-		// NEWSLETTER (Channels)
-		// ----------------------------------------------------------
 		if h.Newsletter != nil {
 			session.POST("/newsletter/create", h.Newsletter.CreateNewsletter)
 			session.GET("/newsletter/list", h.Newsletter.GetSubscribedNewsletters)
@@ -273,22 +216,13 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 			session.POST("/newsletter/subscribe-live", h.Newsletter.NewsletterSubscribeLiveUpdates)
 		}
 
-		// ----------------------------------------------------------
-		// STATUS (Stories)
-		// ----------------------------------------------------------
 		if h.Status != nil {
 			session.POST("/status/send", h.Status.SendStory)
 			session.GET("/status/privacy", h.Status.GetStatusPrivacy)
 		}
 
-		// ----------------------------------------------------------
-		// CALL
-		// ----------------------------------------------------------
 		session.POST("/call/reject", h.Chat.RejectCall)
 
-		// ----------------------------------------------------------
-		// WEBHOOK
-		// ----------------------------------------------------------
 		session.GET("/webhook", h.Webhook.GetWebhook)
 		session.POST("/webhook", h.Webhook.SetWebhook)
 		session.PUT("/webhook", h.Webhook.UpdateWebhook)

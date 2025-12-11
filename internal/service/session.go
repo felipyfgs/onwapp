@@ -23,7 +23,6 @@ import (
 )
 
 func init() {
-	// Device name shown in WhatsApp linked devices
 	deviceName := os.Getenv("DEVICE_NAME")
 	if deviceName == "" {
 		deviceName = "OnWApp"
@@ -33,10 +32,8 @@ func init() {
 	store.DeviceProps.RequireFullSync = proto.Bool(false)
 }
 
-// EventHandler is a function that handles WhatsApp events
 type EventHandler func(session *model.Session, evt interface{})
 
-// WebhookSender defines the interface for sending webhooks
 type WebhookSender interface {
 	Send(ctx context.Context, sessionID, sessionId, event string, rawEvent interface{})
 }
@@ -113,15 +110,12 @@ func (s *SessionService) LoadFromDatabase(ctx context.Context) error {
 
 		logger.Session().Info().Str("session", rec.Session).Str("jid", rec.DeviceJID).Str("phone", rec.Phone).Str("status", rec.Status).Msg("Session loaded from database")
 
-		// Se a sessão tem credenciais válidas (deviceJID preenchido), reconecta automaticamente
-		// O device.ID será preenchido pelo whatsmeow se houver credenciais no sqlstore
 		if device != nil && device.ID != nil {
 			sessionsToReconnect = append(sessionsToReconnect, session)
 			logger.Session().Info().Str("session", rec.Session).Msg("Session has valid credentials, will auto-reconnect")
 		}
 	}
 
-	// Reconectar sessões que estavam conectadas
 	for _, session := range sessionsToReconnect {
 		go s.reconnectSession(session)
 	}
@@ -153,7 +147,6 @@ func (s *SessionService) Create(ctx context.Context, sessionId string, apiKey st
 		return nil, fmt.Errorf("session %s already exists", sessionId)
 	}
 
-	// Save to database and get record
 	rec, err := s.database.Sessions.Create(ctx, sessionId, apiKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to save session to database: %w", err)
@@ -192,7 +185,6 @@ func (s *SessionService) Get(sessionId string) (*model.Session, error) {
 	return session, nil
 }
 
-// GetByID finds a session by its UUID (session.ID field) - O(1) lookup
 func (s *SessionService) GetByID(id string) (*model.Session, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -210,13 +202,10 @@ func (s *SessionService) Delete(ctx context.Context, sessionId string) error {
 
 	session, exists := s.sessions[sessionId]
 
-	// If session exists in memory, properly cleanup WhatsApp connection
 	if exists && session != nil {
 		hasCredentials := session.Device != nil && session.Device.ID != nil
 
-		// If we have credentials, properly logout from WhatsApp server first
 		if hasCredentials {
-			// If not connected, try to connect first so we can send logout to server
 			if !session.Client.IsConnected() {
 				logger.Session().Info().Str("session", sessionId).Msg("Connecting to send logout request before delete...")
 				if err := session.Client.Connect(); err != nil {
@@ -224,7 +213,6 @@ func (s *SessionService) Delete(ctx context.Context, sessionId string) error {
 				}
 			}
 
-			// Send logout to WhatsApp server (removes device from their servers)
 			if session.Client.IsConnected() {
 				if err := session.Client.Logout(ctx); err != nil {
 					logger.Session().Warn().Err(err).Str("session", sessionId).Msg("Failed to logout from WhatsApp server")
@@ -232,29 +220,22 @@ func (s *SessionService) Delete(ctx context.Context, sessionId string) error {
 				}
 			}
 
-			// Ensure device is deleted from whatsmeow store
 			if err := s.container.DeleteDevice(ctx, session.Device); err != nil {
 				logger.Session().Debug().Err(err).Str("session", sessionId).Msg("DeleteDevice (may already be deleted by Logout)")
 			}
 		} else {
-			// No credentials - always disconnect to stop QR generation goroutine
-			// Disconnect() is safe to call even if not connected, and it will
 
 			session.Client.Disconnect()
 		}
 
-		// Clear QR code
 		session.SetQR("")
 
-		// Remove from in-memory maps
 		delete(s.sessions, sessionId)
 		delete(s.sessionsByID, session.ID)
 	}
 
-	// Always try to delete from database (even if not in memory)
 	if err := s.database.Sessions.Delete(ctx, sessionId); err != nil {
 		logger.Session().Warn().Err(err).Str("session", sessionId).Msg("Failed to delete session from database")
-		// If not in memory and database delete failed, session truly doesn't exist
 		if !exists {
 			return fmt.Errorf("session %s not found", sessionId)
 		}
@@ -289,12 +270,10 @@ func (s *SessionService) Connect(ctx context.Context, sessionId string) (*model.
 	s.setupEventHandler(session)
 
 	if session.Client.Store.ID == nil {
-		// New login - need QR code
 		go s.startClientWithQR(session)
 		return session, nil
 	}
 
-	// Already logged in - just connect
 	if err := session.Client.Connect(); err != nil {
 		session.SetStatus(model.StatusDisconnected)
 		return nil, err
@@ -317,7 +296,6 @@ func (s *SessionService) startClientWithQR(session *model.Session) {
 		return
 	}
 
-	// Process QR events in the same goroutine (blocking)
 	for evt := range qrChan {
 		switch evt.Event {
 		case "code":
@@ -328,10 +306,9 @@ func (s *SessionService) startClientWithQR(session *model.Session) {
 		case "success":
 			session.SetStatus(model.StatusConnected)
 			session.SetQR("")
-			// Save JID and phone to database
 			if session.Client.Store.ID != nil {
 				jid := session.Client.Store.ID.String()
-				phone := session.Client.Store.ID.User // Extrai o número do JID
+				phone := session.Client.Store.ID.User
 				if err := s.database.Sessions.UpdateJID(context.Background(), session.Session, jid, phone); err != nil {
 					logger.Session().Warn().Err(err).Str("session", session.Session).Msg("Failed to update session JID")
 				}
@@ -351,7 +328,6 @@ func (s *SessionService) startClientWithQR(session *model.Session) {
 }
 
 func (s *SessionService) setupEventHandler(session *model.Session) {
-	// Prevent duplicate event handler registration on reconnect
 	if session.EventHandlerSet {
 		logger.Session().Debug().Str("session", session.Session).Msg("Event handler already set, skipping")
 		return
@@ -365,24 +341,18 @@ func (s *SessionService) setupEventHandler(session *model.Session) {
 			Str("eventType", fmt.Sprintf("%T", evt)).
 			Msg("Event received, calling handlers")
 
-		// First, save message to database so UpdateCwFields can work
 		s.eventService.HandleEvent(session, evt)
 
-		// Then call external handlers (like Chatwoot) to create message in Chatwoot
-		// They can now UpdateCwFields because message exists in DB
 		for _, handler := range s.externalHandlers {
 			handler(session, evt)
 		}
 	})
 }
 
-// AddEventHandler registers an external event handler
 func (s *SessionService) AddEventHandler(handler EventHandler) {
 	s.externalHandlers = append(s.externalHandlers, handler)
 }
 
-// EmitSyntheticEvent emits a synthetic event for messages sent via API.
-// Saves message to database first, then notifies external handlers (like Chatwoot).
 func (s *SessionService) EmitSyntheticEvent(sessionId string, evt interface{}) {
 	session, err := s.Get(sessionId)
 	if err != nil {
@@ -390,52 +360,41 @@ func (s *SessionService) EmitSyntheticEvent(sessionId string, evt interface{}) {
 		return
 	}
 
-	// First, save message to database so UpdateCwFields can work
 	s.eventService.HandleEvent(session, evt)
 
-	// Then call external handlers (like Chatwoot) to create message in Chatwoot
 	for _, handler := range s.externalHandlers {
 		handler(session, evt)
 	}
 }
 
-// SetMediaService sets the media service for downloading media to storage
 func (s *SessionService) SetMediaService(mediaService *MediaService) {
 	s.eventService.SetMediaService(mediaService)
 }
 
-// SetHistorySyncService sets the history sync service for processing sync data
 func (s *SessionService) SetHistorySyncService(historySyncService *HistorySyncService) {
 	s.eventService.SetHistorySyncService(historySyncService)
 }
 
-// SetWebhookSkipChecker sets the function that determines if webhook should be skipped
-// for certain session/event combinations (e.g., when Chatwoot handles message webhooks)
 func (s *SessionService) SetWebhookSkipChecker(checker event.WebhookSkipChecker) {
 	s.eventService.SetWebhookSkipChecker(checker)
 }
 
-// SetSettingsProvider sets the settings provider for auto-reject calls and privacy sync
 func (s *SessionService) SetSettingsProvider(provider event.SettingsProvider) {
 	s.eventService.SetSettingsProvider(provider)
 }
 
-// SetCallRejecter sets the call rejecter for auto-reject calls
 func (s *SessionService) SetCallRejecter(rejecter event.CallRejecter) {
 	s.eventService.SetCallRejecter(rejecter)
 }
 
-// SetPrivacyGetter sets the privacy getter for syncing privacy settings from WhatsApp
 func (s *SessionService) SetPrivacyGetter(getter event.PrivacyGetter) {
 	s.eventService.SetPrivacyGetter(getter)
 }
 
-// SetPresenceSender sets the presence sender for keepOnline feature
 func (s *SessionService) SetPresenceSender(sender event.PresenceSender) {
 	s.eventService.SetPresenceSender(sender)
 }
 
-// Disconnect disconnects the session but keeps credentials for auto-reconnect
 func (s *SessionService) Disconnect(ctx context.Context, sessionId string) error {
 	session, err := s.Get(sessionId)
 	if err != nil {
@@ -454,8 +413,6 @@ func (s *SessionService) Disconnect(ctx context.Context, sessionId string) error
 	return nil
 }
 
-// Logout logs out from WhatsApp and clears credentials (requires new QR scan to reconnect)
-// This sends remove-companion-device to WhatsApp server and deletes local credentials
 func (s *SessionService) Logout(ctx context.Context, sessionId string) error {
 	session, err := s.Get(sessionId)
 	if err != nil {
@@ -464,9 +421,7 @@ func (s *SessionService) Logout(ctx context.Context, sessionId string) error {
 
 	hasCredentials := session.Device != nil && session.Device.ID != nil
 
-	// If we have credentials, we need to properly logout from WhatsApp server
 	if hasCredentials {
-		// If not connected, try to connect first so we can send logout to server
 		if !session.Client.IsConnected() {
 			logger.Session().Info().Str("session", sessionId).Msg("Connecting to send logout request...")
 			if err := session.Client.Connect(); err != nil {
@@ -474,28 +429,22 @@ func (s *SessionService) Logout(ctx context.Context, sessionId string) error {
 			}
 		}
 
-		// Send logout to WhatsApp server (removes device from their servers)
-		// This calls: sendIQ(remove-companion-device) + Disconnect() + Store.Delete()
 		if session.Client.IsConnected() {
 			if err := session.Client.Logout(ctx); err != nil {
 				logger.Session().Warn().Err(err).Str("session", sessionId).Msg("Failed to logout from WhatsApp server")
-				// Even if logout fails, disconnect and clear locally
 				session.Client.Disconnect()
 			}
 		}
 
-		// Ensure device is deleted from whatsmeow store (in case Logout() failed)
 		if err := s.container.DeleteDevice(ctx, session.Device); err != nil {
 			logger.Session().Debug().Err(err).Str("session", sessionId).Msg("DeleteDevice (may already be deleted by Logout)")
 		}
 	} else {
-		// No credentials, just disconnect if connected
 		if session.Client.IsConnected() {
 			session.Client.Disconnect()
 		}
 	}
 
-	// Clear JID and phone in database but keep the session record
 	if err := s.database.Sessions.UpdateJID(ctx, sessionId, "", ""); err != nil {
 		logger.Session().Warn().Err(err).Str("session", sessionId).Msg("Failed to clear session JID")
 	}
@@ -503,7 +452,6 @@ func (s *SessionService) Logout(ctx context.Context, sessionId string) error {
 		logger.Session().Warn().Err(err).Str("session", sessionId).Msg("Failed to update session status")
 	}
 
-	// Create new device for next connection
 	session.Device = s.container.NewDevice()
 	session.Client.Store = session.Device
 	session.DeviceJID = ""

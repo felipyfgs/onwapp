@@ -14,23 +14,19 @@ import (
 	"onwapp/internal/queue"
 )
 
-// EventHandler handles WhatsApp events for Chatwoot integration
 type EventHandler struct {
 	service       *Service
 	queueProducer *queue.Producer
 }
 
-// NewEventHandler creates a new Chatwoot event handler
 func NewEventHandler(svc *Service) *EventHandler {
 	return &EventHandler{service: svc}
 }
 
-// SetQueueProducer sets the queue producer for async message processing
 func (h *EventHandler) SetQueueProducer(producer *queue.Producer) {
 	h.queueProducer = producer
 }
 
-// HandleEvent processes WhatsApp events and forwards to Chatwoot
 func (h *EventHandler) HandleEvent(session *model.Session, evt interface{}) {
 	ctx := context.Background()
 
@@ -63,8 +59,6 @@ func (h *EventHandler) handleMessage(ctx context.Context, session *model.Session
 		return
 	}
 
-	// Skip outgoing messages that were just sent from Chatwoot webhook
-	// This prevents duplicate processing when emitSentMessageEvent triggers
 	if evt.Info.IsFromMe {
 		chatJID := evt.Info.Chat.String()
 		if IsPendingSentFromChatwoot(session.ID, chatJID) {
@@ -77,13 +71,11 @@ func (h *EventHandler) handleMessage(ctx context.Context, session *model.Session
 		}
 	}
 
-	// Use queue if available, otherwise process directly
 	if h.queueProducer != nil && h.queueProducer.IsConnected() {
 		h.enqueueMessage(ctx, session, evt)
 		return
 	}
 
-	// Fallback to direct processing
 	if evt.Info.IsFromMe {
 		if err := h.service.ProcessOutgoingMessage(ctx, session, evt); err != nil {
 			logger.Chatwoot().Warn().
@@ -104,9 +96,7 @@ func (h *EventHandler) handleMessage(ctx context.Context, session *model.Session
 	}
 }
 
-// enqueueMessage serializes and enqueues a WhatsApp message for async processing
 func (h *EventHandler) enqueueMessage(ctx context.Context, session *model.Session, evt *events.Message) {
-	// Serialize the raw protobuf message for Chatwoot processing
 	rawEvent, err := proto.Marshal(evt.Message)
 	if err != nil {
 		logger.Chatwoot().Warn().Err(err).Str("messageId", evt.Info.ID).Msg("Failed to serialize message for queue, falling back to direct processing")
@@ -114,14 +104,12 @@ func (h *EventHandler) enqueueMessage(ctx context.Context, session *model.Sessio
 		return
 	}
 
-	// Serialize the full event JSON for webhook payload
 	fullEventJSON, err := json.Marshal(evt)
 	if err != nil {
 		logger.Chatwoot().Warn().Err(err).Str("messageId", evt.Info.ID).Msg("Failed to serialize full event JSON")
 		fullEventJSON = nil
 	}
 
-	// Resolve LID to standard JID before enqueueing (queue handlers don't have access to WhatsApp client)
 	chatJID := evt.Info.Chat.String()
 	if util.IsLIDJID(chatJID) {
 		chatJID = resolveLIDToStandardJID(ctx, session.Client, chatJID)
@@ -146,7 +134,6 @@ func (h *EventHandler) enqueueMessage(ctx context.Context, session *model.Sessio
 		FullEventJSON: fullEventJSON,
 	}
 
-	// Extract content for logging/debugging
 	queueMsg.Content = h.service.extractMessageContent(evt)
 
 	msgType := queue.MsgTypeIncoming
@@ -171,7 +158,6 @@ func (h *EventHandler) enqueueMessage(ctx context.Context, session *model.Sessio
 		Msg("Message enqueued for Chatwoot processing")
 }
 
-// processDirectly processes the message without queue (fallback)
 func (h *EventHandler) processDirectly(ctx context.Context, session *model.Session, evt *events.Message) {
 	if evt.Info.IsFromMe {
 		if err := h.service.ProcessOutgoingMessage(ctx, session, evt); err != nil {

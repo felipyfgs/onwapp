@@ -11,18 +11,14 @@ import (
 )
 
 var (
-	// phoneRegex validates phone numbers (international format)
 	phoneRegex = regexp.MustCompile(`^\+?[1-9]\d{6,14}$`)
 
-	// sessionNameRegex validates session names (alphanumeric, dash, underscore)
 	sessionNameRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]{1,64}$`)
 
-	// Private/internal IP ranges to block (SSRF protection)
 	privateIPBlocks []*net.IPNet
 )
 
 func init() {
-	// Initialize private IP blocks
 	privateCIDRs := []string{
 		"127.0.0.0/8",
 		"10.0.0.0/8",
@@ -43,7 +39,6 @@ func init() {
 	}
 }
 
-// ValidationError represents a validation failure
 type ValidationError struct {
 	Field   string
 	Message string
@@ -53,7 +48,6 @@ func (e ValidationError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Field, e.Message)
 }
 
-// ValidatePhone validates a phone number
 func ValidatePhone(phone string) error {
 	cleaned := strings.ReplaceAll(phone, " ", "")
 	cleaned = strings.ReplaceAll(cleaned, "-", "")
@@ -66,7 +60,6 @@ func ValidatePhone(phone string) error {
 	return nil
 }
 
-// ValidateSessionName validates a session name
 func ValidateSessionName(name string) error {
 	if name == "" {
 		return ValidationError{Field: "session", Message: "session name is required"}
@@ -77,18 +70,15 @@ func ValidateSessionName(name string) error {
 	return nil
 }
 
-// IsPrivateIP checks if an IP is in a private/internal range
 func IsPrivateIP(ip net.IP) bool {
 	if ip == nil {
 		return true
 	}
 
-	// Check loopback
 	if ip.IsLoopback() {
 		return true
 	}
 
-	// Check private ranges
 	for _, block := range privateIPBlocks {
 		if block.Contains(ip) {
 			return true
@@ -98,7 +88,6 @@ func IsPrivateIP(ip net.IP) bool {
 	return false
 }
 
-// ValidateURL validates a URL and checks for SSRF vulnerabilities
 func ValidateURL(rawURL string) error {
 	if rawURL == "" {
 		return ValidationError{Field: "url", Message: "URL is required"}
@@ -109,18 +98,15 @@ func ValidateURL(rawURL string) error {
 		return ValidationError{Field: "url", Message: "invalid URL format"}
 	}
 
-	// Only allow http and https
 	if parsed.Scheme != "http" && parsed.Scheme != "https" {
 		return ValidationError{Field: "url", Message: "only http and https schemes are allowed"}
 	}
 
-	// Extract hostname
 	hostname := parsed.Hostname()
 	if hostname == "" {
 		return ValidationError{Field: "url", Message: "URL must have a hostname"}
 	}
 
-	// Block localhost variations
 	lowerHost := strings.ToLower(hostname)
 	blockedHosts := []string{"localhost", "127.0.0.1", "0.0.0.0", "[::1]", "::1"}
 	for _, blocked := range blockedHosts {
@@ -129,11 +115,8 @@ func ValidateURL(rawURL string) error {
 		}
 	}
 
-	// Resolve hostname and check IP
 	ips, err := net.LookupIP(hostname)
 	if err != nil {
-		// If we can't resolve, allow the URL (might be temporary DNS issue)
-		// This is intentional - we don't want to block valid URLs due to DNS hiccups
 		return nil
 	}
 
@@ -146,7 +129,6 @@ func ValidateURL(rawURL string) error {
 	return nil
 }
 
-// ValidateURLWithTimeout validates URL with DNS resolution timeout
 func ValidateURLWithTimeout(rawURL string, timeout time.Duration) error {
 	if rawURL == "" {
 		return ValidationError{Field: "url", Message: "URL is required"}
@@ -157,7 +139,6 @@ func ValidateURLWithTimeout(rawURL string, timeout time.Duration) error {
 		return ValidationError{Field: "url", Message: "invalid URL format"}
 	}
 
-	// Only allow http and https
 	if parsed.Scheme != "http" && parsed.Scheme != "https" {
 		return ValidationError{Field: "url", Message: "only http and https schemes are allowed"}
 	}
@@ -167,7 +148,6 @@ func ValidateURLWithTimeout(rawURL string, timeout time.Duration) error {
 		return ValidationError{Field: "url", Message: "URL must have a hostname"}
 	}
 
-	// Block localhost variations
 	lowerHost := strings.ToLower(hostname)
 	blockedHosts := []string{"localhost", "127.0.0.1", "0.0.0.0", "[::1]", "::1"}
 	for _, blocked := range blockedHosts {
@@ -176,7 +156,6 @@ func ValidateURLWithTimeout(rawURL string, timeout time.Duration) error {
 		}
 	}
 
-	// Use custom resolver with timeout
 	resolver := &net.Resolver{}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
@@ -195,7 +174,6 @@ func ValidateURLWithTimeout(rawURL string, timeout time.Duration) error {
 	return nil
 }
 
-// ValidateWebhookURL validates a webhook URL
 func ValidateWebhookURL(rawURL string) error {
 	if err := ValidateURL(rawURL); err != nil {
 		return err
@@ -203,9 +181,7 @@ func ValidateWebhookURL(rawURL string) error {
 
 	parsed, _ := url.Parse(rawURL)
 
-	// Webhooks should use HTTPS in production
 	if parsed.Scheme != "https" {
-		// Allow HTTP for localhost in development
 		if !strings.Contains(parsed.Host, "localhost") {
 			return ValidationError{Field: "url", Message: "webhook URLs should use HTTPS"}
 		}
@@ -214,16 +190,12 @@ func ValidateWebhookURL(rawURL string) error {
 	return nil
 }
 
-// SanitizeString removes potentially dangerous characters
 func SanitizeString(s string) string {
-	// Remove null bytes
 	s = strings.ReplaceAll(s, "\x00", "")
-	// Trim whitespace
 	s = strings.TrimSpace(s)
 	return s
 }
 
-// ValidateMessageContent validates message content
 func ValidateMessageContent(content string, maxLength int) error {
 	if content == "" {
 		return ValidationError{Field: "content", Message: "content is required"}
@@ -234,7 +206,6 @@ func ValidateMessageContent(content string, maxLength int) error {
 	return nil
 }
 
-// ValidateFileSize validates file size
 func ValidateFileSize(size int64, maxSizeMB int64) error {
 	maxBytes := maxSizeMB * 1024 * 1024
 	if size > maxBytes {
@@ -243,7 +214,6 @@ func ValidateFileSize(size int64, maxSizeMB int64) error {
 	return nil
 }
 
-// AllowedMimeTypes for media uploads
 var AllowedMimeTypes = map[string][]string{
 	"image":    {"image/jpeg", "image/png", "image/gif", "image/webp"},
 	"video":    {"video/mp4", "video/webm", "video/quicktime"},
@@ -252,7 +222,6 @@ var AllowedMimeTypes = map[string][]string{
 	"sticker":  {"image/webp"},
 }
 
-// ValidateMimeType validates mime type for a given media type
 func ValidateMimeType(mimeType, mediaType string) error {
 	allowed, exists := AllowedMimeTypes[mediaType]
 	if !exists {

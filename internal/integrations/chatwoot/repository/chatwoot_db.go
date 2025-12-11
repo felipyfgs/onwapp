@@ -12,14 +12,12 @@ import (
 	"onwapp/internal/integrations/chatwoot/core"
 )
 
-// ChatwootDBRepository handles all Chatwoot PostgreSQL database operations
 type ChatwootDBRepository struct {
 	db        *sql.DB
 	accountID int
 	inboxID   int
 }
 
-// NewChatwootDBRepository creates a new Chatwoot DB repository
 func NewChatwootDBRepository(db *sql.DB, accountID, inboxID int) *ChatwootDBRepository {
 	return &ChatwootDBRepository{
 		db:        db,
@@ -28,7 +26,6 @@ func NewChatwootDBRepository(db *sql.DB, accountID, inboxID int) *ChatwootDBRepo
 	}
 }
 
-// GetUserByToken retrieves the user ID and type from access token
 func (r *ChatwootDBRepository) GetUserByToken(ctx context.Context, token string) (userID int, userType string, err error) {
 	err = r.db.QueryRowContext(ctx, `
 		SELECT u.id, 'User' FROM users u
@@ -38,14 +35,12 @@ func (r *ChatwootDBRepository) GetUserByToken(ctx context.Context, token string)
 	return
 }
 
-// InboxExists checks if inbox exists
 func (r *ChatwootDBRepository) InboxExists(ctx context.Context, inboxID int) bool {
 	var id int
 	err := r.db.QueryRowContext(ctx, `SELECT id FROM inboxes WHERE id = $1`, inboxID).Scan(&id)
 	return err == nil && id > 0
 }
 
-// GetExistingSourceIDs returns a set of existing source IDs for deduplication
 func (r *ChatwootDBRepository) GetExistingSourceIDs(ctx context.Context, messageIDs []string) (map[string]bool, error) {
 	existing := make(map[string]bool)
 	if len(messageIDs) == 0 {
@@ -85,7 +80,6 @@ func (r *ChatwootDBRepository) GetExistingSourceIDs(ctx context.Context, message
 	return existing, nil
 }
 
-// InsertMessageRequest contains data for inserting a message
 type InsertMessageRequest struct {
 	Content        string
 	ConversationID int
@@ -96,7 +90,6 @@ type InsertMessageRequest struct {
 	Timestamp      time.Time
 }
 
-// InsertMessage inserts a single text message
 func (r *ChatwootDBRepository) InsertMessage(ctx context.Context, req *InsertMessageRequest) error {
 	_, err := r.db.ExecContext(ctx, `
 		INSERT INTO messages (content, processed_message_content, account_id, inbox_id, conversation_id, 
@@ -107,7 +100,6 @@ func (r *ChatwootDBRepository) InsertMessage(ctx context.Context, req *InsertMes
 	return err
 }
 
-// UpdateMessageTimestamp updates the created_at/updated_at for a message
 func (r *ChatwootDBRepository) UpdateMessageTimestamp(ctx context.Context, messageID int, timestamp time.Time) error {
 	_, err := r.db.ExecContext(ctx,
 		`UPDATE messages SET created_at = $1, updated_at = $1 WHERE id = $2`,
@@ -115,7 +107,6 @@ func (r *ChatwootDBRepository) UpdateMessageTimestamp(ctx context.Context, messa
 	return err
 }
 
-// UpdateConversationTimestamp updates the last_activity_at for a conversation
 func (r *ChatwootDBRepository) UpdateConversationTimestamp(ctx context.Context, conversationID int, timestamp time.Time) error {
 	_, err := r.db.ExecContext(ctx,
 		`UPDATE conversations SET last_activity_at = $1, updated_at = $1 WHERE id = $2 AND (last_activity_at IS NULL OR last_activity_at < $1)`,
@@ -123,13 +114,11 @@ func (r *ChatwootDBRepository) UpdateConversationTimestamp(ctx context.Context, 
 	return err
 }
 
-// ContactIdentifier represents a contact with ID and identifier
 type ContactIdentifier struct {
 	ID         int
 	Identifier string
 }
 
-// GetContactsWithoutAvatar returns contacts that don't have an avatar
 func (r *ChatwootDBRepository) GetContactsWithoutAvatar(ctx context.Context) ([]ContactIdentifier, error) {
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT c.id, c.identifier 
@@ -155,7 +144,6 @@ func (r *ChatwootDBRepository) GetContactsWithoutAvatar(ctx context.Context) ([]
 	return contacts, rows.Err()
 }
 
-// UpsertContactsAndConversations creates contacts, contact_inboxes, and conversations in batch
 func (r *ChatwootDBRepository) UpsertContactsAndConversations(ctx context.Context, phoneData []core.PhoneTimestamp) (map[string]*core.ChatFKs, error) {
 	result := make(map[string]*core.ChatFKs)
 	if len(phoneData) == 0 {
@@ -182,7 +170,6 @@ func (r *ChatwootDBRepository) UpsertContactsAndConversations(ctx context.Contex
 			idx2, pd.FirstTS, pd.LastTS, idx2+1, idx2+2))
 	}
 
-	// Step 1: Upsert contacts
 	query1 := fmt.Sprintf(`
 		WITH phone_data AS (
 			SELECT phone_number, created_at, last_activity_at, contact_name, identifier, is_group FROM (
@@ -202,7 +189,6 @@ func (r *ChatwootDBRepository) UpsertContactsAndConversations(ctx context.Contex
 		return nil, fmt.Errorf("failed to upsert contacts: %w", err)
 	}
 
-	// Step 2: Create contact_inboxes
 	query2 := fmt.Sprintf(`
 		WITH phone_data AS (
 			SELECT identifier FROM (VALUES %s) AS t (phone_number, created_at, last_activity_at, contact_name, identifier)
@@ -219,7 +205,6 @@ func (r *ChatwootDBRepository) UpsertContactsAndConversations(ctx context.Contex
 		return nil, fmt.Errorf("failed to create contact_inboxes: %w", err)
 	}
 
-	// Step 3: Create conversations
 	query3 := fmt.Sprintf(`
 		WITH phone_data AS (
 			SELECT identifier FROM (VALUES %s) AS t (phone_number, created_at, last_activity_at, contact_name, identifier)
@@ -237,7 +222,6 @@ func (r *ChatwootDBRepository) UpsertContactsAndConversations(ctx context.Contex
 		return nil, fmt.Errorf("failed to create conversations: %w", err)
 	}
 
-	// Step 4: Query the created FKs
 	query4 := fmt.Sprintf(`
 		WITH phone_data AS (
 			SELECT phone_number, identifier FROM (VALUES %s) AS t (phone_number, created_at, last_activity_at, contact_name, identifier)
@@ -267,14 +251,12 @@ func (r *ChatwootDBRepository) UpsertContactsAndConversations(ctx context.Contex
 	return result, rows.Err()
 }
 
-// ContactData represents contact data for batch insert
 type ContactData struct {
 	Name       string
 	Phone      string
 	Identifier string
 }
 
-// InsertContactsBatch inserts contacts in batch
 func (r *ChatwootDBRepository) InsertContactsBatch(ctx context.Context, contacts []ContactData) (int, error) {
 	if len(contacts) == 0 {
 		return 0, nil
@@ -309,14 +291,12 @@ func (r *ChatwootDBRepository) InsertContactsBatch(ctx context.Context, contacts
 	return int(rows), nil
 }
 
-// ResetAllData deletes all Chatwoot data except the bot contact (id=1)
 func (r *ChatwootDBRepository) ResetAllData(ctx context.Context) (*core.ResetStats, error) {
 	stats := &core.ResetStats{}
 
 	inboxExists := r.InboxExists(ctx, r.inboxID)
 
 	if inboxExists {
-		// Delete messages for conversations in this inbox
 		result, err := r.db.ExecContext(ctx, `
 			DELETE FROM messages WHERE conversation_id IN (
 				SELECT id FROM conversations WHERE account_id = $1 AND inbox_id = $2 AND contact_id > 1
@@ -328,7 +308,6 @@ func (r *ChatwootDBRepository) ResetAllData(ctx context.Context) (*core.ResetSta
 			stats.MessagesDeleted = int(rows)
 		}
 
-		// Delete conversations
 		result, err = r.db.ExecContext(ctx,
 			`DELETE FROM conversations WHERE account_id = $1 AND inbox_id = $2 AND contact_id > 1`,
 			r.accountID, r.inboxID)
@@ -339,7 +318,6 @@ func (r *ChatwootDBRepository) ResetAllData(ctx context.Context) (*core.ResetSta
 			stats.ConversationsDeleted = int(rows)
 		}
 
-		// Delete contact_inboxes
 		result, err = r.db.ExecContext(ctx,
 			`DELETE FROM contact_inboxes WHERE inbox_id = $1 AND contact_id > 1`,
 			r.inboxID)
@@ -350,7 +328,6 @@ func (r *ChatwootDBRepository) ResetAllData(ctx context.Context) (*core.ResetSta
 			stats.ContactInboxDeleted = int(rows)
 		}
 	} else {
-		// Delete messages for all conversations of this account
 		result, err := r.db.ExecContext(ctx, `
 			DELETE FROM messages WHERE account_id = $1 AND conversation_id IN (
 				SELECT id FROM conversations WHERE account_id = $1 AND contact_id > 1
@@ -362,7 +339,6 @@ func (r *ChatwootDBRepository) ResetAllData(ctx context.Context) (*core.ResetSta
 			stats.MessagesDeleted = int(rows)
 		}
 
-		// Delete conversations
 		result, err = r.db.ExecContext(ctx,
 			`DELETE FROM conversations WHERE account_id = $1 AND contact_id > 1`,
 			r.accountID)
@@ -373,7 +349,6 @@ func (r *ChatwootDBRepository) ResetAllData(ctx context.Context) (*core.ResetSta
 			stats.ConversationsDeleted = int(rows)
 		}
 
-		// Delete contact_inboxes
 		result, err = r.db.ExecContext(ctx,
 			`DELETE FROM contact_inboxes WHERE contact_id IN (SELECT id FROM contacts WHERE account_id = $1 AND id > 1)`,
 			r.accountID)
@@ -385,7 +360,6 @@ func (r *ChatwootDBRepository) ResetAllData(ctx context.Context) (*core.ResetSta
 		}
 	}
 
-	// Delete contacts (except bot contact id=1)
 	result, err := r.db.ExecContext(ctx,
 		`DELETE FROM contacts WHERE account_id = $1 AND id > 1`,
 		r.accountID)

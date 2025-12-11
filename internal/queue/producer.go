@@ -11,17 +11,14 @@ import (
 	"onwapp/internal/logger"
 )
 
-// Producer publica mensagens nos streams
 type Producer struct {
 	client *Client
 }
 
-// NewProducer cria um novo producer
 func NewProducer(client *Client) *Producer {
 	return &Producer{client: client}
 }
 
-// PublishWAToCW publica mensagem WhatsApp -> Chatwoot
 func (p *Producer) PublishWAToCW(ctx context.Context, sessionID string, msgType MessageType, data interface{}) error {
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
@@ -41,7 +38,6 @@ func (p *Producer) PublishWAToCW(ctx context.Context, sessionID string, msgType 
 	return p.publish(ctx, subject, msg)
 }
 
-// PublishCWToWA publica mensagem Chatwoot -> WhatsApp
 func (p *Producer) PublishCWToWA(ctx context.Context, sessionID string, msgType MessageType, data interface{}) error {
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
@@ -61,7 +57,6 @@ func (p *Producer) PublishCWToWA(ctx context.Context, sessionID string, msgType 
 	return p.publish(ctx, subject, msg)
 }
 
-// PublishToDLQ move mensagem para Dead Letter Queue
 func (p *Producer) PublishToDLQ(ctx context.Context, originalSubject string, msg *QueueMessage, reason string) error {
 	dlqMsg := &DLQMessage{
 		OriginalSubject: originalSubject,
@@ -113,7 +108,6 @@ func (p *Producer) publish(ctx context.Context, subject string, msg *QueueMessag
 	return nil
 }
 
-// IsConnected verifica se o producer está conectado
 func (p *Producer) IsConnected() bool {
 	return p.client != nil && p.client.IsConnected()
 }

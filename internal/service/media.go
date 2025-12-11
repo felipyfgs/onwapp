@@ -19,10 +19,8 @@ import (
 	"onwapp/internal/util"
 )
 
-// downloadSemaphore limits concurrent media downloads to prevent resource exhaustion
 var downloadSemaphore = util.NewSemaphore(100)
 
-// Timeout and delay constants for media operations
 const (
 	mediaDownloadTimeout   = 60 * time.Second
 	downloadBatchDelay     = 100 * time.Millisecond
@@ -32,7 +30,6 @@ const (
 	pendingRetryMaxAge     = 5 * time.Minute
 )
 
-// MediaRetryInfo stores info needed to process media retry responses
 type MediaRetryInfo struct {
 	SessionID string
 	MsgID     string
@@ -48,15 +45,12 @@ type MediaService struct {
 	database *db.Database
 	storage  *StorageService
 
-	// Track pending media retries
 	pendingRetries   map[string]*MediaRetryInfo
 	pendingRetriesMu sync.RWMutex
 
-	// Track downloads in progress to prevent duplicates
 	downloading   map[string]bool
 	downloadingMu sync.Mutex
 
-	// Track if history sync processing is running
 	historySyncRunning bool
 	historySyncMu      sync.Mutex
 }
@@ -70,30 +64,25 @@ func NewMediaService(database *db.Database, storage *StorageService) *MediaServi
 	}
 }
 
-// tryStartDownload attempts to mark a media as being downloaded
-// Returns true if this goroutine should proceed with the download
 func (s *MediaService) tryStartDownload(mediaID string) bool {
 	s.downloadingMu.Lock()
 	defer s.downloadingMu.Unlock()
 
 	if s.downloading[mediaID] {
-		return false // Already being downloaded
+		return false
 	}
 	s.downloading[mediaID] = true
 	return true
 }
 
-// finishDownload marks a media download as complete
 func (s *MediaService) finishDownload(mediaID string) {
 	s.downloadingMu.Lock()
 	defer s.downloadingMu.Unlock()
 	delete(s.downloading, mediaID)
 }
 
-// ErrMediaExpired indicates the media is no longer available on WhatsApp servers (404/410)
 var ErrMediaExpired = errors.New("media expired on WhatsApp servers")
 
-// IsMediaExpiredError checks if the error indicates media is no longer available
 func IsMediaExpiredError(err error) bool {
 	if err == nil {
 		return false
@@ -109,8 +98,6 @@ func IsMediaExpiredError(err error) bool {
 		strings.Contains(errStr, "forbidden")
 }
 
-// DownloadAndStore downloads media from WhatsApp and stores it in MinIO
-// Returns ErrMediaExpired if media needs retry request
 func (s *MediaService) DownloadAndStore(ctx context.Context, client *whatsmeow.Client, media *model.Media, sessionID string) error {
 	if client == nil {
 		return fmt.Errorf("whatsapp client is nil")
@@ -120,18 +107,14 @@ func (s *MediaService) DownloadAndStore(ctx context.Context, client *whatsmeow.C
 		return fmt.Errorf("media cannot be downloaded: missing directPath or mediaKey")
 	}
 
-	// Get fromMe from associated message (denormalized field not stored in zpMedia)
-	// Use media.SessionID (UUID) instead of sessionID parameter (which is session name for storage path)
 	fromMe := false
 	msg, err := s.database.Messages.GetByMsgId(ctx, media.SessionID, media.MsgID)
 	if err == nil && msg != nil {
 		fromMe = msg.FromMe
 	}
 
-	// Get media type for whatsmeow
 	waMediaType := getWhatsmeowMediaType(media.MediaType)
 
-	// Download from WhatsApp
 	data, err := client.DownloadMediaWithPath(
 		ctx,
 		media.WADirectPath,
@@ -146,7 +129,6 @@ func (s *MediaService) DownloadAndStore(ctx context.Context, client *whatsmeow.C
 		errMsg := err.Error()
 		_ = s.database.Media.IncrementDownloadAttempts(ctx, media.ID, errMsg)
 
-		// Check if media expired (404/410) - needs retry request
 		if IsMediaExpiredError(err) {
 			logger.Storage().Warn().
 				Str("mediaId", media.ID).
@@ -159,7 +141,6 @@ func (s *MediaService) DownloadAndStore(ctx context.Context, client *whatsmeow.C
 		return fmt.Errorf("failed to download from whatsapp: %w", err)
 	}
 
-	// Upload to MinIO
 	contentType := media.MimeType
 	if contentType == "" {
 		contentType = getDefaultContentType(media.MediaType)
@@ -171,7 +152,6 @@ func (s *MediaService) DownloadAndStore(ctx context.Context, client *whatsmeow.C
 		return fmt.Errorf("failed to upload to storage: %w", err)
 	}
 
-	// Update database
 	err = s.database.Media.UpdateDownloadStatus(ctx, media.ID, true, result.Key, result.URL, "")
 	if err != nil {
 		return fmt.Errorf("failed to update media status: %w", err)
@@ -187,20 +167,16 @@ func (s *MediaService) DownloadAndStore(ctx context.Context, client *whatsmeow.C
 	return nil
 }
 
-// SendMediaRetryRequest sends a media retry request to WhatsApp for expired media
 func (s *MediaService) SendMediaRetryRequest(ctx context.Context, client *whatsmeow.Client, media *model.Media, sessionID string) error {
 	if client == nil {
 		return fmt.Errorf("whatsapp client is nil")
 	}
 
-	// Get message info for the retry request
-	// Use media.SessionID (UUID) instead of sessionID parameter (which is session name)
 	msg, err := s.database.Messages.GetByMsgId(ctx, media.SessionID, media.MsgID)
 	if err != nil || msg == nil {
 		return fmt.Errorf("failed to get message info: %w", err)
 	}
 
-	// Parse JIDs
 	chatJID, err := types.ParseJID(msg.ChatJID)
 	if err != nil {
 		return fmt.Errorf("failed to parse chat JID: %w", err)
@@ -211,7 +187,6 @@ func (s *MediaService) SendMediaRetryRequest(ctx context.Context, client *whatsm
 		senderJID, _ = types.ParseJID(msg.SenderJID)
 	}
 
-	// Build message info for retry request
 	msgInfo := &types.MessageInfo{
 		ID: msg.MsgId,
 		MessageSource: types.MessageSource{
@@ -222,7 +197,6 @@ func (s *MediaService) SendMediaRetryRequest(ctx context.Context, client *whatsm
 		},
 	}
 
-	// Store pending retry info
 	s.pendingRetriesMu.Lock()
 	s.pendingRetries[media.MsgID] = &MediaRetryInfo{
 		SessionID: sessionID,
@@ -236,7 +210,6 @@ func (s *MediaService) SendMediaRetryRequest(ctx context.Context, client *whatsm
 	}
 	s.pendingRetriesMu.Unlock()
 
-	// Send retry request
 	err = client.SendMediaRetryReceipt(ctx, msgInfo, media.WAMediaKey)
 	if err != nil {
 		s.pendingRetriesMu.Lock()
@@ -245,7 +218,6 @@ func (s *MediaService) SendMediaRetryRequest(ctx context.Context, client *whatsm
 		return fmt.Errorf("failed to send media retry request: %w", err)
 	}
 
-	// Mark as retry requested in database
 	_ = s.database.Media.MarkAsRetryRequested(ctx, media.ID)
 
 	logger.Storage().Info().
@@ -257,11 +229,9 @@ func (s *MediaService) SendMediaRetryRequest(ctx context.Context, client *whatsm
 	return nil
 }
 
-// HandleMediaRetryResponse processes a media retry response from WhatsApp
 func (s *MediaService) HandleMediaRetryResponse(ctx context.Context, client *whatsmeow.Client, evt *events.MediaRetry, sessionID string) error {
 	msgID := evt.MessageID
 
-	// Get pending retry info
 	s.pendingRetriesMu.RLock()
 	retryInfo, exists := s.pendingRetries[msgID]
 	s.pendingRetriesMu.RUnlock()
@@ -273,7 +243,6 @@ func (s *MediaService) HandleMediaRetryResponse(ctx context.Context, client *wha
 		return nil
 	}
 
-	// Decrypt the retry notification
 	retryData, err := whatsmeow.DecryptMediaRetryNotification(evt, retryInfo.MediaKey)
 	if err != nil {
 		logger.Storage().Warn().
@@ -283,14 +252,12 @@ func (s *MediaService) HandleMediaRetryResponse(ctx context.Context, client *wha
 		return err
 	}
 
-	// Check result
 	if retryData.GetResult() != waMmsRetry.MediaRetryNotification_SUCCESS {
 		logger.Storage().Warn().
 			Str("msgId", msgID).
 			Int32("result", int32(retryData.GetResult())).
 			Msg("Media retry failed")
 
-		// Clean up pending retry
 		s.pendingRetriesMu.Lock()
 		delete(s.pendingRetries, msgID)
 		s.pendingRetriesMu.Unlock()
@@ -298,7 +265,6 @@ func (s *MediaService) HandleMediaRetryResponse(ctx context.Context, client *wha
 		return fmt.Errorf("media retry failed with result: %v", retryData.GetResult())
 	}
 
-	// Update direct path in database
 	newDirectPath := retryData.GetDirectPath()
 	if newDirectPath == "" {
 		return fmt.Errorf("media retry response has empty direct path")
@@ -314,18 +280,15 @@ func (s *MediaService) HandleMediaRetryResponse(ctx context.Context, client *wha
 		Str("newDirectPath", newDirectPath).
 		Msg("Media retry successful, direct path updated")
 
-	// Clean up pending retry
 	s.pendingRetriesMu.Lock()
 	delete(s.pendingRetries, msgID)
 	s.pendingRetriesMu.Unlock()
 
-	// Try to download with new path
 	media, err := s.database.Media.GetByMsgID(ctx, sessionID, msgID)
 	if err != nil || media == nil {
 		return fmt.Errorf("failed to get updated media: %w", err)
 	}
 
-	// Download with new path (with semaphore to limit concurrent downloads)
 	go func() {
 		downloadSemaphore.Acquire()
 		defer downloadSemaphore.Release()
@@ -344,7 +307,6 @@ func (s *MediaService) HandleMediaRetryResponse(ctx context.Context, client *wha
 	return nil
 }
 
-// CleanupOldPendingRetries removes old pending retries (older than pendingRetryMaxAge)
 func (s *MediaService) CleanupOldPendingRetries() {
 	s.pendingRetriesMu.Lock()
 	defer s.pendingRetriesMu.Unlock()
@@ -357,8 +319,6 @@ func (s *MediaService) CleanupOldPendingRetries() {
 	}
 }
 
-// ProcessPendingDownloads processes pending media downloads for a session
-// Returns (success, failed, retryRequested)
 func (s *MediaService) ProcessPendingDownloads(ctx context.Context, client *whatsmeow.Client, sessionID string, batchSize int) (int, int) {
 	if s.storage == nil {
 		logger.Storage().Warn().Msg("Storage service not configured, skipping media downloads")
@@ -385,7 +345,6 @@ func (s *MediaService) ProcessPendingDownloads(ctx context.Context, client *what
 	skipped := 0
 
 	for _, media := range medias {
-		// Skip if already being downloaded by another goroutine
 		if !s.tryStartDownload(media.ID) {
 			skipped++
 			continue
@@ -395,9 +354,7 @@ func (s *MediaService) ProcessPendingDownloads(ctx context.Context, client *what
 		s.finishDownload(media.ID)
 
 		if err != nil {
-			// Check if media expired and needs retry
 			if errors.Is(err, ErrMediaExpired) {
-				// Send retry request
 				if retryErr := s.SendMediaRetryRequest(ctx, client, media, sessionID); retryErr != nil {
 					logger.Storage().Warn().
 						Err(retryErr).
@@ -417,7 +374,6 @@ func (s *MediaService) ProcessPendingDownloads(ctx context.Context, client *what
 			success++
 		}
 
-		// Small delay to avoid rate limiting
 		time.Sleep(downloadBatchDelay)
 	}
 
@@ -428,14 +384,11 @@ func (s *MediaService) ProcessPendingDownloads(ctx context.Context, client *what
 	return success, failed
 }
 
-// ProcessHistorySyncMedia processes media from history sync in background
-// Only one instance runs at a time per service to prevent duplicate downloads
 func (s *MediaService) ProcessHistorySyncMedia(ctx context.Context, client *whatsmeow.Client, sessionID string, mediaCount int) {
 	if s.storage == nil {
 		return
 	}
 
-	// Check if already running - only one history sync processor at a time
 	s.historySyncMu.Lock()
 	if s.historySyncRunning {
 		s.historySyncMu.Unlock()
@@ -445,7 +398,6 @@ func (s *MediaService) ProcessHistorySyncMedia(ctx context.Context, client *what
 	s.historySyncRunning = true
 	s.historySyncMu.Unlock()
 
-	// Process in background with delay to not overload
 	go func() {
 		defer func() {
 			s.historySyncMu.Lock()
@@ -453,13 +405,11 @@ func (s *MediaService) ProcessHistorySyncMedia(ctx context.Context, client *what
 			s.historySyncMu.Unlock()
 		}()
 
-		// Wait a bit for history sync to settle
 		time.Sleep(historySyncSettleDelay)
 
 		processCtx, cancel := context.WithTimeout(context.Background(), historySyncTimeout)
 		defer cancel()
 
-		// Process in batches
 		batchSize := 10
 		totalSuccess := 0
 		totalFailed := 0
@@ -483,7 +433,6 @@ func (s *MediaService) ProcessHistorySyncMedia(ctx context.Context, client *what
 				emptyBatches = 0
 			}
 
-			// Delay between batches
 			time.Sleep(batchProcessDelay)
 		}
 
@@ -497,7 +446,6 @@ func (s *MediaService) ProcessHistorySyncMedia(ctx context.Context, client *what
 	}()
 }
 
-// waMediaTypes maps media type strings to whatsmeow.MediaType - O(1) lookup
 var waMediaTypes = map[string]whatsmeow.MediaType{
 	"image":    whatsmeow.MediaImage,
 	"video":    whatsmeow.MediaVideo,
@@ -506,7 +454,6 @@ var waMediaTypes = map[string]whatsmeow.MediaType{
 	"sticker":  whatsmeow.MediaImage,
 }
 
-// defaultContentTypes maps media type strings to MIME types - O(1) lookup
 var defaultContentTypes = map[string]string{
 	"image":    "image/jpeg",
 	"video":    "video/mp4",

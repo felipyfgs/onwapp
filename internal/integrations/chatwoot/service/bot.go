@@ -11,13 +11,11 @@ import (
 	zpservice "onwapp/internal/service"
 )
 
-// BotCommandHandler handles commands sent to the bot contact (123456)
 type BotCommandHandler struct {
 	service        *Service
 	sessionService *zpservice.SessionService
 }
 
-// NewBotCommandHandler creates a new bot command handler
 func NewBotCommandHandler(svc *Service, sessionSvc *zpservice.SessionService) *BotCommandHandler {
 	return &BotCommandHandler{
 		service:        svc,
@@ -25,7 +23,6 @@ func NewBotCommandHandler(svc *Service, sessionSvc *zpservice.SessionService) *B
 	}
 }
 
-// HandleCommand processes commands sent to the bot contact (123456)
 func (h *BotCommandHandler) HandleCommand(ctx context.Context, session *model.Session, cfg *core.Config, content string) {
 	command := strings.TrimSpace(content)
 	command = strings.TrimPrefix(command, "/")
@@ -133,7 +130,6 @@ func (h *BotCommandHandler) handleUnknown(ctx context.Context, cfg *core.Config,
 		fmt.Sprintf("❓ Unknown command: *%s*\n\nType *help* for available commands.", command))
 }
 
-// IsBotContact checks if the identifier is the bot contact
 func IsBotContact(identifier string) bool {
 	return identifier == "123456" || identifier == "+123456"
 }

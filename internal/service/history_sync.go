@@ -11,7 +11,6 @@ import (
 	"onwapp/internal/model"
 )
 
-// Re-export ChatWithLastMessage for external use
 type ChatWithLastMessage = repository.ChatWithLastMessage
 type LastMessageData = repository.LastMessageData
 
@@ -26,12 +25,10 @@ func NewHistorySyncService(chatRepo *repository.ChatRepository) *HistorySyncServ
 	}
 }
 
-// SetMessageRepository sets the message repository (optional dependency)
 func (s *HistorySyncService) SetMessageRepository(repo *repository.MessageRepository) {
 	s.messageRepo = repo
 }
 
-// ProcessHistorySync processes a history sync event and saves chat metadata
 func (s *HistorySyncService) ProcessHistorySync(ctx context.Context, sessionID string, e *events.HistorySync) error {
 	syncType := mapSyncType(e.Data.GetSyncType())
 	progress := int(e.Data.GetProgress())
@@ -51,7 +48,6 @@ func (s *HistorySyncService) ProcessHistorySync(ctx context.Context, sessionID s
 	return nil
 }
 
-// processConversations extracts and saves chat metadata from conversations
 func (s *HistorySyncService) processConversations(ctx context.Context, sessionID string, conversations []*waHistorySync.Conversation) (int, error) {
 	if len(conversations) == 0 {
 		return 0, nil
@@ -102,7 +98,6 @@ func (s *HistorySyncService) processConversations(ctx context.Context, sessionID
 	return saved, nil
 }
 
-// GetAllChats returns chats for a session with pagination and optional unread filter
 func (s *HistorySyncService) GetAllChats(ctx context.Context, sessionID string, limit, offset int, unreadOnly bool) ([]*model.Chat, error) {
 	if limit <= 0 {
 		limit = 100
@@ -113,7 +108,6 @@ func (s *HistorySyncService) GetAllChats(ctx context.Context, sessionID string, 
 	return s.chatRepo.GetBySession(ctx, sessionID, limit, offset, unreadOnly)
 }
 
-// GetAllChatsWithLastMessage returns chats with last message and settings
 func (s *HistorySyncService) GetAllChatsWithLastMessage(ctx context.Context, sessionID string, limit, offset int, unreadOnly bool) ([]*repository.ChatWithLastMessage, error) {
 	if limit <= 0 {
 		limit = 100
@@ -124,12 +118,10 @@ func (s *HistorySyncService) GetAllChatsWithLastMessage(ctx context.Context, ses
 	return s.chatRepo.GetBySessionWithLastMessage(ctx, sessionID, limit, offset, unreadOnly)
 }
 
-// GetChatByJID returns a chat by its JID with additional context
 func (s *HistorySyncService) GetChatByJID(ctx context.Context, sessionID, chatJID string) (*model.Chat, error) {
 	return s.chatRepo.GetWithContext(ctx, sessionID, chatJID)
 }
 
-// GetMessagesByChat returns messages for a specific chat with pagination
 func (s *HistorySyncService) GetMessagesByChat(ctx context.Context, sessionID, chatJID string, limit, offset int) ([]model.Message, error) {
 	if s.messageRepo == nil {
 		return nil, nil
@@ -143,7 +135,6 @@ func (s *HistorySyncService) GetMessagesByChat(ctx context.Context, sessionID, c
 	return s.messageRepo.GetByChat(ctx, sessionID, chatJID, limit, offset)
 }
 
-// mapSyncType converts whatsmeow sync type to our model type
 func mapSyncType(t waHistorySync.HistorySync_HistorySyncType) model.SyncType {
 	switch t {
 	case waHistorySync.HistorySync_INITIAL_BOOTSTRAP:

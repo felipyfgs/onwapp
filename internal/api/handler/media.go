@@ -28,8 +28,6 @@ func NewMediaHandler(database *db.Database, mediaService *service.MediaService, 
 	}
 }
 
-// shouldProxyMedia checks if we should proxy media or redirect
-// Returns true if URL is internal/localhost (needs proxy)
 func (h *MediaHandler) shouldProxyMedia(storageURL string) bool {
 	if storageURL == "" {
 		return false
@@ -37,7 +35,6 @@ func (h *MediaHandler) shouldProxyMedia(storageURL string) bool {
 
 	lower := strings.ToLower(storageURL)
 
-	// Check for localhost/internal URLs
 	isLocal := strings.Contains(lower, "localhost") ||
 		strings.Contains(lower, "127.0.0.1") ||
 		strings.Contains(lower, "::1") ||
@@ -48,7 +45,6 @@ func (h *MediaHandler) shouldProxyMedia(storageURL string) bool {
 	return isLocal
 }
 
-// GetMedia godoc
 // @Summary      Get media by message ID
 // @Description  Get media information for a specific message
 // @Tags         media
@@ -87,7 +83,6 @@ func (h *MediaHandler) GetMedia(c *gin.Context) {
 	c.JSON(http.StatusOK, media)
 }
 
-// StreamMedia godoc
 // @Summary      Stream media file
 // @Description  Stream media file directly (redirects to storage URL or proxies the file)
 // @Tags         media
@@ -123,9 +118,7 @@ func (h *MediaHandler) StreamMedia(c *gin.Context) {
 		return
 	}
 
-	// Check if we should proxy or redirect
 	if h.shouldProxyMedia(media.StorageURL) {
-		// PROXY: Download from MinIO and stream to client (for localhost/internal URLs)
 		if h.storageService == nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "storage service not configured"})
 			return
@@ -141,12 +134,10 @@ func (h *MediaHandler) StreamMedia(c *gin.Context) {
 			return
 		}
 	} else {
-		// REDIRECT: Let browser download directly from public URL (more efficient)
 		c.Redirect(http.StatusFound, media.StorageURL)
 	}
 }
 
-// StreamMediaPublic godoc
 // @Summary      Stream media file (public)
 // @Description  Stream media file directly without authentication (for browser audio/video playback)
 // @Tags         media
@@ -181,9 +172,7 @@ func (h *MediaHandler) StreamMediaPublic(c *gin.Context) {
 		return
 	}
 
-	// Check if we should proxy or redirect
 	if h.shouldProxyMedia(media.StorageURL) {
-		// PROXY: Download from MinIO and stream to client (for localhost/internal URLs)
 		if h.storageService == nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "storage service not configured"})
 			return
@@ -199,12 +188,10 @@ func (h *MediaHandler) StreamMediaPublic(c *gin.Context) {
 			return
 		}
 	} else {
-		// REDIRECT: Let browser download directly from public URL (more efficient)
 		c.Redirect(http.StatusFound, media.StorageURL)
 	}
 }
 
-// ListPendingMedia godoc
 // @Summary      List pending media downloads
 // @Description  Get list of media files pending download
 // @Tags         media
@@ -242,7 +229,6 @@ func (h *MediaHandler) ListPendingMedia(c *gin.Context) {
 	})
 }
 
-// ProcessPendingMedia godoc
 // @Summary      Process pending media downloads
 // @Description  Download pending media from WhatsApp and upload to storage
 // @Tags         media
@@ -288,7 +274,6 @@ func (h *MediaHandler) ProcessPendingMedia(c *gin.Context) {
 	})
 }
 
-// ListMedia godoc
 // @Summary      List all media for session
 // @Description  Get list of all media files for a session
 // @Tags         media
@@ -337,7 +322,6 @@ func (h *MediaHandler) ListMedia(c *gin.Context) {
 	})
 }
 
-// RetryMediaDownload godoc
 // @Summary      Retry downloading a specific media
 // @Description  Force retry downloading media from WhatsApp (sends retry request if needed)
 // @Tags         media
@@ -374,7 +358,6 @@ func (h *MediaHandler) RetryMediaDownload(c *gin.Context) {
 		return
 	}
 
-	// Get media from database
 	media, err := h.database.Media.GetByMsgID(c.Request.Context(), session.ID, messageID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
@@ -386,14 +369,11 @@ func (h *MediaHandler) RetryMediaDownload(c *gin.Context) {
 		return
 	}
 
-	// Try to download
 	go func() {
 		ctx := c.Request.Context()
 
-		// Attempt download
 		err := h.mediaService.DownloadAndStore(ctx, session.Client, media, sessionId)
 
-		// If media expired, send retry request automatically
 		if err != nil && service.IsMediaExpiredError(err) {
 			_ = h.mediaService.SendMediaRetryRequest(ctx, session.Client, media, sessionId)
 		}

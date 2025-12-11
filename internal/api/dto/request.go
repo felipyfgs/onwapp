@@ -1,18 +1,10 @@
 package dto
 
-// Session requests
-
-// CreateSessionRequest is the request to create a new WhatsApp session
 type CreateSessionRequest struct {
-	// Session name/identifier (unique)
 	Session string `json:"session" binding:"required" example:"my-session"`
-	// Optional API key for session-level authentication. If not provided, one will be generated automatically.
-	ApiKey string `json:"apiKey,omitempty" example:"my-custom-api-key"`
+	ApiKey  string `json:"apiKey,omitempty" example:"my-custom-api-key"`
 }
 
-// Message requests
-
-// QuotedMessageDTO represents a message being quoted/replied to
 type QuotedMessageDTO struct {
 	MessageID string `json:"messageId" binding:"required" example:"3EB0ABC123"`
 	ChatJID   string `json:"chatJid,omitempty" example:"5511999999999@s.whatsapp.net"`
@@ -79,16 +71,12 @@ type SendReactionRequest struct {
 	Emoji     string `json:"emoji" binding:"required" example:"👍"`
 }
 
-// Webhook requests
-
 type SetWebhookRequest struct {
 	URL     string   `json:"url" example:"https://example.com/webhook"`
 	Events  []string `json:"events" example:"message.received,session.connected"`
 	Enabled bool     `json:"enabled" example:"true"`
 	Secret  string   `json:"secret" example:"my-secret-key"`
 }
-
-// Contact requests
 
 type CheckPhoneRequest struct {
 	Phones []string `json:"phones" binding:"required" example:"5511999999999,5511888888888"`
@@ -113,8 +101,6 @@ type MarkReadRequest struct {
 	MessageIDs []string `json:"messageIds"`
 }
 
-// Group requests
-
 type CreateGroupRequest struct {
 	Name         string   `json:"name" binding:"required" example:"My Group"`
 	Participants []string `json:"participants" binding:"required"`
@@ -123,8 +109,6 @@ type CreateGroupRequest struct {
 type GroupIDRequest struct {
 	GroupID string `json:"groupId" binding:"required" example:"123456789@g.us"`
 }
-
-// Newsletter requests (body-based)
 
 type NewsletterIDRequest struct {
 	NewsletterJID string `json:"newsletterJid" binding:"required" example:"123456789@newsletter"`
@@ -149,8 +133,6 @@ type GroupUpdateRequest struct {
 	Value   string `json:"value" binding:"required" example:"New Name"`
 }
 
-// Chat requests
-
 type ArchiveChatRequest struct {
 	Phone   string `json:"phone" binding:"required" example:"5511999999999"`
 	Archive bool   `json:"archive" example:"true"`
@@ -172,8 +154,6 @@ type EditMessageRequest struct {
 	NewText   string `json:"newText" binding:"required" example:"Edited message"`
 }
 
-// Profile requests
-
 type SetStatusRequest struct {
 	Status string `json:"status" binding:"required" example:"Hey there! I'm using OnWapp"`
 }
@@ -185,8 +165,6 @@ type SetPushNameRequest struct {
 type SetProfilePictureRequest struct {
 	Image string `json:"image" binding:"required" example:"base64_encoded_image"`
 }
-
-// Poll requests
 
 type SendPollRequest struct {
 	Phone           string   `json:"phone" binding:"required" example:"5511999999999"`
@@ -201,21 +179,15 @@ type SendPollVoteRequest struct {
 	SelectedOptions []string `json:"selectedOptions" binding:"required" example:"Red"`
 }
 
-// Blocklist requests
-
 type BlocklistRequest struct {
 	Phone  string `json:"phone" binding:"required" example:"5511999999999"`
 	Action string `json:"action" binding:"required" example:"block"`
 }
 
-// Disappearing messages requests
-
 type DisappearingRequest struct {
 	Phone string `json:"phone" binding:"required" example:"5511999999999"`
 	Timer string `json:"timer" binding:"required" example:"24h"`
 }
-
-// Group settings requests
 
 type GroupAnnounceRequest struct {
 	GroupID  string `json:"groupId" binding:"required" example:"123456789@g.us"`
@@ -253,8 +225,6 @@ type GroupRequestActionBodyRequest struct {
 	Action       string   `json:"action" binding:"required" example:"approve"`
 }
 
-// Newsletter requests
-
 type CreateNewsletterRequest struct {
 	Name        string `json:"name" binding:"required" example:"My Channel"`
 	Description string `json:"description" example:"Channel description"`
@@ -282,34 +252,24 @@ type NewsletterMarkViewedRequest struct {
 	ServerIDs     []int  `json:"serverIds" binding:"required" example:"1,2,3"`
 }
 
-// Contact subscribe request
-
 type SubscribePresenceRequest struct {
 	Phone string `json:"phone" binding:"required" example:"5511999999999"`
 }
-
-// Call request
 
 type RejectCallRequest struct {
 	CallFrom string `json:"callFrom" binding:"required" example:"5511999999999"`
 	CallID   string `json:"callId" binding:"required" example:"CALL123"`
 }
 
-// Pair phone request
-
 type PairPhoneRequest struct {
 	Phone string `json:"phone" binding:"required" example:"5511999999999"`
 }
-
-// Request unavailable message
 
 type RequestUnavailableMessageRequest struct {
 	ChatID    string `json:"chatId" binding:"required" example:"5511999999999@s.whatsapp.net"`
 	MessageID string `json:"messageId" binding:"required" example:"ABCD1234"`
 	SenderJID string `json:"senderJid" example:"5511999999999@s.whatsapp.net"`
 }
-
-// Status/Story request
 
 type SendStatusRequest struct {
 	Text     string `json:"text" example:"My status update"`
@@ -319,14 +279,10 @@ type SendStatusRequest struct {
 	MimeType string `json:"mimetype" example:"image/jpeg"`
 }
 
-// Community requests
-
 type LinkGroupRequest struct {
 	ParentGroupID string `json:"parentGroupId" binding:"required" example:"123456789@g.us"`
 	ChildGroupID  string `json:"childGroupId" binding:"required" example:"987654321@g.us"`
 }
-
-// Interactive message requests
 
 type ButtonDTO struct {
 	ButtonID    string `json:"buttonId" binding:"required" example:"btn1"`
@@ -377,8 +333,6 @@ type SendInteractiveRequest struct {
 	MimeType string                `json:"mimetype,omitempty" example:"image/jpeg"`
 }
 
-// Template message requests
-
 type TemplateButtonDTO struct {
 	Index      uint32                 `json:"index" example:"0"`
 	QuickReply *TemplateQuickReplyDTO `json:"quickReply,omitempty"`
@@ -414,8 +368,6 @@ type SendTemplateRequest struct {
 	Filename string              `json:"filename,omitempty" example:"document.pdf"`
 }
 
-// Carousel message requests
-
 type CarouselCardHeaderDTO struct {
 	Title    string `json:"title" example:"Product 1"`
 	Image    string `json:"image,omitempty" example:"base64_encoded_image_or_url"`
@@ -438,9 +390,6 @@ type SendCarouselRequest struct {
 	Cards  []CarouselCardDTO `json:"cards" binding:"required,min=1"`
 }
 
-// Settings requests
-
-// SessionSettingsRequest contains all optional settings fields for create/update
 type SessionSettingsRequest struct {
 	AlwaysOnline             *bool   `json:"alwaysOnline,omitempty" example:"false"`
 	AutoRejectCalls          *bool   `json:"autoRejectCalls,omitempty" example:"false"`

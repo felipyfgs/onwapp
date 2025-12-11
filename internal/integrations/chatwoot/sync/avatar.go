@@ -17,14 +17,12 @@ const (
 	avatarRequestTimeout = 5 * time.Second
 )
 
-// AvatarUpdater handles avatar update operations
 type AvatarUpdater struct {
 	cfg            *core.Config
 	client         *client.Client
 	contactsGetter ContactsGetter
 }
 
-// NewAvatarUpdater creates a new avatar updater
 func NewAvatarUpdater(cfg *core.Config, cli *client.Client, contactsGetter ContactsGetter) *AvatarUpdater {
 	return &AvatarUpdater{
 		cfg:            cfg,
@@ -33,7 +31,6 @@ func NewAvatarUpdater(cfg *core.Config, cli *client.Client, contactsGetter Conta
 	}
 }
 
-// UpdateAvatars updates avatars for contacts in chatCache
 func (u *AvatarUpdater) UpdateAvatars(ctx context.Context, chatCache map[string]*core.ChatFKs) int {
 	if u.contactsGetter == nil || len(chatCache) == 0 {
 		return 0
@@ -52,7 +49,6 @@ func (u *AvatarUpdater) UpdateAvatars(ctx context.Context, chatCache map[string]
 	return updated
 }
 
-// updateSingleAvatar updates avatar for a single contact
 func (u *AvatarUpdater) updateSingleAvatar(ctx context.Context, jid string, contactID int) bool {
 	avatarURL, err := u.contactsGetter.GetProfilePictureURL(ctx, jid)
 	if err != nil || avatarURL == "" {
@@ -65,7 +61,6 @@ func (u *AvatarUpdater) updateSingleAvatar(ctx context.Context, jid string, cont
 	return err == nil
 }
 
-// UpdateAllAvatarsAsync updates all contact avatars in background with worker pool
 func (u *AvatarUpdater) UpdateAllAvatarsAsync(cfg *core.Config) {
 	if u.contactsGetter == nil {
 		return
@@ -74,13 +69,11 @@ func (u *AvatarUpdater) UpdateAllAvatarsAsync(cfg *core.Config) {
 	go u.runAvatarWorkers(cfg)
 }
 
-// avatarJob represents a job for the avatar worker pool
 type avatarJob struct {
 	contactID  int
 	identifier string
 }
 
-// runAvatarWorkers runs avatar update workers in parallel
 func (u *AvatarUpdater) runAvatarWorkers(cfg *core.Config) {
 	db, err := openChatwootDB(cfg)
 	if err != nil {
@@ -104,17 +97,14 @@ func (u *AvatarUpdater) runAvatarWorkers(cfg *core.Config) {
 
 	logger.Chatwoot().Debug().Int("contacts", len(contacts)).Msg("Chatwoot avatar: starting background update")
 
-	// Create job channel and worker pool
 	jobs := make(chan avatarJob, len(contacts))
 	var wg gosync.WaitGroup
 
-	// Start workers
 	for i := 0; i < avatarWorkerCount; i++ {
 		wg.Add(1)
 		go u.avatarWorker(ctx, jobs, &wg)
 	}
 
-	// Send jobs
 	for _, c := range contacts {
 		jobs <- avatarJob{
 			contactID:  c.ID,
@@ -123,13 +113,11 @@ func (u *AvatarUpdater) runAvatarWorkers(cfg *core.Config) {
 	}
 	close(jobs)
 
-	// Wait for completion
 	wg.Wait()
 
 	logger.Chatwoot().Debug().Int("contacts", len(contacts)).Msg("Chatwoot avatar: background update completed")
 }
 
-// avatarWorker processes avatar update jobs
 func (u *AvatarUpdater) avatarWorker(ctx context.Context, jobs <-chan avatarJob, wg *gosync.WaitGroup) {
 	defer wg.Done()
 
@@ -154,7 +142,6 @@ func (u *AvatarUpdater) avatarWorker(ctx context.Context, jobs <-chan avatarJob,
 	}
 }
 
-// openChatwootDB opens a connection to the Chatwoot database
 func openChatwootDB(cfg *core.Config) (*sql.DB, error) {
 	port := cfg.ChatwootDBPort
 	if port == 0 {

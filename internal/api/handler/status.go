@@ -31,7 +31,6 @@ func NewStatusHandler(wpp *wpp.Service) *StatusHandler {
 	return &StatusHandler{wpp: wpp}
 }
 
-// validateSessionID validates and returns the session ID from URL params
 func validateSessionID(c *gin.Context) (string, error) {
 	sessionID := c.Param("session")
 	if sessionID == "" {
@@ -40,7 +39,6 @@ func validateSessionID(c *gin.Context) (string, error) {
 	return sessionID, nil
 }
 
-// parseJSONStatus parses status data from JSON request
 func (h *StatusHandler) parseJSONStatus(c *gin.Context) (text, image string, err error) {
 	var req dto.SendStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -49,11 +47,9 @@ func (h *StatusHandler) parseJSONStatus(c *gin.Context) (text, image string, err
 	return req.Text, req.Image, nil
 }
 
-// parseMultipartStatus parses status data from multipart form request
 func (h *StatusHandler) parseMultipartStatus(c *gin.Context) (text, image string, err error) {
 	text = c.PostForm("text")
 
-	// Check if file was provided
 	if _, _, err := c.Request.FormFile("file"); err == nil {
 		return "", "", errors.New(errImageStatusNotSupported)
 	}
@@ -61,7 +57,6 @@ func (h *StatusHandler) parseMultipartStatus(c *gin.Context) (text, image string
 	return text, "", nil
 }
 
-// parseStatusInput routes to the appropriate parser based on content type
 func (h *StatusHandler) parseStatusInput(c *gin.Context) (text, image string, err error) {
 	if IsMultipartRequest(c) {
 		return h.parseMultipartStatus(c)
@@ -69,7 +64,6 @@ func (h *StatusHandler) parseStatusInput(c *gin.Context) (text, image string, er
 	return h.parseJSONStatus(c)
 }
 
-// buildStatusMessage constructs a WhatsApp status message from input
 func (h *StatusHandler) buildStatusMessage(text, image string) (*waE2E.Message, error) {
 	if text == "" && image == "" {
 		return nil, errors.New(errTextOrImageRequired)
@@ -81,11 +75,9 @@ func (h *StatusHandler) buildStatusMessage(text, image string) (*waE2E.Message, 
 		}, nil
 	}
 
-	// Image status not yet supported
 	return nil, errors.New(errImageStatusNotSupported)
 }
 
-// SendStory godoc
 // @Summary      Post a story
 // @Description  Post a text or media story (status update visible to contacts). Supports JSON with base64/URL or multipart/form-data.
 // @Tags         status
@@ -138,7 +130,6 @@ func (h *StatusHandler) SendStory(c *gin.Context) {
 	})
 }
 
-// GetStatusPrivacy godoc
 // @Summary      Get status privacy settings
 // @Description  Get who can see your status updates
 // @Tags         status

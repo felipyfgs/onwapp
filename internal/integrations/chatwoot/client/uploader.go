@@ -14,19 +14,16 @@ import (
 	"onwapp/internal/logger"
 )
 
-// MediaUploader handles uploading media to Chatwoot via API
 type MediaUploader struct {
 	client *Client
 }
 
-// NewMediaUploader creates a new media uploader
 func NewMediaUploader(c *Client) *MediaUploader {
 	return &MediaUploader{
 		client: c,
 	}
 }
 
-// MediaUploadRequest represents a request to upload media to Chatwoot
 type MediaUploadRequest struct {
 	ConversationID int
 	MediaURL       string
@@ -36,11 +33,10 @@ type MediaUploadRequest struct {
 	Caption        string
 	MessageType    string
 	ContentAttrs   map[string]interface{}
-	Timestamp      *time.Time // Optional: original message timestamp for correct ordering
+	Timestamp      *time.Time
 	SourceID       string
 }
 
-// UploadFromURL downloads media from URL and uploads to Chatwoot
 func (m *MediaUploader) UploadFromURL(ctx context.Context, req MediaUploadRequest) (*core.Message, error) {
 	data, contentType, err := DownloadMedia(ctx, req.MediaURL)
 	if err != nil {
@@ -94,7 +90,6 @@ func (m *MediaUploader) UploadFromURL(ctx context.Context, req MediaUploadReques
 	return msg, nil
 }
 
-// DownloadMedia downloads media from a URL with context for timeout control
 func DownloadMedia(ctx context.Context, url string) ([]byte, string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -119,7 +114,6 @@ func DownloadMedia(ctx context.Context, url string) ([]byte, string, error) {
 	return data, mimeType, nil
 }
 
-// ExtractFilename extracts or generates a filename from URL or mime type
 func ExtractFilename(url, mimeType string) string {
 	urlPath := strings.Split(url, "?")[0]
 	filename := path.Base(urlPath)
@@ -132,7 +126,6 @@ func ExtractFilename(url, mimeType string) string {
 	return fmt.Sprintf("file%s", ext)
 }
 
-// GetExtensionFromMime returns file extension for common mime types
 func GetExtensionFromMime(mimeType string) string {
 	mimeToExt := map[string]string{
 		"image/jpeg":         ".jpg",

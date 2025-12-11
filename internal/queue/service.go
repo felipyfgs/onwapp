@@ -7,7 +7,6 @@ import (
 	"onwapp/internal/logger"
 )
 
-// Service gerencia a fila de mensagens
 type Service struct {
 	client   *Client
 	producer *Producer
@@ -15,7 +14,6 @@ type Service struct {
 	enabled  bool
 }
 
-// NewService cria um novo serviço de fila
 func NewService(cfg *config.Config) (*Service, error) {
 	if !cfg.NatsEnabled {
 		logger.Nats().Info().Msg("Queue service disabled (NATS_ENABLED=false)")
@@ -46,7 +44,6 @@ func NewService(cfg *config.Config) (*Service, error) {
 	}, nil
 }
 
-// Initialize inicializa os streams do JetStream
 func (s *Service) Initialize(ctx context.Context) error {
 	if !s.enabled {
 		return nil
@@ -54,7 +51,6 @@ func (s *Service) Initialize(ctx context.Context) error {
 	return s.client.EnsureStreams(ctx)
 }
 
-// Start inicia os consumers
 func (s *Service) Start(ctx context.Context) error {
 	if !s.enabled {
 		return nil
@@ -62,7 +58,6 @@ func (s *Service) Start(ctx context.Context) error {
 	return s.consumer.Start(ctx)
 }
 
-// Stop para os consumers e fecha a conexão
 func (s *Service) Stop() {
 	if !s.enabled {
 		return
@@ -72,7 +67,6 @@ func (s *Service) Stop() {
 	}
 }
 
-// Close fecha a conexão NATS
 func (s *Service) Close() {
 	if !s.enabled {
 		return
@@ -83,27 +77,22 @@ func (s *Service) Close() {
 	}
 }
 
-// IsEnabled verifica se o serviço está habilitado
 func (s *Service) IsEnabled() bool {
 	return s.enabled
 }
 
-// Producer retorna o producer
 func (s *Service) Producer() *Producer {
 	return s.producer
 }
 
-// Consumer retorna o consumer
 func (s *Service) Consumer() *Consumer {
 	return s.consumer
 }
 
-// Client retorna o cliente NATS
 func (s *Service) Client() *Client {
 	return s.client
 }
 
-// RegisterHandler registra um handler para um tipo de mensagem
 func (s *Service) RegisterHandler(msgType MessageType, handler MessageHandler) {
 	if !s.enabled || s.consumer == nil {
 		return

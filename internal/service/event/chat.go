@@ -9,8 +9,6 @@ import (
 	"onwapp/internal/model"
 )
 
-// Presence events
-
 func (s *Service) handlePresence(ctx context.Context, session *model.Session, e *events.Presence) {
 	logger.WPP().Debug().
 		Str("session", session.Session).
@@ -35,8 +33,6 @@ func (s *Service) handleChatPresence(ctx context.Context, session *model.Session
 
 	s.sendWebhook(ctx, session, string(model.EventChatPresence), e)
 }
-
-// Chat management events
 
 func (s *Service) handleMute(ctx context.Context, session *model.Session, e *events.Mute) {
 	logger.WPP().Debug().

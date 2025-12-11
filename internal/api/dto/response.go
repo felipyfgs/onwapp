@@ -1,53 +1,32 @@
 package dto
 
-// ErrorResponse is the only envelope - used for errors
 type ErrorResponse struct {
 	Error string `json:"error" example:"session not found"`
 }
 
-// MessageOnlyResponse for operations that return just a message
 type MessageOnlyResponse struct {
 	Message string `json:"message" example:"operation completed"`
 }
 
-// Session responses
-
-// SessionStats contains counters for session data
 type SessionStats struct {
-	// Total number of messages
 	Messages int `json:"messages" example:"1234"`
-	// Total number of chats
-	Chats int `json:"chats" example:"42"`
-	// Total number of contacts
+	Chats    int `json:"chats" example:"42"`
 	Contacts int `json:"contacts" example:"156"`
-	// Total number of groups
-	Groups int `json:"groups" example:"12"`
+	Groups   int `json:"groups" example:"12"`
 }
 
-// SessionResponse represents a WhatsApp session with connection info and authentication
 type SessionResponse struct {
-	// Unique session UUID (database primary key)
-	ID string `json:"id" example:"ce270f0c-c3d6-41ad-b481-1587f813c3b1"`
-	// Session name/identifier (used in API routes)
-	Session string `json:"session" example:"my-session"`
-	// WhatsApp device JID after connection
-	DeviceJID *string `json:"deviceJid,omitempty" example:"5511999999999@s.whatsapp.net"`
-	// Phone number associated with the session
-	Phone *string `json:"phone,omitempty" example:"5511999999999"`
-	// Connection status: disconnected, connecting, connected
-	Status string `json:"status" example:"connected"`
-	// Session-specific API key for authentication (use in Authorization header)
-	ApiKey *string `json:"apiKey,omitempty" example:"a1b2c3d4e5f6..."`
-	// WhatsApp push name (display name)
-	PushName *string `json:"pushName,omitempty" example:"John Doe"`
-	// Profile picture URL
-	ProfilePicture *string `json:"profilePicture,omitempty" example:"https://pps.whatsapp.net/..."`
-	// Session statistics (only for connected sessions)
-	Stats *SessionStats `json:"stats,omitempty"`
-	// Session creation timestamp
-	CreatedAt string `json:"createdAt" example:"2025-11-29T14:18:15.324706Z"`
-	// Last update timestamp
-	UpdatedAt string `json:"updatedAt" example:"2025-11-29T14:18:15.324706Z"`
+	ID             string        `json:"id" example:"ce270f0c-c3d6-41ad-b481-1587f813c3b1"`
+	Session        string        `json:"session" example:"my-session"`
+	DeviceJID      *string       `json:"deviceJid,omitempty" example:"5511999999999@s.whatsapp.net"`
+	Phone          *string       `json:"phone,omitempty" example:"5511999999999"`
+	Status         string        `json:"status" example:"connected"`
+	ApiKey         *string       `json:"apiKey,omitempty" example:"a1b2c3d4e5f6..."`
+	PushName       *string       `json:"pushName,omitempty" example:"John Doe"`
+	ProfilePicture *string       `json:"profilePicture,omitempty" example:"https://pps.whatsapp.net/..."`
+	Stats          *SessionStats `json:"stats,omitempty"`
+	CreatedAt      string        `json:"createdAt" example:"2025-11-29T14:18:15.324706Z"`
+	UpdatedAt      string        `json:"updatedAt" example:"2025-11-29T14:18:15.324706Z"`
 }
 
 type QRResponse struct {
@@ -65,14 +44,10 @@ type MessageResponse struct {
 	ID      *string `json:"id,omitempty" example:"ABCD1234"`
 }
 
-// Send message response
-
 type SendResponse struct {
 	MessageID string `json:"messageId" example:"ABCD1234"`
 	Timestamp int64  `json:"timestamp" example:"1699999999"`
 }
-
-// Webhook responses
 
 type WebhookResponse struct {
 	ID        string   `json:"id,omitempty" example:"uuid"`
@@ -87,15 +62,12 @@ type EventsResponse struct {
 	All        []string            `json:"all"`
 }
 
-// Contact responses
-
 type CheckPhoneResult struct {
 	Phone        string `json:"phone" example:"5511999999999"`
 	IsRegistered bool   `json:"isRegistered" example:"true"`
 	JID          string `json:"jid,omitempty" example:"5511999999999@s.whatsapp.net"`
 }
 
-// CheckPhoneResultsResponse is array of CheckPhoneResult
 type CheckPhoneResultsResponse = []CheckPhoneResult
 
 type ContactInfoResponse struct {
@@ -132,8 +104,6 @@ type BusinessProfileResponse struct {
 	Profile interface{} `json:"profile"`
 }
 
-// Group responses
-
 type GroupActionResponse struct {
 	GroupID string      `json:"groupId,omitempty" example:"123456789@g.us"`
 	Data    interface{} `json:"data,omitempty"`
@@ -148,8 +118,6 @@ type GroupRequestParticipantsResponse struct {
 	GroupID      string      `json:"groupId" example:"123456789@g.us"`
 	Participants interface{} `json:"participants"`
 }
-
-// Profile responses
 
 type ProfileInfoResponse struct {
 	Profile interface{} `json:"profile"`
@@ -166,8 +134,6 @@ type SetNameResponse struct {
 type SetPictureResponse struct {
 	PictureID string `json:"pictureId" example:"abc123"`
 }
-
-// Settings responses
 
 type SettingsResponse struct {
 	ID                       int64  `json:"id"`
@@ -187,8 +153,6 @@ type SettingsResponse struct {
 	CreatedAt                string `json:"createdAt"`
 	UpdatedAt                string `json:"updatedAt"`
 }
-
-// Chat responses
 
 type ChatActionResponse struct {
 	Status string `json:"status,omitempty" example:"archived"`
@@ -211,25 +175,17 @@ type ChatMessageResponse struct {
 	Deleted      bool   `json:"deleted,omitempty" example:"false"`
 }
 
-// Newsletter responses
-
 type NewsletterResponse struct {
 	Data interface{} `json:"data"`
 }
-
-// Status responses
 
 type StatusPrivacyResponse struct {
 	Privacy interface{} `json:"privacy"`
 }
 
-// Community response
-
 type CommunityResponse struct {
 	Groups interface{} `json:"groups,omitempty"`
 }
-
-// Media responses
 
 type MediaResponse struct {
 	ID         string `json:"id" example:"uuid"`
@@ -250,9 +206,6 @@ type MediaResponse struct {
 	CreatedAt  string `json:"createdAt" example:"2025-01-01T00:00:00Z"`
 }
 
-// Chat responses
-
-// LastMessageInfo represents the last message in a chat
 type LastMessageInfo struct {
 	Content   string `json:"content,omitempty" example:"Hello!"`
 	Timestamp int64  `json:"timestamp" example:"1699999999"`
@@ -284,13 +237,9 @@ type ChatResponse struct {
 	LastMessage         *LastMessageInfo `json:"lastMessage,omitempty"`
 }
 
-// Newsletter extra responses
-
 type NewsletterLiveResponse struct {
 	Duration string `json:"duration" example:"24h0m0s"`
 }
-
-// Contact extra responses
 
 type LIDResponse struct {
 	Phone string `json:"phone" example:"5511999999999"`

@@ -10,7 +10,6 @@ import (
 	"go.mau.fi/whatsmeow/types/events"
 )
 
-// GetOwnProfile gets the own profile
 func (s *Service) GetOwnProfile(ctx context.Context, sessionId string) (map[string]interface{}, error) {
 	session, err := s.sessions.Get(sessionId)
 	if err != nil {
@@ -27,7 +26,6 @@ func (s *Service) GetOwnProfile(ctx context.Context, sessionId string) (map[stri
 		"pushName": client.Store.PushName,
 	}
 
-	// Get user info (status, picture)
 	userJID := types.NewJID(client.Store.ID.User, types.DefaultUserServer)
 	userInfo, err := client.GetUserInfo(ctx, []types.JID{userJID})
 	if err == nil && userInfo != nil {
@@ -38,7 +36,6 @@ func (s *Service) GetOwnProfile(ctx context.Context, sessionId string) (map[stri
 		}
 	}
 
-	// Get profile picture URL
 	pic, err := client.GetProfilePictureInfo(ctx, userJID, &whatsmeow.GetProfilePictureParams{})
 	if err == nil && pic != nil {
 		result["pictureUrl"] = pic.URL
@@ -47,7 +44,6 @@ func (s *Service) GetOwnProfile(ctx context.Context, sessionId string) (map[stri
 	return result, nil
 }
 
-// SetStatusMessage sets the status message
 func (s *Service) SetStatusMessage(ctx context.Context, sessionId, status string) error {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -56,7 +52,6 @@ func (s *Service) SetStatusMessage(ctx context.Context, sessionId, status string
 	return client.SetStatusMessage(ctx, status)
 }
 
-// SetPushName sets the display name
 func (s *Service) SetPushName(ctx context.Context, sessionId, name string) error {
 	session, err := s.sessions.Get(sessionId)
 	if err != nil {
@@ -66,7 +61,6 @@ func (s *Service) SetPushName(ctx context.Context, sessionId, name string) error
 	return nil
 }
 
-// SetProfilePicture sets the profile picture
 func (s *Service) SetProfilePicture(ctx context.Context, sessionId string, data []byte) (string, error) {
 	session, err := s.sessions.Get(sessionId)
 	if err != nil {
@@ -85,7 +79,6 @@ func (s *Service) SetProfilePicture(ctx context.Context, sessionId string, data 
 	return pictureID, nil
 }
 
-// DeleteProfilePicture removes the profile picture
 func (s *Service) DeleteProfilePicture(ctx context.Context, sessionId string) error {
 	session, err := s.sessions.Get(sessionId)
 	if err != nil {
@@ -96,7 +89,6 @@ func (s *Service) DeleteProfilePicture(ctx context.Context, sessionId string) er
 		return fmt.Errorf("session not authenticated")
 	}
 
-	// Pass nil to delete the picture (whatsmeow sends empty content which removes the picture)
 	_, err = session.Client.SetGroupPhoto(ctx, *session.Client.Store.ID, nil)
 	if err != nil {
 		return fmt.Errorf("failed to delete profile picture: %w", err)
@@ -104,7 +96,6 @@ func (s *Service) DeleteProfilePicture(ctx context.Context, sessionId string) er
 	return nil
 }
 
-// GetBlocklist gets blocklist
 func (s *Service) GetBlocklist(ctx context.Context, sessionId string) (*types.Blocklist, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -113,7 +104,6 @@ func (s *Service) GetBlocklist(ctx context.Context, sessionId string) (*types.Bl
 	return client.GetBlocklist(ctx)
 }
 
-// UpdateBlocklist blocks or unblocks a contact
 func (s *Service) UpdateBlocklist(ctx context.Context, sessionId, phone string, block bool) (*types.Blocklist, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -135,7 +125,6 @@ func (s *Service) UpdateBlocklist(ctx context.Context, sessionId, phone string, 
 	return client.UpdateBlocklist(ctx, jid, action)
 }
 
-// GetStatusPrivacy gets status privacy settings
 func (s *Service) GetStatusPrivacy(ctx context.Context, sessionId string) ([]types.StatusPrivacy, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -144,7 +133,6 @@ func (s *Service) GetStatusPrivacy(ctx context.Context, sessionId string) ([]typ
 	return client.GetStatusPrivacy(ctx)
 }
 
-// PairPhone pairs using phone number
 func (s *Service) PairPhone(ctx context.Context, sessionId, phone string) (string, error) {
 	session, err := s.sessions.Get(sessionId)
 	if err != nil {
@@ -159,7 +147,6 @@ func (s *Service) PairPhone(ctx context.Context, sessionId, phone string) (strin
 	return code, nil
 }
 
-// RejectCall rejects a call
 func (s *Service) RejectCall(ctx context.Context, sessionId, callFrom, callID string) error {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -174,7 +161,6 @@ func (s *Service) RejectCall(ctx context.Context, sessionId, callFrom, callID st
 	return client.RejectCall(ctx, jid, callID)
 }
 
-// GetPrivacySettingsAsStrings gets privacy settings as a map of strings
 func (s *Service) GetPrivacySettingsAsStrings(ctx context.Context, sessionId string) (map[string]string, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -194,7 +180,6 @@ func (s *Service) GetPrivacySettingsAsStrings(ctx context.Context, sessionId str
 	}, nil
 }
 
-// SetPrivacySettingByName sets a privacy setting by name
 func (s *Service) SetPrivacySettingByName(ctx context.Context, sessionId, settingName, value string) error {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -208,7 +193,6 @@ func (s *Service) SetPrivacySettingByName(ctx context.Context, sessionId, settin
 	return err
 }
 
-// SetDefaultDisappearingTimerByName sets the default disappearing timer by name
 func (s *Service) SetDefaultDisappearingTimerByName(ctx context.Context, sessionId, timer string) error {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -223,7 +207,6 @@ func (s *Service) SetDefaultDisappearingTimerByName(ctx context.Context, session
 	return client.SetDefaultDisappearingTimer(ctx, duration)
 }
 
-// parseDisappearingTimer converts timer string to duration
 func parseDisappearingTimer(timer string) (time.Duration, error) {
 	switch timer {
 	case "off", "":

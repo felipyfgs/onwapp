@@ -9,7 +9,6 @@ import (
 	"golang.org/x/time/rate"
 )
 
-// RateLimiterConfig holds rate limiter configuration
 type RateLimiterConfig struct {
 	RequestsPerSecond float64
 	Burst             int
@@ -17,7 +16,6 @@ type RateLimiterConfig struct {
 	TTL               time.Duration
 }
 
-// DefaultRateLimiterConfig returns sensible defaults for high-volume usage (1000+ sessions)
 func DefaultRateLimiterConfig() RateLimiterConfig {
 	return RateLimiterConfig{
 		RequestsPerSecond: 200,
@@ -32,14 +30,12 @@ type client struct {
 	lastSeen time.Time
 }
 
-// RateLimiter manages per-client rate limiting
 type RateLimiter struct {
 	clients map[string]*client
 	mu      sync.RWMutex
 	config  RateLimiterConfig
 }
 
-// NewRateLimiter creates a new rate limiter with cleanup goroutine
 func NewRateLimiter(config RateLimiterConfig) *RateLimiter {
 	rl := &RateLimiter{
 		clients: make(map[string]*client),
@@ -88,7 +84,6 @@ func (rl *RateLimiter) cleanup() {
 	}
 }
 
-// Middleware returns a gin middleware for rate limiting
 func (rl *RateLimiter) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		key := getClientKey(c)
@@ -109,22 +104,17 @@ func (rl *RateLimiter) Middleware() gin.HandlerFunc {
 	}
 }
 
-// getClientKey extracts a unique identifier for the client
 func getClientKey(c *gin.Context) string {
-	// Try Authorization header first (for API clients)
 	if auth := c.GetHeader("Authorization"); auth != "" {
-		// Use first 16 chars of token to avoid storing full tokens
 		if len(auth) > 16 {
 			return "auth:" + auth[:16]
 		}
 		return "auth:" + auth
 	}
 
-	// Fall back to IP address
 	return "ip:" + c.ClientIP()
 }
 
-// RateLimit creates a simple rate limiting middleware with default config
 func RateLimit(requestsPerSecond float64, burst int) gin.HandlerFunc {
 	config := DefaultRateLimiterConfig()
 	config.RequestsPerSecond = requestsPerSecond
@@ -134,7 +124,6 @@ func RateLimit(requestsPerSecond float64, burst int) gin.HandlerFunc {
 	return rl.Middleware()
 }
 
-// StrictRateLimit for sensitive endpoints (login, etc)
 func StrictRateLimit() gin.HandlerFunc {
 	config := RateLimiterConfig{
 		RequestsPerSecond: 1,

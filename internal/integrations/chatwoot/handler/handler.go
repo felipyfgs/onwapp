@@ -23,7 +23,6 @@ import (
 	"onwapp/internal/service/wpp"
 )
 
-// Handler handles HTTP requests for Chatwoot integration
 type Handler struct {
 	service           *cwservice.Service
 	sessionService    *service.SessionService
@@ -33,7 +32,6 @@ type Handler struct {
 	queueProducer     *queue.Producer
 }
 
-// NewHandler creates a new Chatwoot handler
 func NewHandler(svc *cwservice.Service, sessionSvc *service.SessionService, wppSvc *wpp.Service, database *db.Database) *Handler {
 	return &Handler{
 		service:           svc,
@@ -44,16 +42,10 @@ func NewHandler(svc *cwservice.Service, sessionSvc *service.SessionService, wppS
 	}
 }
 
-// SetQueueProducer sets the queue producer for async message processing
 func (h *Handler) SetQueueProducer(producer *queue.Producer) {
 	h.queueProducer = producer
 }
 
-// =============================================================================
-// CONFIG ENDPOINTS
-// =============================================================================
-
-// SetConfig handles POST /sessions/:sessionId/chatwoot/set
 // @Summary Set Chatwoot configuration
 // @Description Configure Chatwoot integration for a session
 // @Tags         chatwoot
@@ -85,7 +77,6 @@ func (h *Handler) SetConfig(c *gin.Context) {
 		return
 	}
 
-	// Convert DTO to service request
 	svcReq := &cwservice.SetConfigRequest{
 		Enabled:        req.Enabled,
 		URL:            req.URL,
@@ -123,14 +114,13 @@ func (h *Handler) SetConfig(c *gin.Context) {
 	c.JSON(http.StatusOK, cfg)
 }
 
-// ValidateCredentials handles POST /chatwoot/validate
 // @Summary Validate Chatwoot credentials
 // @Description Validate Chatwoot URL, token and account ID before saving configuration
 // @Tags         chatwoot
 // @Accept json
 // @Produce json
 // @Param credentials body ValidateCredentialsRequest true "Chatwoot credentials to validate"
-// @Success 200 {object} client.ValidationResult
+// @Success 200 {object} ValidationResult
 // @Failure 400 {object} map[string]interface{}
 // @Security Authorization
 // @Router /chatwoot/validate [post]
@@ -156,7 +146,6 @@ func (h *Handler) ValidateCredentials(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-// GetConfig handles GET /sessions/:sessionId/chatwoot/find
 // @Summary Get Chatwoot configuration
 // @Description Get Chatwoot integration configuration for a session
 // @Tags         chatwoot
@@ -184,7 +173,6 @@ func (h *Handler) GetConfig(c *gin.Context) {
 	c.JSON(http.StatusOK, cfg)
 }
 
-// DeleteConfig handles DELETE /sessions/:sessionId/chatwoot
 // @Summary Delete Chatwoot configuration
 // @Description Remove Chatwoot integration configuration for a session
 // @Tags         chatwoot
@@ -211,14 +199,8 @@ func (h *Handler) DeleteConfig(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "chatwoot configuration deleted"})
 }
 
-// =============================================================================
-// WEBHOOK ENDPOINT
-// =============================================================================
-
-// Maximum webhook payload size (1MB)
 const maxWebhookPayloadSize = 1 * 1024 * 1024
 
-// ReceiveWebhook handles POST /chatwoot/webhook/:sessionId
 // @Summary Receive Chatwoot webhook
 // @Description Receive webhook events from Chatwoot
 // @Tags         chatwoot
@@ -230,7 +212,6 @@ const maxWebhookPayloadSize = 1 * 1024 * 1024
 func (h *Handler) ReceiveWebhook(c *gin.Context) {
 	sessionId := c.Param("sessionId")
 
-	// Validate session name format
 	if sessionId == "" || len(sessionId) > 64 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid session id"})
 		return
@@ -247,7 +228,6 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 		return
 	}
 
-	// Limit payload size to prevent memory exhaustion
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxWebhookPayloadSize)
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
@@ -266,12 +246,9 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 		return
 	}
 
-	// Ignore message_updated events (except deletions)
-	// Chatwoot sends these in bulk when messages are viewed/read, causing spam
 	if payload.Event == "message_updated" {
 		if payload.ContentAttrs != nil {
 			if deleted, ok := payload.ContentAttrs["deleted"].(bool); ok && deleted {
-				// Handle deletion
 				deleteCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 				go func() {
 					defer cancel()
@@ -309,7 +286,6 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 			}
 		}
 
-		// Check for duplicate webhook (same Chatwoot message ID already processed)
 		if h.database != nil && payload.ID > 0 {
 			existingMsg, _ := h.database.Messages.GetByCwMsgId(c.Request.Context(), session.ID, payload.ID)
 			if existingMsg != nil {
@@ -350,7 +326,6 @@ func (h *Handler) ReceiveWebhook(c *gin.Context) {
 		if chatJid != "" && (content != "" || len(attachments) > 0) {
 			c.JSON(http.StatusOK, gin.H{"message": "accepted"})
 
-			// Use queue if available, otherwise process directly in goroutine
 			if h.queueProducer != nil && h.queueProducer.IsConnected() {
 				h.enqueueToWhatsApp(c.Request.Context(), session, chatJid, content, attachments, quotedMsg, payload.ID, conversationID)
 			} else {
@@ -380,19 +355,12 @@ func (h *Handler) extractChatId(payload *cwservice.WebhookPayload) string {
 	return ""
 }
 
-// =============================================================================
-// WHATSAPP MESSAGE SENDING
-// =============================================================================
-
 func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.Session, chatJid, content string, attachments []core.Attachment, quotedMsg *core.QuotedMessageInfo, chatwootMsgID, chatwootConvID int) error {
 	recipient := chatJid
 
-	// Mark as pending BEFORE sending to prevent duplicate processing
-	// when emitSentMessageEvent triggers the Chatwoot event handler
 	cwservice.MarkPendingSentFromChatwoot(session.ID, chatJid, chatwootMsgID)
 	defer cwservice.ClearPendingSentFromChatwoot(session.ID, chatJid, chatwootMsgID)
 
-	// Mark incoming messages as read in WhatsApp when agent responds
 	h.markMessagesAsRead(ctx, session, chatJid)
 
 	var quoted *wpp.QuotedMessage
@@ -463,7 +431,6 @@ func (h *Handler) sendToWhatsAppBackground(ctx context.Context, session *model.S
 					filename = att.Extension
 				}
 				if filename == "" {
-					// Try to extract filename from URL
 					filename = util.ExtractFilenameFromURL(att.DataURL)
 				}
 				if filename == "" {
@@ -523,7 +490,6 @@ func (h *Handler) saveOutgoingMessage(ctx context.Context, session *model.Sessio
 	_, _ = h.database.Messages.Save(ctx, msg)
 }
 
-// enqueueToWhatsApp enqueues a message to be sent to WhatsApp via the queue
 func (h *Handler) enqueueToWhatsApp(ctx context.Context, session *model.Session, chatJid, content string, attachments []core.Attachment, quotedMsg *core.QuotedMessageInfo, chatwootMsgID, chatwootConvID int) {
 	var quotedInfo *queue.QuotedInfo
 	if quotedMsg != nil {
@@ -558,7 +524,6 @@ func (h *Handler) enqueueToWhatsApp(ctx context.Context, session *model.Session,
 			Int("cwMsgId", chatwootMsgID).
 			Msg("Failed to enqueue message, falling back to direct processing")
 
-		// Fallback to direct processing
 		go func() {
 			bgCtx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 			defer cancel()
@@ -577,7 +542,6 @@ func (h *Handler) enqueueToWhatsApp(ctx context.Context, session *model.Session,
 		Msg("Message enqueued for WhatsApp delivery")
 }
 
-// SendToWhatsAppFromQueue processes a message from the queue and sends it to WhatsApp
 func (h *Handler) SendToWhatsAppFromQueue(ctx context.Context, sessionID string, data *queue.CWToWAMessage) error {
 	session, err := h.sessionService.GetByID(sessionID)
 	if err != nil || session == nil {
@@ -652,11 +616,6 @@ func downloadMedia(ctx context.Context, url string) ([]byte, string, error) {
 	return data, mimeType, nil
 }
 
-// =============================================================================
-// SYNC ENDPOINTS
-// =============================================================================
-
-// SyncContacts handles POST /sessions/:sessionId/chatwoot/sync/contacts
 // @Summary Sync contacts to Chatwoot (async)
 // @Description Start async synchronization of contacts from message history to Chatwoot
 // @Tags         chatwoot
@@ -671,7 +630,6 @@ func (h *Handler) SyncContacts(c *gin.Context) {
 	h.handleSync(c, "contacts")
 }
 
-// SyncMessages handles POST /sessions/:sessionId/chatwoot/sync/messages
 // @Summary Sync messages to Chatwoot (async)
 // @Description Start async synchronization of message history to Chatwoot. By default imports ALL messages. Use ?days=N to limit.
 // @Tags         chatwoot
@@ -687,7 +645,6 @@ func (h *Handler) SyncMessages(c *gin.Context) {
 	h.handleSync(c, "messages")
 }
 
-// SyncAll handles POST /sessions/:sessionId/chatwoot/sync
 // @Summary Full sync to Chatwoot (async)
 // @Description Start async synchronization of all contacts and messages to Chatwoot. By default imports ALL messages. Use ?days=N to limit.
 // @Tags         chatwoot
@@ -727,7 +684,6 @@ func (h *Handler) handleSync(c *gin.Context, syncType string) {
 		sessionId: sessionId,
 	}
 
-	// Use whatsmeow's native LID resolver instead of database queries
 	lidResolver := &whatsappLIDResolver{session: session}
 
 	dbSync, err := cwsync.NewChatwootDBSync(cfg, h.database.Messages, contactsAdapter, h.database.Media, session.ID, lidResolver)
@@ -737,8 +693,6 @@ func (h *Handler) handleSync(c *gin.Context, syncType string) {
 		return
 	}
 
-	// Default: import ALL messages (daysLimit=0)
-	// Use ?days=N to limit to last N days
 	daysLimit := 0
 	if days := c.Query("days"); days != "" {
 		_, _ = fmt.Sscanf(days, "%d", &daysLimit)
@@ -755,7 +709,6 @@ func (h *Handler) handleSync(c *gin.Context, syncType string) {
 	c.JSON(http.StatusAccepted, status)
 }
 
-// GetSyncStatusHandler handles GET /sessions/:sessionId/chatwoot/sync/status
 // @Summary Get sync status
 // @Description Get the current sync status for a session
 // @Tags         chatwoot
@@ -777,7 +730,6 @@ func (h *Handler) GetSyncStatusHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, status)
 }
 
-// ResetChatwoot handles POST /sessions/:sessionId/chatwoot/reset
 // @Summary Reset Chatwoot data for testing
 // @Description Delete all Chatwoot contacts, conversations and messages (except bot)
 // @Tags         chatwoot
@@ -800,7 +752,6 @@ func (h *Handler) ResetChatwoot(c *gin.Context) {
 		return
 	}
 
-	// Use whatsmeow's native LID resolver instead of database queries
 	lidResolver := &whatsappLIDResolver{session: session}
 
 	dbSync, err := cwsync.NewChatwootDBSync(cfg, nil, nil, nil, session.ID, lidResolver)
@@ -833,7 +784,6 @@ func (h *Handler) ResetChatwoot(c *gin.Context) {
 	})
 }
 
-// ResolveAllConversations handles POST /sessions/:sessionId/chatwoot/resolve-all
 // @Summary Resolve all open conversations
 // @Description Set all open conversations to resolved status
 // @Tags         chatwoot
@@ -882,7 +832,6 @@ func (h *Handler) ResolveAllConversations(c *gin.Context) {
 	})
 }
 
-// GetConversationsStats handles GET /sessions/:sessionId/chatwoot/conversations/stats
 // @Summary Get conversations statistics
 // @Description Get count of open conversations
 // @Tags         chatwoot
@@ -925,7 +874,6 @@ func (h *Handler) GetConversationsStats(c *gin.Context) {
 	})
 }
 
-// GetSyncOverview handles GET /sessions/:sessionId/chatwoot/overview
 // @Summary Get sync overview statistics
 // @Description Get comprehensive statistics: contacts, conversations, messages
 // @Tags         chatwoot
@@ -957,14 +905,12 @@ func (h *Handler) GetSyncOverview(c *gin.Context) {
 	}
 	defer dbSync.Close()
 
-	// Get Chatwoot overview
 	overview, err := dbSync.GetSyncOverview(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Get WhatsApp contacts count
 	contactsAdapter := &whatsappContactsAdapter{
 		wpp:       h.wpp,
 		sessionId: sessionId,
@@ -979,7 +925,6 @@ func (h *Handler) GetSyncOverview(c *gin.Context) {
 	})
 }
 
-// GetOrphanStats handles GET /sessions/:sessionId/chatwoot/orphans
 // @Summary Get orphan records stats
 // @Description Preview orphan records count before cleanup (scoped to this session's inbox only)
 // @Tags         chatwoot
@@ -1020,7 +965,6 @@ func (h *Handler) GetOrphanStats(c *gin.Context) {
 	c.JSON(http.StatusOK, stats)
 }
 
-// CleanupOrphans handles POST /sessions/:sessionId/chatwoot/cleanup
 // @Summary Clean orphan records
 // @Description Remove orphan records ONLY from this session's inbox (safe, won't affect other inboxes)
 // @Tags         chatwoot
@@ -1070,10 +1014,6 @@ func (h *Handler) CleanupOrphans(c *gin.Context) {
 
 	c.JSON(http.StatusOK, result)
 }
-
-// =============================================================================
-// ADAPTERS
-// =============================================================================
 
 type whatsappContactsAdapter struct {
 	wpp       *wpp.Service
@@ -1157,7 +1097,6 @@ func (a *whatsappContactsAdapter) GetAllGroupNames(ctx context.Context) (map[str
 	return result, nil
 }
 
-// whatsappLIDResolver implements util.LIDResolver using whatsmeow's native LID store
 type whatsappLIDResolver struct {
 	session *model.Session
 }
@@ -1167,7 +1106,6 @@ func (r *whatsappLIDResolver) ResolveLIDToPhone(ctx context.Context, lidNumber s
 		return ""
 	}
 
-	// Create LID JID from number
 	lidJID := types.JID{User: lidNumber, Server: types.HiddenUserServer}
 
 	pnJID, err := r.session.Client.Store.LIDs.GetPNForLID(ctx, lidJID)
@@ -1178,17 +1116,11 @@ func (r *whatsappLIDResolver) ResolveLIDToPhone(ctx context.Context, lidNumber s
 	return pnJID.User
 }
 
-// =============================================================================
-// READ RECEIPTS
-// =============================================================================
-
-// markMessagesAsRead sends read receipts to WhatsApp for unread incoming messages
 func (h *Handler) markMessagesAsRead(ctx context.Context, session *model.Session, chatJid string) {
 	if h.database == nil {
 		return
 	}
 
-	// Get unread incoming messages from this chat (limit 50 to avoid huge batches)
 	unreadMsgs, err := h.database.Messages.GetUnreadIncomingByChat(ctx, session.ID, chatJid, 50)
 	if err != nil {
 		logger.Chatwoot().Debug().Err(err).Str("session", session.Session).Str("chatJid", chatJid).Msg("Chatwoot: failed to get unread messages")
@@ -1199,22 +1131,18 @@ func (h *Handler) markMessagesAsRead(ctx context.Context, session *model.Session
 		return
 	}
 
-	// Extract message IDs and phone number
 	msgIds := make([]string, len(unreadMsgs))
 	for i, msg := range unreadMsgs {
 		msgIds[i] = msg.MsgId
 	}
 
-	// Extract phone from JID (remove @s.whatsapp.net or @g.us)
 	phone := strings.Split(chatJid, "@")[0]
 
-	// Send read receipt to WhatsApp
 	if markErr := h.wpp.MarkRead(ctx, session.Session, phone, msgIds); markErr != nil {
 		logger.Chatwoot().Debug().Err(markErr).Str("session", session.Session).Str("chatJid", chatJid).Int("count", len(msgIds)).Msg("Chatwoot: failed to send read receipts to WhatsApp")
 		return
 	}
 
-	// Mark messages as read in database
 	affected, dbErr := h.database.Messages.MarkAsReadByAgent(ctx, session.ID, msgIds)
 	if dbErr != nil {
 		logger.Chatwoot().Debug().Err(dbErr).Str("session", session.Session).Msg("Chatwoot: failed to mark messages as read in database")

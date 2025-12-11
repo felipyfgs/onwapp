@@ -8,7 +8,6 @@ import (
 	"go.mau.fi/whatsmeow/types"
 )
 
-// ParticipantAction represents the type of group participant action
 type ParticipantAction int
 
 const (
@@ -18,7 +17,6 @@ const (
 	ActionDemote
 )
 
-// updateParticipants is a generic helper for participant operations
 func (s *Service) updateParticipants(ctx context.Context, sessionId, groupID string, phones []string, action ParticipantAction) ([]types.GroupParticipant, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -58,27 +56,22 @@ func (s *Service) updateParticipants(ctx context.Context, sessionId, groupID str
 	return result, nil
 }
 
-// AddParticipants adds participants to a group
 func (s *Service) AddParticipants(ctx context.Context, sessionId, groupID string, phones []string) ([]types.GroupParticipant, error) {
 	return s.updateParticipants(ctx, sessionId, groupID, phones, ActionAdd)
 }
 
-// RemoveParticipants removes participants from a group
 func (s *Service) RemoveParticipants(ctx context.Context, sessionId, groupID string, phones []string) ([]types.GroupParticipant, error) {
 	return s.updateParticipants(ctx, sessionId, groupID, phones, ActionRemove)
 }
 
-// PromoteParticipants promotes participants to admin
 func (s *Service) PromoteParticipants(ctx context.Context, sessionId, groupID string, phones []string) ([]types.GroupParticipant, error) {
 	return s.updateParticipants(ctx, sessionId, groupID, phones, ActionPromote)
 }
 
-// DemoteParticipants demotes admins to regular participants
 func (s *Service) DemoteParticipants(ctx context.Context, sessionId, groupID string, phones []string) ([]types.GroupParticipant, error) {
 	return s.updateParticipants(ctx, sessionId, groupID, phones, ActionDemote)
 }
 
-// CreateGroup creates a new group
 func (s *Service) CreateGroup(ctx context.Context, sessionId, name string, phones []string) (*types.GroupInfo, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -97,7 +90,6 @@ func (s *Service) CreateGroup(ctx context.Context, sessionId, name string, phone
 	return client.CreateGroup(ctx, whatsmeow.ReqCreateGroup{Name: name, Participants: jids})
 }
 
-// GetGroupInfo retrieves group information
 func (s *Service) GetGroupInfo(ctx context.Context, sessionId, groupID string) (*types.GroupInfo, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -111,7 +103,6 @@ func (s *Service) GetGroupInfo(ctx context.Context, sessionId, groupID string) (
 	return client.GetGroupInfo(ctx, jid)
 }
 
-// GetJoinedGroups lists all joined groups
 func (s *Service) GetJoinedGroups(ctx context.Context, sessionId string) ([]*types.GroupInfo, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -120,7 +111,6 @@ func (s *Service) GetJoinedGroups(ctx context.Context, sessionId string) ([]*typ
 	return client.GetJoinedGroups(ctx)
 }
 
-// LeaveGroup leaves a group
 func (s *Service) LeaveGroup(ctx context.Context, sessionId, groupID string) error {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -134,7 +124,6 @@ func (s *Service) LeaveGroup(ctx context.Context, sessionId, groupID string) err
 	return client.LeaveGroup(ctx, jid)
 }
 
-// SetGroupName updates group name
 func (s *Service) SetGroupName(ctx context.Context, sessionId, groupID, name string) error {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -148,7 +137,6 @@ func (s *Service) SetGroupName(ctx context.Context, sessionId, groupID, name str
 	return client.SetGroupName(ctx, jid, name)
 }
 
-// SetGroupTopic updates group description
 func (s *Service) SetGroupTopic(ctx context.Context, sessionId, groupID, topic string) error {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -162,7 +150,6 @@ func (s *Service) SetGroupTopic(ctx context.Context, sessionId, groupID, topic s
 	return client.SetGroupTopic(ctx, jid, "", "", topic)
 }
 
-// GetInviteLink gets group invite link
 func (s *Service) GetInviteLink(ctx context.Context, sessionId, groupID string, reset bool) (string, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -176,7 +163,6 @@ func (s *Service) GetInviteLink(ctx context.Context, sessionId, groupID string, 
 	return client.GetGroupInviteLink(ctx, jid, reset)
 }
 
-// JoinWithLink joins a group via invite link
 func (s *Service) JoinWithLink(ctx context.Context, sessionId, link string) (types.JID, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -185,7 +171,6 @@ func (s *Service) JoinWithLink(ctx context.Context, sessionId, link string) (typ
 	return client.JoinGroupWithLink(ctx, link)
 }
 
-// SetGroupAnnounce sets if only admins can send messages
 func (s *Service) SetGroupAnnounce(ctx context.Context, sessionId, groupID string, announce bool) error {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -199,7 +184,6 @@ func (s *Service) SetGroupAnnounce(ctx context.Context, sessionId, groupID strin
 	return client.SetGroupAnnounce(ctx, jid, announce)
 }
 
-// SetGroupLocked sets if only admins can edit group info
 func (s *Service) SetGroupLocked(ctx context.Context, sessionId, groupID string, locked bool) error {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -213,7 +197,6 @@ func (s *Service) SetGroupLocked(ctx context.Context, sessionId, groupID string,
 	return client.SetGroupLocked(ctx, jid, locked)
 }
 
-// SetGroupPhoto sets group photo
 func (s *Service) SetGroupPhoto(ctx context.Context, sessionId, groupID string, data []byte) (string, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -227,13 +210,11 @@ func (s *Service) SetGroupPhoto(ctx context.Context, sessionId, groupID string, 
 	return client.SetGroupPhoto(ctx, jid, data)
 }
 
-// DeleteGroupPhoto removes group photo
 func (s *Service) DeleteGroupPhoto(ctx context.Context, sessionId, groupID string) error {
 	_, err := s.SetGroupPhoto(ctx, sessionId, groupID, nil)
 	return err
 }
 
-// GetGroupPicture gets group profile picture
 func (s *Service) GetGroupPicture(ctx context.Context, sessionId, groupJID string) (*types.ProfilePictureInfo, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -247,7 +228,6 @@ func (s *Service) GetGroupPicture(ctx context.Context, sessionId, groupJID strin
 	return client.GetProfilePictureInfo(ctx, jid, &whatsmeow.GetProfilePictureParams{})
 }
 
-// GetGroupInfoFromLink gets group info from invite link
 func (s *Service) GetGroupInfoFromLink(ctx context.Context, sessionId, code string) (*types.GroupInfo, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -256,7 +236,6 @@ func (s *Service) GetGroupInfoFromLink(ctx context.Context, sessionId, code stri
 	return client.GetGroupInfoFromLink(ctx, code)
 }
 
-// SetJoinApprovalMode sets join approval mode
 func (s *Service) SetJoinApprovalMode(ctx context.Context, sessionId, groupID string, mode bool) error {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -270,7 +249,6 @@ func (s *Service) SetJoinApprovalMode(ctx context.Context, sessionId, groupID st
 	return client.SetGroupJoinApprovalMode(ctx, jid, mode)
 }
 
-// SetMemberAddMode sets who can add members
 func (s *Service) SetMemberAddMode(ctx context.Context, sessionId, groupID string, mode types.GroupMemberAddMode) error {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -284,7 +262,6 @@ func (s *Service) SetMemberAddMode(ctx context.Context, sessionId, groupID strin
 	return client.SetGroupMemberAddMode(ctx, jid, mode)
 }
 
-// GetJoinRequests gets pending join requests
 func (s *Service) GetJoinRequests(ctx context.Context, sessionId, groupID string) ([]types.GroupParticipantRequest, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -298,7 +275,6 @@ func (s *Service) GetJoinRequests(ctx context.Context, sessionId, groupID string
 	return client.GetGroupRequestParticipants(ctx, jid)
 }
 
-// UpdateJoinRequests approves or rejects join requests
 func (s *Service) UpdateJoinRequests(ctx context.Context, sessionId, groupID string, phones []string, action whatsmeow.ParticipantRequestChange) ([]types.GroupParticipant, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -322,7 +298,6 @@ func (s *Service) UpdateJoinRequests(ctx context.Context, sessionId, groupID str
 	return client.UpdateGroupRequestParticipants(ctx, groupJID, jids, action)
 }
 
-// LinkGroup links a group to a community
 func (s *Service) LinkGroup(ctx context.Context, sessionId, parentID, childID string) error {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -342,7 +317,6 @@ func (s *Service) LinkGroup(ctx context.Context, sessionId, parentID, childID st
 	return client.LinkGroup(ctx, parentJID, childJID)
 }
 
-// UnlinkGroup unlinks a group from a community
 func (s *Service) UnlinkGroup(ctx context.Context, sessionId, parentID, childID string) error {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -362,7 +336,6 @@ func (s *Service) UnlinkGroup(ctx context.Context, sessionId, parentID, childID 
 	return client.UnlinkGroup(ctx, parentJID, childJID)
 }
 
-// GetSubGroups gets sub-groups of a community
 func (s *Service) GetSubGroups(ctx context.Context, sessionId, communityID string) ([]*types.GroupLinkTarget, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {

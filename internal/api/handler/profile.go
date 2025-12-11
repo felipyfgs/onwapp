@@ -17,7 +17,6 @@ func NewProfileHandler(wpp *wpp.Service) *ProfileHandler {
 	return &ProfileHandler{wpp: wpp}
 }
 
-// GetProfile godoc
 // @Summary      Get own profile info
 // @Description  Get own WhatsApp profile information
 // @Tags         profile
@@ -44,7 +43,6 @@ func (h *ProfileHandler) GetProfile(c *gin.Context) {
 	})
 }
 
-// SetStatus godoc
 // @Summary      Set status message
 // @Description  Set WhatsApp status/about message
 // @Tags         profile
@@ -75,7 +73,6 @@ func (h *ProfileHandler) SetStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SetStatusResponse(req))
 }
 
-// SetPushName godoc
 // @Summary      Set display name
 // @Description  Set WhatsApp display name (push name)
 // @Tags         profile
@@ -106,7 +103,6 @@ func (h *ProfileHandler) SetPushName(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SetNameResponse(req))
 }
 
-// SetProfilePicture godoc
 // @Summary      Set profile picture
 // @Description  Set WhatsApp profile picture (supports JSON with base64/URL or multipart/form-data)
 // @Tags         profile
@@ -155,7 +151,6 @@ func (h *ProfileHandler) SetProfilePicture(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SetPictureResponse{PictureID: pictureID})
 }
 
-// DeleteProfilePicture godoc
 // @Summary      Delete profile picture
 // @Description  Remove WhatsApp profile picture
 // @Tags         profile

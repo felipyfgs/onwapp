@@ -48,12 +48,9 @@ func NewStorageService(cfg *config.Config) (*StorageService, error) {
 		useSSL:   cfg.MinioUseSSL,
 	}
 
-	// Build public URL
 	if cfg.MinioPublicURL != "" {
-		// Use explicit public URL if provided
 		s.publicURL = fmt.Sprintf("%s/%s", strings.TrimSuffix(cfg.MinioPublicURL, "/"), cfg.MinioBucket)
 	} else {
-		// Default: build from endpoint
 		protocol := "http"
 		if cfg.MinioUseSSL {
 			protocol = "https"
@@ -109,7 +106,6 @@ func (s *StorageService) ensureBucketOnce(ctx context.Context) error {
 		err = s.client.MakeBucket(ctx, s.bucket, minio.MakeBucketOptions{})
 		if err != nil {
 			logger.Storage().Error().Err(err).Str("bucket", s.bucket).Msg("MakeBucket failed")
-			// Check if bucket was created by another process
 			exists, checkErr := s.client.BucketExists(ctx, s.bucket)
 			if checkErr == nil && exists {
 				logger.Storage().Info().Str("bucket", s.bucket).Msg("Bucket already exists (created by another process)")
@@ -120,7 +116,6 @@ func (s *StorageService) ensureBucketOnce(ctx context.Context) error {
 			logger.Storage().Info().Str("bucket", s.bucket).Msg("Created MinIO bucket")
 		}
 
-		// Set bucket policy to allow public read
 		policy := fmt.Sprintf(`{
 			"Version": "2012-10-17",
 			"Statement": [
@@ -147,7 +142,6 @@ func (s *StorageService) Upload(ctx context.Context, sessionID, msgID, mediaType
 		return nil, fmt.Errorf("empty data")
 	}
 
-	// Generate key: session/direction/date/msgid_type.ext
 	ext := getExtensionFromContentType(contentType)
 	date := time.Now().Format("2006/01/02")
 	direction := "received"
@@ -215,31 +209,24 @@ func (s *StorageService) GetPresignedURL(ctx context.Context, key string, expiry
 	return url.String(), nil
 }
 
-// StreamObject streams a file from storage to an HTTP response writer
-// Supports both full URLs and storage keys
-// URL format: http://localhost:9000/bucket-name/path/to/file.jpg
 func (s *StorageService) StreamObject(ctx context.Context, w io.Writer, storageURL, contentType string, setHeaders func(contentType string, size int64)) error {
-	// Extract object key from URL
 	parts := strings.SplitN(storageURL, "/"+s.bucket+"/", 2)
 	if len(parts) != 2 {
 		return fmt.Errorf("invalid storage URL format: expected '/%s/' in URL", s.bucket)
 	}
 	objectKey := parts[1]
 
-	// Get object from MinIO
 	object, err := s.client.GetObject(ctx, s.bucket, objectKey, minio.GetObjectOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to get object from storage: %w", err)
 	}
 	defer object.Close()
 
-	// Get object info for content length
 	stat, err := object.Stat()
 	if err != nil {
 		return fmt.Errorf("failed to stat object: %w", err)
 	}
 
-	// Set headers via callback
 	if contentType == "" {
 		contentType = stat.ContentType
 		if contentType == "" {
@@ -250,12 +237,10 @@ func (s *StorageService) StreamObject(ctx context.Context, w io.Writer, storageU
 		setHeaders(contentType, stat.Size)
 	}
 
-	// Stream to client
 	_, err = io.Copy(w, object)
 	return err
 }
 
-// contentTypeExtensions maps content type prefixes to file extensions - O(1) lookup
 var contentTypeExtensions = map[string]string{
 	"image/jpeg":      ".jpg",
 	"image/png":       ".png",
@@ -270,17 +255,14 @@ var contentTypeExtensions = map[string]string{
 }
 
 func getExtensionFromContentType(contentType string) string {
-	// Direct lookup for exact matches
 	if ext, ok := contentTypeExtensions[contentType]; ok {
 		return ext
 	}
-	// Check prefixes for types with parameters (e.g., "image/jpeg; charset=utf-8")
 	for prefix, ext := range contentTypeExtensions {
 		if strings.HasPrefix(contentType, prefix) {
 			return ext
 		}
 	}
-	// Fallback for generic application types
 	if strings.HasPrefix(contentType, "application/") {
 		return path.Ext(contentType)
 	}

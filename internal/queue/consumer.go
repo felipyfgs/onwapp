@@ -12,10 +12,8 @@ import (
 	"onwapp/internal/logger"
 )
 
-// MessageHandler processa uma mensagem da fila
 type MessageHandler func(ctx context.Context, msg *QueueMessage) error
 
-// Consumer consome mensagens dos streams
 type Consumer struct {
 	client   *Client
 	producer *Producer
@@ -25,7 +23,6 @@ type Consumer struct {
 	wg       sync.WaitGroup
 }
 
-// NewConsumer cria um novo consumer
 func NewConsumer(client *Client, producer *Producer) *Consumer {
 	return &Consumer{
 		client:   client,
@@ -34,7 +31,6 @@ func NewConsumer(client *Client, producer *Producer) *Consumer {
 	}
 }
 
-// RegisterHandler registra um handler para um tipo de mensagem
 func (c *Consumer) RegisterHandler(msgType MessageType, handler MessageHandler) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -42,7 +38,6 @@ func (c *Consumer) RegisterHandler(msgType MessageType, handler MessageHandler) 
 	logger.Nats().Debug().Str("type", string(msgType)).Msg("Registered queue handler")
 }
 
-// Start inicia os consumers para ambos os streams
 func (c *Consumer) Start(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	c.cancel = cancel
@@ -60,7 +55,6 @@ func (c *Consumer) Start(ctx context.Context) error {
 	return nil
 }
 
-// Stop para os consumers
 func (c *Consumer) Stop() {
 	if c.cancel != nil {
 		c.cancel()
@@ -172,7 +166,6 @@ func (c *Consumer) processMessage(ctx context.Context, msg jetstream.Msg, stream
 			Int("maxRetries", c.client.Config().MaxRetries).
 			Msg("Failed to process queue message")
 
-		// Se excedeu tentativas, mover para DLQ
 		if int(meta.NumDelivered) >= c.client.Config().MaxRetries {
 			if dlqErr := c.producer.PublishToDLQ(ctx, msg.Subject(), &queueMsg, err.Error()); dlqErr != nil {
 				logger.Nats().Error().Err(dlqErr).Str("msgId", queueMsg.ID).Msg("Failed to publish to DLQ")

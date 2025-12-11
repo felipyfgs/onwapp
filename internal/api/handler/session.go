@@ -21,7 +21,6 @@ import (
 	"onwapp/internal/service/wpp"
 )
 
-// generateAPIKey generates a random 32-byte hex API key
 func generateAPIKey() string {
 	bytes := make([]byte, 32)
 	if _, err := rand.Read(bytes); err != nil {
@@ -64,7 +63,6 @@ func sessionToResponse(sess *model.Session) dto.SessionResponse {
 	return resp
 }
 
-// Fetch godoc
 // @Summary      Fetch all sessions
 // @Description  Get a list of all WhatsApp sessions with profile and stats
 // @Tags         sessions
@@ -85,7 +83,6 @@ func (h *SessionHandler) Fetch(c *gin.Context) {
 		}
 		resp := sessionToResponse(sess)
 
-		// For connected sessions, fetch additional data
 		if sess.GetStatus() == model.StatusConnected {
 			h.enrichSessionResponse(c.Request.Context(), sess, &resp)
 		}
@@ -96,30 +93,24 @@ func (h *SessionHandler) Fetch(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// enrichSessionResponse adds profile, avatar and stats to a connected session response
 func (h *SessionHandler) enrichSessionResponse(ctx context.Context, sess *model.Session, resp *dto.SessionResponse) {
-	// Get data from client store
 	if sess.Client != nil && sess.Client.Store != nil && sess.Client.Store.ID != nil {
 		storeID := sess.Client.Store.ID
 
-		// Set DeviceJID if not already set
 		if resp.DeviceJID == nil {
 			jid := storeID.String()
 			resp.DeviceJID = &jid
 		}
 
-		// Set Phone if not already set (extract from JID)
 		if resp.Phone == nil && storeID.User != "" {
 			resp.Phone = &storeID.User
 		}
 
-		// Get push name
 		pushName := sess.Client.Store.PushName
 		if pushName != "" {
 			resp.PushName = &pushName
 		}
 
-		// Get profile picture - use user JID (without device suffix)
 		userJID := types.NewJID(storeID.User, types.DefaultUserServer)
 		pic, err := sess.Client.GetProfilePictureInfo(ctx, userJID, &whatsmeow.GetProfilePictureParams{})
 		if err != nil {
@@ -129,22 +120,18 @@ func (h *SessionHandler) enrichSessionResponse(ctx context.Context, sess *model.
 		}
 	}
 
-	// Get stats from database
 	stats := &dto.SessionStats{}
 
 	if h.database != nil {
-		// Count messages
 		if msgCount, err := h.database.Messages.CountBySession(ctx, sess.ID); err == nil {
 			stats.Messages = msgCount
 		}
 
-		// Count chats
 		if chatCount, err := h.database.Chats.CountBySession(ctx, sess.ID); err == nil {
 			stats.Chats = chatCount
 		}
 	}
 
-	// Count contacts from whatsmeow store
 	if sess.Client != nil && sess.Client.Store != nil {
 		contacts, err := sess.Client.Store.Contacts.GetAllContacts(ctx)
 		if err == nil {
@@ -152,7 +139,6 @@ func (h *SessionHandler) enrichSessionResponse(ctx context.Context, sess *model.
 		}
 	}
 
-	// Count groups
 	if sess.Client != nil {
 		groups, err := sess.Client.GetJoinedGroups(ctx)
 		if err == nil {
@@ -163,7 +149,6 @@ func (h *SessionHandler) enrichSessionResponse(ctx context.Context, sess *model.
 	resp.Stats = stats
 }
 
-// Create godoc
 // @Summary      Create a new session
 // @Description  Create a new WhatsApp session with the given name
 // @Tags         sessions
@@ -183,7 +168,6 @@ func (h *SessionHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// Use provided API key or generate a new one
 	apiKey := req.ApiKey
 	if apiKey == "" {
 		apiKey = generateAPIKey()
@@ -198,7 +182,6 @@ func (h *SessionHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, sessionToResponse(session))
 }
 
-// Delete godoc
 // @Summary      Delete a session
 // @Description  Delete an existing WhatsApp session
 // @Tags         sessions
@@ -221,7 +204,6 @@ func (h *SessionHandler) Delete(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.MessageResponse{Message: "session deleted"})
 }
 
-// Info godoc
 // @Summary      Get session info
 // @Description  Get information about a WhatsApp session
 // @Tags         sessions
@@ -245,7 +227,6 @@ func (h *SessionHandler) Info(c *gin.Context) {
 	c.JSON(http.StatusOK, sessionToResponse(session))
 }
 
-// Connect godoc
 // @Summary      Connect session
 // @Description  Connect a WhatsApp session. If not authenticated, returns QR code endpoint
 // @Tags         sessions
@@ -284,7 +265,6 @@ func (h *SessionHandler) Connect(c *gin.Context) {
 	})
 }
 
-// Disconnect godoc
 // @Summary      Disconnect session
 // @Description  Disconnect from WhatsApp but keep credentials (can auto-reconnect)
 // @Tags         sessions
@@ -312,7 +292,6 @@ func (h *SessionHandler) Disconnect(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.MessageResponse{Message: "disconnected (credentials kept, use /connect to reconnect)"})
 }
 
-// Logout godoc
 // @Summary      Logout session
 // @Description  Logout from WhatsApp and clear credentials (requires new QR scan to reconnect)
 // @Tags         sessions
@@ -340,7 +319,6 @@ func (h *SessionHandler) Logout(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.MessageResponse{Message: "logged out (credentials cleared, scan QR to reconnect)"})
 }
 
-// Restart godoc
 // @Summary      Restart session
 // @Description  Disconnect and reconnect a WhatsApp session
 // @Tags         sessions
@@ -367,7 +345,6 @@ func (h *SessionHandler) Restart(c *gin.Context) {
 	})
 }
 
-// QR godoc
 // @Summary      Get QR code
 // @Description  Get QR code for WhatsApp authentication
 // @Tags         sessions
@@ -417,7 +394,6 @@ func (h *SessionHandler) QR(c *gin.Context) {
 	})
 }
 
-// PairPhone godoc
 // @Summary      Pair using phone number
 // @Description  Pair WhatsApp session using phone number instead of QR code
 // @Tags         sessions

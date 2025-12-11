@@ -9,8 +9,6 @@ import (
 	"onwapp/internal/model"
 )
 
-// Call events
-
 func (s *Service) handleCallOffer(ctx context.Context, session *model.Session, e *events.CallOffer) {
 	logger.WPP().Info().
 		Str("session", session.Session).
@@ -19,7 +17,6 @@ func (s *Service) handleCallOffer(ctx context.Context, session *model.Session, e
 		Str("callId", e.CallID).
 		Msg("Call offer received")
 
-	// Check if auto-reject calls is enabled
 	if s.settingsProvider != nil && s.callRejecter != nil {
 		_, autoReject, err := s.settingsProvider.GetBySessionID(ctx, session.ID)
 		if err == nil && autoReject {
@@ -117,8 +114,6 @@ func (s *Service) handleCallRelayLatency(ctx context.Context, session *model.Ses
 	s.sendWebhook(ctx, session, string(model.EventCallRelayLatency), e)
 }
 
-// Group events
-
 func (s *Service) handleGroupInfo(ctx context.Context, session *model.Session, e *events.GroupInfo) {
 	logger.WPP().Debug().
 		Str("session", session.Session).
@@ -140,8 +135,6 @@ func (s *Service) handleJoinedGroup(ctx context.Context, session *model.Session,
 
 	s.sendWebhook(ctx, session, string(model.EventGroupJoined), e)
 }
-
-// Newsletter events
 
 func (s *Service) handleNewsletterJoin(ctx context.Context, session *model.Session, e *events.NewsletterJoin) {
 	logger.WPP().Info().
@@ -174,8 +167,6 @@ func (s *Service) handleNewsletterLiveUpdate(ctx context.Context, session *model
 		Str("id", e.JID.String()).
 		Msg("Newsletter live update")
 }
-
-// Contact events
 
 func (s *Service) handlePushName(ctx context.Context, session *model.Session, e *events.PushName) {
 	logger.WPP().Debug().
@@ -222,8 +213,6 @@ func (s *Service) handleBusinessName(ctx context.Context, session *model.Session
 
 	s.sendWebhook(ctx, session, string(model.EventContactBusinessName), e)
 }
-
-// Privacy events
 
 func (s *Service) handleIdentityChange(ctx context.Context, session *model.Session, e *events.IdentityChange) {
 	logger.WPP().Debug().

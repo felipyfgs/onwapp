@@ -18,7 +18,6 @@ func NewCommunityHandler(wpp *wpp.Service) *CommunityHandler {
 	return &CommunityHandler{wpp: wpp}
 }
 
-// LinkGroup godoc
 // @Summary      Link group to community
 // @Description  Link a group to a community as a subgroup
 // @Tags         community
@@ -51,7 +50,6 @@ func (h *CommunityHandler) LinkGroup(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
-// UnlinkGroup godoc
 // @Summary      Unlink group from community
 // @Description  Unlink a group from a community
 // @Tags         community
@@ -84,7 +82,6 @@ func (h *CommunityHandler) UnlinkGroup(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
-// GetSubGroups godoc
 // @Summary      Get community subgroups
 // @Description  Get list of subgroups in a community
 // @Tags         community

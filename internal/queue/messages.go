@@ -7,24 +7,20 @@ import (
 	"onwapp/internal/integrations/chatwoot/core"
 )
 
-// MessageType identifica o tipo de mensagem na fila
 type MessageType string
 
 const (
-	// WhatsApp -> Chatwoot
 	MsgTypeIncoming     MessageType = "incoming"
 	MsgTypeOutgoingSent MessageType = "outgoing_sent"
 	MsgTypeReceipt      MessageType = "receipt"
 	MsgTypeReaction     MessageType = "reaction"
 	MsgTypeDelete       MessageType = "delete"
 
-	// Chatwoot -> WhatsApp
 	MsgTypeSendText  MessageType = "send_text"
 	MsgTypeSendMedia MessageType = "send_media"
 	MsgTypeDeleteWA  MessageType = "delete_wa"
 )
 
-// QueueMessage é a estrutura base para todas as mensagens
 type QueueMessage struct {
 	ID        string          `json:"id"`
 	Type      MessageType     `json:"type"`
@@ -34,7 +30,6 @@ type QueueMessage struct {
 	Data      json.RawMessage `json:"data"`
 }
 
-// MediaInfo informações de mídia
 type MediaInfo struct {
 	IsMedia  bool   `json:"is_media"`
 	MimeType string `json:"mime_type"`
@@ -42,7 +37,6 @@ type MediaInfo struct {
 	Caption  string `json:"caption,omitempty"`
 }
 
-// WAToCWMessage - dados específicos WhatsApp -> Chatwoot
 type WAToCWMessage struct {
 	MessageID     string          `json:"message_id"`
 	SessionName   string          `json:"session_name"`
@@ -58,14 +52,12 @@ type WAToCWMessage struct {
 	FullEventJSON json.RawMessage `json:"full_event_json"`
 }
 
-// WAToCWReceiptMessage - dados de recibo (read/delivered)
 type WAToCWReceiptMessage struct {
 	MessageIDs  []string `json:"message_ids"`
 	ChatJID     string   `json:"chat_jid"`
 	ReceiptType string   `json:"receipt_type"`
 }
 
-// WAToCWReactionMessage - dados de reação
 type WAToCWReactionMessage struct {
 	Emoji       string `json:"emoji"`
 	TargetMsgID string `json:"target_msg_id"`
@@ -74,12 +66,10 @@ type WAToCWReactionMessage struct {
 	IsFromMe    bool   `json:"is_from_me"`
 }
 
-// WAToCWDeleteMessage - dados de deleção
 type WAToCWDeleteMessage struct {
 	DeletedMsgID string `json:"deleted_msg_id"`
 }
 
-// QuotedInfo informações de mensagem citada
 type QuotedInfo struct {
 	MsgID     string `json:"msg_id"`
 	ChatJID   string `json:"chat_jid"`
@@ -88,7 +78,6 @@ type QuotedInfo struct {
 	FromMe    bool   `json:"from_me"`
 }
 
-// CWToWAMessage - dados específicos Chatwoot -> WhatsApp
 type CWToWAMessage struct {
 	ChatJID        string            `json:"chat_jid"`
 	Content        string            `json:"content"`
@@ -98,12 +87,10 @@ type CWToWAMessage struct {
 	ChatwootConvID int               `json:"chatwoot_conv_id"`
 }
 
-// CWToWADeleteMessage - dados de deleção Chatwoot -> WhatsApp
 type CWToWADeleteMessage struct {
 	ChatwootMsgID int `json:"chatwoot_msg_id"`
 }
 
-// DLQMessage - mensagem na Dead Letter Queue
 type DLQMessage struct {
 	OriginalSubject string        `json:"original_subject"`
 	OriginalMessage *QueueMessage `json:"original_message"`

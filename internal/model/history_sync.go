@@ -1,6 +1,5 @@
 package model
 
-// SyncType represents the type of history sync
 type SyncType string
 
 const (
@@ -13,7 +12,6 @@ const (
 	SyncTypeOnDemand         SyncType = "ON_DEMAND"
 )
 
-// HistorySyncStatus represents the status of history sync for a session
 type HistorySyncStatus string
 
 const (

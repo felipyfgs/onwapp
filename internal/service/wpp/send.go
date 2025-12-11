@@ -10,7 +10,6 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// MediaParams holds parameters for sending media messages
 type MediaParams struct {
 	Data      []byte
 	MimeType  string
@@ -21,7 +20,6 @@ type MediaParams struct {
 	PTT       bool
 }
 
-// sendMedia is a generic helper for uploading and sending media
 func (s *Service) sendMedia(ctx context.Context, sessionId, phone string, p MediaParams, build func(*whatsmeow.UploadResponse, *waE2E.ContextInfo) *waE2E.Message) (whatsmeow.SendResponse, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -49,16 +47,10 @@ func (s *Service) sendMedia(ctx context.Context, sessionId, phone string, p Medi
 	return resp, nil
 }
 
-// =============================================================================
-// TEXT MESSAGES
-// =============================================================================
-
-// SendText sends a text message
 func (s *Service) SendText(ctx context.Context, sessionId, phone, text string) (whatsmeow.SendResponse, error) {
 	return s.SendTextQuoted(ctx, sessionId, phone, text, nil)
 }
 
-// SendTextQuoted sends a text message with optional quote
 func (s *Service) SendTextQuoted(ctx context.Context, sessionId, phone, text string, quoted *QuotedMessage) (whatsmeow.SendResponse, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -91,11 +83,6 @@ func (s *Service) SendTextQuoted(ctx context.Context, sessionId, phone, text str
 	return resp, nil
 }
 
-// =============================================================================
-// MEDIA MESSAGES
-// =============================================================================
-
-// SendImage sends an image message
 func (s *Service) SendImage(ctx context.Context, sessionId, phone string, data []byte, caption, mimeType string, quoted *QuotedMessage) (whatsmeow.SendResponse, error) {
 	p := MediaParams{Data: data, MimeType: mimeType, Caption: caption, MediaType: whatsmeow.MediaImage, Quoted: quoted}
 
@@ -118,7 +105,6 @@ func (s *Service) SendImage(ctx context.Context, sessionId, phone string, data [
 	return resp, err
 }
 
-// SendDocument sends a document message
 func (s *Service) SendDocument(ctx context.Context, sessionId, phone string, data []byte, filename, mimeType string, quoted *QuotedMessage) (whatsmeow.SendResponse, error) {
 	p := MediaParams{Data: data, MimeType: mimeType, FileName: filename, MediaType: whatsmeow.MediaDocument, Quoted: quoted}
 
@@ -139,7 +125,6 @@ func (s *Service) SendDocument(ctx context.Context, sessionId, phone string, dat
 	})
 }
 
-// SendAudio sends an audio message
 func (s *Service) SendAudio(ctx context.Context, sessionId, phone string, data []byte, mimeType string, ptt bool, quoted *QuotedMessage) (whatsmeow.SendResponse, error) {
 	p := MediaParams{Data: data, MimeType: mimeType, MediaType: whatsmeow.MediaAudio, Quoted: quoted, PTT: ptt}
 
@@ -160,7 +145,6 @@ func (s *Service) SendAudio(ctx context.Context, sessionId, phone string, data [
 	})
 }
 
-// SendVideo sends a video message
 func (s *Service) SendVideo(ctx context.Context, sessionId, phone string, data []byte, caption, mimeType string, quoted *QuotedMessage) (whatsmeow.SendResponse, error) {
 	p := MediaParams{Data: data, MimeType: mimeType, Caption: caption, MediaType: whatsmeow.MediaVideo, Quoted: quoted}
 
@@ -181,7 +165,6 @@ func (s *Service) SendVideo(ctx context.Context, sessionId, phone string, data [
 	})
 }
 
-// SendSticker sends a sticker message
 func (s *Service) SendSticker(ctx context.Context, sessionId, phone string, data []byte, mimeType string) (whatsmeow.SendResponse, error) {
 	p := MediaParams{Data: data, MimeType: mimeType, MediaType: whatsmeow.MediaImage}
 
@@ -200,11 +183,6 @@ func (s *Service) SendSticker(ctx context.Context, sessionId, phone string, data
 	})
 }
 
-// =============================================================================
-// SPECIAL MESSAGES
-// =============================================================================
-
-// SendLocation sends a location message
 func (s *Service) SendLocation(ctx context.Context, sessionId, phone string, lat, lng float64, name, address string) (whatsmeow.SendResponse, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -234,7 +212,6 @@ func (s *Service) SendLocation(ctx context.Context, sessionId, phone string, lat
 	return resp, nil
 }
 
-// SendContact sends a contact card
 func (s *Service) SendContact(ctx context.Context, sessionId, phone, contactName, contactPhone string) (whatsmeow.SendResponse, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -265,7 +242,6 @@ func (s *Service) SendContact(ctx context.Context, sessionId, phone, contactName
 	return resp, nil
 }
 
-// SendReaction sends a reaction to a message
 func (s *Service) SendReaction(ctx context.Context, sessionId, phone, messageID, emoji string) (whatsmeow.SendResponse, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -280,11 +256,6 @@ func (s *Service) SendReaction(ctx context.Context, sessionId, phone, messageID,
 	return client.SendMessage(ctx, jid, client.BuildReaction(jid, jid, messageID, emoji))
 }
 
-// =============================================================================
-// INTERACTIVE MESSAGES
-// =============================================================================
-
-// SendButtons sends a message with buttons (max 3)
 func (s *Service) SendButtons(ctx context.Context, sessionId, phone string, params whatsmeow.ButtonsMessageParams) (whatsmeow.SendResponse, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -299,7 +270,6 @@ func (s *Service) SendButtons(ctx context.Context, sessionId, phone string, para
 	return client.SendButtonsMessage(ctx, jid, params)
 }
 
-// SendList sends a message with a list
 func (s *Service) SendList(ctx context.Context, sessionId, phone string, params whatsmeow.ListMessageParams) (whatsmeow.SendResponse, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -314,7 +284,6 @@ func (s *Service) SendList(ctx context.Context, sessionId, phone string, params 
 	return client.SendListMessage(ctx, jid, params)
 }
 
-// SendNativeFlow sends an interactive message with native flow buttons
 func (s *Service) SendNativeFlow(ctx context.Context, sessionId, phone string, params whatsmeow.NativeFlowMessageParams) (whatsmeow.SendResponse, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -329,7 +298,6 @@ func (s *Service) SendNativeFlow(ctx context.Context, sessionId, phone string, p
 	return client.SendNativeFlowMessage(ctx, jid, params)
 }
 
-// SendTemplate sends a message with template buttons
 func (s *Service) SendTemplate(ctx context.Context, sessionId, phone string, params whatsmeow.TemplateMessageParams) (whatsmeow.SendResponse, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -344,7 +312,6 @@ func (s *Service) SendTemplate(ctx context.Context, sessionId, phone string, par
 	return client.SendTemplateMessage(ctx, jid, params)
 }
 
-// SendCarousel sends a carousel message with multiple cards
 func (s *Service) SendCarousel(ctx context.Context, sessionId, phone string, params whatsmeow.CarouselMessageParams) (whatsmeow.SendResponse, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -359,11 +326,6 @@ func (s *Service) SendCarousel(ctx context.Context, sessionId, phone string, par
 	return client.SendCarouselMessage(ctx, jid, params)
 }
 
-// =============================================================================
-// POLL MESSAGES
-// =============================================================================
-
-// SendPoll sends a poll
 func (s *Service) SendPoll(ctx context.Context, sessionId, phone, name string, options []string, selectableCount int) (whatsmeow.SendResponse, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -389,7 +351,6 @@ func (s *Service) SendPoll(ctx context.Context, sessionId, phone, name string, o
 	return resp, nil
 }
 
-// SendPollVote votes on a poll
 func (s *Service) SendPollVote(ctx context.Context, sessionId, phone, pollMsgID string, selectedOptions []string) (whatsmeow.SendResponse, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -417,11 +378,6 @@ func (s *Service) SendPollVote(ctx context.Context, sessionId, phone, pollMsgID 
 	return client.SendMessage(ctx, jid, msg)
 }
 
-// =============================================================================
-// STATUS/STORY
-// =============================================================================
-
-// SendStatus sends a status/story
 func (s *Service) SendStatus(ctx context.Context, sessionId string, msg *waE2E.Message) (whatsmeow.SendResponse, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -431,11 +387,6 @@ func (s *Service) SendStatus(ctx context.Context, sessionId string, msg *waE2E.M
 	return client.SendMessage(ctx, types.StatusBroadcastJID, msg)
 }
 
-// =============================================================================
-// MEDIA UTILITIES
-// =============================================================================
-
-// DownloadMedia downloads media from a message
 func (s *Service) DownloadMedia(ctx context.Context, sessionId string, msg *waE2E.Message) ([]byte, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -461,7 +412,6 @@ func (s *Service) DownloadMedia(ctx context.Context, sessionId string, msg *waE2
 	return client.Download(ctx, dl)
 }
 
-// UploadMedia uploads media and returns upload response
 func (s *Service) UploadMedia(ctx context.Context, sessionId string, data []byte, mediaType whatsmeow.MediaType) (*whatsmeow.UploadResponse, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {

@@ -11,17 +11,14 @@ import (
 	"onwapp/internal/integrations/chatwoot/core"
 )
 
-// ConfigRepository handles database operations for Chatwoot configuration
 type ConfigRepository struct {
 	pool *pgxpool.Pool
 }
 
-// NewConfigRepository creates a new Chatwoot config repository
 func NewConfigRepository(pool *pgxpool.Pool) *ConfigRepository {
 	return &ConfigRepository{pool: pool}
 }
 
-// Upsert creates or updates a Chatwoot configuration
 func (r *ConfigRepository) Upsert(ctx context.Context, cfg *core.Config) (*core.Config, error) {
 	query := `
 		INSERT INTO "onWappChatwoot" (
@@ -76,7 +73,6 @@ func (r *ConfigRepository) Upsert(ctx context.Context, cfg *core.Config) (*core.
 	return cfg, nil
 }
 
-// GetBySessionID retrieves configuration by session ID
 func (r *ConfigRepository) GetBySessionID(ctx context.Context, sessionID string) (*core.Config, error) {
 	query := `
 		SELECT "id", "sessionId", "enabled", "url", "token", "account",
@@ -111,7 +107,6 @@ func (r *ConfigRepository) GetBySessionID(ctx context.Context, sessionID string)
 	return cfg, nil
 }
 
-// GetEnabledBySessionID retrieves enabled configuration by session ID
 func (r *ConfigRepository) GetEnabledBySessionID(ctx context.Context, sessionID string) (*core.Config, error) {
 	cfg, err := r.GetBySessionID(ctx, sessionID)
 	if err != nil {
@@ -123,14 +118,12 @@ func (r *ConfigRepository) GetEnabledBySessionID(ctx context.Context, sessionID 
 	return cfg, nil
 }
 
-// Delete removes a configuration by session ID
 func (r *ConfigRepository) Delete(ctx context.Context, sessionID string) error {
 	query := `DELETE FROM "onWappChatwoot" WHERE "sessionId" = $1`
 	_, err := r.pool.Exec(ctx, query, sessionID)
 	return err
 }
 
-// UpdateInboxID updates the inbox ID for a configuration
 func (r *ConfigRepository) UpdateInboxID(ctx context.Context, sessionID string, inboxID int) error {
 	query := `UPDATE "onWappChatwoot" SET "inboxId" = $1, "updatedAt" = $2 WHERE "sessionId" = $3`
 	_, err := r.pool.Exec(ctx, query, inboxID, time.Now(), sessionID)

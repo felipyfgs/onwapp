@@ -11,11 +11,6 @@ import (
 	"onwapp/internal/logger"
 )
 
-// =============================================================================
-// WEBHOOK DTOs
-// =============================================================================
-
-// WebhookPayload represents incoming webhook from Chatwoot
 type WebhookPayload struct {
 	Event        string                 `json:"event"`
 	ID           int                    `json:"id,omitempty"`
@@ -32,7 +27,6 @@ type WebhookPayload struct {
 	Attachments  []core.Attachment      `json:"attachments,omitempty"`
 }
 
-// WebhookConversation represents conversation data in webhook payload
 type WebhookConversation struct {
 	ID           int                `json:"id"`
 	InboxID      int                `json:"inbox_id,omitempty"`
@@ -42,16 +36,10 @@ type WebhookConversation struct {
 	ContactInbox *core.ContactInbox `json:"contact_inbox,omitempty"`
 }
 
-// ConversationMeta represents metadata in conversation
 type ConversationMeta struct {
 	Sender *core.Contact `json:"sender,omitempty"`
 }
 
-// =============================================================================
-// WEBHOOK PARSING
-// =============================================================================
-
-// ParseWebhookPayload parses raw JSON into WebhookPayload
 func ParseWebhookPayload(data []byte) (*WebhookPayload, error) {
 	var payload WebhookPayload
 	if err := json.Unmarshal(data, &payload); err != nil {
@@ -60,11 +48,6 @@ func ParseWebhookPayload(data []byte) (*WebhookPayload, error) {
 	return &payload, nil
 }
 
-// =============================================================================
-// WEBHOOK PROCESSING (Chatwoot -> WhatsApp)
-// =============================================================================
-
-// GetWebhookDataForSending extracts data from webhook for sending via WhatsApp
 func (s *Service) GetWebhookDataForSending(ctx context.Context, sessionID string, payload *WebhookPayload) (chatJid, content string, attachments []core.Attachment, err error) {
 	cfg, err := s.repo.GetEnabledBySessionID(ctx, sessionID)
 	if err != nil || cfg == nil {
@@ -112,8 +95,6 @@ func (s *Service) GetWebhookDataForSending(ctx context.Context, sessionID string
 
 	content = s.ConvertMarkdown(payload.Content)
 
-	// Only add agent signature if there's actual text content
-	// This prevents sending just the signature when agent sends only attachments
 	if cfg.SignAgent && payload.Sender != nil && content != "" {
 		senderName := payload.Sender.AvailableName
 		if senderName == "" {
@@ -135,7 +116,6 @@ func (s *Service) GetWebhookDataForSending(ctx context.Context, sessionID string
 	return chatJid, content, attachments, nil
 }
 
-// GetQuotedMessage finds the original message being replied to from Chatwoot
 func (s *Service) GetQuotedMessage(ctx context.Context, sessionID string, payload *WebhookPayload) *core.QuotedMessageInfo {
 	if s.database == nil {
 		return nil
@@ -167,8 +147,6 @@ func (s *Service) GetQuotedMessage(ctx context.Context, sessionID string, payloa
 		return nil
 	}
 
-	// Use the original SenderJID (which may be LID format) for Participant
-	// WhatsApp expects LID format in group quotes to avoid mention notifications
 	return &core.QuotedMessageInfo{
 		MsgId:     msg.MsgId,
 		ChatJID:   msg.ChatJID,

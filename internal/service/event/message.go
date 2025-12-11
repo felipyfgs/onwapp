@@ -15,10 +15,8 @@ import (
 	"onwapp/internal/util"
 )
 
-// downloadSemaphore limits concurrent media downloads (shared with media service)
 var downloadSemaphore = util.NewSemaphore(100)
 
-// Timeout constants for message handling
 const (
 	mediaDownloadTimeoutMsg = 60 * time.Second
 )
@@ -105,12 +103,10 @@ func (s *Service) handleMessage(ctx context.Context, session *model.Session, e *
 		logger.WPP().Warn().Err(err).Str("session", session.Session).Str("messageId", e.Info.ID).Msg("Failed to save message")
 	}
 
-	// Update conversation timestamp so chat appears at top of list
 	if err := s.database.Chats.UpdateConversationTimestamp(ctx, session.ID, e.Info.Chat.String(), e.Info.Timestamp.Unix()); err != nil {
 		logger.WPP().Warn().Err(err).Str("session", session.Session).Str("chat", e.Info.Chat.String()).Msg("Failed to update conversation timestamp")
 	}
 
-	// Increment unread count for received messages (not from us)
 	if !e.Info.IsFromMe {
 		if err := s.database.Chats.IncrementUnreadCount(ctx, session.ID, e.Info.Chat.String()); err != nil {
 			logger.WPP().Warn().Err(err).Str("session", session.Session).Str("chat", e.Info.Chat.String()).Msg("Failed to increment unread count")
@@ -370,7 +366,6 @@ func (s *Service) handleMediaRetry(ctx context.Context, session *model.Session, 
 	s.sendWebhook(ctx, session, string(model.EventMediaRetry), e)
 }
 
-// extractMessageTypeAndContent extracts message type and content from a message
 func (s *Service) extractMessageTypeAndContent(msg *waE2E.Message) (string, string) {
 	if msg == nil {
 		return "unknown", ""
@@ -491,7 +486,6 @@ func (s *Service) extractMessageTypeAndContent(msg *waE2E.Message) (string, stri
 	return "unknown", ""
 }
 
-// extractMediaInfo extracts media information from a message
 func (s *Service) extractMediaInfo(sessionID, msgID string, msg *waE2E.Message) *model.Media {
 	if msg == nil {
 		return nil
@@ -595,7 +589,6 @@ func (s *Service) extractMediaInfo(sessionID, msgID string, msg *waE2E.Message) 
 	return nil
 }
 
-// extractContextInfo extracts ContextInfo from various message types
 func extractContextInfo(msg *waE2E.Message) *waE2E.ContextInfo {
 	if msg == nil {
 		return nil
@@ -629,7 +622,6 @@ func extractContextInfo(msg *waE2E.Message) *waE2E.ContextInfo {
 	return nil
 }
 
-// extractQuotedID extracts the quoted message ID from ContextInfo.StanzaID
 func extractQuotedID(msg *waE2E.Message) string {
 	if ctxInfo := extractContextInfo(msg); ctxInfo != nil {
 		return ctxInfo.GetStanzaID()
@@ -637,7 +629,6 @@ func extractQuotedID(msg *waE2E.Message) string {
 	return ""
 }
 
-// extractQuotedSender extracts the quoted message sender from ContextInfo.Participant
 func extractQuotedSender(msg *waE2E.Message) string {
 	if ctxInfo := extractContextInfo(msg); ctxInfo != nil {
 		return ctxInfo.GetParticipant()

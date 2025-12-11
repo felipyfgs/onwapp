@@ -17,7 +17,6 @@ func NewContactHandler(wpp *wpp.Service) *ContactHandler {
 	return &ContactHandler{wpp: wpp}
 }
 
-// CheckPhone godoc
 // @Summary      Check if phones are registered on WhatsApp
 // @Description  Check if phone numbers are registered on WhatsApp
 // @Tags         contact
@@ -58,7 +57,6 @@ func (h *ContactHandler) CheckPhone(c *gin.Context) {
 	c.JSON(http.StatusOK, checkResults)
 }
 
-// GetContactInfo godoc
 // @Summary      Get contact information
 // @Description  Get information about WhatsApp contacts
 // @Tags         contact
@@ -102,7 +100,6 @@ func (h *ContactHandler) GetContactInfo(c *gin.Context) {
 	})
 }
 
-// GetAvatar godoc
 // @Summary      Get contact avatar
 // @Description  Get profile picture URL for a contact
 // @Tags         contact
@@ -144,7 +141,6 @@ func (h *ContactHandler) GetAvatar(c *gin.Context) {
 	})
 }
 
-// GetContacts godoc
 // @Summary      Get all contacts
 // @Description  Get all contacts from WhatsApp
 // @Tags         contact
@@ -168,7 +164,6 @@ func (h *ContactHandler) GetContacts(c *gin.Context) {
 	c.JSON(http.StatusOK, contacts)
 }
 
-// GetBlocklist godoc
 // @Summary      Get blocked contacts
 // @Description  Get list of blocked contacts
 // @Tags         contact
@@ -198,7 +193,6 @@ func (h *ContactHandler) GetBlocklist(c *gin.Context) {
 	})
 }
 
-// UpdateBlocklist godoc
 // @Summary      Block or unblock contact
 // @Description  Block or unblock a contact
 // @Tags         contact
@@ -234,7 +228,6 @@ func (h *ContactHandler) UpdateBlocklist(c *gin.Context) {
 	})
 }
 
-// GetContactQRLink godoc
 // @Summary      Get contact QR link
 // @Description  Get QR link for adding contact
 // @Tags         contact
@@ -261,7 +254,6 @@ func (h *ContactHandler) GetContactQRLink(c *gin.Context) {
 	})
 }
 
-// GetBusinessProfile godoc
 // @Summary      Get business profile
 // @Description  Get business profile of a contact
 // @Tags         contact
@@ -291,7 +283,6 @@ func (h *ContactHandler) GetBusinessProfile(c *gin.Context) {
 	})
 }
 
-// GetContactLID godoc
 // @Summary      Get contact LID
 // @Description  Get the Linked ID (LID) for a contact
 // @Tags         contact

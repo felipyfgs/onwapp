@@ -13,32 +13,24 @@ import (
 	"onwapp/internal/logger"
 )
 
-// ProfilePictureFetcher is a function type for getting profile pictures from WhatsApp
 type ProfilePictureFetcher func(ctx context.Context, sessionId string, jid string) (string, error)
 
-// GroupInfoFetcher is a function type for getting group metadata from WhatsApp
 type GroupInfoFetcher func(ctx context.Context, sessionId string, groupJid string) (string, error)
 
-// ContactNameFetcher is a function type for getting the best contact name from WhatsApp contacts
-// Priority: 1. full_name (address book), 2. business_name, 3. push_name
 type ContactNameFetcher func(ctx context.Context, jid string) string
 
-// ContactManager handles contact and conversation management with caching
 type ContactManager struct {
 	conversationCache sync.Map
 	conversationLocks sync.Map
 	cacheTTL          time.Duration
 }
 
-// NewContactManager creates a new contact manager
 func NewContactManager() *ContactManager {
 	return &ContactManager{
 		cacheTTL: 8 * time.Hour,
 	}
 }
 
-// GetOrCreateContactAndConversation handles contact and conversation creation with proper caching
-// Note: We cache ContactID (not ConversationID) to ensure autoReopen is always checked
 func (cm *ContactManager) GetOrCreateContactAndConversation(
 	ctx context.Context,
 	c *client.Client,
@@ -59,7 +51,6 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 	var needsContactLookup bool = true
 	var usedCache bool = false
 
-	// Check cache for contactID (not conversationID)
 	if entry, ok := cm.conversationCache.Load(cacheKey); ok {
 		cached := entry.(core.ContactCacheEntry)
 		if time.Now().Before(cached.ExpiresAt) {
@@ -71,11 +62,9 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 		}
 	}
 
-	// If we need to look up contact, use locking to prevent duplicate creation
 	if needsContactLookup {
 		lockKey := fmt.Sprintf("lock:%s", cacheKey)
 		if _, loaded := cm.conversationLocks.LoadOrStore(lockKey, true); loaded {
-			// Another goroutine is creating the contact, wait for it
 			for i := 0; i < 50; i++ {
 				time.Sleep(100 * time.Millisecond)
 				if entry, ok := cm.conversationCache.Load(cacheKey); ok {
@@ -94,7 +83,6 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 		} else {
 			defer cm.conversationLocks.Delete(lockKey)
 
-			// Double-check cache after acquiring lock
 			if entry, ok := cm.conversationCache.Load(cacheKey); ok {
 				cached := entry.(core.ContactCacheEntry)
 				if time.Now().Before(cached.ExpiresAt) {
@@ -106,7 +94,6 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 		}
 	}
 
-	// Create/get contact if not cached
 	if needsContactLookup {
 		phoneNumber := util.ExtractPhoneFromJID(remoteJid)
 
@@ -140,7 +127,6 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 
 			contact, err = cm.getOrCreateGroupContact(ctx, c, cfg, remoteJid, groupName, avatarURL)
 		} else {
-			// Priority for contact name: 1. Address book (full_name), 2. pushName, 3. phone number
 			contactName := ""
 			if getContactName != nil {
 				contactName = getContactName(ctx, remoteJid)
@@ -168,17 +154,13 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 
 		contactID = contact.ID
 
-		// Cache the contactID (not conversationID)
 		cm.conversationCache.Store(cacheKey, core.ContactCacheEntry{
 			ContactID: contactID,
 			ExpiresAt: time.Now().Add(cm.cacheTTL),
 		})
 	}
 
-	// If contact was from cache, check if name needs updating
-	// This ensures contact names are updated even when using cached contactID
 	if usedCache && !isGroup && !isFromMe {
-		// Get the best available name: address book > pushName > (skip update)
 		bestName := ""
 		if getContactName != nil {
 			bestName = getContactName(ctx, remoteJid)
@@ -191,7 +173,6 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 		}
 	}
 
-	// ALWAYS call GetOrCreateConversation to check status and autoReopen if needed
 	status := "open"
 	if cfg.StartPending {
 		status = "pending"
@@ -199,8 +180,6 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 
 	conv, err := c.GetOrCreateConversation(ctx, contactID, cfg.InboxID, status, cfg.AutoReopen)
 	if err != nil {
-		// If contact was from cache and we got a 404 error, the contact was deleted
-		// Invalidate cache and retry with fresh contact creation
 		if usedCache && core.IsNotFoundError(err) {
 			logger.Chatwoot().Info().
 				Str("cacheKey", cacheKey).
@@ -209,7 +188,6 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 
 			cm.conversationCache.Delete(cacheKey)
 
-			// Retry without cache - recursive call with cleared cache
 			return cm.GetOrCreateContactAndConversation(
 				ctx, c, cfg, remoteJid, pushName, isFromMe,
 				participantJid, getProfilePicture, getGroupInfo, getContactName, sessionId,
@@ -221,12 +199,9 @@ func (cm *ContactManager) GetOrCreateContactAndConversation(
 	return conv.ID, nil
 }
 
-// maybeUpdateContactName updates contact name if it's still set to phone number
 func (cm *ContactManager) maybeUpdateContactName(ctx context.Context, c *client.Client, contactID int, pushName string) {
 	contact, err := c.GetContact(ctx, contactID)
 	if err != nil {
-		// If 404, the contact was deleted - just log at debug level and return
-		// The main flow will handle cache invalidation on next message
 		if core.IsNotFoundError(err) {
 			logger.Chatwoot().Debug().Int("contactId", contactID).Msg("Chatwoot: contact not found (404), skipping name update")
 			return
@@ -235,9 +210,7 @@ func (cm *ContactManager) maybeUpdateContactName(ctx context.Context, c *client.
 		return
 	}
 
-	// Only update if current name looks like a phone number and pushName is different
 	if contact != nil && pushName != "" && contact.Name != pushName {
-		// Check if current name is just a phone number (starts with + or is all digits)
 		currentName := contact.Name
 		isPhoneNumber := strings.HasPrefix(currentName, "+") ||
 			(len(currentName) > 8 && isNumeric(currentName))
@@ -258,7 +231,6 @@ func (cm *ContactManager) maybeUpdateContactName(ctx context.Context, c *client.
 	}
 }
 
-// isNumeric checks if a string contains only digits
 func isNumeric(s string) bool {
 	for _, c := range s {
 		if c < '0' || c > '9' {
@@ -268,7 +240,6 @@ func isNumeric(s string) bool {
 	return true
 }
 
-// getOrCreateIndividualContact handles individual (non-group) contacts
 func (cm *ContactManager) getOrCreateIndividualContact(
 	ctx context.Context,
 	c *client.Client,
@@ -312,7 +283,6 @@ func (cm *ContactManager) getOrCreateIndividualContact(
 	return contact, nil
 }
 
-// getOrCreateGroupContact handles group contacts
 func (cm *ContactManager) getOrCreateGroupContact(
 	ctx context.Context,
 	c *client.Client,
@@ -339,7 +309,6 @@ func (cm *ContactManager) getOrCreateGroupContact(
 	return contact, nil
 }
 
-// FormatGroupMessage formats a message from a group to show participant info
 func (cm *ContactManager) FormatGroupMessage(content string, participantJid string, pushName string) string {
 	if participantJid == "" {
 		return content
@@ -361,7 +330,6 @@ func (cm *ContactManager) FormatGroupMessage(content string, participantJid stri
 	return participantInfo
 }
 
-// InvalidateCache removes a conversation from cache
 func (cm *ContactManager) InvalidateCache(sessionID, remoteJid string) {
 	cacheKey := fmt.Sprintf("%s:%s", sessionID, remoteJid)
 	cm.conversationCache.Delete(cacheKey)

@@ -1,5 +1,14 @@
 basePath: /
 definitions:
+  AccountInfo:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      role:
+        type: string
+    type: object
   ArchiveChatRequest:
     properties:
       archive:
@@ -32,7 +41,6 @@ definitions:
   BlocklistRequest:
     properties:
       action:
-        description: block or unblock
         example: block
         type: string
       phone:
@@ -114,6 +122,9 @@ definitions:
       content:
         example: Hello!
         type: string
+      deleted:
+        example: false
+        type: boolean
       fromMe:
         example: false
         type: boolean
@@ -131,6 +142,9 @@ definitions:
         type: string
       quotedId:
         example: 3EB0DEF456
+        type: string
+      quotedSender:
+        example: 5511999999999@s.whatsapp.net
         type: string
       senderJid:
         example: 5511999999999@s.whatsapp.net
@@ -168,23 +182,46 @@ definitions:
     type: object
   ChatResponse:
     properties:
+      archived:
+        example: false
+        type: boolean
+      contactName:
+        example: John Doe
+        type: string
       conversationTimestamp:
         example: 1699999999
         type: integer
       ephemeralExpiration:
         example: 86400
         type: integer
+      id:
+        example: ce270f0c-c3d6-41ad-b481-1587f813c3b1
+        type: string
+      isGroup:
+        example: false
+        type: boolean
       jid:
         example: 5511999999999@s.whatsapp.net
         type: string
+      lastMessage:
+        $ref: '#/definitions/LastMessageInfo'
       locked:
         example: false
         type: boolean
       markedAsUnread:
         example: false
         type: boolean
+      muted:
+        example: ""
+        type: string
       name:
         example: John Doe
+        type: string
+      pinned:
+        example: false
+        type: boolean
+      profilePicture:
+        example: https://...
         type: string
       readOnly:
         example: false
@@ -301,66 +338,50 @@ definitions:
   ContactSyncDetails:
     properties:
       alreadyExists:
-        description: Skipped breakdown
         type: integer
       businessContacts:
-        description: Business/verified contacts
         type: integer
       groups:
-        description: Group JIDs (not synced as contacts)
         type: integer
       invalidPhone:
-        description: Invalid phone numbers
         type: integer
       lidContacts:
-        description: LID contacts that couldn't be resolved
         type: integer
       newsletters:
-        description: Newsletter channels
         type: integer
       notInAgenda:
-        description: Contacts not saved (only PushName)
         type: integer
       savedContacts:
-        description: Imported breakdown
         type: integer
       statusBroadcast:
-        description: Status broadcast
         type: integer
       totalWhatsApp:
-        description: Source info
         type: integer
     type: object
   ContactsOverview:
     properties:
       groups:
-        description: Contacts with @g.us identifier (groups)
         type: integer
       private:
-        description: Contacts with @s.whatsapp.net (private chats)
         type: integer
       totalChatwoot:
         type: integer
       whatsAppSynced:
         type: integer
       withName:
-        description: Contacts that have a name (saved in agenda)
         type: integer
       withoutName:
-        description: Contacts that only have phone number as name
         type: integer
     type: object
   ConversationsOverview:
     properties:
       groupChats:
-        description: Conversations with group contacts
         type: integer
       open:
         type: integer
       pending:
         type: integer
       privateChats:
-        description: Conversations with private contacts
         type: integer
       resolved:
         type: integer
@@ -397,12 +418,9 @@ definitions:
   CreateSessionRequest:
     properties:
       apiKey:
-        description: Optional API key for session-level authentication. If not provided,
-          one will be generated automatically.
         example: my-custom-api-key
         type: string
       session:
-        description: Session name/identifier (unique)
         example: my-session
         type: string
     required:
@@ -429,7 +447,6 @@ definitions:
         example: "5511999999999"
         type: string
       timer:
-        description: 24h, 7d, 90d, or off
         example: 24h
         type: string
     required:
@@ -540,7 +557,6 @@ definitions:
         example: 123456789@g.us
         type: string
       mode:
-        description: admin_add or all_member_add
         example: admin_add
         type: string
     required:
@@ -574,7 +590,6 @@ definitions:
   GroupRequestActionBodyRequest:
     properties:
       action:
-        description: approve or reject
         example: approve
         type: string
       participants:
@@ -618,6 +633,33 @@ definitions:
         type: string
       phone:
         example: "5511999999999"
+        type: string
+    type: object
+  LastMessageInfo:
+    properties:
+      content:
+        example: Hello!
+        type: string
+      fromMe:
+        example: false
+        type: boolean
+      mediaType:
+        example: image
+        type: string
+      pushName:
+        example: John
+        type: string
+      senderJid:
+        example: 5511999999999@s.whatsapp.net
+        type: string
+      status:
+        example: sent
+        type: string
+      timestamp:
+        example: 1699999999
+        type: integer
+      type:
+        example: text
         type: string
     type: object
   LinkGroupRequest:
@@ -679,7 +721,6 @@ definitions:
         example: "5511999999999"
         type: string
     required:
-    - messageIds
     - phone
     type: object
   MediaResponse:
@@ -747,49 +788,34 @@ definitions:
   MessageSyncDetails:
     properties:
       alreadySynced:
-        description: Skipped breakdown
         type: integer
       emptyContent:
-        description: No content
         type: integer
       groupChats:
-        description: Group conversations
         type: integer
       groupMessages:
-        description: Messages in groups
         type: integer
       lidChats:
-        description: LID chats not resolved
         type: integer
       mediaMessages:
-        description: Images, videos, audio, documents
         type: integer
       newsletters:
-        description: Newsletter messages
         type: integer
       noMedia:
-        description: Media not found
         type: integer
       oldMessages:
-        description: Before date limit
         type: integer
       privateChats:
-        description: Conversations breakdown
         type: integer
       protocol:
-        description: Protocol messages
         type: integer
       reactions:
-        description: Reaction messages
         type: integer
       statusBroadcast:
-        description: Status/stories
         type: integer
       system:
-        description: System messages
         type: integer
       textMessages:
-        description: Imported breakdown
         type: integer
     type: object
   MessagesOverview:
@@ -936,6 +962,20 @@ definitions:
       status:
         example: connecting
         type: string
+    type: object
+  QuotedMessageDTO:
+    properties:
+      chatJid:
+        example: 5511999999999@s.whatsapp.net
+        type: string
+      messageId:
+        example: 3EB0ABC123
+        type: string
+      senderJid:
+        example: 5511888888888@s.whatsapp.net
+        type: string
+    required:
+    - messageId
     type: object
   RejectCallRequest:
     properties:
@@ -1324,6 +1364,8 @@ definitions:
       phone:
         example: "5511999999999"
         type: string
+      quoted:
+        $ref: '#/definitions/QuotedMessageDTO'
       text:
         example: Hello World
         type: string
@@ -1352,48 +1394,35 @@ definitions:
   SessionResponse:
     properties:
       apiKey:
-        description: Session-specific API key for authentication (use in Authorization
-          header)
         example: a1b2c3d4e5f6...
         type: string
       createdAt:
-        description: Session creation timestamp
         example: "2025-11-29T14:18:15.324706Z"
         type: string
       deviceJid:
-        description: WhatsApp device JID after connection
         example: 5511999999999@s.whatsapp.net
         type: string
       id:
-        description: Unique session UUID (database primary key)
         example: ce270f0c-c3d6-41ad-b481-1587f813c3b1
         type: string
       phone:
-        description: Phone number associated with the session
         example: "5511999999999"
         type: string
       profilePicture:
-        description: Profile picture URL
         example: https://pps.whatsapp.net/...
         type: string
       pushName:
-        description: WhatsApp push name (display name)
         example: John Doe
         type: string
       session:
-        description: Session name/identifier (used in API routes)
         example: my-session
         type: string
       stats:
-        allOf:
-        - $ref: '#/definitions/SessionStats'
-        description: Session statistics (only for connected sessions)
+        $ref: '#/definitions/SessionStats'
       status:
-        description: 'Connection status: disconnected, connecting, connected'
         example: connected
         type: string
       updatedAt:
-        description: Last update timestamp
         example: "2025-11-29T14:18:15.324706Z"
         type: string
     type: object
@@ -1436,19 +1465,15 @@ definitions:
   SessionStats:
     properties:
       chats:
-        description: Total number of chats
         example: 42
         type: integer
       contacts:
-        description: Total number of contacts
         example: 156
         type: integer
       groups:
-        description: Total number of groups
         example: 12
         type: integer
       messages:
-        description: Total number of messages
         example: 1234
         type: integer
     type: object
@@ -1459,11 +1484,6 @@ definitions:
       autoCreate:
         type: boolean
       autoReopen:
-        description: |-
-          AutoReopen configures Chatwoot inbox settings for conversation management.
-          When true: sets lock_to_single_conversation=true and allow_messages_after_resolved=true
-          This means Chatwoot will automatically reopen resolved conversations when new messages arrive.
-          When false: creates new conversations for each interaction (default Chatwoot behavior).
         type: boolean
       chatwootDbHost:
         type: string
@@ -1641,9 +1661,7 @@ definitions:
   SyncStats:
     properties:
       contactDetails:
-        allOf:
-        - $ref: '#/definitions/ContactSyncDetails'
-        description: Detailed breakdowns
+        $ref: '#/definitions/ContactSyncDetails'
       contactsErrors:
         type: integer
       contactsImported:
@@ -1676,10 +1694,8 @@ definitions:
       stats:
         $ref: '#/definitions/SyncStats'
       status:
-        description: idle, running, completed, failed
         type: string
       type:
-        description: contacts, messages, all
         type: string
     type: object
   TemplateButtonDTO:
@@ -1729,6 +1745,46 @@ definitions:
     required:
     - displayText
     - url
+    type: object
+  ValidateCredentialsRequest:
+    properties:
+      account:
+        type: integer
+      token:
+        type: string
+      url:
+        type: string
+    required:
+    - account
+    - token
+    - url
+    type: object
+  ValidationResult:
+    properties:
+      accountName:
+        type: string
+      accountValid:
+        type: boolean
+      availableAccounts:
+        items:
+          $ref: '#/definitions/AccountInfo'
+        type: array
+      error:
+        type: string
+      errorCode:
+        type: string
+      tokenValid:
+        type: boolean
+      userEmail:
+        type: string
+      userId:
+        type: integer
+      userName:
+        type: string
+      userRole:
+        type: string
+      valid:
+        type: boolean
     type: object
 info:
   contact: {}
@@ -2672,6 +2728,40 @@ paths:
       summary: Set group join approval mode
       tags:
       - group
+  /{session}/group/avatar:
+    get:
+      description: Get group profile picture URL
+      parameters:
+      - description: Session ID
+        in: path
+        name: session
+        required: true
+        type: string
+      - description: Group ID
+        in: query
+        name: groupId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/AvatarResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - Authorization: []
+      summary: Get group picture
+      tags:
+      - group
   /{session}/group/create:
     post:
       consumes:
@@ -3512,6 +3602,73 @@ paths:
       security:
       - Authorization: []
       summary: Get media by message ID
+      tags:
+      - media
+  /{session}/media/retry:
+    post:
+      description: Force retry downloading media from WhatsApp (sends retry request
+        if needed)
+      parameters:
+      - description: Session ID
+        in: path
+        name: session
+        required: true
+        type: string
+      - description: Message ID
+        in: query
+        name: messageId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - Authorization: []
+      summary: Retry downloading a specific media
+      tags:
+      - media
+  /{session}/media/stream:
+    get:
+      description: Stream media file directly (redirects to storage URL or proxies
+        the file)
+      parameters:
+      - description: Session ID
+        in: path
+        name: session
+        required: true
+        type: string
+      - description: Message ID
+        in: query
+        name: messageId
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - Authorization: []
+      summary: Stream media file
       tags:
       - media
   /{session}/message/delete:
@@ -5234,6 +5391,35 @@ paths:
       summary: Post a story
       tags:
       - status
+  /chatwoot/validate:
+    post:
+      consumes:
+      - application/json
+      description: Validate Chatwoot URL, token and account ID before saving configuration
+      parameters:
+      - description: Chatwoot credentials to validate
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/ValidateCredentialsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/ValidationResult'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - Authorization: []
+      summary: Validate Chatwoot credentials
+      tags:
+      - chatwoot
   /chatwoot/webhook/{sessionId}:
     post:
       consumes:
@@ -5271,6 +5457,35 @@ paths:
       summary: List available webhook events
       tags:
       - webhook
+  /public/{session}/media/stream:
+    get:
+      description: Stream media file directly without authentication (for browser
+        audio/video playback)
+      parameters:
+      - description: Session ID
+        in: path
+        name: session
+        required: true
+        type: string
+      - description: Message ID
+        in: query
+        name: messageId
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      summary: Stream media file (public)
+      tags:
+      - media
   /sessions:
     get:
       consumes:

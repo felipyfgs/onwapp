@@ -9,7 +9,6 @@ import (
 	"go.mau.fi/whatsmeow/types"
 )
 
-// CreateNewsletter creates a newsletter/channel
 func (s *Service) CreateNewsletter(ctx context.Context, sessionId, name, description string) (*types.NewsletterMetadata, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -22,7 +21,6 @@ func (s *Service) CreateNewsletter(ctx context.Context, sessionId, name, descrip
 	})
 }
 
-// FollowNewsletter follows a channel
 func (s *Service) FollowNewsletter(ctx context.Context, sessionId, newsletterJID string) error {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -37,7 +35,6 @@ func (s *Service) FollowNewsletter(ctx context.Context, sessionId, newsletterJID
 	return client.FollowNewsletter(ctx, jid)
 }
 
-// UnfollowNewsletter unfollows a channel
 func (s *Service) UnfollowNewsletter(ctx context.Context, sessionId, newsletterJID string) error {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -52,7 +49,6 @@ func (s *Service) UnfollowNewsletter(ctx context.Context, sessionId, newsletterJ
 	return client.UnfollowNewsletter(ctx, jid)
 }
 
-// GetNewsletterInfo gets info of a channel
 func (s *Service) GetNewsletterInfo(ctx context.Context, sessionId, newsletterJID string) (*types.NewsletterMetadata, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -67,7 +63,6 @@ func (s *Service) GetNewsletterInfo(ctx context.Context, sessionId, newsletterJI
 	return client.GetNewsletterInfo(ctx, jid)
 }
 
-// GetSubscribedNewsletters lists subscribed channels
 func (s *Service) GetSubscribedNewsletters(ctx context.Context, sessionId string) ([]*types.NewsletterMetadata, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -76,7 +71,6 @@ func (s *Service) GetSubscribedNewsletters(ctx context.Context, sessionId string
 	return client.GetSubscribedNewsletters(ctx)
 }
 
-// GetNewsletterMessages gets messages from a channel
 func (s *Service) GetNewsletterMessages(ctx context.Context, sessionId, newsletterJID string, count int, before types.MessageServerID) ([]*types.NewsletterMessage, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -94,7 +88,6 @@ func (s *Service) GetNewsletterMessages(ctx context.Context, sessionId, newslett
 	})
 }
 
-// NewsletterSendReaction sends reaction on a channel message
 func (s *Service) NewsletterSendReaction(ctx context.Context, sessionId, newsletterJID string, serverID types.MessageServerID, reaction string, messageID types.MessageID) error {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -109,7 +102,6 @@ func (s *Service) NewsletterSendReaction(ctx context.Context, sessionId, newslet
 	return client.NewsletterSendReaction(ctx, jid, serverID, reaction, messageID)
 }
 
-// NewsletterToggleMute mutes or unmutes a channel
 func (s *Service) NewsletterToggleMute(ctx context.Context, sessionId, newsletterJID string, mute bool) error {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -124,7 +116,6 @@ func (s *Service) NewsletterToggleMute(ctx context.Context, sessionId, newslette
 	return client.NewsletterToggleMute(ctx, jid, mute)
 }
 
-// NewsletterMarkViewed marks channel messages as viewed
 func (s *Service) NewsletterMarkViewed(ctx context.Context, sessionId, newsletterJID string, serverIDs []types.MessageServerID) error {
 	client, err := s.getClient(sessionId)
 	if err != nil {
@@ -139,7 +130,6 @@ func (s *Service) NewsletterMarkViewed(ctx context.Context, sessionId, newslette
 	return client.NewsletterMarkViewed(ctx, jid, serverIDs)
 }
 
-// NewsletterSubscribeLiveUpdates subscribes to real-time updates
 func (s *Service) NewsletterSubscribeLiveUpdates(ctx context.Context, sessionId, newsletterJID string) (time.Duration, error) {
 	client, err := s.getClient(sessionId)
 	if err != nil {

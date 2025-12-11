@@ -15,7 +15,6 @@ import (
 	"onwapp/internal/model"
 )
 
-// Timeout and interval constants for connection events
 const (
 	privacySyncTimeout         = 30 * time.Second
 	keepOnlineInterval         = 4 * time.Minute
@@ -43,20 +42,17 @@ func (s *Service) handleConnected(ctx context.Context, session *model.Session) {
 		logger.WPP().Warn().Err(err).Str("session", session.Session).Msg("Failed to update session status")
 	}
 
-	// Ensure settings exist for this session
 	if s.settingsProvider != nil {
 		if err := s.settingsProvider.EnsureExists(ctx, session.ID); err != nil {
 			logger.WPP().Warn().Err(err).Str("session", session.Session).Msg("Failed to ensure settings exist")
 		}
 	}
 
-	// Sync privacy settings from WhatsApp to database and check keepOnline
 	if s.settingsProvider != nil {
 		go func() {
 			syncCtx, cancel := context.WithTimeout(context.Background(), privacySyncTimeout)
 			defer cancel()
 
-			// Sync privacy settings
 			if s.privacyGetter != nil {
 				privacy, err := s.privacyGetter.GetPrivacySettingsAsStrings(syncCtx, session.Session)
 				if err != nil {
@@ -68,7 +64,6 @@ func (s *Service) handleConnected(ctx context.Context, session *model.Session) {
 				}
 			}
 
-			// Check if keepOnline is enabled and start presence loop
 			alwaysOnline, _, err := s.settingsProvider.GetBySessionID(syncCtx, session.ID)
 			if err == nil && alwaysOnline && s.presenceSender != nil {
 				s.startKeepOnline(session)
@@ -79,7 +74,6 @@ func (s *Service) handleConnected(ctx context.Context, session *model.Session) {
 	s.sendWebhook(ctx, session, string(model.EventSessionConnected), nil)
 }
 
-// startKeepOnline starts a goroutine that periodically sends online presence
 func (s *Service) startKeepOnline(session *model.Session) {
 	logger.WPP().Info().Str("session", session.Session).Msg("Starting keepOnline")
 
@@ -87,20 +81,17 @@ func (s *Service) startKeepOnline(session *model.Session) {
 		ticker := time.NewTicker(keepOnlineInterval)
 		defer ticker.Stop()
 
-		// Send initial presence
 		ctx := context.Background()
 		if err := s.presenceSender.SendPresence(ctx, session.Session, true); err != nil {
 			logger.WPP().Warn().Err(err).Str("session", session.Session).Msg("Failed to send initial online presence")
 		}
 
 		for range ticker.C {
-			// Check if session is still connected
 			if session.GetStatus() != model.StatusConnected {
 				logger.WPP().Debug().Str("session", session.Session).Msg("Session disconnected, stopping keepOnline")
 				return
 			}
 
-			// Check if alwaysOnline is still enabled
 			if s.settingsProvider != nil {
 				alwaysOnline, _, err := s.settingsProvider.GetBySessionID(ctx, session.ID)
 				if err != nil || !alwaysOnline {
@@ -109,7 +100,6 @@ func (s *Service) startKeepOnline(session *model.Session) {
 				}
 			}
 
-			// Send presence
 			if err := s.presenceSender.SendPresence(ctx, session.Session, true); err != nil {
 				logger.WPP().Warn().Err(err).Str("session", session.Session).Msg("Failed to send keepOnline presence")
 			} else {
@@ -279,8 +269,6 @@ func (s *Service) handlePairError(ctx context.Context, session *model.Session, e
 
 	s.sendWebhook(ctx, session, string(model.EventPairError), e)
 }
-
-// Sync events
 
 func (s *Service) handleHistorySync(ctx context.Context, session *model.Session, e *events.HistorySync) {
 	syncType := e.Data.GetSyncType().String()

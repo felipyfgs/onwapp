@@ -11,22 +11,18 @@ import (
 )
 
 const (
-	maxDownloadSize = 100 * 1024 * 1024 // 100MB max file size
+	maxDownloadSize = 100 * 1024 * 1024
 	downloadTimeout = 30 * time.Second
 )
 
-// DownloadFromURL downloads content from a URL with SSRF protection and size limits
 func DownloadFromURL(url string) ([]byte, string, error) {
-	// Validate URL for SSRF
 	if err := validator.ValidateURL(url); err != nil {
 		return nil, "", err
 	}
 
-	// Create HTTP client with timeout
 	client := &http.Client{
 		Timeout: downloadTimeout,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			// Validate redirect URLs for SSRF
 			if err := validator.ValidateURL(req.URL.String()); err != nil {
 				return err
 			}
@@ -53,19 +49,16 @@ func DownloadFromURL(url string) ([]byte, string, error) {
 	}
 	defer resp.Body.Close()
 
-	// Check response status
 	if resp.StatusCode != http.StatusOK {
 		return nil, "", fmt.Errorf("failed to download: status %s", resp.Status)
 	}
 
-	// Limit read size to prevent memory exhaustion
 	limitedReader := io.LimitReader(resp.Body, maxDownloadSize+1)
 	data, err := io.ReadAll(limitedReader)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to read body: %w", err)
 	}
 
-	// Check if we hit the limit
 	if int64(len(data)) > maxDownloadSize {
 		return nil, "", fmt.Errorf("file size exceeds 100MB limit")
 	}

@@ -10,7 +10,6 @@ import (
 	"onwapp/internal/integrations/chatwoot/core"
 )
 
-// IsMediaMessage checks if the message contains downloadable media
 func IsMediaMessage(msg *waE2E.Message) bool {
 	if msg == nil {
 		return false
@@ -22,7 +21,6 @@ func IsMediaMessage(msg *waE2E.Message) bool {
 		msg.StickerMessage != nil
 }
 
-// GetMediaInfo extracts media information from a message
 func GetMediaInfo(msg *waE2E.Message) *core.MediaInfo {
 	if msg == nil {
 		return nil
@@ -65,7 +63,6 @@ func GetMediaInfo(msg *waE2E.Message) *core.MediaInfo {
 			filename = doc.GetTitle()
 		}
 		if filename == "" {
-			// Generate filename from mimetype
 			ext := ".bin"
 			switch doc.GetMimetype() {
 			case "application/pdf":
@@ -103,7 +100,6 @@ func GetMediaInfo(msg *waE2E.Message) *core.MediaInfo {
 	return nil
 }
 
-// GetMediaTypeFromFilename returns the media type based on file extension
 func GetMediaTypeFromFilename(filename string) string {
 	ext := strings.ToLower(path.Ext(filename))
 	switch ext {
@@ -118,34 +114,27 @@ func GetMediaTypeFromFilename(filename string) string {
 	}
 }
 
-// GetMediaTypeFromURL returns the media type based on URL path
 func GetMediaTypeFromURL(url string) string {
 	return GetMediaTypeFromFilename(url)
 }
 
-// ExtractFilenameFromURL extracts the filename from a URL
 func ExtractFilenameFromURL(urlStr string) string {
 	if urlStr == "" {
 		return ""
 	}
 
-	// Remove query string
 	urlPath := strings.Split(urlStr, "?")[0]
 
-	// Get the base name
 	filename := path.Base(urlPath)
 
-	// Validate it's a reasonable filename
 	if filename == "" || filename == "." || filename == "/" {
 		return ""
 	}
 
-	// Check if it has an extension
 	if !strings.Contains(filename, ".") {
 		return ""
 	}
 
-	// Decode URL-encoded characters (e.g., %20 -> space)
 	decoded, err := url.PathUnescape(filename)
 	if err != nil {
 		return filename
@@ -154,7 +143,6 @@ func ExtractFilenameFromURL(urlStr string) string {
 	return decoded
 }
 
-// FileTypeMap maps media types to Chatwoot file_type strings
 var FileTypeMap = map[string]string{
 	"image":    "image",
 	"video":    "video",
