@@ -58,7 +58,6 @@ func Auth(globalKey string, sessionLookup SessionKeyLookup) gin.HandlerFunc {
 }
 
 // AuthCheck validates the authorization token and returns true if valid
-// Used for WebSocket authentication where middleware pattern doesn't apply
 func AuthCheck(c *gin.Context, globalKey string, sessionLookup SessionKeyLookup) bool {
 	if globalKey == "" && sessionLookup == nil {
 		return true

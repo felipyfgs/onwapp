@@ -13,7 +13,6 @@ import (
 	"onwapp/internal/db"
 	"onwapp/internal/logger"
 	"onwapp/internal/version"
-	"onwapp/internal/ws"
 )
 
 type WebhookHandlerInterface interface {
@@ -48,7 +47,6 @@ type Config struct {
 	AllowedOrigins     []string
 	RateLimitPerSecond float64
 	RateLimitBurst     int
-	WebSocket          *ws.Handler
 }
 
 func Setup(handlers *Handlers, globalAPIKey string) *gin.Engine {
@@ -298,13 +296,6 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 		session.POST("/webhook", h.Webhook.SetWebhook)
 		session.PUT("/webhook", h.Webhook.UpdateWebhook)
 		session.DELETE("/webhook", h.Webhook.DeleteWebhook)
-
-		// ----------------------------------------------------------
-		// WEBSOCKET
-		// ----------------------------------------------------------
-		if cfg.WebSocket != nil {
-			session.GET("/ws", cfg.WebSocket.Handle)
-		}
 	}
 
 	return r
