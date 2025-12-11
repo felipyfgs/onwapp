@@ -1,7 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import { PageLayout } from "@/components/layout";
+import { useState, useEffect } from "react";
+import { AppSidebar } from "@/components/layout";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+} from "@/components/ui/breadcrumb";
+import { Separator } from "@/components/ui/separator";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,9 +32,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useEffect } from "react";
 import { getSessions, sendTextMessage, sendImageMessage, Session } from "@/lib/api";
 import { Send, Image, FileText, MapPin, Mic, Video, CheckCircle, AlertCircle } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 type MessageType = "text" | "image" | "audio" | "video" | "document" | "location";
 
@@ -92,133 +104,154 @@ export default function MessagesPage() {
   ];
 
   return (
-    <PageLayout title="Send Message" breadcrumbs={[{ label: "Messages" }]}>
-      <div className="max-w-2xl mx-auto space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Send Message</CardTitle>
-            <CardDescription>Send WhatsApp messages through your connected sessions</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Session & Recipient */}
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Session</Label>
-                <Select value={selectedSession} onValueChange={setSelectedSession}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select session" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sessions.map((s) => (
-                      <SelectItem key={s.session} value={s.session}>
-                        {s.pushName || s.session}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Recipient (JID or Phone)</Label>
-                <Input
-                  placeholder="5511999999999 or 5511999999999@s.whatsapp.net"
-                  value={recipient}
-                  onChange={(e) => setRecipient(e.target.value)}
-                />
-              </div>
-            </div>
-
-            {/* Message Type */}
-            <div className="space-y-2">
-              <Label>Message Type</Label>
-              <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-                {messageTypes.map((type) => (
-                  <Button
-                    key={type.value}
-                    variant={messageType === type.value ? "default" : "outline"}
-                    size="sm"
-                    className="flex flex-col h-16 gap-1"
-                    onClick={() => setMessageType(type.value as MessageType)}
-                  >
-                    <type.icon className="h-4 w-4" />
-                    <span className="text-xs">{type.label}</span>
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {/* Message Content */}
-            {messageType === "text" && (
-              <div className="space-y-2">
-                <Label>Message</Label>
-                <Textarea
-                  placeholder="Type your message..."
-                  value={textMessage}
-                  onChange={(e) => setTextMessage(e.target.value)}
-                  rows={4}
-                />
-              </div>
-            )}
-
-            {(messageType === "image" || messageType === "video" || messageType === "audio" || messageType === "document") && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Media URL</Label>
-                  <Input
-                    placeholder="https://example.com/image.jpg"
-                    value={mediaUrl}
-                    onChange={(e) => setMediaUrl(e.target.value)}
-                  />
-                </div>
-                {(messageType === "image" || messageType === "video") && (
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center justify-between gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+          <div className="flex items-center gap-2 px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbPage>Send Message</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </div>
+          <div className="flex items-center gap-2 px-4">
+            <ThemeToggle />
+          </div>
+        </header>
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+          <div className="max-w-2xl mx-auto w-full">
+            <Card>
+              <CardHeader>
+                <CardTitle>Send Message</CardTitle>
+                <CardDescription>Send WhatsApp messages through your connected sessions</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Session & Recipient */}
+                <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label>Caption (optional)</Label>
+                    <Label>Session</Label>
+                    <Select value={selectedSession} onValueChange={setSelectedSession}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select session" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sessions.map((s) => (
+                          <SelectItem key={s.session} value={s.session}>
+                            {s.pushName || s.session}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Recipient (JID or Phone)</Label>
                     <Input
-                      placeholder="Image caption..."
-                      value={caption}
-                      onChange={(e) => setCaption(e.target.value)}
+                      placeholder="5511999999999 or 5511999999999@s.whatsapp.net"
+                      value={recipient}
+                      onChange={(e) => setRecipient(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {/* Message Type */}
+                <div className="space-y-2">
+                  <Label>Message Type</Label>
+                  <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                    {messageTypes.map((type) => (
+                      <Button
+                        key={type.value}
+                        variant={messageType === type.value ? "default" : "outline"}
+                        size="sm"
+                        className="flex flex-col h-16 gap-1"
+                        onClick={() => setMessageType(type.value as MessageType)}
+                      >
+                        <type.icon className="h-4 w-4" />
+                        <span className="text-xs">{type.label}</span>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Message Content */}
+                {messageType === "text" && (
+                  <div className="space-y-2">
+                    <Label>Message</Label>
+                    <Textarea
+                      placeholder="Type your message..."
+                      value={textMessage}
+                      onChange={(e) => setTextMessage(e.target.value)}
+                      rows={4}
                     />
                   </div>
                 )}
-              </div>
-            )}
 
-            {messageType === "location" && (
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Latitude</Label>
-                  <Input
-                    placeholder="-23.5505"
-                    value={latitude}
-                    onChange={(e) => setLatitude(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Longitude</Label>
-                  <Input
-                    placeholder="-46.6333"
-                    value={longitude}
-                    onChange={(e) => setLongitude(e.target.value)}
-                  />
-                </div>
-              </div>
-            )}
+                {(messageType === "image" || messageType === "video" || messageType === "audio" || messageType === "document") && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Media URL</Label>
+                      <Input
+                        placeholder="https://example.com/image.jpg"
+                        value={mediaUrl}
+                        onChange={(e) => setMediaUrl(e.target.value)}
+                      />
+                    </div>
+                    {(messageType === "image" || messageType === "video") && (
+                      <div className="space-y-2">
+                        <Label>Caption (optional)</Label>
+                        <Input
+                          placeholder="Image caption..."
+                          value={caption}
+                          onChange={(e) => setCaption(e.target.value)}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
 
-            {/* Result */}
-            {result && (
-              <div className={`flex items-center gap-2 p-4 rounded-lg ${result.success ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200" : "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200"}`}>
-                {result.success ? <CheckCircle className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
-                <span>{result.message}</span>
-              </div>
-            )}
+                {messageType === "location" && (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Latitude</Label>
+                      <Input
+                        placeholder="-23.5505"
+                        value={latitude}
+                        onChange={(e) => setLatitude(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Longitude</Label>
+                      <Input
+                        placeholder="-46.6333"
+                        value={longitude}
+                        onChange={(e) => setLongitude(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
 
-            {/* Send Button */}
-            <Button onClick={handleSend} disabled={sending || !selectedSession} className="w-full">
-              <Send className="mr-2 h-4 w-4" />
-              {sending ? "Sending..." : "Send Message"}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    </PageLayout>
+                {/* Result */}
+                {result && (
+                  <div className={`flex items-center gap-2 p-4 rounded-lg ${result.success ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200" : "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200"}`}>
+                    {result.success ? <CheckCircle className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
+                    <span>{result.message}</span>
+                  </div>
+                )}
+
+                {/* Send Button */}
+                <Button onClick={handleSend} disabled={sending || !selectedSession} className="w-full">
+                  <Send className="mr-2 h-4 w-4" />
+                  {sending ? "Sending..." : "Send Message"}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

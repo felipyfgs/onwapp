@@ -29,7 +29,7 @@ const data = {
   user: {
     name: "Admin",
     email: "admin@onwapp.io",
-    avatar: "/avatars/admin.jpg",
+    avatar: "",
   },
   teams: [
     {
