@@ -5,7 +5,6 @@ version: "3.7"
 # ===========================================
 # Domains:
 #   - api.xapza.com     → API Backend
-#   - app.xapza.com     → Frontend (Painel)
 #   - minio.xapza.com   → MinIO Console
 #   - s3.xapza.com      → MinIO S3 API
 # Network: infraNet (external - Traefik)
@@ -176,49 +175,6 @@ services:
         - traefik.http.routers.onwapp-api.entrypoints=websecure
         - traefik.http.routers.onwapp-api.tls.certresolver=letsencryptresolver
         - traefik.http.services.onwapp-api.loadbalancer.server.port=8080
-
-  # ==========================================
-  # OnWapp Frontend (app.xapza.com)
-  # ==========================================
-  painel:
-    image: felipyfgs17/onwapp-painel:1.0.2
-    networks:
-      - infraNet
-    depends_on:
-      - api
-    environment:
-      # API URL (public for browser)
-      - NEXT_PUBLIC_API_URL=https://api.xapza.com
-      - API_URL=http://api:8080
-      # Authentication (same as API)
-      - GLOBAL_API_KEY=5A292B35A83212BF
-      # Next.js
-      - NODE_ENV=production
-      - HOSTNAME=0.0.0.0
-      - PORT=3000
-      # Timezone
-      - TZ=America/Sao_Paulo
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 512M
-      restart_policy:
-        condition: any
-        delay: 5s
-      labels:
-        - traefik.enable=true
-        - traefik.docker.network=infraNet
-        # Frontend (app.xapza.com)
-        - traefik.http.routers.onwapp-painel.rule=Host(`app.xapza.com`)
-        - traefik.http.routers.onwapp-painel.entrypoints=websecure
-        - traefik.http.routers.onwapp-painel.tls.certresolver=letsencryptresolver
-        - traefik.http.services.onwapp-painel.loadbalancer.server.port=3000
 
 # ==========================================
 # Volumes
