@@ -112,12 +112,6 @@ func GinMiddleware() gin.HandlerFunc {
 		path := c.Request.URL.Path
 		query := c.Request.URL.RawQuery
 
-		// Skip logging for WebSocket connections (they need clean hijack)
-		if strings.HasSuffix(path, "/ws") {
-			c.Next()
-			return
-		}
-
 		// Generate or use existing request ID
 		requestID := c.GetHeader(RequestIDKey)
 		if requestID == "" {
