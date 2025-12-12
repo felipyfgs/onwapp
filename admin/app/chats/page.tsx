@@ -24,9 +24,7 @@ import {
   sendTextMessage,
   markRead,
   archiveChat,
-  closeTicket,
-  reopenTicket,
-  transferTicket,
+  getTicket,
   getQueues,
   type Chat,
   type Message,
@@ -44,6 +42,8 @@ export default function ChatsPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [queues, setQueues] = useState<Queue[]>([]);
+  const [ticketListKey, setTicketListKey] = useState(0);
+  const [activeSubTab, setActiveSubTab] = useState<"open" | "pending">("pending");
 
   // Load sessions on mount
   useEffect(() => {
@@ -83,11 +83,30 @@ export default function ChatsPage() {
     fetchMessages(ticket.contactJid);
   };
 
-  const handleTicketUpdate = () => {
-    if (selectedTicket) {
-      fetchMessages(selectedTicket.contactJid);
+  const refreshSelectedTicket = useCallback(async () => {
+    if (!selectedSession || !selectedTicket) return;
+    try {
+      const response = await getTicket(selectedSession, selectedTicket.id);
+      if (response.data) {
+        setSelectedTicket(response.data);
+      }
+    } catch (error) {
+      console.error("Failed to refresh ticket:", error);
     }
-  };
+  }, [selectedSession, selectedTicket]);
+
+  const handleTicketUpdate = useCallback((switchToOpen?: boolean) => {
+    if (selectedTicket) {
+      // Optimistically update ticket status when accepting
+      if (switchToOpen) {
+        setSelectedTicket(prev => prev ? { ...prev, status: "open" } : null);
+        setActiveSubTab("open"); // Switch to "Atendendo" tab
+      }
+      fetchMessages(selectedTicket.contactJid);
+      refreshSelectedTicket();
+    }
+    setTicketListKey(k => k + 1);
+  }, [selectedTicket, fetchMessages, refreshSelectedTicket]);
 
   const handleSendMessage = async (text: string) => {
     if (!selectedSession || !selectedTicket) return;
@@ -168,6 +187,7 @@ export default function ChatsPage() {
                   selectedTicket={selectedTicket}
                   onSelectTicket={handleSelectTicket}
                   onTicketUpdate={handleTicketUpdate}
+                  refreshTrigger={ticketListKey}
                 />
               </ResizablePanel>
               <ResizableHandle withHandle />

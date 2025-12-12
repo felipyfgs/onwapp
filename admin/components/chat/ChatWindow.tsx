@@ -49,7 +49,7 @@ interface ChatWindowProps {
   ticket?: Ticket | null;
   session?: string;
   queues?: Queue[];
-  onTicketAction?: () => void;
+  onTicketAction?: (switchToOpen?: boolean) => void;
 }
 
 interface ChatHeaderProps {
@@ -60,7 +60,7 @@ interface ChatHeaderProps {
   onArchive?: () => void;
   onMute?: () => void;
   onDelete?: () => void;
-  onTicketAction?: () => void;
+  onTicketAction?: (switchToOpen?: boolean) => void;
 }
 
 function ChatHeader({ 
@@ -85,7 +85,7 @@ function ChatHeader({
     try {
       await acceptTicket(session, ticket.id);
       toast.success("Ticket aceito");
-      onTicketAction?.();
+      onTicketAction?.(true); // Switch to "Atendendo" tab
     } catch (error) {
       toast.error("Erro ao aceitar ticket");
     } finally {

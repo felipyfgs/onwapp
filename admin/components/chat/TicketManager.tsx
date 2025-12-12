@@ -39,6 +39,9 @@ interface TicketManagerProps {
   selectedTicket: Ticket | null;
   onSelectTicket: (ticket: Ticket) => void;
   onTicketUpdate: () => void;
+  refreshTrigger?: number;
+  activeSubTab?: "open" | "pending";
+  onSubTabChange?: (tab: "open" | "pending") => void;
 }
 
 const ITEMS_PER_PAGE = 30;
@@ -48,9 +51,12 @@ export function TicketManager({
   selectedTicket,
   onSelectTicket,
   onTicketUpdate,
+  refreshTrigger,
+  activeSubTab,
+  onSubTabChange,
 }: TicketManagerProps) {
   const [mainTab, setMainTab] = useState<"open" | "closed" | "search">("open");
-  const [subTab, setSubTab] = useState<"open" | "pending">("pending");
+  const [subTab, setSubTab] = useState<"open" | "pending">(activeSubTab || "pending");
   const [searchQuery, setSearchQuery] = useState("");
   const [showAll, setShowAll] = useState(true);
   const [selectedQueueId, setSelectedQueueId] = useState<string>("all");
@@ -135,7 +141,15 @@ export function TicketManager({
 
   useEffect(() => {
     fetchTickets(true);
-  }, [session, mainTab, subTab, searchQuery, selectedQueueId]);
+  }, [session, mainTab, subTab, searchQuery, selectedQueueId, refreshTrigger]);
+
+  // Sync subTab with external control
+  useEffect(() => {
+    if (activeSubTab !== undefined && activeSubTab !== subTab) {
+      setSubTab(activeSubTab);
+      setMainTab("open"); // Ensure we're on the open tab when switching subtabs
+    }
+  }, [activeSubTab]);
 
   const virtualizer = useVirtualizer({
     count: hasMore ? tickets.length + 1 : tickets.length,
@@ -433,14 +447,20 @@ export function TicketManager({
           <SubTabButton
             value="open"
             active={subTab === "open"}
-            onClick={() => setSubTab("open")}
+            onClick={() => {
+              setSubTab("open");
+              onSubTabChange?.("open");
+            }}
             label="Atendendo"
             count={openCount}
           />
           <SubTabButton
             value="pending"
             active={subTab === "pending"}
-            onClick={() => setSubTab("pending")}
+            onClick={() => {
+              setSubTab("pending");
+              onSubTabChange?.("pending");
+            }}
             label="Aguardando"
             count={pendingCount}
             variant="warning"

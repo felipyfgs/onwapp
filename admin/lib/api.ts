@@ -438,9 +438,10 @@ export async function setChatPresence(session: string, jid: string, presence: "c
 }
 
 export async function markRead(session: string, jid: string, messageIds?: string[]): Promise<void> {
+  const phone = jid.split("@")[0];
   await fetchApi(`/${session}/chat/markread`, {
     method: "POST",
-    body: JSON.stringify({ jid, messageIds }),
+    body: JSON.stringify({ phone, messageIds }),
   });
 }
 
