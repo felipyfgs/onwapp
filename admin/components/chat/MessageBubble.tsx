@@ -1,0 +1,238 @@
+"use client";
+
+import { Message } from "@/lib/api";
+import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Check,
+  CheckCheck,
+  Clock,
+  Image as ImageIcon,
+  FileText,
+  Mic,
+  Video,
+  MapPin,
+  Contact,
+  Sticker,
+  Play,
+  Download,
+} from "lucide-react";
+
+interface MessageBubbleProps {
+  message: Message;
+  showAvatar?: boolean;
+  senderPicture?: string;
+}
+
+function formatMessageTime(timestamp: string): string {
+  return new Date(timestamp).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function MessageStatus({ status }: { status?: string }) {
+  switch (status) {
+    case "sent":
+      return <Check className="h-3 w-3 text-muted-foreground" />;
+    case "delivered":
+      return <CheckCheck className="h-3 w-3 text-muted-foreground" />;
+    case "read":
+      return <CheckCheck className="h-3 w-3 text-blue-500" />;
+    case "pending":
+      return <Clock className="h-3 w-3 text-muted-foreground" />;
+    default:
+      return null;
+  }
+}
+
+function MediaPreview({ message }: { message: Message }) {
+  const { type, mediaUrl, content } = message;
+  
+  switch (type) {
+    case "image":
+      return (
+        <div className="relative rounded-lg overflow-hidden max-w-xs">
+          {mediaUrl ? (
+            <img
+              src={mediaUrl}
+              alt="Image"
+              className="w-full h-auto max-h-64 object-cover"
+            />
+          ) : (
+            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+              <ImageIcon className="h-5 w-5 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Image</span>
+            </div>
+          )}
+          {content && <p className="mt-1 text-sm">{content}</p>}
+        </div>
+      );
+      
+    case "video":
+      return (
+        <div className="relative rounded-lg overflow-hidden max-w-xs">
+          {mediaUrl ? (
+            <div className="relative">
+              <video
+                src={mediaUrl}
+                className="w-full h-auto max-h-64 object-cover rounded-lg"
+                controls
+              />
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+              <Video className="h-5 w-5 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Video</span>
+            </div>
+          )}
+          {content && <p className="mt-1 text-sm">{content}</p>}
+        </div>
+      );
+      
+    case "audio":
+    case "ptt":
+      return (
+        <div className="flex items-center gap-3 p-2 bg-muted/30 rounded-lg min-w-48">
+          <button className="h-10 w-10 rounded-full bg-primary flex items-center justify-center shrink-0">
+            <Play className="h-5 w-5 text-primary-foreground ml-0.5" />
+          </button>
+          <div className="flex-1">
+            <div className="h-1 bg-muted rounded-full">
+              <div className="h-full w-0 bg-primary rounded-full" />
+            </div>
+            <span className="text-xs text-muted-foreground mt-1">0:00</span>
+          </div>
+          <Mic className="h-4 w-4 text-muted-foreground" />
+        </div>
+      );
+      
+    case "document":
+      return (
+        <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg min-w-48">
+          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            <FileText className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">
+              {content || "Document"}
+            </p>
+            <p className="text-xs text-muted-foreground">PDF, DOC</p>
+          </div>
+          <Download className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-foreground" />
+        </div>
+      );
+      
+    case "sticker":
+      return (
+        <div className="max-w-32">
+          {mediaUrl ? (
+            <img src={mediaUrl} alt="Sticker" className="w-full h-auto" />
+          ) : (
+            <div className="h-24 w-24 bg-muted/50 rounded-lg flex items-center justify-center">
+              <Sticker className="h-8 w-8 text-muted-foreground" />
+            </div>
+          )}
+        </div>
+      );
+      
+    case "location":
+      return (
+        <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg">
+          <MapPin className="h-5 w-5 text-red-500" />
+          <span className="text-sm">{content || "Location shared"}</span>
+        </div>
+      );
+      
+    case "contact":
+    case "vcard":
+      return (
+        <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg">
+          <Contact className="h-5 w-5 text-primary" />
+          <span className="text-sm">{content || "Contact shared"}</span>
+        </div>
+      );
+      
+    default:
+      return null;
+  }
+}
+
+export function MessageBubble({ message, showAvatar, senderPicture }: MessageBubbleProps) {
+  const isMe = message.isFromMe;
+  const isMedia = ["image", "video", "audio", "ptt", "document", "sticker", "location", "contact", "vcard"].includes(message.type);
+  
+  return (
+    <div className={cn(
+      "flex gap-2 px-4 py-1",
+      isMe ? "flex-row-reverse" : "flex-row"
+    )}>
+      {/* Avatar for received messages */}
+      {!isMe && showAvatar && (
+        <Avatar className="h-8 w-8 shrink-0">
+          {senderPicture && <AvatarImage src={senderPicture} />}
+          <AvatarFallback className="text-xs">
+            {(message.senderName || "?").substring(0, 2).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+      )}
+      {!isMe && !showAvatar && <div className="w-8" />}
+      
+      {/* Message Bubble */}
+      <div className={cn(
+        "max-w-[70%] rounded-2xl px-3 py-2 relative",
+        isMe 
+          ? "bg-primary text-primary-foreground rounded-br-sm" 
+          : "bg-muted rounded-bl-sm"
+      )}>
+        {/* Sender name for group chats */}
+        {!isMe && message.senderName && showAvatar && (
+          <p className="text-xs font-medium text-primary mb-1">
+            {message.senderName}
+          </p>
+        )}
+        
+        {/* Quoted message */}
+        {message.quotedMessage && (
+          <div className={cn(
+            "mb-2 p-2 rounded-lg border-l-2 text-xs",
+            isMe 
+              ? "bg-primary-foreground/10 border-primary-foreground/30" 
+              : "bg-background border-primary"
+          )}>
+            <p className="font-medium truncate">
+              {message.quotedMessage.senderName || "You"}
+            </p>
+            <p className="truncate opacity-80">
+              {message.quotedMessage.content || "Media"}
+            </p>
+          </div>
+        )}
+        
+        {/* Media content */}
+        {isMedia && <MediaPreview message={message} />}
+        
+        {/* Text content */}
+        {message.type === "text" && message.content && (
+          <p className="text-sm whitespace-pre-wrap break-words">
+            {message.content}
+          </p>
+        )}
+        
+        {/* Time and status */}
+        <div className={cn(
+          "flex items-center gap-1 mt-1",
+          isMe ? "justify-end" : "justify-start"
+        )}>
+          <span className={cn(
+            "text-[10px]",
+            isMe ? "text-primary-foreground/70" : "text-muted-foreground"
+          )}>
+            {formatMessageTime(message.timestamp)}
+          </span>
+          {isMe && <MessageStatus status={message.status} />}
+        </div>
+      </div>
+    </div>
+  );
+}
