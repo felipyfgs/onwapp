@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { cn, debounce } from "@/lib/utils";
 import {
   Inbox,
   CheckCircle,
@@ -39,7 +40,6 @@ import {
   type Queue,
 } from "@/lib/api";
 import { toast } from "sonner";
-import { cn, debounce } from "@/lib/utils";
 
 interface TicketManagerProps {
   session: string;
@@ -67,6 +67,7 @@ export function TicketManager({
   const [subTab, setSubTab] = useState<"open" | "pending">(activeSubTab || "pending");
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [globalSearchEnabled, setGlobalSearchEnabled] = useState(false);
   const [showAll, setShowAll] = useState(true);
   const [selectedQueueId, setSelectedQueueId] = useState<string>("all");
   const [newTicketModalOpen, setNewTicketModalOpen] = useState(false);
@@ -288,10 +289,26 @@ export function TicketManager({
   const virtualizer = useVirtualizer({
     count: tickets.length + (hasMore ? 1 : 0),
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => 76,
+    estimateSize: () => 110,
     overscan: 5,
-    enabled: !loading,
+    enabled: !loading && processingIds.size === 0,
   });
+
+  // Memoizar estilo do container para evitar flushSync
+  const containerStyle = useMemo(() => {
+    if (!virtualizer || typeof virtualizer.getTotalSize !== 'function') {
+      return {
+        height: "0px",
+        width: "100%",
+        position: "relative" as const,
+      };
+    }
+    return {
+      height: `${virtualizer.getTotalSize()}px`,
+      width: "100%",
+      position: "relative" as const,
+    };
+  }, [virtualizer, tickets.length, hasMore]);
 
   const openCount = stats?.open || 0;
   const pendingCount = stats?.pending || 0;
@@ -413,13 +430,7 @@ export function TicketManager({
         className="h-full overflow-y-auto"
         onScroll={handleScroll}
       >
-        <div
-          style={{
-            height: virtualizer.getTotalSize() + "px",
-            width: "100%",
-            position: "relative",
-          }}
-        >
+        <div style={containerStyle}>
           {virtualizer.getVirtualItems().map((virtualRow) => {
             const isLoaderRow = virtualRow.index >= tickets.length;
             const ticket = tickets[virtualRow.index];
@@ -505,17 +516,45 @@ export function TicketManager({
 
       {/* Options Bar */}
       <div className="flex items-center gap-2 p-2 bg-card border-b shrink-0">
-        {mainTab === "search" ? (
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nome ou numero..."
-              value={searchInput}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        ) : (
+        {/* Universal Search Bar */}
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={mainTab === "search" ? "Buscar em todos os tickets..." : "Buscar tickets..."}
+            value={searchInput}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            onFocus={() => {
+              if (searchInput && !globalSearchEnabled) {
+                setGlobalSearchEnabled(true);
+                setMainTab("search");
+              }
+            }}
+            className={cn(
+              "pl-10 pr-8",
+              globalSearchEnabled && "border-primary"
+            )}
+          />
+          {searchInput && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+              onClick={() => {
+                setSearchInput("");
+                setSearchQuery("");
+                if (globalSearchEnabled) {
+                  setGlobalSearchEnabled(false);
+                  setMainTab("open");
+                }
+              }}
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+
+        {/* Action Buttons */}
+        {mainTab !== "search" && !globalSearchEnabled && (
           <>
             <Button
               variant="outline"
@@ -543,18 +582,10 @@ export function TicketManager({
                 <Square className="h-4 w-4" />
               )}
             </Button>
-            <div className="flex items-center gap-2 ml-auto">
-              <Label htmlFor="showAll" className="text-xs text-muted-foreground hidden sm:inline">
-                Todos
-              </Label>
-              <Switch
-                id="showAll"
-                checked={showAll}
-                onCheckedChange={setShowAll}
-              />
-            </div>
           </>
         )}
+
+        {/* Queue Filter */}
         <Select value={selectedQueueId} onValueChange={setSelectedQueueId}>
           <SelectTrigger className="w-[120px]">
             <SelectValue placeholder="Fila" />
@@ -574,6 +605,8 @@ export function TicketManager({
             ))}
           </SelectContent>
         </Select>
+
+        {/* Refresh Button */}
         <Button
           variant="ghost"
           size="icon"
@@ -583,6 +616,20 @@ export function TicketManager({
         >
           <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
         </Button>
+
+        {/* Show All Toggle (only when not searching) */}
+        {mainTab !== "search" && !globalSearchEnabled && (
+          <div className="flex items-center gap-2">
+            <Label htmlFor="showAll" className="text-xs text-muted-foreground hidden sm:inline">
+              Todos
+            </Label>
+            <Switch
+              id="showAll"
+              checked={showAll}
+              onCheckedChange={setShowAll}
+            />
+          </div>
+        )}
       </div>
 
       {/* Bulk Actions Bar */}

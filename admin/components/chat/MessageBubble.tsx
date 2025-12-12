@@ -164,12 +164,12 @@ export function MessageBubble({ message, showAvatar, senderPicture }: MessageBub
   
   return (
     <div className={cn(
-      "flex gap-2 px-2 sm:px-4 py-1 w-full min-w-0",
+      "flex gap-2 px-2 sm:px-4 py-1 w-full group min-w-0",
       isMe ? "flex-row-reverse" : "flex-row"
     )}>
       {/* Avatar for received messages */}
       {!isMe && showAvatar && (
-        <Avatar className="h-8 w-8 shrink-0 shadow-sm">
+        <Avatar className="h-7 w-7 shrink-0 shadow-sm ring-1 ring-background">
           {senderPicture && <AvatarImage src={senderPicture} />}
           <AvatarFallback className="text-xs bg-primary text-primary-foreground font-medium">
             {message.senderName 
@@ -179,18 +179,18 @@ export function MessageBubble({ message, showAvatar, senderPicture }: MessageBub
           </AvatarFallback>
         </Avatar>
       )}
-      {!isMe && !showAvatar && <div className="w-8 shrink-0" />}
+      {!isMe && !showAvatar && <div className="w-7 shrink-0" />}
       
       {/* Message Bubble */}
       <div className={cn(
-        "max-w-[85%] sm:max-w-[75%] md:max-w-[70%] rounded-2xl px-3 py-2 relative overflow-hidden min-w-0 shadow-sm",
+        "max-w-[70%] sm:max-w-[65%] md:max-w-[60%] lg:max-w-[55%] rounded-2xl px-3 py-2 relative overflow-hidden min-w-0 shadow-sm transition-all duration-200 hover:shadow-md",
         isMe 
-          ? "bg-primary text-primary-foreground rounded-br-md" 
-          : "bg-card border border-border/50 rounded-bl-md"
+          ? "bg-primary text-primary-foreground rounded-br-md hover:bg-primary/95" 
+          : "bg-card border border-border/50 rounded-bl-md hover:bg-card/80"
       )}>
         {/* Sender name for group chats */}
         {!isMe && message.senderName && showAvatar && (
-          <p className="text-xs font-medium text-primary mb-1">
+          <p className="text-xs font-medium text-primary mb-1 truncate">
             {message.senderName}
           </p>
         )}
@@ -198,7 +198,7 @@ export function MessageBubble({ message, showAvatar, senderPicture }: MessageBub
         {/* Quoted message */}
         {message.quotedMessage && (
           <div className={cn(
-            "mb-2 p-2 rounded-lg border-l-2 text-xs",
+            "mb-2 p-2 rounded-lg border-l-2 text-xs cursor-pointer hover:opacity-80 transition-opacity",
             isMe 
               ? "bg-primary-foreground/10 border-primary-foreground/30" 
               : "bg-background border-primary"
@@ -217,19 +217,19 @@ export function MessageBubble({ message, showAvatar, senderPicture }: MessageBub
         
         {/* Text content */}
         {message.type === "text" && message.content && (
-          <p className="text-sm whitespace-pre-wrap break-words overflow-hidden" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+          <p className="text-sm whitespace-pre-wrap break-words overflow-hidden leading-relaxed" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
             {message.content}
           </p>
         )}
         
         {/* Time and status */}
         <div className={cn(
-          "flex items-center gap-1 mt-1",
+          "flex items-center gap-1 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200",
           isMe ? "justify-end" : "justify-start"
         )}>
           <span className={cn(
-            "text-[10px]",
-            isMe ? "text-primary-foreground/70" : "text-muted-foreground"
+            "text-[10px] font-medium",
+            isMe ? "text-primary-foreground/60" : "text-muted-foreground"
           )}>
             {formatMessageTime(message.timestamp)}
           </span>
