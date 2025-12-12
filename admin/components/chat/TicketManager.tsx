@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Inbox,
   CheckCircle,
@@ -23,8 +22,9 @@ import {
   RefreshCw,
   Loader2,
   CheckCheck,
-  PlayCircle,
   X,
+  CheckSquare,
+  Square,
 } from "lucide-react";
 import { TicketListItem } from "./TicketListItem";
 import { NewTicketModal } from "./NewTicketModal";
@@ -81,6 +81,8 @@ export function TicketManager({
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [acceptLoading, setAcceptLoading] = useState(false);
+  const [resolveLoading, setResolveLoading] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const offsetRef = useRef(0);
@@ -206,7 +208,7 @@ export function TicketManager({
 
   const handleBulkAccept = useCallback(async () => {
     if (selectedIds.size === 0) return;
-    setBulkLoading(true);
+    setAcceptLoading(true);
     let success = 0;
     let failed = 0;
     
@@ -219,7 +221,7 @@ export function TicketManager({
       }
     }
     
-    setBulkLoading(false);
+    setAcceptLoading(false);
     clearSelection();
     fetchTickets(true);
     onTicketUpdate();
@@ -234,7 +236,7 @@ export function TicketManager({
 
   const handleBulkResolve = useCallback(async () => {
     if (selectedIds.size === 0) return;
-    setBulkLoading(true);
+    setResolveLoading(true);
     let success = 0;
     let failed = 0;
     
@@ -247,7 +249,7 @@ export function TicketManager({
       }
     }
     
-    setBulkLoading(false);
+    setResolveLoading(false);
     clearSelection();
     fetchTickets(true);
     onTicketUpdate();
@@ -275,6 +277,7 @@ export function TicketManager({
     getScrollElement: () => scrollRef.current,
     estimateSize: () => 76,
     overscan: 5,
+    enabled: !loading,
   });
 
   const openCount = stats?.open || 0;
@@ -399,7 +402,7 @@ export function TicketManager({
       >
         <div
           style={{
-            height: `${virtualizer.getTotalSize()}px`,
+            height: virtualizer.getTotalSize() + "px",
             width: "100%",
             position: "relative",
           }}
@@ -416,7 +419,7 @@ export function TicketManager({
                   top: 0,
                   left: 0,
                   width: "100%",
-                  height: `${virtualRow.size}px`,
+                  height: virtualRow.size + "px",
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
               >
@@ -444,6 +447,9 @@ export function TicketManager({
                       fetchTickets(true);
                       onTicketUpdate();
                     }}
+                    selectionMode={selectionMode}
+                    isChecked={selectedIds.has(ticket.id)}
+                    onCheckChange={(checked) => toggleSelection(ticket.id, checked)}
                   />
                 )}
               </div>
@@ -501,9 +507,27 @@ export function TicketManager({
               variant="outline"
               size="sm"
               onClick={() => setNewTicketModalOpen(true)}
+              className="w-8 h-8 p-0"
             >
-              <Plus className="h-4 w-4 mr-1" />
-              <span className="hidden sm:inline">Novo</span>
+              <Plus className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={selectionMode ? "default" : "outline"}
+              size="sm"
+              onClick={() => {
+                if (selectionMode) {
+                  clearSelection();
+                } else {
+                  setSelectionMode(true);
+                }
+              }}
+              className="w-8 h-8 p-0"
+            >
+              {selectionMode ? (
+                <X className="h-4 w-4" />
+              ) : (
+                <Square className="h-4 w-4" />
+              )}
             </Button>
             <div className="flex items-center gap-2 ml-auto">
               <Label htmlFor="showAll" className="text-xs text-muted-foreground hidden sm:inline">
@@ -546,6 +570,84 @@ export function TicketManager({
           <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
         </Button>
       </div>
+
+      {/* Bulk Actions Bar */}
+      {selectionMode && (
+        <div className={cn(
+          "flex items-center justify-between px-3 py-2 border-b shrink-0 transition-all duration-200",
+          selectedIds.size > 0 
+            ? "bg-primary/5 border-primary/20" 
+            : "bg-muted/20 border-muted/30"
+        )}>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 text-sm">
+              <CheckSquare className="h-4 w-4 text-primary" />
+              <span className="font-medium text-primary">
+                {selectedIds.size}
+              </span>
+              <span className="text-muted-foreground">
+                {selectedIds.size === 1 ? "selecionado" : "selecionados"}
+              </span>
+            </div>
+            
+            {selectedIds.size > 0 && (
+              <div className="h-4 w-px bg-border mx-1" />
+            )}
+            
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={selectAll}
+                disabled={selectedIds.size === tickets.length}
+                className="h-7 w-7 p-0"
+              >
+                <CheckSquare className="h-3 w-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearSelection}
+                disabled={acceptLoading || resolveLoading}
+                className="h-7 w-7 p-0"
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+          
+          {selectedIds.size > 0 && (
+            <div className="flex items-center gap-1">
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleBulkAccept}
+                disabled={acceptLoading || resolveLoading}
+                className="h-7 w-7 p-0"
+              >
+                {acceptLoading ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <CheckCheck className="h-3 w-3" />
+                )}
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleBulkResolve}
+                disabled={acceptLoading || resolveLoading}
+                className="h-7 w-7 p-0"
+              >
+                {resolveLoading ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <CheckCircle className="h-3 w-3" />
+                )}
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Sub Tabs for Open */}
       {mainTab === "open" && (
