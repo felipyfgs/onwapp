@@ -427,7 +427,7 @@ export async function getChatInfo(session: string, jid: string): Promise<Chat> {
 }
 
 export async function getChatMessages(session: string, jid: string, limit = 50): Promise<Message[]> {
-  return fetchApi<Message[]>(`/${session}/chat/messages?jid=${encodeURIComponent(jid)}&limit=${limit}`);
+  return fetchApi<Message[]>(`/${session}/chat/messages?chatId=${encodeURIComponent(jid)}&limit=${limit}`);
 }
 
 export async function setChatPresence(session: string, jid: string, presence: "composing" | "paused" | "recording"): Promise<void> {

@@ -180,7 +180,7 @@ export function MessageBubble({ message, showAvatar, senderPicture }: MessageBub
       
       {/* Message Bubble */}
       <div className={cn(
-        "max-w-[70%] rounded-2xl px-3 py-2 relative",
+        "max-w-[75%] sm:max-w-[70%] rounded-2xl px-3 py-2 relative overflow-hidden",
         isMe 
           ? "bg-primary text-primary-foreground rounded-br-sm" 
           : "bg-muted rounded-bl-sm"

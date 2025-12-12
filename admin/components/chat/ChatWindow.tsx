@@ -217,7 +217,7 @@ export function ChatWindow({
   const groupedMessages = groupMessagesByDate(messages);
 
   return (
-    <div className="flex flex-col h-full bg-muted/30">
+    <div className="flex flex-col h-full bg-muted/30 overflow-hidden">
       {/* Header */}
       <ChatHeader 
         chat={chat} 

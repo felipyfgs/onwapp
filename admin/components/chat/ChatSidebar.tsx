@@ -77,7 +77,7 @@ export function ChatSidebar({ chats, selectedChat, onSelectChat, loading }: Chat
   }), [chats]);
 
   return (
-    <div className="flex flex-col h-full border-r bg-background">
+    <div className="flex flex-col h-full border-r bg-background overflow-hidden">
       {/* Header */}
       <div className="p-4 border-b space-y-3">
         <div className="flex items-center gap-2">

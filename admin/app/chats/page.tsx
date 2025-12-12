@@ -30,10 +30,9 @@ import {
   Session,
 } from "@/lib/api";
 import { RefreshCw, Settings } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 export default function ChatsPage() {
-  const { toast } = useToast();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [selectedSession, setSelectedSession] = useState<string>("");
   const [chats, setChats] = useState<Chat[]>([]);
@@ -111,11 +110,7 @@ export default function ChatsPage() {
       // Update chat list
       fetchChats();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to send message",
-        variant: "destructive",
-      });
+      toast.error("Failed to send message");
     }
   };
 
@@ -125,16 +120,10 @@ export default function ChatsPage() {
     if (!chat) return;
     try {
       await archiveChat(selectedSession, selectedChat, !chat.isArchived);
-      toast({
-        title: chat.isArchived ? "Chat unarchived" : "Chat archived",
-      });
+      toast.success(chat.isArchived ? "Chat unarchived" : "Chat archived");
       fetchChats();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to archive chat",
-        variant: "destructive",
-      });
+      toast.error("Failed to archive chat");
     }
   };
 
@@ -179,8 +168,8 @@ export default function ChatsPage() {
               </div>
             </div>
           ) : (
-            <ResizablePanelGroup direction="horizontal" className="h-full">
-              <ResizablePanel defaultSize={30} minSize={20} maxSize={40}>
+            <ResizablePanelGroup direction="horizontal" className="h-full overflow-hidden">
+              <ResizablePanel defaultSize={35} minSize={25} maxSize={45}>
                 <ChatSidebar
                   chats={chats}
                   selectedChat={selectedChat || undefined}
