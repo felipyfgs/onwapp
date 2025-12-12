@@ -87,12 +87,12 @@ export function MessageInput({
   };
 
   return (
-    <div className="border-t bg-background p-3 shrink-0">
+    <div className="border-t bg-background/95 backdrop-blur-sm p-3 shrink-0 shadow-[0_-1px_3px_rgba(0,0,0,0.05)]">
       <div className="flex items-end gap-2">
         {/* Attachment Button */}
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon" className="shrink-0" disabled={disabled}>
+            <Button variant="ghost" size="icon" className="shrink-0 text-muted-foreground hover:text-foreground" disabled={disabled}>
               <Paperclip className="h-5 w-5" />
             </Button>
           </PopoverTrigger>

@@ -52,20 +52,29 @@ function ChatHeader({ chat, onArchive, onMute, onDelete }: {
   
   return (
     <div className="flex items-center gap-3 p-3 border-b bg-background shrink-0">
-      <Avatar className="h-10 w-10">
+      <Avatar className="h-11 w-11 shadow-sm cursor-pointer">
         {chat.profilePicture && <AvatarImage src={chat.profilePicture} alt={name} />}
-        <AvatarFallback className={chat.isGroup ? "bg-primary/10 text-primary" : ""}>
+        <AvatarFallback className={cn(
+          "font-medium",
+          chat.isGroup 
+            ? "bg-primary text-primary-foreground" 
+            : "bg-muted text-muted-foreground"
+        )}>
           {chat.isGroup ? <Users className="h-5 w-5" /> : initials}
         </AvatarFallback>
       </Avatar>
       
-      <div className="flex-1 min-w-0">
-        <p className="font-medium truncate">{name}</p>
-        <p className="text-xs text-muted-foreground truncate">
-          {chat.isGroup 
-            ? "Click to see group info" 
-            : "Click to see contact info"
-          }
+      <div className="flex-1 min-w-0 cursor-pointer">
+        <p className="font-semibold truncate">{name}</p>
+        <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+          {chat.isGroup ? (
+            <>
+              <Users className="h-3 w-3" />
+              <span>Tap for group info</span>
+            </>
+          ) : (
+            <span>Tap for contact info</span>
+          )}
         </p>
       </div>
       
@@ -132,7 +141,7 @@ function ChatHeader({ chat, onArchive, onMute, onDelete }: {
 function DateDivider({ date }: { date: string }) {
   return (
     <div className="flex items-center justify-center py-4">
-      <div className="px-3 py-1 rounded-full bg-muted text-xs text-muted-foreground">
+      <div className="px-4 py-1.5 rounded-lg bg-card border border-border/50 text-xs text-muted-foreground font-medium shadow-sm">
         {date}
       </div>
     </div>
@@ -217,7 +226,7 @@ export function ChatWindow({
   const groupedMessages = groupMessagesByDate(messages);
 
   return (
-    <div className="flex flex-col h-full bg-muted/30 overflow-hidden min-h-0">
+    <div className="flex h-full flex-col bg-muted/30 overflow-hidden">
       {/* Header */}
       <ChatHeader 
         chat={chat} 
@@ -229,7 +238,7 @@ export function ChatWindow({
       {/* Messages */}
       <div 
         ref={scrollRef}
-        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative"
+        className="flex-1 overflow-y-auto relative"
         onScroll={handleScroll}
       >
         {loading ? (

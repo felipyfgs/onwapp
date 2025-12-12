@@ -77,9 +77,9 @@ export function ChatSidebar({ chats, selectedChat, onSelectChat, loading }: Chat
   }), [chats]);
 
   return (
-    <div className="flex flex-col h-full border-r bg-background overflow-hidden min-h-0">
+    <div className="flex h-full flex-col border-r bg-background overflow-hidden">
       {/* Header */}
-      <div className="p-4 border-b space-y-3 shrink-0">
+      <div className="border-b p-4 space-y-3 shrink-0">
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -146,7 +146,7 @@ export function ChatSidebar({ chats, selectedChat, onSelectChat, loading }: Chat
       </div>
 
       {/* Chat List */}
-      <ScrollArea className="flex-1 min-h-0">
+      <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="p-4 space-y-3">
             {[...Array(8)].map((_, i) => (
@@ -181,22 +181,27 @@ export function ChatSidebar({ chats, selectedChat, onSelectChat, loading }: Chat
                     "flex items-center gap-3 p-3 cursor-pointer transition-colors border-l-2 border-transparent",
                     isSelected 
                       ? "bg-accent border-l-primary" 
-                      : "hover:bg-accent/50"
+                      : "hover:bg-muted/50"
                   )}
                   onClick={() => onSelectChat(chat.jid)}
                 >
-                  <div className="relative">
-                    <Avatar className="h-12 w-12">
+                  <div className="relative shrink-0">
+                    <Avatar className="h-12 w-12 shadow-sm">
                       {chat.profilePicture && (
                         <AvatarImage src={chat.profilePicture} alt={name} />
                       )}
-                      <AvatarFallback className={chat.isGroup ? "bg-primary/10 text-primary" : ""}>
+                      <AvatarFallback className={cn(
+                        "font-medium",
+                        chat.isGroup 
+                          ? "bg-primary text-primary-foreground" 
+                          : "bg-muted text-muted-foreground"
+                      )}>
                         {chat.isGroup ? <Users className="h-5 w-5" /> : initials}
                       </AvatarFallback>
                     </Avatar>
                     {chat.isMuted && (
-                      <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-muted flex items-center justify-center">
-                        <span className="text-[10px]">🔇</span>
+                      <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-background border border-border flex items-center justify-center">
+                        <span className="text-[9px]">🔇</span>
                       </div>
                     )}
                   </div>
@@ -242,7 +247,7 @@ export function ChatSidebar({ chats, selectedChat, onSelectChat, loading }: Chat
             })}
           </div>
         )}
-      </ScrollArea>
+      </div>
     </div>
   );
 }

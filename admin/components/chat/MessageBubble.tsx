@@ -169,21 +169,24 @@ export function MessageBubble({ message, showAvatar, senderPicture }: MessageBub
     )}>
       {/* Avatar for received messages */}
       {!isMe && showAvatar && (
-        <Avatar className="h-8 w-8 shrink-0">
+        <Avatar className="h-8 w-8 shrink-0 shadow-sm">
           {senderPicture && <AvatarImage src={senderPicture} />}
-          <AvatarFallback className="text-xs">
-            {(message.senderName || "?").substring(0, 2).toUpperCase()}
+          <AvatarFallback className="text-xs bg-primary text-primary-foreground font-medium">
+            {message.senderName 
+              ? message.senderName.substring(0, 2).toUpperCase()
+              : message.senderJid?.split("@")[0]?.slice(-2) || "US"
+            }
           </AvatarFallback>
         </Avatar>
       )}
-      {!isMe && !showAvatar && <div className="w-8" />}
+      {!isMe && !showAvatar && <div className="w-8 shrink-0" />}
       
       {/* Message Bubble */}
       <div className={cn(
-        "max-w-[85%] sm:max-w-[75%] md:max-w-[70%] rounded-2xl px-3 py-2 relative overflow-hidden min-w-0",
+        "max-w-[85%] sm:max-w-[75%] md:max-w-[70%] rounded-2xl px-3 py-2 relative overflow-hidden min-w-0 shadow-sm",
         isMe 
-          ? "bg-primary text-primary-foreground rounded-br-sm" 
-          : "bg-muted rounded-bl-sm"
+          ? "bg-primary text-primary-foreground rounded-br-md" 
+          : "bg-card border border-border/50 rounded-bl-md"
       )}>
         {/* Sender name for group chats */}
         {!isMe && message.senderName && showAvatar && (
