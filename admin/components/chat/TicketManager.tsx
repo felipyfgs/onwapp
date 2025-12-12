@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Inbox,
   CheckCircle,
@@ -21,6 +22,9 @@ import {
   Plus,
   RefreshCw,
   Loader2,
+  CheckCheck,
+  PlayCircle,
+  X,
 } from "lucide-react";
 import { TicketListItem } from "./TicketListItem";
 import { NewTicketModal } from "./NewTicketModal";
@@ -28,10 +32,13 @@ import {
   getTickets,
   getTicketStats,
   getQueues,
+  acceptTicket,
+  closeTicket,
   type Ticket,
   type TicketStats,
   type Queue,
 } from "@/lib/api";
+import { toast } from "sonner";
 import { cn, debounce } from "@/lib/utils";
 
 interface TicketManagerProps {
@@ -70,6 +77,10 @@ export function TicketManager({
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const offsetRef = useRef(0);
@@ -171,6 +182,83 @@ export function TicketManager({
       fetchTickets(false);
     }
   }, [fetchTickets, hasMore, loading]);
+
+  const toggleSelection = useCallback((ticketId: string, checked: boolean) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(ticketId);
+      } else {
+        newSet.delete(ticketId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const selectAll = useCallback(() => {
+    setSelectedIds(new Set(tickets.map(t => t.id)));
+  }, [tickets]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedIds(new Set());
+    setSelectionMode(false);
+  }, []);
+
+  const handleBulkAccept = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    let success = 0;
+    let failed = 0;
+    
+    for (const ticketId of selectedIds) {
+      try {
+        await acceptTicket(session, ticketId);
+        success++;
+      } catch {
+        failed++;
+      }
+    }
+    
+    setBulkLoading(false);
+    clearSelection();
+    fetchTickets(true);
+    onTicketUpdate();
+    
+    if (failed > 0) {
+      toast.error(`${failed} ticket(s) falharam`);
+    }
+    if (success > 0) {
+      toast.success(`${success} ticket(s) aceitos`);
+    }
+  }, [selectedIds, session, clearSelection, fetchTickets, onTicketUpdate]);
+
+  const handleBulkResolve = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    let success = 0;
+    let failed = 0;
+    
+    for (const ticketId of selectedIds) {
+      try {
+        await closeTicket(session, ticketId);
+        success++;
+      } catch {
+        failed++;
+      }
+    }
+    
+    setBulkLoading(false);
+    clearSelection();
+    fetchTickets(true);
+    onTicketUpdate();
+    
+    if (failed > 0) {
+      toast.error(`${failed} ticket(s) falharam`);
+    }
+    if (success > 0) {
+      toast.success(`${success} ticket(s) resolvidos`);
+    }
+  }, [selectedIds, session, clearSelection, fetchTickets, onTicketUpdate]);
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
@@ -306,7 +394,7 @@ export function TicketManager({
     return (
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto min-h-0"
+        className="h-full overflow-y-auto"
         onScroll={handleScroll}
       >
         <div

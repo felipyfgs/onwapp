@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Users,
   MoreVertical,
@@ -39,6 +40,9 @@ interface TicketListItemProps {
   session: string;
   queues: Queue[];
   onUpdate: () => void;
+  selectionMode?: boolean;
+  isChecked?: boolean;
+  onCheckChange?: (checked: boolean) => void;
 }
 
 function TicketListItemComponent({
@@ -48,6 +52,9 @@ function TicketListItemComponent({
   session,
   queues,
   onUpdate,
+  selectionMode,
+  isChecked,
+  onCheckChange,
 }: TicketListItemProps) {
   const [transferModalOpen, setTransferModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -125,10 +132,19 @@ function TicketListItemComponent({
       <div
         className={cn(
           "flex items-start gap-3 p-3 cursor-pointer hover:bg-muted/50 transition-colors",
-          isSelected && "bg-accent border-l-2 border-l-primary"
+          isSelected && "bg-accent border-l-2 border-l-primary",
+          isChecked && "bg-primary/5"
         )}
-        onClick={onClick}
+        onClick={selectionMode ? () => onCheckChange?.(!isChecked) : onClick}
       >
+        {selectionMode && (
+          <Checkbox
+            checked={isChecked}
+            onCheckedChange={(checked) => onCheckChange?.(checked as boolean)}
+            onClick={(e) => e.stopPropagation()}
+            className="mt-1 shrink-0"
+          />
+        )}
         <Avatar className="h-10 w-10 shrink-0">
           <AvatarImage src={ticket.contactPicUrl} />
           <AvatarFallback
@@ -248,6 +264,8 @@ export const TicketListItem = memo(TicketListItemComponent, (prev, next) => {
     prev.ticket.updatedAt === next.ticket.updatedAt &&
     prev.ticket.status === next.ticket.status &&
     prev.ticket.unreadCount === next.ticket.unreadCount &&
-    prev.isSelected === next.isSelected
+    prev.isSelected === next.isSelected &&
+    prev.selectionMode === next.selectionMode &&
+    prev.isChecked === next.isChecked
   );
 });

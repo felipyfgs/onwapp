@@ -97,10 +97,11 @@ export default function ChatsPage() {
 
   const handleTicketUpdate = useCallback((switchToOpen?: boolean) => {
     if (selectedTicket) {
-      // Optimistically update ticket status when accepting
       if (switchToOpen) {
         setSelectedTicket(prev => prev ? { ...prev, status: "open" } : null);
-        setActiveSubTab("open"); // Switch to "Atendendo" tab
+        setActiveSubTab("open");
+        refreshSelectedTicket();
+        return;
       }
       fetchMessages(selectedTicket.contactJid);
       refreshSelectedTicket();
@@ -188,6 +189,8 @@ export default function ChatsPage() {
                   onSelectTicket={handleSelectTicket}
                   onTicketUpdate={handleTicketUpdate}
                   refreshTrigger={ticketListKey}
+                  activeSubTab={activeSubTab}
+                  onSubTabChange={setActiveSubTab}
                 />
               </ResizablePanel>
               <ResizableHandle withHandle />
