@@ -119,7 +119,7 @@ export default function WebhooksPage() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <PageHeader breadcrumbs={[{ label: "Integrations", href: "#" }, { label: "Webhooks" }]} />
+        <PageHeader breadcrumbs={[{ label: "Integrations" }, { label: "Webhooks" }]} />
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           {/* Toolbar */}
           <div className="flex gap-4">

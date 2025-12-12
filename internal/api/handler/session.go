@@ -224,7 +224,12 @@ func (h *SessionHandler) Info(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, sessionToResponse(session))
+	resp := sessionToResponse(session)
+	if session.GetStatus() == model.StatusConnected {
+		h.enrichSessionResponse(c.Request.Context(), session, &resp)
+	}
+
+	c.JSON(http.StatusOK, resp)
 }
 
 // @Summary      Connect session

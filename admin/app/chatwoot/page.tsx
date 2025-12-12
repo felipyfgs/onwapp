@@ -206,7 +206,7 @@ export default function ChatwootPage() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <PageHeader breadcrumbs={[{ label: "Integrations", href: "#" }, { label: "Chatwoot" }]} />
+        <PageHeader breadcrumbs={[{ label: "Integrations" }, { label: "Chatwoot" }]} />
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           {/* Toolbar */}
           <div className="flex gap-4">

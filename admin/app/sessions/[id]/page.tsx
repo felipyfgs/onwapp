@@ -144,23 +144,34 @@ export default function SessionDetailPage() {
                 <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                   <div className="flex items-center gap-4">
                     <div className="relative">
-                      <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center text-2xl font-semibold">
+                      {session.profilePicture ? (
+                        <img
+                          src={session.profilePicture}
+                          alt={session.pushName || session.session}
+                          className="h-16 w-16 rounded-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                      ) : null}
+                      <div className={`h-16 w-16 rounded-full bg-muted flex items-center justify-center text-2xl font-semibold ${session.profilePicture ? 'hidden' : ''}`}>
                         {session.session.charAt(0).toUpperCase()}
                       </div>
                       <div
                         className={`absolute bottom-0 right-0 h-4 w-4 rounded-full border-2 border-background ${
                           session.status === "connected"
-                            ? "bg-primary"
+                            ? "bg-green-500"
                             : session.status === "connecting"
-                            ? "bg-chart-4"
-                            : "bg-destructive"
+                            ? "bg-yellow-500"
+                            : "bg-red-500"
                         }`}
                       />
                     </div>
                     <div>
                       <h1 className="text-2xl font-bold">{session.session}</h1>
                       <p className="text-muted-foreground">
-                        {session.phone || session.deviceJid || "Not authenticated"}
+                        {session.pushName || session.phone || session.deviceJid || "Not authenticated"}
                       </p>
                       <p className={`text-sm font-medium ${statusColor}`}>
                         {session.status === "connected"

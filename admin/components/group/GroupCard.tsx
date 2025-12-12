@@ -1,7 +1,7 @@
 "use client";
 
 import { Group } from "@/lib/api";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Lock, Megaphone } from "lucide-react";
 
@@ -21,6 +21,7 @@ export function GroupCard({ group, onClick }: GroupCardProps) {
       onClick={() => onClick?.(group)}
     >
       <Avatar className="h-12 w-12">
+        {group.profilePicture && <AvatarImage src={group.profilePicture} alt={group.name} />}
         <AvatarFallback className="bg-primary/10 text-primary">
           {initials}
         </AvatarFallback>

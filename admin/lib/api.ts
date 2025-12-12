@@ -57,6 +57,7 @@ export interface Chat {
   jid: string;
   name?: string;
   pushName?: string;
+  profilePicture?: string;
   lastMessage?: Message;
   unreadCount?: number;
   isGroup?: boolean;

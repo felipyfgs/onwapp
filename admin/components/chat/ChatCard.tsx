@@ -1,7 +1,7 @@
 "use client";
 
 import { Chat } from "@/lib/api";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Users } from "lucide-react";
 
@@ -34,6 +34,7 @@ export function ChatCard({ chat, onClick }: ChatCardProps) {
       onClick={() => onClick?.(chat)}
     >
       <Avatar className="h-12 w-12">
+        {chat.profilePicture && <AvatarImage src={chat.profilePicture} alt={name} />}
         <AvatarFallback className={chat.isGroup ? "bg-primary/10 text-primary" : ""}>
           {chat.isGroup ? <Users className="h-5 w-5" /> : initials}
         </AvatarFallback>

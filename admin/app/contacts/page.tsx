@@ -6,7 +6,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -209,6 +209,7 @@ export default function ContactsPage() {
                     className="flex items-center gap-4 p-4 border-b last:border-b-0 hover:bg-accent transition-colors"
                   >
                     <Avatar className="h-12 w-12">
+                      {contact.profilePicture && <AvatarImage src={contact.profilePicture} alt={name} />}
                       <AvatarFallback>{initials}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">

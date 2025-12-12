@@ -11,6 +11,13 @@ import {
   QrCode,
   ExternalLink,
   ChevronRight,
+  MessageSquare,
+  Phone,
+  Key,
+  Copy,
+  Check,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -20,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 interface SessionCardProps {
   session: Session;
@@ -42,55 +50,86 @@ export function SessionCard({
   onShowQR,
   onOpen,
 }: SessionCardProps) {
-  const statusColor = {
-    connected: "bg-green-500",
-    disconnected: "bg-red-500",
-    connecting: "bg-yellow-500",
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
+
+  const statusConfig = {
+    connected: { bg: "bg-green-500/15", text: "text-green-600 dark:text-green-400", dot: "bg-green-500", label: "Online" },
+    disconnected: { bg: "bg-red-500/15", text: "text-red-600 dark:text-red-400", dot: "bg-red-500", label: "Offline" },
+    connecting: { bg: "bg-yellow-500/15", text: "text-yellow-600 dark:text-yellow-400", dot: "bg-yellow-500", label: "Connecting" },
   }[session.status];
 
   const handleClick = () => {
-    if (onOpen) {
-      onOpen(session.session);
+    if (onOpen) onOpen(session.session);
+  };
+
+  const copyApiKey = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (session.apiKey) {
+      navigator.clipboard.writeText(session.apiKey);
+      setCopiedKey(true);
+      setTimeout(() => setCopiedKey(false), 2000);
     }
   };
 
+  const toggleShowApiKey = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowApiKey(!showApiKey);
+  };
+
+  const displayApiKey = (key?: string) => {
+    if (!key) return "No API Key";
+    if (showApiKey) return key;
+    if (key.length <= 8) return "••••••••";
+    return `${key.slice(0, 4)}${"•".repeat(8)}${key.slice(-4)}`;
+  };
+
+  const borderClass = {
+    connected: "border-green-500/50 shadow-sm shadow-green-500/10",
+    disconnected: "",
+    connecting: "border-yellow-500/50",
+  }[session.status];
+
   return (
     <div
-      className={`flex items-center gap-3 px-4 py-3 border-b last:border-b-0 transition-colors ${
-        onOpen ? "cursor-pointer hover:bg-accent/50" : ""
+      className={`rounded-xl border bg-card p-4 transition-all ${borderClass} ${
+        onOpen ? "cursor-pointer hover:shadow-md hover:border-primary/30" : ""
       }`}
       onClick={handleClick}
     >
-      {/* Avatar */}
-      <div className="relative flex-shrink-0">
-        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center text-lg font-semibold">
-          {session.session.charAt(0).toUpperCase()}
+      {/* Header: Avatar + Name + Menu */}
+      <div className="flex items-center gap-3 mb-3">
+        <div className="relative flex-shrink-0">
+          {session.profilePicture ? (
+            <img
+              src={session.profilePicture}
+              alt={session.pushName || session.session}
+              className="h-12 w-12 rounded-full object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+          ) : null}
+          <div className={`h-12 w-12 rounded-full bg-muted flex items-center justify-center text-base font-semibold ${session.profilePicture ? 'hidden' : ''}`}>
+            {session.session.charAt(0).toUpperCase()}
+          </div>
+          <div className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-card ${statusConfig.dot}`} />
         </div>
-        <div
-          className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background ${statusColor}`}
-        />
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold truncate">{session.session}</h3>
-          <span className="text-xs text-muted-foreground flex-shrink-0 ml-2">
-            {session.status === "connected" && session.stats
-              ? `${session.stats.chats} chats`
-              : session.status}
-          </span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-sm truncate leading-tight">{session.session}</h3>
+            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${statusConfig.bg} ${statusConfig.text}`}>
+              {statusConfig.label}
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground truncate mt-0.5">
+            {session.pushName || "Not authenticated"}
+          </p>
         </div>
-        <p className="text-sm text-muted-foreground truncate">
-          {session.pushName || session.phone || session.deviceJid || "Not authenticated"}
-        </p>
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center gap-1 flex-shrink-0">
         <DropdownMenu>
           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button variant="ghost" size="icon" className="h-7 w-7 -mr-1">
               <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -133,18 +172,62 @@ export function SessionCard({
               Restart
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => onDelete(session.session)}
-              className="text-destructive"
-            >
+            <DropdownMenuItem onClick={() => onDelete(session.session)} className="text-destructive">
               <Trash2 className="mr-2 h-4 w-4" />
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        {onOpen && (
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+      </div>
+
+      {/* Info Section */}
+      <div className="space-y-2 mb-3 text-xs text-muted-foreground">
+        {session.phone && (
+          <div className="flex items-center gap-2">
+            <Phone className="h-3.5 w-3.5 flex-shrink-0" />
+            <span className="truncate">{session.phone}</span>
+          </div>
         )}
+        <div className="flex items-center gap-2">
+          <Key className="h-3.5 w-3.5 flex-shrink-0" />
+          <span className="truncate font-mono text-[11px]">{displayApiKey(session.apiKey)}</span>
+          {session.apiKey && (
+            <div className="ml-auto flex items-center gap-1">
+              <button
+                onClick={toggleShowApiKey}
+                className="p-1 hover:bg-muted rounded transition-colors"
+                title={showApiKey ? "Hide API Key" : "Show API Key"}
+              >
+                {showApiKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              </button>
+              <button
+                onClick={copyApiKey}
+                className="p-1 hover:bg-muted rounded transition-colors"
+                title="Copy API Key"
+              >
+                {copiedKey ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Footer: Stats */}
+      <div className="flex items-center justify-between pt-3 border-t text-xs text-muted-foreground">
+        <div className="flex items-center gap-3">
+          {session.stats ? (
+            <>
+              <span className="flex items-center gap-1">
+                <MessageSquare className="h-3.5 w-3.5" />
+                {session.stats.chats} chats
+              </span>
+              <span>{session.stats.contacts} contacts</span>
+            </>
+          ) : (
+            <span className="text-muted-foreground/50">{session.status}</span>
+          )}
+        </div>
+        {onOpen && <ChevronRight className="h-4 w-4" />}
       </div>
     </div>
   );

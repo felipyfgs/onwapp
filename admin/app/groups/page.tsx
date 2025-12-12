@@ -7,7 +7,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
@@ -199,6 +199,7 @@ export default function GroupsPage() {
                     onClick={() => router.push(`/groups/${selectedSession}/${encodeURIComponent(group.jid)}`)}
                   >
                     <Avatar className="h-12 w-12">
+                      {group.profilePicture && <AvatarImage src={group.profilePicture} alt={group.name} />}
                       <AvatarFallback className="bg-primary/10 text-primary">
                         {initials}
                       </AvatarFallback>

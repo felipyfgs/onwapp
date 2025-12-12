@@ -7,7 +7,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -158,6 +158,7 @@ export default function ChatsPage() {
                     onClick={() => router.push(`/chats/${selectedSession}/${encodeURIComponent(chat.jid)}`)}
                   >
                     <Avatar className="h-12 w-12">
+                      {chat.profilePicture && <AvatarImage src={chat.profilePicture} alt={name} />}
                       <AvatarFallback className={chat.isGroup ? "bg-primary/10 text-primary" : ""}>
                         {chat.isGroup ? <Users className="h-5 w-5" /> : initials}
                       </AvatarFallback>

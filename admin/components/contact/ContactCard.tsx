@@ -1,7 +1,7 @@
 "use client";
 
 import { Contact } from "@/lib/api";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 
 interface ContactCardProps {
@@ -21,6 +21,7 @@ export function ContactCard({ contact, onClick }: ContactCardProps) {
       onClick={() => onClick?.(contact)}
     >
       <Avatar className="h-12 w-12">
+        {contact.profilePicture && <AvatarImage src={contact.profilePicture} alt={name} />}
         <AvatarFallback>{initials}</AvatarFallback>
       </Avatar>
       <div className="flex-1 min-w-0">

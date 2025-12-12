@@ -162,81 +162,134 @@ export default function SessionsPage() {
       </header>
 
       {/* Main Content */}
-      <main className="px-8 py-6 lg:px-12">
-        <div className="mx-auto max-w-6xl space-y-6">
-          {/* Stats */}
-          <div className="grid gap-4 md:grid-cols-3">
-            <StatsCard title="Connected" value={connectedCount} icon={Wifi} variant="primary" />
-            <StatsCard title="Disconnected" value={disconnectedCount} icon={WifiOff} variant="chart4" />
-            <StatsCard title="Connecting" value={connectingCount} icon={Loader2} variant="chart2" />
+      <main className="px-4 py-4 lg:px-6">
+        <div className="space-y-4">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="rounded-xl border bg-card p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total</p>
+                  <p className="text-2xl font-bold">{sessions.length}</p>
+                </div>
+                <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center">
+                  <Smartphone className="h-5 w-5 text-primary" />
+                </div>
+              </div>
+            </div>
+            <div className="rounded-xl border bg-card p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Connected</p>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">{connectedCount}</p>
+                </div>
+                <div className="h-10 w-10 rounded-full bg-green-500/15 flex items-center justify-center">
+                  <Wifi className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+              </div>
+            </div>
+            <div className="rounded-xl border bg-card p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Disconnected</p>
+                  <p className="text-2xl font-bold text-red-600 dark:text-red-400">{disconnectedCount}</p>
+                </div>
+                <div className="h-10 w-10 rounded-full bg-red-500/15 flex items-center justify-center">
+                  <WifiOff className="h-5 w-5 text-red-600 dark:text-red-400" />
+                </div>
+              </div>
+            </div>
+            <div className="rounded-xl border bg-card p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Connecting</p>
+                  <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{connectingCount}</p>
+                </div>
+                <div className="h-10 w-10 rounded-full bg-yellow-500/15 flex items-center justify-center">
+                  <Loader2 className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Toolbar */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search sessions..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {filterButtons.map((btn) => (
-                <Button
-                  key={btn.value}
-                  variant={statusFilter === btn.value ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setStatusFilter(btn.value)}
-                >
-                  {btn.label} ({btn.count})
-                </Button>
-              ))}
+          {/* Search + Filters + Actions */}
+          <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center justify-between">
+            <div className="flex flex-col sm:flex-row gap-3 flex-1">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search sessions..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 h-9"
+                />
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {filterButtons.map((btn) => (
+                  <Button
+                    key={btn.value}
+                    variant={statusFilter === btn.value ? "default" : "outline"}
+                    size="sm"
+                    className="h-9"
+                    onClick={() => setStatusFilter(btn.value)}
+                  >
+                    {btn.label} ({btn.count})
+                  </Button>
+                ))}
+              </div>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" onClick={() => setShowCreateDialog(true)}>
+              <Button onClick={() => setShowCreateDialog(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 New Session
               </Button>
-              <Button variant="outline" size="sm" onClick={fetchSessions}>
+              <Button variant="outline" onClick={fetchSessions}>
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Refresh
               </Button>
             </div>
           </div>
 
-          {/* Session List */}
+          {/* Session Grid */}
           {loading ? (
-            <div className="rounded-xl border bg-card overflow-hidden">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="flex items-center gap-4 p-4 border-b last:border-b-0">
-                  <Skeleton className="h-12 w-12 rounded-full" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-1/3" />
-                    <Skeleton className="h-3 w-1/4" />
+                <div key={i} className="rounded-xl border bg-card p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-2/3" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
+                  </div>
+                  <div className="space-y-2 mb-3">
+                    <Skeleton className="h-3 w-32" />
+                    <Skeleton className="h-3 w-40" />
+                  </div>
+                  <div className="pt-3 border-t">
+                    <Skeleton className="h-3 w-24" />
                   </div>
                 </div>
               ))}
             </div>
           ) : filteredSessions.length === 0 ? (
-            <div className="rounded-xl border bg-muted/50 p-12 text-center">
-              <Smartphone className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-medium mb-2">No sessions found</h3>
-              <p className="text-muted-foreground mb-4">
+            <div className="rounded-xl border bg-muted/50 p-8 text-center">
+              <Smartphone className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+              <h3 className="text-base font-medium mb-1">No sessions found</h3>
+              <p className="text-sm text-muted-foreground mb-3">
                 {searchQuery || statusFilter !== "all"
                   ? "Try adjusting your search or filter"
                   : "Create your first session to get started"}
               </p>
               {!searchQuery && statusFilter === "all" && (
-                <Button onClick={() => setShowCreateDialog(true)}>
+                <Button size="sm" onClick={() => setShowCreateDialog(true)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Create Session
                 </Button>
               )}
             </div>
           ) : (
-            <div className="rounded-xl border bg-card overflow-hidden">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {filteredSessions.map((session) => (
                 <SessionCard
                   key={session.session}
