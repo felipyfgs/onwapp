@@ -235,6 +235,13 @@ func main() {
 	chatHandler.SetSessionService(sessionService)
 	chatHandler.SetHistorySyncService(historySyncService)
 
+	ticketHandler := handler.NewTicketHandler(database.Tickets)
+	ticketHandler.SetSessionService(sessionService)
+
+	queueHandler := handler.NewQueueHandler(database.Queues)
+	userHandler := handler.NewUserHandler(database.Users, database.Queues)
+	quickReplyHandler := handler.NewQuickReplyHandler(database.QuickReplies)
+
 	handlers := &router.Handlers{
 		Session:    handler.NewSessionHandler(sessionService, wppService, database),
 		Profile:    handler.NewProfileHandler(wppService),
@@ -248,6 +255,10 @@ func main() {
 		Status:     handler.NewStatusHandler(wppService),
 		Settings:   handler.NewSettingsHandler(database.Settings, wppService),
 		Webhook:    webhookHandler,
+		Ticket:     ticketHandler,
+		Queue:      queueHandler,
+		User:       userHandler,
+		QuickReply: quickReplyHandler,
 	}
 
 	sessionLookup := func(ctx context.Context, apiKey string) (string, bool) {

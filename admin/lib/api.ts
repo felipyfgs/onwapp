@@ -866,3 +866,290 @@ export async function rejectCall(session: string, callId: string, from: string):
     body: JSON.stringify({ callId, from }),
   });
 }
+
+// ============ Ticket System Types ============
+
+export interface Ticket {
+  id: string;
+  sessionId: string;
+  contactJid: string;
+  contactName?: string;
+  contactPicUrl?: string;
+  queueId?: string;
+  userId?: string;
+  status: "pending" | "open" | "closed";
+  lastMessage?: string;
+  unreadCount: number;
+  isGroup: boolean;
+  closedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  queue?: Queue;
+  user?: User;
+}
+
+export interface TicketStats {
+  pending: number;
+  open: number;
+  closed: number;
+  total: number;
+}
+
+export interface Queue {
+  id: string;
+  name: string;
+  color: string;
+  greetingMessage?: string;
+  ticketCount?: number;
+  userCount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  profile: "admin" | "user";
+  online: boolean;
+  createdAt: string;
+  updatedAt: string;
+  queues?: Queue[];
+}
+
+export interface QuickReply {
+  id: string;
+  shortcut: string;
+  message: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateTicketRequest {
+  contactJid: string;
+  contactName?: string;
+  contactPicUrl?: string;
+  queueId?: string;
+  isGroup?: boolean;
+}
+
+export interface UpdateTicketRequest {
+  contactName?: string;
+  contactPicUrl?: string;
+  queueId?: string | null;
+  userId?: string | null;
+  status?: "pending" | "open" | "closed";
+}
+
+export interface CreateQueueRequest {
+  name: string;
+  color: string;
+  greetingMessage?: string;
+}
+
+export interface UpdateQueueRequest {
+  name?: string;
+  color?: string;
+  greetingMessage?: string;
+}
+
+export interface CreateUserRequest {
+  name: string;
+  email: string;
+  password: string;
+  profile: "admin" | "user";
+  queueIds?: string[];
+}
+
+export interface UpdateUserRequest {
+  name?: string;
+  email?: string;
+  profile?: "admin" | "user";
+  queueIds?: string[];
+}
+
+export interface CreateQuickReplyRequest {
+  shortcut: string;
+  message: string;
+}
+
+export interface UpdateQuickReplyRequest {
+  shortcut?: string;
+  message?: string;
+}
+
+// ============ Ticket API ============
+
+export async function getTickets(
+  session: string,
+  params?: {
+    status?: string;
+    queueId?: string;
+    userId?: string;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }
+): Promise<{ data: Ticket[]; pagination?: { total: number; page: number; perPage: number } }> {
+  const searchParams = new URLSearchParams();
+  if (params?.status) searchParams.set("status", params.status);
+  if (params?.queueId) searchParams.set("queueId", params.queueId);
+  if (params?.userId) searchParams.set("userId", params.userId);
+  if (params?.search) searchParams.set("search", params.search);
+  if (params?.limit) searchParams.set("limit", params.limit.toString());
+  if (params?.offset) searchParams.set("offset", params.offset.toString());
+
+  const query = searchParams.toString();
+  return fetchApi(`/${session}/tickets${query ? `?${query}` : ""}`);
+}
+
+export async function getTicket(session: string, ticketId: string): Promise<{ data: Ticket }> {
+  return fetchApi(`/${session}/tickets/${ticketId}`);
+}
+
+export async function getTicketStats(session: string): Promise<{ data: TicketStats }> {
+  return fetchApi(`/${session}/tickets/stats`);
+}
+
+export async function createTicket(session: string, data: CreateTicketRequest): Promise<{ data: Ticket }> {
+  return fetchApi(`/${session}/tickets`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateTicket(session: string, ticketId: string, data: UpdateTicketRequest): Promise<{ data: Ticket }> {
+  return fetchApi(`/${session}/tickets/${ticketId}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteTicket(session: string, ticketId: string): Promise<void> {
+  await fetchApi(`/${session}/tickets/${ticketId}`, { method: "DELETE" });
+}
+
+export async function acceptTicket(session: string, ticketId: string, userId?: string): Promise<{ data: Ticket }> {
+  return fetchApi(`/${session}/tickets/${ticketId}/accept`, {
+    method: "POST",
+    body: JSON.stringify({ userId: userId || "" }),
+  });
+}
+
+export async function closeTicket(session: string, ticketId: string): Promise<{ data: Ticket }> {
+  return fetchApi(`/${session}/tickets/${ticketId}/close`, { method: "POST" });
+}
+
+export async function reopenTicket(session: string, ticketId: string): Promise<{ data: Ticket }> {
+  return fetchApi(`/${session}/tickets/${ticketId}/reopen`, { method: "POST" });
+}
+
+export async function transferTicket(
+  session: string,
+  ticketId: string,
+  data: { queueId?: string; userId?: string }
+): Promise<{ data: Ticket }> {
+  return fetchApi(`/${session}/tickets/${ticketId}/transfer`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+// ============ Queue API ============
+
+export async function getQueues(): Promise<{ data: Queue[] }> {
+  return fetchApi("/queues");
+}
+
+export async function getQueue(queueId: string): Promise<{ data: Queue }> {
+  return fetchApi(`/queues/${queueId}`);
+}
+
+export async function createQueue(data: CreateQueueRequest): Promise<{ data: Queue }> {
+  return fetchApi("/queues", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateQueue(queueId: string, data: UpdateQueueRequest): Promise<{ data: Queue }> {
+  return fetchApi(`/queues/${queueId}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteQueue(queueId: string): Promise<void> {
+  await fetchApi(`/queues/${queueId}`, { method: "DELETE" });
+}
+
+// ============ User API ============
+
+export async function getUsers(): Promise<{ data: User[] }> {
+  return fetchApi("/users");
+}
+
+export async function getUser(userId: string): Promise<{ data: User }> {
+  return fetchApi(`/users/${userId}`);
+}
+
+export async function createUser(data: CreateUserRequest): Promise<{ data: User }> {
+  return fetchApi("/users", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateUser(userId: string, data: UpdateUserRequest): Promise<{ data: User }> {
+  return fetchApi(`/users/${userId}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateUserPassword(userId: string, password: string): Promise<void> {
+  await fetchApi(`/users/${userId}/password`, {
+    method: "PATCH",
+    body: JSON.stringify({ password }),
+  });
+}
+
+export async function setUserQueues(userId: string, queueIds: string[]): Promise<{ data: User }> {
+  return fetchApi(`/users/${userId}/queues`, {
+    method: "POST",
+    body: JSON.stringify({ queueIds }),
+  });
+}
+
+export async function deleteUser(userId: string): Promise<void> {
+  await fetchApi(`/users/${userId}`, { method: "DELETE" });
+}
+
+// ============ Quick Reply API ============
+
+export async function getQuickReplies(search?: string): Promise<{ data: QuickReply[] }> {
+  const query = search ? `?search=${encodeURIComponent(search)}` : "";
+  return fetchApi(`/quick-replies${query}`);
+}
+
+export async function getQuickReply(quickReplyId: string): Promise<{ data: QuickReply }> {
+  return fetchApi(`/quick-replies/${quickReplyId}`);
+}
+
+export async function createQuickReply(data: CreateQuickReplyRequest): Promise<{ data: QuickReply }> {
+  return fetchApi("/quick-replies", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateQuickReply(quickReplyId: string, data: UpdateQuickReplyRequest): Promise<{ data: QuickReply }> {
+  return fetchApi(`/quick-replies/${quickReplyId}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteQuickReply(quickReplyId: string): Promise<void> {
+  await fetchApi(`/quick-replies/${quickReplyId}`, { method: "DELETE" });
+}

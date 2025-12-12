@@ -17,29 +17,33 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { PageHeader } from "@/components/common";
-import { ChatSidebar, ChatWindow } from "@/components/chat";
+import { TicketManager, ChatWindow } from "@/components/chat";
 import {
-  getChats,
   getChatMessages,
   getSessions,
   sendTextMessage,
   markRead,
   archiveChat,
-  Chat,
-  Message,
-  Session,
+  closeTicket,
+  reopenTicket,
+  transferTicket,
+  getQueues,
+  type Chat,
+  type Message,
+  type Session,
+  type Ticket,
+  type Queue,
 } from "@/lib/api";
-import { RefreshCw, Settings } from "lucide-react";
+import { Settings, Ticket as TicketIcon } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ChatsPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [selectedSession, setSelectedSession] = useState<string>("");
-  const [chats, setChats] = useState<Chat[]>([]);
-  const [selectedChat, setSelectedChat] = useState<string | null>(null);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [loadingChats, setLoadingChats] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [queues, setQueues] = useState<Queue[]>([]);
 
   // Load sessions on mount
   useEffect(() => {
@@ -50,42 +54,22 @@ export default function ChatsPage() {
         if (connected.length > 0) {
           setSelectedSession(connected[0].session);
         }
-      })
-      .finally(() => setLoadingChats(false));
+      });
+    
+    getQueues()
+      .then((response) => setQueues(response.data || []))
+      .catch(() => {});
   }, []);
 
-  // Fetch chats when session changes
-  const fetchChats = useCallback(async () => {
-    if (!selectedSession) return;
-    setLoadingChats(true);
-    try {
-      const data = await getChats(selectedSession);
-      setChats(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("Failed to fetch chats:", error);
-      setChats([]);
-    } finally {
-      setLoadingChats(false);
-    }
-  }, [selectedSession]);
-
-  useEffect(() => {
-    if (selectedSession) {
-      fetchChats();
-      setSelectedChat(null);
-      setMessages([]);
-    }
-  }, [selectedSession, fetchChats]);
-
-  // Fetch messages when chat is selected
-  const fetchMessages = useCallback(async (jid: string) => {
-    if (!selectedSession || !jid) return;
+  // Fetch messages when ticket is selected
+  const fetchMessages = useCallback(async (contactJid: string) => {
+    if (!selectedSession || !contactJid) return;
     setLoadingMessages(true);
     try {
-      const data = await getChatMessages(selectedSession, jid, 100);
+      const data = await getChatMessages(selectedSession, contactJid, 100);
       setMessages(Array.isArray(data) ? data : []);
       // Mark as read
-      await markRead(selectedSession, jid).catch(() => {});
+      await markRead(selectedSession, contactJid).catch(() => {});
     } catch (error) {
       console.error("Failed to fetch messages:", error);
       setMessages([]);
@@ -94,40 +78,48 @@ export default function ChatsPage() {
     }
   }, [selectedSession]);
 
-  const handleSelectChat = (jid: string) => {
-    setSelectedChat(jid);
-    fetchMessages(jid);
+  const handleSelectTicket = (ticket: Ticket) => {
+    setSelectedTicket(ticket);
+    fetchMessages(ticket.contactJid);
+  };
+
+  const handleTicketUpdate = () => {
+    if (selectedTicket) {
+      fetchMessages(selectedTicket.contactJid);
+    }
   };
 
   const handleSendMessage = async (text: string) => {
-    if (!selectedSession || !selectedChat) return;
+    if (!selectedSession || !selectedTicket) return;
     try {
       const sent = await sendTextMessage(selectedSession, {
-        to: selectedChat,
+        to: selectedTicket.contactJid,
         text,
       });
       setMessages((prev) => [...prev, sent]);
-      // Update chat list
-      fetchChats();
     } catch (error) {
       toast.error("Failed to send message");
     }
   };
 
   const handleArchive = async () => {
-    if (!selectedSession || !selectedChat) return;
-    const chat = chats.find((c) => c.jid === selectedChat);
-    if (!chat) return;
+    if (!selectedSession || !selectedTicket) return;
     try {
-      await archiveChat(selectedSession, selectedChat, !chat.isArchived);
-      toast.success(chat.isArchived ? "Chat unarchived" : "Chat archived");
-      fetchChats();
+      await archiveChat(selectedSession, selectedTicket.contactJid, true);
+      toast.success("Chat archived");
     } catch (error) {
       toast.error("Failed to archive chat");
     }
   };
 
-  const currentChat = chats.find((c) => c.jid === selectedChat) || null;
+  // Convert ticket to chat format for ChatWindow
+  const currentChat: Chat | null = selectedTicket ? {
+    jid: selectedTicket.contactJid,
+    name: selectedTicket.contactName || undefined,
+    profilePicture: selectedTicket.contactPicUrl || undefined,
+    isGroup: selectedTicket.isGroup,
+    unreadCount: selectedTicket.unreadCount,
+  } : null;
 
   return (
     <SidebarProvider>
@@ -137,9 +129,13 @@ export default function ChatsPage() {
           breadcrumbs={[{ label: "Chats" }]}
           actions={
             <div className="flex items-center gap-2">
-              <Select value={selectedSession} onValueChange={setSelectedSession}>
+              <Select value={selectedSession} onValueChange={(value) => {
+                setSelectedSession(value);
+                setSelectedTicket(null);
+                setMessages([]);
+              }}>
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Select session" />
+                  <SelectValue placeholder="Selecionar sessao" />
                 </SelectTrigger>
                 <SelectContent>
                   {sessions.map((s) => (
@@ -149,9 +145,6 @@ export default function ChatsPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button variant="outline" size="icon" onClick={fetchChats}>
-                <RefreshCw className="h-4 w-4" />
-              </Button>
             </div>
           }
         />
@@ -161,31 +154,47 @@ export default function ChatsPage() {
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <Settings className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-xl font-semibold mb-2">Select a session</h3>
+                <h3 className="text-xl font-semibold mb-2">Selecione uma sessao</h3>
                 <p className="text-muted-foreground">
-                  Choose a connected WhatsApp session to start chatting
+                  Escolha uma sessao WhatsApp conectada para iniciar
                 </p>
               </div>
             </div>
           ) : (
             <ResizablePanelGroup direction="horizontal" className="h-full">
               <ResizablePanel defaultSize={35} minSize={25} maxSize={45}>
-                <ChatSidebar
-                  chats={chats}
-                  selectedChat={selectedChat || undefined}
-                  onSelectChat={handleSelectChat}
-                  loading={loadingChats}
+                <TicketManager
+                  session={selectedSession}
+                  selectedTicket={selectedTicket}
+                  onSelectTicket={handleSelectTicket}
+                  onTicketUpdate={handleTicketUpdate}
                 />
               </ResizablePanel>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={65}>
-                <ChatWindow
-                  chat={currentChat}
-                  messages={messages}
-                  loading={loadingMessages}
-                  onSendMessage={handleSendMessage}
-                  onArchive={handleArchive}
-                />
+                {selectedTicket ? (
+                  <ChatWindow
+                    chat={currentChat}
+                    messages={messages}
+                    loading={loadingMessages}
+                    onSendMessage={handleSendMessage}
+                    onArchive={handleArchive}
+                    ticket={selectedTicket}
+                    session={selectedSession}
+                    queues={queues}
+                    onTicketAction={handleTicketUpdate}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full bg-muted/30">
+                    <div className="text-center">
+                      <TicketIcon className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                      <h3 className="text-xl font-semibold mb-2">Selecione um ticket</h3>
+                      <p className="text-muted-foreground">
+                        Escolha um ticket na lista para ver a conversa
+                      </p>
+                    </div>
+                  </div>
+                )}
               </ResizablePanel>
             </ResizablePanelGroup>
           )}

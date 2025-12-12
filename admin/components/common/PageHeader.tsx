@@ -27,6 +27,7 @@ interface PageHeaderProps {
   backUrl?: string;
   showLogout?: boolean;
   onLogout?: () => void;
+  actions?: React.ReactNode;
 }
 
 export function PageHeader({
@@ -35,6 +36,7 @@ export function PageHeader({
   backUrl = "/sessions",
   showLogout = false,
   onLogout,
+  actions,
 }: PageHeaderProps) {
   const router = useRouter();
 
@@ -61,6 +63,7 @@ export function PageHeader({
         </Breadcrumb>
       </div>
       <div className="flex items-center gap-2 px-4">
+        {actions}
         {showBack && (
           <Button variant="outline" size="sm" onClick={() => router.push(backUrl)}>
             <ArrowLeft className="mr-2 h-4 w-4" />
