@@ -83,6 +83,7 @@ export function TicketManager({
   const [bulkLoading, setBulkLoading] = useState(false);
   const [acceptLoading, setAcceptLoading] = useState(false);
   const [resolveLoading, setResolveLoading] = useState(false);
+  const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const offsetRef = useRef(0);
@@ -209,6 +210,7 @@ export function TicketManager({
   const handleBulkAccept = useCallback(async () => {
     if (selectedIds.size === 0) return;
     setAcceptLoading(true);
+    setProcessingIds(new Set(selectedIds));
     let success = 0;
     let failed = 0;
     
@@ -222,9 +224,14 @@ export function TicketManager({
     }
     
     setAcceptLoading(false);
-    clearSelection();
-    fetchTickets(true);
-    onTicketUpdate();
+    
+    // Animação de desaparecimento suave
+    setTimeout(() => {
+      setProcessingIds(new Set());
+      clearSelection();
+      fetchTickets(true);
+      onTicketUpdate();
+    }, 300);
     
     if (failed > 0) {
       toast.error(`${failed} ticket(s) falharam`);
@@ -232,11 +239,12 @@ export function TicketManager({
     if (success > 0) {
       toast.success(`${success} ticket(s) aceitos`);
     }
-  }, [selectedIds, session, clearSelection, fetchTickets, onTicketUpdate]);
+  }, [selectedIds, session, fetchTickets, onTicketUpdate]);
 
   const handleBulkResolve = useCallback(async () => {
     if (selectedIds.size === 0) return;
     setResolveLoading(true);
+    setProcessingIds(new Set(selectedIds));
     let success = 0;
     let failed = 0;
     
@@ -250,9 +258,14 @@ export function TicketManager({
     }
     
     setResolveLoading(false);
-    clearSelection();
-    fetchTickets(true);
-    onTicketUpdate();
+    
+    // Animação de desaparecimento suave
+    setTimeout(() => {
+      setProcessingIds(new Set());
+      clearSelection();
+      fetchTickets(true);
+      onTicketUpdate();
+    }, 300);
     
     if (failed > 0) {
       toast.error(`${failed} ticket(s) falharam`);
@@ -260,7 +273,7 @@ export function TicketManager({
     if (success > 0) {
       toast.success(`${success} ticket(s) resolvidos`);
     }
-  }, [selectedIds, session, clearSelection, fetchTickets, onTicketUpdate]);
+  }, [selectedIds, session, fetchTickets, onTicketUpdate]);
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
@@ -449,6 +462,7 @@ export function TicketManager({
                     }}
                     selectionMode={selectionMode}
                     isChecked={selectedIds.has(ticket.id)}
+                    isProcessing={processingIds.has(ticket.id)}
                     onCheckChange={(checked) => toggleSelection(ticket.id, checked)}
                   />
                 )}

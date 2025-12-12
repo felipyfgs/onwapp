@@ -43,6 +43,7 @@ interface TicketListItemProps {
   selectionMode?: boolean;
   isChecked?: boolean;
   onCheckChange?: (checked: boolean) => void;
+  isProcessing?: boolean;
 }
 
 function TicketListItemComponent({
@@ -55,6 +56,7 @@ function TicketListItemComponent({
   selectionMode,
   isChecked,
   onCheckChange,
+  isProcessing,
 }: TicketListItemProps) {
   const [transferModalOpen, setTransferModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -131,9 +133,10 @@ function TicketListItemComponent({
     <>
       <div
         className={cn(
-          "flex items-start gap-3 p-3 cursor-pointer hover:bg-muted/50 transition-colors",
+          "flex items-start gap-3 p-3 cursor-pointer hover:bg-muted/50 transition-all duration-300 ease-in-out",
           isSelected && "bg-accent border-l-2 border-l-primary",
-          isChecked && "bg-primary/5"
+          isChecked && "bg-primary/5",
+          isProcessing && "opacity-50 scale-95 transform translate-x-2"
         )}
         onClick={selectionMode ? () => onCheckChange?.(!isChecked) : onClick}
       >
@@ -266,6 +269,7 @@ export const TicketListItem = memo(TicketListItemComponent, (prev, next) => {
     prev.ticket.unreadCount === next.ticket.unreadCount &&
     prev.isSelected === next.isSelected &&
     prev.selectionMode === next.selectionMode &&
-    prev.isChecked === next.isChecked
+    prev.isChecked === next.isChecked &&
+    prev.isProcessing === next.isProcessing
   );
 });
