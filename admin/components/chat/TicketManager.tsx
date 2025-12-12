@@ -299,16 +299,16 @@ export function TicketManager({
     <button
       onClick={onClick}
       className={cn(
-        "flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-colors",
+        "flex-1 min-w-0 flex items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 px-2 text-xs sm:text-sm font-medium transition-colors",
         active 
           ? "bg-accent text-accent-foreground border-b-2 border-primary" 
           : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
       )}
     >
-      <Icon className="h-4 w-4" />
-      <span className="hidden sm:inline">{label}</span>
+      <Icon className="h-4 w-4 shrink-0" />
+      <span className="hidden sm:inline truncate">{label}</span>
       {count !== undefined && count > 0 && (
-        <Badge variant="secondary" className="ml-1 h-5 min-w-5 px-1.5">
+        <Badge variant="secondary" className="ml-0 sm:ml-1 h-5 min-w-5 px-1 text-xs shrink-0">
           {count}
         </Badge>
       )}
@@ -333,18 +333,18 @@ export function TicketManager({
     <button
       onClick={onClick}
       className={cn(
-        "flex-1 flex items-center justify-center gap-1 py-2 text-sm font-medium transition-colors rounded-md",
+        "flex-1 min-w-0 flex items-center justify-center gap-1 px-2 py-2 text-xs sm:text-sm font-medium transition-colors rounded-md",
         active 
           ? "bg-background text-foreground shadow-sm" 
           : "text-muted-foreground hover:text-foreground"
       )}
     >
-      {label}
+      <span className="truncate">{label}</span>
       {count !== undefined && count > 0 && (
         <Badge 
           variant="secondary" 
           className={cn(
-            "ml-1 h-5 min-w-5 px-1",
+            "ml-1 h-5 min-w-5 px-1 text-xs shrink-0",
             variant === "warning" && "bg-yellow-500/20 text-yellow-600"
           )}
         >
@@ -457,7 +457,7 @@ export function TicketManager({
   return (
     <div className="flex flex-col h-full bg-background overflow-hidden">
       {/* Main Tabs */}
-      <div className="flex shrink-0 border-b bg-card">
+      <div className="flex shrink-0 border-b bg-card overflow-x-auto scrollbar-hide">
         <TabButton
           value="open"
           active={mainTab === "open"}
@@ -549,7 +549,7 @@ export function TicketManager({
 
       {/* Sub Tabs for Open */}
       {mainTab === "open" && (
-        <div className="flex gap-1 p-1 bg-muted/50 shrink-0">
+        <div className="flex gap-1 p-1 bg-muted/50 shrink-0 overflow-x-auto scrollbar-hide">
           <SubTabButton
             value="open"
             active={subTab === "open"}
