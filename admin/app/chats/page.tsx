@@ -132,7 +132,7 @@ export default function ChatsPage() {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset className="flex flex-col h-screen">
+      <SidebarInset className="overflow-hidden min-w-0">
         <PageHeader
           breadcrumbs={[{ label: "Chats" }]}
           actions={
@@ -156,7 +156,7 @@ export default function ChatsPage() {
           }
         />
         
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-hidden">
           {!selectedSession ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
@@ -169,23 +169,27 @@ export default function ChatsPage() {
             </div>
           ) : (
             <ResizablePanelGroup direction="horizontal" className="h-full overflow-hidden">
-              <ResizablePanel defaultSize={35} minSize={25} maxSize={45}>
-                <ChatSidebar
-                  chats={chats}
-                  selectedChat={selectedChat || undefined}
-                  onSelectChat={handleSelectChat}
-                  loading={loadingChats}
-                />
+              <ResizablePanel defaultSize={35} minSize={25} maxSize={45} className="min-w-0">
+                <div className="h-full w-full overflow-hidden">
+                  <ChatSidebar
+                    chats={chats}
+                    selectedChat={selectedChat || undefined}
+                    onSelectChat={handleSelectChat}
+                    loading={loadingChats}
+                  />
+                </div>
               </ResizablePanel>
               <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={70}>
-                <ChatWindow
-                  chat={currentChat}
-                  messages={messages}
-                  loading={loadingMessages}
-                  onSendMessage={handleSendMessage}
-                  onArchive={handleArchive}
-                />
+              <ResizablePanel defaultSize={65} className="min-w-0">
+                <div className="h-full w-full overflow-hidden">
+                  <ChatWindow
+                    chat={currentChat}
+                    messages={messages}
+                    loading={loadingMessages}
+                    onSendMessage={handleSendMessage}
+                    onArchive={handleArchive}
+                  />
+                </div>
               </ResizablePanel>
             </ResizablePanelGroup>
           )}

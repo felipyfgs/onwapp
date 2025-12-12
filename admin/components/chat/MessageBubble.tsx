@@ -164,7 +164,7 @@ export function MessageBubble({ message, showAvatar, senderPicture }: MessageBub
   
   return (
     <div className={cn(
-      "flex gap-2 px-4 py-1",
+      "flex gap-2 px-2 sm:px-4 py-1 w-full min-w-0",
       isMe ? "flex-row-reverse" : "flex-row"
     )}>
       {/* Avatar for received messages */}
@@ -180,7 +180,7 @@ export function MessageBubble({ message, showAvatar, senderPicture }: MessageBub
       
       {/* Message Bubble */}
       <div className={cn(
-        "max-w-[75%] sm:max-w-[70%] rounded-2xl px-3 py-2 relative overflow-hidden",
+        "max-w-[85%] sm:max-w-[75%] md:max-w-[70%] rounded-2xl px-3 py-2 relative overflow-hidden min-w-0",
         isMe 
           ? "bg-primary text-primary-foreground rounded-br-sm" 
           : "bg-muted rounded-bl-sm"
@@ -214,7 +214,7 @@ export function MessageBubble({ message, showAvatar, senderPicture }: MessageBub
         
         {/* Text content */}
         {message.type === "text" && message.content && (
-          <p className="text-sm whitespace-pre-wrap break-words">
+          <p className="text-sm whitespace-pre-wrap break-words overflow-hidden" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
             {message.content}
           </p>
         )}

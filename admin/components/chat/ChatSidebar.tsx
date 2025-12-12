@@ -77,9 +77,9 @@ export function ChatSidebar({ chats, selectedChat, onSelectChat, loading }: Chat
   }), [chats]);
 
   return (
-    <div className="flex flex-col h-full border-r bg-background overflow-hidden">
+    <div className="flex flex-col h-full border-r bg-background overflow-hidden min-h-0">
       {/* Header */}
-      <div className="p-4 border-b space-y-3">
+      <div className="p-4 border-b space-y-3 shrink-0">
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -146,7 +146,7 @@ export function ChatSidebar({ chats, selectedChat, onSelectChat, loading }: Chat
       </div>
 
       {/* Chat List */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 min-h-0">
         {loading ? (
           <div className="p-4 space-y-3">
             {[...Array(8)].map((_, i) => (

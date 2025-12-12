@@ -51,7 +51,7 @@ function ChatHeader({ chat, onArchive, onMute, onDelete }: {
   const initials = name.substring(0, 2).toUpperCase();
   
   return (
-    <div className="flex items-center gap-3 p-3 border-b bg-background">
+    <div className="flex items-center gap-3 p-3 border-b bg-background shrink-0">
       <Avatar className="h-10 w-10">
         {chat.profilePicture && <AvatarImage src={chat.profilePicture} alt={name} />}
         <AvatarFallback className={chat.isGroup ? "bg-primary/10 text-primary" : ""}>
@@ -217,7 +217,7 @@ export function ChatWindow({
   const groupedMessages = groupMessagesByDate(messages);
 
   return (
-    <div className="flex flex-col h-full bg-muted/30 overflow-hidden">
+    <div className="flex flex-col h-full bg-muted/30 overflow-hidden min-h-0">
       {/* Header */}
       <ChatHeader 
         chat={chat} 
@@ -229,7 +229,7 @@ export function ChatWindow({
       {/* Messages */}
       <div 
         ref={scrollRef}
-        className="flex-1 overflow-y-auto relative"
+        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative"
         onScroll={handleScroll}
       >
         {loading ? (
@@ -241,7 +241,7 @@ export function ChatWindow({
             <p>No messages yet. Start a conversation!</p>
           </div>
         ) : (
-          <div className="py-4">
+          <div className="py-4 px-2 sm:px-4 overflow-hidden">
             {groupedMessages.map((group, groupIndex) => (
               <div key={group.date}>
                 <DateDivider date={group.date} />

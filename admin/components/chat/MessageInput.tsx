@@ -87,7 +87,7 @@ export function MessageInput({
   };
 
   return (
-    <div className="border-t bg-background p-3">
+    <div className="border-t bg-background p-3 shrink-0">
       <div className="flex items-end gap-2">
         {/* Attachment Button */}
         <Popover>
