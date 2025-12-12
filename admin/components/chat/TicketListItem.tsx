@@ -173,12 +173,15 @@ function TicketListItemComponent({
     <>
       <div
         className={cn(
-          "group relative flex gap-3 p-3 cursor-pointer transition-all duration-200 hover:bg-muted/30 active:scale-[0.98]",
-          isSelected && "bg-accent/50 border-l-3 border-l-primary",
+          "group relative flex gap-3 p-3 cursor-pointer transition-all duration-200 hover:bg-muted/30 active:scale-[0.98] card-hover",
+          isSelected && "bg-accent/50 border-l-3 border-l-primary shadow-sm",
           isChecked && "bg-primary/5",
           isProcessing && "opacity-60 scale-95 transform translate-x-1"
         )}
         onClick={selectionMode ? () => onCheckChange?.(!isChecked) : onClick}
+        role="listitem"
+        aria-label={`Ticket de ${ticket.contactName || ticket.contactJid.split("@")[0]} - Status: ${ticket.status}`}
+        aria-selected={isSelected}
       >
         {/* Selection Checkbox */}
         {selectionMode && (
@@ -194,15 +197,15 @@ function TicketListItemComponent({
 
         {/* Status Indicator Bar */}
         <div className={cn(
-          "absolute left-0 top-0 bottom-0 w-1 transition-colors duration-200",
-          ticket.status === "pending" && "bg-yellow-500",
+          "absolute left-0 top-0 bottom-0 w-1 transition-all duration-200",
+          ticket.status === "pending" && "bg-yellow-500 animate-pulse",
           ticket.status === "open" && "bg-green-500",
           ticket.status === "closed" && "bg-gray-400"
         )} />
 
         {/* Avatar */}
         <div className="relative">
-          <Avatar className="h-11 w-11 shadow-sm ring-2 ring-background">
+          <Avatar className="h-11 w-11 shadow-sm ring-2 ring-background transition-transform group-hover:scale-105">
             <AvatarImage src={ticket.contactPicUrl} alt={ticket.contactName || "Contact"} />
             <AvatarFallback
               className={cn(
@@ -220,9 +223,19 @@ function TicketListItemComponent({
             </AvatarFallback>
           </Avatar>
           
-          {/* Online/Active Indicator */}
-          {ticket.status === "open" && (
-            <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-green-500 rounded-full border-2 border-background" />
+          {/* Status Indicator */}
+          <div className={cn(
+            "absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background transition-all duration-200",
+            ticket.status === "pending" && "bg-yellow-500 animate-pulse",
+            ticket.status === "open" && "bg-green-500",
+            ticket.status === "closed" && "bg-gray-400"
+          )} />
+          
+          {/* Unread Indicator */}
+          {ticket.unreadCount > 0 && (
+            <div className="absolute -top-1 -right-1 h-5 w-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold animate-bounce-subtle">
+              {ticket.unreadCount > 9 ? "9+" : ticket.unreadCount}
+            </div>
           )}
         </div>
 
@@ -262,7 +275,7 @@ function TicketListItemComponent({
           <div className="flex items-center gap-2 flex-wrap">
             {/* Status Badge */}
             <Badge variant="outline" className={cn(
-              "h-5 text-[10px] px-2 font-medium gap-1",
+              "h-5 text-[10px] px-2 font-medium gap-1 transition-colors",
               getStatusColor()
             )}>
               {getStatusIcon()}
@@ -275,9 +288,9 @@ function TicketListItemComponent({
             {ticket.queue && (
               <Badge
                 variant="secondary"
-                className="h-5 text-[10px] px-2"
-                style={{ 
-                  backgroundColor: `${ticket.queue.color}20`, 
+                className="h-5 text-[10px] px-2 transition-colors hover:opacity-80"
+                style={{
+                  backgroundColor: `${ticket.queue.color}20`,
                   color: ticket.queue.color,
                   borderColor: `${ticket.queue.color}40`
                 }}
@@ -288,26 +301,38 @@ function TicketListItemComponent({
 
             {/* User Badge */}
             {ticket.user && (
-              <Badge variant="outline" className="h-5 text-[10px] px-2 gap-1">
+              <Badge variant="outline" className="h-5 text-[10px] px-2 gap-1 transition-colors">
                 <User className="h-2.5 w-2.5" />
                 {ticket.user.name.split(" ")[0]}
               </Badge>
+            )}
+            
+            {/* Priority Indicator for high unread count */}
+            {ticket.unreadCount > 5 && (
+              <div className="flex items-center gap-1 text-xs text-red-500 font-medium">
+                <div className="h-2 w-2 bg-red-500 rounded-full animate-pulse" />
+                <span>Alta prioridade</span>
+              </div>
             )}
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <div className={cn(
+          "flex items-center gap-1 shrink-0 transition-all duration-200",
+          isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+        )}>
           {!selectionMode && (
             <>
               {ticket.status === "pending" && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 w-8 text-green-600 hover:bg-green-50"
+                  className="h-8 w-8 text-green-600 hover:bg-green-50 focus-ring"
                   onClick={handleAccept}
                   disabled={loading}
                   title="Aceitar ticket"
+                  aria-label="Aceitar ticket"
                 >
                   <PlayCircle className="h-4 w-4" />
                 </Button>
@@ -318,20 +343,22 @@ function TicketListItemComponent({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 w-8 hover:bg-muted"
+                    className="h-8 w-8 hover:bg-muted focus-ring"
                     onClick={handleClose}
                     disabled={loading}
                     title="Resolver ticket"
+                    aria-label="Resolver ticket"
                   >
                     <CheckCircle className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 w-8 hover:bg-muted"
+                    className="h-8 w-8 hover:bg-muted focus-ring"
                     onClick={handleTransferClick}
                     disabled={loading}
                     title="Transferir ticket"
+                    aria-label="Transferir ticket"
                   >
                     <ArrowRightLeft className="h-4 w-4" />
                   </Button>
@@ -342,10 +369,11 @@ function TicketListItemComponent({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 w-8 hover:bg-muted"
+                  className="h-8 w-8 hover:bg-muted focus-ring"
                   onClick={handleReopen}
                   disabled={loading}
                   title="Reabrir ticket"
+                  aria-label="Reabrir ticket"
                 >
                   <RotateCcw className="h-4 w-4" />
                 </Button>
@@ -356,7 +384,13 @@ function TicketListItemComponent({
           {/* More Actions */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button variant="ghost" size="sm" className="h-8 w-8">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 focus-ring"
+                aria-label="Mais ações"
+                title="Mais ações"
+              >
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>

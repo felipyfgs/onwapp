@@ -22,6 +22,7 @@ interface MessageBubbleProps {
   message: Message;
   showAvatar?: boolean;
   senderPicture?: string;
+  searchQuery?: string;
 }
 
 function formatMessageTime(timestamp: string): string {
@@ -158,7 +159,7 @@ function MediaPreview({ message }: { message: Message }) {
   }
 }
 
-export function MessageBubble({ message, showAvatar, senderPicture }: MessageBubbleProps) {
+export function MessageBubble({ message, showAvatar, senderPicture, searchQuery }: MessageBubbleProps) {
   const isMe = message.isFromMe;
   const isMedia = ["image", "video", "audio", "ptt", "document", "sticker", "location", "contact", "vcard"].includes(message.type);
   
@@ -218,7 +219,7 @@ export function MessageBubble({ message, showAvatar, senderPicture }: MessageBub
         {/* Text content */}
         {message.type === "text" && message.content && (
           <p className="text-sm whitespace-pre-wrap break-words overflow-hidden leading-relaxed" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
-            {message.content}
+            {searchQuery ? highlightSearchText(message.content, searchQuery) : message.content}
           </p>
         )}
         
@@ -237,5 +238,23 @@ export function MessageBubble({ message, showAvatar, senderPicture }: MessageBub
         </div>
       </div>
     </div>
+  );
+}
+
+// Helper function to highlight search text
+function highlightSearchText(text: string, query: string): React.ReactNode {
+  if (!query.trim()) return text;
+  
+  const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  const parts = text.split(regex);
+  
+  return parts.map((part, index) =>
+    regex.test(part) ? (
+      <mark key={index} className="bg-yellow-300/80 text-yellow-900 rounded px-0.5">
+        {part}
+      </mark>
+    ) : (
+      <span key={index}>{part}</span>
+    )
   );
 }

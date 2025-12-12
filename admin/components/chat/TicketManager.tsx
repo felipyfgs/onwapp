@@ -314,36 +314,49 @@ export function TicketManager({
   const pendingCount = stats?.pending || 0;
   const closedCount = stats?.closed || 0;
 
-  const TabButton = ({ 
-    value, 
-    active, 
-    onClick, 
-    icon: Icon, 
-    label, 
-    count 
-  }: { 
-    value: string; 
-    active: boolean; 
-    onClick: () => void; 
-    icon: React.ElementType; 
-    label: string; 
+  const TabButton = ({
+    value,
+    active,
+    onClick,
+    icon: Icon,
+    label,
+    count,
+    ...props
+  }: {
+    value: string;
+    active: boolean;
+    onClick: () => void;
+    icon: React.ElementType;
+    label: string;
     count?: number;
+    [key: string]: any;
   }) => (
     <button
       onClick={onClick}
       className={cn(
-        "flex-1 min-w-0 flex items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 px-2 text-xs sm:text-sm font-medium transition-colors",
-        active 
-          ? "bg-accent text-accent-foreground border-b-2 border-primary" 
+        "flex-1 min-w-0 flex items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 px-2 text-xs sm:text-sm font-medium transition-colors transition-smooth relative",
+        active
+          ? "bg-accent text-accent-foreground border-b-2 border-primary"
           : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
       )}
+      role="tab"
+      {...props}
     >
       <Icon className="h-4 w-4 shrink-0" />
       <span className="hidden sm:inline truncate">{label}</span>
       {count !== undefined && count > 0 && (
-        <Badge variant="secondary" className="ml-0 sm:ml-1 h-5 min-w-5 px-1 text-xs shrink-0">
+        <Badge
+          variant="secondary"
+          className={cn(
+            "ml-0 sm:ml-1 h-5 min-w-5 px-1 text-xs shrink-0 animate-scale-in",
+            active && "bg-primary text-primary-foreground"
+          )}
+        >
           {count}
         </Badge>
+      )}
+      {active && (
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary animate-scale-in" />
       )}
     </button>
   );
@@ -390,36 +403,43 @@ export function TicketManager({
   const renderTicketList = () => {
     if (loading) {
       return (
-        <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4">
-          <Loader2 className="h-8 w-8 animate-spin mb-2" />
-          <p className="text-sm">Carregando tickets...</p>
+        <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4 animate-fade-in">
+          <div className="relative">
+            <Loader2 className="h-8 w-8 animate-spin mb-2" />
+            <div className="absolute inset-0 h-8 w-8 rounded-full border-4 border-primary/20 border-t-transparent animate-spin" />
+          </div>
+          <p className="text-sm mt-2">Carregando tickets...</p>
+          <p className="text-xs text-muted-foreground/60 mt-1">Isso pode levar alguns instantes</p>
         </div>
       );
     }
 
     if (tickets.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4">
-          {mainTab === "search" ? (
-            <>
-              <Search className="h-10 w-10 mb-2" />
-              <p className="text-sm">
-                {searchQuery ? "Nenhum resultado encontrado" : "Digite para buscar tickets"}
-              </p>
-            </>
-          ) : mainTab === "closed" ? (
-            <>
-              <CheckCircle className="h-10 w-10 mb-2" />
-              <p className="text-sm">Nenhum ticket resolvido</p>
-            </>
-          ) : (
-            <>
-              <Inbox className="h-10 w-10 mb-2" />
-              <p className="text-sm">
-                Nenhum ticket {subTab === "open" ? "em atendimento" : "aguardando"}
-              </p>
-            </>
-          )}
+        <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4 animate-fade-in">
+          <div className="relative mb-4">
+            <div className="absolute inset-0 bg-primary/10 rounded-full blur-xl" />
+            {mainTab === "search" ? (
+              <Search className="h-10 w-10 relative" />
+            ) : mainTab === "closed" ? (
+              <CheckCircle className="h-10 w-10 relative" />
+            ) : (
+              <Inbox className="h-10 w-10 relative" />
+            )}
+          </div>
+          <p className="text-sm font-medium mb-1">
+            {mainTab === "search"
+              ? (searchQuery ? "Nenhum resultado encontrado" : "Digite para buscar tickets")
+              : mainTab === "closed"
+              ? "Nenhum ticket resolvido"
+              : `Nenhum ticket ${subTab === "open" ? "em atendimento" : "aguardando"}`
+            }
+          </p>
+          <p className="text-xs text-muted-foreground/60">
+            {mainTab === "search" && searchQuery && "Tente usar termos diferentes"}
+            {mainTab === "open" && "Novos tickets aparecerão aqui automaticamente"}
+            {mainTab === "closed" && "Tickets resolvidos aparecerão aqui"}
+          </p>
         </div>
       );
     }
@@ -448,16 +468,21 @@ export function TicketManager({
                 }}
               >
                 {isLoaderRow ? (
-                  <div className="flex items-center justify-center h-full text-muted-foreground">
+                  <div className="flex items-center justify-center h-full text-muted-foreground py-4">
                     {loadingMore ? (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 animate-fade-in">
                         <Loader2 className="h-4 w-4 animate-spin" />
                         <span className="text-sm">Carregando mais...</span>
                       </div>
                     ) : hasMore ? (
                       <span className="text-sm text-muted-foreground/50">...</span>
                     ) : (
-                      <span className="text-sm">Fim da lista</span>
+                      <div className="flex flex-col items-center animate-fade-in">
+                        <span className="text-sm">Fim da lista</span>
+                        <span className="text-xs text-muted-foreground/60 mt-1">
+                          {tickets.length} ticket{tickets.length !== 1 ? 's' : ''} carregado{tickets.length !== 1 ? 's' : ''}
+                        </span>
+                      </div>
                     )}
                   </div>
                 ) : (
@@ -488,7 +513,7 @@ export function TicketManager({
   return (
     <div className="flex flex-col h-full bg-background overflow-hidden">
       {/* Main Tabs */}
-      <div className="flex shrink-0 border-b bg-card overflow-x-auto scrollbar-hide">
+      <div className="flex shrink-0 border-b bg-card overflow-x-auto scrollbar-hide" role="tablist" aria-label="Navegação de tickets">
         <TabButton
           value="open"
           active={mainTab === "open"}
@@ -496,6 +521,9 @@ export function TicketManager({
           icon={Inbox}
           label="Abertos"
           count={openCount + pendingCount}
+          data-testid="tab-1"
+          aria-selected={mainTab === "open"}
+          aria-controls="tickets-panel"
         />
         <TabButton
           value="closed"
@@ -504,6 +532,9 @@ export function TicketManager({
           icon={CheckCircle}
           label="Resolvidos"
           count={closedCount}
+          data-testid="tab-2"
+          aria-selected={mainTab === "closed"}
+          aria-controls="tickets-panel"
         />
         <TabButton
           value="search"
@@ -511,6 +542,9 @@ export function TicketManager({
           onClick={() => setMainTab("search")}
           icon={Search}
           label="Buscar"
+          data-testid="tab-3"
+          aria-selected={mainTab === "search"}
+          aria-controls="tickets-panel"
         />
       </div>
 
@@ -518,7 +552,7 @@ export function TicketManager({
       <div className="flex items-center gap-2 p-2 bg-card border-b shrink-0">
         {/* Universal Search Bar */}
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
           <Input
             placeholder={mainTab === "search" ? "Buscar em todos os tickets..." : "Buscar tickets..."}
             value={searchInput}
@@ -530,9 +564,13 @@ export function TicketManager({
               }
             }}
             className={cn(
-              "pl-10 pr-8",
-              globalSearchEnabled && "border-primary"
+              "pl-10 pr-8 focus-ring transition-smooth",
+              globalSearchEnabled && "border-primary animate-pulse-once"
             )}
+            data-testid="search-input"
+            aria-label="Buscar tickets"
+            role="searchbox"
+            aria-expanded={globalSearchEnabled}
           />
           {searchInput && (
             <Button
@@ -738,7 +776,12 @@ export function TicketManager({
       )}
 
       {/* Ticket List */}
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div
+        className="flex-1 min-h-0 overflow-hidden scrollbar-thin"
+        role="tabpanel"
+        id="tickets-panel"
+        aria-label={`Lista de tickets - ${mainTab === "open" ? "Abertos" : mainTab === "closed" ? "Resolvidos" : "Busca"}`}
+      >
         {renderTicketList()}
       </div>
 

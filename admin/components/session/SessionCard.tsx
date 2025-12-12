@@ -85,17 +85,27 @@ export function SessionCard({
   };
 
   const borderClass = {
-    connected: "border-green-500/50 shadow-sm shadow-green-500/10",
-    disconnected: "",
-    connecting: "border-yellow-500/50",
+    connected: "border-green-500/50 shadow-sm shadow-green-500/10 bg-gradient-to-br from-green-50/50 to-transparent",
+    disconnected: "border-gray-200/50 hover:border-gray-300/50",
+    connecting: "border-yellow-500/50 bg-gradient-to-br from-yellow-50/50 to-transparent animate-pulse-subtle",
   }[session.status];
 
   return (
     <div
-      className={`rounded-xl border bg-card p-4 transition-all ${borderClass} ${
-        onOpen ? "cursor-pointer hover:shadow-md hover:border-primary/30" : ""
-      }`}
+      className={cn(
+        "group relative rounded-xl border bg-card p-4 transition-all duration-300 hover:shadow-lg",
+        borderClass,
+        onOpen && "cursor-pointer hover:scale-[1.02] hover:border-primary/30"
+      )}
       onClick={handleClick}
+      role={onOpen ? "button" : undefined}
+      tabIndex={onOpen ? 0 : undefined}
+      onKeyDown={(e) => {
+        if (onOpen && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          onOpen(session.session);
+        }
+      }}
     >
       {/* Header: Avatar + Name + Menu */}
       <div className="flex items-center gap-3 mb-3">
@@ -104,22 +114,38 @@ export function SessionCard({
             <img
               src={session.profilePicture}
               alt={session.pushName || session.session}
-              className="h-12 w-12 rounded-full object-cover"
+              className="h-12 w-12 rounded-full object-cover ring-2 ring-background group-hover:ring-primary/20 transition-all"
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
                 e.currentTarget.nextElementSibling?.classList.remove('hidden');
               }}
             />
           ) : null}
-          <div className={`h-12 w-12 rounded-full bg-muted flex items-center justify-center text-base font-semibold ${session.profilePicture ? 'hidden' : ''}`}>
+          <div className={cn(
+            "h-12 w-12 rounded-full bg-muted flex items-center justify-center text-base font-semibold transition-all",
+            session.profilePicture ? 'hidden' : '',
+            'group-hover:bg-primary/10 group-hover:scale-105'
+          )}>
             {session.session.charAt(0).toUpperCase()}
           </div>
-          <div className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-card ${statusConfig.dot}`} />
+          <div className={cn(
+            "absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-background transition-all",
+            statusConfig.dot,
+            session.status === "connected" && "animate-pulse-green",
+            session.status === "connecting" && "animate-pulse"
+          )} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-sm truncate leading-tight">{session.session}</h3>
-            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${statusConfig.bg} ${statusConfig.text}`}>
+            <h3 className="font-semibold text-sm truncate leading-tight group-hover:text-primary transition-colors">
+              {session.session}
+            </h3>
+            <span className={cn(
+              "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium transition-all",
+              statusConfig.bg,
+              statusConfig.text,
+              "group-hover:scale-105"
+            )}>
               {statusConfig.label}
             </span>
           </div>
@@ -183,29 +209,33 @@ export function SessionCard({
       {/* Info Section */}
       <div className="space-y-2 mb-3 text-xs text-muted-foreground">
         {session.phone && (
-          <div className="flex items-center gap-2">
-            <Phone className="h-3.5 w-3.5 flex-shrink-0" />
-            <span className="truncate">{session.phone}</span>
+          <div className="flex items-center gap-2 p-1.5 rounded hover:bg-muted/50 transition-colors">
+            <Phone className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/70" />
+            <span className="truncate font-medium">{session.phone}</span>
           </div>
         )}
-        <div className="flex items-center gap-2">
-          <Key className="h-3.5 w-3.5 flex-shrink-0" />
+        <div className="flex items-center gap-2 p-1.5 rounded hover:bg-muted/50 transition-colors">
+          <Key className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/70" />
           <span className="truncate font-mono text-[11px]">{displayApiKey(session.apiKey)}</span>
           {session.apiKey && (
-            <div className="ml-auto flex items-center gap-1">
+            <div className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
                 onClick={toggleShowApiKey}
-                className="p-1 hover:bg-muted rounded transition-colors"
-                title={showApiKey ? "Hide API Key" : "Show API Key"}
+                className="p-1 hover:bg-background rounded transition-colors"
+                title={showApiKey ? "Ocultar API Key" : "Mostrar API Key"}
               >
                 {showApiKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
               </button>
               <button
                 onClick={copyApiKey}
-                className="p-1 hover:bg-muted rounded transition-colors"
-                title="Copy API Key"
+                className="p-1 hover:bg-background rounded transition-colors"
+                title="Copiar API Key"
               >
-                {copiedKey ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                {copiedKey ? (
+                  <Check className="h-3.5 w-3.5 text-green-500 animate-scale-in" />
+                ) : (
+                  <Copy className="h-3.5 w-3.5" />
+                )}
               </button>
             </div>
           )}
@@ -217,17 +247,23 @@ export function SessionCard({
         <div className="flex items-center gap-3">
           {session.stats ? (
             <>
-              <span className="flex items-center gap-1">
-                <MessageSquare className="h-3.5 w-3.5" />
-                {session.stats.chats} chats
+              <span className="flex items-center gap-1 p-1 rounded hover:bg-muted/50 transition-colors">
+                <MessageSquare className="h-3.5 w-3.5 text-muted-foreground/70" />
+                <span className="font-medium">{session.stats.chats} chats</span>
               </span>
-              <span>{session.stats.contacts} contacts</span>
+              <span className="p-1 rounded hover:bg-muted/50 transition-colors">
+                <span className="font-medium">{session.stats.contacts} contacts</span>
+              </span>
             </>
           ) : (
-            <span className="text-muted-foreground/50">{session.status}</span>
+            <span className="px-2 py-1 rounded-full bg-muted/50 text-muted-foreground/70 font-medium">
+              {session.status}
+            </span>
           )}
         </div>
-        {onOpen && <ChevronRight className="h-4 w-4" />}
+        {onOpen && (
+          <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary transition-colors" />
+        )}
       </div>
     </div>
   );

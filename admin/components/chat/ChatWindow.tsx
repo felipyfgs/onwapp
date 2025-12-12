@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { Chat, Message, Ticket, Queue, acceptTicket, closeTicket, reopenTicket } from "@/lib/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +34,8 @@ import {
   ArrowRightLeft,
   Clock,
   PlayCircle,
+  X,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -153,12 +156,12 @@ function ChatHeader({
   return (
     <>
       <div className="flex items-center gap-3 p-3 border-b bg-background shrink-0">
-        <Avatar className="h-11 w-11 shadow-sm cursor-pointer">
+        <Avatar className="h-11 w-11 shadow-sm cursor-pointer transition-transform hover:scale-105">
           {chat.profilePicture && <AvatarImage src={chat.profilePicture} alt={name} />}
           <AvatarFallback className={cn(
             "font-medium",
-            chat.isGroup 
-              ? "bg-primary text-primary-foreground" 
+            chat.isGroup
+              ? "bg-primary text-primary-foreground"
               : "bg-muted text-muted-foreground"
           )}>
             {chat.isGroup ? <Users className="h-5 w-5" /> : initials}
@@ -173,8 +176,8 @@ function ChatHeader({
           <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
             {ticket?.queue && (
               <span className="flex items-center gap-1">
-                <span 
-                  className="h-2 w-2 rounded-full" 
+                <span
+                  className="h-2 w-2 rounded-full"
                   style={{ backgroundColor: ticket.queue.color || "#999" }}
                 />
                 {ticket.queue.name}
@@ -238,7 +241,12 @@ function ChatHeader({
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="focus-ring"
+                aria-label="Mais opções"
+              >
                 <MoreVertical className="h-5 w-5" />
               </Button>
             </DropdownMenuTrigger>
@@ -247,7 +255,7 @@ function ChatHeader({
                 <Users className="h-4 w-4 mr-2" />
                 {chat.isGroup ? "Info do grupo" : "Info do contato"}
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setIsSearching(!isSearching)}>
                 <Search className="h-4 w-4 mr-2" />
                 Buscar mensagens
               </DropdownMenuItem>
@@ -323,6 +331,9 @@ export function ChatWindow({
 }: ChatWindowProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -344,6 +355,68 @@ export function ChatWindow({
       });
     }
   };
+
+  // Search functionality
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    
+    const query = searchQuery.toLowerCase();
+    const results: { message: Message; index: number }[] = [];
+    
+    messages.forEach((message, index) => {
+      if (message.content && message.content.toLowerCase().includes(query)) {
+        results.push({ message, index });
+      }
+    });
+    
+    return results;
+  }, [messages, searchQuery]);
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setCurrentSearchIndex(0);
+    setIsSearching(query.trim().length > 0);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    setIsSearching(false);
+    setCurrentSearchIndex(0);
+  };
+
+  const navigateSearch = (direction: 'up' | 'down') => {
+    if (searchResults.length === 0) return;
+    
+    if (direction === 'down') {
+      setCurrentSearchIndex(prev => (prev + 1) % searchResults.length);
+    } else {
+      setCurrentSearchIndex(prev => (prev - 1 + searchResults.length) % searchResults.length);
+    }
+  };
+
+  const scrollToSearchResult = (index: number) => {
+    if (searchResults.length === 0 || !scrollRef.current) return;
+    
+    const targetIndex = searchResults[index].index;
+    const messageElements = scrollRef.current.querySelectorAll('[data-message-index]');
+    const targetElement = messageElements[targetIndex] as HTMLElement;
+    
+    if (targetElement) {
+      targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      // Highlight the message temporarily
+      targetElement.classList.add('bg-primary/10');
+      setTimeout(() => {
+        targetElement.classList.remove('bg-primary/10');
+      }, 2000);
+    }
+  };
+
+  useEffect(() => {
+    if (isSearching && searchResults.length > 0) {
+      scrollToSearchResult(currentSearchIndex);
+    }
+  }, [currentSearchIndex, isSearching, searchResults]);
 
   if (!chat) {
     return <EmptyState />;
@@ -377,8 +450,8 @@ export function ChatWindow({
   return (
     <div className="flex h-full flex-col bg-muted/30 overflow-hidden">
       {/* Header */}
-      <ChatHeader 
-        chat={chat} 
+      <ChatHeader
+        chat={chat}
         ticket={ticket}
         session={session}
         queues={queues}
@@ -388,11 +461,72 @@ export function ChatWindow({
         onTicketAction={onTicketAction}
       />
       
+      {/* Search Bar */}
+      {isSearching && (
+        <div className="border-b bg-background p-3 animate-fade-in">
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar mensagens..."
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="pl-10 pr-10 focus-ring"
+                aria-label="Buscar mensagens"
+              />
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+                  onClick={clearSearch}
+                  aria-label="Limpar busca"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+            
+            {searchResults.length > 0 && (
+              <div className="flex items-center gap-1 text-sm text-muted-foreground bg-muted px-2 py-1 rounded-md">
+                <span>{currentSearchIndex + 1}/{searchResults.length}</span>
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    onClick={() => navigateSearch('up')}
+                    disabled={searchResults.length <= 1}
+                    aria-label="Resultado anterior"
+                  >
+                    <ChevronDown className="h-3 w-3 rotate-180" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    onClick={() => navigateSearch('down')}
+                    disabled={searchResults.length <= 1}
+                    aria-label="Próximo resultado"
+                  >
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      
       {/* Messages */}
-      <div 
+      <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto relative"
+        className="flex-1 overflow-y-auto relative scrollbar-thin"
         onScroll={handleScroll}
+        role="log"
+        aria-label="Mensagens da conversa"
+        aria-live="polite"
+        aria-atomic="false"
       >
         {loading ? (
           <div className="flex items-center justify-center h-full">
@@ -408,24 +542,39 @@ export function ChatWindow({
               <div key={group.date}>
                 <DateDivider date={group.date} />
                 {group.messages.map((message, msgIndex) => {
-                  const prevMessage = msgIndex > 0 
-                    ? group.messages[msgIndex - 1] 
-                    : groupIndex > 0 
-                      ? groupedMessages[groupIndex - 1].messages.slice(-1)[0] 
+                  const prevMessage = msgIndex > 0
+                    ? group.messages[msgIndex - 1]
+                    : groupIndex > 0
+                      ? groupedMessages[groupIndex - 1].messages.slice(-1)[0]
                       : null;
                   
                   const showAvatar = !message.isFromMe && (
-                    !prevMessage || 
-                    prevMessage.isFromMe || 
+                    !prevMessage ||
+                    prevMessage.isFromMe ||
                     prevMessage.senderJid !== message.senderJid
                   );
                   
+                  // Calculate global message index for search
+                  const globalMessageIndex = messages.findIndex(m => m.id === message.id);
+                  const isSearchResult = isSearching && searchQuery &&
+                    message.content &&
+                    message.content.toLowerCase().includes(searchQuery.toLowerCase());
+                  
                   return (
-                    <MessageBubble
+                    <div
                       key={message.id || `${groupIndex}-${msgIndex}`}
-                      message={message}
-                      showAvatar={showAvatar}
-                    />
+                      data-message-index={globalMessageIndex}
+                      className={cn(
+                        "transition-colors duration-300",
+                        isSearchResult && "bg-primary/5"
+                      )}
+                    >
+                      <MessageBubble
+                        message={message}
+                        showAvatar={showAvatar}
+                        searchQuery={isSearching ? searchQuery : undefined}
+                      />
+                    </div>
                   );
                 })}
               </div>
@@ -437,8 +586,10 @@ export function ChatWindow({
         {showScrollButton && (
           <Button
             size="icon"
-            className="absolute bottom-4 right-4 rounded-full shadow-lg"
+            className="absolute bottom-4 right-4 rounded-full shadow-lg animate-bounce-subtle focus-ring"
             onClick={scrollToBottom}
+            aria-label="Rolar para baixo"
+            title="Rolar para baixo"
           >
             <ArrowDown className="h-5 w-5" />
           </Button>

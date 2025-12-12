@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { GlobalSearchProvider } from "@/hooks/useGlobalSearch";
+import { HelpModalProvider } from "@/hooks/useHelpModal";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -19,13 +21,28 @@ export const metadata: Metadata = {
   description: "WhatsApp API Session Manager",
 };
 
+function GlobalSearchWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <GlobalSearchProvider>
+      <HelpModalProvider>
+        {children}
+      </HelpModalProvider>
+    </GlobalSearchProvider>
+  );
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="theme-color" content="#000000" />
+        <link rel="icon" href="/favicon.ico" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
@@ -35,8 +52,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
-          <Toaster richColors position="top-right" />
+          <GlobalSearchWrapper>
+            {children}
+            <Toaster richColors position="top-right" />
+          </GlobalSearchWrapper>
         </ThemeProvider>
       </body>
     </html>
