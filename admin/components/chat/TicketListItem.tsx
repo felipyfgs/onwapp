@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,7 @@ interface TicketListItemProps {
   onUpdate: () => void;
 }
 
-export function TicketListItem({
+function TicketListItemComponent({
   ticket,
   isSelected,
   onClick,
@@ -241,3 +241,13 @@ export function TicketListItem({
     </>
   );
 }
+
+export const TicketListItem = memo(TicketListItemComponent, (prev, next) => {
+  return (
+    prev.ticket.id === next.ticket.id &&
+    prev.ticket.updatedAt === next.ticket.updatedAt &&
+    prev.ticket.status === next.ticket.status &&
+    prev.ticket.unreadCount === next.ticket.unreadCount &&
+    prev.isSelected === next.isSelected
+  );
+});

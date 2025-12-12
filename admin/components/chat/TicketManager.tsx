@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,7 @@ import {
   type TicketStats,
   type Queue,
 } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { cn, debounce } from "@/lib/utils";
 
 interface TicketManagerProps {
   session: string;
@@ -45,6 +45,7 @@ interface TicketManagerProps {
 }
 
 const ITEMS_PER_PAGE = 30;
+const SCROLL_THRESHOLD = 300;
 
 export function TicketManager({
   session,
@@ -57,6 +58,7 @@ export function TicketManager({
 }: TicketManagerProps) {
   const [mainTab, setMainTab] = useState<"open" | "closed" | "search">("open");
   const [subTab, setSubTab] = useState<"open" | "pending">(activeSubTab || "pending");
+  const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showAll, setShowAll] = useState(true);
   const [selectedQueueId, setSelectedQueueId] = useState<string>("all");
@@ -68,25 +70,38 @@ export function TicketManager({
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [offset, setOffset] = useState(0);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const offsetRef = useRef(0);
+  const loadingMoreRef = useRef(false);
+
+  const debouncedSetSearch = useMemo(
+    () => debounce((value: string) => setSearchQuery(value), 300),
+    []
+  );
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchInput(value);
+    debouncedSetSearch(value);
+  }, [debouncedSetSearch]);
 
   const fetchTickets = useCallback(async (reset = true) => {
     if (!session) return;
-    
+    if (!reset && loadingMoreRef.current) return;
+
     if (reset) {
       setLoading(true);
-      setOffset(0);
+      offsetRef.current = 0;
       setHasMore(true);
     } else {
+      loadingMoreRef.current = true;
       setLoadingMore(true);
     }
 
     try {
       const params: { status?: string; queueId?: string; search?: string; limit?: number; offset?: number } = {
         limit: ITEMS_PER_PAGE,
-        offset: reset ? 0 : offset,
+        offset: reset ? 0 : offsetRef.current,
       };
 
       if (mainTab === "open") {
@@ -103,18 +118,18 @@ export function TicketManager({
 
       const [ticketsRes, statsRes] = await Promise.all([
         getTickets(session, params),
-        reset ? getTicketStats(session) : Promise.resolve({ data: stats }),
+        reset ? getTicketStats(session) : Promise.resolve(null),
       ]);
 
       const newTickets = ticketsRes.data || [];
-      
+
       if (reset) {
         setTickets(newTickets);
-        setStats(statsRes.data);
-        setOffset(ITEMS_PER_PAGE);
+        if (statsRes) setStats(statsRes.data);
+        offsetRef.current = ITEMS_PER_PAGE;
       } else {
         setTickets(prev => [...prev, ...newTickets]);
-        setOffset(prev => prev + ITEMS_PER_PAGE);
+        offsetRef.current += ITEMS_PER_PAGE;
       }
 
       setHasMore(newTickets.length === ITEMS_PER_PAGE);
@@ -123,8 +138,9 @@ export function TicketManager({
     } finally {
       setLoading(false);
       setLoadingMore(false);
+      loadingMoreRef.current = false;
     }
-  }, [session, mainTab, subTab, searchQuery, selectedQueueId, offset, stats]);
+  }, [session, mainTab, subTab, searchQuery, selectedQueueId]);
 
   const fetchQueues = useCallback(async () => {
     try {
@@ -143,36 +159,35 @@ export function TicketManager({
     fetchTickets(true);
   }, [session, mainTab, subTab, searchQuery, selectedQueueId, refreshTrigger]);
 
-  // Sync subTab with external control
   useEffect(() => {
     if (activeSubTab !== undefined && activeSubTab !== subTab) {
       setSubTab(activeSubTab);
-      setMainTab("open"); // Ensure we're on the open tab when switching subtabs
+      setMainTab("open");
     }
   }, [activeSubTab]);
 
+  const loadMore = useCallback(() => {
+    if (!loadingMoreRef.current && hasMore && !loading) {
+      fetchTickets(false);
+    }
+  }, [fetchTickets, hasMore, loading]);
+
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    const { scrollTop, scrollHeight, clientHeight } = target;
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+
+    if (distanceFromBottom < SCROLL_THRESHOLD) {
+      loadMore();
+    }
+  }, [loadMore]);
+
   const virtualizer = useVirtualizer({
-    count: hasMore ? tickets.length + 1 : tickets.length,
+    count: tickets.length + (hasMore ? 1 : 0),
     getScrollElement: () => scrollRef.current,
     estimateSize: () => 76,
     overscan: 5,
   });
-
-  useEffect(() => {
-    const items = virtualizer.getVirtualItems();
-    const lastItem = items[items.length - 1];
-
-    if (!lastItem) return;
-
-    if (
-      lastItem.index >= tickets.length - 1 &&
-      hasMore &&
-      !loadingMore &&
-      !loading
-    ) {
-      fetchTickets(false);
-    }
-  }, [virtualizer.getVirtualItems(), hasMore, loadingMore, loading, tickets.length, fetchTickets]);
 
   const openCount = stats?.open || 0;
   const pendingCount = stats?.pending || 0;
@@ -292,6 +307,7 @@ export function TicketManager({
       <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto min-h-0"
+        onScroll={handleScroll}
       >
         <div
           style={{
@@ -318,11 +334,13 @@ export function TicketManager({
               >
                 {isLoaderRow ? (
                   <div className="flex items-center justify-center h-full text-muted-foreground">
-                    {hasMore ? (
+                    {loadingMore ? (
                       <div className="flex items-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin" />
                         <span className="text-sm">Carregando mais...</span>
                       </div>
+                    ) : hasMore ? (
+                      <span className="text-sm text-muted-foreground/50">...</span>
                     ) : (
                       <span className="text-sm">Fim da lista</span>
                     )}
@@ -384,8 +402,8 @@ export function TicketManager({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar por nome ou numero..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={searchInput}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-10"
             />
           </div>
