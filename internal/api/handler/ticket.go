@@ -301,12 +301,6 @@ func (h *TicketHandler) Accept(c *gin.Context) {
 		return
 	}
 
-	userID, err := uuid.Parse(req.UserID)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrInvalidRequest("invalid user ID"))
-		return
-	}
-
 	ticket, err := h.ticketRepo.GetByIDWithRelations(c.Request.Context(), ticketID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.ErrInternal(err.Error()))
@@ -317,7 +311,16 @@ func (h *TicketHandler) Accept(c *gin.Context) {
 		return
 	}
 
-	ticket.UserID = &userID
+	// UserID is optional - if provided, assign the ticket to that user
+	if req.UserID != "" {
+		userID, err := uuid.Parse(req.UserID)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, dto.ErrInvalidRequest("invalid user ID"))
+			return
+		}
+		ticket.UserID = &userID
+	}
+
 	ticket.Status = model.TicketStatusOpen
 
 	if err := h.ticketRepo.Update(c.Request.Context(), ticket); err != nil {

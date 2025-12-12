@@ -422,7 +422,7 @@ export function ChatWindow({
                   
                   return (
                     <MessageBubble
-                      key={message.id}
+                      key={message.id || `${groupIndex}-${msgIndex}`}
                       message={message}
                       showAvatar={showAvatar}
                     />
