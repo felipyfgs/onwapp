@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -16,9 +16,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { getQR, pairPhone, connectSession } from "@/lib/api";
-import { useSessionEvent } from "@/hooks/useSessionEvents";
-import { SessionEvent } from "@/lib/nats";
+import { useSessionConnection } from "@/hooks/useSessionConnection";
+import { useSessionForm } from "@/hooks/useSessionForm";
+import { useApiKeys } from "@/hooks/useApiKeys";
 import { Loader2, Check, Copy, Phone } from "lucide-react";
 
 interface QRCodeModalProps {
@@ -28,113 +28,65 @@ interface QRCodeModalProps {
 }
 
 export function QRCodeModal({ sessionName, open, onClose }: QRCodeModalProps) {
-  const [qrCode, setQrCode] = useState<string | null>(null);
-  const [status, setStatus] = useState<string>("loading");
-  const [loading, setLoading] = useState(false);
-
-  // States for Phone Code tab
+  // State for phone input (kept in component as it's UI state)
   const [phone, setPhone] = useState<string>("");
-  const [pairCode, setPairCode] = useState<string>("");
-  const [pairStatus, setPairStatus] = useState<"idle" | "loading" | "code_generated" | "connecting" | "connected" | "error">("idle");
-  const [pairError, setPairError] = useState<string>("");
 
-  const fetchQR = useCallback(async () => {
-    if (!sessionName) return;
+  // Use hooks for all business logic
+  const {
+    qrCode,
+    qrStatus,
+    phoneCode,
+    phoneStatus,
+    errorMessage,
+    actions: connectionActions,
+  } = useSessionConnection(sessionName || "");
 
-    setLoading(true);
+  const { formatting, validation } = useSessionForm();
+  const { isCopied, actions: keyActions } = useApiKeys();
+
+  // Reset and fetch QR when modal opens
+  useEffect(() => {
+    if (open && sessionName) {
+      connectionActions.reset();
+      connectionActions.fetchQR();
+      // Reset phone input when modal opens
+      setPhone("");
+    }
+  }, [open, sessionName, connectionActions]);
+
+  // Auto-close when connected
+  useEffect(() => {
+    if (phoneStatus === 'connected' || qrStatus === 'connected') {
+      console.log("Session connected, closing modal...");
+      onClose();
+    }
+  }, [phoneStatus, qrStatus, onClose]);
+
+  const handleGenerateCode = async () => {
+    if (!phone) return;
+
     try {
-      const response = await getQR(sessionName);
-      if (response.qr) {
-        setQrCode(response.qr);
-      }
-      setStatus(response.status);
+      await connectionActions.generatePhoneCode(phone);
     } catch (error) {
-      console.error("Failed to fetch QR:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [sessionName]);
-
-  const handleGenerateCode = useCallback(async () => {
-    if (!sessionName || !phone) return;
-
-    setPairStatus("loading");
-    setPairError("");
-
-    try {
-      // First, ensure session is connected/initialized
-      await connectSession(sessionName);
-
-      // Small delay to ensure connection is established
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Clean phone number - remove non-digits
-      const cleanPhone = phone.replace(/\D/g, "");
-      const response = await pairPhone(sessionName, cleanPhone);
-      setPairCode(response.code);
-      setPairStatus("code_generated");
-    } catch (error: any) {
+      // Error handling is done in the hook
       console.error("Failed to generate pair code:", error);
-      const errorMessage = error?.message || "Failed to generate code";
-
-      // Provide more user-friendly error messages
-      if (errorMessage.includes("websocket not connected")) {
-        setPairError("Failed to initialize WhatsApp connection. Please try again.");
-      } else if (errorMessage.includes("session not found")) {
-        setPairError("Session not found. Please check session name and try again.");
-      } else {
-        setPairError("Failed to generate code. Please try again.");
-      }
-
-      setPairStatus("error");
     }
-  }, [sessionName, phone]);
+  };
 
-  const handleCopyCode = () => {
-    if (pairCode) {
-      navigator.clipboard.writeText(pairCode);
+  const handleCopyCode = async () => {
+    if (phoneCode) {
+      await keyActions.copyToClipboard(phoneCode);
     }
   };
 
   const handleTryAgain = () => {
-    setPairStatus("idle");
-    setPairCode("");
-    setPairError("");
+    connectionActions.reset();
   };
 
-  useEffect(() => {
-    if (open && sessionName) {
-      fetchQR();
-      // Reset phone code states when modal opens
-      setPairStatus("idle");
-      setPhone("");
-      setPairCode("");
-      setPairError("");
-    }
-  }, [open, sessionName, fetchQR]);
-
-  const handleEvent = useCallback(
-    (event: SessionEvent) => {
-      if (event.event === "session.qr" && event.data?.qrBase64) {
-        setQrCode(event.data.qrBase64);
-        setStatus("connecting");
-      } else if (event.event === "session.connected") {
-        // Update both QR and Phone Code statuses
-        setStatus("connected");
-        setPairStatus("connected");
-
-        // Close modal immediately when connected
-        console.log("Session connected, closing modal...");
-        onClose();
-      } else if (event.event === "session.disconnected") {
-        setStatus("disconnected");
-        setPairStatus("idle");
-      }
-    },
-    [onClose]
-  );
-
-  useSessionEvent(sessionName, handleEvent);
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const cleanedPhone = formatting.cleanPhoneNumber(e.target.value);
+    setPhone(cleanedPhone);
+  };
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
@@ -158,29 +110,10 @@ export function QRCodeModal({ sessionName, open, onClose }: QRCodeModalProps) {
 
           <TabsContent value="qr" className="mt-6">
             <div className="flex flex-col items-center justify-center py-4">
-              {loading ? (
+              {qrStatus === 'loading' ? (
                 <div className="flex flex-col items-center gap-2">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">Loading QR Code...</p>
-                </div>
-              ) : status === "connected" ? (
-                <div className="flex flex-col items-center gap-2 text-green-600">
-                  <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
-                    <svg
-                      className="h-8 w-8"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  </div>
-                  <p className="font-medium">Connected!</p>
                 </div>
               ) : qrCode ? (
                 <div className="flex flex-col items-center gap-4">
@@ -197,9 +130,9 @@ export function QRCodeModal({ sessionName, open, onClose }: QRCodeModalProps) {
                 <div className="flex flex-col items-center gap-2 text-muted-foreground">
                   <p>No QR code available</p>
                   <p className="text-xs">
-                    {status === "disconnected"
+                    {qrStatus === "disconnected" || qrStatus === "idle"
                       ? "Click Connect to generate QR code"
-                      : `Status: ${status}`}
+                      : `Status: ${qrStatus}`}
                   </p>
                 </div>
               )}
@@ -215,7 +148,7 @@ export function QRCodeModal({ sessionName, open, onClose }: QRCodeModalProps) {
                   id="phone"
                   placeholder="5511999999999"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                  onChange={handlePhoneChange}
                 />
                 <p className="text-sm text-muted-foreground">
                   Include country code without + or spaces
@@ -225,17 +158,17 @@ export function QRCodeModal({ sessionName, open, onClose }: QRCodeModalProps) {
               {/* Generate Code Button */}
               <Button
                 onClick={handleGenerateCode}
-                disabled={!phone || pairStatus === "loading"}
+                disabled={!phone || phoneStatus === "loading"}
                 className="w-full"
               >
-                {pairStatus === "loading" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {phoneStatus === "loading" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Generate Code
               </Button>
 
               {/* Code Display Section */}
-              {pairCode && pairStatus === "code_generated" && (
+              {phoneCode && (phoneStatus === "code_generated" || phoneStatus === "connected") && (
                 <div className="text-center p-6 bg-muted rounded-lg">
-                  <div className="text-3xl font-mono tracking-wider">{pairCode}</div>
+                  <div className="text-3xl font-mono tracking-wider">{phoneCode}</div>
                   <div className="mt-4 space-y-2 text-sm text-muted-foreground">
                     <p>1. Open WhatsApp</p>
                     <p>2. Go to Linked Devices</p>
@@ -248,22 +181,21 @@ export function QRCodeModal({ sessionName, open, onClose }: QRCodeModalProps) {
                     className="mt-2"
                     onClick={handleCopyCode}
                   >
-                    Copy Code
+                    {isCopied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+                    {isCopied ? "Copied!" : "Copy Code"}
                   </Button>
+                  {phoneStatus === "connected" && (
+                    <div className="mt-3 flex items-center justify-center gap-2 text-green-600">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="text-sm">Connecting to WhatsApp...</span>
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Status Section */}
-              {pairStatus === "connected" && (
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <Check className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                  <p className="text-green-700 font-medium">Connected Successfully!</p>
-                </div>
-              )}
-
-              {pairStatus === "error" && (
+              {phoneStatus === "error" && (
                 <div className="text-center p-4 bg-red-50 rounded-lg">
-                  <p className="text-red-700 text-sm">{pairError}</p>
+                  <p className="text-red-700 text-sm">{errorMessage}</p>
                   <Button variant="outline" size="sm" className="mt-2" onClick={handleTryAgain}>
                     Try Again
                   </Button>

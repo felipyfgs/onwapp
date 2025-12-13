@@ -26,7 +26,7 @@ const (
 	downloadBatchDelay     = 100 * time.Millisecond
 	historySyncSettleDelay = 2 * time.Second
 	historySyncTimeout     = 10 * time.Minute
-	batchProcessDelay      = 1 * time.Second
+	batchProcessDelay      = 3 * time.Second
 	pendingRetryMaxAge     = 5 * time.Minute
 )
 
@@ -105,6 +105,11 @@ func (s *MediaService) DownloadAndStore(ctx context.Context, client *whatsmeow.C
 
 	if !media.CanDownload() {
 		return fmt.Errorf("media cannot be downloaded: missing directPath or mediaKey")
+	}
+
+	// Check connection before attempting download
+	if !client.IsConnected() {
+		return fmt.Errorf("websocket not connected")
 	}
 
 	fromMe := false
@@ -410,7 +415,7 @@ func (s *MediaService) ProcessHistorySyncMedia(ctx context.Context, client *what
 		processCtx, cancel := context.WithTimeout(context.Background(), historySyncTimeout)
 		defer cancel()
 
-		batchSize := 10
+		batchSize := 5
 		totalSuccess := 0
 		totalFailed := 0
 		emptyBatches := 0
@@ -421,6 +426,14 @@ func (s *MediaService) ProcessHistorySyncMedia(ctx context.Context, client *what
 				logger.Storage().Warn().Msg("History sync media processing timeout")
 				return
 			default:
+			}
+
+			// Check if client is still connected before processing
+			if !client.IsConnected() {
+				logger.Storage().Warn().
+					Str("sessionId", sessionID).
+					Msg("Client disconnected, stopping media processing")
+				return
 			}
 
 			success, failed := s.ProcessPendingDownloads(processCtx, client, sessionID, batchSize)
