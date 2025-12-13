@@ -86,17 +86,17 @@ export function SessionCard({
   };
 
   const borderClass = {
-    connected: "border-green-500/50 shadow-sm shadow-green-500/10 bg-gradient-to-br from-green-50/50 to-transparent",
-    disconnected: "border-gray-200/50 hover:border-gray-300/50",
-    connecting: "border-yellow-500/50 bg-gradient-to-br from-yellow-50/50 to-transparent animate-pulse-subtle",
+    connected: "border-green-500/50",
+    disconnected: "border-gray-200/50",
+    connecting: "border-yellow-500/50",
   }[session.status];
 
   return (
     <div
       className={cn(
-        "group relative rounded-xl border bg-card p-4 transition-all duration-300 hover:shadow-lg",
+        "group relative rounded-xl border bg-card p-4",
         borderClass,
-        onOpen && "cursor-pointer hover:scale-[1.02] hover:border-primary/30"
+        onOpen && "cursor-pointer"
       )}
       onClick={handleClick}
       role={onOpen ? "button" : undefined}
@@ -115,7 +115,7 @@ export function SessionCard({
             <img
               src={session.profilePicture}
               alt={session.pushName || session.session}
-              className="h-12 w-12 rounded-full object-cover ring-2 ring-background group-hover:ring-primary/20 transition-all"
+              className="h-12 w-12 rounded-full object-cover ring-2 ring-background"
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
                 e.currentTarget.nextElementSibling?.classList.remove('hidden');
@@ -123,29 +123,25 @@ export function SessionCard({
             />
           ) : null}
           <div className={cn(
-            "h-12 w-12 rounded-full bg-muted flex items-center justify-center text-base font-semibold transition-all",
-            session.profilePicture ? 'hidden' : '',
-            'group-hover:bg-primary/10 group-hover:scale-105'
+            "h-12 w-12 rounded-full bg-muted flex items-center justify-center text-base font-semibold",
+            session.profilePicture ? 'hidden' : ''
           )}>
             {session.session.charAt(0).toUpperCase()}
           </div>
           <div className={cn(
-            "absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-background transition-all",
-            statusConfig.dot,
-            session.status === "connected" && "animate-pulse-green",
-            session.status === "connecting" && "animate-pulse"
+            "absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-background",
+            statusConfig.dot
           )} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-sm truncate leading-tight group-hover:text-primary transition-colors">
+            <h3 className="font-semibold text-sm truncate leading-tight">
               {session.session}
             </h3>
             <span className={cn(
-              "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium transition-all",
+              "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium",
               statusConfig.bg,
-              statusConfig.text,
-              "group-hover:scale-105"
+              statusConfig.text
             )}>
               {statusConfig.label}
             </span>
@@ -210,30 +206,30 @@ export function SessionCard({
       {/* Info Section */}
       <div className="space-y-2 mb-3 text-xs text-muted-foreground">
         {session.phone && (
-          <div className="flex items-center gap-2 p-1.5 rounded hover:bg-muted/50 transition-colors">
+          <div className="flex items-center gap-2 p-1.5 rounded">
             <Phone className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/70" />
             <span className="truncate font-medium">{session.phone}</span>
           </div>
         )}
-        <div className="flex items-center gap-2 p-1.5 rounded hover:bg-muted/50 transition-colors">
+        <div className="flex items-center gap-2 p-1.5 rounded">
           <Key className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/70" />
           <span className="truncate font-mono text-[11px]">{displayApiKey(session.apiKey)}</span>
           {session.apiKey && (
-            <div className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="ml-auto flex items-center gap-1">
               <button
                 onClick={toggleShowApiKey}
-                className="p-1 hover:bg-background rounded transition-colors"
+                className="p-1 rounded"
                 title={showApiKey ? "Ocultar API Key" : "Mostrar API Key"}
               >
                 {showApiKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
               </button>
               <button
                 onClick={copyApiKey}
-                className="p-1 hover:bg-background rounded transition-colors"
+                className="p-1 rounded"
                 title="Copiar API Key"
               >
                 {copiedKey ? (
-                  <Check className="h-3.5 w-3.5 text-green-500 animate-scale-in" />
+                  <Check className="h-3.5 w-3.5 text-green-500" />
                 ) : (
                   <Copy className="h-3.5 w-3.5" />
                 )}
@@ -248,11 +244,11 @@ export function SessionCard({
         <div className="flex items-center gap-3">
           {session.stats ? (
             <>
-              <span className="flex items-center gap-1 p-1 rounded hover:bg-muted/50 transition-colors">
+              <span className="flex items-center gap-1 p-1 rounded">
                 <MessageSquare className="h-3.5 w-3.5 text-muted-foreground/70" />
                 <span className="font-medium">{session.stats.chats} chats</span>
               </span>
-              <span className="p-1 rounded hover:bg-muted/50 transition-colors">
+              <span className="p-1 rounded">
                 <span className="font-medium">{session.stats.contacts} contacts</span>
               </span>
             </>
@@ -263,7 +259,7 @@ export function SessionCard({
           )}
         </div>
         {onOpen && (
-          <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary transition-colors" />
+          <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
         )}
       </div>
     </div>

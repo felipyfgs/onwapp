@@ -107,7 +107,7 @@ export default function ChatsPage() {
                     actions={
                         <div className="flex items-center gap-2">
                             <div className="flex items-center gap-2 text-sm text-muted-foreground mr-2">
-                                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                                <div className="h-2 w-2 rounded-full bg-green-500" />
                                 <span className="hidden sm:inline">Online</span>
                             </div>
                             <Select
@@ -141,11 +141,10 @@ export default function ChatsPage() {
 
                 <div className="h-[calc(100vh-4rem)] overflow-hidden">
                     {!selectedSession ? (
-                        <div className="flex items-center justify-center h-full animate-fade-in">
+                        <div className="flex items-center justify-center h-full">
                             <div className="text-center max-w-sm mx-auto p-6">
-                                <div className="relative mb-6">
-                                    <div className="absolute inset-0 bg-primary/10 rounded-full blur-xl animate-pulse" />
-                                    <Settings className="h-16 w-16 mx-auto relative text-muted-foreground" />
+                                <div className="mb-6">
+                                    <Settings className="h-16 w-16 mx-auto text-muted-foreground" />
                                 </div>
                                 <h3 className="text-xl font-semibold mb-2 text-foreground">
                                     Selecione uma sessão
@@ -164,7 +163,6 @@ export default function ChatsPage() {
                                 defaultSize={35}
                                 minSize={25}
                                 maxSize={45}
-                                className="transition-all duration-300 ease-in-out"
                             >
                                 <TicketManager
                                     session={selectedSession}
@@ -178,14 +176,12 @@ export default function ChatsPage() {
                             </ResizablePanel>
                             <ResizableHandle
                                 withHandle
-                                className="transition-colors hover:bg-primary/20"
                             />
                             <ResizablePanel
                                 defaultSize={65}
-                                className="transition-all duration-300 ease-in-out"
                             >
                                 {selectedTicket ? (
-                                    <div className="h-full animate-slide-in-right">
+                                    <div className="h-full">
                                         <ChatWindow
                                             chat={currentChat}
                                             messages={messages}
@@ -201,9 +197,8 @@ export default function ChatsPage() {
                                 ) : (
                                     <div className="flex items-center justify-center h-full bg-muted/30">
                                         <div className="text-center max-w-sm mx-auto p-6">
-                                            <div className="relative mb-6">
-                                                <div className="absolute inset-0 bg-primary/10 rounded-full blur-xl animate-pulse" />
-                                                <TicketIcon className="h-16 w-16 mx-auto relative text-muted-foreground" />
+                                            <div className="mb-6">
+                                                <TicketIcon className="h-16 w-16 mx-auto text-muted-foreground" />
                                             </div>
                                             <h3 className="text-xl font-semibold mb-2 text-foreground">
                                                 Selecione um ticket

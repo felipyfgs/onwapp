@@ -137,7 +137,7 @@ export default function DashboardPage() {
             </div>
             
             {/* System Status */}
-            <Card className="border-0 bg-gradient-to-br from-card to-card/80">
+            <Card className="border bg-card">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <CheckCircle className="h-5 w-5 text-green-500" />
@@ -189,7 +189,7 @@ export default function DashboardPage() {
             </div>
             
             {/* Quick Stats */}
-            <Card className="border-0 bg-gradient-to-br from-card to-card/80">
+            <Card className="border bg-card">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <TrendingUp className="h-5 w-5 text-primary" />
