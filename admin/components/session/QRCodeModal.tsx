@@ -119,9 +119,13 @@ export function QRCodeModal({ sessionName, open, onClose }: QRCodeModalProps) {
         setQrCode(event.data.qrBase64);
         setStatus("connecting");
       } else if (event.event === "session.connected") {
+        // Update both QR and Phone Code statuses
         setStatus("connected");
         setPairStatus("connected");
-        setTimeout(onClose, 1000);
+
+        // Close modal immediately when connected
+        console.log("Session connected, closing modal...");
+        onClose();
       } else if (event.event === "session.disconnected") {
         setStatus("disconnected");
         setPairStatus("idle");
