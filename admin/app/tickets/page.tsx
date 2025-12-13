@@ -1,19 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { AppSidebar } from "@/components/layout/app-sidebar";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/layout";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { PageHeader } from "@/components/common";
 import {
   Select,
   SelectContent,
@@ -178,20 +168,9 @@ export default function TicketsPage() {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset className="overflow-hidden">
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbPage>Tickets</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </header>
-
-        <div className="flex flex-1 flex-col gap-4 p-4 overflow-auto">
+      <SidebarInset>
+        <PageHeader breadcrumbs={[{ label: "Tickets" }]} />
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0 overflow-auto">
           {/* Stats Cards */}
           {stats && (
             <div className="grid gap-4 md:grid-cols-4">

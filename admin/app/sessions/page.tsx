@@ -146,7 +146,7 @@ export default function SessionsPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 border-b bg-card">
         <div className="flex h-14 items-center justify-between px-6">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -172,7 +172,7 @@ export default function SessionsPage() {
                   <p className="text-sm text-muted-foreground">Total</p>
                   <p className="text-2xl font-bold">{sessions.length}</p>
                 </div>
-                <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center">
+                <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
                   <Smartphone className="h-5 w-5 text-primary" />
                 </div>
               </div>
@@ -181,10 +181,10 @@ export default function SessionsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Connected</p>
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">{connectedCount}</p>
+                  <p className="text-2xl font-bold text-green-600">{connectedCount}</p>
                 </div>
-                <div className="h-10 w-10 rounded-full bg-green-500/15 flex items-center justify-center">
-                  <Wifi className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                  <Wifi className="h-5 w-5 text-green-600" />
                 </div>
               </div>
             </div>
@@ -192,10 +192,10 @@ export default function SessionsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Disconnected</p>
-                  <p className="text-2xl font-bold text-red-600 dark:text-red-400">{disconnectedCount}</p>
+                  <p className="text-2xl font-bold text-red-600">{disconnectedCount}</p>
                 </div>
-                <div className="h-10 w-10 rounded-full bg-red-500/15 flex items-center justify-center">
-                  <WifiOff className="h-5 w-5 text-red-600 dark:text-red-400" />
+                <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                  <WifiOff className="h-5 w-5 text-red-600" />
                 </div>
               </div>
             </div>
@@ -203,10 +203,10 @@ export default function SessionsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Connecting</p>
-                  <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{connectingCount}</p>
+                  <p className="text-2xl font-bold text-yellow-600">{connectingCount}</p>
                 </div>
-                <div className="h-10 w-10 rounded-full bg-yellow-500/15 flex items-center justify-center">
-                  <Loader2 className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                  <Loader2 className="h-5 w-5 text-yellow-600" />
                 </div>
               </div>
             </div>
