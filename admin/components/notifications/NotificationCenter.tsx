@@ -104,7 +104,7 @@ const mockNotifications: Notification[] = [
     type: "warning",
     title: "Limite de mensagens próximo",
     description: "Você utilizou 85% do seu limite mensal",
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
+    timestamp: new Date(Date.now() - 2 * 60 * 1000),
     read: true,
     metadata: {
       priority: "medium"
@@ -230,37 +230,39 @@ export function NotificationCenter({ className }: NotificationCenterProps) {
           </Badge>
         )}
       </Button>
-
+      
       {/* Dropdown */}
       {open && (
-        <Card className="absolute right-0 top-full mt-2 w-96 max-h-96 overflow-hidden border shadow-lg z-50">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Notificações</CardTitle>
-              <div className="flex items-center gap-2">
-                {unreadCount > 0 && (
+        <div className="absolute right-0 top-full mt-2 z-[9999]">
+          <div className="w-96 max-h-96 overflow-hidden border shadow-lg bg-background rounded-xl">
+            <div className="p-4 border-b">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Notificações</h3>
+                <div className="flex items-center gap-2">
+                  {unreadCount > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={markAllAsRead}
+                      className="text-xs h-7"
+                    >
+                      Marcar todas como lidas
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={markAllAsRead}
-                    className="text-xs h-7"
+                    onClick={() => setOpen(false)}
+                    className="h-7 w-7 p-0"
                   >
-                    Marcar todas como lidas
+                    <X className="h-4 w-4" />
                   </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setOpen(false)}
-                  className="h-7 w-7 p-0"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                </div>
               </div>
             </div>
             
             {/* Filters */}
-            <div className="flex gap-1">
+            <div className="flex gap-1 p-2">
               <Button
                 variant={filter === "all" ? "default" : "ghost"}
                 size="sm"
@@ -286,10 +288,8 @@ export function NotificationCenter({ className }: NotificationCenterProps) {
                 Importantes ({importantCount})
               </Button>
             </div>
-          </CardHeader>
-          
-          <CardContent className="p-0">
-            <div className="max-h-64 overflow-y-auto">
+            
+            <div className="max-h-64 overflow-y-auto p-2">
               {filteredNotifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <Bell className="h-8 w-8 text-muted-foreground mb-2" />
@@ -315,7 +315,7 @@ export function NotificationCenter({ className }: NotificationCenterProps) {
                       <div
                         key={notification.id}
                         className={cn(
-                          "p-3 hover:bg-muted/30 transition-colors cursor-pointer border-l-4",
+                          "p-3 hover:bg-muted/30 transition-colors cursor-pointer border-l-4 rounded-lg",
                           colorClass,
                           !notification.read && "bg-muted/20"
                         )}
@@ -403,8 +403,8 @@ export function NotificationCenter({ className }: NotificationCenterProps) {
                 </Button>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
     </div>
   );

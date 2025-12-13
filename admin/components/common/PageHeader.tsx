@@ -17,6 +17,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { ArrowLeft, LogOut, Search, HelpCircle } from "lucide-react";
 import { useGlobalSearch } from "@/hooks/useGlobalSearch";
+import { useHelpModal } from "@/hooks/useHelpModal";
 
 interface BreadcrumbItem {
   label: string;
@@ -45,7 +46,7 @@ export function PageHeader({
   const { toggleHelp } = useHelpModal();
 
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="flex h-16 shrink-0 items-center justify-between gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex items-center gap-2 px-4 flex-1 min-w-0">
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
