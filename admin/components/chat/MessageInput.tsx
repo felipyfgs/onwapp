@@ -13,13 +13,12 @@ import {
   Paperclip,
   Smile,
   Mic,
-  X,
-  Image as ImageIcon,
-  FileText,
+  Image,
+  File,
   Video,
   Camera,
   MapPin,
-  Contact,
+  User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -31,12 +30,10 @@ interface MessageInputProps {
 }
 
 const EMOJI_LIST = [
-  "😀", "😃", "😄", "😁", "😅", "😂", "🤣", "😊",
-  "😇", "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘",
-  "😗", "😙", "😚", "😋", "😛", "😜", "🤪", "😝",
-  "👍", "👎", "👌", "✌️", "🤞", "🤟", "🤘", "👋",
-  "❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "💔",
-  "✅", "❌", "⭐", "🔥", "💯", "🎉", "🎊", "🙏",
+  "😀", "😃", "😄", "😁", "😊", "😍", "🥰", "😘",
+  "😂", "🤣", "😎", "🤔", "😴", "🤗", "😇", "🙃",
+  "👍", "👎", "👌", "✌️", "🤝", "🙏", "💪", "🎉",
+  "❤️", "💔", "💯", "⭐", "🔥", "✨", "💥", "🎈",
 ];
 
 export function MessageInput({
@@ -124,209 +121,183 @@ export function MessageInput({
   };
 
   return (
-    <div className="border-t bg-background/95 backdrop-blur-sm p-3 shrink-0 shadow-[0_-1px_3px_rgba(0,0,0,0.05)]">
-      {/* Typing Indicator */}
-      {isTyping && (
-        <div className="px-3 pb-2 text-xs text-muted-foreground animate-fade-in">
-          <div className="flex items-center gap-1">
+    <div className="border-t bg-background p-4">
+      <div className="max-w-4xl mx-auto">
+        {isTyping && (
+          <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
             <div className="flex gap-1">
-              <div className="h-1.5 w-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <div className="h-1.5 w-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <div className="h-1.5 w-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
-            <span className="ml-1">Digitando...</span>
+            <span>Digitando...</span>
           </div>
-        </div>
-      )}
-      
-      <div className="flex items-end gap-2">
-        {/* Attachment Button */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="shrink-0 text-muted-foreground hover:text-foreground transition-colors focus-ring"
-              disabled={disabled}
-              aria-label="Anexar arquivo"
-              title="Anexar arquivo"
-            >
-              <Paperclip className="h-5 w-5" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-48 p-2" align="start">
-            <div className="grid grid-cols-3 gap-1">
-              <button
-                className="flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-accent transition-colors focus-ring"
-                onClick={() => fileInputRef.current?.click()}
-                aria-label="Enviar documento"
+        )}
+
+        <div className="flex items-end gap-2">
+          {/* Attach button */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 text-muted-foreground hover:text-foreground transition-colors"
+                disabled={disabled}
               >
-                <div className="h-10 w-10 rounded-full bg-purple-500 flex items-center justify-center transition-transform hover:scale-105">
-                  <FileText className="h-5 w-5 text-white" />
-                </div>
-                <span className="text-xs">Documento</span>
-              </button>
-              <button
-                className="flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-accent transition-colors focus-ring"
-                onClick={() => fileInputRef.current?.click()}
-                aria-label="Enviar imagem"
-              >
-                <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center transition-transform hover:scale-105">
-                  <ImageIcon className="h-5 w-5 text-white" />
-                </div>
-                <span className="text-xs">Imagem</span>
-              </button>
-              <button
-                className="flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-accent transition-colors focus-ring"
-                onClick={() => fileInputRef.current?.click()}
-                aria-label="Enviar vídeo"
-              >
-                <div className="h-10 w-10 rounded-full bg-pink-500 flex items-center justify-center transition-transform hover:scale-105">
-                  <Video className="h-5 w-5 text-white" />
-                </div>
-                <span className="text-xs">Vídeo</span>
-              </button>
-              <button
-                className="flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-accent transition-colors focus-ring"
-                aria-label="Tirar foto"
-              >
-                <div className="h-10 w-10 rounded-full bg-red-500 flex items-center justify-center transition-transform hover:scale-105">
-                  <Camera className="h-5 w-5 text-white" />
-                </div>
-                <span className="text-xs">Câmera</span>
-              </button>
-              <button
-                className="flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-accent transition-colors focus-ring"
-                aria-label="Enviar localização"
-              >
-                <div className="h-10 w-10 rounded-full bg-green-500 flex items-center justify-center transition-transform hover:scale-105">
-                  <MapPin className="h-5 w-5 text-white" />
-                </div>
-                <span className="text-xs">Localização</span>
-              </button>
-              <button
-                className="flex flex-col items-center gap-1 p-3 rounded-lg hover:bg-accent transition-colors focus-ring"
-                aria-label="Enviar contato"
-              >
-                <div className="h-10 w-10 rounded-full bg-cyan-500 flex items-center justify-center transition-transform hover:scale-105">
-                  <Contact className="h-5 w-5 text-white" />
-                </div>
-                <span className="text-xs">Contato</span>
-              </button>
-            </div>
-          </PopoverContent>
-        </Popover>
-        
-        <input
-          ref={fileInputRef}
-          type="file"
-          className="hidden"
-          onChange={handleFileSelect}
-          accept="image/*,video/*,application/*"
-        />
-        
-        {/* Emoji Picker */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="shrink-0 transition-colors focus-ring"
-              disabled={disabled}
-              aria-label="Inserir emoji"
-              title="Inserir emoji"
-            >
-              <Smile className="h-5 w-5" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-72 p-2" align="start">
-            <div className="grid grid-cols-8 gap-1">
-              {EMOJI_LIST.map((emoji) => (
+                <Paperclip className="h-5 w-5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-60 p-1" align="start">
+              <div className="grid grid-cols-4 gap-1">
                 <button
-                  key={emoji}
-                  className="p-2 text-xl hover:bg-accent rounded transition-colors focus-ring"
-                  onClick={() => insertEmoji(emoji)}
-                  aria-label={`Inserir emoji ${emoji}`}
+                  className="flex flex-col items-center gap-1 p-3 rounded-md hover:bg-accent transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
                 >
-                  {emoji}
+                  <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800">
+                    <File className="h-4 w-4" />
+                  </div>
+                  <span className="text-xs">Arquivo</span>
                 </button>
-              ))}
-            </div>
-          </PopoverContent>
-        </Popover>
+                <button
+                  className="flex flex-col items-center gap-1 p-3 rounded-md hover:bg-accent transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                    <Image className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <span className="text-xs">Imagem</span>
+                </button>
+                <button
+                  className="flex flex-col items-center gap-1 p-3 rounded-md hover:bg-accent transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
+                    <Video className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <span className="text-xs">Vídeo</span>
+                </button>
+                <button
+                  className="flex flex-col items-center gap-1 p-3 rounded-md hover:bg-accent transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/30">
+                    <Camera className="h-4 w-4 text-red-600 dark:text-red-400" />
+                  </div>
+                  <span className="text-xs">Câmera</span>
+                </button>
+              </div>
+            </PopoverContent>
+          </Popover>
 
-        {/* Message Input */}
-        <div className="flex-1 relative">
-          <Textarea
-            ref={textareaRef}
-            value={message}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            placeholder={placeholder}
-            disabled={disabled}
-            className="min-h-10 max-h-32 resize-none pr-4 focus-ring transition-smooth"
-            rows={1}
-            aria-label="Mensagem"
-            aria-describedby={isTyping ? "typing-indicator" : undefined}
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            onChange={handleFileSelect}
+            accept="image/*,video/*,application/*"
           />
-        </div>
 
-        {/* Send / Record Button */}
-        {message.trim() ? (
+          {/* Emoji button */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 text-muted-foreground hover:text-foreground transition-colors"
+                disabled={disabled}
+              >
+                <Smile className="h-5 w-5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-2" align="start">
+              <div className="grid grid-cols-8 gap-0.5">
+                {EMOJI_LIST.map((emoji) => (
+                  <button
+                    key={emoji}
+                    className="p-2 text-lg hover:bg-accent rounded transition-colors"
+                    onClick={() => insertEmoji(emoji)}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {/* Message input */}
+          <div className="flex-1 relative">
+            <Textarea
+              ref={textareaRef}
+              value={message}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder={placeholder}
+              disabled={disabled}
+              className="min-h-10 max-h-32 px-4 py-2 resize-none bg-muted/50 border-0 focus:bg-background transition-colors"
+              rows={1}
+            />
+          </div>
+
+          {/* Send/Record button */}
           <Button
-            size="icon"
-            className="shrink-0 h-10 w-10 transition-colors focus-ring animate-scale-in"
-            onClick={handleSend}
-            disabled={disabled}
-            aria-label="Enviar mensagem"
-            title="Enviar mensagem"
-          >
-            <Send className="h-5 w-5" />
-          </Button>
-        ) : (
-          <Button
-            variant={isRecording ? "destructive" : "default"}
             size="icon"
             className={cn(
-              "shrink-0 h-10 w-10 transition-colors focus-ring",
-              isRecording && "animate-pulse"
+              "h-10 w-10 transition-all duration-200",
+              message.trim()
+                ? "bg-primary hover:bg-primary/90"
+                : "bg-muted hover:bg-muted/80 text-muted-foreground",
+              isRecording && "bg-red-500 hover:bg-red-600 text-white animate-pulse"
             )}
-            onClick={() => isRecording ? stopRecording() : startRecording()}
+            onClick={() => {
+              if (isRecording) {
+                stopRecording();
+              } else if (message.trim()) {
+                handleSend();
+              } else {
+                startRecording();
+              }
+            }}
             disabled={disabled}
-            aria-label={isRecording ? "Parar gravação" : "Iniciar gravação"}
-            title={isRecording ? "Parar gravação" : "Iniciar gravação"}
           >
-            {isRecording ? <X className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-          </Button>
-        )}
-      </div>
-      
-      {isRecording && (
-        <div className="mt-2 flex items-center gap-2 p-2 bg-destructive/10 rounded-lg animate-fade-in">
-          <div className="h-3 w-3 rounded-full bg-destructive animate-pulse" />
-          <span className="text-sm text-destructive" id="typing-indicator">
-            Gravando... {formatRecordingTime(recordingTime)}
-          </span>
-          <div className="flex-1" />
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={stopRecording}
-            className="focus-ring"
-            aria-label="Cancelar gravação"
-          >
-            Cancelar
-          </Button>
-          <Button
-            size="sm"
-            onClick={stopRecording}
-            className="focus-ring"
-            aria-label="Enviar áudio"
-          >
-            Enviar
+            {isRecording ? (
+              <X className="h-4 w-4" />
+            ) : message.trim() ? (
+              <Send className="h-4 w-4" />
+            ) : (
+              <Mic className="h-4 w-4" />
+            )}
           </Button>
         </div>
-      )}
+
+        {/* Recording indicator */}
+        {isRecording && (
+          <div className="mt-3 flex items-center justify-between p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+              <span className="text-sm text-red-700 dark:text-red-300">
+                Gravando áudio... {formatRecordingTime(recordingTime)}
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={stopRecording}
+                className="text-red-600 hover:text-red-700 hover:bg-red-100"
+              >
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                onClick={stopRecording}
+                className="bg-red-500 hover:bg-red-600 text-white"
+              >
+                Enviar
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
