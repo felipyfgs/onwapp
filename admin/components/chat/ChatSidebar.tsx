@@ -178,7 +178,7 @@ export function ChatSidebar({ chats, selectedChat, onSelectChat, loading }: Chat
                 <div
                   key={chat.jid}
                   className={cn(
-                    "flex items-center gap-3 p-3 cursor-pointer transition-colors border-l-2 border-transparent",
+                    "flex items-center gap-3 p-3 cursor-pointer transition-colors border-l-2 border-transparent min-h-[72px] max-h-[72px]",
                     isSelected 
                       ? "bg-accent border-l-primary" 
                       : "hover:bg-muted/50"
@@ -209,7 +209,7 @@ export function ChatSidebar({ chats, selectedChat, onSelectChat, loading }: Chat
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <p className={cn(
-                        "font-medium truncate",
+                        "font-medium truncate max-w-[160px]",
                         (chat.unreadCount || 0) > 0 && "font-semibold"
                       )}>
                         {name}
@@ -223,7 +223,7 @@ export function ChatSidebar({ chats, selectedChat, onSelectChat, loading }: Chat
                         {formatTime(chat.conversationTimestamp)}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 max-h-6 overflow-hidden">
                       <p className={cn(
                         "text-sm truncate flex-1",
                         (chat.unreadCount || 0) > 0 

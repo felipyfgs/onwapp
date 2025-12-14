@@ -49,7 +49,7 @@ function ChatListItemComponent({
   return (
     <div
       className={cn(
-        "group relative flex gap-3 p-3 cursor-pointer transition-all duration-200 hover:bg-muted/30 active:scale-[0.98]",
+        "group relative flex gap-3 p-3 cursor-pointer transition-all duration-200 hover:bg-muted/30 active:scale-[0.98] min-h-[72px] max-h-[72px]",
         selected && "bg-accent/50 border-l-3 border-l-primary shadow-sm"
       )}
       onClick={onClick}
@@ -86,10 +86,10 @@ function ChatListItemComponent({
       </div>
 
       {/* Content */}
-      <div className="flex-1 min-w-0 space-y-1">
+      <div className="flex-1 min-w-0 space-y-1 max-h-16 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-2 min-w-0 max-w-[180px]">
             <h3 className="font-semibold text-sm truncate">
               {displayName}
             </h3>
@@ -113,11 +113,13 @@ function ChatListItemComponent({
 
         {/* Last Message */}
         {chat.lastMessage && (
-          <div className="flex items-start gap-2">
+          <div className="flex items-start gap-2 max-h-8 overflow-hidden">
             <MessageSquare className="h-3 w-3 text-muted-foreground mt-0.5 shrink-0" />
-            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-              {chat.lastMessage.content || "Mídia"}
-            </p>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-muted-foreground truncate">
+                {chat.lastMessage.content || "Mídia"}
+              </p>
+            </div>
           </div>
         )}
       </div>

@@ -17,7 +17,6 @@ interface ChatListProps {
   refreshTrigger?: number;
 }
 
-const ITEMS_PER_PAGE = 30;
 const SCROLL_THRESHOLD = 300;
 
 export function ChatList({
@@ -136,8 +135,8 @@ export function ChatList({
   const rowVirtualizer = useVirtualizer({
     count: filteredChats.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => 72,
-    overscan: 5,
+    estimateSize: () => 72, // Altura fixa consistente com ChatListItem
+    overscan: 3, // Reduzido para melhor performance
   });
 
   return (
@@ -215,6 +214,7 @@ export function ChatList({
                     top: 0,
                     left: 0,
                     width: "100%",
+                    height: `${virtualRow.size}px`,
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
                 >
