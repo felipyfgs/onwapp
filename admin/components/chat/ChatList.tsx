@@ -77,7 +77,7 @@ export function ChatList({
       // Client-side filtering by search
       if (searchQuery) {
         newChats = newChats.filter(chat => {
-          const name = chat.name || chat.pushName || chat.jid;
+          const name = chat.name || chat.contactName || chat.jid;
           return name.toLowerCase().includes(searchQuery.toLowerCase());
         });
       }

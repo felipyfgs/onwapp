@@ -32,7 +32,7 @@ interface ChatHeaderProps {
 }
 
 function ChatHeader({ chat, onArchive }: ChatHeaderProps) {
-  const name = chat.name || chat.pushName || chat.jid.split("@")[0];
+  const name = chat.name || chat.contactName || chat.jid.split("@")[0];
   const initials = name.substring(0, 2).toUpperCase();
 
   return (

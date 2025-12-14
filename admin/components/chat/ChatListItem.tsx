@@ -44,7 +44,7 @@ function ChatListItemComponent({
     return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
   };
 
-  const displayName = chat.name || chat.pushName || chat.jid.split("@")[0];
+  const displayName = chat.name || chat.contactName || chat.jid.split("@")[0];
 
   return (
     <div
