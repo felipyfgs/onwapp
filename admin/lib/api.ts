@@ -54,18 +54,22 @@ export interface BusinessProfile {
 }
 
 export interface Chat {
+  id?: string;
   jid: string;
   name?: string;
-  pushName?: string;
+  contactName?: string;
   profilePicture?: string;
   lastMessage?: Message;
   unreadCount?: number;
+  markedAsUnread?: boolean;
   isGroup?: boolean;
-  isArchived?: boolean;
-  isMuted?: boolean;
-  muteExpiration?: string;
+  archived?: boolean;  // Backend retorna "archived", não "isArchived"
   pinned?: boolean;
-  updatedAt?: string;
+  muted?: string;  // Backend retorna string ("muted" ou ""), não boolean
+  conversationTimestamp?: number;
+  readOnly?: boolean;
+  suspended?: boolean;
+  locked?: boolean;
 }
 
 export interface Message {

@@ -33,9 +33,9 @@ interface ChatSidebarProps {
 
 type FilterType = "all" | "unread" | "groups" | "archived";
 
-function formatTime(timestamp?: string): string {
+function formatTime(timestamp?: number | string): string {
   if (!timestamp) return "";
-  const date = new Date(timestamp);
+  const date = typeof timestamp === "number" ? new Date(timestamp * 1000) : new Date(timestamp);
   const now = new Date();
   const diff = now.getTime() - date.getTime();
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -51,29 +51,29 @@ export function ChatSidebar({ chats, selectedChat, onSelectChat, loading }: Chat
 
   const filteredChats = useMemo(() => {
     return chats.filter((chat) => {
-      const name = (chat.name || chat.pushName || chat.jid).toLowerCase();
+      const name = (chat.name || chat.contactName || chat.jid).toLowerCase();
       const matchesSearch = name.includes(search.toLowerCase());
-      
+
       if (!matchesSearch) return false;
-      
+
       switch (filter) {
         case "unread":
           return (chat.unreadCount || 0) > 0;
         case "groups":
           return chat.isGroup;
         case "archived":
-          return chat.isArchived;
+          return chat.archived;
         default:
-          return !chat.isArchived;
+          return !chat.archived;
       }
     });
   }, [chats, search, filter]);
 
   const stats = useMemo(() => ({
-    total: chats.filter(c => !c.isArchived).length,
+    total: chats.filter(c => !c.archived).length,
     unread: chats.filter(c => (c.unreadCount || 0) > 0).length,
     groups: chats.filter(c => c.isGroup).length,
-    archived: chats.filter(c => c.isArchived).length,
+    archived: chats.filter(c => c.archived).length,
   }), [chats]);
 
   return (
@@ -170,7 +170,7 @@ export function ChatSidebar({ chats, selectedChat, onSelectChat, loading }: Chat
         ) : (
           <div>
             {filteredChats.map((chat) => {
-              const name = chat.name || chat.pushName || chat.jid.split("@")[0];
+              const name = chat.name || chat.contactName || chat.jid.split("@")[0];
               const initials = name.substring(0, 2).toUpperCase();
               const isSelected = selectedChat === chat.jid;
               
@@ -199,7 +199,7 @@ export function ChatSidebar({ chats, selectedChat, onSelectChat, loading }: Chat
                         {chat.isGroup ? <Users className="h-5 w-5" /> : initials}
                       </AvatarFallback>
                     </Avatar>
-                    {chat.isMuted && (
+                    {chat.muted && chat.muted !== "" && (
                       <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-background border border-border flex items-center justify-center">
                         <span className="text-[9px]">🔇</span>
                       </div>
@@ -216,11 +216,11 @@ export function ChatSidebar({ chats, selectedChat, onSelectChat, loading }: Chat
                       </p>
                       <span className={cn(
                         "text-xs shrink-0",
-                        (chat.unreadCount || 0) > 0 
-                          ? "text-primary font-medium" 
+                        (chat.unreadCount || 0) > 0
+                          ? "text-primary font-medium"
                           : "text-muted-foreground"
                       )}>
-                        {formatTime(chat.updatedAt)}
+                        {formatTime(chat.conversationTimestamp)}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
