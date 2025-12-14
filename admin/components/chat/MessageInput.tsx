@@ -104,10 +104,12 @@ export function MessageInput({
 
   // Memoize button icon to prevent unnecessary re-renders
   const ButtonIcon = useMemo(() => {
-    if (isRecording) return <X className="h-4 w-4" />;
-    if (trimmedMessage) return <Send className="h-4 w-4" />;
-    return <Mic className="h-4 w-4" />;
+    if (isRecording) return X;
+    if (trimmedMessage) return Send;
+    return Mic;
   }, [isRecording, trimmedMessage]);
+
+  const IconComponent = ButtonIcon;
 
   return (
     <div className="border-t bg-background">
@@ -151,7 +153,7 @@ export function MessageInput({
           onClick={handleMainButtonClick}
           disabled={disabled}
         >
-          <ButtonIcon />
+          <IconComponent className="h-4 w-4" />
         </Button>
       </div>
 
