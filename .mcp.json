@@ -1,6 +1,7 @@
 {
   "mcpServers": {
     "playwright": {
+      "timeout": 60,
       "type": "stdio",
       "command": "npx",
       "args": [
@@ -14,6 +15,7 @@
       ]
     },
     "postgres": {
+      "timeout": 60,
       "type": "stdio",
       "command": "npx",
       "args": [
@@ -21,10 +23,11 @@
         "@henkey/postgres-mcp-server"
       ],
       "env": {
-        "CONNECTION_STRING": "postgres://onwapp:postgres@localhost:5432/onwapp?sslmode=disable"
+        "CONNECTION_STRING": "postgres://postgres:postgres@localhost:5432/onwapp?sslmode=disable"
       }
     },
     "context7": {
+      "timeout": 60,
       "type": "stdio",
       "command": "npx",
       "args": [
@@ -32,24 +35,20 @@
         "@upstash/context7-mcp"
       ]
     },
-    "git": {
-      "type": "stdio",
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-git"
-      ]
-    },
     "filesystem": {
+      "disabled": false,
+      "timeout": 60,
       "type": "stdio",
       "command": "npx",
       "args": [
         "-y",
         "@modelcontextprotocol/server-filesystem",
-        "/root/onwapp"
+        "/home/obsidian/onwapp"
       ]
     },
     "memory-bank": {
+      "disabled": false,
+      "timeout": 60,
       "type": "stdio",
       "command": "npx",
       "args": [
