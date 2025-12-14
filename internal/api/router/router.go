@@ -147,7 +147,7 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 		session.POST("/disconnect", h.Session.Disconnect)
 		session.POST("/logout", h.Session.Logout)
 		session.POST("/restart", h.Session.Restart)
-		session.GET("/qr", h.Session.QR)
+		session.GET("/qr", middleware.StrictRateLimit(), h.Session.QR)
 		session.POST("/pairphone", h.Session.PairPhone)
 
 		session.GET("/profile", h.Profile.GetProfile)

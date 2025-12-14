@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +31,9 @@ export function QRCodeModal({ sessionName, open, onClose }: QRCodeModalProps) {
   // State for phone input (kept in component as it's UI state)
   const [phone, setPhone] = useState<string>("");
 
+  // Ref to track if we've already initialized this modal instance
+  const initializedRef = useRef<boolean>(false);
+
   // Use hooks for all business logic
   const {
     qrCode,
@@ -44,15 +47,20 @@ export function QRCodeModal({ sessionName, open, onClose }: QRCodeModalProps) {
   const { formatting, validation } = useSessionForm();
   const { isCopied, actions: keyActions } = useApiKeys();
 
-  // Reset and fetch QR when modal opens
+  // Reset and fetch QR when modal opens - optimized dependencies
   useEffect(() => {
-    if (open && sessionName) {
+    if (open && sessionName && !initializedRef.current) {
+      console.log("[QR Modal] Modal opened, initializing QR fetch for session:", sessionName);
+      initializedRef.current = true;
       connectionActions.reset();
       connectionActions.fetchQR();
       // Reset phone input when modal opens
       setPhone("");
+    } else if (!open) {
+      // Reset initialization flag when modal closes
+      initializedRef.current = false;
     }
-  }, [open, sessionName, connectionActions]);
+  }, [open, sessionName]); // Remove connectionActions from deps
 
   // Auto-close when connected
   useEffect(() => {

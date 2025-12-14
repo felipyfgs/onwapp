@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { getQR, pairPhone, connectSession } from "@/lib/api";
 import { useSessionEvent } from "@/hooks/useSessionEvents";
 import { SessionEvent } from "@/lib/nats";
@@ -26,19 +26,45 @@ export function useSessionConnection(sessionName: string): UseSessionConnectionR
   const [phoneStatus, setPhoneStatus] = useState<'idle' | 'loading' | 'code_generated' | 'connecting' | 'connected' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
 
+  // Refs for debouncing and state tracking
+  const lastRequestTime = useRef<number>(0);
+  const requestInProgress = useRef<boolean>(false);
+
   const fetchQR = useCallback(async () => {
-    if (!sessionName) return;
+    if (!sessionName || requestInProgress.current) {
+      console.log(`[QR Fetch] Skipped - sessionName: ${!!sessionName}, requestInProgress: ${requestInProgress.current}`);
+      return;
+    }
+
+    const now = Date.now();
+    const timeSinceLastRequest = now - lastRequestTime.current;
+
+    // 2 second debounce between QR requests
+    if (timeSinceLastRequest < 2000) {
+      console.log(`[QR Fetch] Throttled - Last request was ${timeSinceLastRequest}ms ago (minimum 2000ms required)`);
+      return;
+    }
+
+    console.log(`[QR Fetch] Starting request for session: ${sessionName}`);
+    requestInProgress.current = true;
+    lastRequestTime.current = now;
 
     setQrStatus('loading');
     try {
       const response = await getQR(sessionName);
       if (response.qr) {
         setQrCode(response.qr);
+        console.log(`[QR Fetch] QR code received for session: ${sessionName}`);
       }
       setQrStatus(response.status as any);
     } catch (error) {
-      console.error("Failed to fetch QR:", error);
+      console.error("[QR Fetch] Failed to fetch QR:", error);
       setQrStatus('idle');
+    } finally {
+      // Clear request in progress after a short delay to prevent rapid retries
+      setTimeout(() => {
+        requestInProgress.current = false;
+      }, 1000);
     }
   }, [sessionName]);
 
@@ -84,6 +110,10 @@ export function useSessionConnection(sessionName: string): UseSessionConnectionR
     setPhoneCode(null);
     setPhoneStatus('idle');
     setErrorMessage('');
+    // Reset debouncing refs
+    requestInProgress.current = false;
+    lastRequestTime.current = 0;
+    console.log("[QR Fetch] Reset completed - debouncing refs cleared");
   }, []);
 
   // Handle WebSocket events

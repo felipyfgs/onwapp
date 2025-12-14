@@ -7,6 +7,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/http"
+	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/skip2/go-qrcode"
@@ -29,14 +31,76 @@ func generateAPIKey() string {
 	return hex.EncodeToString(bytes)
 }
 
+type QRCacheEntry struct {
+	QR       string
+	Status   string
+	CachedAt time.Time
+}
+
 type SessionHandler struct {
 	sessionService *service.SessionService
 	wpp            *wpp.Service
 	database       *db.Database
+	qrCache        map[string]*QRCacheEntry
+	qrCacheMutex   sync.RWMutex
 }
 
 func NewSessionHandler(sessionService *service.SessionService, wpp *wpp.Service, database *db.Database) *SessionHandler {
-	return &SessionHandler{sessionService: sessionService, wpp: wpp, database: database}
+	h := &SessionHandler{
+		sessionService: sessionService,
+		wpp:            wpp,
+		database:       database,
+		qrCache:        make(map[string]*QRCacheEntry),
+	}
+
+	// Start QR cache cleanup goroutine
+	go h.qrCacheCleanup()
+
+	return h
+}
+
+func (h *SessionHandler) qrCacheCleanup() {
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		h.qrCacheMutex.Lock()
+		now := time.Now()
+		for sessionId, entry := range h.qrCache {
+			// Remove cache entries older than 10 seconds
+			if now.Sub(entry.CachedAt) > 10*time.Second {
+				delete(h.qrCache, sessionId)
+			}
+		}
+		h.qrCacheMutex.Unlock()
+	}
+}
+
+func (h *SessionHandler) getCachedQR(sessionId string, getNewQR func() (string, string)) (string, string) {
+	h.qrCacheMutex.RLock()
+	if entry, exists := h.qrCache[sessionId]; exists {
+		// Return cached response if less than 5 seconds old
+		if time.Since(entry.CachedAt) < 5*time.Second {
+			h.qrCacheMutex.RUnlock()
+			logger.Info.Printf("[QR Cache] Cache hit for session: %s (age: %v)", sessionId, time.Since(entry.CachedAt))
+			return entry.QR, entry.Status
+		}
+	}
+	h.qrCacheMutex.RUnlock()
+
+	// Generate new QR code
+	qr, status := getNewQR()
+
+	h.qrCacheMutex.Lock()
+	h.qrCache[sessionId] = &QRCacheEntry{
+		QR:       qr,
+		Status:   status,
+		CachedAt: time.Now(),
+	}
+	h.qrCacheMutex.Unlock()
+
+	logger.Info.Printf("[QR Cache] Cache miss for session: %s - new QR cached", sessionId)
+	return qr, status
 }
 
 func sessionToResponse(sess *model.Session) dto.SessionResponse {
@@ -366,16 +430,25 @@ func (h *SessionHandler) QR(c *gin.Context) {
 	sessionId := c.Param("session")
 	format := c.DefaultQuery("format", "json")
 
+	logger.Info.Printf("[QR Handler] Request for session: %s, format: %s, IP: %s", sessionId, format, c.ClientIP())
+
 	session, err := h.sessionService.Get(sessionId)
 	if err != nil {
+		logger.Error.Printf("[QR Handler] Session not found: %s", sessionId)
 		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	qr := session.GetQR()
+	// Use cache to prevent excessive QR generation
+	qr, status := h.getCachedQR(sessionId, func() (string, string) {
+		logger.Info.Printf("[QR Handler] Generating new QR for session: %s", sessionId)
+		return session.GetQR(), string(session.GetStatus())
+	})
+
 	if qr == "" {
+		logger.Info.Printf("[QR Handler] No QR available for session: %s, status: %s", sessionId, status)
 		c.JSON(http.StatusOK, dto.QRResponse{
-			Status: string(session.GetStatus()),
+			Status: status,
 		})
 		return
 	}
@@ -383,6 +456,7 @@ func (h *SessionHandler) QR(c *gin.Context) {
 	if format == "image" {
 		png, err := qrcode.Encode(qr, qrcode.Medium, 256)
 		if err != nil {
+			logger.Error.Printf("[QR Handler] Failed to generate QR image: %v", err)
 			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to generate QR image"})
 			return
 		}
@@ -393,9 +467,10 @@ func (h *SessionHandler) QR(c *gin.Context) {
 	image, _ := qrcode.Encode(qr, qrcode.Medium, 256)
 	base64QR := "data:image/png;base64," + base64.StdEncoding.EncodeToString(image)
 
+	logger.Info.Printf("[QR Handler] Returning QR for session: %s, status: %s", sessionId, status)
 	c.JSON(http.StatusOK, dto.QRResponse{
 		QR:     base64QR,
-		Status: string(session.GetStatus()),
+		Status: status,
 	})
 }
 

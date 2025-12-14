@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY || "";
 
 // ============ Types ============
