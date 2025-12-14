@@ -130,7 +130,7 @@ export default function ChatsPage() {
                                 minSize={25}
                                 maxSize={45}
                             >
-                                <TicketManager
+                                <ChatList
                                     session={selectedSession}
                                     selectedChat={selectedChat}
                                     onSelectChat={handleSelectChat}
