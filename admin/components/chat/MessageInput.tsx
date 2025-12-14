@@ -9,7 +9,6 @@ import { useAudioRecording } from "@/hooks/chat/useAudioRecording";
 import { AttachmentPopover } from "./message-input/AttachmentPopover";
 import { EmojiPicker } from "./message-input/EmojiPicker";
 import { RecordingIndicator } from "./message-input/RecordingIndicator";
-import { TypingIndicator } from "./message-input/TypingIndicator";
 
 // Types
 type MediaType = "image" | "video" | "document";
@@ -28,7 +27,6 @@ export function MessageInput({
   placeholder = "Type a message...",
 }: MessageInputProps) {
   const [message, setMessage] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const {
@@ -67,14 +65,7 @@ export function MessageInput({
   const handleInputChange = useCallback((e: ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
     setMessage(newValue);
-    
-    // Update typing indicator
-    if (!isTyping && newValue.length > 0) {
-      setIsTyping(true);
-    } else if (isTyping && newValue.length === 0) {
-      setIsTyping(false);
-    }
-  }, [isTyping]);
+  }, []);
 
   const handleEmojiSelect = useCallback((emoji: string) => {
     setMessage(prev => prev + emoji);
@@ -114,8 +105,6 @@ export function MessageInput({
   return (
     <div className="border-t bg-background">
       <div className="flex items-center gap-1 p-2">
-        {isTyping && <TypingIndicator />}
-        
         <AttachmentPopover 
           onFileSelect={handleFileSelect}
           disabled={disabled}
