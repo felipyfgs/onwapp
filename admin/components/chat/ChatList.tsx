@@ -71,13 +71,16 @@ export function ChatList({
 
       loadingMoreRef.current = true;
 
-      const response = await getChats(session, {
-        limit: ITEMS_PER_PAGE,
-        offset: offsetRef.current,
-        search: searchQuery || undefined,
-      });
+      const response = await getChats(session);
+      let newChats = response || [];
 
-      const newChats = response.data || [];
+      // Client-side filtering by search
+      if (searchQuery) {
+        newChats = newChats.filter(chat => {
+          const name = chat.name || chat.pushName || chat.jid;
+          return name.toLowerCase().includes(searchQuery.toLowerCase());
+        });
+      }
 
       if (reset) {
         setChats(newChats);
@@ -86,11 +89,8 @@ export function ChatList({
         setChats((prev) => [...prev, ...newChats]);
       }
 
-      if (newChats.length < ITEMS_PER_PAGE) {
-        setHasMore(false);
-      } else {
-        offsetRef.current += ITEMS_PER_PAGE;
-      }
+      setHasMore(false); // No pagination since we load all chats
+
     } catch (error: any) {
       console.error("Failed to load chats:", error);
       toast.error(error?.message || "Falha ao carregar chats");

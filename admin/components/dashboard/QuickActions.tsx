@@ -31,14 +31,14 @@ interface QuickAction {
 
 interface QuickActionsProps {
   sessionCount?: number;
-  pendingTickets?: number;
+  unreadChats?: number;
   unreadMessages?: number;
 }
 
-export function QuickActions({ 
-  sessionCount = 0, 
-  pendingTickets = 0, 
-  unreadMessages = 0 
+export function QuickActions({
+  sessionCount = 0,
+  unreadChats = 0,
+  unreadMessages = 0
 }: QuickActionsProps) {
   const router = useRouter();
 
@@ -53,13 +53,13 @@ export function QuickActions({
       shortcut: "N"
     },
     {
-      id: "new-ticket",
-      title: "Criar Ticket",
-      description: "Iniciar novo atendimento",
+      id: "view-chats",
+      title: "Ver Chats",
+      description: "Acessar conversas",
       icon: Plus,
       action: () => router.push("/chats"),
-      badge: pendingTickets > 0 ? pendingTickets.toString() : undefined,
-      variant: pendingTickets > 0 ? "primary" : "default",
+      badge: unreadChats > 0 ? unreadChats.toString() : undefined,
+      variant: unreadChats > 0 ? "primary" : "default",
       shortcut: "T"
     },
     {

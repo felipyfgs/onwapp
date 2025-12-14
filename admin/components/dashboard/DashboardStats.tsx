@@ -83,10 +83,9 @@ interface DashboardStatsProps {
       today: number;
       change: number;
     };
-    tickets: {
-      open: number;
-      pending: number;
-      resolved: number;
+    chats: {
+      total: number;
+      unread: number;
     };
     contacts: {
       total: number;
@@ -101,7 +100,7 @@ export function DashboardStats({ data, loading = false }: DashboardStatsProps) {
   const defaultData = {
     sessions: { total: 0, active: 0, inactive: 0 },
     messages: { total: 0, today: 0, change: 0 },
-    tickets: { open: 0, pending: 0, resolved: 0 },
+    chats: { total: 0, unread: 0 },
     contacts: { total: 0, new: 0, change: 0 },
   };
 
@@ -132,16 +131,13 @@ export function DashboardStats({ data, loading = false }: DashboardStatsProps) {
         loading={loading}
       />
       <StatCard
-        title="Tickets Abertos"
-        value={stats.tickets.open + stats.tickets.pending}
+        title="Conversas"
+        value={stats.chats.total}
         icon={Activity}
         description={
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="text-xs">
-              {stats.tickets.pending} aguardando
-            </Badge>
-            <Badge variant="outline" className="text-xs">
-              {stats.tickets.resolved} resolvidos
+              {stats.chats.unread} não lidas
             </Badge>
           </div>
         }
