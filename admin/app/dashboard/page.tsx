@@ -21,8 +21,9 @@ import {
   RefreshCw,
   Settings
 } from "lucide-react";
-import { getSessions, getTickets } from "@/lib/api";
+import { getSessions } from "@/lib/api";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface DashboardData {
   sessions: {
@@ -35,10 +36,9 @@ interface DashboardData {
     today: number;
     change: number;
   };
-  tickets: {
-    open: number;
-    pending: number;
-    resolved: number;
+  chats: {
+    total: number;
+    unread: number;
   };
   contacts: {
     total: number;
@@ -54,10 +54,7 @@ export default function DashboardPage() {
 
   const fetchDashboardData = async () => {
     try {
-      const [sessions, tickets] = await Promise.all([
-        getSessions(),
-        getTickets("default") // Assuming default session for demo
-      ]);
+      const sessions = await getSessions();
 
       const activeSessions = sessions.filter(s => s.status === "connected").length;
       const totalSessions = sessions.length;
@@ -73,10 +70,9 @@ export default function DashboardPage() {
           today: 45,
           change: 12
         },
-        tickets: {
-          open: tickets.data?.filter(t => t.status === "open").length || 0,
-          pending: tickets.data?.filter(t => t.status === "pending").length || 0,
-          resolved: tickets.data?.filter(t => t.status === "closed").length || 0
+        chats: {
+          total: 0,
+          unread: 0
         },
         contacts: {
           total: 567,
@@ -131,7 +127,7 @@ export default function DashboardPage() {
             <div className="lg:col-span-2">
               <QuickActions
                 sessionCount={data?.sessions.total}
-                pendingTickets={data?.tickets.pending}
+                unreadChats={data?.chats.unread}
                 unreadMessages={data?.messages.today}
               />
             </div>

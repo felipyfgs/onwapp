@@ -11,10 +11,6 @@ import {
   Webhook,
   UsersRound,
   Send,
-  List,
-  Ticket,
-  Layers,
-  UserCog,
 } from "lucide-react"
 
 import { NavMain } from "./nav-main"
@@ -90,16 +86,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         title: "Media",
         url: "/media",
         icon: Image,
-      },
-      {
-        title: "Tickets",
-        url: "#",
-        icon: Ticket,
-        items: [
-          { title: "Todos os Tickets", url: "/tickets" },
-          { title: "Filas", url: "/queues" },
-          { title: "Usuarios", url: "/users" },
-        ],
       },
       {
         title: "Integrations",
