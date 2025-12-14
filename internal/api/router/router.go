@@ -36,10 +36,6 @@ type Handlers struct {
 	Status     *handler.StatusHandler
 	Settings   *handler.SettingsHandler
 	Webhook    WebhookHandlerInterface
-	Ticket     *handler.TicketHandler
-	Queue      *handler.QueueHandler
-	User       *handler.UserHandler
-	QuickReply *handler.QuickReplyHandler
 }
 
 type Config struct {
@@ -97,45 +93,6 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 	{
 		sessions.GET("", h.Session.Fetch)
 		sessions.POST("", h.Session.Create)
-	}
-
-	// Ticket system routes (global)
-	if h.Queue != nil {
-		queues := r.Group("/queues")
-		queues.Use(middleware.Auth(cfg.GlobalAPIKey, cfg.SessionLookup))
-		{
-			queues.GET("", h.Queue.List)
-			queues.POST("", h.Queue.Create)
-			queues.GET("/:id", h.Queue.Get)
-			queues.PATCH("/:id", h.Queue.Update)
-			queues.DELETE("/:id", h.Queue.Delete)
-		}
-	}
-
-	if h.User != nil {
-		users := r.Group("/users")
-		users.Use(middleware.Auth(cfg.GlobalAPIKey, cfg.SessionLookup))
-		{
-			users.GET("", h.User.List)
-			users.POST("", h.User.Create)
-			users.GET("/:id", h.User.Get)
-			users.PATCH("/:id", h.User.Update)
-			users.DELETE("/:id", h.User.Delete)
-			users.PATCH("/:id/password", h.User.UpdatePassword)
-			users.POST("/:id/queues", h.User.SetQueues)
-		}
-	}
-
-	if h.QuickReply != nil {
-		quickReplies := r.Group("/quick-replies")
-		quickReplies.Use(middleware.Auth(cfg.GlobalAPIKey, cfg.SessionLookup))
-		{
-			quickReplies.GET("", h.QuickReply.List)
-			quickReplies.POST("", h.QuickReply.Create)
-			quickReplies.GET("/:id", h.QuickReply.Get)
-			quickReplies.PATCH("/:id", h.QuickReply.Update)
-			quickReplies.DELETE("/:id", h.QuickReply.Delete)
-		}
 	}
 
 	session := r.Group("/:session")
@@ -265,20 +222,6 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 		}
 
 		session.POST("/call/reject", h.Chat.RejectCall)
-
-		// Ticket routes (per session)
-		if h.Ticket != nil {
-			session.GET("/tickets", h.Ticket.List)
-			session.POST("/tickets", h.Ticket.Create)
-			session.GET("/tickets/stats", h.Ticket.Stats)
-			session.GET("/tickets/:id", h.Ticket.Get)
-			session.PATCH("/tickets/:id", h.Ticket.Update)
-			session.DELETE("/tickets/:id", h.Ticket.Delete)
-			session.POST("/tickets/:id/accept", h.Ticket.Accept)
-			session.POST("/tickets/:id/close", h.Ticket.Close)
-			session.POST("/tickets/:id/reopen", h.Ticket.Reopen)
-			session.POST("/tickets/:id/transfer", h.Ticket.Transfer)
-		}
 
 		session.GET("/webhook", h.Webhook.GetWebhook)
 		session.POST("/webhook", h.Webhook.SetWebhook)
