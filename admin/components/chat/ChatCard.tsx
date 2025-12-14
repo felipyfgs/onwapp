@@ -4,33 +4,21 @@ import { Chat } from "@/lib/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Users } from "lucide-react";
+import { formatChatTime } from "@/lib/date-utils";
 
 interface ChatCardProps {
   chat: Chat;
   onClick?: (chat: Chat) => void;
 }
 
-function formatTime(timestamp?: string): string {
-  if (!timestamp) return "";
-  const date = new Date(timestamp);
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  if (days === 0) return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  if (days === 1) return "Yesterday";
-  if (days < 7) return date.toLocaleDateString([], { weekday: "short" });
-  return date.toLocaleDateString([], { month: "short", day: "numeric" });
-}
-
 export function ChatCard({ chat, onClick }: ChatCardProps) {
-  const name = chat.name || chat.pushName || chat.jid.split("@")[0];
+  const name = chat.name || chat.contactName || chat.jid.split("@")[0];
   const initials = name.substring(0, 2).toUpperCase();
 
   return (
     <div
-      className={`flex items-center gap-4 p-4 border-b last:border-b-0 transition-colors ${
-        onClick ? "hover:bg-accent cursor-pointer" : ""
-      }`}
+      className={`flex items-center gap-4 p-4 border-b last:border-b-0 transition-colors ${onClick ? "hover:bg-accent cursor-pointer" : ""
+        }`}
       onClick={() => onClick?.(chat)}
     >
       <Avatar className="h-12 w-12">
@@ -43,7 +31,7 @@ export function ChatCard({ chat, onClick }: ChatCardProps) {
         <div className="flex items-center justify-between">
           <p className="font-medium truncate">{name}</p>
           <span className="text-xs text-muted-foreground flex-shrink-0">
-            {formatTime(chat.updatedAt)}
+            {chat.conversationTimestamp ? formatChatTime(chat.conversationTimestamp) : ""}
           </span>
         </div>
         <div className="flex items-center gap-2">

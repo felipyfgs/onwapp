@@ -24,7 +24,7 @@ const DEFAULT_CONFIG: ChatCacheConfig = {
 export function useChatCache(config: Partial<ChatCacheConfig> = {}) {
   const cacheConfig = { ...DEFAULT_CONFIG, ...config };
   const cacheRef = useRef<Map<string, CacheItem<any>>>(new Map());
-  const cleanupIntervalRef = useRef<NodeJS.Timeout>();
+  const cleanupIntervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const [cacheStats, setCacheStats] = useState({
     hits: 0,
     misses: 0,
@@ -35,24 +35,24 @@ export function useChatCache(config: Partial<ChatCacheConfig> = {}) {
   const cleanup = useCallback(() => {
     const now = Date.now();
     const cache = cacheRef.current;
-    
+
     for (const [key, item] of cache.entries()) {
       if (now > item.expiresAt) {
         cache.delete(key);
       }
     }
-    
+
     // Enforce max size
     if (cache.size > cacheConfig.maxSize) {
       const entries = Array.from(cache.entries());
       // Sort by timestamp (oldest first)
       entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
-      
+
       // Remove oldest entries
       const toRemove = entries.slice(0, cache.size - cacheConfig.maxSize);
       toRemove.forEach(([key]) => cache.delete(key));
     }
-    
+
     updateCacheStats();
   }, [cacheConfig]);
 
@@ -77,13 +77,13 @@ export function useChatCache(config: Partial<ChatCacheConfig> = {}) {
   ) => {
     const now = Date.now();
     const expiresAt = now + ttl;
-    
+
     cacheRef.current.set(key, {
       data,
       timestamp: now,
       expiresAt,
     });
-    
+
     updateCacheStats();
   }, [cacheConfig.defaultTTL, updateCacheStats]);
 
@@ -91,19 +91,19 @@ export function useChatCache(config: Partial<ChatCacheConfig> = {}) {
   const get = useCallback(<T>(key: string): T | null => {
     const cache = cacheRef.current;
     const item = cache.get(key);
-    
+
     if (!item) {
       setCacheStats(prev => ({ ...prev, misses: prev.misses + 1 }));
       return null;
     }
-    
+
     const now = Date.now();
     if (now > item.expiresAt) {
       cache.delete(key);
       setCacheStats(prev => ({ ...prev, misses: prev.misses + 1 }));
       return null;
     }
-    
+
     setCacheStats(prev => ({ ...prev, hits: prev.hits + 1 }));
     return item.data as T;
   }, [setCacheStats]);
@@ -183,13 +183,13 @@ export function useChatCache(config: Partial<ChatCacheConfig> = {}) {
   const invalidatePattern = useCallback((pattern: string) => {
     const cache = cacheRef.current;
     const regex = new RegExp(pattern);
-    
+
     for (const [key] of cache.entries()) {
       if (regex.test(key)) {
         cache.delete(key);
       }
     }
-    
+
     updateCacheStats();
   }, [updateCacheStats]);
 
@@ -208,7 +208,7 @@ export function useChatCache(config: Partial<ChatCacheConfig> = {}) {
   // Setup cleanup interval
   useEffect(() => {
     cleanupIntervalRef.current = setInterval(cleanup, cacheConfig.cleanupInterval);
-    
+
     return () => {
       if (cleanupIntervalRef.current) {
         clearInterval(cleanupIntervalRef.current);
@@ -234,7 +234,7 @@ export function useChatCache(config: Partial<ChatCacheConfig> = {}) {
     get,
     delete: del,
     clear,
-    
+
     // Specific cache methods
     cacheMessages,
     getCachedMessages,
@@ -242,16 +242,16 @@ export function useChatCache(config: Partial<ChatCacheConfig> = {}) {
     getCachedChat,
     cacheTicketList,
     getCachedTicketList,
-    
+
     // Invalidation methods
     invalidatePattern,
     invalidateSession,
     invalidateChat,
     invalidateTickets,
-    
+
     // Cache statistics
     stats: cacheStats,
-    
+
     // Cleanup method
     cleanup,
   };

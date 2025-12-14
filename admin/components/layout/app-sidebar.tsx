@@ -53,53 +53,66 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const navMain = React.useMemo(() => {
     const activeSession = sessions.find((s) => s.status === "connected") || sessions[0]
-    const overviewUrl = activeSession ? `/sessions/${activeSession.session}` : "/sessions"
+    const sessionId = activeSession?.session
+    const baseUrl = sessionId ? `/sessions/${sessionId}` : "/sessions"
 
     return [
       {
-        title: "Overview",
-        url: overviewUrl,
+        title: "Sessions",
+        url: "/sessions",
         icon: Smartphone,
         isActive: true,
       },
       {
+        title: "Overview",
+        url: baseUrl,
+        icon: Smartphone,
+        disabled: !sessionId,
+      },
+      {
         title: "Chats",
-        url: "/chats",
+        url: `${baseUrl}/chats`,
         icon: MessagesSquare,
+        disabled: !sessionId,
       },
       {
         title: "Contacts",
-        url: "/contacts",
+        url: `${baseUrl}/contacts`,
         icon: Users,
+        disabled: !sessionId,
       },
       {
         title: "Groups",
-        url: "/groups",
+        url: `${baseUrl}/groups`,
         icon: UsersRound,
+        disabled: !sessionId,
       },
       {
         title: "Messages",
-        url: "/messages",
+        url: `${baseUrl}/messages`,
         icon: Send,
+        disabled: !sessionId,
       },
       {
         title: "Media",
-        url: "/media",
+        url: `${baseUrl}/media`,
         icon: Image,
+        disabled: !sessionId,
       },
       {
         title: "Integrations",
         url: "#",
         icon: Webhook,
         items: [
-          { title: "Webhooks", url: "/webhooks" },
-          { title: "Chatwoot", url: "/chatwoot" },
+          { title: "Webhooks", url: `${baseUrl}/webhooks` },
+          { title: "Chatwoot", url: `${baseUrl}/chatwoot` },
         ],
       },
       {
         title: "Settings",
-        url: "/settings",
+        url: `${baseUrl}/settings`,
         icon: Settings2,
+        disabled: !sessionId,
       },
     ]
   }, [sessions])

@@ -22,12 +22,12 @@ interface UseSessionFormReturn {
 export function useSessionForm(): UseSessionFormReturn {
   const validateSessionNameAction = useCallback((name: string): string | null => {
     const result = validateSessionName(name);
-    return result.isValid ? null : result.error;
+    return result.isValid ? null : (result.error ?? "Invalid session name");
   }, []);
 
   const validatePhoneNumberAction = useCallback((phone: string): string | null => {
     const result = validatePhoneNumber(phone);
-    return result.isValid ? null : result.error;
+    return result.isValid ? null : (result.error ?? "Invalid phone number");
   }, []);
 
   const formatApiKeyAction = useCallback((key: string, show: boolean = false): string => {

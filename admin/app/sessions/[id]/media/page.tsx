@@ -1,47 +1,29 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useParams } from "next/navigation";
 import { AppSidebar } from "@/components/layout";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { PageHeader, StatsCard } from "@/components/common";
-import { getMediaList, getSessions, Media, Session } from "@/lib/api";
+import { getMediaList, Media } from "@/lib/api";
 import { Image, FileText, Mic, Video, File, RefreshCw, Download } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY || "";
 
 export default function MediaPage() {
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [selectedSession, setSelectedSession] = useState<string>("");
+  const params = useParams();
+  const sessionId = params.id as string;
   const [media, setMedia] = useState<Media[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    getSessions()
-      .then((data) => {
-        const connected = Array.isArray(data) ? data.filter((s) => s.status === "connected") : [];
-        setSessions(connected);
-        if (connected.length > 0) {
-          setSelectedSession(connected[0].session);
-        }
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
   const fetchMedia = useCallback(async () => {
-    if (!selectedSession) return;
+    if (!sessionId) return;
     setLoading(true);
     try {
-      const data = await getMediaList(selectedSession, 100);
+      const data = await getMediaList(sessionId, 100);
       setMedia(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch media:", error);
@@ -49,13 +31,11 @@ export default function MediaPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedSession]);
+  }, [sessionId]);
 
   useEffect(() => {
-    if (selectedSession) {
-      fetchMedia();
-    }
-  }, [selectedSession, fetchMedia]);
+    fetchMedia();
+  }, [fetchMedia]);
 
   const getMediaIcon = (type: string) => {
     switch (type.toLowerCase()) {
@@ -68,18 +48,18 @@ export default function MediaPage() {
   };
 
   const getMediaUrl = (m: Media) => {
-    return `${API_URL}/${selectedSession}/media/stream?id=${m.id}&auth=${API_KEY}`;
+    return `${API_URL}/${sessionId}/media/stream?id=${m.id}&auth=${API_KEY}`;
   };
 
   const formatSize = (bytes?: number) => {
-    if (!bytes) return "Unknown";
+    if (!bytes) return "Desconhecido";
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString(undefined, {
+    return new Date(date).toLocaleDateString("pt-BR", {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -95,44 +75,32 @@ export default function MediaPage() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <PageHeader breadcrumbs={[{ label: "Media" }]} />
+        <PageHeader
+          breadcrumbs={[
+            { label: "Sessions", href: "/sessions" },
+            { label: sessionId, href: `/sessions/${sessionId}` },
+            { label: "Media" },
+          ]}
+        />
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           {/* Toolbar */}
           <div className="flex gap-4">
-            <Select value={selectedSession} onValueChange={setSelectedSession}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Select session" />
-              </SelectTrigger>
-              <SelectContent>
-                {sessions.map((s) => (
-                  <SelectItem key={s.session} value={s.session}>
-                    {s.pushName || s.session}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <Button variant="outline" size="sm" onClick={fetchMedia}>
               <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
+              Atualizar
             </Button>
           </div>
 
           {/* Stats */}
           <div className="grid gap-4 md:grid-cols-4">
-            <StatsCard title="Images" value={images.length} icon={Image} variant="chart1" />
-            <StatsCard title="Videos" value={videos.length} icon={Video} variant="chart2" />
-            <StatsCard title="Audio" value={audios.length} icon={Mic} variant="primary" />
-            <StatsCard title="Documents" value={documents.length} icon={FileText} variant="chart4" />
+            <StatsCard title="Imagens" value={images.length} icon={Image} variant="chart1" />
+            <StatsCard title="Vídeos" value={videos.length} icon={Video} variant="chart2" />
+            <StatsCard title="Áudio" value={audios.length} icon={Mic} variant="primary" />
+            <StatsCard title="Documentos" value={documents.length} icon={FileText} variant="chart4" />
           </div>
 
           {/* Media Grid */}
-          {!selectedSession ? (
-            <div className="rounded-xl border bg-muted/50 p-12 text-center">
-              <Image className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-medium mb-2">Select a session</h3>
-              <p className="text-muted-foreground">Choose a connected session to view media</p>
-            </div>
-          ) : loading ? (
+          {loading ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               {[...Array(8)].map((_, i) => (
                 <Skeleton key={i} className="aspect-square rounded-xl" />
@@ -141,8 +109,8 @@ export default function MediaPage() {
           ) : media.length === 0 ? (
             <div className="rounded-xl border bg-muted/50 p-12 text-center">
               <Image className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-medium mb-2">No media found</h3>
-              <p className="text-muted-foreground">No media files in this session</p>
+              <h3 className="text-lg font-medium mb-2">Nenhuma mídia encontrada</h3>
+              <p className="text-muted-foreground">Nenhum arquivo de mídia nesta sessão</p>
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

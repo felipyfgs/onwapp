@@ -87,11 +87,22 @@ func (s *Service) GetContactLID(ctx context.Context, sessionId, phone string) (s
 		return "", fmt.Errorf("invalid phone: %w", err)
 	}
 
-	if session.Client.Store.ID != nil {
-		ownJID := *session.Client.Store.ID
-		if jid.User == ownJID.User && ownJID.RawAgent > 0 {
-			return ownJID.String(), nil
-		}
+	// If already a LID, return it directly
+	if jid.Server == types.HiddenUserServer {
+		return jid.String(), nil
+	}
+
+	// Look up the LID for the contact using whatsmeow's LID store
+	if session.Client.Store.LIDs == nil {
+		return "", fmt.Errorf("LID store is not available")
+	}
+
+	lid, err := session.Client.Store.LIDs.GetLIDForPN(ctx, jid)
+	if err != nil {
+		return "", fmt.Errorf("failed to get LID for %s (server=%s): %w", jid.String(), jid.Server, err)
+	}
+	if !lid.IsEmpty() {
+		return lid.String(), nil
 	}
 
 	return "", nil

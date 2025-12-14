@@ -1,5 +1,7 @@
 "use client";
 
+import React from "react";
+
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
 
@@ -33,7 +35,7 @@ export function useFocusTrap(isActive: boolean) {
         const focusableElements = document.querySelectorAll(
           'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
         );
-        
+
         const firstElement = focusableElements[0] as HTMLElement;
         const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
 
@@ -49,7 +51,7 @@ export function useFocusTrap(isActive: boolean) {
           }
         }
       }
-      
+
       // Escape to close
       if (event.key === 'Escape') {
         event.preventDefault();
@@ -58,7 +60,7 @@ export function useFocusTrap(isActive: boolean) {
     };
 
     document.addEventListener('keydown', handleKeyDown);
-    
+
     // Focus first element when trap is activated
     const firstFocusable = document.querySelector(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
@@ -78,7 +80,7 @@ export function useAnnouncer() {
     if (announcer) {
       announcer.textContent = message;
       announcer.setAttribute('aria-live', priority);
-      
+
       // Clear after announcement
       setTimeout(() => {
         announcer.textContent = '';
@@ -247,9 +249,9 @@ export function FontSizeControls({ className }: { className?: string }) {
 }
 
 // Accessibility wrapper
-export function AccessibilityWrapper({ 
-  children, 
-  className 
+export function AccessibilityWrapper({
+  children,
+  className
 }: AccessibilityProps) {
   return (
     <div className={cn("accessibility-enabled", className)}>
@@ -257,14 +259,14 @@ export function AccessibilityWrapper({
       <div id="main-content" role="main">
         {children}
       </div>
-      
+
       {/* Accessibility controls */}
       <div className="fixed bottom-4 right-4 flex flex-col gap-2 p-3 bg-background border rounded-lg shadow-lg z-50">
         <HighContrastToggle />
         <ReducedMotionToggle />
         <FontSizeControls />
       </div>
-      
+
       {/* Screen reader announcer */}
       <div
         id="screen-reader-announcer"

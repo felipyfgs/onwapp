@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import { AppSidebar } from "@/components/layout";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { PageHeader } from "@/components/common";
@@ -48,6 +49,8 @@ interface DashboardData {
 }
 
 export default function DashboardPage() {
+  const params = useParams();
+  const sessionId = params.id as string;
   const [data, setData] = useState<DashboardData>();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -103,7 +106,11 @@ export default function DashboardPage() {
       <AppSidebar />
       <SidebarInset>
         <PageHeader
-          breadcrumbs={[{ label: "Dashboard" }]}
+          breadcrumbs={[
+            { label: "Sessions", href: "/sessions" },
+            { label: sessionId, href: `/sessions/${sessionId}` },
+            { label: "Dashboard" },
+          ]}
           actions={
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
@@ -117,11 +124,11 @@ export default function DashboardPage() {
             </div>
           }
         />
-        
+
         <div className="flex flex-1 flex-col gap-6 p-4 pt-0 overflow-auto">
           {/* Stats Overview */}
           <DashboardStats data={data} loading={loading} />
-          
+
           <div className="grid gap-6 lg:grid-cols-3">
             {/* Quick Actions */}
             <div className="lg:col-span-2">
@@ -131,7 +138,7 @@ export default function DashboardPage() {
                 unreadMessages={data?.messages.today}
               />
             </div>
-            
+
             {/* System Status */}
             <Card className="border bg-card">
               <CardHeader className="pb-3">
@@ -167,7 +174,7 @@ export default function DashboardPage() {
                     </Badge>
                   </div>
                 </div>
-                
+
                 <div className="pt-3 border-t">
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Clock className="h-3 w-3" />
@@ -177,13 +184,13 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </div>
-          
+
           {/* Activity Feed */}
           <div className="grid gap-6 lg:grid-cols-3">
             <div className="lg:col-span-2">
               <ActivityFeed loading={loading} onRefresh={handleRefresh} />
             </div>
-            
+
             {/* Quick Stats */}
             <Card className="border bg-card">
               <CardHeader className="pb-3">
@@ -201,7 +208,7 @@ export default function DashboardPage() {
                     </div>
                     <span className="text-sm font-medium">92%</span>
                   </div>
-                  
+
                   <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-green-500" />
@@ -209,7 +216,7 @@ export default function DashboardPage() {
                     </div>
                     <span className="text-sm font-medium">4.8/5</span>
                   </div>
-                  
+
                   <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
                     <div className="flex items-center gap-2">
                       <BarChart3 className="h-4 w-4 text-purple-500" />
@@ -217,7 +224,7 @@ export default function DashboardPage() {
                     </div>
                     <span className="text-sm font-medium">+23%</span>
                   </div>
-                  
+
                   <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
                     <div className="flex items-center gap-2">
                       <AlertTriangle className="h-4 w-4 text-yellow-500" />
@@ -226,7 +233,7 @@ export default function DashboardPage() {
                     <span className="text-sm font-medium">2</span>
                   </div>
                 </div>
-                
+
                 <Button variant="outline" className="w-full mt-4">
                   Ver Relatórios Completos
                 </Button>

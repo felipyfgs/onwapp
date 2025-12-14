@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Users, MessageSquare } from "lucide-react";
 import { type Chat } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { formatRelativeTimeCompact } from "@/lib/date-utils";
 
 interface ChatListItemProps {
   chat: Chat;
@@ -28,21 +29,6 @@ function ChatListItemComponent({
       .slice(0, 2);
   };
 
-  const formatTime = (dateString?: string) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return "Agora";
-    if (diffMins < 60) return `${diffMins}m`;
-    if (diffHours < 24) return `${diffHours}h`;
-    if (diffDays < 7) return `${diffDays}d`;
-    return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-  };
 
   const displayName = chat.name || chat.contactName || chat.jid.split("@")[0];
 
@@ -78,7 +64,7 @@ function ChatListItemComponent({
         </Avatar>
 
         {/* Unread Indicator */}
-        {chat.unreadCount && chat.unreadCount > 0 && (
+        {chat.unreadCount !== undefined && chat.unreadCount > 0 && (
           <div className="absolute -top-1 -right-1 h-5 w-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold">
             {chat.unreadCount > 9 ? "9+" : chat.unreadCount}
           </div>
@@ -98,12 +84,12 @@ function ChatListItemComponent({
             )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {chat.updatedAt && (
+            {chat.conversationTimestamp && (
               <span className="text-xs text-muted-foreground font-medium">
-                {formatTime(chat.updatedAt)}
+                {formatRelativeTimeCompact(chat.conversationTimestamp)}
               </span>
             )}
-            {chat.unreadCount && chat.unreadCount > 0 && (
+            {chat.unreadCount !== undefined && chat.unreadCount > 0 && (
               <Badge className="h-5 min-w-5 px-1.5 text-[10px] bg-primary text-primary-foreground">
                 {chat.unreadCount}
               </Badge>
@@ -131,7 +117,7 @@ export const ChatListItem = memo(ChatListItemComponent, (prev, next) => {
   return (
     prev.chat.jid === next.chat.jid &&
     prev.chat.unreadCount === next.chat.unreadCount &&
-    prev.chat.updatedAt === next.chat.updatedAt &&
+    prev.chat.conversationTimestamp === next.chat.conversationTimestamp &&
     prev.selected === next.selected
   );
 });

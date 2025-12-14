@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useParams } from "next/navigation";
 import { AppSidebar } from "@/components/layout";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -8,13 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Card,
   CardContent,
@@ -30,35 +24,23 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/common";
-import { getSessions, getWebhook, setWebhook, deleteWebhook, Webhook, Session } from "@/lib/api";
+import { getWebhook, setWebhook, deleteWebhook, Webhook } from "@/lib/api";
 import { Webhook as WebhookIcon, Plus, Trash2, RefreshCw, CheckCircle, XCircle, ExternalLink } from "lucide-react";
 
 export default function WebhooksPage() {
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [selectedSession, setSelectedSession] = useState<string>("");
+  const params = useParams();
+  const sessionId = params.id as string;
   const [webhook, setWebhookState] = useState<Webhook | null>(null);
   const [loading, setLoading] = useState(true);
   const [configDialog, setConfigDialog] = useState(false);
   const [webhookUrl, setWebhookUrl] = useState("");
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    getSessions()
-      .then((data) => {
-        const connected = Array.isArray(data) ? data.filter((s) => s.status === "connected") : [];
-        setSessions(connected);
-        if (connected.length > 0) {
-          setSelectedSession(connected[0].session);
-        }
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
   const fetchWebhook = useCallback(async () => {
-    if (!selectedSession) return;
+    if (!sessionId) return;
     setLoading(true);
     try {
-      const data = await getWebhook(selectedSession);
+      const data = await getWebhook(sessionId);
       setWebhookState(data);
       if (data) {
         setWebhookUrl(data.url);
@@ -69,19 +51,17 @@ export default function WebhooksPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedSession]);
+  }, [sessionId]);
 
   useEffect(() => {
-    if (selectedSession) {
-      fetchWebhook();
-    }
-  }, [selectedSession, fetchWebhook]);
+    fetchWebhook();
+  }, [fetchWebhook]);
 
   const handleSaveWebhook = async () => {
-    if (!webhookUrl || !selectedSession) return;
+    if (!webhookUrl || !sessionId) return;
     setSaving(true);
     try {
-      const result = await setWebhook(selectedSession, { url: webhookUrl, enabled: true });
+      const result = await setWebhook(sessionId, { url: webhookUrl, enabled: true });
       setWebhookState(result);
       setConfigDialog(false);
     } catch (error) {
@@ -92,9 +72,9 @@ export default function WebhooksPage() {
   };
 
   const handleDeleteWebhook = async () => {
-    if (!selectedSession || !confirm("Delete this webhook?")) return;
+    if (!sessionId || !confirm("Excluir este webhook?")) return;
     try {
-      await deleteWebhook(selectedSession);
+      await deleteWebhook(sessionId);
       setWebhookState(null);
       setWebhookUrl("");
     } catch (error) {
@@ -119,36 +99,24 @@ export default function WebhooksPage() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <PageHeader breadcrumbs={[{ label: "Integrations" }, { label: "Webhooks" }]} />
+        <PageHeader
+          breadcrumbs={[
+            { label: "Sessions", href: "/sessions" },
+            { label: sessionId, href: `/sessions/${sessionId}` },
+            { label: "Webhooks" },
+          ]}
+        />
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           {/* Toolbar */}
           <div className="flex gap-4">
-            <Select value={selectedSession} onValueChange={setSelectedSession}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Select session" />
-              </SelectTrigger>
-              <SelectContent>
-                {sessions.map((s) => (
-                  <SelectItem key={s.session} value={s.session}>
-                    {s.pushName || s.session}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <Button variant="outline" size="sm" onClick={fetchWebhook}>
               <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
+              Atualizar
             </Button>
           </div>
 
           {/* Webhook Card */}
-          {!selectedSession ? (
-            <div className="rounded-xl border bg-muted/50 p-12 text-center">
-              <WebhookIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-medium mb-2">Select a session</h3>
-              <p className="text-muted-foreground">Choose a session to configure webhooks</p>
-            </div>
-          ) : loading ? (
+          {loading ? (
             <Card>
               <CardHeader>
                 <Skeleton className="h-6 w-32" />
@@ -165,20 +133,20 @@ export default function WebhooksPage() {
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       <WebhookIcon className="h-5 w-5" />
-                      Webhook Configuration
+                      Configuração do Webhook
                     </CardTitle>
-                    <CardDescription>Events will be sent to this URL</CardDescription>
+                    <CardDescription>Eventos serão enviados para esta URL</CardDescription>
                   </div>
                   <Badge variant={webhook.enabled !== false ? "default" : "secondary"}>
                     {webhook.enabled !== false ? (
                       <>
                         <CheckCircle className="h-3 w-3 mr-1" />
-                        Active
+                        Ativo
                       </>
                     ) : (
                       <>
                         <XCircle className="h-3 w-3 mr-1" />
-                        Disabled
+                        Desativado
                       </>
                     )}
                   </Badge>
@@ -195,7 +163,7 @@ export default function WebhooksPage() {
                 </div>
 
                 <div>
-                  <Label className="text-sm text-muted-foreground">Events</Label>
+                  <Label className="text-sm text-muted-foreground">Eventos</Label>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {(webhook.events || allEvents).map((event) => (
                       <Badge key={event} variant="outline">
@@ -208,30 +176,30 @@ export default function WebhooksPage() {
                 <div className="flex gap-2 pt-4">
                   <Dialog open={configDialog} onOpenChange={setConfigDialog}>
                     <DialogTrigger asChild>
-                      <Button variant="outline">Edit Webhook</Button>
+                      <Button variant="outline">Editar Webhook</Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Configure Webhook</DialogTitle>
+                        <DialogTitle>Configurar Webhook</DialogTitle>
                       </DialogHeader>
                       <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                          <Label>Webhook URL</Label>
+                          <Label>URL do Webhook</Label>
                           <Input
-                            placeholder="https://your-server.com/webhook"
+                            placeholder="https://seu-servidor.com/webhook"
                             value={webhookUrl}
                             onChange={(e) => setWebhookUrl(e.target.value)}
                           />
                         </div>
                         <Button onClick={handleSaveWebhook} disabled={saving || !webhookUrl} className="w-full">
-                          {saving ? "Saving..." : "Save Webhook"}
+                          {saving ? "Salvando..." : "Salvar Webhook"}
                         </Button>
                       </div>
                     </DialogContent>
                   </Dialog>
                   <Button variant="destructive" onClick={handleDeleteWebhook}>
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
+                    Excluir
                   </Button>
                 </div>
               </CardContent>
@@ -239,32 +207,32 @@ export default function WebhooksPage() {
           ) : (
             <Card>
               <CardHeader>
-                <CardTitle>No Webhook Configured</CardTitle>
-                <CardDescription>Set up a webhook to receive real-time events</CardDescription>
+                <CardTitle>Nenhum Webhook Configurado</CardTitle>
+                <CardDescription>Configure um webhook para receber eventos em tempo real</CardDescription>
               </CardHeader>
               <CardContent>
                 <Dialog open={configDialog} onOpenChange={setConfigDialog}>
                   <DialogTrigger asChild>
                     <Button>
                       <Plus className="mr-2 h-4 w-4" />
-                      Add Webhook
+                      Adicionar Webhook
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Configure Webhook</DialogTitle>
+                      <DialogTitle>Configurar Webhook</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                       <div className="space-y-2">
-                        <Label>Webhook URL</Label>
+                        <Label>URL do Webhook</Label>
                         <Input
-                          placeholder="https://your-server.com/webhook"
+                          placeholder="https://seu-servidor.com/webhook"
                           value={webhookUrl}
                           onChange={(e) => setWebhookUrl(e.target.value)}
                         />
                       </div>
                       <Button onClick={handleSaveWebhook} disabled={saving || !webhookUrl} className="w-full">
-                        {saving ? "Saving..." : "Save Webhook"}
+                        {saving ? "Salvando..." : "Salvar Webhook"}
                       </Button>
                     </div>
                   </DialogContent>
@@ -276,8 +244,8 @@ export default function WebhooksPage() {
           {/* Events Info */}
           <Card>
             <CardHeader>
-              <CardTitle>Available Events</CardTitle>
-              <CardDescription>Events that will be sent to your webhook</CardDescription>
+              <CardTitle>Eventos Disponíveis</CardTitle>
+              <CardDescription>Eventos que serão enviados ao seu webhook</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid gap-2 md:grid-cols-2">

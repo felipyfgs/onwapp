@@ -150,9 +150,10 @@ export function ChatWindow({
             </div>
           </div>
         ) : (
-          messages.map((message) => (
-            <MessageBubble key={message.id} message={message} />
+          messages.map((message, index) => (
+            <MessageBubble key={message.id || index} message={message} />
           ))
+
         )}
         <div ref={messagesEndRef} />
       </div>

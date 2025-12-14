@@ -40,10 +40,20 @@ export function useChatCore(session: string) {
     if (!session || !selectedChat) return;
     try {
       const sent = await sendTextMessage(session, {
-        to: selectedChat.jid,
+        phone: selectedChat.jid,
         text,
       });
-      setMessages((prev) => [...prev, sent]);
+      // Create a local message from the response
+      const newMessage: Message = {
+        id: sent.messageId,
+        chatJid: selectedChat.jid,
+        type: "text",
+        content: text,
+        isFromMe: true,
+        timestamp: new Date(sent.timestamp * 1000).toISOString(),
+        status: "sent",
+      };
+      setMessages((prev) => [...prev, newMessage]);
     } catch (error) {
       toast.error("Failed to send message");
     }

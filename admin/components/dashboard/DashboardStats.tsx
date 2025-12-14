@@ -1,75 +1,8 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, TrendingDown, Users, MessageSquare, Smartphone, Activity } from "lucide-react";
-import { cn } from "@/lib/utils";
-
-interface StatCardProps {
-  title: string;
-  value: string | number;
-  change?: {
-    value: number;
-    trend: "up" | "down";
-  };
-  icon: React.ElementType;
-  description?: string;
-  loading?: boolean;
-}
-
-function StatCard({ 
-  title, 
-  value, 
-  change, 
-  icon: Icon, 
-  description, 
-  loading = false 
-}: StatCardProps) {
-  return (
-    <Card className="relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-[1.02] border-0 bg-gradient-to-br from-card to-card/80">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {title}
-        </CardTitle>
-        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-          <Icon className="h-4 w-4 text-primary" />
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
-          <div className="text-2xl font-bold">
-            {loading ? (
-              <div className="h-8 w-16 bg-muted rounded animate-pulse" />
-            ) : (
-              value
-            )}
-          </div>
-          {change && (
-            <div className="flex items-center space-x-1 text-xs">
-              {change.trend === "up" ? (
-                <TrendingUp className="h-3 w-3 text-green-500" />
-              ) : (
-                <TrendingDown className="h-3 w-3 text-red-500" />
-              )}
-              <span className={cn(
-                "font-medium",
-                change.trend === "up" ? "text-green-500" : "text-red-500"
-              )}>
-                {Math.abs(change.value)}%
-              </span>
-              <span className="text-muted-foreground">vs última semana</span>
-            </div>
-          )}
-          {description && (
-            <p className="text-xs text-muted-foreground">{description}</p>
-          )}
-        </div>
-      </CardContent>
-      {/* Decorative gradient */}
-      <div className="absolute top-0 right-0 h-32 w-32 bg-gradient-to-br from-primary/5 to-transparent rounded-full -translate-y-16 translate-x-16" />
-    </Card>
-  );
-}
+import { Users, MessageSquare, Smartphone, Activity } from "lucide-react";
+import { StatsCard } from "@/components/common";
 
 interface DashboardStatsProps {
   data?: {
@@ -108,7 +41,7 @@ export function DashboardStats({ data, loading = false }: DashboardStatsProps) {
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <StatCard
+      <StatsCard
         title="Sessões Ativas"
         value={`${stats.sessions.active}/${stats.sessions.total}`}
         change={{
@@ -119,7 +52,7 @@ export function DashboardStats({ data, loading = false }: DashboardStatsProps) {
         description={`${stats.sessions.inactive} inativas`}
         loading={loading}
       />
-      <StatCard
+      <StatsCard
         title="Mensagens Hoje"
         value={stats.messages.today.toLocaleString()}
         change={{
@@ -129,21 +62,23 @@ export function DashboardStats({ data, loading = false }: DashboardStatsProps) {
         icon={MessageSquare}
         description={`${stats.messages.total} total`}
         loading={loading}
+        variant="chart1"
       />
-      <StatCard
+      <StatsCard
         title="Conversas"
         value={stats.chats.total}
         icon={Activity}
         description={
-          <div className="flex items-center gap-2">
+          <span className="flex items-center gap-2">
             <Badge variant="secondary" className="text-xs">
               {stats.chats.unread} não lidas
             </Badge>
-          </div>
+          </span>
         }
         loading={loading}
+        variant="chart2"
       />
-      <StatCard
+      <StatsCard
         title="Contatos"
         value={stats.contacts.total.toLocaleString()}
         change={{
@@ -153,6 +88,7 @@ export function DashboardStats({ data, loading = false }: DashboardStatsProps) {
         icon={Users}
         description={`${stats.contacts.new} novos esta semana`}
         loading={loading}
+        variant="chart3"
       />
     </div>
   );

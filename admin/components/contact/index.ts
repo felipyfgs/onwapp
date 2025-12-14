@@ -1,2 +1,9 @@
 export { ContactCard } from "./ContactCard";
 export { CheckPhoneDialog } from "./CheckPhoneDialog";
+export { ContactsToolbar } from "./ContactsToolbar";
+export { ContactsStats } from "./ContactsStats";
+export { ContactList } from "./ContactList";
+export { BlocklistDialog } from "./BlocklistDialog";
+export { ContactQRDialog } from "./ContactQRDialog";
+export { ContactDetailsModal } from "./ContactDetailsModal";
+export { BusinessProfileCard } from "./BusinessProfileCard";

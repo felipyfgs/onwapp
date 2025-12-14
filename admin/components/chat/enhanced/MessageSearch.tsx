@@ -72,9 +72,9 @@ export function MessageSearch({
     from: filters.dateFrom || "",
     to: filters.dateTo || "",
   });
-  
+
   const inputRef = useRef<HTMLInputElement>(null);
-  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Handle search input
   const handleSearchChange = useCallback((value: string) => {
@@ -101,7 +101,7 @@ export function MessageSearch({
   // Handle filter changes
   const handleFilterChange = useCallback((filterType: string, value: string) => {
     const newFilters = { ...filters };
-    
+
     switch (filterType) {
       case 'dateFrom':
         newFilters.dateFrom = value || undefined;
@@ -116,7 +116,7 @@ export function MessageSearch({
         newFilters.hasMedia = value === 'true';
         break;
     }
-    
+
     updateFilters(newFilters);
   }, [filters, updateFilters]);
 
@@ -151,7 +151,7 @@ export function MessageSearch({
   // Suggestions dropdown
   const SuggestionsDropdown = () => {
     const suggestions = getSuggestions(currentQuery);
-    
+
     if (suggestions.length === 0) return null;
 
     return (
@@ -351,7 +351,7 @@ export function MessageSearch({
                       </div>
                     )}
                   </div>
-                  <div 
+                  <div
                     className="text-sm text-muted-foreground line-clamp-2"
                     dangerouslySetInnerHTML={{
                       __html: highlightText(message.content || '', currentQuery)

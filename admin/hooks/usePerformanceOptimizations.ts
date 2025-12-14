@@ -104,7 +104,7 @@ export function useLazyImage(src: string, placeholder?: string) {
 
 // Debounced resize observer
 export function useResizeObserver(callback: () => void, delay: number = 250) {
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   useEffect(() => {
     const handleResize = () => {
@@ -156,8 +156,9 @@ export function usePerformanceMonitor() {
     let clsValue = 0;
     const clsObserver = new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
-        if (!entry.hadRecentInput) {
-          clsValue += entry.value;
+        const layoutShift = entry as PerformanceEntry & { hadRecentInput?: boolean; value?: number };
+        if (!layoutShift.hadRecentInput) {
+          clsValue += layoutShift.value || 0;
         }
       }
       setMetrics(prev => ({ ...prev, cls: clsValue }));
@@ -168,8 +169,9 @@ export function usePerformanceMonitor() {
     // Measure FID
     const fidObserver = new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
+        const firstInput = entry as PerformanceEntry & { processingStart?: number };
         if (entry.name === 'first-input') {
-          setMetrics(prev => ({ ...prev, fid: entry.processingStart - entry.startTime }));
+          setMetrics(prev => ({ ...prev, fid: (firstInput.processingStart || 0) - entry.startTime }));
         }
       }
     });
@@ -218,12 +220,19 @@ export function useMemoryMonitor() {
 }
 
 // Network status monitoring
+interface NetworkInfo {
+  online: boolean;
+  effectiveType: 'slow-2g' | '2g' | '3g' | '4g';
+  downlink: number;
+  rtt: number;
+}
+
 export function useNetworkStatus() {
-  const [networkInfo, setNetworkInfo] = useState({
-    online: navigator.onLine,
-    effectiveType: '4g' as NetworkInformation['effectiveType'],
-    downlink: 10 as NetworkInformation['downlink'],
-    rtt: 100 as NetworkInformation['rtt']
+  const [networkInfo, setNetworkInfo] = useState<NetworkInfo>({
+    online: typeof navigator !== 'undefined' ? navigator.onLine : true,
+    effectiveType: '4g',
+    downlink: 10,
+    rtt: 100
   });
 
   useEffect(() => {
@@ -245,14 +254,16 @@ export function useNetworkStatus() {
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-    navigator.connection?.addEventListener('change', handleConnectionChange);
+
+    const connection = (navigator as Navigator & { connection?: EventTarget }).connection;
+    connection?.addEventListener('change', handleConnectionChange);
 
     updateNetworkInfo();
 
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
-      navigator.connection?.removeEventListener('change', handleConnectionChange);
+      connection?.removeEventListener('change', handleConnectionChange);
     };
   }, []);
 

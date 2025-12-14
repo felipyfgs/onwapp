@@ -17,19 +17,13 @@ import {
   Play,
   Download,
 } from "lucide-react";
+import { formatMessageTime } from "@/lib/date-utils";
 
 interface MessageBubbleProps {
   message: Message;
   showAvatar?: boolean;
   senderPicture?: string;
   searchQuery?: string;
-}
-
-function formatMessageTime(timestamp: string): string {
-  return new Date(timestamp).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 }
 
 function MessageStatus({ status }: { status?: string }) {

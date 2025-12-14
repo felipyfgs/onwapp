@@ -5,12 +5,12 @@ import { Command } from "cmdk";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { 
-  Search, 
-  MessageSquare, 
-  Users, 
-  Smartphone, 
-  Settings, 
+import {
+  Search,
+  MessageSquare,
+  Users,
+  Smartphone,
+  Settings,
   FileText,
   Hash,
   ArrowRight,
@@ -48,7 +48,7 @@ const mockResults: SearchResult[] = [
     badge: "Online"
   },
   {
-    id: "2", 
+    id: "2",
     title: "João Silva",
     description: "Última mensagem: há 5 minutos",
     category: "chat",
@@ -107,15 +107,15 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
     }
 
     setLoading(true);
-    
+
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 300));
-    
+
     const filtered = mockResults.filter(item =>
       item.title.toLowerCase().includes(query.toLowerCase()) ||
       item.description.toLowerCase().includes(query.toLowerCase())
     );
-    
+
     setResults(filtered);
     setRecentItems([]);
     setLoading(false);
@@ -141,7 +141,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
   const handleSelect = (result: SearchResult) => {
     router.push(result.url);
     onOpenChange(false);
-    
+
     // Add to recent searches
     // This would typically save to localStorage or backend
   };
@@ -206,7 +206,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
               </Button>
             )}
           </div>
-          
+
           <Command.List className="max-h-[450px] overflow-y-auto p-2">
             {loading ? (
               <div className="flex items-center justify-center py-6">
@@ -258,14 +258,14 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                     })}
                   </Command.Group>
                 )}
-                
+
                 {search.length > 0 && (
                   <Command.Group heading="Resultados">
                     {displayItems.map((item) => {
                       const Icon = item.icon;
-                      const categoryIcon = getCategoryIcon(item.category);
+                      const CategoryIcon = getCategoryIcon(item.category);
                       const categoryColor = getCategoryColor(item.category);
-                      
+
                       return (
                         <Command.Item
                           key={item.id}
@@ -276,7 +276,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                           <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center">
                             <Icon className="h-4 w-4" />
                           </div>
-                          
+
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <p className="text-sm font-medium truncate">
@@ -292,13 +292,13 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                               {item.description}
                             </p>
                           </div>
-                          
+
                           <div className="flex items-center gap-2">
                             <div className={cn(
                               "h-6 w-6 rounded-full flex items-center justify-center",
                               categoryColor
                             )}>
-                              <categoryIcon className="h-3 w-3" />
+                              <CategoryIcon className="h-3 w-3" />
                             </div>
                             <ArrowRight className="h-4 w-4 text-muted-foreground" />
                           </div>
@@ -307,7 +307,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
                     })}
                   </Command.Group>
                 )}
-                
+
                 {search.length === 0 && (
                   <Command.Group heading="Buscas Recentes">
                     {recentSearches.map((term, index) => (

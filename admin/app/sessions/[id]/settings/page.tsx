@@ -1,5 +1,6 @@
 "use client";
 
+import { useParams } from "next/navigation";
 import { AppSidebar } from "@/components/layout";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import {
@@ -16,6 +17,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Settings, Server, Key } from "lucide-react";
 
 export default function SettingsPage() {
+  const params = useParams();
+  const sessionId = params.id as string;
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
   const natsUrl = process.env.NEXT_PUBLIC_NATS_WS_URL || "Auto-detect";
 
@@ -23,7 +26,13 @@ export default function SettingsPage() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <PageHeader breadcrumbs={[{ label: "Settings" }]} />
+        <PageHeader
+          breadcrumbs={[
+            { label: "Sessions", href: "/sessions" },
+            { label: sessionId, href: `/sessions/${sessionId}` },
+            { label: "Settings" },
+          ]}
+        />
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           <div className="max-w-2xl space-y-6">
             <Card>

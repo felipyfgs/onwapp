@@ -147,7 +147,7 @@ export function QRCodeModal({ sessionName, open, onClose }: QRCodeModalProps) {
                 <div className="flex flex-col items-center gap-2 text-muted-foreground">
                   <p>No QR code available</p>
                   <p className="text-xs">
-                    {qrStatus === "disconnected" || qrStatus === "idle"
+                    {qrStatus === "idle"
                       ? "Click Connect to generate QR code"
                       : `Status: ${qrStatus}`}
                   </p>

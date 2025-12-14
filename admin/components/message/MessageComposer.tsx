@@ -55,11 +55,11 @@ export function MessageComposer({ sessionId, defaultRecipient = "" }: MessageCom
       switch (messageType) {
         case "text":
           if (!textMessage) throw new Error("Enter a message");
-          await sendTextMessage(sessionId, { to: recipient, text: textMessage });
+          await sendTextMessage(sessionId, { phone: recipient, text: textMessage });
           break;
         case "image":
           if (!mediaUrl) throw new Error("Enter image URL");
-          await sendImageMessage(sessionId, { to: recipient, url: mediaUrl, caption });
+          await sendImageMessage(sessionId, { phone: recipient, image: mediaUrl, caption });
           break;
         default:
           throw new Error("Message type not implemented yet");

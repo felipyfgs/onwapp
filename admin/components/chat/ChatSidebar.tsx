@@ -23,6 +23,7 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatChatTime } from "@/lib/date-utils";
 
 interface ChatSidebarProps {
   chats: Chat[];
@@ -32,18 +33,6 @@ interface ChatSidebarProps {
 }
 
 type FilterType = "all" | "unread" | "groups" | "archived";
-
-function formatTime(timestamp?: number | string): string {
-  if (!timestamp) return "";
-  const date = typeof timestamp === "number" ? new Date(timestamp * 1000) : new Date(timestamp);
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  if (days === 0) return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  if (days === 1) return "Yesterday";
-  if (days < 7) return date.toLocaleDateString([], { weekday: "short" });
-  return date.toLocaleDateString([], { month: "short", day: "numeric" });
-}
 
 export function ChatSidebar({ chats, selectedChat, onSelectChat, loading }: ChatSidebarProps) {
   const [search, setSearch] = useState("");
@@ -220,7 +209,7 @@ export function ChatSidebar({ chats, selectedChat, onSelectChat, loading }: Chat
                           ? "text-primary font-medium"
                           : "text-muted-foreground"
                       )}>
-                        {formatTime(chat.conversationTimestamp)}
+                        {formatChatTime(chat.conversationTimestamp)}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 max-h-6 overflow-hidden">

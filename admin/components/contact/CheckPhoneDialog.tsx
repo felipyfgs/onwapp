@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { checkPhone } from "@/lib/api";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -9,52 +8,43 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { Phone, CheckCircle, XCircle } from "lucide-react";
+import { CheckCircle, XCircle } from "lucide-react";
 
 interface CheckPhoneDialogProps {
-  sessionId: string;
-  trigger?: React.ReactNode;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onCheck: (phone: string) => void;
+  result: { exists: boolean; jid: string } | null;
+  checking: boolean;
+  onResultClear: () => void;
 }
 
-export function CheckPhoneDialog({ sessionId, trigger }: CheckPhoneDialogProps) {
-  const [open, setOpen] = useState(false);
+export function CheckPhoneDialog({
+  open,
+  onOpenChange,
+  onCheck,
+  result,
+  checking,
+  onResultClear,
+}: CheckPhoneDialogProps) {
   const [phone, setPhone] = useState("");
-  const [result, setResult] = useState<{ exists: boolean; jid: string } | null>(null);
-  const [checking, setChecking] = useState(false);
 
-  const handleCheck = async () => {
-    if (!phone || !sessionId) return;
-    setChecking(true);
-    try {
-      const results = await checkPhone(sessionId, [phone]);
-      setResult(results[0] || null);
-    } catch (error) {
-      console.error("Failed to check phone:", error);
-    } finally {
-      setChecking(false);
-    }
-  };
-
-  const handleOpenChange = (isOpen: boolean) => {
-    setOpen(isOpen);
-    if (!isOpen) {
+  useEffect(() => {
+    if (!open) {
       setPhone("");
-      setResult(null);
+      onResultClear();
+    }
+  }, [open, onResultClear]);
+
+  const handleCheck = () => {
+    if (phone) {
+      onCheck(phone);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button variant="outline" size="sm">
-            <Phone className="mr-2 h-4 w-4" />
-            Check Number
-          </Button>
-        )}
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Check WhatsApp Number</DialogTitle>
@@ -69,15 +59,17 @@ export function CheckPhoneDialog({ sessionId, trigger }: CheckPhoneDialogProps) 
             {checking ? "Checking..." : "Check"}
           </Button>
           {result && (
-            <div className={`flex items-center gap-2 p-4 rounded-lg ${result.exists ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"}`}>
+            <div
+              className={`flex items-center gap-2 p-4 rounded-lg ${
+                result.exists ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"
+              }`}
+            >
               {result.exists ? <CheckCircle className="h-5 w-5" /> : <XCircle className="h-5 w-5" />}
               <div>
                 <p className="font-medium">
                   {result.exists ? "Number has WhatsApp" : "Number not on WhatsApp"}
                 </p>
-                {result.exists && (
-                  <p className="text-sm opacity-80">JID: {result.jid}</p>
-                )}
+                {result.exists && <p className="text-sm opacity-80">JID: {result.jid}</p>}
               </div>
             </div>
           )}

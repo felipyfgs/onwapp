@@ -122,7 +122,7 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 		session.POST("/contact/check", h.Contact.CheckPhone)
 		session.GET("/contact/blocklist", h.Contact.GetBlocklist)
 		session.POST("/contact/blocklist", h.Contact.UpdateBlocklist)
-		session.GET("/contact/info", h.Contact.GetContactInfo)
+		session.POST("/contact/info", h.Contact.GetContactInfo)
 		session.GET("/contact/avatar", h.Contact.GetAvatar)
 		session.GET("/contact/business", h.Contact.GetBusinessProfile)
 		session.GET("/contact/lid", h.Contact.GetContactLID)

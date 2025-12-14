@@ -76,8 +76,8 @@ export function useSessionActions(): UseSessionActionsReturn {
     }
 
     try {
-      const result = await restartSession(name.trim());
-      toast.success(result?.message || "Session restart initiated");
+      await restartSession(name.trim());
+      toast.success("Session restart initiated");
     } catch (error: any) {
       console.error("Failed to restart session:", error);
       const errorMessage = error?.message || "Failed to restart session";

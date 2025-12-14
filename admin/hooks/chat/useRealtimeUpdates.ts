@@ -50,7 +50,7 @@ export function useRealtimeUpdates(options: UseRealtimeUpdatesOptions) {
   const [presence, setPresence] = useState<Map<string, PresenceData>>(new Map());
   
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const typingTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const lastEventRef = useRef<string>("");
 
@@ -190,7 +190,7 @@ export function useRealtimeUpdates(options: UseRealtimeUpdatesOptions) {
           notificationBody = `${ticket.contactName || ticket.contactJid} is waiting`;
           break;
         case 'open':
-          if (ticket.unreadCount > 0) {
+          if ((ticket.unreadCount ?? 0) > 0) {
             notificationTitle = 'Ticket updated';
             notificationBody = `New message in ${ticket.contactName || ticket.contactJid}`;
           }
