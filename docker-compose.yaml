@@ -21,7 +21,7 @@ services:
     networks:
       - onwapp-dev-network
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-onwapp} -d ${POSTGRES_DB:-onwapp}']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-onwapp}']
       interval: 10s
       timeout: 5s
       retries: 5
