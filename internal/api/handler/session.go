@@ -82,7 +82,7 @@ func (h *SessionHandler) getCachedQR(sessionId string, getNewQR func() (string, 
 		// Return cached response if less than 5 seconds old
 		if time.Since(entry.CachedAt) < 5*time.Second {
 			h.qrCacheMutex.RUnlock()
-			logger.Info.Printf("[QR Cache] Cache hit for session: %s (age: %v)", sessionId, time.Since(entry.CachedAt))
+			logger.Info().Str("session", sessionId).Dur("age", time.Since(entry.CachedAt)).Msg("[QR Cache] Cache hit")
 			return entry.QR, entry.Status
 		}
 	}
@@ -99,7 +99,7 @@ func (h *SessionHandler) getCachedQR(sessionId string, getNewQR func() (string, 
 	}
 	h.qrCacheMutex.Unlock()
 
-	logger.Info.Printf("[QR Cache] Cache miss for session: %s - new QR cached", sessionId)
+	logger.Info().Str("session", sessionId).Msg("[QR Cache] Cache miss - new QR cached")
 	return qr, status
 }
 
@@ -137,6 +137,13 @@ func sessionToResponse(sess *model.Session) dto.SessionResponse {
 // @Security     Authorization
 // @Router       /sessions [get]
 func (h *SessionHandler) Fetch(c *gin.Context) {
+	defer func() {
+		if r := recover(); r != nil {
+			logger.API().Error().Interface("panic", r).Msg("Panic recovered in SessionHandler.Fetch")
+			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Internal server error while fetching sessions"})
+		}
+	}()
+
 	sessions := h.sessionService.List()
 
 	response := make([]dto.SessionResponse, 0, len(sessions))
@@ -196,7 +203,7 @@ func (h *SessionHandler) enrichSessionResponse(ctx context.Context, sess *model.
 		}
 	}
 
-	if sess.Client != nil && sess.Client.Store != nil {
+	if sess.Client != nil && sess.Client.Store != nil && sess.Client.Store.Contacts != nil {
 		contacts, err := sess.Client.Store.Contacts.GetAllContacts(ctx)
 		if err == nil {
 			stats.Contacts = len(contacts)
@@ -280,6 +287,13 @@ func (h *SessionHandler) Delete(c *gin.Context) {
 // @Security     Authorization
 // @Router       /{session}/status [get]
 func (h *SessionHandler) Info(c *gin.Context) {
+	defer func() {
+		if r := recover(); r != nil {
+			logger.API().Error().Interface("panic", r).Msg("Panic recovered in SessionHandler.Info")
+			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "Internal server error while fetching session info"})
+		}
+	}()
+
 	sessionId := c.Param("session")
 
 	session, err := h.sessionService.Get(sessionId)
@@ -430,23 +444,23 @@ func (h *SessionHandler) QR(c *gin.Context) {
 	sessionId := c.Param("session")
 	format := c.DefaultQuery("format", "json")
 
-	logger.Info.Printf("[QR Handler] Request for session: %s, format: %s, IP: %s", sessionId, format, c.ClientIP())
+	logger.Info().Str("session", sessionId).Str("format", format).Str("ip", c.ClientIP()).Msg("[QR Handler] Request received")
 
 	session, err := h.sessionService.Get(sessionId)
 	if err != nil {
-		logger.Error.Printf("[QR Handler] Session not found: %s", sessionId)
+		logger.Error().Str("session", sessionId).Msg("[QR Handler] Session not found")
 		c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	// Use cache to prevent excessive QR generation
 	qr, status := h.getCachedQR(sessionId, func() (string, string) {
-		logger.Info.Printf("[QR Handler] Generating new QR for session: %s", sessionId)
+		logger.Info().Str("session", sessionId).Msg("[QR Handler] Generating new QR")
 		return session.GetQR(), string(session.GetStatus())
 	})
 
 	if qr == "" {
-		logger.Info.Printf("[QR Handler] No QR available for session: %s, status: %s", sessionId, status)
+		logger.Info().Str("session", sessionId).Str("status", status).Msg("[QR Handler] No QR available")
 		c.JSON(http.StatusOK, dto.QRResponse{
 			Status: status,
 		})
@@ -456,7 +470,7 @@ func (h *SessionHandler) QR(c *gin.Context) {
 	if format == "image" {
 		png, err := qrcode.Encode(qr, qrcode.Medium, 256)
 		if err != nil {
-			logger.Error.Printf("[QR Handler] Failed to generate QR image: %v", err)
+			logger.Error().Err(err).Msg("[QR Handler] Failed to generate QR image")
 			c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: "failed to generate QR image"})
 			return
 		}
@@ -467,7 +481,7 @@ func (h *SessionHandler) QR(c *gin.Context) {
 	image, _ := qrcode.Encode(qr, qrcode.Medium, 256)
 	base64QR := "data:image/png;base64," + base64.StdEncoding.EncodeToString(image)
 
-	logger.Info.Printf("[QR Handler] Returning QR for session: %s, status: %s", sessionId, status)
+	logger.Info().Str("session", sessionId).Str("status", status).Msg("[QR Handler] Returning QR")
 	c.JSON(http.StatusOK, dto.QRResponse{
 		QR:     base64QR,
 		Status: status,

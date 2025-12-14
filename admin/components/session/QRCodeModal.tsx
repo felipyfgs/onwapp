@@ -49,13 +49,19 @@ export function QRCodeModal({ sessionName, open, onClose }: QRCodeModalProps) {
 
   // Reset and fetch QR when modal opens - optimized dependencies
   useEffect(() => {
-    if (open && sessionName && !initializedRef.current) {
-      console.log("[QR Modal] Modal opened, initializing QR fetch for session:", sessionName);
-      initializedRef.current = true;
-      connectionActions.reset();
-      connectionActions.fetchQR();
-      // Reset phone input when modal opens
-      setPhone("");
+    if (open && sessionName) {
+      if (!initializedRef.current) {
+        console.log("[QR Modal] Modal opened, initializing QR fetch for session:", sessionName);
+        initializedRef.current = true;
+        connectionActions.reset();
+        // Small delay to ensure reset completes before fetching
+        const timer = setTimeout(() => {
+          connectionActions.fetchQR();
+        }, 100);
+        // Reset phone input when modal opens
+        setPhone("");
+        return () => clearTimeout(timer);
+      }
     } else if (!open) {
       // Reset initialization flag when modal closes
       initializedRef.current = false;
@@ -118,10 +124,13 @@ export function QRCodeModal({ sessionName, open, onClose }: QRCodeModalProps) {
 
           <TabsContent value="qr" className="mt-6">
             <div className="flex flex-col items-center justify-center py-4">
-              {qrStatus === 'loading' ? (
+              {qrStatus === 'loading' || (qrStatus === 'connecting' && !qrCode) ? (
                 <div className="flex flex-col items-center gap-2">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">Loading QR Code...</p>
+                  <p className="text-sm text-muted-foreground">
+                    {qrStatus === 'loading' ? 'Loading QR Code...' : 'Generating QR Code...'}
+                  </p>
+                  <p className="text-xs text-muted-foreground/60">This may take a few seconds</p>
                 </div>
               ) : qrCode ? (
                 <div className="flex flex-col items-center gap-4">

@@ -159,7 +159,7 @@ export function SessionCard({
           <DropdownMenuContent align="end">
             {onOpen && (
               <>
-                <DropdownMenuItem onClick={() => onOpen(session.session)}>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onOpen(session.session); }}>
                   <ExternalLink className="mr-2 h-4 w-4" />
                   Open
                 </DropdownMenuItem>
@@ -167,35 +167,35 @@ export function SessionCard({
               </>
             )}
             {session.status === "disconnected" && (
-              <DropdownMenuItem onClick={() => onConnect(session.session)}>
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onConnect(session.session); }}>
                 <Power className="mr-2 h-4 w-4" />
                 Connect
               </DropdownMenuItem>
             )}
             {session.status === "connecting" && (
-              <DropdownMenuItem onClick={() => onShowQR(session.session)}>
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onShowQR(session.session); }}>
                 <QrCode className="mr-2 h-4 w-4" />
                 Show QR Code
               </DropdownMenuItem>
             )}
             {session.status === "connected" && (
               <>
-                <DropdownMenuItem onClick={() => onDisconnect(session.session)}>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDisconnect(session.session); }}>
                   <PowerOff className="mr-2 h-4 w-4" />
                   Disconnect
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onLogout(session.session)}>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onLogout(session.session); }}>
                   <LogOut className="mr-2 h-4 w-4" />
                   Logout
                 </DropdownMenuItem>
               </>
             )}
-            <DropdownMenuItem onClick={() => onRestart(session.session)}>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRestart(session.session); }}>
               <RefreshCw className="mr-2 h-4 w-4" />
               Restart
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => onDelete(session.session)} className="text-destructive">
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(session.session); }} className="text-destructive">
               <Trash2 className="mr-2 h-4 w-4" />
               Delete
             </DropdownMenuItem>

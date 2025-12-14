@@ -29,8 +29,10 @@ export function useSessionConnection(sessionName: string): UseSessionConnectionR
   // Refs for debouncing and state tracking
   const lastRequestTime = useRef<number>(0);
   const requestInProgress = useRef<boolean>(false);
+  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const maxRetries = useRef<number>(0);
 
-  const fetchQR = useCallback(async () => {
+  const fetchQR = useCallback(async (retryCount: number = 0) => {
     if (!sessionName || requestInProgress.current) {
       console.log(`[QR Fetch] Skipped - sessionName: ${!!sessionName}, requestInProgress: ${requestInProgress.current}`);
       return;
@@ -40,12 +42,12 @@ export function useSessionConnection(sessionName: string): UseSessionConnectionR
     const timeSinceLastRequest = now - lastRequestTime.current;
 
     // 2 second debounce between QR requests
-    if (timeSinceLastRequest < 2000) {
+    if (timeSinceLastRequest < 2000 && retryCount === 0) {
       console.log(`[QR Fetch] Throttled - Last request was ${timeSinceLastRequest}ms ago (minimum 2000ms required)`);
       return;
     }
 
-    console.log(`[QR Fetch] Starting request for session: ${sessionName}`);
+    console.log(`[QR Fetch] Starting request for session: ${sessionName} (attempt ${retryCount + 1})`);
     requestInProgress.current = true;
     lastRequestTime.current = now;
 
@@ -54,17 +56,40 @@ export function useSessionConnection(sessionName: string): UseSessionConnectionR
       const response = await getQR(sessionName);
       if (response.qr) {
         setQrCode(response.qr);
+        setQrStatus(response.status as any);
         console.log(`[QR Fetch] QR code received for session: ${sessionName}`);
+        maxRetries.current = 0; // Reset retry counter on success
+      } else if (response.status === 'connecting' && retryCount < 10) {
+        // QR not available yet but session is connecting - retry
+        setQrStatus('connecting');
+        console.log(`[QR Fetch] QR not available yet, will retry in 2s (attempt ${retryCount + 1}/10)`);
+        maxRetries.current = retryCount + 1;
+
+        // Clear any existing retry timeout
+        if (retryTimeoutRef.current) {
+          clearTimeout(retryTimeoutRef.current);
+        }
+
+        // Schedule retry
+        retryTimeoutRef.current = setTimeout(() => {
+          requestInProgress.current = false;
+          fetchQR(retryCount + 1);
+        }, 2000);
+      } else {
+        setQrStatus(response.status as any);
+        maxRetries.current = 0;
       }
-      setQrStatus(response.status as any);
     } catch (error) {
       console.error("[QR Fetch] Failed to fetch QR:", error);
       setQrStatus('idle');
+      maxRetries.current = 0;
     } finally {
-      // Clear request in progress after a short delay to prevent rapid retries
-      setTimeout(() => {
-        requestInProgress.current = false;
-      }, 1000);
+      if (!retryTimeoutRef.current) {
+        // Clear request in progress after a short delay to prevent rapid retries
+        setTimeout(() => {
+          requestInProgress.current = false;
+        }, 1000);
+      }
     }
   }, [sessionName]);
 
@@ -113,6 +138,12 @@ export function useSessionConnection(sessionName: string): UseSessionConnectionR
     // Reset debouncing refs
     requestInProgress.current = false;
     lastRequestTime.current = 0;
+    maxRetries.current = 0;
+    // Clear any pending retry timeouts
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current);
+      retryTimeoutRef.current = null;
+    }
     console.log("[QR Fetch] Reset completed - debouncing refs cleared");
   }, []);
 
@@ -131,6 +162,16 @@ export function useSessionConnection(sessionName: string): UseSessionConnectionR
   }, []);
 
   useSessionEvent(sessionName, handleEvent);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   return {
     qrCode,
