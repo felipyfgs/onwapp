@@ -15,30 +15,25 @@ import {
     ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { PageHeader } from "@/components/common";
-import { TicketManager, ChatWindow } from "@/components/chat";
-import { Settings, Ticket as TicketIcon } from "lucide-react";
+import { ChatList, ChatWindow } from "@/components/chat";
+import { Settings, MessageCircle } from "lucide-react";
 import { useEffect, useCallback } from "react";
 import { toast } from "sonner";
 
 import { useChatSessions } from "@/hooks/useChatSessions";
-import { useChatQueues } from "@/hooks/useChatQueues";
 import { useChatCore } from "@/hooks/useChatCore";
 
 export default function ChatsPage() {
     const { sessions, selectedSession, setSelectedSession } = useChatSessions();
-    const { queues } = useChatQueues();
     const {
-        selectedTicket,
+        selectedChat,
         messages,
         loadingMessages,
-        ticketListKey,
-        activeSubTab,
+        chatListKey,
         currentChat,
-        handleSelectTicket,
-        handleTicketUpdate,
+        handleSelectChat,
         handleSendMessage,
         handleArchive,
-        setActiveSubTab,
         resetChat,
     } = useChatCore(selectedSession);
 
@@ -47,9 +42,8 @@ export default function ChatsPage() {
         resetChat();
     };
 
-    // Keyboard shortcuts for better UX
+    // Basic keyboard shortcuts
     const handleKeyDown = useCallback((event: KeyboardEvent) => {
-        // Ignore if user is typing in an input
         if (event.target instanceof HTMLInputElement ||
             event.target instanceof HTMLTextAreaElement) {
             return;
@@ -60,34 +54,6 @@ export default function ChatsPage() {
             event.preventDefault();
             const sessionSelector = document.querySelector('[data-testid="session-selector"]') as HTMLButtonElement;
             sessionSelector?.click();
-            return;
-        }
-
-        // Ctrl/Cmd + / to show keyboard shortcuts
-        if ((event.ctrlKey || event.metaKey) && event.key === '/') {
-            event.preventDefault();
-            toast.info("Atalhos: Ctrl+K (Sessão), Ctrl+1 (Abertos), Ctrl+2 (Resolvidos), Ctrl+3 (Buscar), Esc (Limpar busca)");
-            return;
-        }
-
-        // Ctrl/Cmd + 1/2/3 to switch tabs
-        if ((event.ctrlKey || event.metaKey) && event.key >= '1' && event.key <= '3') {
-            event.preventDefault();
-            const tabNumber = parseInt(event.key);
-            const tabButtons = document.querySelectorAll('[data-testid^="tab-"]');
-            if (tabButtons[tabNumber - 1]) {
-                (tabButtons[tabNumber - 1] as HTMLButtonElement).click();
-            }
-            return;
-        }
-
-        // Escape to clear search
-        if (event.key === 'Escape') {
-            const searchInput = document.querySelector('[data-testid="search-input"]') as HTMLInputElement;
-            if (searchInput && searchInput.value) {
-                searchInput.value = '';
-                searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-            }
         }
     }, []);
 
@@ -166,12 +132,9 @@ export default function ChatsPage() {
                             >
                                 <TicketManager
                                     session={selectedSession}
-                                    selectedTicket={selectedTicket}
-                                    onSelectTicket={handleSelectTicket}
-                                    onTicketUpdate={handleTicketUpdate}
-                                    refreshTrigger={ticketListKey}
-                                    activeSubTab={activeSubTab}
-                                    onSubTabChange={setActiveSubTab}
+                                    selectedChat={selectedChat}
+                                    onSelectChat={handleSelectChat}
+                                    refreshTrigger={chatListKey}
                                 />
                             </ResizablePanel>
                             <ResizableHandle
@@ -180,7 +143,7 @@ export default function ChatsPage() {
                             <ResizablePanel
                                 defaultSize={65}
                             >
-                                {selectedTicket ? (
+                                {selectedChat ? (
                                     <div className="h-full">
                                         <ChatWindow
                                             chat={currentChat}
@@ -188,23 +151,20 @@ export default function ChatsPage() {
                                             loading={loadingMessages}
                                             onSendMessage={handleSendMessage}
                                             onArchive={handleArchive}
-                                            ticket={selectedTicket}
                                             session={selectedSession}
-                                            queues={queues}
-                                            onTicketAction={handleTicketUpdate}
                                         />
                                     </div>
                                 ) : (
                                     <div className="flex items-center justify-center h-full bg-muted/30">
                                         <div className="text-center max-w-sm mx-auto p-6">
                                             <div className="mb-6">
-                                                <TicketIcon className="h-16 w-16 mx-auto text-muted-foreground" />
+                                                <MessageCircle className="h-16 w-16 mx-auto text-muted-foreground" />
                                             </div>
                                             <h3 className="text-xl font-semibold mb-2 text-foreground">
-                                                Selecione um ticket
+                                                Selecione um chat
                                             </h3>
                                             <p className="text-muted-foreground text-sm leading-relaxed">
-                                                Escolha um ticket na lista para ver a conversa
+                                                Escolha um chat na lista para ver a conversa
                                             </p>
                                         </div>
                                     </div>
