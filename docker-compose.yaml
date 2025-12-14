@@ -12,7 +12,7 @@ services:
       - '5432:5432'
     environment:
       TZ: America/Sao_Paulo
-      POSTGRES_USER: ${POSTGRES_USER:-onwapp}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-onwapp}
       PGDATA: /var/lib/postgresql/data/pgdata
@@ -76,7 +76,7 @@ services:
       CONNECTIONS: con1
       LABEL_con1: onwapp PostgreSQL Dev
       SERVER_con1: dev_postgres
-      USER_con1: ${POSTGRES_USER:-onwapp}
+      USER_con1: ${POSTGRES_USER:-postgres}
       PASSWORD_con1: ${POSTGRES_PASSWORD:-postgres}
       PORT_con1: 5432
       ENGINE_con1: postgres@dbgate-plugin-postgres
