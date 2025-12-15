@@ -1,8 +1,7 @@
 import { apiClient } from '../api';
 import type { 
-  Webhook, 
+  WebhookConfig, 
   WebhookRequest, 
-  WebhookStats, 
   ApiResponse 
 } from '../types/api';
 
@@ -11,8 +10,8 @@ export const webhookService = {
    * Get webhook config
    * GET /webhook/:session
    */
-  async getWebhook(session: string): Promise<Webhook> {
-    const response = await apiClient.get<Webhook>(`/webhook/${session}`);
+  async getWebhook(session: string): Promise<WebhookConfig> {
+    const response = await apiClient.get<WebhookConfig>(`/webhook/${session}`);
     return response.data;
   },
 
@@ -47,8 +46,8 @@ export const webhookService = {
    * Get webhook stats
    * GET /webhook/:session/stats
    */
-  async getWebhookStats(session: string): Promise<WebhookStats> {
-    const response = await apiClient.get<WebhookStats>(`/webhook/${session}/stats`);
+  async getWebhookStats(session: string): Promise<Record<string, unknown>> {
+    const response = await apiClient.get<Record<string, unknown>>(`/webhook/${session}/stats`);
     return response.data;
   },
 

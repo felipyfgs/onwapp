@@ -1,7 +1,6 @@
 import { apiClient } from '../api';
 import type { 
   Chat, 
-  ChatResponse, 
   ApiResponse 
 } from '../types/api';
 

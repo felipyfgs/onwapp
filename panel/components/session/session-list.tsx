@@ -3,7 +3,6 @@
 import { useEffect } from 'react';
 import { useSessionStore } from '@/stores/session-store';
 import apiClient from '@/lib/api';
-import { Session } from '@/lib/types/api';
 import {
   Table,
   TableBody,

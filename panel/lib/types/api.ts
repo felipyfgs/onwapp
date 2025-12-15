@@ -16,6 +16,7 @@ export interface Session {
   apiKey?: string;
   pushName?: string;
   profilePicture?: string;
+  qr?: string;
   stats?: {
     messages: number;
     groups: number;

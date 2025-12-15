@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,11 +28,7 @@ export default function MediaPage() {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadMedia();
-  }, [sessionId]);
-
-  const loadMedia = async () => {
+  const loadMedia = useCallback(async () => {
     setLoading(true);
     try {
       const response = await mediaService.getSessionMedia(sessionId);
@@ -43,7 +39,11 @@ export default function MediaPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [sessionId]);
+
+  useEffect(() => {
+    loadMedia();
+  }, [sessionId, loadMedia]);
 
   const filteredMedia = media.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase());

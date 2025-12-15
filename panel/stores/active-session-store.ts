@@ -29,7 +29,11 @@ export const useActiveSessionStore = create<ActiveSessionState>((set) => ({
       };
 
       if (event.event === 'session.qr' && event.data) {
-        const qrData = event.data as any;
+        const qrData = event.data as { 
+          qrBase64?: string; 
+          qrCode?: string; 
+          pairingCode?: string;
+        };
         updates.qrCode = qrData.qrBase64 || qrData.qrCode || null;
         updates.pairingCode = qrData.pairingCode || null;
       }

@@ -5,7 +5,6 @@ import { useParams } from 'next/navigation';
 import { useChatStore } from '@/stores/chat-store';
 import apiClient from '@/lib/api';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Card } from '@/components/ui/card';
 import { MessageBubble } from './message-bubble';
 import { MessageInput } from './message-input';
 
