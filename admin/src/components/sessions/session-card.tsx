@@ -96,7 +96,7 @@ export function SessionCard({ session, onSessionUpdate }: SessionCardProps) {
   const handleConnect = async () => {
     setActionLoading('connect')
     try {
-      await connectSession(session.id)
+      await connectSession(session.session)
       toast.success("Sessão conectada com sucesso!")
       onSessionUpdate?.()
     } catch (error: any) {
@@ -109,7 +109,7 @@ export function SessionCard({ session, onSessionUpdate }: SessionCardProps) {
   const handleDisconnect = async () => {
     setActionLoading('disconnect')
     try {
-      await disconnectSession(session.id)
+      await disconnectSession(session.session)
       toast.success("Sessão desconectada com sucesso!")
       onSessionUpdate?.()
     } catch (error: any) {
@@ -126,7 +126,7 @@ export function SessionCard({ session, onSessionUpdate }: SessionCardProps) {
     
     setActionLoading('delete')
     try {
-      await api.deleteSession(session.id)
+      await api.deleteSession(session.session)
       toast.success("Sessão excluída com sucesso!")
       onSessionUpdate?.()
     } catch (error: any) {
@@ -139,7 +139,7 @@ export function SessionCard({ session, onSessionUpdate }: SessionCardProps) {
   const handleRestart = async () => {
     setActionLoading('restart')
     try {
-      await api.restartSession(session.id)
+      await api.restartSession(session.session)
       toast.success("Sessão reiniciada com sucesso!")
       onSessionUpdate?.()
     } catch (error: any) {

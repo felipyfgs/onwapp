@@ -70,7 +70,8 @@ export default function SessionDetailsPage() {
 
   useEffect(() => {
     if (sessions && sessionId) {
-      const session = sessions.find((s) => s.id === sessionId);
+      const sessionsArray = Array.isArray(sessions) ? sessions : [];
+      const session = sessionsArray.find((s) => s.id === sessionId);
       if (session) {
         setCurrentSession(session);
         setStatus(session.status);
@@ -105,7 +106,9 @@ export default function SessionDetailsPage() {
   const handleConnect = async () => {
     setIsLoadingAction(true);
     try {
-      await connectSession(sessionId);
+      if (currentSession) {
+        await connectSession(currentSession.session);
+      }
     } catch (err) {
       console.error("Failed to connect session:", err);
     } finally {
@@ -116,7 +119,9 @@ export default function SessionDetailsPage() {
   const handleDisconnect = async () => {
     setIsLoadingAction(true);
     try {
-      await disconnectSession(sessionId);
+      if (currentSession) {
+        await disconnectSession(currentSession.session);
+      }
     } catch (err) {
       console.error("Failed to disconnect session:", err);
     } finally {
@@ -127,7 +132,9 @@ export default function SessionDetailsPage() {
   const handleLogout = async () => {
     setIsLoadingAction(true);
     try {
-      await logoutSession(sessionId);
+      if (currentSession) {
+        await logoutSession(currentSession.session);
+      }
     } catch (err) {
       console.error("Failed to logout session:", err);
     } finally {
@@ -138,7 +145,9 @@ export default function SessionDetailsPage() {
   const handleRestart = async () => {
     setIsLoadingAction(true);
     try {
-      await restartSession(sessionId);
+      if (currentSession) {
+        await restartSession(currentSession.session);
+      }
     } catch (err) {
       console.error("Failed to restart session:", err);
     } finally {
