@@ -1,63 +1,145 @@
-import { AppSidebar } from "@/components/app-sidebar"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
-import { Separator } from "@/components/ui/separator"
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
+'use client';
 
-export default async function Page({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
+import { useParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Search, Plus, Users, Radio, RefreshCw, Settings } from 'lucide-react';
+import apiClient from '@/lib/api';
+
+interface Newsletter {
+  id: string;
+  name: string;
+  description: string;
+  subscriberCount: number;
+  status: 'active' | 'inactive';
+}
+
+export default function NewsletterPage() {
+  const params = useParams();
+  const sessionId = params.id as string;
+  const [search, setSearch] = useState('');
+  const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadNewsletters();
+  }, [sessionId]);
+
+  const loadNewsletters = async () => {
+    setLoading(true);
+    try {
+      const response = await apiClient.newsletter.list(sessionId);
+      setNewsletters(response.data || []);
+    } catch (error) {
+      console.error('Failed to load newsletters:', error);
+      setNewsletters([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredNewsletters = newsletters.filter(newsletter =>
+    newsletter.name.toLowerCase().includes(search.toLowerCase()) ||
+    newsletter.description.toLowerCase().includes(search.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+        <div className="flex items-center justify-center py-12">
+          <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <SidebarProvider>
-      <AppSidebar sessionId={id} />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator
-              orientation="vertical"
-              className="mr-2 data-[orientation=vertical]:h-4"
-            />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="/sessions">
-                    Sessions
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href={`/sessions/${params.id}`}>
-                    {params.id}
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Newsletter</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-        </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div className="bg-muted/50 aspect-video rounded-xl" />
-            <div className="bg-muted/50 aspect-video rounded-xl" />
-            <div className="bg-muted/50 aspect-video rounded-xl" />
-          </div>
-          <div className="bg-muted/50 min-h-[100vh] flex-1 rounded-xl md:min-h-min" />
+    <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Newsletter</h2>
+          <p className="text-muted-foreground">Gerencie seus canais do WhatsApp</p>
         </div>
-      </SidebarInset>
-    </SidebarProvider>
-  )
+        <Button>
+          <Plus className="h-4 w-4 mr-2" />
+          Novo Canal
+        </Button>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar canais..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+      </div>
+
+      {filteredNewsletters.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <Radio className="h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="font-semibold">Nenhum canal encontrado</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            {search ? 'Tente buscar por outro termo' : 'Crie seu primeiro canal para começar'}
+          </p>
+          {!search && (
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Criar Canal
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="grid gap-4">
+          {filteredNewsletters.map((newsletter) => (
+            <Card key={newsletter.id} className="hover:bg-accent/50 transition-colors">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+                      <Radio className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        {newsletter.name}
+                        <Badge variant={newsletter.status === 'active' ? 'default' : 'secondary'}>
+                          {newsletter.status === 'active' ? 'Ativo' : 'Inativo'}
+                        </Badge>
+                      </CardTitle>
+                      <CardDescription>{newsletter.description}</CardDescription>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="icon">
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Users className="h-4 w-4" />
+                    <span>{newsletter.subscriberCount.toLocaleString('pt-BR')} inscritos</span>
+                  </div>
+                  <div className="flex gap-2 ml-auto">
+                    <Button variant="outline" size="sm">
+                      Ver Inscritos
+                    </Button>
+                    <Button size="sm">
+                      Nova Postagem
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
