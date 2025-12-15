@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSessionStore } from '@/stores/session-store';
 import { useGlobalStore } from '@/stores/global-store';
-import { useTheme } from '@/providers/theme-provider';
+import { ModeToggle } from '@/components/mode-toggle';
 import apiClient from '@/lib/api';
 import { SessionCard } from '@/components/session/session-card';
 import { CreateSessionDialog } from '@/components/session/create-session-dialog';
@@ -16,8 +16,6 @@ import {
   Wifi, 
   WifiOff,
   Smartphone,
-  Moon,
-  Sun,
   Menu,
   X
 } from 'lucide-react';
@@ -25,7 +23,6 @@ import {
 export default function SessionsPage() {
   const { sessions, loading, setSessions, setLoading } = useSessionStore();
   const natsConnected = useGlobalStore((state) => state.natsConnected);
-  const { theme, toggleTheme } = useTheme();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'connected' | 'disconnected' | 'connecting'>('all');
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -112,18 +109,7 @@ export default function SessionsPage() {
               )}
             </Badge>
             
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className="rounded-lg"
-            >
-              {theme === 'dark' ? (
-                <Sun className="h-5 w-5" />
-              ) : (
-                <Moon className="h-5 w-5" />
-              )}
-            </Button>
+            <ModeToggle />
 
             <CreateSessionDialog />
           </div>
