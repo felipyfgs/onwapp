@@ -40,8 +40,14 @@ export default function Page({ params }: { params: { id: string } }) {
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
+                <BreadcrumbItem className="hidden md:block">
+                  <BreadcrumbLink href={`/sessions/${params.id}/integrations`}>
+                    Integrations
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Chatwoot</BreadcrumbPage>
+                  <BreadcrumbPage>Webhooks</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>

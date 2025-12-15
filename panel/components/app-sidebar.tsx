@@ -51,16 +51,6 @@ const data = {
       url: "/dashboard",
       icon: Home,
       isActive: true,
-      items: [
-        {
-          title: "Overview",
-          url: "/dashboard",
-        },
-        {
-          title: "Analytics",
-          url: "/dashboard/analytics",
-        },
-      ],
     },
     {
       title: "Sessions",
@@ -79,18 +69,8 @@ const data = {
     },
     {
       title: "Messages",
-      url: "#",
+      url: "/messages",
       icon: MessageSquare,
-      items: [
-        {
-          title: "All Messages",
-          url: "/messages",
-        },
-        {
-          title: "Templates",
-          url: "/messages/templates",
-        },
-      ],
     },
     {
       title: "Integrations",
@@ -115,20 +95,6 @@ const data = {
       title: "Settings",
       url: "/settings",
       icon: Settings,
-      items: [
-        {
-          title: "General",
-          url: "/settings",
-        },
-        {
-          title: "API Keys",
-          url: "/settings/api-keys",
-        },
-        {
-          title: "Storage",
-          url: "/settings/storage",
-        },
-      ],
     },
   ],
   sessionFeatures: [
@@ -173,14 +139,19 @@ const data = {
       icon: Radio,
     },
     {
-      name: "Webhooks",
-      url: "webhooks",
+      name: "Integrations",
+      url: "integrations",
       icon: Webhook,
-    },
-    {
-      name: "Chatwoot",
-      url: "chatwoot",
-      icon: Headphones,
+      items: [
+        {
+          name: "Webhooks",
+          url: "integrations/webhooks",
+        },
+        {
+          name: "Chatwoot",
+          url: "integrations/chatwoot",
+        },
+      ],
     },
     {
       name: "Settings",
