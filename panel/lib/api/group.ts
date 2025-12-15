@@ -31,11 +31,10 @@ export const groupService = {
    * Create group
    * POST /group/:session
    */
-  async createGroup(session: string, name: string, participants: string[], description?: string): Promise<ApiResponse> {
+  async createGroup(session: string, name: string, participants: string[]): Promise<ApiResponse> {
     const request: CreateGroupRequest = { 
       name, 
-      participants, 
-      description 
+      participants
     };
     const response = await apiClient.post<ApiResponse>(`/group/${session}`, request);
     return response.data;

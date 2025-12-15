@@ -8,8 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Image as ImageIcon, Video, Type, RefreshCw } from 'lucide-react';
-import apiClient from '@/lib/api';
-import { Status } from '@/lib/types/api';
+import { statusService } from '@/lib/api/index';
+import type { Status } from '@/lib/types/api';
 
 type StatusType = 'all' | 'image' | 'video' | 'text';
 
@@ -29,8 +29,8 @@ export default function StatusPage() {
   const loadStatuses = async () => {
     setLoading(true);
     try {
-      const response = await apiClient.status.list(sessionId);
-      setStatuses(response.data || []);
+      const response = await statusService.getStatuses(sessionId);
+      setStatuses(response || []);
     } catch (error) {
       console.error('Failed to load statuses:', error);
       setStatuses([]);
@@ -41,7 +41,13 @@ export default function StatusPage() {
 
   const handleCreateStatus = async () => {
     try {
-      await apiClient.status.create(sessionId, newStatus);
+      if (newStatus.type === 'text') {
+        await statusService.sendTextStatus(sessionId, newStatus.content);
+      } else if (newStatus.type === 'image') {
+        await statusService.sendImageStatus(sessionId, newStatus.content);
+      } else if (newStatus.type === 'video') {
+        await statusService.sendVideoStatus(sessionId, newStatus.content);
+      }
       setNewStatus({ type: 'text', content: '' });
       setShowCreateForm(false);
       loadStatuses();
@@ -52,7 +58,7 @@ export default function StatusPage() {
 
   const filteredStatuses = statuses.filter(status => {
     if (activeTab === 'all') return true;
-    return status.type === activeTab;
+    return status.mediaType === activeTab;
   });
 
   if (loading) {
@@ -164,15 +170,15 @@ export default function StatusPage() {
               {filteredStatuses.map((status) => (
                 <Card key={status.id} className="overflow-hidden group cursor-pointer hover:bg-accent/50 transition-colors">
                   <CardContent className="p-0">
-                    {status.type === 'text' ? (
+                    {status.mediaType === 'text' ? (
                       <div className="aspect-square bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center p-4">
                         <p className="text-white text-center font-medium line-clamp-6">
-                          {status.content}
+                          {status.text}
                         </p>
                       </div>
-                    ) : status.type === 'image' ? (
+                    ) : status.mediaType === 'image' ? (
                       <div className="aspect-square bg-muted">
-                        <img src={status.content} alt="Status" className="w-full h-full object-cover" />
+                        <img src={status.mediaUrl} alt="Status" className="w-full h-full object-cover" />
                       </div>
                     ) : (
                       <div className="aspect-square bg-muted flex items-center justify-center">

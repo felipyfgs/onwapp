@@ -32,11 +32,8 @@ export const messageService = {
    * POST /message/:session/:chat/text
    */
   async sendText(session: string, chat: string, text: string): Promise<MessageResponse> {
-    const message: SendMessageRequest = { 
-      type: 'text', 
-      text 
-    };
-    return this.sendMessage(session, chat, message);
+    const response = await apiClient.post<MessageResponse>(`/message/${session}/${chat}/text`, { text });
+    return response.data;
   },
 
   /**
@@ -44,12 +41,8 @@ export const messageService = {
    * POST /message/:session/:chat/image
    */
   async sendImage(session: string, chat: string, image: string, caption?: string): Promise<MessageResponse> {
-    const message: SendMessageRequest = { 
-      type: 'image', 
-      image, 
-      caption 
-    };
-    return this.sendMessage(session, chat, message);
+    const response = await apiClient.post<MessageResponse>(`/message/${session}/${chat}/image`, { image, caption });
+    return response.data;
   },
 
   /**
@@ -57,11 +50,8 @@ export const messageService = {
    * POST /message/:session/:chat/audio
    */
   async sendAudio(session: string, chat: string, audio: string): Promise<MessageResponse> {
-    const message: SendMessageRequest = { 
-      type: 'audio', 
-      audio 
-    };
-    return this.sendMessage(session, chat, message);
+    const response = await apiClient.post<MessageResponse>(`/message/${session}/${chat}/audio`, { audio });
+    return response.data;
   },
 
   /**
@@ -69,12 +59,8 @@ export const messageService = {
    * POST /message/:session/:chat/video
    */
   async sendVideo(session: string, chat: string, video: string, caption?: string): Promise<MessageResponse> {
-    const message: SendMessageRequest = { 
-      type: 'video', 
-      video, 
-      caption 
-    };
-    return this.sendMessage(session, chat, message);
+    const response = await apiClient.post<MessageResponse>(`/message/${session}/${chat}/video`, { video, caption });
+    return response.data;
   },
 
   /**
@@ -82,12 +68,8 @@ export const messageService = {
    * POST /message/:session/:chat/document
    */
   async sendDocument(session: string, chat: string, document: string, filename?: string): Promise<MessageResponse> {
-    const message: SendMessageRequest = { 
-      type: 'document', 
-      document, 
-      filename 
-    };
-    return this.sendMessage(session, chat, message);
+    const response = await apiClient.post<MessageResponse>(`/message/${session}/${chat}/document`, { document, filename });
+    return response.data;
   },
 
   /**
@@ -95,11 +77,8 @@ export const messageService = {
    * POST /message/:session/:chat/sticker
    */
   async sendSticker(session: string, chat: string, sticker: string): Promise<MessageResponse> {
-    const message: SendMessageRequest = { 
-      type: 'sticker', 
-      sticker 
-    };
-    return this.sendMessage(session, chat, message);
+    const response = await apiClient.post<MessageResponse>(`/message/${session}/${chat}/sticker`, { sticker });
+    return response.data;
   },
 
   /**
@@ -113,11 +92,10 @@ export const messageService = {
     longitude: number, 
     address?: string
   ): Promise<MessageResponse> {
-    const message: SendMessageRequest = { 
-      type: 'location', 
+    const response = await apiClient.post<MessageResponse>(`/message/${session}/${chat}/location`, { 
       location: { latitude, longitude, address } 
-    };
-    return this.sendMessage(session, chat, message);
+    });
+    return response.data;
   },
 
   /**
@@ -125,11 +103,10 @@ export const messageService = {
    * POST /message/:session/:chat/contact
    */
   async sendContact(session: string, chat: string, contact: string, name: string): Promise<MessageResponse> {
-    const message: SendMessageRequest = { 
-      type: 'contact', 
+    const response = await apiClient.post<MessageResponse>(`/message/${session}/${chat}/contact`, { 
       contact: { phone: contact, name } 
-    };
-    return this.sendMessage(session, chat, message);
+    });
+    return response.data;
   },
 
   /**
@@ -143,11 +120,10 @@ export const messageService = {
     options: string[], 
     multiple?: boolean
   ): Promise<MessageResponse> {
-    const message: SendMessageRequest = { 
-      type: 'poll', 
+    const response = await apiClient.post<MessageResponse>(`/message/${session}/${chat}/poll`, { 
       poll: { question, options, multiple } 
-    };
-    return this.sendMessage(session, chat, message);
+    });
+    return response.data;
   },
 
   /**
@@ -160,12 +136,11 @@ export const messageService = {
     text: string, 
     buttons: Array<{ id: string; text: string }>
   ): Promise<MessageResponse> {
-    const message: SendMessageRequest = { 
-      type: 'buttons', 
+    const response = await apiClient.post<MessageResponse>(`/message/${session}/${chat}/buttons`, { 
       text, 
       buttons 
-    };
-    return this.sendMessage(session, chat, message);
+    });
+    return response.data;
   },
 
   /**
@@ -182,12 +157,11 @@ export const messageService = {
       rows: Array<{ id: string; title: string; description?: string }>;
     }>
   ): Promise<MessageResponse> {
-    const message: SendMessageRequest = { 
-      type: 'list', 
+    const response = await apiClient.post<MessageResponse>(`/message/${session}/${chat}/list`, { 
       text, 
       list: { title, sections } 
-    };
-    return this.sendMessage(session, chat, message);
+    });
+    return response.data;
   },
 
   /**
@@ -199,11 +173,8 @@ export const messageService = {
     chat: string, 
     interactive: any
   ): Promise<MessageResponse> {
-    const message: SendMessageRequest = { 
-      type: 'interactive', 
-      interactive 
-    };
-    return this.sendMessage(session, chat, message);
+    const response = await apiClient.post<MessageResponse>(`/message/${session}/${chat}/interactive`, { interactive });
+    return response.data;
   },
 
   /**
@@ -217,11 +188,10 @@ export const messageService = {
     language: string, 
     components?: any[]
   ): Promise<MessageResponse> {
-    const message: SendMessageRequest = { 
-      type: 'template', 
+    const response = await apiClient.post<MessageResponse>(`/message/${session}/${chat}/template`, { 
       template: { name: template, language, components } 
-    };
-    return this.sendMessage(session, chat, message);
+    });
+    return response.data;
   },
 
   /**
@@ -238,11 +208,10 @@ export const messageService = {
       buttons: Array<{ id: string; text: string }>;
     }>
   ): Promise<MessageResponse> {
-    const message: SendMessageRequest = { 
-      type: 'carousel', 
+    const response = await apiClient.post<MessageResponse>(`/message/${session}/${chat}/carousel`, { 
       carousel: { cards } 
-    };
-    return this.sendMessage(session, chat, message);
+    });
+    return response.data;
   },
 
   /**

@@ -1,9 +1,6 @@
 import { apiClient } from '../api';
 import type { 
   Profile, 
-  ProfileResponse, 
-  UpdateProfileRequest, 
-  UpdateProfilePhotoRequest,
   ApiResponse 
 } from '../types/api';
 
@@ -12,8 +9,8 @@ export const profileService = {
    * Get profile by session
    * GET /profile/:session
    */
-  async getProfile(session: string): Promise<ProfileResponse> {
-    const response = await apiClient.get<ProfileResponse>(`/profile/${session}`);
+  async getProfile(session: string): Promise<ApiResponse<Profile>> {
+    const response = await apiClient.get<ApiResponse<Profile>>(`/profile/${session}`);
     return response.data;
   },
 
@@ -21,7 +18,7 @@ export const profileService = {
    * Update profile
    * PUT /profile/:session
    */
-  async updateProfile(session: string, profile: UpdateProfileRequest): Promise<ApiResponse> {
+  async updateProfile(session: string, profile: any): Promise<ApiResponse> {
     const response = await apiClient.put<ApiResponse>(`/profile/${session}`, profile);
     return response.data;
   },
@@ -30,7 +27,7 @@ export const profileService = {
    * Update profile photo
    * PUT /profile/:session/photo
    */
-  async updateProfilePhoto(session: string, photoData: UpdateProfilePhotoRequest): Promise<ApiResponse> {
+  async updateProfilePhoto(session: string, photoData: any): Promise<ApiResponse> {
     const response = await apiClient.put<ApiResponse>(`/profile/${session}/photo`, photoData);
     return response.data;
   },
@@ -39,8 +36,8 @@ export const profileService = {
    * Get profile by phone number
    * GET /profile/:session/:phone
    */
-  async getProfileByPhone(session: string, phone: string): Promise<ProfileResponse> {
-    const response = await apiClient.get<ProfileResponse>(`/profile/${session}/${phone}`);
+  async getProfileByPhone(session: string, phone: string): Promise<ApiResponse<Profile>> {
+    const response = await apiClient.get<ApiResponse<Profile>>(`/profile/${session}/${phone}`);
     return response.data;
   }
 };

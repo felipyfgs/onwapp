@@ -7,15 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, Plus, Users, Radio, RefreshCw, Settings } from 'lucide-react';
-import apiClient from '@/lib/api';
-
-interface Newsletter {
-  id: string;
-  name: string;
-  description: string;
-  subscriberCount: number;
-  status: 'active' | 'inactive';
-}
+import { newsletterService } from '@/lib/api/index';
+import type { Newsletter } from '@/lib/types/api';
 
 export default function NewsletterPage() {
   const params = useParams();
@@ -31,8 +24,8 @@ export default function NewsletterPage() {
   const loadNewsletters = async () => {
     setLoading(true);
     try {
-      const response = await apiClient.newsletter.list(sessionId);
-      setNewsletters(response.data || []);
+      const response = await newsletterService.getNewsletters(sessionId);
+      setNewsletters(response || []);
     } catch (error) {
       console.error('Failed to load newsletters:', error);
       setNewsletters([]);
@@ -43,7 +36,7 @@ export default function NewsletterPage() {
 
   const filteredNewsletters = newsletters.filter(newsletter =>
     newsletter.name.toLowerCase().includes(search.toLowerCase()) ||
-    newsletter.description.toLowerCase().includes(search.toLowerCase())
+    (newsletter.description && newsletter.description.toLowerCase().includes(search.toLowerCase()))
   );
 
   if (loading) {
@@ -98,7 +91,7 @@ export default function NewsletterPage() {
       ) : (
         <div className="grid gap-4">
           {filteredNewsletters.map((newsletter) => (
-            <Card key={newsletter.id} className="hover:bg-accent/50 transition-colors">
+            <Card key={newsletter.jid} className="hover:bg-accent/50 transition-colors">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
@@ -108,8 +101,8 @@ export default function NewsletterPage() {
                     <div>
                       <CardTitle className="flex items-center gap-2">
                         {newsletter.name}
-                        <Badge variant={newsletter.status === 'active' ? 'default' : 'secondary'}>
-                          {newsletter.status === 'active' ? 'Ativo' : 'Inativo'}
+                        <Badge variant={newsletter.isFollowing ? 'default' : 'secondary'}>
+                          {newsletter.isFollowing ? 'Seguindo' : 'Não segue'}
                         </Badge>
                       </CardTitle>
                       <CardDescription>{newsletter.description}</CardDescription>
@@ -124,7 +117,7 @@ export default function NewsletterPage() {
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Users className="h-4 w-4" />
-                    <span>{newsletter.subscriberCount.toLocaleString('pt-BR')} inscritos</span>
+                    <span>{newsletter.subscribers.toLocaleString('pt-BR')} inscritos</span>
                   </div>
                   <div className="flex gap-2 ml-auto">
                     <Button variant="outline" size="sm">
