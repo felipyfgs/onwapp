@@ -27,18 +27,22 @@ export default function SessionsPage() {
   const [filter, setFilter] = useState<'all' | 'connected' | 'disconnected' | 'connecting'>('all');
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     fetchSessions();
   }, []);
 
   const fetchSessions = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const response = await apiClient.get('/sessions');
+      const response = await apiClient.get('/sessions', { timeout: 10000 }); // 10s timeout
       const data = Array.isArray(response.data) ? response.data : [];
       setSessions(data.filter((session: { session?: string }) => session && session.session));
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch sessions:', error);
+      setError('Não foi possível carregar as sessões. Verifique se a API está online.');
       setSessions([]);
     } finally {
       setLoading(false);
@@ -119,10 +123,6 @@ export default function SessionsPage() {
         <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8">
           {/* Header Section */}
           <div className="mb-8">
-            <div className="mb-6">
-              <h2 className="text-2xl font-semibold">Painel de Sessões</h2>
-            </div>
-
             {/* Stats Cards */}
             <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-4">
               {filterButtons.map((btn) => (
@@ -169,14 +169,28 @@ export default function SessionsPage() {
             </div>
           </div>
 
-          {/* Sessions Grid */}
-          {loading ? (
+          {/* Sessions List */}
+          {error ? (
+            <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-8 text-center">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-destructive/20 mb-4">
+                <WifiOff className="h-6 w-6 text-destructive" />
+              </div>
+              <h3 className="mb-2 text-lg font-semibold text-destructive">Erro de Conexão</h3>
+              <p className="mb-6 text-sm text-muted-foreground max-w-sm mx-auto">
+                {error}
+              </p>
+              <Button onClick={fetchSessions} variant="outline" className="border-destructive/50 hover:bg-destructive/20">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Tentar Novamente
+              </Button>
+            </div>
+          ) : loading ? (
             <div className="flex flex-col items-center justify-center py-20">
               <div className="text-center">
                 <div className="inline-block">
-                  <RefreshCw className="h-12 w-12 animate-spin text-muted-foreground mb-4" />
+                  <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground mb-4" />
                 </div>
-                <p className="text-muted-foreground">Carregando sessões...</p>
+                <p className="text-sm text-muted-foreground">Carregando sessões...</p>
               </div>
             </div>
           ) : filteredSessions.length === 0 ? (
@@ -195,7 +209,7 @@ export default function SessionsPage() {
               {!search && filter === 'all' && <CreateSessionDialog />}
             </div>
           ) : (
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="flex flex-col gap-1">
               {filteredSessions.map((session) => (
                 <SessionCard 
                   key={session.id} 

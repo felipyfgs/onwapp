@@ -31,7 +31,18 @@ class ApiClient {
     this.instance.interceptors.response.use(
       (response) => response,
       (error) => {
-        console.error('API Error:', error.response?.data || error.message);
+        // Silently handle expected errors or empty responses
+        if (error.response?.status === 404) {
+          return Promise.reject(error);
+        }
+
+        // Only log if there's actual error data
+        const errorData = error.response?.data || error.message;
+        if (errorData && Object.keys(errorData).length > 0) {
+           // Optional: Uncomment for debugging only
+           // console.error('API Error:', errorData);
+        }
+        
         return Promise.reject(error);
       }
     );

@@ -1,9 +1,17 @@
 'use client';
 
 import { Session } from '@/lib/types/api';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Wifi, WifiOff, Power, PowerOff, Trash2, ChevronRight } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { 
+  Power, 
+  PowerOff, 
+  Trash2, 
+  ChevronRight,
+  MessageSquare,
+  Users,
+  Contact
+} from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import apiClient from '@/lib/api';
@@ -50,59 +58,91 @@ export function SessionCard({ session, onDelete, onRefresh }: SessionCardProps) 
     }
   };
 
+  const getInitials = () => {
+    if (session.pushName) {
+      return session.pushName.substring(0, 2).toUpperCase();
+    }
+    return session.session.substring(0, 2).toUpperCase();
+  };
+
   return (
     <Link href={`/sessions/${session.session}`}>
-      <Card className="p-4 hover:bg-accent/50 transition-colors cursor-pointer overflow-hidden">
-        <div className="flex items-center gap-3">
-          <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+      <div className="group flex items-center gap-3 rounded-md border border-border/50 bg-card/50 p-3 hover:bg-accent/50 hover:border-accent transition-all duration-200">
+        {/* Avatar Compacto */}
+        <div className="relative flex-shrink-0">
+          <Avatar className="h-9 w-9 border border-border/50">
+            <AvatarImage src={session.profilePicture} alt={session.pushName || session.session} />
+            <AvatarFallback className="text-[10px] bg-gradient-to-br from-green-500/80 to-green-600/80 text-white">
+              {getInitials()}
+            </AvatarFallback>
+          </Avatar>
+          <div className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background ${
             isConnected ? 'bg-green-500' : 
             isConnecting ? 'bg-yellow-500 animate-pulse' : 
-            'bg-red-500'
+            'bg-zinc-300'
           }`} />
+        </div>
 
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="font-medium truncate">{session.session}</span>
-              {isConnected ? (
-                <Wifi className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
-              ) : (
-                <WifiOff className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-              )}
-            </div>
+        {/* Info Compacta */}
+        <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
+          <div className="flex items-center justify-between">
+            <span className="font-medium text-sm truncate text-foreground/90">
+              {session.pushName || session.session}
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+            <span className="truncate font-mono opacity-80">@{session.session}</span>
             {session.phone && (
-              <span className="text-xs text-muted-foreground truncate block">{session.phone}</span>
+              <>
+                <span className="w-0.5 h-0.5 rounded-full bg-border" />
+                <span className="truncate opacity-80">+{session.phone}</span>
+              </>
             )}
           </div>
-
-          <div className="flex items-center gap-1 flex-shrink-0">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handlePower}
-              disabled={isLoading}
-              className="h-8 w-8"
-            >
-              {isConnected || isConnecting ? (
-                <PowerOff className="h-4 w-4" />
-              ) : (
-                <Power className="h-4 w-4" />
-              )}
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleDelete}
-              disabled={isLoading}
-              className="h-8 w-8 text-destructive hover:text-destructive"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-
-            <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-          </div>
         </div>
-      </Card>
+
+        {/* Stats Minimalistas (apenas ícones e números pequenos) */}
+        {isConnected && session.stats && (
+          <div className="hidden sm:flex items-center gap-3 px-2">
+            <div className="flex items-center gap-1 text-muted-foreground/70" title="Mensagens">
+              <MessageSquare className="h-3 w-3" />
+              <span className="text-[10px] tabular-nums">{session.stats.messages || 0}</span>
+            </div>
+            <div className="flex items-center gap-1 text-muted-foreground/70" title="Grupos">
+              <Users className="h-3 w-3" />
+              <span className="text-[10px] tabular-nums">{session.stats.groups || 0}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Ações Sutis */}
+        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handlePower}
+            disabled={isLoading}
+            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+          >
+            {isConnected || isConnecting ? (
+              <PowerOff className="h-3.5 w-3.5" />
+            ) : (
+              <Power className="h-3.5 w-3.5" />
+            )}
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleDelete}
+            disabled={isLoading}
+            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </div>
     </Link>
   );
 }

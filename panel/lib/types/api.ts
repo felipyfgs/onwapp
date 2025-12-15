@@ -19,6 +19,7 @@ export interface Session {
   qr?: string;
   stats?: {
     messages: number;
+    chats: number;
     groups: number;
     contacts: number;
   };

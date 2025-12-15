@@ -29,7 +29,8 @@ export function CreateSessionDialog() {
 
     setLoading(true);
     try {
-      const response = await apiClient.post('/sessions', { name: name.trim() });
+      // Backend expects 'session' key, not 'name'
+      const response = await apiClient.post('/sessions', { session: name.trim() });
       addSession(response.data);
       setName('');
       setOpen(false);
