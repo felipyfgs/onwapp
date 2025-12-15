@@ -18,7 +18,7 @@ export const profileService = {
    * Update profile
    * PUT /profile/:session
    */
-  async updateProfile(session: string, profile: any): Promise<ApiResponse> {
+  async updateProfile(session: string, profile: Record<string, unknown>): Promise<ApiResponse> {
     const response = await apiClient.put<ApiResponse>(`/profile/${session}`, profile);
     return response.data;
   },
@@ -27,7 +27,7 @@ export const profileService = {
    * Update profile photo
    * PUT /profile/:session/photo
    */
-  async updateProfilePhoto(session: string, photoData: any): Promise<ApiResponse> {
+  async updateProfilePhoto(session: string, photoData: Record<string, unknown>): Promise<ApiResponse> {
     const response = await apiClient.put<ApiResponse>(`/profile/${session}/photo`, photoData);
     return response.data;
   },

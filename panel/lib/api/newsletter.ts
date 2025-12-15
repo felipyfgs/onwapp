@@ -105,8 +105,8 @@ export const newsletterService = {
    * Get newsletter followers
    * GET /newsletter/:session/:newsletter/followers
    */
-  async getNewsletterFollowers(session: string, newsletter: string): Promise<any[]> {
-    const response = await apiClient.get<any[]>(`/newsletter/${session}/${newsletter}/followers`);
+  async getNewsletterFollowers(session: string, newsletter: string): Promise<unknown[]> {
+    const response = await apiClient.get<unknown[]>(`/newsletter/${session}/${newsletter}/followers`);
     return response.data;
   },
 

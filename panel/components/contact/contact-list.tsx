@@ -30,15 +30,18 @@ export function ContactList() {
     setLoading(true);
     try {
       const response = await apiClient.get(`/sessions/${sessionId}/contact/list`);
-      setContacts(response.data || []);
+      const data = response.data || [];
+      setContacts(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Failed to fetch contacts:', error);
+      setContacts([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredContacts = contacts.filter((contact) =>
+  const contactsArray = Array.isArray(contacts) ? contacts : [];
+  const filteredContacts = contactsArray.filter((contact) =>
     contact.name?.toLowerCase().includes(search.toLowerCase()) ||
     contact.phone?.toLowerCase().includes(search.toLowerCase())
   );

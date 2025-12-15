@@ -39,7 +39,7 @@ export default function SessionsPage() {
     try {
       const response = await apiClient.get('/sessions');
       const data = Array.isArray(response.data) ? response.data : [];
-      setSessions(data.filter((session: any) => session && session.session));
+      setSessions(data.filter((session: { session?: string }) => session && session.session));
     } catch (error) {
       console.error('Failed to fetch sessions:', error);
       setSessions([]);

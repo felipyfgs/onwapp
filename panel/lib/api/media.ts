@@ -66,8 +66,8 @@ export const mediaService = {
    * Get all media for session
    * GET /media/:session
    */
-  async getSessionMedia(session: string): Promise<any[]> {
-    const response = await apiClient.get<any[]>(`/media/${session}`);
+  async getSessionMedia(session: string): Promise<unknown[]> {
+    const response = await apiClient.get<unknown[]>(`/media/${session}`);
     return response.data;
   },
 

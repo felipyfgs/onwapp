@@ -7,11 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Webhook, MessageSquare, Settings, ChevronRight } from 'lucide-react';
 
+import { LucideIcon } from 'lucide-react';
+
 interface Integration {
   id: string;
   name: string;
   description: string;
-  icon: any;
+  icon: LucideIcon;
   href: string;
   status: 'connected' | 'disconnected';
   badge?: string;

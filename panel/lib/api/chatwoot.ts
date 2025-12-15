@@ -92,8 +92,8 @@ export const chatwootService = {
    * Get Chatwoot conversations
    * GET /chatwoot/:session/conversations
    */
-  async getChatwootConversations(session: string): Promise<any[]> {
-    const response = await apiClient.get<any[]>(`/chatwoot/${session}/conversations`);
+  async getChatwootConversations(session: string): Promise<unknown[]> {
+    const response = await apiClient.get<unknown[]>(`/chatwoot/${session}/conversations`);
     return response.data;
   },
 

@@ -28,9 +28,11 @@ export function GroupList() {
     setLoading(true);
     try {
       const response = await apiClient.get(`/sessions/${sessionId}/group/list`);
-      setGroups(response.data || []);
+      const data = response.data || [];
+      setGroups(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Failed to fetch groups:', error);
+      setGroups([]);
     } finally {
       setLoading(false);
     }
@@ -46,6 +48,8 @@ export function GroupList() {
       console.error('Failed to leave group:', error);
     }
   };
+
+  const groupsArray = Array.isArray(groups) ? groups : [];
 
   if (loading) {
     return <div className="text-center py-8">Carregando grupos...</div>;
@@ -63,14 +67,14 @@ export function GroupList() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {groups.length === 0 ? (
+          {groupsArray.length === 0 ? (
             <TableRow>
               <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                 Nenhum grupo encontrado
               </TableCell>
             </TableRow>
           ) : (
-            groups.map((group) => (
+            groupsArray.map((group) => (
               <TableRow key={group.jid}>
                 <TableCell className="font-medium">{group.name}</TableCell>
                 <TableCell>{group.subject}</TableCell>

@@ -171,7 +171,7 @@ export const messageService = {
   async sendInteractive(
     session: string, 
     chat: string, 
-    interactive: any
+    interactive: Record<string, unknown>
   ): Promise<MessageResponse> {
     const response = await apiClient.post<MessageResponse>(`/message/${session}/${chat}/interactive`, { interactive });
     return response.data;
@@ -186,7 +186,7 @@ export const messageService = {
     chat: string, 
     template: string, 
     language: string, 
-    components?: any[]
+    components?: unknown[]
   ): Promise<MessageResponse> {
     const response = await apiClient.post<MessageResponse>(`/message/${session}/${chat}/template`, { 
       template: { name: template, language, components } 
