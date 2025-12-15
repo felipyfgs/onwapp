@@ -1,4 +1,7 @@
-import { AppSidebar } from "@/components/app-sidebar"
+'use client';
+
+import { useParams } from 'next/navigation';
+import { AppSidebar } from "@/components/app-sidebar";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -6,22 +9,25 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
-import { Separator } from "@/components/ui/separator"
+} from "@/components/ui/breadcrumb";
+import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
+import { ChatSidebar } from "@/components/chat/chat-sidebar";
+import { ChatWindow } from "@/components/chat/chat-window";
 
-export default async function Page({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
+export default function MessagesPage() {
+  const params = useParams();
+  const sessionId = params.id as string;
 
   return (
     <SidebarProvider>
-      <AppSidebar sessionId={id} />
+      <AppSidebar sessionId={sessionId} />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
             <Separator
@@ -37,8 +43,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href={`/sessions/${id}`}>
-                    {id}
+                  <BreadcrumbLink href={`/sessions/${sessionId}`}>
+                    {sessionId}
                   </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
@@ -49,15 +55,15 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             </Breadcrumb>
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div className="bg-muted/50 aspect-video rounded-xl" />
-            <div className="bg-muted/50 aspect-video rounded-xl" />
-            <div className="bg-muted/50 aspect-video rounded-xl" />
+        <div className="flex h-[calc(100vh-4rem)]">
+          <div className="w-80">
+            <ChatSidebar />
           </div>
-          <div className="bg-muted/50 min-h-[100vh] flex-1 rounded-xl md:min-h-min" />
+          <div className="flex-1">
+            <ChatWindow />
+          </div>
         </div>
       </SidebarInset>
     </SidebarProvider>
-  )
+  );
 }
