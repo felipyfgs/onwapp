@@ -129,7 +129,7 @@ export default function ChatwootIntegrationPage() {
   const fetchSyncStatus = async () => {
     try {
       const status = await getChatwootSyncStatus(sessionId);
-      setSyncStatus(status);
+      setSyncStatus(status as SyncStatus);
     } catch (err) {
       toast({
         variant: "destructive",
