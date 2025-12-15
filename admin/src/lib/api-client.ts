@@ -57,181 +57,279 @@ export async function apiRequest<T = any>(
   }
 }
 
-// Funções específicas para cada endpoint
+// API completo com todas as funções
 export const api = {
-  // Sessões
-  getSessions: () => apiRequest<Session[]>("/sessions"),
-  createSession: (data: any) => apiRequest<Session>("/sessions", "POST", data),
+  // ========== SESSÕES ==========
+  getSessions: () => apiRequest<any[]>("/sessions"),
+  createSession: (data: any) => apiRequest("/sessions", "POST", data),
   getSessionStatus: (sessionId: string) =>
-    apiRequest<SessionStatus>(`/${sessionId}/status`),
+    apiRequest(`/sessions/${sessionId}/status`),
   deleteSession: (sessionId: string) =>
-    apiRequest<void>(`/${sessionId}`, "DELETE"),
+    apiRequest(`/sessions/${sessionId}`, "DELETE"),
   connectSession: (sessionId: string) =>
-    apiRequest<void>(`/${sessionId}/connect`, "POST"),
+    apiRequest(`/sessions/${sessionId}/connect`, "POST"),
   disconnectSession: (sessionId: string) =>
-    apiRequest<void>(`/${sessionId}/disconnect`, "POST"),
+    apiRequest(`/sessions/${sessionId}/disconnect`, "POST"),
   logoutSession: (sessionId: string) =>
-    apiRequest<void>(`/${sessionId}/logout`, "POST"),
+    apiRequest(`/sessions/${sessionId}/logout`, "POST"),
   restartSession: (sessionId: string) =>
-    apiRequest<void>(`/${sessionId}/restart`, "POST"),
-  getSessionQR: (sessionId: string) => apiRequest<QRResponse>(`/${sessionId}/qr`),
+    apiRequest(`/sessions/${sessionId}/restart`, "POST"),
+  getSessionQR: (sessionId: string) =>
+    apiRequest(`/sessions/${sessionId}/qr`),
   pairPhone: (sessionId: string, data: any) =>
-    apiRequest<void>(`/${sessionId}/pairphone`, "POST", data),
+    apiRequest(`/sessions/${sessionId}/pairphone`, "POST", data),
 
-  // Webhooks
+  // ========== PROFILE ==========
+  getProfile: (sessionId: string) =>
+    apiRequest(`/sessions/${sessionId}/profile`),
+  setStatus: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/profile/status`, "POST", data),
+  setPushName: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/profile/name`, "POST", data),
+  setProfilePicture: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/profile/picture`, "POST", data),
+  deleteProfilePicture: (sessionId: string) =>
+    apiRequest(`/sessions/${sessionId}/profile/picture/remove`, "POST"),
+
+  // ========== SETTINGS ==========
+  getSettings: (sessionId: string) =>
+    apiRequest(`/sessions/${sessionId}/settings`),
+  updateSettings: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/settings`, "POST", data),
+
+  // ========== CONTACTS ==========
+  getContacts: (sessionId: string) =>
+    apiRequest(`/sessions/${sessionId}/contact/list`),
+  checkPhone: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/contact/check`, "POST", data),
+  getBlocklist: (sessionId: string) =>
+    apiRequest(`/sessions/${sessionId}/contact/blocklist`),
+  updateBlocklist: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/contact/blocklist`, "POST", data),
+  getContactInfo: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/contact/info`, "POST", data),
+  getAvatar: (sessionId: string, params?: any) =>
+    apiRequest(`/sessions/${sessionId}/contact/avatar`, "GET", undefined, params),
+  getBusinessProfile: (sessionId: string, params?: any) =>
+    apiRequest(`/sessions/${sessionId}/contact/business`, "GET", undefined, params),
+  getContactLID: (sessionId: string, params?: any) =>
+    apiRequest(`/sessions/${sessionId}/contact/lid`, "GET", undefined, params),
+  getContactQRLink: (sessionId: string, params?: any) =>
+    apiRequest(`/sessions/${sessionId}/contact/qrlink`, "GET", undefined, params),
+
+  // ========== PRESENCE ==========
+  setPresence: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/presence`, "POST", data),
+  subscribePresence: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/presence/subscribe`, "POST", data),
+
+  // ========== CHATS ==========
+  setChatPresence: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/chat/presence`, "POST", data),
+  markRead: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/chat/markread`, "POST", data),
+  markChatUnread: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/chat/unread`, "POST", data),
+  archiveChat: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/chat/archive`, "POST", data),
+  setDisappearingTimer: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/chat/disappearing`, "POST", data),
+  getAllChats: (sessionId: string) =>
+    apiRequest(`/sessions/${sessionId}/chat/list`),
+  getChatMessages: (sessionId: string, params?: any) =>
+    apiRequest(`/sessions/${sessionId}/chat/messages`, "GET", undefined, params),
+  getChatInfo: (sessionId: string, params?: any) =>
+    apiRequest(`/sessions/${sessionId}/chat/info`, "GET", undefined, params),
+
+  // ========== MESSAGES ==========
+  sendText: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/message/send/text`, "POST", data),
+  sendImage: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/message/send/image`, "POST", data),
+  sendAudio: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/message/send/audio`, "POST", data),
+  sendVideo: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/message/send/video`, "POST", data),
+  sendDocument: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/message/send/document`, "POST", data),
+  sendSticker: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/message/send/sticker`, "POST", data),
+  sendLocation: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/message/send/location`, "POST", data),
+  sendContact: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/message/send/contact`, "POST", data),
+  sendPoll: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/message/send/poll`, "POST", data),
+  sendButtons: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/message/send/buttons`, "POST", data),
+  sendList: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/message/send/list`, "POST", data),
+  sendInteractive: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/message/send/interactive`, "POST", data),
+  sendTemplate: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/message/send/template`, "POST", data),
+  sendCarousel: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/message/send/carousel`, "POST", data),
+  sendReaction: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/message/react`, "POST", data),
+  deleteMessage: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/message/delete`, "POST", data),
+  editMessage: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/message/edit`, "POST", data),
+  sendPollVote: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/message/poll/vote`, "POST", data),
+  requestUnavailableMessage: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/message/request-unavailable`, "POST", data),
+
+  // ========== GROUPS ==========
+  createGroup: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/group/create`, "POST", data),
+  getJoinedGroups: (sessionId: string) =>
+    apiRequest(`/sessions/${sessionId}/group/list`),
+  getGroupInfo: (sessionId: string, params?: any) =>
+    apiRequest(`/sessions/${sessionId}/group/info`, "GET", undefined, params),
+  leaveGroup: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/group/leave`, "POST", data),
+  updateGroupName: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/group/name`, "POST", data),
+  updateGroupTopic: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/group/topic`, "POST", data),
+  setGroupPicture: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/group/photo`, "POST", data),
+  deleteGroupPicture: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/group/photo/remove`, "POST", data),
+  getGroupPicture: (sessionId: string, params?: any) =>
+    apiRequest(`/sessions/${sessionId}/group/avatar`, "GET", undefined, params),
+  addParticipants: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/group/participants/add`, "POST", data),
+  removeParticipants: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/group/participants/remove`, "POST", data),
+  promoteParticipants: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/group/participants/promote`, "POST", data),
+  demoteParticipants: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/group/participants/demote`, "POST", data),
+  setGroupAnnounce: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/group/announce`, "POST", data),
+  setGroupLocked: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/group/locked`, "POST", data),
+  setGroupApprovalMode: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/group/approval`, "POST", data),
+  setGroupMemberAddMode: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/group/memberadd`, "POST", data),
+  getInviteLink: (sessionId: string, params?: any) =>
+    apiRequest(`/sessions/${sessionId}/group/invitelink`, "GET", undefined, params),
+  getGroupInfoFromLink: (sessionId: string, params?: any) =>
+    apiRequest(`/sessions/${sessionId}/group/inviteinfo`, "GET", undefined, params),
+  joinGroup: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/group/join`, "POST", data),
+  getGroupRequestParticipants: (sessionId: string, params?: any) =>
+    apiRequest(`/sessions/${sessionId}/group/requests`, "GET", undefined, params),
+  updateGroupRequestParticipants: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/group/requests/action`, "POST", data),
+  sendGroupMessage: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/group/send/text`, "POST", data),
+
+  // ========== COMMUNITY ==========
+  getSubGroups: (sessionId: string, params?: any) =>
+    apiRequest(`/sessions/${sessionId}/community/groups`, "GET", undefined, params),
+  linkGroup: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/community/link`, "POST", data),
+  unlinkGroup: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/community/unlink`, "POST", data),
+
+  // ========== MEDIA ==========
+  listMedia: (sessionId: string, params?: any) =>
+    apiRequest(`/sessions/${sessionId}/media/list`, "GET", undefined, params),
+  listPendingMedia: (sessionId: string) =>
+    apiRequest(`/sessions/${sessionId}/media/pending`),
+  processPendingMedia: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/media/process`, "POST", data),
+  retryMediaDownload: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/media/retry`, "POST", data),
+  getMedia: (sessionId: string, params?: any) =>
+    apiRequest(`/sessions/${sessionId}/media/download`, "GET", undefined, params),
+  streamMedia: (sessionId: string, params?: any) =>
+    apiRequest(`/sessions/${sessionId}/media/stream`, "GET", undefined, params),
+
+  // ========== NEWSLETTER ==========
+  createNewsletter: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/newsletter/create`, "POST", data),
+  getSubscribedNewsletters: (sessionId: string) =>
+    apiRequest(`/sessions/${sessionId}/newsletter/list`),
+  getNewsletterInfo: (sessionId: string, params?: any) =>
+    apiRequest(`/sessions/${sessionId}/newsletter/info`, "GET", undefined, params),
+  followNewsletter: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/newsletter/follow`, "POST", data),
+  unfollowNewsletter: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/newsletter/unfollow`, "POST", data),
+  getNewsletterMessages: (sessionId: string, params?: any) =>
+    apiRequest(`/sessions/${sessionId}/newsletter/messages`, "GET", undefined, params),
+  newsletterSendReaction: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/newsletter/react`, "POST", data),
+  newsletterToggleMute: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/newsletter/mute`, "POST", data),
+  newsletterMarkViewed: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/newsletter/viewed`, "POST", data),
+  newsletterSubscribeLiveUpdates: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/newsletter/subscribe-live`, "POST", data),
+
+  // ========== STATUS ==========
+  sendStory: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/status/send`, "POST", data),
+  getStatusPrivacy: (sessionId: string) =>
+    apiRequest(`/sessions/${sessionId}/status/privacy`),
+
+  // ========== CALL ==========
+  rejectCall: (sessionId: string, data: any) =>
+    apiRequest(`/sessions/${sessionId}/call/reject`, "POST", data),
+
+  // ========== WEBHOOKS ==========
   getWebhook: (sessionId: string) =>
-    apiRequest<WebhookResponse>(`/${sessionId}/webhook`),
+    apiRequest(`/sessions/${sessionId}/webhook`),
   setWebhook: (sessionId: string, data: any) =>
-    apiRequest<WebhookResponse>(`/${sessionId}/webhook`, "POST", data),
+    apiRequest(`/sessions/${sessionId}/webhook`, "POST", data),
   updateWebhook: (sessionId: string, data: any) =>
-    apiRequest<WebhookResponse>(`/${sessionId}/webhook`, "PUT", data),
+    apiRequest(`/sessions/${sessionId}/webhook`, "PUT", data),
   deleteWebhook: (sessionId: string) =>
-    apiRequest<void>(`/${sessionId}/webhook`, "DELETE"),
-  getWebhookEvents: () => apiRequest<WebhookEventsResponse>("/events"),
+    apiRequest(`/sessions/${sessionId}/webhook`, "DELETE"),
+  getWebhookEvents: () => apiRequest("/events"),
 
-  // Chatwoot
+  // ========== CHATWOOT ==========
   getChatwootConfig: (sessionId: string) =>
-    apiRequest<ChatwootConfig>(`/sessions/${sessionId}/chatwoot/find`),
+    apiRequest(`/sessions/${sessionId}/chatwoot/find`),
   setChatwootConfig: (sessionId: string, data: any) =>
-    apiRequest<ChatwootConfig>(
-      `/sessions/${sessionId}/chatwoot/set`,
-      "POST",
-      data
-    ),
+    apiRequest(`/sessions/${sessionId}/chatwoot/set`, "POST", data),
   validateChatwootCredentials: (data: any) =>
-    apiRequest<ValidationResult>("/chatwoot/validate", "POST", data),
+    apiRequest("/chatwoot/validate", "POST", data),
   syncChatwootContacts: (sessionId: string, days?: number) =>
-    apiRequest<SyncStatus>(
+    apiRequest(
       `/sessions/${sessionId}/chatwoot/sync/contacts`,
       "POST",
       undefined,
       days ? { days: days.toString() } : undefined
     ),
   syncChatwootMessages: (sessionId: string, days?: number) =>
-    apiRequest<SyncStatus>(
+    apiRequest(
       `/sessions/${sessionId}/chatwoot/sync/messages`,
       "POST",
       undefined,
       days ? { days: days.toString() } : undefined
     ),
   syncChatwootAll: (sessionId: string, days?: number) =>
-    apiRequest<SyncStatus>(
+    apiRequest(
       `/sessions/${sessionId}/chatwoot/sync`,
       "POST",
       undefined,
       days ? { days: days.toString() } : undefined
     ),
   getChatwootSyncStatus: (sessionId: string) =>
-    apiRequest<SyncStatus>(`/sessions/${sessionId}/chatwoot/sync/status`),
+    apiRequest(`/sessions/${sessionId}/chatwoot/sync/status`),
   getChatwootOverview: (sessionId: string) =>
-    apiRequest<ChatwootOverview>(`/sessions/${sessionId}/chatwoot/overview`),
+    apiRequest(`/sessions/${sessionId}/chatwoot/overview`),
   resolveAllChatwootConversations: (sessionId: string) =>
-    apiRequest<void>(`/sessions/${sessionId}/chatwoot/resolve-all`, "POST"),
+    apiRequest(`/sessions/${sessionId}/chatwoot/resolve-all`, "POST"),
   getChatwootConversationsStats: (sessionId: string) =>
-    apiRequest<ConversationsStats>(
-      `/sessions/${sessionId}/chatwoot/conversations/stats`
-    ),
+    apiRequest(`/sessions/${sessionId}/chatwoot/conversations/stats`),
   resetChatwoot: (sessionId: string) =>
-    apiRequest<void>(`/sessions/${sessionId}/chatwoot/reset`, "POST"),
+    apiRequest(`/sessions/${sessionId}/chatwoot/reset`, "POST"),
 };
-
-// Tipos de dados
-interface Session {
-  id: string;
-  session: string;
-  status: string;
-  apiKey: string;
-  createdAt: string;
-  updatedAt: string;
-  device?: {
-    platform: string;
-    pushName: string;
-    jid: string;
-  };
-  stats?: {
-    messages: number;
-    chats: number;
-    contacts: number;
-    groups: number;
-  };
-}
-
-interface SessionStatus {
-  status: string;
-  device?: {
-    platform: string;
-    pushName: string;
-    jid: string;
-  };
-}
-
-interface QRResponse {
-  qr: string;
-  code: string;
-}
-
-interface WebhookResponse {
-  id: string;
-  sessionId: string;
-  url: string;
-  events: string[];
-  enabled: boolean;
-  secret?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface WebhookEventsResponse {
-  categories: Record<string, string[]>;
-  all: string[];
-}
-
-interface ChatwootConfig {
-  enabled: boolean;
-  url: string;
-  token: string;
-  account: number;
-  inboxId: number;
-  inbox?: string;
-  signAgent: boolean;
-  signSeparator: string;
-  autoReopen: boolean;
-  startPending: boolean;
-  mergeBrPhones: boolean;
-  syncContacts: boolean;
-  syncMessages: boolean;
-  syncDays: number;
-  ignoreChats: string[];
-  autoCreate: boolean;
-}
-
-interface ValidationResult {
-  valid: boolean;
-  message: string;
-  inboxes?: {
-    id: number;
-    name: string;
-  }[];
-}
-
-interface SyncStatus {
-  status: string;
-  progress?: number;
-  message?: string;
-  error?: string;
-}
-
-interface ChatwootOverview {
-  whatsapp: {
-    contacts: number;
-  };
-  chatwoot: {
-    contacts: number;
-    conversations: number;
-    messages: number;
-  };
-}
-
-interface ConversationsStats {
-  open: number;
-}

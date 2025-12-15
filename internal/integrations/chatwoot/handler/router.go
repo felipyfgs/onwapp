@@ -9,7 +9,7 @@ import (
 type SessionKeyLookup = middleware.SessionKeyLookup
 
 func RegisterRoutes(r *gin.Engine, handler *Handler, apiKey string, sessionLookup SessionKeyLookup) {
-	r.POST("/chatwoot/webhook/:sessionId", handler.ReceiveWebhook)
+	r.POST("/chatwoot/webhook/:session", handler.ReceiveWebhook)
 
 	chatwoot := r.Group("/chatwoot")
 	chatwoot.Use(middleware.Auth(apiKey, sessionLookup))
@@ -20,19 +20,19 @@ func RegisterRoutes(r *gin.Engine, handler *Handler, apiKey string, sessionLooku
 	sessions := r.Group("/sessions")
 	sessions.Use(middleware.Auth(apiKey, sessionLookup))
 	{
-		sessions.POST("/:sessionId/chatwoot/set", handler.SetConfig)
-		sessions.GET("/:sessionId/chatwoot/find", handler.GetConfig)
-		sessions.DELETE("/:sessionId/chatwoot", handler.DeleteConfig)
+		sessions.POST("/:session/chatwoot/set", handler.SetConfig)
+		sessions.GET("/:session/chatwoot/find", handler.GetConfig)
+		sessions.DELETE("/:session/chatwoot", handler.DeleteConfig)
 
-		sessions.POST("/:sessionId/chatwoot/sync", handler.SyncAll)
-		sessions.POST("/:sessionId/chatwoot/sync/contacts", handler.SyncContacts)
-		sessions.POST("/:sessionId/chatwoot/sync/messages", handler.SyncMessages)
-		sessions.GET("/:sessionId/chatwoot/sync/status", handler.GetSyncStatusHandler)
+		sessions.POST("/:session/chatwoot/sync", handler.SyncAll)
+		sessions.POST("/:session/chatwoot/sync/contacts", handler.SyncContacts)
+		sessions.POST("/:session/chatwoot/sync/messages", handler.SyncMessages)
+		sessions.GET("/:session/chatwoot/sync/status", handler.GetSyncStatusHandler)
 
-		sessions.GET("/:sessionId/chatwoot/overview", handler.GetSyncOverview)
-		sessions.POST("/:sessionId/chatwoot/resolve-all", handler.ResolveAllConversations)
-		sessions.GET("/:sessionId/chatwoot/conversations/stats", handler.GetConversationsStats)
+		sessions.GET("/:session/chatwoot/overview", handler.GetSyncOverview)
+		sessions.POST("/:session/chatwoot/resolve-all", handler.ResolveAllConversations)
+		sessions.GET("/:session/chatwoot/conversations/stats", handler.GetConversationsStats)
 
-		sessions.POST("/:sessionId/chatwoot/reset", handler.ResetChatwoot)
+		sessions.POST("/:session/chatwoot/reset", handler.ResetChatwoot)
 	}
 }

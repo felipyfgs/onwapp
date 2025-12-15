@@ -95,7 +95,7 @@ func SetupWithConfig(cfg *Config) *gin.Engine {
 		sessions.POST("", h.Session.Create)
 	}
 
-	session := r.Group("/:session")
+	session := r.Group("/sessions/:session")
 	session.Use(middleware.Auth(cfg.GlobalAPIKey, cfg.SessionLookup))
 	{
 		session.GET("/status", h.Session.Info)
