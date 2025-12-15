@@ -44,9 +44,9 @@ export function CreateSessionDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Nova Sessão
+        <Button className="flex-1 sm:flex-none">
+          <Plus className="h-4 w-4 sm:mr-2" />
+          <span className="hidden sm:inline">Nova Sessão</span>
         </Button>
       </DialogTrigger>
       <DialogContent>

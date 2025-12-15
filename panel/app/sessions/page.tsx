@@ -110,8 +110,6 @@ export default function SessionsPage() {
             </Badge>
             
             <ModeToggle />
-
-            <CreateSessionDialog />
           </div>
         </div>
       </header>
@@ -121,23 +119,8 @@ export default function SessionsPage() {
         <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8">
           {/* Header Section */}
           <div className="mb-8">
-            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <h2 className="text-3xl font-bold tracking-tight">Suas Sessões</h2>
-                <p className="text-muted-foreground">
-                  Gerencie e monitore suas instâncias do WhatsApp
-                </p>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={fetchSessions}
-                disabled={loading}
-                className="w-full sm:w-auto"
-              >
-                <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                Atualizar
-              </Button>
+            <div className="mb-6">
+              <h2 className="text-2xl font-semibold">Painel de Sessões</h2>
             </div>
 
             {/* Stats Cards */}
@@ -161,9 +144,9 @@ export default function SessionsPage() {
             </div>
           </div>
 
-          {/* Search Bar */}
-          <div className="mb-6">
-            <div className="relative">
+          {/* Search Bar with Actions */}
+          <div className="mb-6 flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Buscar sessões por nome..."
@@ -171,6 +154,18 @@ export default function SessionsPage() {
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-10"
               />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={fetchSessions}
+                disabled={loading}
+                className="flex-1 sm:flex-none"
+              >
+                <RefreshCw className={`h-4 w-4 sm:mr-2 ${loading ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">Atualizar</span>
+              </Button>
+              <CreateSessionDialog />
             </div>
           </div>
 
