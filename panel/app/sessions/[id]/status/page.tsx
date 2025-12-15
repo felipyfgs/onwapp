@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Image as ImageIcon, Video, Type, RefreshCw } from 'lucide-react';
-import { statusService } from '@/lib/api/index';
+import statusService from '@/lib/api/status';
 import type { Status } from '@/lib/types/api';
 
 type StatusType = 'all' | 'image' | 'video' | 'text';

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, Plus, Users, Radio, RefreshCw, Settings } from 'lucide-react';
-import { newsletterService } from '@/lib/api/index';
+import newsletterService from '@/lib/api/newsletter';
 import type { Newsletter } from '@/lib/types/api';
 
 export default function NewsletterPage() {

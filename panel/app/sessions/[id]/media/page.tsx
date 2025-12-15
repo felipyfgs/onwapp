@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Search, Upload, Download, Trash2, FileText, Image, Video, File, RefreshCw } from 'lucide-react';
-import { mediaService } from '@/lib/api/index';
+import mediaService from '@/lib/api/media';
 
 type MediaType = 'all' | 'image' | 'video' | 'document';
 
@@ -36,7 +36,7 @@ export default function MediaPage() {
     setLoading(true);
     try {
       const response = await mediaService.getSessionMedia(sessionId);
-      setMedia(response || []);
+      setMedia((response as MediaItem[]) || []);
     } catch (error) {
       console.error('Failed to load media:', error);
       setMedia([]);
