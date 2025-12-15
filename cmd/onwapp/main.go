@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"onwapp/internal/admin"
+	"onwapp/internal/ws"
 	"onwapp/internal/api/handler"
 	"onwapp/internal/api/router"
 	"onwapp/internal/config"
@@ -135,7 +135,7 @@ func main() {
 	sessionService.SetPresenceSender(wppService)
 
 	var queueService *queue.Service
-	var adminPublisher *admin.Publisher
+	var adminPublisher *ws.Publisher
 	if cfg.NatsEnabled {
 		var err error
 		queueService, err = queue.NewService(cfg)
@@ -149,7 +149,7 @@ func main() {
 			} else {
 				logger.Nats().Info().Msg("Queue service initialized with NATS JetStream")
 
-				adminPublisher = admin.New(queueService.Client())
+				adminPublisher = ws.New(queueService.Client())
 				if adminPublisher != nil {
 					if err := adminPublisher.EnsureStream(ctx); err != nil {
 						logger.Nats().Warn().Err(err).Msg("Failed to initialize admin stream")

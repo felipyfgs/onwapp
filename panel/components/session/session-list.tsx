@@ -102,14 +102,14 @@ export function SessionList() {
           ) : (
             sessions.map((session) => (
               <TableRow key={session.id}>
-                <TableCell className="font-medium">{session.name}</TableCell>
+                <TableCell className="font-medium">{session.session}</TableCell>
                 <TableCell>{getStatusBadge(session.status)}</TableCell>
                 <TableCell>
                   {new Date(session.createdAt).toLocaleDateString('pt-BR')}
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-                    <Link href={`/sessions/${session.name}`}>
+                    <Link href={`/sessions/${session.session}`}>
                       <Button variant="outline" size="sm">
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -118,7 +118,7 @@ export function SessionList() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleConnect(session.name)}
+                        onClick={() => handleConnect(session.session)}
                       >
                         <Power className="h-4 w-4" />
                       </Button>
@@ -126,7 +126,7 @@ export function SessionList() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleDisconnect(session.name)}
+                        onClick={() => handleDisconnect(session.session)}
                       >
                         <PowerOff className="h-4 w-4" />
                       </Button>

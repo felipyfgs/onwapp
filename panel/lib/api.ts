@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY || '';
 
 class ApiClient {
   private instance: AxiosInstance;
@@ -16,9 +17,9 @@ class ApiClient {
 
     this.instance.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
-        const apiKey = localStorage.getItem('api_key');
+        const apiKey = API_KEY || localStorage.getItem('api_key');
         if (apiKey) {
-          config.headers['X-API-Key'] = apiKey;
+          config.headers['Authorization'] = apiKey;
         }
         return config;
       },

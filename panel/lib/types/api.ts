@@ -9,9 +9,18 @@ export interface ApiResponse<T = any> {
 // Session Types
 export interface Session {
   id: string;
-  name: string;
+  session: string;
   status: 'connected' | 'disconnected' | 'connecting';
-  qr?: string;
+  deviceJid?: string;
+  phone?: string;
+  apiKey?: string;
+  pushName?: string;
+  profilePicture?: string;
+  stats?: {
+    messages: number;
+    groups: number;
+    contacts: number;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -20,6 +29,23 @@ export interface SessionStatus {
   status: string;
   qr?: string;
   pairingCode?: string;
+}
+
+export interface CreateSessionRequest {
+  session?: string;
+  name?: string;
+}
+
+export interface SessionResponse {
+  success: boolean;
+  session: Session;
+  message?: string;
+}
+
+export interface SessionStatusResponse {
+  success: boolean;
+  status: SessionStatus;
+  message?: string;
 }
 
 // Profile Types
@@ -94,6 +120,13 @@ export interface Participant {
   isSuperAdmin: boolean;
 }
 
+export interface ChatResponse {
+  success: boolean;
+  chat?: Chat;
+  chats?: Chat[];
+  message?: string;
+}
+
 export interface Presence {
   jid: string;
   lastSeen?: string;
@@ -145,6 +178,13 @@ export interface Message {
   reactions?: Reaction[];
   isEdited?: boolean;
   isDeleted?: boolean;
+}
+
+export interface MessageResponse {
+  success: boolean;
+  message?: Message;
+  messageId?: string;
+  error?: string;
 }
 
 export interface LocationData {
@@ -358,6 +398,19 @@ export interface ChatwootStats {
 }
 
 // Status Types
+export interface Status {
+  id: string;
+  jid: string;
+  timestamp: string;
+  mediaUrl: string;
+  mediaType: 'image' | 'video' | 'text';
+  caption?: string;
+  text?: string;
+  backgroundColor?: string;
+  views: number;
+  isViewed: boolean;
+}
+
 export interface StatusStory {
   id: string;
   timestamp: string;
@@ -371,6 +424,28 @@ export interface StatusStory {
 export interface StatusPrivacy {
   whoCanSee: 'all' | 'contacts' | 'contacts_except' | 'only_share_with';
   contacts?: string[];
+}
+
+// Community Types
+export interface Community {
+  jid: string;
+  name: string;
+  description?: string;
+  picture?: string;
+  createdAt: string;
+  owner: string;
+  participantCount: number;
+}
+
+// Call Types
+export interface Call {
+  id: string;
+  from: string;
+  to: string;
+  type: 'voice' | 'video';
+  status: 'incoming' | 'outgoing' | 'missed' | 'rejected' | 'accepted' | 'ended';
+  duration?: number;
+  timestamp: string;
 }
 
 // Request Types

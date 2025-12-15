@@ -25,7 +25,7 @@ export function SessionCard({ session }: SessionCardProps) {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>{session.name}</CardTitle>
+          <CardTitle>{session.session}</CardTitle>
           <Badge variant={session.status === 'connected' ? 'default' : 'secondary'}>
             {session.status}
           </Badge>
@@ -41,7 +41,7 @@ export function SessionCard({ session }: SessionCardProps) {
             {session.status === 'connected' ? 'Online' : 'Offline'}
           </span>
         </div>
-        <Link href={`/sessions/${session.name}`} className="mt-4 block">
+        <Link href={`/sessions/${session.session}`} className="mt-4 block">
           <Button className="w-full">
             <Eye className="mr-2 h-4 w-4" />
             Ver Detalhes

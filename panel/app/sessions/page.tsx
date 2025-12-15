@@ -31,16 +31,19 @@ export default function SessionsPage() {
     setLoading(true);
     try {
       const response = await apiClient.get('/sessions');
-      setSessions(response.data || []);
+      const data = Array.isArray(response.data) ? response.data : [];
+      setSessions(data.filter((session: any) => session && session.session));
     } catch (error) {
       console.error('Failed to fetch sessions:', error);
+      setSessions([]);
     } finally {
       setLoading(false);
     }
   };
 
   const filteredSessions = sessions.filter((session) => {
-    const matchesSearch = session.name.toLowerCase().includes(search.toLowerCase());
+    if (!session || !session.session) return false;
+    const matchesSearch = session.session.toLowerCase().includes(search.toLowerCase());
     const matchesFilter = filter === 'all' || session.status === filter;
     return matchesSearch && matchesFilter;
   });
