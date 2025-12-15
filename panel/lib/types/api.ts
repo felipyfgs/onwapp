@@ -1,3 +1,12 @@
+// Base Types
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+}
+
+// Session Types
 export interface Session {
   id: string;
   name: string;
@@ -7,14 +16,54 @@ export interface Session {
   updatedAt: string;
 }
 
+export interface SessionStatus {
+  status: string;
+  qr?: string;
+  pairingCode?: string;
+}
+
+// Profile Types
+export interface Profile {
+  name: string;
+  status: string;
+  picture?: string;
+}
+
+// Contact Types
 export interface Contact {
   jid: string;
   name: string;
   phone: string;
   avatar?: string;
   blocked?: boolean;
+  about?: string;
+  isBusiness?: boolean;
+  businessProfile?: BusinessProfile;
 }
 
+export interface BusinessProfile {
+  id: string;
+  name: string;
+  description?: string;
+  email?: string;
+  address?: string;
+  website?: string[];
+  category?: string;
+  hours?: BusinessHours[];
+  services?: string[];
+}
+
+export interface BusinessHours {
+  day: string;
+  open: string;
+  close: string;
+}
+
+export interface ContactBlocklist {
+  jids: string[];
+}
+
+// Chat Types
 export interface Chat {
   jid: string;
   name: string;
@@ -22,7 +71,52 @@ export interface Chat {
   lastMessageTime?: string;
   unreadCount: number;
   archived?: boolean;
+  muted?: boolean;
+  pinned?: boolean;
+  disappearingTimer?: number;
+  isGroup?: boolean;
+  participantCount?: number;
 }
+
+export interface ChatInfo {
+  jid: string;
+  name: string;
+  description?: string;
+  participants?: Participant[];
+  createdAt?: string;
+  createdBy?: string;
+}
+
+export interface Participant {
+  jid: string;
+  name: string;
+  isAdmin: boolean;
+  isSuperAdmin: boolean;
+}
+
+export interface Presence {
+  jid: string;
+  lastSeen?: string;
+  isOnline: boolean;
+  presence: 'available' | 'unavailable' | 'composing' | 'recording';
+}
+
+// Message Types
+export type MessageType = 
+  | 'text' 
+  | 'image' 
+  | 'audio' 
+  | 'video' 
+  | 'document' 
+  | 'sticker' 
+  | 'location' 
+  | 'contact' 
+  | 'poll' 
+  | 'buttons' 
+  | 'list' 
+  | 'interactive' 
+  | 'template' 
+  | 'carousel';
 
 export interface Message {
   id: string;
@@ -31,10 +125,152 @@ export interface Message {
   sender?: string;
   timestamp: string;
   text?: string;
-  type: 'text' | 'image' | 'audio' | 'video' | 'document' | 'sticker' | 'location' | 'contact' | 'poll';
+  type: MessageType;
   mediaUrl?: string;
+  mediaKey?: string;
+  mediaType?: string;
+  caption?: string;
+  fileName?: string;
+  fileSize?: number;
+  duration?: number;
+  mimeType?: string;
+  location?: LocationData;
+  contact?: ContactData;
+  poll?: PollData;
+  buttons?: ButtonData[];
+  list?: ListData;
+  interactive?: InteractiveData;
+  template?: TemplateData;
+  carousel?: CarouselData[];
+  reactions?: Reaction[];
+  isEdited?: boolean;
+  isDeleted?: boolean;
 }
 
+export interface LocationData {
+  latitude: number;
+  longitude: number;
+  name?: string;
+  address?: string;
+}
+
+export interface ContactData {
+  displayName: string;
+  vcard: string;
+  phoneNumber: string;
+}
+
+export interface PollData {
+  question: string;
+  options: PollOption[];
+  allowsMultipleAnswers: boolean;
+  messageSecret?: string;
+}
+
+export interface PollOption {
+  optionName: string;
+  optionId: number;
+}
+
+export interface ButtonData {
+  buttonId: string;
+  buttonText: string;
+  type: 'reply' | 'url' | 'call';
+  url?: string;
+  phoneNumber?: string;
+}
+
+export interface ListData {
+  title: string;
+  description?: string;
+  buttonText: string;
+  sections: ListSection[];
+}
+
+export interface ListSection {
+  title: string;
+  rows: ListRow[];
+}
+
+export interface ListRow {
+  rowId: string;
+  title: string;
+  description?: string;
+}
+
+export interface InteractiveData {
+  header?: InteractiveHeader;
+  body: InteractiveBody;
+  footer?: InteractiveFooter;
+  action: InteractiveAction;
+}
+
+export interface InteractiveHeader {
+  type: 'text' | 'image' | 'video' | 'document';
+  text?: string;
+  media?: string;
+}
+
+export interface InteractiveBody {
+  text: string;
+}
+
+export interface InteractiveFooter {
+  text: string;
+}
+
+export interface InteractiveAction {
+  type: 'button' | 'list' | 'cta_url';
+  buttons?: ButtonData[];
+  sections?: ListSection[];
+  ctaUrl?: {
+    displayText: string;
+    url: string;
+  };
+}
+
+export interface TemplateData {
+  name: string;
+  language: string;
+  components: TemplateComponent[];
+}
+
+export interface TemplateComponent {
+  type: 'header' | 'body' | 'footer' | 'button';
+  parameters?: TemplateParameter[];
+}
+
+export interface TemplateParameter {
+  type: 'text' | 'image' | 'video' | 'document' | 'currency' | 'date_time';
+  text?: string;
+  media?: string;
+  currency?: {
+    fallbackValue: string;
+    code: string;
+    amount: number;
+  };
+  dateTime?: {
+    fallbackValue: string;
+  };
+}
+
+export interface CarouselData {
+  cards: CarouselCard[];
+}
+
+export interface CarouselCard {
+  header?: InteractiveHeader;
+  body: InteractiveBody;
+  action?: InteractiveAction;
+}
+
+export interface Reaction {
+  emoji: string;
+  count: number;
+  hasReacted: boolean;
+}
+
+// Group Types
 export interface Group {
   jid: string;
   name: string;
@@ -42,36 +278,186 @@ export interface Group {
   owner: string;
   participants: GroupParticipant[];
   createdAt: string;
+  description?: string;
+  picture?: string;
+  isLocked?: boolean;
+  isAnnounceOnly?: boolean;
+  approvalMode?: boolean;
+  memberAddMode?: string;
 }
 
 export interface GroupParticipant {
   jid: string;
+  name: string;
   isAdmin: boolean;
   isSuperAdmin: boolean;
 }
 
-export interface Profile {
-  name: string;
-  status: string;
-  picture?: string;
+export interface GroupInvite {
+  code: string;
+  link: string;
+  createdAt: string;
+  creator: string;
 }
 
+export interface GroupRequest {
+  jid: string;
+  name: string;
+  requestTime: string;
+}
+
+// Media Types
+export interface MediaItem {
+  messageId: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  url: string;
+  isPending: boolean;
+  timestamp: string;
+}
+
+// Newsletter Types
+export interface Newsletter {
+  jid: string;
+  name: string;
+  description?: string;
+  picture?: string;
+  subscribers: number;
+  isFollowing: boolean;
+  isMuted: boolean;
+  createdAt: string;
+}
+
+// Webhook Types
 export interface WebhookConfig {
+  url: string;
+  events: string[];
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Chatwoot Types
+export interface ChatwootConfig {
+  url: string;
+  accountId: string;
+  token: string;
+  enabled: boolean;
+  inboxId?: string;
+  syncStatus?: 'syncing' | 'completed' | 'error';
+  lastSync?: string;
+}
+
+export interface ChatwootStats {
+  totalConversations: number;
+  resolvedConversations: number;
+  pendingConversations: number;
+  lastSync: string;
+  syncStatus: 'syncing' | 'completed' | 'error';
+}
+
+// Status Types
+export interface StatusStory {
+  id: string;
+  timestamp: string;
+  mediaUrl: string;
+  mediaType: 'image' | 'video';
+  caption?: string;
+  views: number;
+  isViewed: boolean;
+}
+
+export interface StatusPrivacy {
+  whoCanSee: 'all' | 'contacts' | 'contacts_except' | 'only_share_with';
+  contacts?: string[];
+}
+
+// Request Types
+export interface SendMessageRequest {
+  jid: string;
+  text?: string;
+  media?: File;
+  caption?: string;
+  options?: MessageOptions;
+}
+
+export interface MessageOptions {
+  quotedMessageId?: string;
+  mentions?: string[];
+  sendSeen?: boolean;
+  linkPreview?: boolean;
+}
+
+export interface CreateGroupRequest {
+  name: string;
+  subject?: string;
+  participants: string[];
+}
+
+export interface UpdateGroupRequest {
+  name?: string;
+  subject?: string;
+  announce?: boolean;
+  locked?: boolean;
+  approval?: boolean;
+  memberAdd?: string;
+}
+
+export interface WebhookRequest {
   url: string;
   events: string[];
   enabled: boolean;
 }
 
-export interface ChatwootConfig {
+export interface ChatwootRequest {
   url: string;
   accountId: string;
   token: string;
   enabled: boolean;
 }
 
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  error?: string;
+// Response Types
+export interface PaginatedResponse<T> {
+  data: T[];
+  hasMore: boolean;
+  cursor?: string;
+  total?: number;
+}
+
+export interface ContactCheckResponse {
+  jid: string;
+  exists: boolean;
+  name?: string;
+  picture?: string;
+}
+
+export interface QRCodeResponse {
+  qrCode: string;
+  qrBase64: string;
+  pairingCode?: string;
+}
+
+export interface GroupInfoResponse {
+  jid: string;
+  name: string;
+  subject: string;
+  owner: string;
+  participants: GroupParticipant[];
+  createdAt: string;
+  description?: string;
+  picture?: string;
+  isLocked?: boolean;
+  isAnnounceOnly?: boolean;
+  approvalMode?: boolean;
+  memberAddMode?: string;
+}
+
+export interface MediaUploadResponse {
+  messageId: string;
+  url: string;
+  key: string;
+  mimeType: string;
+  fileName: string;
+  fileSize: number;
 }
