@@ -9,8 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Save, Trash2, LogOut, Key, Shield, Bell, RefreshCw } from 'lucide-react';
-import apiClient from '@/lib/api';
-import { useSessionStore } from '@/store/session';
+import { sessionService } from '@/lib/api/index';
+import { useSessionStore } from '@/stores/session-store';
 
 export default function SettingsPage() {
   const params = useParams();
@@ -34,8 +34,8 @@ export default function SettingsPage() {
   const loadSettings = async () => {
     setLoading(true);
     try {
-      const response = await apiClient.session.get(sessionId);
-      if (response.data) {
+      const response = await sessionService.getSessionStatus(sessionId);
+      if (response.status) {
         setSettings({
           notifications: true,
           autoRead: false,
@@ -65,7 +65,7 @@ export default function SettingsPage() {
 
   const handleLogout = async () => {
     try {
-      await apiClient.session.disconnect(sessionId);
+      await sessionService.logoutSession(sessionId);
     } catch (error) {
       console.error('Failed to logout:', error);
     }
@@ -74,7 +74,7 @@ export default function SettingsPage() {
   const handleDelete = async () => {
     if (!confirm('Tem certeza que deseja deletar esta sessão?')) return;
     try {
-      await apiClient.session.delete(sessionId);
+      await sessionService.deleteSession(sessionId);
       window.location.href = '/sessions';
     } catch (error) {
       console.error('Failed to delete session:', error);
