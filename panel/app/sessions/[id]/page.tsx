@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { QrCodeDialog } from '@/components/session/qr-code-dialog';
 import { 
   Power, 
   PowerOff, 
@@ -40,7 +41,7 @@ import {
   Radio,
   Link2
 } from "lucide-react";
-import NextImage from 'next/image';
+
 
 export default function SessionPage() {
   const params = useParams();
@@ -319,50 +320,14 @@ export default function SessionPage() {
       </Card>
 
       {/* QR Code Dialog */}
-      <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-center">Conectar WhatsApp</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col items-center gap-4 py-4">
-            {qrCode ? (
-              <>
-                <div className="relative w-64 h-64 rounded-lg border-2 bg-white dark:bg-gray-950 p-3">
-                  <NextImage
-                    src={qrCode}
-                    alt="QR Code"
-                    fill
-                    className="object-contain"
-                    unoptimized
-                    priority
-                  />
-                </div>
-                {pairingCode && (
-                  <div className="text-center w-full py-3 bg-muted/50 rounded-lg">
-                    <p className="text-xs text-muted-foreground mb-1">Código de Pareamento</p>
-                    <p className="text-2xl font-mono font-bold tracking-widest">{pairingCode}</p>
-                  </div>
-                )}
-                <p className="text-sm text-muted-foreground text-center">
-                  Abra o WhatsApp no celular e escaneie o código
-                </p>
-              </>
-            ) : status === 'connecting' ? (
-              <div className="flex flex-col items-center py-8">
-                <Loader2 className="h-12 w-12 animate-spin text-primary mb-3" />
-                <p className="text-sm text-muted-foreground">Gerando QR Code...</p>
-              </div>
-            ) : status === 'connected' ? (
-              <div className="flex flex-col items-center py-8">
-                <div className="rounded-full p-4 bg-green-100 dark:bg-green-950 mb-3">
-                  <CheckCircle2 className="h-10 w-10 text-green-600" />
-                </div>
-                <p className="font-medium text-green-600">Conectado com sucesso!</p>
-              </div>
-            ) : null}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <QrCodeDialog
+        sessionName={sessionName}
+        qrCode={qrCode}
+        pairingCode={pairingCode}
+        status={status}
+        open={qrDialogOpen}
+        onOpenChange={setQrDialogOpen}
+      />
     </div>
   );
 }
