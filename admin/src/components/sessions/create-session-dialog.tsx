@@ -1,39 +1,65 @@
 "use client"
 
 import { useState } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Plus } from "lucide-react"
-import { useApi } from "@/hooks/use-api"
+import { useSessions } from "@/hooks/use-api" // Using useSessions hook which exposes createSession
 import { toast } from "sonner"
 
+const formSchema = z.object({
+  session: z.string().min(3, "O nome da sessão deve ter pelo menos 3 caracteres"),
+})
+
 interface CreateSessionDialogProps {
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
   onSessionCreated?: () => void
-  children?: React.ReactNode
+  trigger?: React.ReactNode
 }
 
-export const CreateSessionDialog = ({ onSessionCreated, children }: CreateSessionDialogProps) => {
-  const [open, setOpen] = useState(false)
+export const CreateSessionDialog = ({
+  open: controlledOpen,
+  onOpenChange: setControlledOpen,
+  onSessionCreated,
+  trigger
+}: CreateSessionDialogProps) => {
+  const [internalOpen, setInternalOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [sessionName, setSessionName] = useState("")
-  const api = useApi()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!sessionName.trim()) {
-      toast.error("Nome da sessão é obrigatório")
-      return
-    }
+  // Use controlled state if provided, otherwise internal state
+  const isControlled = controlledOpen !== undefined
+  const open = isControlled ? controlledOpen : internalOpen
+  const setOpen = isControlled ? setControlledOpen : setInternalOpen
 
+  const { createSession } = useSessions()
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      session: "",
+    },
+  })
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setLoading(true)
     try {
-      await createSession(sessionName.trim())
+      // The API expects { session: "name" } based on typical REST patterns or potentially just the body
+      // Based on previous code analysis, createSession takes just `data`. 
+      // Let's assume the API payload should be { session: "name" } directly or similar.
+      // However, looking at the previous code: `createSession(sessionName.trim())` suggesting it was sending a string?
+      // Wait, api-client.ts says: `createSession: (data: any) => apiRequest<Session>("/sessions", "POST", data),`
+      // So if we pass `{ session: "name" }`, it sends that JSON.
+
+      await createSession(values)
       toast.success("Sessão criada com sucesso!")
-      setSessionName("")
-      setOpen(false)
+      form.reset()
+      setOpen?.(false)
       onSessionCreated?.()
     } catch (error: any) {
       toast.error(error.message || "Erro ao criar sessão")
@@ -42,45 +68,61 @@ export const CreateSessionDialog = ({ onSessionCreated, children }: CreateSessio
     }
   }
 
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      form.reset()
+    }
+    setOpen?.(newOpen)
+  }
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {children || (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
+      {!trigger && !isControlled && (
+        <DialogTrigger asChild>
           <Button>
             <Plus className="mr-2 h-4 w-4" />
             Nova Sessão
           </Button>
-        )}
-      </DialogTrigger>
+        </DialogTrigger>
+      )}
+
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Criar Nova Sessão</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="sessionName">Nome da Sessão</Label>
-            <Input
-              id="sessionName"
-              value={sessionName}
-              onChange={(e) => setSessionName(e.target.value)}
-              placeholder="Digite o nome da sessão"
-              disabled={loading}
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="session"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome da Sessão</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Digite o nome da sessão" {...field} disabled={loading} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="flex justify-end space-x-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-              disabled={loading}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Criando..." : "Criar Sessão"}
-            </Button>
-          </div>
-        </form>
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleOpenChange(false)}
+                disabled={loading}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? "Criando..." : "Criar Sessão"}
+              </Button>
+            </div>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   )

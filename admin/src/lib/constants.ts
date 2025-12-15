@@ -1,11 +1,13 @@
 // Constantes da aplicação
 
 // URLs da API
-export const API_BASE_URL = 'http://localhost:8080';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 export const API_KEY = process.env.NEXT_PUBLIC_API_KEY || 'your-global-api-key';
 
 // URLs do NATS WebSocket
-export const NATS_WS_URL = process.env.NEXT_PUBLIC_NATS_WS_URL || 'ws://localhost:9222';
+export const NATS_WS_URL = typeof window !== 'undefined'
+  ? `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/nats`
+  : process.env.NEXT_PUBLIC_NATS_WS_URL || 'ws://localhost:9222';
 
 // Tipos de eventos NATS
 export const NATS_EVENT_TYPES = {
