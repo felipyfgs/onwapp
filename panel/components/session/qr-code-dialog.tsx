@@ -14,7 +14,6 @@ import NextImage from 'next/image';
 interface QrCodeDialogProps {
   sessionName: string;
   qrCode?: string;
-  pairingCode?: string;
   status?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -24,7 +23,6 @@ interface QrCodeDialogProps {
 export function QrCodeDialog({ 
   sessionName, 
   qrCode, 
-  pairingCode, 
   status = 'disconnected',
   open, 
   onOpenChange,
@@ -81,12 +79,7 @@ export function QrCodeDialog({
                 />
               </div>
               
-              {pairingCode && (
-                <div className="text-center w-full py-3 bg-muted/50 rounded-lg">
-                  <p className="text-xs text-muted-foreground mb-1">Código de Pareamento</p>
-                  <p className="text-2xl font-mono font-bold tracking-widest">{pairingCode}</p>
-                </div>
-              )}
+
               
               <div className="text-center">
                 <p className="text-sm text-muted-foreground mb-2">

@@ -24,7 +24,6 @@ export function CreateSessionDialog() {
   const [loading, setLoading] = useState(false);
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [qrCode, setQrCode] = useState<string | null>(null);
-  const [pairingCode, setPairingCode] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
   const addSession = useSessionStore((state) => state.addSession);
 
@@ -57,14 +56,24 @@ export function CreateSessionDialog() {
 
   const fetchQrCode = async (sessionName: string) => {
     try {
-      const response = await apiClient.get(`/sessions/${sessionName}/status`);
+      // First check session status
+      const statusResponse = await apiClient.get(`/sessions/${sessionName}/status`);
       
-      if (response.data.qrCode) {
-        setQrCode(response.data.qrCode);
-        setPairingCode(response.data.pairingCode || null);
-        setConnectionStatus(response.data.status || 'connecting');
-      } else if (response.data.status === 'connected') {
+      if (statusResponse.data.status === 'connected') {
         setConnectionStatus('connected');
+        return;
+      }
+      
+      if (statusResponse.data.status === 'connecting') {
+        // Get QR code data
+        const qrResponse = await apiClient.get(`/sessions/${sessionName}/qr`);
+        
+        if (qrResponse.data.qr) {
+          setQrCode(qrResponse.data.qr);
+          setConnectionStatus(qrResponse.data.status || 'connecting');
+        } else {
+          setTimeout(() => fetchQrCode(sessionName), 2000);
+        }
       } else {
         setTimeout(() => fetchQrCode(sessionName), 2000);
       }
@@ -126,7 +135,6 @@ export function CreateSessionDialog() {
       <QrCodeDialog
         sessionName={name}
         qrCode={qrCode || undefined}
-        pairingCode={pairingCode || undefined}
         status={connectionStatus}
         open={qrDialogOpen}
         onOpenChange={setQrDialogOpen}

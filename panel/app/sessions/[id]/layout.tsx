@@ -1,6 +1,7 @@
 'use client';
 
-import { useParams, usePathname } from 'next/navigation';
+import { useParams, usePathname, useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { AppSidebar } from "@/components/app-sidebar";
 import {
   Breadcrumb,
@@ -59,9 +60,19 @@ export default function SessionLayout({
 }) {
   const params = useParams();
   const pathname = usePathname();
+  const router = useRouter();
   const sessionId = params.id as string;
+  const sessionExists = useSessionSubscription(sessionId);
 
-  useSessionSubscription(sessionId);
+  useEffect(() => {
+    if (!sessionExists) {
+      router.push('/sessions');
+    }
+  }, [sessionExists, router]);
+
+  if (!sessionExists) {
+    return null;
+  }
 
   const breadcrumbs = getBreadcrumbs(pathname, sessionId);
 

@@ -15,7 +15,8 @@ import {
   Phone,
   CheckCircle2,
   AlertCircle,
-  Clock
+  Clock,
+  QrCode
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -25,10 +26,12 @@ interface SessionCardProps {
   session: Session;
   onDelete?: (id: string) => void;
   onRefresh?: () => void;
+  onQRCodeRequest?: (sessionName: string) => void;
   isSelected?: boolean;
+  viewMode?: 'compact' | 'detailed';
 }
 
-export function SessionCard({ session, onDelete, onRefresh, isSelected = false }: SessionCardProps) {
+export function SessionCard({ session, onDelete, onRefresh, onQRCodeRequest, isSelected = false, viewMode = 'compact' }: SessionCardProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const isConnected = session.status === 'connected';
@@ -155,7 +158,11 @@ export function SessionCard({ session, onDelete, onRefresh, isSelected = false }
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handlePower}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handlePower(e);
+                }}
                 disabled={isLoading}
                 className="flex-1 gap-2"
               >
@@ -167,10 +174,30 @@ export function SessionCard({ session, onDelete, onRefresh, isSelected = false }
                 <span>{isConnected || isConnecting ? 'Desconectar' : 'Conectar'}</span>
               </Button>
 
+              {onQRCodeRequest && !isConnected && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onQRCodeRequest(session.session);
+                  }}
+                  className="gap-2"
+                >
+                  <QrCode className="h-4 w-4" />
+                  <span>QR Code</span>
+                </Button>
+              )}
+
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleDelete}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleDelete(e);
+                }}
                 disabled={isLoading}
                 className="gap-2 text-destructive border-destructive/30 hover:border-destructive hover:bg-destructive/10"
               >

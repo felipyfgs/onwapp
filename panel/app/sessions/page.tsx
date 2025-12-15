@@ -8,6 +8,7 @@ import { ModeToggle } from '@/components/mode-toggle';
 import apiClient from '@/lib/api';
 import { SessionCard } from '@/components/session/session-card';
 import { CreateSessionDialog } from '@/components/session/create-session-dialog';
+import { QrCodeDialog } from '@/components/session/qr-code-dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +23,8 @@ import {
   Grid,
   List,
   SortAsc,
-  SortDesc
+  SortDesc,
+  QrCode
 } from 'lucide-react';
 import { Session } from '@/lib/types/api';
 
@@ -40,6 +42,10 @@ export default function SessionsPage() {
   const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('compact');
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [qrDialogOpen, setQrDialogOpen] = useState(false);
+  const [qrSessionName, setQrSessionName] = useState<string | null>(null);
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [qrStatus, setQrStatus] = useState('disconnected');
 
   // Fetch sessions
   const fetchSessions = useCallback(async () => {
@@ -118,6 +124,36 @@ export default function SessionsPage() {
   useEffect(() => {
     fetchSessions();
   }, [fetchSessions]);
+
+  const fetchQrCodeForSession = async (sessionName: string) => {
+    try {
+      setQrSessionName(sessionName);
+      setQrStatus('connecting');
+      setQrDialogOpen(true);
+      
+      // First trigger connect if not already connecting
+      await apiClient.post(`/sessions/${sessionName}/connect`);
+      
+      // Then fetch QR code
+      const response = await apiClient.get(`/sessions/${sessionName}/qr`);
+      
+      if (response.data.qr) {
+        setQrCode(response.data.qr);
+        setQrStatus(response.data.status || 'connecting');
+      }
+    } catch (error) {
+      console.error('Failed to fetch QR code:', error);
+      setQrStatus('disconnected');
+      setSuccessMessage('Falha ao gerar QR code');
+    }
+  };
+
+  const handleQrDialogClose = () => {
+    setQrDialogOpen(false);
+    setQrCode(null);
+    setQrStatus('disconnected');
+    setQrSessionName(null);
+  };
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -206,6 +242,16 @@ export default function SessionsPage() {
           </div>
         </div>
       )}
+
+      {/* QR Code Dialog */}
+      <QrCodeDialog
+        sessionName={qrSessionName || ''}
+        qrCode={qrCode || undefined}
+        status={qrStatus}
+        open={qrDialogOpen}
+        onOpenChange={setQrDialogOpen}
+        onClose={handleQrDialogClose}
+      />
 
       <div className="flex">
         {/* Main Content */}
@@ -300,6 +346,7 @@ export default function SessionsPage() {
                   <RefreshCw className={`h-4 w-4 sm:mr-2 ${loading ? 'animate-spin' : ''}`} />
                   <span className="hidden sm:inline">Atualizar</span>
                 </Button>
+
                 <CreateSessionDialog />
               </div>
             </div>
@@ -356,6 +403,7 @@ export default function SessionsPage() {
                     session={session}
                     onDelete={(id) => setSessions(sessions.filter(s => s.id !== id))}
                     onRefresh={fetchSessions}
+                    onQRCodeRequest={fetchQrCodeForSession}
                     viewMode={viewMode}
                     isSelected={activeSessionId === session.session}
                   />
