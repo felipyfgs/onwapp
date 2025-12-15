@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSessionStore } from '@/stores/session-store';
 import apiClient from '@/lib/api';
 import {
@@ -16,15 +16,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, QrCode } from 'lucide-react';
-import { QrCodeDialog } from './qr-code-dialog';
+
 
 export function CreateSessionDialog() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [qrDialogOpen, setQrDialogOpen] = useState(false);
-  const [qrCode, setQrCode] = useState<string | null>(null);
-  const [connectionStatus, setConnectionStatus] = useState('disconnected');
   const addSession = useSessionStore((state) => state.addSession);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,12 +36,7 @@ export function CreateSessionDialog() {
       setName('');
       setOpen(false);
       
-      // Open QR code dialog after session creation
-      setQrDialogOpen(true);
-      setConnectionStatus('connecting');
-      
-      // Start polling for QR code
-      await fetchQrCode(name.trim());
+      // Session created successfully, user will manually connect and open QR code
       
     } catch (error) {
       console.error('Failed to create session:', error);
@@ -52,42 +44,6 @@ export function CreateSessionDialog() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const fetchQrCode = async (sessionName: string) => {
-    try {
-      // First check session status
-      const statusResponse = await apiClient.get(`/sessions/${sessionName}/status`);
-      
-      if (statusResponse.data.status === 'connected') {
-        setConnectionStatus('connected');
-        return;
-      }
-      
-      if (statusResponse.data.status === 'connecting') {
-        // Get QR code data
-        const qrResponse = await apiClient.get(`/sessions/${sessionName}/qr`);
-        
-        if (qrResponse.data.qr) {
-          setQrCode(qrResponse.data.qr);
-          setConnectionStatus(qrResponse.data.status || 'connecting');
-        } else {
-          setTimeout(() => fetchQrCode(sessionName), 2000);
-        }
-      } else {
-        setTimeout(() => fetchQrCode(sessionName), 2000);
-      }
-    } catch (error) {
-      console.error('Failed to fetch QR code:', error);
-      setConnectionStatus('disconnected');
-    }
-  };
-
-  const handleQrDialogClose = () => {
-    setQrDialogOpen(false);
-    setQrCode(null);
-    setPairingCode(null);
-    setConnectionStatus('disconnected');
   };
 
   return (
@@ -131,15 +87,6 @@ export function CreateSessionDialog() {
         </DialogContent>
       </Dialog>
       
-      {/* QR Code Dialog */}
-      <QrCodeDialog
-        sessionName={name}
-        qrCode={qrCode || undefined}
-        status={connectionStatus}
-        open={qrDialogOpen}
-        onOpenChange={setQrDialogOpen}
-        onClose={handleQrDialogClose}
-      />
     </>
   );
 }
