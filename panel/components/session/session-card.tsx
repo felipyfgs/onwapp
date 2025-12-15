@@ -1,53 +1,108 @@
 'use client';
 
 import { Session } from '@/lib/types/api';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Eye } from 'lucide-react';
+import { Wifi, WifiOff, Power, PowerOff, Trash2, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import { useState } from 'react';
+import apiClient from '@/lib/api';
 
 interface SessionCardProps {
   session: Session;
+  onDelete?: (id: string) => void;
+  onRefresh?: () => void;
 }
 
-export function SessionCard({ session }: SessionCardProps) {
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      connected: 'bg-green-500',
-      connecting: 'bg-yellow-500',
-      disconnected: 'bg-red-500',
-    };
-    return colors[status] || 'bg-gray-500';
+export function SessionCard({ session, onDelete, onRefresh }: SessionCardProps) {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const isConnected = session.status === 'connected';
+  const isConnecting = session.status === 'connecting';
+
+  const handlePower = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsLoading(true);
+    try {
+      const action = isConnected || isConnecting ? 'disconnect' : 'connect';
+      await apiClient.post(`/sessions/${session.session}/${action}`);
+      onRefresh?.();
+    } catch (error) {
+      console.error('Failed:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm('Excluir esta sessão?')) return;
+    setIsLoading(true);
+    try {
+      await apiClient.delete(`/sessions/${session.session}`);
+      onDelete?.(session.id);
+    } catch (error) {
+      console.error('Failed:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>{session.session}</CardTitle>
-          <Badge variant={session.status === 'connected' ? 'default' : 'secondary'}>
-            {session.status}
-          </Badge>
+    <Link href={`/sessions/${session.session}`}>
+      <Card className="p-4 hover:bg-accent/50 transition-colors cursor-pointer overflow-hidden">
+        <div className="flex items-center gap-3">
+          <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+            isConnected ? 'bg-green-500' : 
+            isConnecting ? 'bg-yellow-500 animate-pulse' : 
+            'bg-red-500'
+          }`} />
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="font-medium truncate">{session.session}</span>
+              {isConnected ? (
+                <Wifi className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
+              ) : (
+                <WifiOff className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+              )}
+            </div>
+            {session.phone && (
+              <span className="text-xs text-muted-foreground truncate block">{session.phone}</span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handlePower}
+              disabled={isLoading}
+              className="h-8 w-8"
+            >
+              {isConnected || isConnecting ? (
+                <PowerOff className="h-4 w-4" />
+              ) : (
+                <Power className="h-4 w-4" />
+              )}
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleDelete}
+              disabled={isLoading}
+              className="h-8 w-8 text-destructive hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+
+            <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          </div>
         </div>
-        <CardDescription>
-          Criado em {new Date(session.createdAt).toLocaleDateString('pt-BR')}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center gap-2">
-          <div className={`h-3 w-3 rounded-full ${getStatusColor(session.status)}`} />
-          <span className="text-sm text-muted-foreground">
-            {session.status === 'connected' ? 'Online' : 'Offline'}
-          </span>
-        </div>
-        <Link href={`/sessions/${session.session}`} className="mt-4 block">
-          <Button className="w-full">
-            <Eye className="mr-2 h-4 w-4" />
-            Ver Detalhes
-          </Button>
-        </Link>
-      </CardContent>
-    </Card>
+      </Card>
+    </Link>
   );
 }
