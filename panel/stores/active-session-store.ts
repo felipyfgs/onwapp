@@ -1,13 +1,33 @@
 import { create } from 'zustand';
 import type { SessionEvent } from '@/lib/types/nats';
 
+interface SessionStats {
+  messages: number;
+  chats: number;
+  contacts: number;
+  groups: number;
+}
+
+interface SessionInfo {
+  status: 'connected' | 'disconnected' | 'connecting';
+  pushName?: string;
+  profilePicture?: string;
+  phone?: string;
+  stats?: SessionStats;
+}
+
 interface ActiveSessionState {
   sessionId: string | null;
   status: 'connected' | 'disconnected' | 'connecting';
   qrCode: string | null;
   pairingCode: string | null;
   lastEvent: SessionEvent | null;
+  pushName: string | null;
+  profilePicture: string | null;
+  phone: string | null;
+  stats: SessionStats | null;
   setSessionId: (sessionId: string | null) => void;
+  setSessionInfo: (info: SessionInfo) => void;
   updateFromEvent: (event: SessionEvent) => void;
   reset: () => void;
 }
@@ -18,8 +38,20 @@ export const useActiveSessionStore = create<ActiveSessionState>((set) => ({
   qrCode: null,
   pairingCode: null,
   lastEvent: null,
+  pushName: null,
+  profilePicture: null,
+  phone: null,
+  stats: null,
 
   setSessionId: (sessionId) => set({ sessionId }),
+
+  setSessionInfo: (info) => set({
+    status: info.status,
+    pushName: info.pushName || null,
+    profilePicture: info.profilePicture || null,
+    phone: info.phone || null,
+    stats: info.stats || null,
+  }),
 
   updateFromEvent: (event) =>
     set((state) => {
@@ -53,5 +85,9 @@ export const useActiveSessionStore = create<ActiveSessionState>((set) => ({
       qrCode: null,
       pairingCode: null,
       lastEvent: null,
+      pushName: null,
+      profilePicture: null,
+      phone: null,
+      stats: null,
     }),
 }));

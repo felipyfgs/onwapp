@@ -2,27 +2,39 @@
 
 import { Session } from '@/lib/types/api';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
   Power, 
   PowerOff, 
-  Trash2, 
-  ChevronRight,
+  Trash2,
   MessageSquare,
   Users,
-  Contact
+  Users2,
+  Phone,
+  CheckCircle2,
+  AlertCircle,
+  Clock
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import apiClient from '@/lib/api';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider
+} from '@/components/ui/tooltip';
 
 interface SessionCardProps {
   session: Session;
   onDelete?: (id: string) => void;
   onRefresh?: () => void;
+  isSelected?: boolean;
 }
 
-export function SessionCard({ session, onDelete, onRefresh }: SessionCardProps) {
+export function SessionCard({ session, onDelete, onRefresh, isSelected = false }: SessionCardProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const isConnected = session.status === 'connected';
@@ -65,84 +77,123 @@ export function SessionCard({ session, onDelete, onRefresh }: SessionCardProps) 
     return session.session.substring(0, 2).toUpperCase();
   };
 
+  const getStatusIcon = () => {
+    if (isConnected) return <CheckCircle2 className="h-3 w-3 text-green-500" />;
+    if (isConnecting) return <Clock className="h-3 w-3 text-yellow-500 animate-pulse" />;
+    return <AlertCircle className="h-3 w-3 text-zinc-400" />;
+  };
+
   return (
-    <Link href={`/sessions/${session.session}`}>
-      <div className="group flex items-center gap-3 rounded-md border border-border/50 bg-card/50 p-3 hover:bg-accent/50 hover:border-accent transition-all duration-200">
-        {/* Avatar Compacto */}
-        <div className="relative flex-shrink-0">
-          <Avatar className="h-9 w-9 border border-border/50">
-            <AvatarImage src={session.profilePicture} alt={session.pushName || session.session} />
-            <AvatarFallback className="text-[10px] bg-gradient-to-br from-green-500/80 to-green-600/80 text-white">
-              {getInitials()}
-            </AvatarFallback>
-          </Avatar>
-          <div className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background ${
-            isConnected ? 'bg-green-500' : 
-            isConnecting ? 'bg-yellow-500 animate-pulse' : 
-            'bg-zinc-300'
-          }`} />
-        </div>
-
-        {/* Info Compacta */}
-        <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
-          <div className="flex items-center justify-between">
-            <span className="font-medium text-sm truncate text-foreground/90">
-              {session.pushName || session.session}
-            </span>
-          </div>
-          
-          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-            <span className="truncate font-mono opacity-80">@{session.session}</span>
-            {session.phone && (
-              <>
-                <span className="w-0.5 h-0.5 rounded-full bg-border" />
-                <span className="truncate opacity-80">+{session.phone}</span>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Stats Minimalistas (apenas ícones e números pequenos) */}
-        {isConnected && session.stats && (
-          <div className="hidden sm:flex items-center gap-3 px-2">
-            <div className="flex items-center gap-1 text-muted-foreground/70" title="Mensagens">
-              <MessageSquare className="h-3 w-3" />
-              <span className="text-[10px] tabular-nums">{session.stats.messages || 0}</span>
+    <Card className="relative rounded-lg border border-border bg-card hover:border-accent hover:bg-accent/50 transition-all duration-200 overflow-hidden">
+      <Link href={`/sessions/${session.session}`} className="block">
+        <CardContent className="p-3">
+          <div className="flex items-start justify-between gap-2">
+            {/* Left: Avatar and Info */}
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div className="relative flex-shrink-0">
+                <Avatar className="h-10 w-10 border border-border/50">
+                  <AvatarImage src={session.profilePicture} alt={session.pushName || session.session} />
+                  <AvatarFallback className="text-xs bg-gradient-to-br from-green-500/80 to-green-600/80 text-white">
+                    {getInitials()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className={`absolute -bottom-1 -right-1 h-2.5 w-2.5 rounded-full border-2 border-background ${
+                  isConnected ? 'bg-green-500' : 
+                  isConnecting ? 'bg-yellow-500 animate-pulse' : 
+                  'bg-zinc-300'
+                }`} />
+              </div>
+              
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold text-sm text-foreground truncate">
+                  {session.pushName || session.session}
+                </h3>
+                <p className="text-xs text-muted-foreground font-mono truncate">@{session.session}</p>
+                
+                {/* Compact Stats */}
+                {isConnected && session.stats && (
+                  <div className="flex items-center gap-3 mt-1 text-xs">
+                    <div className="flex items-center gap-1 text-muted-foreground">
+                      <MessageSquare className="h-3 w-3" />
+                      <span>{session.stats.messages || 0}</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-muted-foreground">
+                      <Users className="h-3 w-3" />
+                      <span>{session.stats.contacts || 0}</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-muted-foreground">
+                      <Users2 className="h-3 w-3" />
+                      <span>{session.stats.groups || 0}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-1 text-muted-foreground/70" title="Grupos">
-              <Users className="h-3 w-3" />
-              <span className="text-[10px] tabular-nums">{session.stats.groups || 0}</span>
+            
+            {/* Right: Status and Actions */}
+            <div className="flex flex-col items-end gap-2 flex-shrink-0">
+              {/* Status Badge */}
+              <Badge 
+                variant={
+                  isConnected ? 'default' : 
+                  isConnecting ? 'secondary' : 'destructive'
+                }
+                className="text-xs w-fit"
+              >
+                <div className="flex items-center gap-1">
+                  {getStatusIcon()}
+                  <span>{isConnected ? 'Conectado' : isConnecting ? 'Conectando' : 'Desconectado'}</span>
+                </div>
+              </Badge>
+              
+              {/* Actions - Always visible */}
+              <div className="flex items-center gap-1">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handlePower}
+                        disabled={isLoading}
+                        className="h-6 w-6"
+                      >
+                        {isConnected || isConnecting ? (
+                          <PowerOff className="h-3 w-3" />
+                        ) : (
+                          <Power className="h-3 w-3" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {isConnected || isConnecting ? 'Desconectar' : 'Conectar'}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleDelete}
+                        disabled={isLoading}
+                        className="h-6 w-6 text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Excluir sessão
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </div>
           </div>
-        )}
-
-        {/* Ações Sutis */}
-        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handlePower}
-            disabled={isLoading}
-            className="h-7 w-7 text-muted-foreground hover:text-foreground"
-          >
-            {isConnected || isConnecting ? (
-              <PowerOff className="h-3.5 w-3.5" />
-            ) : (
-              <Power className="h-3.5 w-3.5" />
-            )}
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleDelete}
-            disabled={isLoading}
-            className="h-7 w-7 text-muted-foreground hover:text-destructive"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      </div>
-    </Link>
+        </CardContent>
+      </Link>
+    </Card>
   );
 }

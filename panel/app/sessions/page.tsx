@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSessionStore } from '@/stores/session-store';
 import { useGlobalStore } from '@/stores/global-store';
+import { useActiveSessionStore } from '@/stores/active-session-store';
 import { ModeToggle } from '@/components/mode-toggle';
 import apiClient from '@/lib/api';
 import { SessionCard } from '@/components/session/session-card';
@@ -17,29 +18,37 @@ import {
   WifiOff,
   Smartphone,
   Menu,
-  X
+  X,
+  Grid,
+  List,
+  SortAsc,
+  SortDesc
 } from 'lucide-react';
+import { Session } from '@/lib/types/api';
 
 export default function SessionsPage() {
   const { sessions, loading, setSessions, setLoading } = useSessionStore();
   const natsConnected = useGlobalStore((state) => state.natsConnected);
+  const activeSessionId = useActiveSessionStore((state) => state.sessionId);
+  
+  // State
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'connected' | 'disconnected' | 'connecting'>('all');
   const [sidebarOpen, setSidebarOpen] = useState(true);
-
+  const [sortBy, setSortBy] = useState<'name' | 'status' | 'lastActivity'>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('compact');
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchSessions();
-  }, []);
-
-  const fetchSessions = async () => {
+  // Fetch sessions
+  const fetchSessions = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.get('/sessions', { timeout: 10000 }); // 10s timeout
+      const response = await apiClient.get('/sessions', { timeout: 30000 });
       const data = Array.isArray(response.data) ? response.data : [];
-      setSessions(data.filter((session: { session?: string }) => session && session.session));
+      setSessions(data.filter((session: Session) => session && session.session));
     } catch (error: any) {
       console.error('Failed to fetch sessions:', error);
       setError('Não foi possível carregar as sessões. Verifique se a API está online.');
@@ -47,15 +56,44 @@ export default function SessionsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setSessions, setLoading]);
 
-  const filteredSessions = sessions.filter((session) => {
+  // Filter and sort sessions
+  const filteredSessions = sessions.filter((session: Session) => {
     if (!session || !session.session) return false;
-    const matchesSearch = session.session.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = session.session.toLowerCase().includes(search.toLowerCase()) ||
+                          (session.pushName && session.pushName.toLowerCase().includes(search.toLowerCase()));
     const matchesFilter = filter === 'all' || session.status === filter;
     return matchesSearch && matchesFilter;
+  }).sort((a: Session, b: Session) => {
+    let aValue: any, bValue: any;
+    
+    switch (sortBy) {
+      case 'name':
+        aValue = (a.pushName || a.session).toLowerCase();
+        bValue = (b.pushName || b.session).toLowerCase();
+        break;
+      case 'status':
+        aValue = a.status;
+        bValue = b.status;
+        break;
+      case 'lastActivity':
+        aValue = (a as any).lastActivity || 0;
+        bValue = (b as any).lastActivity || 0;
+        break;
+      default:
+        aValue = a.session;
+        bValue = b.session;
+    }
+    
+    if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+    return 0;
   });
 
+  
+
+  // Stats
   const stats = {
     total: sessions.length,
     connected: sessions.filter((s) => s.status === 'connected').length,
@@ -69,6 +107,38 @@ export default function SessionsPage() {
     { key: 'disconnected' as const, label: 'Desconectadas', count: stats.disconnected },
     { key: 'connecting' as const, label: 'Conectando', count: stats.connecting },
   ];
+
+  const sortOptions = [
+    { key: 'name' as const, label: 'Nome' },
+    { key: 'status' as const, label: 'Status' },
+    { key: 'lastActivity' as const, label: 'Atividade' },
+  ];
+
+  // Effects
+  useEffect(() => {
+    fetchSessions();
+  }, [fetchSessions]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl/Cmd + K for search focus
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        const searchInput = document.querySelector('input[placeholder*="Buscar sessões"]') as HTMLInputElement;
+        searchInput?.focus();
+      }
+      
+      // Ctrl/Cmd + R for refresh
+      if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+        e.preventDefault();
+        fetchSessions();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [fetchSessions]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -113,10 +183,29 @@ export default function SessionsPage() {
               )}
             </Badge>
             
+            {/* Keyboard Shortcuts Indicator */}
+            <div className="hidden md:flex items-center gap-1 px-2 py-1 bg-muted/50 rounded text-xs text-muted-foreground">
+              <span className="hidden lg:inline">Atalhos:</span>
+              <kbd className="px-1 py-0.5 bg-background border border-border rounded text-[10px]">Ctrl+K</kbd>
+              <span className="hidden sm:inline">buscar</span>
+              <kbd className="px-1 py-0.5 bg-background border border-border rounded text-[10px]">Ctrl+R</kbd>
+              <span className="hidden lg:inline">atualizar</span>
+            </div>
+            
             <ModeToggle />
           </div>
         </div>
       </header>
+
+      {/* Success Message */}
+      {successMessage && (
+        <div className="fixed top-20 right-4 z-50 rounded-lg border border-green-200 bg-green-50 p-4 shadow-lg animate-in slide-in-from-top-2 fade-in-0 dark:border-green-800 dark:bg-green-950/50">
+          <div className="flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-green-500"></div>
+            <p className="text-sm font-medium text-green-800 dark:text-green-200">{successMessage}</p>
+          </div>
+        </div>
+      )}
 
       <div className="flex">
         {/* Main Content */}
@@ -144,28 +233,75 @@ export default function SessionsPage() {
             </div>
           </div>
 
-          {/* Search Bar with Actions */}
-          <div className="mb-6 flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Buscar sessões por nome..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={fetchSessions}
-                disabled={loading}
-                className="flex-1 sm:flex-none"
-              >
-                <RefreshCw className={`h-4 w-4 sm:mr-2 ${loading ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">Atualizar</span>
-              </Button>
-              <CreateSessionDialog />
+          {/* Enhanced Search Bar with Controls */}
+          <div className="mb-6 space-y-4">
+            {/* Search and Filters */}
+            <div className="flex flex-col lg:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar sessões por nome ou sessão ID..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              
+              {/* Sort Controls */}
+              <div className="flex gap-2">
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="px-3 py-2 border border-border rounded-md bg-background text-sm"
+                >
+                  {sortOptions.map(option => (
+                    <option key={option.key} value={option.key}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                >
+                  {sortOrder === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
+                </Button>
+                
+                <div className="flex border border-border rounded-md">
+                  <Button
+                    variant={viewMode === 'compact' ? 'default' : 'ghost'}
+                    size="icon"
+                    onClick={() => setViewMode('compact')}
+                    className="rounded-r-none"
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'detailed' ? 'default' : 'ghost'}
+                    size="icon"
+                    onClick={() => setViewMode('detailed')}
+                    className="rounded-l-none"
+                  >
+                    <Grid className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Actions */}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={fetchSessions}
+                  disabled={loading}
+                  className="flex-1 sm:flex-none"
+                >
+                  <RefreshCw className={`h-4 w-4 sm:mr-2 ${loading ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline">Atualizar</span>
+                </Button>
+                <CreateSessionDialog />
+              </div>
             </div>
           </div>
 
@@ -209,15 +345,22 @@ export default function SessionsPage() {
               {!search && filter === 'all' && <CreateSessionDialog />}
             </div>
           ) : (
-            <div className="flex flex-col gap-1">
-              {filteredSessions.map((session) => (
-                <SessionCard 
-                  key={session.id} 
-                  session={session}
-                  onDelete={(id) => setSessions(sessions.filter(s => s.id !== id))}
-                  onRefresh={fetchSessions}
-                />
-              ))}
+            <div className="space-y-4">
+              
+              
+              {/* Sessions Grid/List */}
+              <div className={viewMode === 'detailed' ? "grid gap-4 md:grid-cols-2 lg:grid-cols-3" : "flex flex-col gap-3 py-2"}>
+                {filteredSessions.map((session) => (
+                  <SessionCard 
+                    key={session.id} 
+                    session={session}
+                    onDelete={(id) => setSessions(sessions.filter(s => s.id !== id))}
+                    onRefresh={fetchSessions}
+                    viewMode={viewMode}
+                    isSelected={activeSessionId === session.session}
+                  />
+                ))}
+              </div>
             </div>
           )}
         </main>
