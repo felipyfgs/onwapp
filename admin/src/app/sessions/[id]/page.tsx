@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSessions, useWebhooks, useChatwoot } from "@/hooks/use-api";
@@ -168,11 +169,11 @@ export default function SessionDetailsPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case SESSION_STATUS.CONNECTED:
-        return <Badge variant="success">Conectado</Badge>;
+        return <Badge variant="default">Conectado</Badge>;
       case SESSION_STATUS.CONNECTING:
-        return <Badge variant="warning">Conectando</Badge>;
+        return <Badge variant="secondary">Conectando</Badge>;
       case SESSION_STATUS.QR:
-        return <Badge variant="info">QR Code</Badge>;
+        return <Badge variant="secondary">QR Code</Badge>;
       case SESSION_STATUS.ERROR:
         return <Badge variant="destructive">Erro</Badge>;
       default:
@@ -456,7 +457,7 @@ export default function SessionDetailsPage() {
                   <div>
                     <p className="text-sm text-gray-500">Status</p>
                     {webhook.enabled ? (
-                      <Badge variant="success">Ativado</Badge>
+                      <Badge variant="default">Ativado</Badge>
                     ) : (
                       <Badge variant="secondary">Desativado</Badge>
                     )}
@@ -518,7 +519,7 @@ export default function SessionDetailsPage() {
                   <div>
                     <p className="text-sm text-gray-500">Status</p>
                     {chatwootConfig.enabled ? (
-                      <Badge variant="success">Ativado</Badge>
+                      <Badge variant="default">Ativado</Badge>
                     ) : (
                       <Badge variant="secondary">Desativado</Badge>
                     )}

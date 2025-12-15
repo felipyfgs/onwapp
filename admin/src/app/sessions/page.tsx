@@ -10,10 +10,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, CheckCircle, XCircle } from "lucide-react";
-import SessionCard from "@/components/sessions/session-card";
-import CreateSessionDialog from "@/components/sessions/create-session-dialog";
-import QRCodeDialog from "@/components/sessions/qr-code-dialog";
+import { AlertCircle, CheckCircle, XCircle, Plus } from "lucide-react";
+import { SessionCard } from "@/components/sessions/session-card";
+import { CreateSessionDialog } from "@/components/sessions/create-session-dialog";
+import { QRCodeDialog } from "@/components/sessions/qr-code-dialog";
 
 export default function SessionsPage() {
   const router = useRouter();
@@ -60,9 +60,7 @@ export default function SessionsPage() {
 
   const handleCreateSession = async (sessionName: string) => {
     try {
-      const newSession = await createSession({ session: sessionName });
-      setCurrentSessionId(newSession.id);
-      await connectSession(newSession.id);
+      await createSession({ session: sessionName });
       setShowCreateDialog(false);
     } catch (err) {
       console.error("Failed to create session:", err);
@@ -114,11 +112,14 @@ export default function SessionsPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case SESSION_STATUS.CONNECTED:
-        return <Badge variant="success">Conectado</Badge>;
+        return <Badge variant="default">Conectado</Badge>;
+
       case SESSION_STATUS.CONNECTING:
-        return <Badge variant="warning">Conectando</Badge>;
+        return <Badge variant="secondary">Conectando</Badge>;
+
       case SESSION_STATUS.QR:
-        return <Badge variant="info">QR Code</Badge>;
+        return <Badge variant="secondary">QR Code</Badge>;
+
       case SESSION_STATUS.ERROR:
         return <Badge variant="destructive">Erro</Badge>;
       default:
@@ -126,7 +127,7 @@ export default function SessionsPage() {
     }
   };
 
-  if (loading && sessions.length === 0) {
+  if (loading && (!sessions || sessions.length === 0)) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {Array(6)
@@ -163,7 +164,7 @@ export default function SessionsPage() {
         <Button onClick={() => setShowCreateDialog(true)}>Nova Sessão</Button>
       </div>
 
-      {sessions.length === 0 ? (
+      {sessions && sessions.length === 0 ? (
         <div className="text-center py-12">
           <h2 className="text-xl font-semibold mb-2">Nenhuma sessão encontrada</h2>
           <p className="text-gray-500 mb-4">
@@ -175,7 +176,7 @@ export default function SessionsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {sessions.map((session) => (
+          {sessions && sessions.map((session) => (
             <SessionCard
               key={session.id}
               session={session}
@@ -191,16 +192,18 @@ export default function SessionsPage() {
       )}
 
       <CreateSessionDialog
-        open={showCreateDialog}
-        onOpenChange={setShowCreateDialog}
-        onCreate={handleCreateSession}
-      />
+        onSessionCreated={() => setShowCreateDialog(false)}
+      >
+        <Button onClick={() => setShowCreateDialog(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Nova Sessão
+        </Button>
+      </CreateSessionDialog>
 
       <QRCodeDialog
         open={showQRDialog}
         onOpenChange={setShowQRDialog}
-        qrCode={qrCode}
-        sessionId={currentSessionId}
+        sessionId={currentSessionId || ''}
       />
     </div>
   );

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useApi } from "@/hooks/use-api";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -71,7 +71,6 @@ export default function MessagesPage() {
   const params = useParams();
   const router = useRouter();
   const sessionId = params.id as string;
-  const { toast } = useToast();
 
   const [chats, setChats] = useState<Chat[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -92,7 +91,11 @@ export default function MessagesPage() {
   const fetchChats = async () => {
     try {
       setLoading(true);
-      const response = await api.getAllChats(sessionId);
+      const response = await fetch(`/api/sessions/${sessionId}/chat/list`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('api_key') || ''}`
+        }
+      }).then(res => res.json());
       setChats(response.data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch chats");
@@ -108,7 +111,11 @@ export default function MessagesPage() {
 
   const fetchMessages = async (chatJID: string) => {
     try {
-      const response = await api.getChatMessages(sessionId, chatJID);
+      const response = await fetch(`/api/sessions/${sessionId}/chat/messages?jid=${chatJID}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('api_key') || ''}`
+        }
+      }).then(res => res.json());
       setMessages(response.data || []);
       setActiveTab("messages");
     } catch (err) {
@@ -143,22 +150,82 @@ export default function MessagesPage() {
       let response;
       switch (messageType) {
         case MESSAGE_TYPES.TEXT:
-          response = await api.sendText(sessionId, selectedChat.jid, messageContent);
+          response = await fetch(`/api/sessions/${sessionId}/message/send/text`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('api_key') || ''}`
+            },
+            body: JSON.stringify({
+              number: selectedChat.jid,
+              text: messageContent
+            })
+          }).then(res => res.json());
           break;
         case MESSAGE_TYPES.IMAGE:
-          response = await api.sendImage(sessionId, selectedChat.jid, messageContent);
+          response = await fetch(`/api/sessions/${sessionId}/message/send/image`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('api_key') || ''}`
+            },
+            body: JSON.stringify({
+              number: selectedChat.jid,
+              image: messageContent
+            })
+          }).then(res => res.json());
           break;
         case MESSAGE_TYPES.AUDIO:
-          response = await api.sendAudio(sessionId, selectedChat.jid, messageContent);
+          response = await fetch(`/api/sessions/${sessionId}/message/send/audio`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('api_key') || ''}`
+            },
+            body: JSON.stringify({
+              number: selectedChat.jid,
+              audio: messageContent
+            })
+          }).then(res => res.json());
           break;
         case MESSAGE_TYPES.VIDEO:
-          response = await api.sendVideo(sessionId, selectedChat.jid, messageContent);
+          response = await fetch(`/api/sessions/${sessionId}/message/send/video`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('api_key') || ''}`
+            },
+            body: JSON.stringify({
+              number: selectedChat.jid,
+              video: messageContent
+            })
+          }).then(res => res.json());
           break;
         case MESSAGE_TYPES.DOCUMENT:
-          response = await api.sendDocument(sessionId, selectedChat.jid, messageContent);
+          response = await fetch(`/api/sessions/${sessionId}/message/send/document`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('api_key') || ''}`
+            },
+            body: JSON.stringify({
+              number: selectedChat.jid,
+              document: messageContent
+            })
+          }).then(res => res.json());
           break;
         default:
-          response = await api.sendText(sessionId, selectedChat.jid, messageContent);
+          response = await fetch(`/api/sessions/${sessionId}/message/send/text`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('api_key') || ''}`
+            },
+            body: JSON.stringify({
+              number: selectedChat.jid,
+              text: messageContent
+            })
+          }).then(res => res.json());
       }
 
       toast({
@@ -183,9 +250,11 @@ export default function MessagesPage() {
       case MESSAGE_STATUS.SENT:
         return <Badge variant="secondary">Enviada</Badge>;
       case MESSAGE_STATUS.DELIVERED:
-        return <Badge variant="info">Entregue</Badge>;
+        return <Badge variant="secondary">Entregue</Badge>;
+
       case MESSAGE_STATUS.READ:
-        return <Badge variant="success">Lida</Badge>;
+        return <Badge variant="default">Lida</Badge>;
+
       case MESSAGE_STATUS.FAILED:
         return <Badge variant="destructive">Falhou</Badge>;
       default:

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useChatwoot, useApi } from "@/hooks/use-api";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -60,7 +60,7 @@ export default function ChatwootIntegrationPage() {
   const params = useParams();
   const router = useRouter();
   const sessionId = params.id as string;
-  const { toast } = useToast();
+  const toast = require("sonner").toast;
 
   const {
     chatwootConfig,
@@ -678,7 +678,7 @@ export default function ChatwootIntegrationPage() {
                   <div className="space-y-4">
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-500">Status:</span>
-                      <Badge variant={syncStatus.status === "completed" ? "success" : syncStatus.status === "failed" ? "destructive" : "secondary"}>
+                      <Badge variant={syncStatus.status === "completed" ? "default" : syncStatus.status === "failed" ? "destructive" : "secondary"}>
                         {syncStatus.status}
                       </Badge>
                     </div>

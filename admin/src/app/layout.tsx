@@ -1,15 +1,26 @@
 "use client";
 
+import * as React from "react";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Sidebar } from "@/components/ui/sidebar";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { Toaster } from "@/components/ui/sonner";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,8 +32,40 @@ export default function RootLayout({
   const pathname = usePathname();
   const { setTheme, theme } = useTheme();
 
+  const getBreadcrumbs = () => {
+    const segments = pathname.split('/').filter(Boolean);
+    const breadcrumbs = [];
+    
+    if (segments.length === 0) {
+      return [{ label: 'Início', href: '/' }];
+    }
+
+    // Mapeamento de rotas para labels
+    const routeMap: Record<string, string> = {
+      'sessions': 'Sessões',
+      'webhooks': 'Webhooks',
+      'chatwoot': 'Chatwoot',
+      'settings': 'Configurações',
+      'groups': 'Grupos',
+      'messages': 'Mensagens',
+      'activity': 'Atividade',
+      'logs': 'Logs'
+    };
+
+    let currentPath = '';
+    for (const segment of segments) {
+      currentPath += `/${segment}`;
+      const label = routeMap[segment] || segment;
+      breadcrumbs.push({ label, href: currentPath });
+    }
+
+    return breadcrumbs;
+  };
+
+  const breadcrumbs = getBreadcrumbs();
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="pt-BR" suppressHydrationWarning>
       <body className={cn("min-h-screen bg-background antialiased", inter.className)}>
         <ThemeProvider
           attribute="class"
@@ -31,113 +74,56 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <SidebarProvider>
-            <Sidebar>
-              <SidebarTrigger />
-              <div className="flex h-full flex-col justify-between">
-                <div className="flex-1 overflow-auto py-2">
-                  <div className="py-2">
-                    <div className="px-3 py-2">
-                      <div className="flex items-center gap-2 text-lg font-semibold">
-                        <span className="text-primary">OnWapp</span>
-                        <span className="text-muted-foreground">Admin</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Gerenciamento de Sessões WhatsApp
-                      </p>
-                    </div>
-                    <div className="space-y-1 px-3">
-                      <Button
-                        variant="ghost"
-                        className={cn(
-                          "w-full justify-start",
-                          pathname === "/sessions" && "bg-accent"
-                        )}
-                        onClick={() => (window.location.href = "/sessions")}
-                      >
-                        Sessões
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        className={cn(
-                          "w-full justify-start",
-                          pathname.startsWith("/groups") && "bg-accent"
-                        )}
-                        onClick={() => (window.location.href = "/groups")}
-                      >
-                        Grupos
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        className={cn(
-                          "w-full justify-start",
-                          pathname.startsWith("/messages") && "bg-accent"
-                        )}
-                        onClick={() => (window.location.href = "/messages")}
-                      >
-                        Mensagens
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        className={cn(
-                          "w-full justify-start",
-                          pathname.startsWith("/webhooks") && "bg-accent"
-                        )}
-                        onClick={() => (window.location.href = "/webhooks")}
-                      >
-                        Webhooks
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        className={cn(
-                          "w-full justify-start",
-                          pathname.startsWith("/chatwoot") && "bg-accent"
-                        )}
-                        onClick={() => (window.location.href = "/chatwoot")}
-                      >
-                        Chatwoot
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        className={cn(
-                          "w-full justify-start",
-                          pathname.startsWith("/settings") && "bg-accent"
-                        )}
-                        onClick={() => (window.location.href = "/settings")}
-                      >
-                        Configurações
-                      </Button>
-                    </div>
+            <AppSidebar />
+            <SidebarInset>
+              <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+                <div className="flex items-center gap-2 px-4">
+                  <SidebarTrigger className="-ml-1" />
+                  <Separator
+                    orientation="vertical"
+                    className="mr-2 data-[orientation=vertical]:h-4"
+                  />
+                  <Breadcrumb>
+                    <BreadcrumbList>
+                      {breadcrumbs.map((crumb, index) => (
+                        <React.Fragment key={crumb.href}>
+                          {index === breadcrumbs.length - 1 ? (
+                            <BreadcrumbItem>
+                              <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                            </BreadcrumbItem>
+                          ) : (
+                            <>
+                              <BreadcrumbItem className="hidden md:block">
+                                <BreadcrumbLink href={crumb.href}>{crumb.label}</BreadcrumbLink>
+                              </BreadcrumbItem>
+                              <BreadcrumbSeparator className="hidden md:block" />
+                            </>
+                          )}
+                        </React.Fragment>
+                      ))}
+                    </BreadcrumbList>
+                  </Breadcrumb>
+                  <div className="ml-auto">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setTheme(theme === "dark" ? "light" : "dark");
+                      }}
+                    >
+                      {theme === "dark" ? (
+                        <Sun className="h-4 w-4" />
+                      ) : (
+                        <Moon className="h-4 w-4" />
+                      )}
+                    </Button>
                   </div>
                 </div>
-                <div className="border-t p-4">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start"
-                    onClick={() => {
-                      setTheme(theme === "dark" ? "light" : "dark");
-                    }}
-                  >
-                    {theme === "dark" ? (
-                      <>
-                        <Sun className="mr-2 h-4 w-4" />
-                        Claro
-                      </>
-                    ) : (
-                      <>
-                        <Moon className="mr-2 h-4 w-4" />
-                        Escuro
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </Sidebar>
-            <main className="flex-1 overflow-hidden">
-              <div className="container relative h-full flex-col items-start justify-start p-4 md:gap-8 lg:flex">
+              </header>
+              <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
                 {children}
               </div>
-            </main>
+            </SidebarInset>
           </SidebarProvider>
         </ThemeProvider>
       </body>

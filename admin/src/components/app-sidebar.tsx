@@ -2,16 +2,15 @@
 
 import * as React from "react"
 import {
-  AudioWaveform,
-  BookOpen,
-  Bot,
-  Command,
-  Frame,
-  GalleryVerticalEnd,
-  Map,
-  PieChart,
-  Settings2,
-  SquareTerminal,
+  MessageSquare,
+  Users,
+  Webhook,
+  Settings,
+  Smartphone,
+  Mail,
+  Shield,
+  Database,
+  Activity,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -26,132 +25,105 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
-// This is sample data.
+// Dados do OnWapp Admin
 const data = {
   user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    name: "Admin",
+    email: "admin@onwapp.com",
+    avatar: "/avatars/admin.jpg",
   },
   teams: [
     {
-      name: "Acme Inc",
-      logo: GalleryVerticalEnd,
+      name: "OnWapp",
+      logo: Smartphone,
       plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
     },
   ],
   navMain: [
     {
-      title: "Playground",
-      url: "#",
-      icon: SquareTerminal,
+      title: "Sessões",
+      url: "/sessions",
+      icon: Smartphone,
       isActive: true,
       items: [
         {
-          title: "History",
-          url: "#",
+          title: "Todas as Sessões",
+          url: "/sessions",
         },
         {
-          title: "Starred",
-          url: "#",
+          title: "Grupos",
+          url: "/sessions/groups",
         },
         {
-          title: "Settings",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Models",
-      url: "#",
-      icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
+          title: "Mensagens",
+          url: "/sessions/messages",
         },
       ],
     },
     {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
+      title: "Webhooks",
+      url: "/webhooks",
+      icon: Webhook,
       items: [
         {
-          title: "Introduction",
-          url: "#",
+          title: "Configurar",
+          url: "/webhooks",
         },
         {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
+          title: "Logs",
+          url: "/webhooks/logs",
         },
       ],
     },
     {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
+      title: "Chatwoot",
+      url: "/chatwoot",
+      icon: Shield,
       items: [
         {
-          title: "General",
-          url: "#",
+          title: "Configuração",
+          url: "/chatwoot",
         },
         {
-          title: "Team",
-          url: "#",
+          title: "Sincronização",
+          url: "/chatwoot/sync",
         },
         {
-          title: "Billing",
-          url: "#",
+          title: "Conversas",
+          url: "/chatwoot/conversations",
+        },
+      ],
+    },
+    {
+      title: "Configurações",
+      url: "/settings",
+      icon: Settings,
+      items: [
+        {
+          title: "Geral",
+          url: "/settings",
         },
         {
-          title: "Limits",
-          url: "#",
+          title: "API",
+          url: "/settings/api",
+        },
+        {
+          title: "Segurança",
+          url: "/settings/security",
         },
       ],
     },
   ],
   projects: [
     {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
+      name: "Atividade",
+      url: "/activity",
+      icon: Activity,
     },
     {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
+      name: "Logs",
+      url: "/logs",
+      icon: Database,
     },
   ],
 }
