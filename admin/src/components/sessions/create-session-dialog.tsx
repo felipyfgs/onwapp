@@ -8,12 +8,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { AlertCircle } from "lucide-react"
 import { Plus } from "lucide-react"
-import { useSessions } from "@/hooks/use-api" // Using useSessions hook which exposes createSession
+import { useSessions } from "@/hooks/use-api"
 import { toast } from "sonner"
+import { SessionCreateData } from "@/types/session"
 
 const formSchema = z.object({
-  session: z.string().min(3, "O nome da sessão deve ter pelo menos 3 caracteres"),
+  session: z.string()
+    .min(3, "O nome da sessão deve ter pelo menos 3 caracteres")
+    .max(50, "O nome da sessão deve ter no máximo 50 caracteres")
+    .regex(/^[a-zA-Z0-9_-]+$/, "Apenas letras, números, hífens e sublinhados são permitidos")
+    .refine((val) => !val.includes(' '), "O nome não pode conter espaços"),
 })
 
 interface CreateSessionDialogProps {
@@ -49,20 +55,17 @@ export const CreateSessionDialog = ({
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setLoading(true)
     try {
-      // The API expects { session: "name" } based on typical REST patterns or potentially just the body
-      // Based on previous code analysis, createSession takes just `data`. 
-      // Let's assume the API payload should be { session: "name" } directly or similar.
-      // However, looking at the previous code: `createSession(sessionName.trim())` suggesting it was sending a string?
-      // Wait, api-client.ts says: `createSession: (data: any) => apiRequest<Session>("/sessions", "POST", data),`
-      // So if we pass `{ session: "name" }`, it sends that JSON.
-
-      await createSession(values)
+      const sessionData: SessionCreateData = {
+        session: values.session.trim()
+      };
+      await createSession(sessionData)
       toast.success("Sessão criada com sucesso!")
       form.reset()
       setOpen?.(false)
       onSessionCreated?.()
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao criar sessão")
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Erro ao criar sessão";
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -101,12 +104,34 @@ export const CreateSessionDialog = ({
                 <FormItem>
                   <FormLabel>Nome da Sessão</FormLabel>
                   <FormControl>
-                    <Input placeholder="Digite o nome da sessão" {...field} disabled={loading} />
+                    <Input 
+                      placeholder="ex: minha-sessao-whatsapp" 
+                      {...field} 
+                      disabled={loading}
+                      className="font-mono"
+                    />
                   </FormControl>
                   <FormMessage />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Use apenas letras, números, hífens (-) e sublinhados (_). Sem espaços.
+                  </p>
                 </FormItem>
               )}
             />
+
+            <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                <div className="text-xs text-blue-800 dark:text-blue-200">
+                  <p className="font-medium mb-1">Dica para o nome da sessão:</p>
+                  <ul className="space-y-1">
+                    <li>• Use nomes descritivos: <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">vendas-maio</code>, <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">suporte-cliente</code></li>
+                    <li>• Evite caracteres especiais e espaços</li>
+                    <li>• O nome será usado para identificar a sessão em toda a aplicação</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
 
             <div className="flex justify-end space-x-2 pt-4">
               <Button

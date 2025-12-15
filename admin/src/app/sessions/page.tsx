@@ -59,9 +59,10 @@ export default function SessionsPage() {
     try {
       await connectSession(sessionId);
       toast.success("Comando de conexão enviado");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to connect session:", err);
-      toast.error(err.message || "Falha ao conectar");
+      const errorMessage = err instanceof Error ? err.message : "Falha ao conectar";
+      toast.error(errorMessage);
     }
   };
 
@@ -85,15 +86,20 @@ export default function SessionsPage() {
     }
   };
 
-  const handleDelete = async (sessionId: string) => {
-    if (!confirm("Tem certeza que deseja excluir esta sessão?")) return;
+  const handleDelete = async (sessionId: string, sessionName: string) => {
+    const confirmed = window.confirm(
+      `Tem certeza que deseja excluir a sessão "${sessionName}"?\n\nEsta ação não pode ser desfeita e removerá todos os dados associados.`
+    );
+    
+    if (!confirmed) return;
+    
     try {
       await deleteSession(sessionId);
-      toast.success("Sessão excluída");
+      toast.success(`Sessão "${sessionName}" excluída com sucesso`);
       fetchSessions();
     } catch (err: any) {
       console.error("Failed to delete session:", err);
-      toast.error(err.message || "Falha ao excluir");
+      toast.error(err.message || "Falha ao excluir sessão");
     }
   };
 
@@ -199,10 +205,10 @@ export default function SessionsPage() {
             <SessionListItem
               key={session.id}
               session={session}
-              onConnect={() => handleConnect(session.id)}
-              onDisconnect={() => handleDisconnect(session.id)}
-              onRestart={() => handleRestart(session.id)}
-              onDelete={() => handleDelete(session.id)}
+              onConnect={() => handleConnect(session.session)}
+              onDisconnect={() => handleDisconnect(session.session)}
+              onRestart={() => handleRestart(session.session)}
+              onDelete={() => handleDelete(session.session, session.session)}
             />
           ))
         )}

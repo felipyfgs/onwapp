@@ -124,13 +124,6 @@ export function useSessions() {
     restartSession,
     getSessionQR,
     pairPhone,
-    getAllChats: (sessionId: string) => Promise<Chat[]>,
-    getChatMessages: (sessionId: string, chatJID: string) => Promise<Message[]>,
-    sendText: (sessionId: string, number: string, text: string) => Promise<Message>,
-    sendImage: (sessionId: string, number: string, image: string) => Promise<Message>,
-    sendAudio: (sessionId: string, number: string, audio: string) => Promise<Message>,
-    sendVideo: (sessionId: string, number: string, video: string) => Promise<Message>,
-    sendDocument: (sessionId: string, number: string, document: string) => Promise<Message>,
   };
 }
 

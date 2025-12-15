@@ -2,7 +2,7 @@
 
 // URLs da API
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
-export const API_KEY = process.env.NEXT_PUBLIC_API_KEY || 'your-global-api-key';
+export const API_KEY = process.env.NEXT_PUBLIC_API_KEY || '76A598BD32F86E989D9FAB93C5E3B';
 
 // URLs do NATS WebSocket
 export const NATS_WS_URL = typeof window !== 'undefined'
