@@ -139,6 +139,26 @@ func (s *Service) PairPhone(ctx context.Context, sessionId, phone string) (strin
 		return "", err
 	}
 
+	// Verificar se a sessão já tem credenciais
+	if session.Client.Store.ID != nil {
+		return "", fmt.Errorf("session already authenticated, logout first to pair a new device")
+	}
+
+	// Se o cliente não estiver conectado, precisa conectar primeiro
+	if !session.Client.IsConnected() {
+		// Obter canal QR (necessário mesmo para pairing code)
+		_, err := session.Client.GetQRChannel(ctx)
+		if err != nil {
+			return "", fmt.Errorf("failed to prepare session for pairing: %w", err)
+		}
+
+		// Conectar o cliente
+		if err := session.Client.Connect(); err != nil {
+			return "", fmt.Errorf("failed to connect client: %w", err)
+		}
+	}
+
+	// Agora que está conectado, gerar o código de pairing
 	code, err := session.Client.PairPhone(ctx, phone, true, whatsmeow.PairClientChrome, "Chrome (Linux)")
 	if err != nil {
 		return "", fmt.Errorf("failed to pair phone: %w", err)
