@@ -1,4 +1,4 @@
-import { Users, Search, UserPlus } from "lucide-react"
+import { UsersRound, Search, Plus } from "lucide-react"
 
 import {
   Breadcrumb,
@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
-export default async function ContactsPage({
+export default async function GroupsPage({
   params,
 }: {
   params: Promise<{ id: string }>
@@ -40,7 +40,7 @@ export default async function ContactsPage({
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
-                <BreadcrumbPage>Contacts</BreadcrumbPage>
+                <BreadcrumbPage>Groups</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -49,31 +49,31 @@ export default async function ContactsPage({
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold">Contacts</h1>
+            <h1 className="text-2xl font-semibold">Groups</h1>
             <p className="text-sm text-muted-foreground">
-              View and manage your contacts
+              View and manage your groups
             </p>
           </div>
           <Button>
-            <UserPlus className="mr-2 h-4 w-4" />
-            Check Number
+            <Plus className="mr-2 h-4 w-4" />
+            Create Group
           </Button>
         </div>
 
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search contacts..." className="pl-8" />
+            <Input placeholder="Search groups..." className="pl-8" />
           </div>
           <Button variant="outline">Filter</Button>
         </div>
 
         <div className="flex flex-1 flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-8 text-center">
-          <Users className="h-12 w-12 text-muted-foreground" />
+          <UsersRound className="h-12 w-12 text-muted-foreground" />
           <div className="space-y-2">
-            <h3 className="text-lg font-semibold">No contacts yet</h3>
+            <h3 className="text-lg font-semibold">No groups yet</h3>
             <p className="text-sm text-muted-foreground">
-              Connect your session to sync your contacts.
+              Connect your session to see your groups here.
             </p>
           </div>
         </div>

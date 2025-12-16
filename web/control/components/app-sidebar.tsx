@@ -2,21 +2,21 @@
 
 import * as React from "react"
 import {
-  AudioWaveform,
-  BookOpen,
-  Bot,
-  Command,
-  Frame,
-  GalleryVerticalEnd,
-  Map,
-  PieChart,
+  LayoutDashboard,
+  MessageSquare,
+  Users,
+  UsersRound,
+  Image,
+  UserCircle,
   Settings2,
-  SquareTerminal,
+  Webhook,
+  MessageCircle,
+  Smartphone,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
+import { SessionSwitcher } from "@/components/session-switcher"
 import { TeamSwitcher } from "@/components/team-switcher"
 import {
   Sidebar,
@@ -26,148 +26,111 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
-// This is sample data.
-const data = {
+const globalData = {
   user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    name: "Admin",
+    email: "admin@onwapp.io",
+    avatar: "",
   },
   teams: [
     {
-      name: "Acme Inc",
-      logo: GalleryVerticalEnd,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
+      name: "OnWapp",
+      logo: Smartphone,
+      plan: "WhatsApp API",
     },
   ],
   navMain: [
     {
-      title: "Playground",
-      url: "#",
-      icon: SquareTerminal,
+      title: "Dashboard",
+      url: "/dashboard",
+      icon: LayoutDashboard,
       isActive: true,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
     },
     {
-      title: "Models",
-      url: "#",
-      icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
+      title: "Sessions",
+      url: "/sessions",
+      icon: Smartphone,
     },
   ],
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+function getSessionNavItems(sessionId: string) {
+  return [
+    {
+      title: "Overview",
+      url: `/sessions/${sessionId}`,
+      icon: LayoutDashboard,
+    },
+    {
+      title: "Chats",
+      url: `/sessions/${sessionId}/chats`,
+      icon: MessageSquare,
+    },
+    {
+      title: "Contacts",
+      url: `/sessions/${sessionId}/contacts`,
+      icon: Users,
+    },
+    {
+      title: "Groups",
+      url: `/sessions/${sessionId}/groups`,
+      icon: UsersRound,
+    },
+    {
+      title: "Media",
+      url: `/sessions/${sessionId}/media`,
+      icon: Image,
+    },
+    {
+      title: "Profile",
+      url: `/sessions/${sessionId}/profile`,
+      icon: UserCircle,
+    },
+    {
+      title: "Settings",
+      url: `/sessions/${sessionId}/settings`,
+      icon: Settings2,
+      items: [
+        { title: "General", url: `/sessions/${sessionId}/settings` },
+        { title: "Integrations", url: `/sessions/${sessionId}/integrations` },
+      ],
+    },
+    {
+      title: "Integrations",
+      url: `/sessions/${sessionId}/integrations`,
+      icon: Webhook,
+      items: [
+        { title: "Overview", url: `/sessions/${sessionId}/integrations` },
+        { title: "Chatwoot", url: `/sessions/${sessionId}/integrations/chatwoot` },
+        { title: "Webhook", url: `/sessions/${sessionId}/integrations/webhook` },
+      ],
+    },
+  ]
+}
+
+interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
+  sessionId?: string
+}
+
+export function AppSidebar({ sessionId, ...props }: AppSidebarProps) {
+  const navItems = sessionId
+    ? getSessionNavItems(sessionId)
+    : globalData.navMain
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        {sessionId ? (
+          <SessionSwitcher sessionId={sessionId} />
+        ) : (
+          <TeamSwitcher teams={globalData.teams} />
+        )}
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        <NavMain items={navItems} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={globalData.user} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
