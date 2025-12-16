@@ -1,12 +1,8 @@
-import Link from "next/link"
-import {
-  Activity,
-  MessageSquare,
-  Users,
-  UsersRound,
-  QrCode,
-  Power,
-} from "lucide-react"
+"use client"
+
+import { useEffect, useState } from "react"
+import { useParams } from "next/navigation"
+import { Activity } from "lucide-react"
 
 import {
   Breadcrumb,
@@ -16,23 +12,64 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { SessionStats } from "@/components/overview/session-stats"
+import { QuickActions } from "@/components/overview/quick-actions"
+import { getSession } from "@/lib/api/sessions"
+import { getChats } from "@/lib/api/chats"
+import { getContacts } from "@/lib/api/contacts"
+import { getGroups } from "@/lib/api/groups"
 
-export default async function SessionOverviewPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
-  const { id } = await params
+export default function SessionOverviewPage() {
+  const params = useParams()
+  const sessionId = params.id as string
+
+  const [session, setSession] = useState<{
+    session: string
+    status: "connected" | "connecting" | "disconnected"
+    pushName?: string
+    phone?: string
+    createdAt?: string
+  } | null>(null)
+  const [stats, setStats] = useState({
+    chats: 0,
+    contacts: 0,
+    groups: 0,
+    media: 0,
+  })
+  const [loading, setLoading] = useState(true)
+
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      const [sessionData, chatsData, contactsData, groupsData] = await Promise.all([
+        getSession(sessionId).catch(() => null),
+        getChats(sessionId).catch(() => []),
+        getContacts(sessionId).catch(() => []),
+        getGroups(sessionId).catch(() => []),
+      ])
+
+      if (sessionData) {
+        setSession(sessionData)
+      }
+      setStats({
+        chats: chatsData.length,
+        contacts: contactsData.length,
+        groups: groupsData.length,
+        media: 0,
+      })
+    } catch (err) {
+      console.error("Failed to fetch session data:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [sessionId])
 
   return (
     <>
@@ -50,7 +87,7 @@ export default async function SessionOverviewPage({
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
-                <BreadcrumbPage>{id}</BreadcrumbPage>
+                <BreadcrumbPage>{sessionId}</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -64,90 +101,24 @@ export default async function SessionOverviewPage({
               Monitor and manage your WhatsApp session
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline">
-              <QrCode className="mr-2 h-4 w-4" />
-              Show QR
-            </Button>
-            <Button>
-              <Power className="mr-2 h-4 w-4" />
-              Connect
-            </Button>
-          </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Status</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">Disconnected</div>
-              <p className="text-xs text-muted-foreground">
-                Connect to start using
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Messages</CardTitle>
-              <MessageSquare className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">Total messages</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Contacts</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">Synced contacts</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Groups</CardTitle>
-              <UsersRound className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">Joined groups</p>
-            </CardContent>
-          </Card>
-        </div>
+        <SessionStats
+          chatsCount={stats.chats}
+          contactsCount={stats.contacts}
+          groupsCount={stats.groups}
+          mediaCount={stats.media}
+          loading={loading}
+        />
 
         <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>Common operations for this session</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-2">
-              <Button variant="outline" className="justify-start" asChild>
-                <Link href={`/sessions/${id}/chats`}>
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  View Chats
-                </Link>
-              </Button>
-              <Button variant="outline" className="justify-start" asChild>
-                <Link href={`/sessions/${id}/contacts`}>
-                  <Users className="mr-2 h-4 w-4" />
-                  View Contacts
-                </Link>
-              </Button>
-              <Button variant="outline" className="justify-start" asChild>
-                <Link href={`/sessions/${id}/groups`}>
-                  <UsersRound className="mr-2 h-4 w-4" />
-                  View Groups
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
+          <QuickActions
+            sessionId={sessionId}
+            sessionName={session?.session || sessionId}
+            status={session?.status || "disconnected"}
+            onStatusChange={fetchData}
+          />
+
           <Card>
             <CardHeader>
               <CardTitle>Session Info</CardTitle>
@@ -155,18 +126,38 @@ export default async function SessionOverviewPage({
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Status</span>
+                <div className="flex items-center gap-2">
+                  <Activity className={`h-4 w-4 ${
+                    session?.status === "connected"
+                      ? "text-green-500"
+                      : session?.status === "connecting"
+                      ? "text-yellow-500"
+                      : "text-muted-foreground"
+                  }`} />
+                  <span className="text-sm font-medium capitalize">
+                    {session?.status || "Disconnected"}
+                  </span>
+                </div>
+              </div>
+              <Separator />
+              <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Session ID</span>
-                <span className="text-sm font-medium">{id}</span>
+                <span className="text-sm font-medium">{sessionId}</span>
+              </div>
+              <Separator />
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Name</span>
+                <span className="text-sm font-medium">
+                  {session?.pushName || "-"}
+                </span>
               </div>
               <Separator />
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Phone</span>
-                <span className="text-sm font-medium">Not connected</span>
-              </div>
-              <Separator />
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Created</span>
-                <span className="text-sm font-medium">-</span>
+                <span className="text-sm font-medium">
+                  {session?.phone || "Not connected"}
+                </span>
               </div>
             </CardContent>
           </Card>

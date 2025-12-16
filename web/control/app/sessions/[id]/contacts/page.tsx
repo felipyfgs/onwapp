@@ -1,5 +1,3 @@
-import { Users, Search, UserPlus } from "lucide-react"
-
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -8,10 +6,9 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { ContactList } from "@/components/contacts/contact-list"
 
 export default async function ContactsPage({
   params,
@@ -54,29 +51,9 @@ export default async function ContactsPage({
               View and manage your contacts
             </p>
           </div>
-          <Button>
-            <UserPlus className="mr-2 h-4 w-4" />
-            Check Number
-          </Button>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search contacts..." className="pl-8" />
-          </div>
-          <Button variant="outline">Filter</Button>
-        </div>
-
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-8 text-center">
-          <Users className="h-12 w-12 text-muted-foreground" />
-          <div className="space-y-2">
-            <h3 className="text-lg font-semibold">No contacts yet</h3>
-            <p className="text-sm text-muted-foreground">
-              Connect your session to sync your contacts.
-            </p>
-          </div>
-        </div>
+        <ContactList />
       </div>
     </>
   )

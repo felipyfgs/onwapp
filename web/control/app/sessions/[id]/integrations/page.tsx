@@ -1,4 +1,8 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useParams } from "next/navigation"
 import { Webhook, MessageCircle, CheckCircle, XCircle } from "lucide-react"
 
 import {
@@ -20,13 +24,31 @@ import {
 } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { getWebhook } from "@/lib/api/webhook"
+import { getChatwootConfig } from "@/lib/api/chatwoot"
 
-export default async function IntegrationsPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
-  const { id } = await params
+export default function IntegrationsPage() {
+  const params = useParams()
+  const sessionId = params.id as string
+
+  const [webhookEnabled, setWebhookEnabled] = useState(false)
+  const [chatwootEnabled, setChatwootEnabled] = useState(false)
+
+  useEffect(() => {
+    async function fetchStatus() {
+      try {
+        const [webhookData, chatwootData] = await Promise.all([
+          getWebhook(sessionId).catch(() => null),
+          getChatwootConfig(sessionId).catch(() => null),
+        ])
+        setWebhookEnabled(webhookData?.enabled || false)
+        setChatwootEnabled(chatwootData?.enabled || false)
+      } catch (err) {
+        console.error("Failed to fetch integration status:", err)
+      }
+    }
+    fetchStatus()
+  }, [sessionId])
 
   return (
     <>
@@ -44,7 +66,7 @@ export default async function IntegrationsPage({
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href={`/sessions/${id}`}>{id}</BreadcrumbLink>
+                <BreadcrumbLink href={`/sessions/${sessionId}`}>{sessionId}</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
@@ -72,10 +94,17 @@ export default async function IntegrationsPage({
                   <MessageCircle className="h-5 w-5" />
                   <CardTitle>Chatwoot</CardTitle>
                 </div>
-                <Badge variant="secondary">
-                  <XCircle className="mr-1 h-3 w-3" />
-                  Disabled
-                </Badge>
+                {chatwootEnabled ? (
+                  <Badge variant="default" className="gap-1">
+                    <CheckCircle className="h-3 w-3" />
+                    Enabled
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="gap-1">
+                    <XCircle className="h-3 w-3" />
+                    Disabled
+                  </Badge>
+                )}
               </div>
               <CardDescription>
                 Connect to Chatwoot for customer support
@@ -86,7 +115,7 @@ export default async function IntegrationsPage({
                 Sync your WhatsApp messages with Chatwoot to manage customer conversations in one place.
               </p>
               <Button asChild>
-                <Link href={`/sessions/${id}/integrations/chatwoot`}>
+                <Link href={`/sessions/${sessionId}/integrations/chatwoot`}>
                   Configure
                 </Link>
               </Button>
@@ -100,10 +129,17 @@ export default async function IntegrationsPage({
                   <Webhook className="h-5 w-5" />
                   <CardTitle>Webhook</CardTitle>
                 </div>
-                <Badge variant="secondary">
-                  <XCircle className="mr-1 h-3 w-3" />
-                  Disabled
-                </Badge>
+                {webhookEnabled ? (
+                  <Badge variant="default" className="gap-1">
+                    <CheckCircle className="h-3 w-3" />
+                    Enabled
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="gap-1">
+                    <XCircle className="h-3 w-3" />
+                    Disabled
+                  </Badge>
+                )}
               </div>
               <CardDescription>
                 Receive real-time event notifications
@@ -114,7 +150,7 @@ export default async function IntegrationsPage({
                 Configure webhooks to receive events like new messages, status updates, and more.
               </p>
               <Button asChild>
-                <Link href={`/sessions/${id}/integrations/webhook`}>
+                <Link href={`/sessions/${sessionId}/integrations/webhook`}>
                   Configure
                 </Link>
               </Button>

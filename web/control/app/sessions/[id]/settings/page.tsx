@@ -1,4 +1,6 @@
-import { Settings2, Save } from "lucide-react"
+"use client"
+
+import { useParams } from "next/navigation"
 
 import {
   Breadcrumb,
@@ -8,24 +10,14 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { SettingsForm } from "@/components/settings/settings-form"
+import { DangerZone } from "@/components/settings/danger-zone"
 
-export default async function SettingsPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
-  const { id } = await params
+export default function SettingsPage() {
+  const params = useParams()
+  const sessionId = params.id as string
 
   return (
     <>
@@ -43,7 +35,7 @@ export default async function SettingsPage({
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href={`/sessions/${id}`}>{id}</BreadcrumbLink>
+                <BreadcrumbLink href={`/sessions/${sessionId}`}>{sessionId}</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
@@ -61,114 +53,15 @@ export default async function SettingsPage({
               Configure your session settings
             </p>
           </div>
-          <Button>
-            <Save className="mr-2 h-4 w-4" />
-            Save Changes
-          </Button>
         </div>
 
         <div className="grid gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>General Settings</CardTitle>
-              <CardDescription>
-                Basic session configuration
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Sync History</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Sync message history when connecting
-                  </p>
-                </div>
-                <Button variant="outline" size="sm">
-                  Configure
-                </Button>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Auto Reconnect</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Automatically reconnect when disconnected
-                  </p>
-                </div>
-                <Button variant="outline" size="sm">
-                  Configure
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Privacy Settings</CardTitle>
-              <CardDescription>
-                Control your privacy preferences
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Read Receipts</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Send read receipts when viewing messages
-                  </p>
-                </div>
-                <Button variant="outline" size="sm">
-                  Configure
-                </Button>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Online Status</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Show when you are online
-                  </p>
-                </div>
-                <Button variant="outline" size="sm">
-                  Configure
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-destructive">
-            <CardHeader>
-              <CardTitle className="text-destructive">Danger Zone</CardTitle>
-              <CardDescription>
-                Irreversible actions for this session
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Logout Session</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Disconnect and remove device from WhatsApp
-                  </p>
-                </div>
-                <Button variant="destructive" size="sm">
-                  Logout
-                </Button>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Delete Session</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Permanently delete this session and all data
-                  </p>
-                </div>
-                <Button variant="destructive" size="sm">
-                  Delete
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <SettingsForm sessionId={sessionId} />
+          <DangerZone
+            sessionId={sessionId}
+            sessionName={sessionId}
+            isConnected={false}
+          />
         </div>
       </div>
     </>

@@ -1,4 +1,8 @@
-import { Webhook, Save, TestTube } from "lucide-react"
+"use client"
+
+import { useEffect, useState } from "react"
+import { useParams } from "next/navigation"
+import { Webhook } from "lucide-react"
 
 import {
   Breadcrumb,
@@ -8,36 +12,40 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { WebhookForm } from "@/components/integrations/webhook-form"
+import { EventSelector } from "@/components/integrations/event-selector"
+import { getWebhook, setWebhook } from "@/lib/api/webhook"
 
-export default async function WebhookPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
-  const { id } = await params
+export default function WebhookPage() {
+  const params = useParams()
+  const sessionId = params.id as string
 
-  const events = [
-    { name: "message.received", label: "Message Received" },
-    { name: "message.sent", label: "Message Sent" },
-    { name: "message.delivered", label: "Message Delivered" },
-    { name: "message.read", label: "Message Read" },
-    { name: "session.connected", label: "Session Connected" },
-    { name: "session.disconnected", label: "Session Disconnected" },
-    { name: "session.qr", label: "QR Code Generated" },
-  ]
+  const [events, setEvents] = useState<string[]>([])
+
+  useEffect(() => {
+    async function fetchWebhook() {
+      try {
+        const webhook = await getWebhook(sessionId)
+        if (webhook?.events) {
+          setEvents(webhook.events)
+        }
+      } catch (err) {
+        console.error("Failed to load webhook:", err)
+      }
+    }
+    fetchWebhook()
+  }, [sessionId])
+
+  const handleEventsChange = async (newEvents: string[]) => {
+    setEvents(newEvents)
+    try {
+      await setWebhook(sessionId, { events: newEvents })
+    } catch (err) {
+      console.error("Failed to update events:", err)
+    }
+  }
 
   return (
     <>
@@ -55,11 +63,11 @@ export default async function WebhookPage({
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href={`/sessions/${id}`}>{id}</BreadcrumbLink>
+                <BreadcrumbLink href={`/sessions/${sessionId}`}>{sessionId}</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href={`/sessions/${id}/integrations`}>
+                <BreadcrumbLink href={`/sessions/${sessionId}/integrations`}>
                   Integrations
                 </BreadcrumbLink>
               </BreadcrumbItem>
@@ -82,77 +90,11 @@ export default async function WebhookPage({
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline">
-              <TestTube className="mr-2 h-4 w-4" />
-              Test Webhook
-            </Button>
-            <Button>
-              <Save className="mr-2 h-4 w-4" />
-              Save
-            </Button>
-          </div>
         </div>
 
         <div className="grid gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Webhook Configuration</CardTitle>
-              <CardDescription>
-                Configure your webhook endpoint
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="url">Webhook URL</Label>
-                <Input
-                  id="url"
-                  placeholder="https://your-server.com/webhook"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Events will be POSTed to this URL
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="secret">Secret (Optional)</Label>
-                <Input
-                  id="secret"
-                  type="password"
-                  placeholder="Your webhook secret"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Used to sign webhook payloads for verification
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Events</CardTitle>
-              <CardDescription>
-                Select which events to receive
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-2 md:grid-cols-2">
-                {events.map((event) => (
-                  <div
-                    key={event.name}
-                    className="flex items-center justify-between rounded-lg border p-3"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">{event.label}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {event.name}
-                      </p>
-                    </div>
-                    <Badge variant="outline">Disabled</Badge>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <WebhookForm sessionId={sessionId} />
+          <EventSelector selectedEvents={events} onChange={handleEventsChange} />
         </div>
       </div>
     </>

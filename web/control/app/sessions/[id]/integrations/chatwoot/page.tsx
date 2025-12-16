@@ -1,4 +1,8 @@
-import { MessageCircle, Save, RefreshCw } from "lucide-react"
+"use client"
+
+import { useEffect, useState } from "react"
+import { useParams } from "next/navigation"
+import { MessageCircle } from "lucide-react"
 
 import {
   Breadcrumb,
@@ -8,25 +12,62 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { ChatwootForm } from "@/components/integrations/chatwoot-form"
+import { SyncSettings } from "@/components/integrations/sync-settings"
+import { getChatwootConfig, setChatwootConfig } from "@/lib/api/chatwoot"
 
-export default async function ChatwootPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
-  const { id } = await params
+export default function ChatwootPage() {
+  const params = useParams()
+  const sessionId = params.id as string
+
+  const [syncContacts, setSyncContacts] = useState(true)
+  const [syncMessages, setSyncMessages] = useState(true)
+  const [syncDays, setSyncDays] = useState(7)
+
+  useEffect(() => {
+    async function fetchConfig() {
+      try {
+        const config = await getChatwootConfig(sessionId)
+        if (config) {
+          setSyncContacts(config.syncContacts ?? true)
+          setSyncMessages(config.syncMessages ?? true)
+          setSyncDays(config.syncDays ?? 7)
+        }
+      } catch (err) {
+        console.error("Failed to load config:", err)
+      }
+    }
+    fetchConfig()
+  }, [sessionId])
+
+  const handleSyncContactsChange = async (value: boolean) => {
+    setSyncContacts(value)
+    try {
+      await setChatwootConfig(sessionId, { syncContacts: value })
+    } catch (err) {
+      console.error("Failed to update sync contacts:", err)
+    }
+  }
+
+  const handleSyncMessagesChange = async (value: boolean) => {
+    setSyncMessages(value)
+    try {
+      await setChatwootConfig(sessionId, { syncMessages: value })
+    } catch (err) {
+      console.error("Failed to update sync messages:", err)
+    }
+  }
+
+  const handleSyncDaysChange = async (value: number) => {
+    setSyncDays(value)
+    try {
+      await setChatwootConfig(sessionId, { syncDays: value })
+    } catch (err) {
+      console.error("Failed to update sync days:", err)
+    }
+  }
 
   return (
     <>
@@ -44,11 +85,11 @@ export default async function ChatwootPage({
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href={`/sessions/${id}`}>{id}</BreadcrumbLink>
+                <BreadcrumbLink href={`/sessions/${sessionId}`}>{sessionId}</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href={`/sessions/${id}/integrations`}>
+                <BreadcrumbLink href={`/sessions/${sessionId}/integrations`}>
                   Integrations
                 </BreadcrumbLink>
               </BreadcrumbItem>
@@ -71,109 +112,19 @@ export default async function ChatwootPage({
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline">
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Sync Now
-            </Button>
-            <Button>
-              <Save className="mr-2 h-4 w-4" />
-              Save
-            </Button>
-          </div>
         </div>
 
         <div className="grid gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Connection Settings</CardTitle>
-              <CardDescription>
-                Configure your Chatwoot instance connection
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="url">Chatwoot URL</Label>
-                  <Input
-                    id="url"
-                    placeholder="https://app.chatwoot.com"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="token">API Token</Label>
-                  <Input
-                    id="token"
-                    type="password"
-                    placeholder="Your API token"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="account">Account ID</Label>
-                  <Input
-                    id="account"
-                    type="number"
-                    placeholder="1"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="inbox">Inbox ID</Label>
-                  <Input
-                    id="inbox"
-                    type="number"
-                    placeholder="1"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Sync Settings</CardTitle>
-              <CardDescription>
-                Configure message synchronization
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Sync Contacts</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Sync WhatsApp contacts to Chatwoot
-                  </p>
-                </div>
-                <Button variant="outline" size="sm">
-                  Enable
-                </Button>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Sync Messages</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Sync message history to Chatwoot
-                  </p>
-                </div>
-                <Button variant="outline" size="sm">
-                  Enable
-                </Button>
-              </div>
-              <Separator />
-              <div className="space-y-2">
-                <Label htmlFor="syncDays">Sync Days</Label>
-                <Input
-                  id="syncDays"
-                  type="number"
-                  placeholder="7"
-                  className="w-32"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Number of days to sync message history
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <ChatwootForm sessionId={sessionId} />
+          <SyncSettings
+            sessionId={sessionId}
+            syncContacts={syncContacts}
+            syncMessages={syncMessages}
+            syncDays={syncDays}
+            onSyncContactsChange={handleSyncContactsChange}
+            onSyncMessagesChange={handleSyncMessagesChange}
+            onSyncDaysChange={handleSyncDaysChange}
+          />
         </div>
       </div>
     </>
