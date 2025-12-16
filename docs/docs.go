@@ -22,7 +22,7 @@ const docTemplate = `{
                         "Authorization": []
                     }
                 ],
-                "description": "Validate Chatwoot URL, token and account ID before saving configuration",
+                "description": "Validate Chatwoot URL, token and account ID before saving configuration. Tests API connectivity.",
                 "consumes": [
                     "application/json"
                 ],
@@ -46,13 +46,27 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Validation result",
                         "schema": {
                             "$ref": "#/definitions/ValidationResult"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid credentials format",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Account not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Connection failed or API error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -101,7 +115,7 @@ const docTemplate = `{
                         "Authorization": []
                     }
                 ],
-                "description": "Get a list of all available webhook event types organized by category",
+                "description": "Get a list of all available webhook event types organized by category (session, message, chat, group, call)",
                 "produces": [
                     "application/json"
                 ],
@@ -111,7 +125,7 @@ const docTemplate = `{
                 "summary": "List available webhook events",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Categories with all available events",
                         "schema": {
                             "$ref": "#/definitions/EventsResponse"
                         }
@@ -121,7 +135,7 @@ const docTemplate = `{
         },
         "/public/{session}/media/stream": {
             "get": {
-                "description": "Stream media file directly without authentication (for browser audio/video playback)",
+                "description": "Stream media file directly without authentication. Useful for embedding media in browsers and external applications. Uses same authorization as internal endpoint.",
                 "produces": [
                     "application/octet-stream"
                 ],
@@ -147,13 +161,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Media file (for browser playback)",
                         "schema": {
                             "type": "file"
                         }
                     },
+                    "400": {
+                        "description": "Missing messageId parameter",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Session or media not found/not downloaded",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Storage service not configured",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -253,55 +279,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/sessions/{id}/media": {
-            "get": {
-                "security": [
-                    {
-                        "Authorization": []
-                    }
-                ],
-                "description": "Get list of all media files for a session",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "media"
-                ],
-                "summary": "List all media for session",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Limit (default: 100)",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Offset (default: 0)",
-                        "name": "offset",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/MediaResponse"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/sessions/{id}/media/pending": {
             "get": {
                 "security": [
@@ -309,7 +286,7 @@ const docTemplate = `{
                         "Authorization": []
                     }
                 ],
-                "description": "Get list of media files pending download",
+                "description": "Get list of media files that have not been downloaded yet. Useful for monitoring and batch processing.",
                 "produces": [
                     "application/json"
                 ],
@@ -327,64 +304,27 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "Limit (default: 100)",
+                        "description": "Limit (default: 100, max: 500)",
                         "name": "limit",
                         "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/MediaResponse"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/sessions/{id}/media/process": {
-            "post": {
-                "security": [
-                    {
-                        "Authorization": []
-                    }
-                ],
-                "description": "Download pending media from WhatsApp and upload to storage",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "media"
-                ],
-                "summary": "Process pending media downloads",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Batch size (default: 10)",
-                        "name": "batchSize",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
+                        "description": "Media list with count",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
-                    "400": {
-                        "description": "Bad Request",
+                    "404": {
+                        "description": "Session not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Database error",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -399,7 +339,7 @@ const docTemplate = `{
                         "Authorization": []
                     }
                 ],
-                "description": "Remove Chatwoot integration configuration for a session",
+                "description": "Remove Chatwoot integration configuration for a session (disables integration)",
                 "produces": [
                     "application/json"
                 ],
@@ -410,7 +350,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Session name",
+                        "description": "Session ID",
                         "name": "sessionId",
                         "in": "path",
                         "required": true
@@ -418,14 +358,23 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Configuration deleted",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
-                    "404": {
-                        "description": "Not Found",
+                    "500": {
+                        "description": "Failed to delete configuration",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -521,7 +470,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Session name",
+                        "description": "Session ID",
                         "name": "sessionId",
                         "in": "path",
                         "required": true
@@ -529,13 +478,13 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Current configuration",
                         "schema": {
                             "$ref": "#/definitions/Config"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Session or configuration not found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -689,7 +638,7 @@ const docTemplate = `{
                         "Authorization": []
                     }
                 ],
-                "description": "Configure Chatwoot integration for a session",
+                "description": "Configure Chatwoot integration for a session. Enable bidirectional sync, webhooks, and contact synchronization.",
                 "consumes": [
                     "application/json"
                 ],
@@ -703,7 +652,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Session name",
+                        "description": "Session ID",
                         "name": "sessionId",
                         "in": "path",
                         "required": true
@@ -720,20 +669,27 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Configuration saved successfully",
                         "schema": {
                             "$ref": "#/definitions/Config"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request or missing required fields",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Session not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to save configuration",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -946,7 +902,7 @@ const docTemplate = `{
                         "Authorization": []
                     }
                 ],
-                "description": "Get the webhook configuration for a session",
+                "description": "Get the webhook configuration for a session including URL, enabled events, and secret",
                 "produces": [
                     "application/json"
                 ],
@@ -965,13 +921,13 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Current webhook configuration",
                         "schema": {
                             "$ref": "#/definitions/GetWebhookResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Session not found or webhook not configured",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -1004,7 +960,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Webhook configuration",
+                        "description": "Webhook configuration to update",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -1015,19 +971,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Updated webhook configuration",
                         "schema": {
                             "$ref": "#/definitions/GetWebhookResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid URL or request format",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Session or webhook not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to update configuration",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -1040,7 +1002,7 @@ const docTemplate = `{
                         "Authorization": []
                     }
                 ],
-                "description": "Set or update the webhook configuration for a session (one webhook per session)",
+                "description": "Set or update the webhook configuration for a session (one webhook per session). Supports HMAC-SHA256 signature validation via secret field.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1060,7 +1022,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Webhook configuration",
+                        "description": "Webhook configuration (url, events, enabled, secret)",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -1071,19 +1033,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Webhook configuration saved",
                         "schema": {
                             "$ref": "#/definitions/GetWebhookResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid URL or request format",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Session not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to save configuration",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -1096,7 +1064,7 @@ const docTemplate = `{
                         "Authorization": []
                     }
                 ],
-                "description": "Delete the webhook configuration for a session",
+                "description": "Delete the webhook configuration for a session (disables webhook notifications)",
                 "produces": [
                     "application/json"
                 ],
@@ -1115,13 +1083,131 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Webhook deleted successfully",
                         "schema": {
                             "$ref": "#/definitions/MessageResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Session or webhook not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to delete webhook",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{session}/media": {
+            "get": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Get list of all media files (downloaded and pending) for a session with pagination support",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "media"
+                ],
+                "summary": "List all media for session",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "session",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit (default: 100, max: 500)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset (default: 0)",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Media list with pagination info",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Database error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{session}/media/process": {
+            "post": {
+                "security": [
+                    {
+                        "Authorization": []
+                    }
+                ],
+                "description": "Download pending media from WhatsApp and upload to storage. Runs asynchronously in batches. Returns success/failed counts immediately.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "media"
+                ],
+                "summary": "Process pending media downloads",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "session",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Batch size (default: 10, max: 50)",
+                        "name": "batchSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Processing results with success/failed counts",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Session not connected or service not configured",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -1751,7 +1837,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Community ID",
+                        "description": "Community ID (without @g.us suffix)",
                         "name": "communityId",
                         "in": "query",
                         "required": true
@@ -1759,13 +1845,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "List of subgroups",
                         "schema": {
                             "$ref": "#/definitions/CommunityResponse"
                         }
                     },
+                    "400": {
+                        "description": "Missing communityId parameter",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Failed to get subgroups",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -1780,7 +1878,7 @@ const docTemplate = `{
                         "Authorization": []
                     }
                 ],
-                "description": "Link a group to a community as a subgroup",
+                "description": "Link a group to a community as a subgroup. Both group IDs must be without @g.us suffix.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1800,7 +1898,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Link data",
+                        "description": "Parent and child group IDs",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -1811,19 +1909,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Group linked successfully",
                         "schema": {
                             "type": "object"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid group IDs",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Failed to link group",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -1838,7 +1942,7 @@ const docTemplate = `{
                         "Authorization": []
                     }
                 ],
-                "description": "Unlink a group from a community",
+                "description": "Unlink a group from a community. Both group IDs must be without @g.us suffix.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1858,7 +1962,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Unlink data",
+                        "description": "Parent and child group IDs",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -1869,19 +1973,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Group unlinked successfully",
                         "schema": {
                             "type": "object"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid group IDs",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Failed to unlink group",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -3914,7 +4024,7 @@ const docTemplate = `{
                         "Authorization": []
                     }
                 ],
-                "description": "Get media information for a specific message",
+                "description": "Get media information for a specific message including storage URL, download status and metadata (type, mime, size, dimensions)",
                 "produces": [
                     "application/json"
                 ],
@@ -3945,8 +4055,20 @@ const docTemplate = `{
                             "$ref": "#/definitions/MediaResponse"
                         }
                     },
+                    "400": {
+                        "description": "Missing messageId parameter",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Session or media not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -3961,7 +4083,7 @@ const docTemplate = `{
                         "Authorization": []
                     }
                 ],
-                "description": "Force retry downloading media from WhatsApp (sends retry request if needed)",
+                "description": "Force retry downloading media from WhatsApp. Useful when media download failed initially or expired. Runs asynchronously and returns immediately.",
                 "produces": [
                     "application/json"
                 ],
@@ -3987,20 +4109,26 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Retry initiated successfully",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Missing messageId or session not connected",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Session or media not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Media service not configured",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -4015,7 +4143,7 @@ const docTemplate = `{
                         "Authorization": []
                     }
                 ],
-                "description": "Stream media file directly (redirects to storage URL or proxies the file)",
+                "description": "Stream media file directly. Automatically proxies local files or redirects to external storage URLs. Supports video streaming and audio playback in browsers.",
                 "produces": [
                     "application/octet-stream"
                 ],
@@ -4041,13 +4169,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Media file (image, video, audio, document)",
                         "schema": {
                             "type": "file"
                         }
                     },
+                    "400": {
+                        "description": "Missing messageId parameter",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Session or media not found/not downloaded",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Storage service not configured or streaming failed",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -5344,7 +5484,7 @@ const docTemplate = `{
                         "Authorization": []
                     }
                 ],
-                "description": "Create a new WhatsApp newsletter/channel",
+                "description": "Create a new WhatsApp newsletter/channel. Returns newsletter JID and basic info.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5364,7 +5504,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Newsletter data",
+                        "description": "Newsletter data (name, description, optional picture)",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -5381,13 +5521,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request data",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Failed to create newsletter",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -5435,17 +5581,23 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/NewsletterActionResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Failed to follow newsletter",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -5460,7 +5612,7 @@ const docTemplate = `{
                         "Authorization": []
                     }
                 ],
-                "description": "Get information about a WhatsApp newsletter",
+                "description": "Get detailed information about a WhatsApp newsletter (name, description, subscribers, privacy, picture)",
                 "produces": [
                     "application/json"
                 ],
@@ -5478,7 +5630,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Newsletter JID",
+                        "description": "Newsletter JID (e.g., 123456789@newsletter)",
                         "name": "newsletterJid",
                         "in": "query",
                         "required": true
@@ -5491,8 +5643,20 @@ const docTemplate = `{
                             "$ref": "#/definitions/NewsletterResponse"
                         }
                     },
+                    "400": {
+                        "description": "Missing newsletterJid parameter",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Failed to get newsletter info",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -5528,14 +5692,17 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "object"
-                            }
+                            "$ref": "#/definitions/NewsletterListResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Failed to get newsletters",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -5550,7 +5717,7 @@ const docTemplate = `{
                         "Authorization": []
                     }
                 ],
-                "description": "Get messages from a WhatsApp newsletter",
+                "description": "Get messages from a WhatsApp newsletter with pagination",
                 "produces": [
                     "application/json"
                 ],
@@ -5575,14 +5742,13 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "default": 50,
-                        "description": "Number of messages",
+                        "description": "Number of messages (default: 50)",
                         "name": "count",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Before server ID",
+                        "description": "Before server ID (for pagination)",
                         "name": "before",
                         "in": "query"
                     }
@@ -5591,11 +5757,23 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/NewsletterResponse"
+                            "$ref": "#/definitions/NewsletterMessagesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Missing newsletterJid parameter",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Failed to get messages",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -5610,7 +5788,7 @@ const docTemplate = `{
                         "Authorization": []
                     }
                 ],
-                "description": "Toggle mute status of a newsletter",
+                "description": "Toggle mute status of a newsletter (notifications on/off)",
                 "consumes": [
                     "application/json"
                 ],
@@ -5630,7 +5808,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Mute data",
+                        "description": "Mute/unmute data",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -5641,19 +5819,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Mute status updated",
                         "schema": {
                             "type": "object"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Failed to update mute status",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -5668,7 +5852,7 @@ const docTemplate = `{
                         "Authorization": []
                     }
                 ],
-                "description": "Send a reaction to a newsletter message",
+                "description": "Send a reaction (emoji) to a newsletter message",
                 "consumes": [
                     "application/json"
                 ],
@@ -5688,7 +5872,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Reaction data",
+                        "description": "Reaction data (emoji, server ID, newsletter JID)",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -5699,19 +5883,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Reaction sent successfully",
                         "schema": {
                             "type": "object"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request data",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Failed to send reaction",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -5726,7 +5916,10 @@ const docTemplate = `{
                         "Authorization": []
                     }
                 ],
-                "description": "Subscribe to receive live updates from a newsletter",
+                "description": "Subscribe to receive live updates from a newsletter (real-time notifications)",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -5743,11 +5936,13 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "Newsletter JID",
-                        "name": "newsletterId",
-                        "in": "path",
-                        "required": true
+                        "description": "Newsletter JID to subscribe",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/NewsletterIDRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -5757,8 +5952,20 @@ const docTemplate = `{
                             "$ref": "#/definitions/NewsletterLiveResponse"
                         }
                     },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Failed to subscribe",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -5806,17 +6013,23 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object"
+                            "$ref": "#/definitions/NewsletterActionResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Failed to unfollow newsletter",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -5831,7 +6044,7 @@ const docTemplate = `{
                         "Authorization": []
                     }
                 ],
-                "description": "Mark newsletter messages as viewed",
+                "description": "Mark newsletter messages as viewed by their server IDs",
                 "consumes": [
                     "application/json"
                 ],
@@ -5851,14 +6064,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "string",
-                        "description": "Newsletter JID",
-                        "name": "newsletterId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Server IDs to mark",
+                        "description": "Server IDs to mark as viewed",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -5869,19 +6075,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Messages marked as viewed",
                         "schema": {
                             "type": "object"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request data",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Failed to mark as viewed",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -6471,7 +6683,7 @@ const docTemplate = `{
                         "Authorization": []
                     }
                 ],
-                "description": "Get all settings for a session (local + privacy synced from WhatsApp)",
+                "description": "Get all settings for a session including local settings and privacy settings synced from WhatsApp (always online, auto-reject calls, sync history, privacy levels)",
                 "produces": [
                     "application/json"
                 ],
@@ -6496,13 +6708,13 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Session or settings not found",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Failed to retrieve settings",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -6515,7 +6727,7 @@ const docTemplate = `{
                         "Authorization": []
                     }
                 ],
-                "description": "Update settings for a session. Local settings are saved to DB. Privacy settings are applied to WhatsApp AND saved to DB.",
+                "description": "Update settings for a session. Local settings (alwaysOnline, autoRejectCalls, syncHistory) are saved to DB. Privacy settings (lastSeen, online, profile, status, readReceipts, groupAdd, callAdd) are applied to WhatsApp AND saved to DB. Disappearing timer is also applied to WhatsApp.",
                 "consumes": [
                     "application/json"
                 ],
@@ -6535,7 +6747,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Settings to update",
+                        "description": "Settings to update (partial updates supported)",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -6546,19 +6758,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Updated settings",
                         "schema": {
                             "$ref": "#/definitions/SettingsResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request or failed to apply privacy setting",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session or settings not found",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Failed to update settings",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -6622,7 +6840,7 @@ const docTemplate = `{
                         "Authorization": []
                     }
                 ],
-                "description": "Get who can see your status updates",
+                "description": "Get who can see your status updates (contacts, groups, everyone)",
                 "produces": [
                     "application/json"
                 ],
@@ -6641,13 +6859,19 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Privacy settings",
                         "schema": {
                             "$ref": "#/definitions/StatusPrivacyResponse"
                         }
                     },
+                    "404": {
+                        "description": "Session not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Failed to get privacy settings",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -6662,7 +6886,7 @@ const docTemplate = `{
                         "Authorization": []
                     }
                 ],
-                "description": "Post a text or media story (status update visible to contacts). Supports JSON with base64/URL or multipart/form-data.",
+                "description": "Post a text status update (visible to contacts). Supports JSON with text field or multipart/form-data. Note: Image status currently not supported.",
                 "consumes": [
                     "application/json",
                     "multipart/form-data"
@@ -6683,7 +6907,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Story data (JSON)",
+                        "description": "Story data (JSON: text field)",
                         "name": "body",
                         "in": "body",
                         "schema": {
@@ -6692,32 +6916,32 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Text content (form-data)",
+                        "description": "Text content (multipart form-data)",
                         "name": "text",
-                        "in": "formData"
-                    },
-                    {
-                        "type": "file",
-                        "description": "Image file (form-data)",
-                        "name": "file",
                         "in": "formData"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Status posted successfully",
                         "schema": {
                             "$ref": "#/definitions/SendResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid input or missing text",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Failed to send status",
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
@@ -7090,10 +7314,32 @@ const docTemplate = `{
                 }
             }
         },
+        "CommunityGroup": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "123456789@g.us"
+                },
+                "members": {
+                    "type": "integer",
+                    "example": 50
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Subgroup Name"
+                }
+            }
+        },
         "CommunityResponse": {
             "type": "object",
             "properties": {
-                "groups": {}
+                "groups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/CommunityGroup"
+                    }
+                }
             }
         },
         "Config": {
@@ -7842,6 +8088,39 @@ const docTemplate = `{
                 }
             }
         },
+        "MessageItem": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "example": "Hello subscribers!"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "ABCD1234"
+                },
+                "mediaUrl": {
+                    "type": "string",
+                    "example": "https://..."
+                },
+                "reactions": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "timestamp": {
+                    "type": "integer",
+                    "example": 1701619200
+                },
+                "type": {
+                    "type": "string",
+                    "example": "text"
+                },
+                "views": {
+                    "type": "integer",
+                    "example": 100
+                }
+            }
+        },
         "MessageOnlyResponse": {
             "type": "object",
             "properties": {
@@ -7952,12 +8231,81 @@ const docTemplate = `{
                 }
             }
         },
+        "NewsletterActionResponse": {
+            "type": "object",
+            "properties": {
+                "jid": {
+                    "type": "string",
+                    "example": "123456789@newsletter"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Newsletter followed successfully"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "NewsletterIDRequest": {
+            "type": "object",
+            "required": [
+                "newsletterJid"
+            ],
+            "properties": {
+                "newsletterJid": {
+                    "type": "string",
+                    "example": "123456789@newsletter"
+                }
+            }
+        },
+        "NewsletterInfo": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Channel description"
+                },
+                "jid": {
+                    "type": "string",
+                    "example": "123456789@newsletter"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "My Channel"
+                },
+                "privacy": {
+                    "type": "string",
+                    "example": "public"
+                }
+            }
+        },
+        "NewsletterListResponse": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "newsletters": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/NewsletterInfo"
+                    }
+                }
+            }
+        },
         "NewsletterLiveResponse": {
             "type": "object",
             "properties": {
                 "duration": {
                     "type": "string",
                     "example": "24h0m0s"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Live updates subscribed"
                 }
             }
         },
@@ -7982,6 +8330,21 @@ const docTemplate = `{
                         2,
                         3
                     ]
+                }
+            }
+        },
+        "NewsletterMessagesResponse": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 50
+                },
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/MessageItem"
+                    }
                 }
             }
         },
@@ -8030,7 +8393,38 @@ const docTemplate = `{
         "NewsletterResponse": {
             "type": "object",
             "properties": {
-                "data": {}
+                "createdAt": {
+                    "type": "string",
+                    "example": "2025-01-01T00:00:00Z"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Channel description"
+                },
+                "jid": {
+                    "type": "string",
+                    "example": "123456789@newsletter"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "My Channel"
+                },
+                "pictureUrl": {
+                    "type": "string",
+                    "example": "https://..."
+                },
+                "privacy": {
+                    "type": "string",
+                    "example": "public"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "active"
+                },
+                "subscribers": {
+                    "type": "integer",
+                    "example": 100
+                }
             }
         },
         "OrphanCleanupResult": {
@@ -9071,7 +9465,16 @@ const docTemplate = `{
         "StatusPrivacyResponse": {
             "type": "object",
             "properties": {
-                "privacy": {}
+                "privacy": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "example": {
+                        "\"online\"": "\"contacts\"}",
+                        "{\"last_seen\"": "\"contacts\""
+                    }
+                }
             }
         },
         "SubscribePresenceRequest": {
@@ -9359,6 +9762,30 @@ const docTemplate = `{
         {
             "description": "Chatwoot integration",
             "name": "chatwoot"
+        },
+        {
+            "description": "File storage \u0026 downloads",
+            "name": "media"
+        },
+        {
+            "description": "Channels \u0026 broadcasts",
+            "name": "newsletter"
+        },
+        {
+            "description": "Session settings \u0026 privacy configuration",
+            "name": "settings"
+        },
+        {
+            "description": "Stories \u0026 status updates",
+            "name": "status"
+        },
+        {
+            "description": "Community \u0026 linked groups",
+            "name": "community"
+        },
+        {
+            "description": "Voice \u0026 video calls",
+            "name": "call"
         }
     ],
     "x-extension-openapi": {

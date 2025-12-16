@@ -20,7 +20,7 @@ export async function apiClient<T>(
   const headers: HeadersInit = {
     "Content-Type": "application/json",
     ...(process.env.NEXT_PUBLIC_API_KEY && {
-      "X-API-Key": process.env.NEXT_PUBLIC_API_KEY,
+      "Authorization": process.env.NEXT_PUBLIC_API_KEY,
     }),
     ...options?.headers,
   }

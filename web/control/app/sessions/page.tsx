@@ -1,11 +1,20 @@
+"use client"
+
+import { useRef } from "react"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { SessionList } from "@/components/sessions/session-list"
+import { SessionList, SessionListRef } from "@/components/sessions/session-list"
 import { CreateSessionDialog } from "@/components/sessions/create-session-dialog"
 
 export default function SessionsPage() {
+  const sessionListRef = useRef<SessionListRef>(null)
+
+  function handleSessionCreated() {
+    sessionListRef.current?.refresh()
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -24,11 +33,11 @@ export default function SessionsPage() {
               </p>
             </div>
           </div>
-          <CreateSessionDialog />
+          <CreateSessionDialog onSuccess={handleSessionCreated} />
         </div>
       </header>
       <main className="container px-4 py-6">
-        <SessionList />
+        <SessionList ref={sessionListRef} />
       </main>
     </div>
   )

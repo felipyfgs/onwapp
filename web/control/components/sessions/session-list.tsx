@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, forwardRef, useImperativeHandle } from "react"
 import { RefreshCw } from "lucide-react"
 
 import {
@@ -14,7 +14,11 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { SessionCard } from "./session-card"
 
-export function SessionList() {
+export interface SessionListRef {
+  refresh: () => void
+}
+
+export const SessionList = forwardRef<SessionListRef>(function SessionList(_, ref) {
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -30,6 +34,10 @@ export function SessionList() {
     }
     setLoading(false)
   }
+
+  useImperativeHandle(ref, () => ({
+    refresh: fetchSessions,
+  }))
 
   useEffect(() => {
     fetchSessions()
@@ -129,4 +137,4 @@ export function SessionList() {
       </div>
     </div>
   )
-}
+})

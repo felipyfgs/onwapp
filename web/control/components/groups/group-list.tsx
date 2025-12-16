@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useMemo } from "react"
 import { useParams } from "next/navigation"
-import { UsersRound, RefreshCw } from "lucide-react"
+import { UsersRound, RefreshCw, WifiOff } from "lucide-react"
 
 import { Group, getGroups, leaveGroup, getInviteLink } from "@/lib/api/groups"
+import { getSession } from "@/lib/api/sessions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { EmptyState } from "@/components/empty-state"
@@ -20,10 +21,21 @@ export function GroupList() {
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState("")
   const [leaveTarget, setLeaveTarget] = useState<Group | null>(null)
+  const [sessionConnected, setSessionConnected] = useState(false)
 
   async function fetchGroups() {
     setLoading(true)
     setError(null)
+    
+    const sessionRes = await getSession(sessionId)
+    if (!sessionRes.success || sessionRes.data?.status !== "connected") {
+      setSessionConnected(false)
+      setGroups([])
+      setLoading(false)
+      return
+    }
+    
+    setSessionConnected(true)
     const response = await getGroups(sessionId)
     if (response.success && response.data) {
       setGroups(response.data)
@@ -69,6 +81,16 @@ export function GroupList() {
   }, [filteredGroups])
 
   if (loading) return <LoadingList count={5} />
+
+  if (!sessionConnected) {
+    return (
+      <EmptyState
+        icon={WifiOff}
+        title="Session not connected"
+        description="Connect your WhatsApp session to view groups."
+      />
+    )
+  }
 
   if (error) {
     return (

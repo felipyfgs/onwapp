@@ -257,9 +257,24 @@ definitions:
         example: "5511999999999"
         type: string
     type: object
+  CommunityGroup:
+    properties:
+      id:
+        example: 123456789@g.us
+        type: string
+      members:
+        example: 50
+        type: integer
+      name:
+        example: Subgroup Name
+        type: string
+    type: object
   CommunityResponse:
     properties:
-      groups: {}
+      groups:
+        items:
+          $ref: '#/definitions/CommunityGroup'
+        type: array
     type: object
   Config:
     properties:
@@ -774,6 +789,30 @@ definitions:
         example: 1920
         type: integer
     type: object
+  MessageItem:
+    properties:
+      content:
+        example: Hello subscribers!
+        type: string
+      id:
+        example: ABCD1234
+        type: string
+      mediaUrl:
+        example: https://...
+        type: string
+      reactions:
+        example: 5
+        type: integer
+      timestamp:
+        example: 1701619200
+        type: integer
+      type:
+        example: text
+        type: string
+      views:
+        example: 100
+        type: integer
+    type: object
   MessageOnlyResponse:
     properties:
       message:
@@ -847,10 +886,58 @@ definitions:
     required:
     - newsletterJid
     type: object
+  NewsletterActionResponse:
+    properties:
+      jid:
+        example: 123456789@newsletter
+        type: string
+      message:
+        example: Newsletter followed successfully
+        type: string
+      success:
+        example: true
+        type: boolean
+    type: object
+  NewsletterIDRequest:
+    properties:
+      newsletterJid:
+        example: 123456789@newsletter
+        type: string
+    required:
+    - newsletterJid
+    type: object
+  NewsletterInfo:
+    properties:
+      description:
+        example: Channel description
+        type: string
+      jid:
+        example: 123456789@newsletter
+        type: string
+      name:
+        example: My Channel
+        type: string
+      privacy:
+        example: public
+        type: string
+    type: object
+  NewsletterListResponse:
+    properties:
+      count:
+        example: 3
+        type: integer
+      newsletters:
+        items:
+          $ref: '#/definitions/NewsletterInfo'
+        type: array
+    type: object
   NewsletterLiveResponse:
     properties:
       duration:
         example: 24h0m0s
+        type: string
+      message:
+        example: Live updates subscribed
         type: string
     type: object
   NewsletterMarkViewedRequest:
@@ -869,6 +956,16 @@ definitions:
     required:
     - newsletterJid
     - serverIds
+    type: object
+  NewsletterMessagesResponse:
+    properties:
+      count:
+        example: 50
+        type: integer
+      messages:
+        items:
+          $ref: '#/definitions/MessageItem'
+        type: array
     type: object
   NewsletterMuteRequest:
     properties:
@@ -902,7 +999,30 @@ definitions:
     type: object
   NewsletterResponse:
     properties:
-      data: {}
+      createdAt:
+        example: "2025-01-01T00:00:00Z"
+        type: string
+      description:
+        example: Channel description
+        type: string
+      jid:
+        example: 123456789@newsletter
+        type: string
+      name:
+        example: My Channel
+        type: string
+      pictureUrl:
+        example: https://...
+        type: string
+      privacy:
+        example: public
+        type: string
+      status:
+        example: active
+        type: string
+      subscribers:
+        example: 100
+        type: integer
     type: object
   OrphanCleanupResult:
     properties:
@@ -1639,7 +1759,13 @@ definitions:
     type: object
   StatusPrivacyResponse:
     properties:
-      privacy: {}
+      privacy:
+        additionalProperties:
+          type: string
+        example:
+          '"online"': '"contacts"}'
+          '{"last_seen"': '"contacts"'
+        type: object
     type: object
   SubscribePresenceRequest:
     properties:
@@ -2185,7 +2311,7 @@ paths:
         name: session
         required: true
         type: string
-      - description: Community ID
+      - description: Community ID (without @g.us suffix)
         in: query
         name: communityId
         required: true
@@ -2194,11 +2320,19 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: List of subgroups
           schema:
             $ref: '#/definitions/CommunityResponse'
+        "400":
+          description: Missing communityId parameter
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Session not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Failed to get subgroups
           schema:
             $ref: '#/definitions/ErrorResponse'
       security:
@@ -2210,14 +2344,15 @@ paths:
     post:
       consumes:
       - application/json
-      description: Link a group to a community as a subgroup
+      description: Link a group to a community as a subgroup. Both group IDs must
+        be without @g.us suffix.
       parameters:
       - description: Session ID
         in: path
         name: session
         required: true
         type: string
-      - description: Link data
+      - description: Parent and child group IDs
         in: body
         name: body
         required: true
@@ -2227,15 +2362,19 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Group linked successfully
           schema:
             type: object
         "400":
-          description: Bad Request
+          description: Invalid group IDs
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Session not found
           schema:
             $ref: '#/definitions/ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Failed to link group
           schema:
             $ref: '#/definitions/ErrorResponse'
       security:
@@ -2247,14 +2386,15 @@ paths:
     post:
       consumes:
       - application/json
-      description: Unlink a group from a community
+      description: Unlink a group from a community. Both group IDs must be without
+        @g.us suffix.
       parameters:
       - description: Session ID
         in: path
         name: session
         required: true
         type: string
-      - description: Unlink data
+      - description: Parent and child group IDs
         in: body
         name: body
         required: true
@@ -2264,15 +2404,19 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Group unlinked successfully
           schema:
             type: object
         "400":
-          description: Bad Request
+          description: Invalid group IDs
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Session not found
           schema:
             $ref: '#/definitions/ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Failed to unlink group
           schema:
             $ref: '#/definitions/ErrorResponse'
       security:
@@ -3576,7 +3720,8 @@ paths:
       - sessions
   /{session}/media/download:
     get:
-      description: Get media information for a specific message
+      description: Get media information for a specific message including storage
+        URL, download status and metadata (type, mime, size, dimensions)
       parameters:
       - description: Session ID
         in: path
@@ -3595,8 +3740,16 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/MediaResponse'
+        "400":
+          description: Missing messageId parameter
+          schema:
+            $ref: '#/definitions/ErrorResponse'
         "404":
-          description: Not Found
+          description: Session or media not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Internal server error
           schema:
             $ref: '#/definitions/ErrorResponse'
       security:
@@ -3606,8 +3759,8 @@ paths:
       - media
   /{session}/media/retry:
     post:
-      description: Force retry downloading media from WhatsApp (sends retry request
-        if needed)
+      description: Force retry downloading media from WhatsApp. Useful when media
+        download failed initially or expired. Runs asynchronously and returns immediately.
       parameters:
       - description: Session ID
         in: path
@@ -3623,16 +3776,20 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Retry initiated successfully
           schema:
             additionalProperties: true
             type: object
         "400":
-          description: Bad Request
+          description: Missing messageId or session not connected
           schema:
             $ref: '#/definitions/ErrorResponse'
         "404":
-          description: Not Found
+          description: Session or media not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Media service not configured
           schema:
             $ref: '#/definitions/ErrorResponse'
       security:
@@ -3642,8 +3799,9 @@ paths:
       - media
   /{session}/media/stream:
     get:
-      description: Stream media file directly (redirects to storage URL or proxies
-        the file)
+      description: Stream media file directly. Automatically proxies local files or
+        redirects to external storage URLs. Supports video streaming and audio playback
+        in browsers.
       parameters:
       - description: Session ID
         in: path
@@ -3659,11 +3817,19 @@ paths:
       - application/octet-stream
       responses:
         "200":
-          description: OK
+          description: Media file (image, video, audio, document)
           schema:
             type: file
+        "400":
+          description: Missing messageId parameter
+          schema:
+            $ref: '#/definitions/ErrorResponse'
         "404":
-          description: Not Found
+          description: Session or media not found/not downloaded
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Storage service not configured or streaming failed
           schema:
             $ref: '#/definitions/ErrorResponse'
       security:
@@ -4506,14 +4672,15 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create a new WhatsApp newsletter/channel
+      description: Create a new WhatsApp newsletter/channel. Returns newsletter JID
+        and basic info.
       parameters:
       - description: Session ID
         in: path
         name: session
         required: true
         type: string
-      - description: Newsletter data
+      - description: Newsletter data (name, description, optional picture)
         in: body
         name: body
         required: true
@@ -4527,11 +4694,15 @@ paths:
           schema:
             $ref: '#/definitions/NewsletterResponse'
         "400":
-          description: Bad Request
+          description: Invalid request data
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Session not found
           schema:
             $ref: '#/definitions/ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Failed to create newsletter
           schema:
             $ref: '#/definitions/ErrorResponse'
       security:
@@ -4562,13 +4733,17 @@ paths:
         "200":
           description: OK
           schema:
-            type: object
+            $ref: '#/definitions/NewsletterActionResponse'
         "400":
-          description: Bad Request
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Session not found
           schema:
             $ref: '#/definitions/ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Failed to follow newsletter
           schema:
             $ref: '#/definitions/ErrorResponse'
       security:
@@ -4578,14 +4753,15 @@ paths:
       - newsletter
   /{session}/newsletter/info:
     get:
-      description: Get information about a WhatsApp newsletter
+      description: Get detailed information about a WhatsApp newsletter (name, description,
+        subscribers, privacy, picture)
       parameters:
       - description: Session ID
         in: path
         name: session
         required: true
         type: string
-      - description: Newsletter JID
+      - description: Newsletter JID (e.g., 123456789@newsletter)
         in: query
         name: newsletterJid
         required: true
@@ -4597,8 +4773,16 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/NewsletterResponse'
+        "400":
+          description: Missing newsletterJid parameter
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Session not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Failed to get newsletter info
           schema:
             $ref: '#/definitions/ErrorResponse'
       security:
@@ -4621,11 +4805,13 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              type: object
-            type: array
+            $ref: '#/definitions/NewsletterListResponse'
+        "404":
+          description: Session not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Failed to get newsletters
           schema:
             $ref: '#/definitions/ErrorResponse'
       security:
@@ -4635,7 +4821,7 @@ paths:
       - newsletter
   /{session}/newsletter/messages:
     get:
-      description: Get messages from a WhatsApp newsletter
+      description: Get messages from a WhatsApp newsletter with pagination
       parameters:
       - description: Session ID
         in: path
@@ -4647,12 +4833,11 @@ paths:
         name: newsletterJid
         required: true
         type: string
-      - default: 50
-        description: Number of messages
+      - description: 'Number of messages (default: 50)'
         in: query
         name: count
         type: integer
-      - description: Before server ID
+      - description: Before server ID (for pagination)
         in: query
         name: before
         type: integer
@@ -4662,9 +4847,17 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/NewsletterResponse'
+            $ref: '#/definitions/NewsletterMessagesResponse'
+        "400":
+          description: Missing newsletterJid parameter
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Session not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Failed to get messages
           schema:
             $ref: '#/definitions/ErrorResponse'
       security:
@@ -4676,14 +4869,14 @@ paths:
     patch:
       consumes:
       - application/json
-      description: Toggle mute status of a newsletter
+      description: Toggle mute status of a newsletter (notifications on/off)
       parameters:
       - description: Session ID
         in: path
         name: session
         required: true
         type: string
-      - description: Mute data
+      - description: Mute/unmute data
         in: body
         name: body
         required: true
@@ -4693,15 +4886,19 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Mute status updated
           schema:
             type: object
         "400":
-          description: Bad Request
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Session not found
           schema:
             $ref: '#/definitions/ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Failed to update mute status
           schema:
             $ref: '#/definitions/ErrorResponse'
       security:
@@ -4713,14 +4910,14 @@ paths:
     post:
       consumes:
       - application/json
-      description: Send a reaction to a newsletter message
+      description: Send a reaction (emoji) to a newsletter message
       parameters:
       - description: Session ID
         in: path
         name: session
         required: true
         type: string
-      - description: Reaction data
+      - description: Reaction data (emoji, server ID, newsletter JID)
         in: body
         name: body
         required: true
@@ -4730,15 +4927,19 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Reaction sent successfully
           schema:
             type: object
         "400":
-          description: Bad Request
+          description: Invalid request data
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Session not found
           schema:
             $ref: '#/definitions/ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Failed to send reaction
           schema:
             $ref: '#/definitions/ErrorResponse'
       security:
@@ -4748,18 +4949,22 @@ paths:
       - newsletter
   /{session}/newsletter/subscribe-live:
     post:
-      description: Subscribe to receive live updates from a newsletter
+      consumes:
+      - application/json
+      description: Subscribe to receive live updates from a newsletter (real-time
+        notifications)
       parameters:
       - description: Session ID
         in: path
         name: session
         required: true
         type: string
-      - description: Newsletter JID
-        in: path
-        name: newsletterId
+      - description: Newsletter JID to subscribe
+        in: body
+        name: body
         required: true
-        type: string
+        schema:
+          $ref: '#/definitions/NewsletterIDRequest'
       produces:
       - application/json
       responses:
@@ -4767,8 +4972,16 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/NewsletterLiveResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Session not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Failed to subscribe
           schema:
             $ref: '#/definitions/ErrorResponse'
       security:
@@ -4799,13 +5012,17 @@ paths:
         "200":
           description: OK
           schema:
-            type: object
+            $ref: '#/definitions/NewsletterActionResponse'
         "400":
-          description: Bad Request
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Session not found
           schema:
             $ref: '#/definitions/ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Failed to unfollow newsletter
           schema:
             $ref: '#/definitions/ErrorResponse'
       security:
@@ -4817,19 +5034,14 @@ paths:
     post:
       consumes:
       - application/json
-      description: Mark newsletter messages as viewed
+      description: Mark newsletter messages as viewed by their server IDs
       parameters:
       - description: Session ID
         in: path
         name: session
         required: true
         type: string
-      - description: Newsletter JID
-        in: path
-        name: newsletterId
-        required: true
-        type: string
-      - description: Server IDs to mark
+      - description: Server IDs to mark as viewed
         in: body
         name: body
         required: true
@@ -4839,15 +5051,19 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Messages marked as viewed
           schema:
             type: object
         "400":
-          description: Bad Request
+          description: Invalid request data
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Session not found
           schema:
             $ref: '#/definitions/ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Failed to mark as viewed
           schema:
             $ref: '#/definitions/ErrorResponse'
       security:
@@ -5225,7 +5441,9 @@ paths:
       - sessions
   /{session}/settings:
     get:
-      description: Get all settings for a session (local + privacy synced from WhatsApp)
+      description: Get all settings for a session including local settings and privacy
+        settings synced from WhatsApp (always online, auto-reject calls, sync history,
+        privacy levels)
       parameters:
       - description: Session ID
         in: path
@@ -5240,11 +5458,11 @@ paths:
           schema:
             $ref: '#/definitions/SettingsResponse'
         "404":
-          description: Not Found
+          description: Session or settings not found
           schema:
             $ref: '#/definitions/ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Failed to retrieve settings
           schema:
             $ref: '#/definitions/ErrorResponse'
       security:
@@ -5255,15 +5473,17 @@ paths:
     post:
       consumes:
       - application/json
-      description: Update settings for a session. Local settings are saved to DB.
-        Privacy settings are applied to WhatsApp AND saved to DB.
+      description: Update settings for a session. Local settings (alwaysOnline, autoRejectCalls,
+        syncHistory) are saved to DB. Privacy settings (lastSeen, online, profile,
+        status, readReceipts, groupAdd, callAdd) are applied to WhatsApp AND saved
+        to DB. Disappearing timer is also applied to WhatsApp.
       parameters:
       - description: Session ID
         in: path
         name: session
         required: true
         type: string
-      - description: Settings to update
+      - description: Settings to update (partial updates supported)
         in: body
         name: body
         required: true
@@ -5273,15 +5493,19 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Updated settings
           schema:
             $ref: '#/definitions/SettingsResponse'
         "400":
-          description: Bad Request
+          description: Invalid request or failed to apply privacy setting
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Session or settings not found
           schema:
             $ref: '#/definitions/ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Failed to update settings
           schema:
             $ref: '#/definitions/ErrorResponse'
       security:
@@ -5322,7 +5546,7 @@ paths:
       - sessions
   /{session}/status/privacy:
     get:
-      description: Get who can see your status updates
+      description: Get who can see your status updates (contacts, groups, everyone)
       parameters:
       - description: Session ID
         in: path
@@ -5333,11 +5557,15 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Privacy settings
           schema:
             $ref: '#/definitions/StatusPrivacyResponse'
+        "404":
+          description: Session not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Failed to get privacy settings
           schema:
             $ref: '#/definitions/ErrorResponse'
       security:
@@ -5350,40 +5578,40 @@ paths:
       consumes:
       - application/json
       - multipart/form-data
-      description: Post a text or media story (status update visible to contacts).
-        Supports JSON with base64/URL or multipart/form-data.
+      description: 'Post a text status update (visible to contacts). Supports JSON
+        with text field or multipart/form-data. Note: Image status currently not supported.'
       parameters:
       - description: Session ID
         in: path
         name: session
         required: true
         type: string
-      - description: Story data (JSON)
+      - description: 'Story data (JSON: text field)'
         in: body
         name: body
         schema:
           $ref: '#/definitions/SendStatusRequest'
-      - description: Text content (form-data)
+      - description: Text content (multipart form-data)
         in: formData
         name: text
         type: string
-      - description: Image file (form-data)
-        in: formData
-        name: file
-        type: file
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Status posted successfully
           schema:
             $ref: '#/definitions/SendResponse'
         "400":
-          description: Bad Request
+          description: Invalid input or missing text
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Session not found
           schema:
             $ref: '#/definitions/ErrorResponse'
         "500":
-          description: Internal Server Error
+          description: Failed to send status
           schema:
             $ref: '#/definitions/ErrorResponse'
       security:
@@ -5395,7 +5623,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Validate Chatwoot URL, token and account ID before saving configuration
+      description: Validate Chatwoot URL, token and account ID before saving configuration.
+        Tests API connectivity.
       parameters:
       - description: Chatwoot credentials to validate
         in: body
@@ -5407,11 +5636,21 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Validation result
           schema:
             $ref: '#/definitions/ValidationResult'
         "400":
-          description: Bad Request
+          description: Invalid credentials format
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Account not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Connection failed or API error
           schema:
             additionalProperties: true
             type: object
@@ -5445,11 +5684,12 @@ paths:
   /events:
     get:
       description: Get a list of all available webhook event types organized by category
+        (session, message, chat, group, call)
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Categories with all available events
           schema:
             $ref: '#/definitions/EventsResponse'
       security:
@@ -5459,8 +5699,9 @@ paths:
       - webhook
   /public/{session}/media/stream:
     get:
-      description: Stream media file directly without authentication (for browser
-        audio/video playback)
+      description: Stream media file directly without authentication. Useful for embedding
+        media in browsers and external applications. Uses same authorization as internal
+        endpoint.
       parameters:
       - description: Session ID
         in: path
@@ -5476,11 +5717,19 @@ paths:
       - application/octet-stream
       responses:
         "200":
-          description: OK
+          description: Media file (for browser playback)
           schema:
             type: file
+        "400":
+          description: Missing messageId parameter
+          schema:
+            $ref: '#/definitions/ErrorResponse'
         "404":
-          description: Not Found
+          description: Session or media not found/not downloaded
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Storage service not configured
           schema:
             $ref: '#/definitions/ErrorResponse'
       summary: Stream media file (public)
@@ -5544,16 +5793,52 @@ paths:
       summary: Create a new session
       tags:
       - sessions
-  /sessions/{id}/media:
+  /sessions/{id}/media/pending:
     get:
-      description: Get list of all media files for a session
+      description: Get list of media files that have not been downloaded yet. Useful
+        for monitoring and batch processing.
       parameters:
       - description: Session ID
         in: path
-        name: id
+        name: session
         required: true
         type: string
-      - description: 'Limit (default: 100)'
+      - description: 'Limit (default: 100, max: 500)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Media list with count
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Session not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Database error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      security:
+      - Authorization: []
+      summary: List pending media downloads
+      tags:
+      - media
+  /sessions/{session}/media:
+    get:
+      description: Get list of all media files (downloaded and pending) for a session
+        with pagination support
+      parameters:
+      - description: Session ID
+        in: path
+        name: session
+        required: true
+        type: string
+      - description: 'Limit (default: 100, max: 500)'
         in: query
         name: limit
         type: integer
@@ -5565,53 +5850,34 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Media list with pagination info
           schema:
-            items:
-              $ref: '#/definitions/MediaResponse'
-            type: array
+            additionalProperties: true
+            type: object
+        "404":
+          description: Session not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Database error
+          schema:
+            $ref: '#/definitions/ErrorResponse'
       security:
       - Authorization: []
       summary: List all media for session
       tags:
       - media
-  /sessions/{id}/media/pending:
-    get:
-      description: Get list of media files pending download
+  /sessions/{session}/media/process:
+    post:
+      description: Download pending media from WhatsApp and upload to storage. Runs
+        asynchronously in batches. Returns success/failed counts immediately.
       parameters:
       - description: Session ID
         in: path
         name: session
         required: true
         type: string
-      - description: 'Limit (default: 100)'
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/MediaResponse'
-            type: array
-      security:
-      - Authorization: []
-      summary: List pending media downloads
-      tags:
-      - media
-  /sessions/{id}/media/process:
-    post:
-      description: Download pending media from WhatsApp and upload to storage
-      parameters:
-      - description: Session ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: 'Batch size (default: 10)'
+      - description: 'Batch size (default: 10, max: 50)'
         in: query
         name: batchSize
         type: integer
@@ -5619,12 +5885,16 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Processing results with success/failed counts
           schema:
             additionalProperties: true
             type: object
         "400":
-          description: Bad Request
+          description: Session not connected or service not configured
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "404":
+          description: Session not found
           schema:
             $ref: '#/definitions/ErrorResponse'
       security:
@@ -5634,9 +5904,10 @@ paths:
       - media
   /sessions/{sessionId}/chatwoot:
     delete:
-      description: Remove Chatwoot integration configuration for a session
+      description: Remove Chatwoot integration configuration for a session (disables
+        integration)
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
         name: sessionId
         required: true
@@ -5645,12 +5916,18 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Configuration deleted
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Session not found
           schema:
             additionalProperties: true
             type: object
-        "404":
-          description: Not Found
+        "500":
+          description: Failed to delete configuration
           schema:
             additionalProperties: true
             type: object
@@ -5707,7 +5984,7 @@ paths:
     get:
       description: Get Chatwoot integration configuration for a session
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
         name: sessionId
         required: true
@@ -5716,11 +5993,11 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Current configuration
           schema:
             $ref: '#/definitions/Config'
         "404":
-          description: Not Found
+          description: Session or configuration not found
           schema:
             additionalProperties: true
             type: object
@@ -5821,9 +6098,10 @@ paths:
     post:
       consumes:
       - application/json
-      description: Configure Chatwoot integration for a session
+      description: Configure Chatwoot integration for a session. Enable bidirectional
+        sync, webhooks, and contact synchronization.
       parameters:
-      - description: Session name
+      - description: Session ID
         in: path
         name: sessionId
         required: true
@@ -5838,16 +6116,21 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Configuration saved successfully
           schema:
             $ref: '#/definitions/Config'
         "400":
-          description: Bad Request
+          description: Invalid request or missing required fields
           schema:
             additionalProperties: true
             type: object
         "404":
-          description: Not Found
+          description: Session not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to save configuration
           schema:
             additionalProperties: true
             type: object
@@ -5988,7 +6271,8 @@ paths:
       - chatwoot
   /sessions/{sessionId}/webhooks:
     delete:
-      description: Delete the webhook configuration for a session
+      description: Delete the webhook configuration for a session (disables webhook
+        notifications)
       parameters:
       - description: Session ID
         in: path
@@ -5999,11 +6283,15 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Webhook deleted successfully
           schema:
             $ref: '#/definitions/MessageResponse'
         "404":
-          description: Not Found
+          description: Session or webhook not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Failed to delete webhook
           schema:
             $ref: '#/definitions/ErrorResponse'
       security:
@@ -6012,7 +6300,8 @@ paths:
       tags:
       - webhook
     get:
-      description: Get the webhook configuration for a session
+      description: Get the webhook configuration for a session including URL, enabled
+        events, and secret
       parameters:
       - description: Session ID
         in: path
@@ -6023,11 +6312,11 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Current webhook configuration
           schema:
             $ref: '#/definitions/GetWebhookResponse'
         "404":
-          description: Not Found
+          description: Session not found or webhook not configured
           schema:
             $ref: '#/definitions/ErrorResponse'
       security:
@@ -6039,14 +6328,14 @@ paths:
       consumes:
       - application/json
       description: Set or update the webhook configuration for a session (one webhook
-        per session)
+        per session). Supports HMAC-SHA256 signature validation via secret field.
       parameters:
       - description: Session ID
         in: path
         name: sessionId
         required: true
         type: string
-      - description: Webhook configuration
+      - description: Webhook configuration (url, events, enabled, secret)
         in: body
         name: request
         required: true
@@ -6056,15 +6345,19 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Webhook configuration saved
           schema:
             $ref: '#/definitions/GetWebhookResponse'
         "400":
-          description: Bad Request
+          description: Invalid URL or request format
           schema:
             $ref: '#/definitions/ErrorResponse'
         "404":
-          description: Not Found
+          description: Session not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Failed to save configuration
           schema:
             $ref: '#/definitions/ErrorResponse'
       security:
@@ -6082,7 +6375,7 @@ paths:
         name: sessionId
         required: true
         type: string
-      - description: Webhook configuration
+      - description: Webhook configuration to update
         in: body
         name: request
         required: true
@@ -6092,15 +6385,19 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Updated webhook configuration
           schema:
             $ref: '#/definitions/GetWebhookResponse'
         "400":
-          description: Bad Request
+          description: Invalid URL or request format
           schema:
             $ref: '#/definitions/ErrorResponse'
         "404":
-          description: Not Found
+          description: Session or webhook not found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        "500":
+          description: Failed to update configuration
           schema:
             $ref: '#/definitions/ErrorResponse'
       security:
@@ -6147,5 +6444,17 @@ tags:
   name: webhook
 - description: Chatwoot integration
   name: chatwoot
+- description: File storage & downloads
+  name: media
+- description: Channels & broadcasts
+  name: newsletter
+- description: Session settings & privacy configuration
+  name: settings
+- description: Stories & status updates
+  name: status
+- description: Community & linked groups
+  name: community
+- description: Voice & video calls
+  name: call
 x-extension-openapi:
   disableSwaggerDefaultValue: true

@@ -160,13 +160,7 @@ func (h *StatusHandler) GetStatusPrivacy(c *gin.Context) {
 		return
 	}
 
-	// Convert to map format
-	privacyMap := make(map[string]string)
-	for _, setting := range privacySettings {
-		privacyMap[setting.Name] = setting.Value
-	}
-
-	respondSuccess(c, dto.StatusPrivacyResponse{
-		Privacy: privacyMap,
+	respondSuccess(c, gin.H{
+		"privacy": privacySettings,
 	})
 }

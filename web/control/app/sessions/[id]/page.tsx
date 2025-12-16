@@ -44,22 +44,29 @@ export default function SessionOverviewPage() {
   const fetchData = async () => {
     try {
       setLoading(true)
-      const [sessionRes, chatsRes, contactsRes, groupsRes] = await Promise.all([
-        getSession(sessionId).catch(() => ({ success: false, data: null })),
-        getChats(sessionId).catch(() => ({ success: false, data: [] })),
-        getContacts(sessionId).catch(() => ({ success: false, data: [] })),
-        getGroups(sessionId).catch(() => ({ success: false, data: [] })),
-      ])
-
+      
+      const sessionRes = await getSession(sessionId).catch(() => ({ success: false, data: null }))
+      
       if (sessionRes.success && sessionRes.data) {
         setSession(sessionRes.data)
+        
+        if (sessionRes.data.status === "connected") {
+          const [chatsRes, contactsRes, groupsRes] = await Promise.all([
+            getChats(sessionId).catch(() => ({ success: false, data: [] })),
+            getContacts(sessionId).catch(() => ({ success: false, data: [] })),
+            getGroups(sessionId).catch(() => ({ success: false, data: [] })),
+          ])
+          
+          setStats({
+            chats: chatsRes.data?.length || 0,
+            contacts: contactsRes.data?.length || 0,
+            groups: groupsRes.data?.length || 0,
+            media: 0,
+          })
+        } else {
+          setStats({ chats: 0, contacts: 0, groups: 0, media: 0 })
+        }
       }
-      setStats({
-        chats: chatsRes.data?.length || 0,
-        contacts: contactsRes.data?.length || 0,
-        groups: groupsRes.data?.length || 0,
-        media: 0,
-      })
     } catch (err) {
       console.error("Failed to fetch session data:", err)
     } finally {

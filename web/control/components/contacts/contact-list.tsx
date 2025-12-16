@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useMemo } from "react"
 import { useParams } from "next/navigation"
-import { Users, RefreshCw } from "lucide-react"
+import { Users, RefreshCw, WifiOff } from "lucide-react"
 
 import { Contact, getContacts, updateBlocklist } from "@/lib/api/contacts"
+import { getSession } from "@/lib/api/sessions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { EmptyState } from "@/components/empty-state"
@@ -18,10 +19,21 @@ export function ContactList() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState("")
+  const [sessionConnected, setSessionConnected] = useState(false)
 
   async function fetchContacts() {
     setLoading(true)
     setError(null)
+    
+    const sessionRes = await getSession(sessionId)
+    if (!sessionRes.success || sessionRes.data?.status !== "connected") {
+      setSessionConnected(false)
+      setContacts([])
+      setLoading(false)
+      return
+    }
+    
+    setSessionConnected(true)
     const response = await getContacts(sessionId)
     if (response.success && response.data) {
       setContacts(response.data)
@@ -70,6 +82,16 @@ export function ContactList() {
   }, [filteredContacts])
 
   if (loading) return <LoadingList count={5} />
+
+  if (!sessionConnected) {
+    return (
+      <EmptyState
+        icon={WifiOff}
+        title="Session not connected"
+        description="Connect your WhatsApp session to view contacts."
+      />
+    )
+  }
 
   if (error) {
     return (

@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useMemo } from "react"
 import { useParams } from "next/navigation"
-import { MessageSquare, RefreshCw } from "lucide-react"
+import { MessageSquare, RefreshCw, WifiOff } from "lucide-react"
 
 import { Chat, getChats, markChatRead, archiveChat } from "@/lib/api/chats"
+import { getSession } from "@/lib/api/sessions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { EmptyState } from "@/components/empty-state"
@@ -18,10 +19,21 @@ export function ChatList() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState("")
+  const [sessionConnected, setSessionConnected] = useState(false)
 
   async function fetchChats() {
     setLoading(true)
     setError(null)
+    
+    const sessionRes = await getSession(sessionId)
+    if (!sessionRes.success || sessionRes.data?.status !== "connected") {
+      setSessionConnected(false)
+      setChats([])
+      setLoading(false)
+      return
+    }
+    
+    setSessionConnected(true)
     const response = await getChats(sessionId)
     if (response.success && response.data) {
       setChats(response.data)
@@ -71,6 +83,16 @@ export function ChatList() {
   }, [filteredChats])
 
   if (loading) return <LoadingList count={5} />
+
+  if (!sessionConnected) {
+    return (
+      <EmptyState
+        icon={WifiOff}
+        title="Session not connected"
+        description="Connect your WhatsApp session to view chats."
+      />
+    )
+  }
 
   if (error) {
     return (
