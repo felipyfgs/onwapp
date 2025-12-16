@@ -30,10 +30,10 @@ export default function ChatwootPage() {
     async function fetchConfig() {
       try {
         const config = await getChatwootConfig(sessionId)
-        if (config) {
-          setSyncContacts(config.syncContacts ?? true)
-          setSyncMessages(config.syncMessages ?? true)
-          setSyncDays(config.syncDays ?? 7)
+        if (config.success && config.data) {
+          setSyncContacts(config.data.syncContacts ?? true)
+          setSyncMessages(config.data.syncMessages ?? true)
+          setSyncDays(config.data.syncDays ?? 7)
         }
       } catch (err) {
         console.error("Failed to load config:", err)
@@ -42,31 +42,16 @@ export default function ChatwootPage() {
     fetchConfig()
   }, [sessionId])
 
-  const handleSyncContactsChange = async (value: boolean) => {
+  const handleSyncContactsChange = (value: boolean) => {
     setSyncContacts(value)
-    try {
-      await setChatwootConfig(sessionId, { syncContacts: value })
-    } catch (err) {
-      console.error("Failed to update sync contacts:", err)
-    }
   }
 
-  const handleSyncMessagesChange = async (value: boolean) => {
+  const handleSyncMessagesChange = (value: boolean) => {
     setSyncMessages(value)
-    try {
-      await setChatwootConfig(sessionId, { syncMessages: value })
-    } catch (err) {
-      console.error("Failed to update sync messages:", err)
-    }
   }
 
-  const handleSyncDaysChange = async (value: number) => {
+  const handleSyncDaysChange = (value: number) => {
     setSyncDays(value)
-    try {
-      await setChatwootConfig(sessionId, { syncDays: value })
-    } catch (err) {
-      console.error("Failed to update sync days:", err)
-    }
   }
 
   return (

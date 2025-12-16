@@ -100,3 +100,21 @@ export async function getBusinessProfile(
 ): Promise<ApiResponse<BusinessProfile>> {
   return apiClient<BusinessProfile>(`/sessions/${sessionId}/contact/business?jid=${jid}`)
 }
+
+export async function getContactLID(
+  sessionId: string,
+  phone: string
+): Promise<ApiResponse<{ lid: string }>> {
+  return apiClient<{ lid: string }>(
+    `/sessions/${sessionId}/contact/lid?phone=${encodeURIComponent(phone)}`
+  )
+}
+
+export async function getContactQRLink(
+  sessionId: string,
+  jid: string
+): Promise<ApiResponse<{ qrLink: string }>> {
+  return apiClient<{ qrLink: string }>(
+    `/sessions/${sessionId}/contact/qrlink?jid=${encodeURIComponent(jid)}`
+  )
+}

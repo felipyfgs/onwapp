@@ -47,15 +47,16 @@ func (h *Handler) SetQueueProducer(producer *queue.Producer) {
 }
 
 // @Summary Set Chatwoot configuration
-// @Description Configure Chatwoot integration for a session
+// @Description Configure Chatwoot integration for a session. Enable bidirectional sync, webhooks, and contact synchronization.
 // @Tags         chatwoot
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session name"
+// @Param sessionId path string true "Session ID"
 // @Param config body SetConfigRequest true "Chatwoot configuration"
-// @Success 200 {object} core.Config
-// @Failure 400 {object} map[string]interface{}
-// @Failure 404 {object} map[string]interface{}
+// @Success 200 {object} core.Config "Configuration saved successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request or missing required fields"
+// @Failure 404 {object} map[string]interface{} "Session not found"
+// @Failure 500 {object} map[string]interface{} "Failed to save configuration"
 // @Security Authorization
 // @Router /sessions/{sessionId}/chatwoot/set [post]
 func (h *Handler) SetConfig(c *gin.Context) {
@@ -115,13 +116,15 @@ func (h *Handler) SetConfig(c *gin.Context) {
 }
 
 // @Summary Validate Chatwoot credentials
-// @Description Validate Chatwoot URL, token and account ID before saving configuration
+// @Description Validate Chatwoot URL, token and account ID before saving configuration. Tests API connectivity.
 // @Tags         chatwoot
 // @Accept json
 // @Produce json
 // @Param credentials body ValidateCredentialsRequest true "Chatwoot credentials to validate"
-// @Success 200 {object} ValidationResult
-// @Failure 400 {object} map[string]interface{}
+// @Success 200 {object} ValidationResult "Validation result"
+// @Failure 400 {object} map[string]interface{} "Invalid credentials format"
+// @Failure 404 {object} map[string]interface{} "Account not found"
+// @Failure 500 {object} map[string]interface{} "Connection failed or API error"
 // @Security Authorization
 // @Router /chatwoot/validate [post]
 func (h *Handler) ValidateCredentials(c *gin.Context) {
@@ -150,9 +153,9 @@ func (h *Handler) ValidateCredentials(c *gin.Context) {
 // @Description Get Chatwoot integration configuration for a session
 // @Tags         chatwoot
 // @Produce json
-// @Param sessionId path string true "Session name"
-// @Success 200 {object} core.Config
-// @Failure 404 {object} map[string]interface{}
+// @Param sessionId path string true "Session ID"
+// @Success 200 {object} core.Config "Current configuration"
+// @Failure 404 {object} map[string]interface{} "Session or configuration not found"
 // @Security Authorization
 // @Router /sessions/{sessionId}/chatwoot/find [get]
 func (h *Handler) GetConfig(c *gin.Context) {
@@ -174,12 +177,13 @@ func (h *Handler) GetConfig(c *gin.Context) {
 }
 
 // @Summary Delete Chatwoot configuration
-// @Description Remove Chatwoot integration configuration for a session
+// @Description Remove Chatwoot integration configuration for a session (disables integration)
 // @Tags         chatwoot
 // @Produce json
-// @Param sessionId path string true "Session name"
-// @Success 200 {object} map[string]interface{}
-// @Failure 404 {object} map[string]interface{}
+// @Param sessionId path string true "Session ID"
+// @Success 200 {object} map[string]string "Configuration deleted"
+// @Failure 404 {object} map[string]interface{} "Session not found"
+// @Failure 500 {object} map[string]interface{} "Failed to delete configuration"
 // @Security Authorization
 // @Router /sessions/{sessionId}/chatwoot [delete]
 func (h *Handler) DeleteConfig(c *gin.Context) {

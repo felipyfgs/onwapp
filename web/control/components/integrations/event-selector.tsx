@@ -47,6 +47,8 @@ const eventGroups = [
   },
 ]
 
+const ALL_EVENT_NAMES = WEBHOOK_EVENTS.map(e => e.name)
+
 export function EventSelector({ selectedEvents, onChange }: EventSelectorProps) {
   const handleToggle = (event: string) => {
     if (selectedEvents.includes(event)) {
@@ -57,10 +59,10 @@ export function EventSelector({ selectedEvents, onChange }: EventSelectorProps) 
   }
 
   const handleSelectAll = () => {
-    if (selectedEvents.length === WEBHOOK_EVENTS.length) {
+    if (selectedEvents.length === ALL_EVENT_NAMES.length) {
       onChange([])
     } else {
-      onChange([...WEBHOOK_EVENTS])
+      onChange([...ALL_EVENT_NAMES])
     }
   }
 

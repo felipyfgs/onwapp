@@ -27,10 +27,12 @@ export function ProfileForm({ sessionId, onUpdate }: ProfileFormProps) {
       try {
         setLoading(true)
         const profile = await getProfile(sessionId)
-        setPushNameValue(profile.pushName || "")
-        setAbout(profile.about || "")
-        setOriginalPushName(profile.pushName || "")
-        setOriginalAbout(profile.about || "")
+        if (profile.success && profile.data) {
+          setPushNameValue(profile.data.pushName || "")
+          setAbout(profile.data.about || "")
+          setOriginalPushName(profile.data.pushName || "")
+          setOriginalAbout(profile.data.about || "")
+        }
       } catch (err) {
         console.error("Failed to load profile:", err)
       } finally {

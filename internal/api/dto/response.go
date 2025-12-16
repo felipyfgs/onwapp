@@ -175,16 +175,74 @@ type ChatMessageResponse struct {
 	Deleted      bool   `json:"deleted,omitempty" example:"false"`
 }
 
+// NewsletterResponse represents newsletter information
 type NewsletterResponse struct {
-	Data interface{} `json:"data"`
+	JID           string `json:"jid" example:"123456789@newsletter"`
+	Name          string `json:"name" example:"My Channel"`
+	Description   string `json:"description" example:"Channel description"`
+	PictureURL    string `json:"pictureUrl,omitempty" example:"https://..."`
+	Subscribers   int    `json:"subscribers" example:"100"`
+	Privacy       string `json:"privacy" example:"public"`
+	Status        string `json:"status" example:"active"`
+	CreatedAt     string `json:"createdAt" example:"2025-01-01T00:00:00Z"`
 }
 
+// NewsletterListResponse represents list of newsletters
+type NewsletterListResponse struct {
+	Count      int                `json:"count" example:"3"`
+	Newsletters []NewsletterInfo  `json:"newsletters"`
+}
+
+type NewsletterInfo struct {
+	JID         string `json:"jid" example:"123456789@newsletter"`
+	Name        string `json:"name" example:"My Channel"`
+	Description string `json:"description" example:"Channel description"`
+	Privacy     string `json:"privacy" example:"public"`
+}
+
+// NewsletterMessagesResponse represents newsletter messages
+type NewsletterMessagesResponse struct {
+	Count    int            `json:"count" example:"50"`
+	Messages []MessageItem  `json:"messages"`
+}
+
+type MessageItem struct {
+	ID        string `json:"id" example:"ABCD1234"`
+	Timestamp int64  `json:"timestamp" example:"1701619200"`
+	Type      string `json:"type" example:"text"`
+	Content   string `json:"content,omitempty" example:"Hello subscribers!"`
+	MediaURL  string `json:"mediaUrl,omitempty" example:"https://..."`
+	Reactions int    `json:"reactions" example:"5"`
+	Views     int    `json:"views" example:"100"`
+}
+
+// StatusPrivacyResponse represents status privacy settings
 type StatusPrivacyResponse struct {
-	Privacy interface{} `json:"privacy"`
+	Privacy map[string]string `json:"privacy" example:"{\"last_seen\":\"contacts\",\"online\":\"contacts\"}"`
 }
 
+// CommunityResponse represents community subgroups
 type CommunityResponse struct {
-	Groups interface{} `json:"groups,omitempty"`
+	Groups []CommunityGroup `json:"groups"`
+}
+
+type CommunityGroup struct {
+	ID      string `json:"id" example:"123456789@g.us"`
+	Name    string `json:"name" example:"Subgroup Name"`
+	Members int    `json:"members" example:"50"`
+}
+
+// NewsletterActionResponse represents result of newsletter action
+type NewsletterActionResponse struct {
+	Success bool   `json:"success" example:"true"`
+	Message string `json:"message" example:"Newsletter followed successfully"`
+	JID     string `json:"jid,omitempty" example:"123456789@newsletter"`
+}
+
+// NewsletterLiveResponse represents live subscription result
+type NewsletterLiveResponse struct {
+	Duration string `json:"duration" example:"24h0m0s"`
+	Message  string `json:"message" example:"Live updates subscribed"`
 }
 
 type MediaResponse struct {
@@ -235,10 +293,6 @@ type ChatResponse struct {
 	Pinned              bool             `json:"pinned,omitempty" example:"false"`
 	Muted               string           `json:"muted,omitempty" example:""`
 	LastMessage         *LastMessageInfo `json:"lastMessage,omitempty"`
-}
-
-type NewsletterLiveResponse struct {
-	Duration string `json:"duration" example:"24h0m0s"`
 }
 
 type LIDResponse struct {

@@ -120,3 +120,37 @@ export async function setDisappearing(
     body: JSON.stringify({ jid: chatJid, expiration }),
   })
 }
+
+export type ChatPresenceType = "composing" | "recording" | "paused"
+
+export async function sendChatPresence(
+  sessionId: string,
+  jid: string,
+  presence: ChatPresenceType
+): Promise<ApiResponse<{ message: string }>> {
+  return apiClient<{ message: string }>(`/sessions/${sessionId}/chat/presence`, {
+    method: "POST",
+    body: JSON.stringify({ jid, presence }),
+  })
+}
+
+export async function sendTyping(
+  sessionId: string,
+  jid: string
+): Promise<ApiResponse<{ message: string }>> {
+  return sendChatPresence(sessionId, jid, "composing")
+}
+
+export async function sendRecording(
+  sessionId: string,
+  jid: string
+): Promise<ApiResponse<{ message: string }>> {
+  return sendChatPresence(sessionId, jid, "recording")
+}
+
+export async function stopTyping(
+  sessionId: string,
+  jid: string
+): Promise<ApiResponse<{ message: string }>> {
+  return sendChatPresence(sessionId, jid, "paused")
+}

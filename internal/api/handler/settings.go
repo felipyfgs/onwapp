@@ -23,13 +23,13 @@ func NewSettingsHandler(settingsRepo *repository.SettingsRepository, wpp *wpp.Se
 }
 
 // @Summary      Get session settings
-// @Description  Get all settings for a session (local + privacy synced from WhatsApp)
+// @Description  Get all settings for a session including local settings and privacy settings synced from WhatsApp (always online, auto-reject calls, sync history, privacy levels)
 // @Tags         settings
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
 // @Success      200    {object}  dto.SettingsResponse
-// @Failure      404    {object}  dto.ErrorResponse
-// @Failure      500    {object}  dto.ErrorResponse
+// @Failure      404    {object}  dto.ErrorResponse  "Session or settings not found"
+// @Failure      500    {object}  dto.ErrorResponse  "Failed to retrieve settings"
 // @Security     Authorization
 // @Router       /{session}/settings [get]
 func (h *SettingsHandler) GetSettings(c *gin.Context) {
@@ -45,15 +45,16 @@ func (h *SettingsHandler) GetSettings(c *gin.Context) {
 }
 
 // @Summary      Update session settings
-// @Description  Update settings for a session. Local settings are saved to DB. Privacy settings are applied to WhatsApp AND saved to DB.
+// @Description  Update settings for a session. Local settings (alwaysOnline, autoRejectCalls, syncHistory) are saved to DB. Privacy settings (lastSeen, online, profile, status, readReceipts, groupAdd, callAdd) are applied to WhatsApp AND saved to DB. Disappearing timer is also applied to WhatsApp.
 // @Tags         settings
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
-// @Param        body   body      dto.SessionSettingsRequest  true  "Settings to update"
-// @Success      200    {object}  dto.SettingsResponse
-// @Failure      400    {object}  dto.ErrorResponse
-// @Failure      500    {object}  dto.ErrorResponse
+// @Param        body   body      dto.SessionSettingsRequest  true  "Settings to update (partial updates supported)"
+// @Success      200    {object}  dto.SettingsResponse  "Updated settings"
+// @Failure      400    {object}  dto.ErrorResponse  "Invalid request or failed to apply privacy setting"
+// @Failure      404    {object}  dto.ErrorResponse  "Session or settings not found"
+// @Failure      500    {object}  dto.ErrorResponse  "Failed to update settings"
 // @Security     Authorization
 // @Router       /{session}/settings [post]
 func (h *SettingsHandler) UpdateSettings(c *gin.Context) {

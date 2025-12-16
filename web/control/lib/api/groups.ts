@@ -174,3 +174,109 @@ export async function joinGroup(
     body: JSON.stringify({ code: inviteCode }),
   })
 }
+
+export async function getGroupAvatar(
+  sessionId: string,
+  jid: string
+): Promise<ApiResponse<{ url: string }>> {
+  return apiClient<{ url: string }>(
+    `/sessions/${sessionId}/group/avatar?jid=${encodeURIComponent(jid)}`
+  )
+}
+
+export async function setAnnounceMode(
+  sessionId: string,
+  jid: string,
+  announce: boolean
+): Promise<ApiResponse<{ message: string }>> {
+  return apiClient<{ message: string }>(`/sessions/${sessionId}/group/announce`, {
+    method: "POST",
+    body: JSON.stringify({ jid, announce }),
+  })
+}
+
+export async function setLockedMode(
+  sessionId: string,
+  jid: string,
+  locked: boolean
+): Promise<ApiResponse<{ message: string }>> {
+  return apiClient<{ message: string }>(`/sessions/${sessionId}/group/locked`, {
+    method: "POST",
+    body: JSON.stringify({ jid, locked }),
+  })
+}
+
+export async function setApprovalMode(
+  sessionId: string,
+  jid: string,
+  approval: boolean
+): Promise<ApiResponse<{ message: string }>> {
+  return apiClient<{ message: string }>(`/sessions/${sessionId}/group/approval`, {
+    method: "POST",
+    body: JSON.stringify({ jid, approval }),
+  })
+}
+
+export async function setMemberAddMode(
+  sessionId: string,
+  jid: string,
+  memberAdd: boolean
+): Promise<ApiResponse<{ message: string }>> {
+  return apiClient<{ message: string }>(`/sessions/${sessionId}/group/memberadd`, {
+    method: "POST",
+    body: JSON.stringify({ jid, memberAdd }),
+  })
+}
+
+export interface GroupInviteInfo {
+  jid: string
+  name: string
+  size: number
+  topic?: string
+}
+
+export async function getGroupInfoFromInvite(
+  sessionId: string,
+  code: string
+): Promise<ApiResponse<GroupInviteInfo>> {
+  return apiClient<GroupInviteInfo>(
+    `/sessions/${sessionId}/group/inviteinfo?code=${encodeURIComponent(code)}`
+  )
+}
+
+export interface JoinRequest {
+  jid: string
+  phone: string
+  requestedAt: string
+}
+
+export async function getJoinRequests(
+  sessionId: string,
+  groupJid: string
+): Promise<ApiResponse<JoinRequest[]>> {
+  return apiClient<JoinRequest[]>(
+    `/sessions/${sessionId}/group/requests?jid=${encodeURIComponent(groupJid)}`
+  )
+}
+
+export async function handleJoinRequest(
+  sessionId: string,
+  groupJid: string,
+  participantJids: string[],
+  action: "approve" | "reject"
+): Promise<ApiResponse<{ message: string }>> {
+  return apiClient<{ message: string }>(`/sessions/${sessionId}/group/requests/action`, {
+    method: "POST",
+    body: JSON.stringify({ jid: groupJid, participants: participantJids, action }),
+  })
+}
+
+export async function revokeInviteLink(
+  sessionId: string,
+  jid: string
+): Promise<ApiResponse<{ inviteLink: string }>> {
+  return apiClient<{ inviteLink: string }>(`/sessions/${sessionId}/group/invitelink/revoke`, {
+    method: "POST",
+    body: JSON.stringify({ jid }),
+  })
+}

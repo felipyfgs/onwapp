@@ -79,17 +79,17 @@ func (h *StatusHandler) buildStatusMessage(text, image string) (*waE2E.Message, 
 }
 
 // @Summary      Post a story
-// @Description  Post a text or media story (status update visible to contacts). Supports JSON with base64/URL or multipart/form-data.
+// @Description  Post a text status update (visible to contacts). Supports JSON with text field or multipart/form-data. Note: Image status currently not supported.
 // @Tags         status
 // @Accept       json,mpfd
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
-// @Param        body   body      dto.SendStatusRequest false  "Story data (JSON)"
-// @Param        text  formData  string  false  "Text content (form-data)"
-// @Param        file  formData  file  false  "Image file (form-data)"
-// @Success      200    {object}  dto.SendResponse
-// @Failure      400    {object}  dto.ErrorResponse
-// @Failure      500    {object}  dto.ErrorResponse
+// @Param        body   body      dto.SendStatusRequest false  "Story data (JSON: text field)"
+// @Param        text  formData  string  false  "Text content (multipart form-data)"
+// @Success      200    {object}  dto.SendResponse  "Status posted successfully"
+// @Failure      400    {object}  dto.ErrorResponse  "Invalid input or missing text"
+// @Failure      404    {object}  dto.ErrorResponse  "Session not found"
+// @Failure      500    {object}  dto.ErrorResponse  "Failed to send status"
 // @Security     Authorization
 // @Router       /{session}/status/send [post]
 func (h *StatusHandler) SendStory(c *gin.Context) {
@@ -131,12 +131,13 @@ func (h *StatusHandler) SendStory(c *gin.Context) {
 }
 
 // @Summary      Get status privacy settings
-// @Description  Get who can see your status updates
+// @Description  Get who can see your status updates (contacts, groups, everyone)
 // @Tags         status
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
-// @Success      200    {object}  dto.StatusPrivacyResponse
-// @Failure      500    {object}  dto.ErrorResponse
+// @Success      200    {object}  dto.StatusPrivacyResponse  "Privacy settings"
+// @Failure      404    {object}  dto.ErrorResponse  "Session not found"
+// @Failure      500    {object}  dto.ErrorResponse  "Failed to get privacy settings"
 // @Security     Authorization
 // @Router       /{session}/status/privacy [get]
 func (h *StatusHandler) GetStatusPrivacy(c *gin.Context) {

@@ -42,12 +42,12 @@ type ErrorResponse struct {
 }
 
 // @Summary Get webhook
-// @Description Get the webhook configuration for a session
+// @Description Get the webhook configuration for a session including URL, enabled events, and secret
 // @Tags         webhook
 // @Produce json
 // @Param sessionId path string true "Session ID"
-// @Success 200 {object} GetWebhookResponse
-// @Failure 404 {object} ErrorResponse
+// @Success 200 {object} GetWebhookResponse "Current webhook configuration"
+// @Failure 404 {object} ErrorResponse "Session not found or webhook not configured"
 // @Security Authorization
 // @Router /sessions/{sessionId}/webhooks [get]
 func (h *Handler) GetWebhook(c *gin.Context) {
@@ -83,15 +83,16 @@ func (h *Handler) GetWebhook(c *gin.Context) {
 }
 
 // @Summary Set webhook
-// @Description Set or update the webhook configuration for a session (one webhook per session)
+// @Description Set or update the webhook configuration for a session (one webhook per session). Supports HMAC-SHA256 signature validation via secret field.
 // @Tags         webhook
 // @Accept json
 // @Produce json
 // @Param sessionId path string true "Session ID"
-// @Param request body SetWebhookRequest true "Webhook configuration"
-// @Success 200 {object} GetWebhookResponse
-// @Failure 400 {object} ErrorResponse
-// @Failure 404 {object} ErrorResponse
+// @Param request body SetWebhookRequest true "Webhook configuration (url, events, enabled, secret)"
+// @Success 200 {object} GetWebhookResponse "Webhook configuration saved"
+// @Failure 400 {object} ErrorResponse "Invalid URL or request format"
+// @Failure 404 {object} ErrorResponse "Session not found"
+// @Failure 500 {object} ErrorResponse "Failed to save configuration"
 // @Security Authorization
 // @Router /sessions/{sessionId}/webhooks [post]
 func (h *Handler) SetWebhook(c *gin.Context) {
@@ -138,10 +139,11 @@ func (h *Handler) SetWebhook(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param sessionId path string true "Session ID"
-// @Param request body SetWebhookRequest true "Webhook configuration"
-// @Success 200 {object} GetWebhookResponse
-// @Failure 400 {object} ErrorResponse
-// @Failure 404 {object} ErrorResponse
+// @Param request body SetWebhookRequest true "Webhook configuration to update"
+// @Success 200 {object} GetWebhookResponse "Updated webhook configuration"
+// @Failure 400 {object} ErrorResponse "Invalid URL or request format"
+// @Failure 404 {object} ErrorResponse "Session or webhook not found"
+// @Failure 500 {object} ErrorResponse "Failed to update configuration"
 // @Security Authorization
 // @Router /sessions/{sessionId}/webhooks [put]
 func (h *Handler) UpdateWebhook(c *gin.Context) {
@@ -193,12 +195,13 @@ func (h *Handler) UpdateWebhook(c *gin.Context) {
 }
 
 // @Summary Delete webhook
-// @Description Delete the webhook configuration for a session
+// @Description Delete the webhook configuration for a session (disables webhook notifications)
 // @Tags         webhook
 // @Produce json
 // @Param sessionId path string true "Session ID"
-// @Success 200 {object} MessageResponse
-// @Failure 404 {object} ErrorResponse
+// @Success 200 {object} MessageResponse "Webhook deleted successfully"
+// @Failure 404 {object} ErrorResponse "Session or webhook not found"
+// @Failure 500 {object} ErrorResponse "Failed to delete webhook"
 // @Security Authorization
 // @Router /sessions/{sessionId}/webhooks [delete]
 func (h *Handler) DeleteWebhook(c *gin.Context) {
@@ -233,10 +236,10 @@ type MessageResponse struct {
 }
 
 // @Summary List available webhook events
-// @Description Get a list of all available webhook event types organized by category
+// @Description Get a list of all available webhook event types organized by category (session, message, chat, group, call)
 // @Tags         webhook
 // @Produce json
-// @Success 200 {object} EventsResponse
+// @Success 200 {object} EventsResponse "Categories with all available events"
 // @Security Authorization
 // @Router /events [get]
 func (h *Handler) GetEvents(c *gin.Context) {

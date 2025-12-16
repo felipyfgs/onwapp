@@ -16,7 +16,7 @@ import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { WebhookForm } from "@/components/integrations/webhook-form"
 import { EventSelector } from "@/components/integrations/event-selector"
-import { getWebhook, setWebhook } from "@/lib/api/webhook"
+import { getWebhook, updateWebhook } from "@/lib/api/webhook"
 
 export default function WebhookPage() {
   const params = useParams()
@@ -28,8 +28,8 @@ export default function WebhookPage() {
     async function fetchWebhook() {
       try {
         const webhook = await getWebhook(sessionId)
-        if (webhook?.events) {
-          setEvents(webhook.events)
+        if (webhook?.data?.events) {
+          setEvents(webhook.data.events)
         }
       } catch (err) {
         console.error("Failed to load webhook:", err)
@@ -41,7 +41,7 @@ export default function WebhookPage() {
   const handleEventsChange = async (newEvents: string[]) => {
     setEvents(newEvents)
     try {
-      await setWebhook(sessionId, { events: newEvents })
+      await updateWebhook(sessionId, { events: newEvents })
     } catch (err) {
       console.error("Failed to update events:", err)
     }

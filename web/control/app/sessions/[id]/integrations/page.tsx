@@ -41,8 +41,8 @@ export default function IntegrationsPage() {
           getWebhook(sessionId).catch(() => null),
           getChatwootConfig(sessionId).catch(() => null),
         ])
-        setWebhookEnabled(webhookData?.enabled || false)
-        setChatwootEnabled(chatwootData?.enabled || false)
+        setWebhookEnabled(webhookData?.data?.enabled || false)
+        setChatwootEnabled(chatwootData?.data?.enabled || false)
       } catch (err) {
         console.error("Failed to fetch integration status:", err)
       }

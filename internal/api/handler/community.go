@@ -19,15 +19,16 @@ func NewCommunityHandler(wpp *wpp.Service) *CommunityHandler {
 }
 
 // @Summary      Link group to community
-// @Description  Link a group to a community as a subgroup
+// @Description  Link a group to a community as a subgroup. Both group IDs must be without @g.us suffix.
 // @Tags         community
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
-// @Param        body   body      dto.LinkGroupRequest true  "Link data"
-// @Success      200    {object}  object
-// @Failure      400    {object}  dto.ErrorResponse
-// @Failure      500    {object}  dto.ErrorResponse
+// @Param        body   body      dto.LinkGroupRequest true  "Parent and child group IDs"
+// @Success      200    {object}  object  "Group linked successfully"
+// @Failure      400    {object}  dto.ErrorResponse  "Invalid group IDs"
+// @Failure      404    {object}  dto.ErrorResponse  "Session not found"
+// @Failure      500    {object}  dto.ErrorResponse  "Failed to link group"
 // @Security     Authorization
 // @Router       /{session}/community/link [post]
 func (h *CommunityHandler) LinkGroup(c *gin.Context) {
@@ -51,15 +52,16 @@ func (h *CommunityHandler) LinkGroup(c *gin.Context) {
 }
 
 // @Summary      Unlink group from community
-// @Description  Unlink a group from a community
+// @Description  Unlink a group from a community. Both group IDs must be without @g.us suffix.
 // @Tags         community
 // @Accept       json
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
-// @Param        body   body      dto.LinkGroupRequest true  "Unlink data"
-// @Success      200    {object}  object
-// @Failure      400    {object}  dto.ErrorResponse
-// @Failure      500    {object}  dto.ErrorResponse
+// @Param        body   body      dto.LinkGroupRequest true  "Parent and child group IDs"
+// @Success      200    {object}  object  "Group unlinked successfully"
+// @Failure      400    {object}  dto.ErrorResponse  "Invalid group IDs"
+// @Failure      404    {object}  dto.ErrorResponse  "Session not found"
+// @Failure      500    {object}  dto.ErrorResponse  "Failed to unlink group"
 // @Security     Authorization
 // @Router       /{session}/community/unlink [post]
 func (h *CommunityHandler) UnlinkGroup(c *gin.Context) {
@@ -87,9 +89,11 @@ func (h *CommunityHandler) UnlinkGroup(c *gin.Context) {
 // @Tags         community
 // @Produce      json
 // @Param        session   path      string  true  "Session ID"
-// @Param        communityId  query      string  true  "Community ID"
-// @Success      200          {object}  dto.CommunityResponse
-// @Failure      500          {object}  dto.ErrorResponse
+// @Param        communityId  query      string  true  "Community ID (without @g.us suffix)"
+// @Success      200          {object}  dto.CommunityResponse  "List of subgroups"
+// @Failure      400          {object}  dto.ErrorResponse  "Missing communityId parameter"
+// @Failure      404          {object}  dto.ErrorResponse  "Session not found"
+// @Failure      500          {object}  dto.ErrorResponse  "Failed to get subgroups"
 // @Security     Authorization
 // @Router       /{session}/community/groups [get]
 func (h *CommunityHandler) GetSubGroups(c *gin.Context) {

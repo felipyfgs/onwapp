@@ -67,6 +67,18 @@ import (
 // @tag.description Webhook integrations
 // @tag.name chatwoot
 // @tag.description Chatwoot integration
+// @tag.name media
+// @tag.description File storage & downloads
+// @tag.name newsletter
+// @tag.description Channels & broadcasts
+// @tag.name settings
+// @tag.description Session settings & privacy configuration
+// @tag.name status
+// @tag.description Stories & status updates
+// @tag.name community
+// @tag.description Community & linked groups
+// @tag.name call
+// @tag.description Voice & video calls
 
 // @x-extension-openapi {"disableSwaggerDefaultValue": true}
 

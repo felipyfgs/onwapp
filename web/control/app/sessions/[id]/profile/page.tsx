@@ -32,7 +32,9 @@ export default function ProfilePage() {
   const fetchProfile = async () => {
     try {
       const data = await getProfile(sessionId)
-      setProfile(data)
+      if (data.success && data.data) {
+        setProfile(data.data)
+      }
     } catch (err) {
       console.error("Failed to load profile:", err)
     }

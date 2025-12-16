@@ -14,7 +14,7 @@ import { formatFileSize } from "@/lib/api/media"
 export interface MediaFile {
   id: string
   msgId: string
-  mediaType: "image" | "video" | "audio" | "document"
+  mediaType: "image" | "video" | "audio" | "document" | "sticker"
   mimeType: string
   fileName?: string
   fileSize: number
