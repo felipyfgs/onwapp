@@ -32,12 +32,12 @@ export function ChatwootForm({ sessionId, onUpdate }: ChatwootFormProps) {
       try {
         setLoading(true)
         const config = await getChatwootConfig(sessionId)
-        if (config) {
-          setEnabled(config.enabled || false)
-          setUrl(config.url || "")
-          setToken(config.token || "")
-          setAccount(String(config.account || ""))
-          setInboxId(String(config.inboxId || ""))
+        if (config.success && config.data) {
+          setEnabled(config.data.enabled || false)
+          setUrl(config.data.url || "")
+          setToken(config.data.token || "")
+          setAccount(String(config.data.account || ""))
+          setInboxId(String(config.data.inboxId || ""))
         }
       } catch (err) {
         console.error("Failed to load Chatwoot config:", err)
@@ -52,13 +52,12 @@ export function ChatwootForm({ sessionId, onUpdate }: ChatwootFormProps) {
     try {
       setValidating(true)
       setValidated(null)
-      const result = await validateCredentials(sessionId, {
+      const result = await validateCredentials({
         url,
         token,
         account: parseInt(account),
-        inboxId: parseInt(inboxId),
       })
-      setValidated(result.valid)
+      setValidated(result.data?.valid ?? false)
     } catch (err) {
       console.error("Validation failed:", err)
       setValidated(false)

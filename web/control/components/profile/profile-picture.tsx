@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { setProfilePicture, removeProfilePicture } from "@/lib/api/profile"
+import { setProfilePicture, deleteProfilePicture } from "@/lib/api/profile"
 
 interface ProfilePictureProps {
   sessionId: string
@@ -36,12 +36,22 @@ export function ProfilePicture({ sessionId, pictureUrl, name, onUpdate }: Profil
 
     try {
       setLoading(true)
-      await setProfilePicture(sessionId, file)
-      onUpdate?.()
+      const reader = new FileReader()
+      reader.onload = async () => {
+        const base64 = (reader.result as string).split(",")[1]
+        await setProfilePicture(sessionId, base64)
+        onUpdate?.()
+        setLoading(false)
+      }
+      reader.onerror = () => {
+        console.error("Failed to read file")
+        setLoading(false)
+      }
+      reader.readAsDataURL(file)
     } catch (err) {
       console.error("Failed to update profile picture:", err)
-    } finally {
       setLoading(false)
+    } finally {
       if (fileInputRef.current) {
         fileInputRef.current.value = ""
       }
@@ -51,7 +61,7 @@ export function ProfilePicture({ sessionId, pictureUrl, name, onUpdate }: Profil
   const handleRemove = async () => {
     try {
       setLoading(true)
-      await removeProfilePicture(sessionId)
+      await deleteProfilePicture(sessionId)
       onUpdate?.()
     } catch (err) {
       console.error("Failed to remove profile picture:", err)

@@ -12,16 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-export interface Group {
-  jid: string
-  name: string
-  topic?: string
-  pictureUrl?: string
-  participantCount: number
-  isAdmin?: boolean
-  isOwner?: boolean
-  isCommunity?: boolean
-}
+import { Group } from "@/lib/api/groups"
 
 interface GroupItemProps {
   group: Group
@@ -44,7 +35,7 @@ export function GroupItem({ group, onLeave, onGetInviteLink, onClick }: GroupIte
       onClick={() => onClick?.(group)}
     >
       <Avatar className="h-12 w-12">
-        <AvatarImage src={group.pictureUrl} alt={group.name} />
+        <AvatarImage src={group.profilePictureUrl} alt={group.name} />
         <AvatarFallback className="bg-primary/10 text-primary">
           {initials}
         </AvatarFallback>
@@ -53,21 +44,16 @@ export function GroupItem({ group, onLeave, onGetInviteLink, onClick }: GroupIte
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="font-medium truncate">{group.name}</span>
-          {group.isOwner && (
+          {group.isSuperAdmin && (
             <Badge variant="default" className="gap-1 text-xs">
               <Crown className="h-3 w-3" />
               Owner
             </Badge>
           )}
-          {group.isAdmin && !group.isOwner && (
+          {group.isAdmin && !group.isSuperAdmin && (
             <Badge variant="secondary" className="gap-1 text-xs">
               <Shield className="h-3 w-3" />
               Admin
-            </Badge>
-          )}
-          {group.isCommunity && (
-            <Badge variant="outline" className="text-xs">
-              Community
             </Badge>
           )}
         </div>

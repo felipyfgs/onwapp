@@ -132,7 +132,7 @@ export function QuickActions({ sessionId, sessionName, status, onStatusChange }:
         onOpenChange={setDisconnectDialogOpen}
         title="Disconnect Session"
         description={`Are you sure you want to disconnect "${sessionName}"? You will need to scan the QR code again to reconnect.`}
-        confirmLabel="Disconnect"
+        confirmText="Disconnect"
         variant="destructive"
         onConfirm={handleDisconnect}
         loading={loading}

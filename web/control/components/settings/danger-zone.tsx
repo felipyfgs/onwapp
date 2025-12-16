@@ -96,7 +96,7 @@ export function DangerZone({ sessionId, sessionName, isConnected }: DangerZonePr
         onOpenChange={setLogoutDialogOpen}
         title="Logout from WhatsApp"
         description={`Are you sure you want to logout session "${sessionName}"? You will need to scan QR code again to reconnect.`}
-        confirmLabel="Logout"
+        confirmText="Logout"
         onConfirm={handleLogout}
         loading={loading}
       />
@@ -106,7 +106,7 @@ export function DangerZone({ sessionId, sessionName, isConnected }: DangerZonePr
         onOpenChange={setDeleteDialogOpen}
         title="Delete Session"
         description={`Are you sure you want to delete session "${sessionName}"? This action cannot be undone and all data will be permanently lost.`}
-        confirmLabel="Delete"
+        confirmText="Delete"
         variant="destructive"
         onConfirm={handleDelete}
         loading={loading}

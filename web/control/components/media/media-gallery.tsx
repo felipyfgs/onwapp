@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useParams } from "next/navigation"
 import { FileImage } from "lucide-react"
-import { getMediaList, getMediaStreamUrl, retryDownload, type Media } from "@/lib/api/media"
+import { getMediaList, getMediaStreamUrl, retryMediaDownload, MediaFile as ApiMediaFile } from "@/lib/api/media"
 import { MediaItem, type MediaFile } from "./media-item"
 import { MediaFilter, type MediaType } from "./media-filter"
 import { EmptyState } from "@/components/empty-state"
@@ -24,8 +24,9 @@ export function MediaGallery() {
     async function fetchMedia() {
       try {
         setLoading(true)
-        const data = await getMediaList(sessionId)
-        setMedia(data.map((m: Media) => ({
+        const response = await getMediaList(sessionId)
+        if (response.success && response.data) {
+          setMedia(response.data.map((m: ApiMediaFile) => ({
           id: m.id,
           msgId: m.msgId,
           mediaType: m.mediaType,
@@ -37,7 +38,8 @@ export function MediaGallery() {
           storageUrl: m.storageUrl,
           thumbnailUrl: m.thumbnailUrl,
           createdAt: m.createdAt,
-        })))
+          })))
+        }
         setError(null)
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load media")
@@ -65,7 +67,7 @@ export function MediaGallery() {
 
   const handleRetry = async (item: MediaFile) => {
     try {
-      await retryDownload(sessionId, item.id)
+      await retryMediaDownload(sessionId, item.id)
       setMedia((prev) =>
         prev.map((m) =>
           m.id === item.id ? { ...m, downloadError: undefined } : m

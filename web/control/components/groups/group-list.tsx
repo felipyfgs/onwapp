@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
+import { useParams } from "next/navigation"
 import { UsersRound, RefreshCw } from "lucide-react"
 
 import { Group, getGroups, leaveGroup, getInviteLink } from "@/lib/api/groups"
@@ -11,11 +12,9 @@ import { LoadingList } from "@/components/loading-state"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { GroupItem } from "./group-item"
 
-interface GroupListProps {
-  sessionId: string
-}
-
-export function GroupList({ sessionId }: GroupListProps) {
+export function GroupList() {
+  const params = useParams()
+  const sessionId = params.id as string
   const [groups, setGroups] = useState<Group[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -110,7 +109,7 @@ export function GroupList({ sessionId }: GroupListProps) {
                   key={group.jid}
                   group={group}
                   onLeave={setLeaveTarget}
-                  onGetInvite={handleGetInvite}
+                  onGetInviteLink={handleGetInvite}
                 />
               ))}
             </div>

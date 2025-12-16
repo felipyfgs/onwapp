@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
+import { useParams } from "next/navigation"
 import { MessageSquare, RefreshCw } from "lucide-react"
 
 import { Chat, getChats, markChatRead, archiveChat } from "@/lib/api/chats"
@@ -10,11 +11,9 @@ import { EmptyState } from "@/components/empty-state"
 import { LoadingList } from "@/components/loading-state"
 import { ChatItem } from "./chat-item"
 
-interface ChatListProps {
-  sessionId: string
-}
-
-export function ChatList({ sessionId }: ChatListProps) {
+export function ChatList() {
+  const params = useParams()
+  const sessionId = params.id as string
   const [chats, setChats] = useState<Chat[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

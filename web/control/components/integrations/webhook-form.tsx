@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { getWebhook, setWebhook, type Webhook } from "@/lib/api/webhook"
+import { getWebhook, setWebhook } from "@/lib/api/webhook"
 
 interface WebhookFormProps {
   sessionId: string
@@ -28,11 +28,11 @@ export function WebhookForm({ sessionId, onUpdate }: WebhookFormProps) {
       try {
         setLoading(true)
         const webhook = await getWebhook(sessionId)
-        if (webhook) {
-          setUrl(webhook.url || "")
-          setSecret(webhook.secret || "")
-          setEnabled(webhook.enabled || false)
-          setEvents(webhook.events || [])
+        if (webhook.success && webhook.data) {
+          setUrl(webhook.data.url || "")
+          setSecret(webhook.data.secret || "")
+          setEnabled(webhook.data.enabled || false)
+          setEvents(webhook.data.events || [])
         }
       } catch (err) {
         console.error("Failed to load webhook:", err)

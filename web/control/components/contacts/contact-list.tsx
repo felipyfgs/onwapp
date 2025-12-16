@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
+import { useParams } from "next/navigation"
 import { Users, RefreshCw } from "lucide-react"
 
 import { Contact, getContacts, updateBlocklist } from "@/lib/api/contacts"
@@ -10,11 +11,9 @@ import { EmptyState } from "@/components/empty-state"
 import { LoadingList } from "@/components/loading-state"
 import { ContactItem } from "./contact-item"
 
-interface ContactListProps {
-  sessionId: string
-}
-
-export function ContactList({ sessionId }: ContactListProps) {
+export function ContactList() {
+  const params = useParams()
+  const sessionId = params.id as string
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

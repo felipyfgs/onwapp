@@ -44,20 +44,20 @@ export default function SessionOverviewPage() {
   const fetchData = async () => {
     try {
       setLoading(true)
-      const [sessionData, chatsData, contactsData, groupsData] = await Promise.all([
-        getSession(sessionId).catch(() => null),
-        getChats(sessionId).catch(() => []),
-        getContacts(sessionId).catch(() => []),
-        getGroups(sessionId).catch(() => []),
+      const [sessionRes, chatsRes, contactsRes, groupsRes] = await Promise.all([
+        getSession(sessionId).catch(() => ({ success: false, data: null })),
+        getChats(sessionId).catch(() => ({ success: false, data: [] })),
+        getContacts(sessionId).catch(() => ({ success: false, data: [] })),
+        getGroups(sessionId).catch(() => ({ success: false, data: [] })),
       ])
 
-      if (sessionData) {
-        setSession(sessionData)
+      if (sessionRes.success && sessionRes.data) {
+        setSession(sessionRes.data)
       }
       setStats({
-        chats: chatsData.length,
-        contacts: contactsData.length,
-        groups: groupsData.length,
+        chats: chatsRes.data?.length || 0,
+        contacts: contactsRes.data?.length || 0,
+        groups: groupsRes.data?.length || 0,
         media: 0,
       })
     } catch (err) {
