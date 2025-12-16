@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
-import { Activity } from "lucide-react"
+import { Activity, QrCode } from "lucide-react"
 
 import {
   Breadcrumb,
@@ -15,8 +15,10 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { Button } from "@/components/ui/button"
 import { SessionStats } from "@/components/overview/session-stats"
 import { QuickActions } from "@/components/overview/quick-actions"
+import { QRCodeDialog } from "@/components/qr-code-dialog"
 import { getSession } from "@/lib/api/sessions"
 import { getChats } from "@/lib/api/chats"
 import { getContacts } from "@/lib/api/contacts"
@@ -40,6 +42,7 @@ export default function SessionOverviewPage() {
     media: 0,
   })
   const [loading, setLoading] = useState(true)
+  const [qrDialogOpen, setQrDialogOpen] = useState(false)
 
   const fetchData = async () => {
     try {
@@ -108,6 +111,16 @@ export default function SessionOverviewPage() {
               Monitor and manage your WhatsApp session
             </p>
           </div>
+          {session?.status === "connected" && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setQrDialogOpen(true)}
+            >
+              <QrCode className="mr-2 h-4 w-4" />
+              Show QR Code
+            </Button>
+          )}
         </div>
 
         <SessionStats
@@ -170,6 +183,16 @@ export default function SessionOverviewPage() {
           </Card>
         </div>
       </div>
+
+      <QRCodeDialog
+        open={qrDialogOpen}
+        onOpenChange={setQrDialogOpen}
+        sessionId={sessionId}
+        onConnected={() => {
+          setQrDialogOpen(false)
+          fetchData()
+        }}
+      />
     </>
   )
 }

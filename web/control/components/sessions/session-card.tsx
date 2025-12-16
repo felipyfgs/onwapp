@@ -9,6 +9,7 @@ import {
   Settings,
   Trash2,
   Smartphone,
+  QrCode,
 } from "lucide-react"
 
 import { Session } from "@/lib/api/sessions"
@@ -78,125 +79,164 @@ export function SessionCard({
   onDisconnect,
   onDelete,
 }: SessionCardProps) {
+  const [qrDialogOpen, setQrDialogOpen] = useState(false)
   const isConnected = session.status === "connected"
   const isConnecting = session.status === "connecting"
 
+  const handleConnect = async () => {
+    await onConnect?.(session)
+    // Open QR dialog after initiating connection
+    setQrDialogOpen(true)
+  }
+
   return (
-    <Card className="group relative overflow-hidden transition-shadow hover:shadow-md">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Avatar className="h-12 w-12">
-                <AvatarImage src={session.profilePictureUrl} />
-                <AvatarFallback>
-                  {getInitials(session.pushName || session.session)}
-                </AvatarFallback>
-              </Avatar>
-              <span
-                className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background ${getStatusColor(session.status)}`}
-              />
+    <>
+      <Card className="group relative overflow-hidden transition-shadow hover:shadow-md">
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Avatar className="h-12 w-12">
+                  <AvatarImage src={session.profilePictureUrl} />
+                  <AvatarFallback>
+                    {getInitials(session.pushName || session.session)}
+                  </AvatarFallback>
+                </Avatar>
+                <span
+                  className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background ${getStatusColor(session.status)}`}
+                />
+              </div>
+              <div className="space-y-1">
+                <CardTitle className="text-base">{session.session}</CardTitle>
+                {session.pushName && (
+                  <CardDescription>{session.pushName}</CardDescription>
+                )}
+              </div>
             </div>
-            <div className="space-y-1">
-              <CardTitle className="text-base">{session.session}</CardTitle>
-              {session.pushName && (
-                <CardDescription>{session.pushName}</CardDescription>
-              )}
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="opacity-0 transition-opacity group-hover:opacity-100"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                  <span className="sr-only">Actions</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href={`/sessions/${session.session}`}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+                {isConnected && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setQrDialogOpen(true)}>
+                      <QrCode className="mr-2 h-4 w-4" />
+                      Show QR Code
+                    </DropdownMenuItem>
+                  </>
+                )}
+                <DropdownMenuSeparator />
+                {isConnected ? (
+                  <DropdownMenuItem onClick={() => onDisconnect?.(session)}>
+                    <PowerOff className="mr-2 h-4 w-4" />
+                    Disconnect
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem
+                    onClick={handleConnect}
+                    disabled={isConnecting}
+                  >
+                    <Power className="mr-2 h-4 w-4" />
+                    Connect
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => onDelete?.(session)}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="opacity-0 transition-opacity group-hover:opacity-100"
-              >
-                <MoreHorizontal className="h-4 w-4" />
-                <span className="sr-only">Actions</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link href={`/sessions/${session.session}`}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              {isConnected ? (
-                <DropdownMenuItem onClick={() => onDisconnect?.(session)}>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Badge variant={getStatusBadgeVariant(session.status)}>
+              {session.status}
+            </Badge>
+            {session.phone && (
+              <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                <Smartphone className="h-3 w-3" />
+                {session.phone}
+              </span>
+            )}
+          </div>
+          {session.about && (
+            <p className="line-clamp-2 text-sm text-muted-foreground">
+              {session.about}
+            </p>
+          )}
+          <div className="flex gap-2 pt-2">
+            <Button asChild variant="outline" size="sm" className="flex-1">
+              <Link href={`/sessions/${session.session}`}>
+                <Settings className="mr-2 h-4 w-4" />
+                Configure
+              </Link>
+            </Button>
+            {isConnected ? (
+              <>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setQrDialogOpen(true)}
+                >
+                  <QrCode className="mr-2 h-4 w-4" />
+                  QR Code
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => onDisconnect?.(session)}
+                >
                   <PowerOff className="mr-2 h-4 w-4" />
                   Disconnect
-                </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem
-                  onClick={() => onConnect?.(session)}
-                  disabled={isConnecting}
-                >
-                  <Power className="mr-2 h-4 w-4" />
-                  Connect
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => onDelete?.(session)}
-                className="text-destructive focus:text-destructive"
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="default"
+                size="sm"
+                className="flex-1"
+                onClick={handleConnect}
+                disabled={isConnecting}
               >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex items-center justify-between">
-          <Badge variant={getStatusBadgeVariant(session.status)}>
-            {session.status}
-          </Badge>
-          {session.phone && (
-            <span className="flex items-center gap-1 text-sm text-muted-foreground">
-              <Smartphone className="h-3 w-3" />
-              {session.phone}
-            </span>
-          )}
-        </div>
-        {session.about && (
-          <p className="line-clamp-2 text-sm text-muted-foreground">
-            {session.about}
-          </p>
-        )}
-        <div className="flex gap-2 pt-2">
-          <Button asChild variant="outline" size="sm" className="flex-1">
-            <Link href={`/sessions/${session.session}`}>
-              <Settings className="mr-2 h-4 w-4" />
-              Configure
-            </Link>
-          </Button>
-          {isConnected ? (
-            <Button
-              variant="secondary"
-              size="sm"
-              className="flex-1"
-              onClick={() => onDisconnect?.(session)}
-            >
-              <PowerOff className="mr-2 h-4 w-4" />
-              Disconnect
-            </Button>
-          ) : (
-            <Button
-              variant="default"
-              size="sm"
-              className="flex-1"
-              onClick={() => onConnect?.(session)}
-              disabled={isConnecting}
-            >
-              <Power className="mr-2 h-4 w-4" />
-              {isConnecting ? "Connecting..." : "Connect"}
-            </Button>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+                <Power className="mr-2 h-4 w-4" />
+                {isConnecting ? "Connecting..." : "Connect"}
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <QRCodeDialog
+        open={qrDialogOpen}
+        onOpenChange={setQrDialogOpen}
+        sessionId={session.session}
+        onConnected={() => {
+          setQrDialogOpen(false)
+          // Trigger parent refresh if needed
+        }}
+      />
+    </>
   )
 }

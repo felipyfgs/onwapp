@@ -2,6 +2,13 @@ import { apiClient, ApiResponse } from "./client"
 
 export type SessionStatus = "disconnected" | "connecting" | "connected"
 
+export interface SessionStats {
+  messages: number
+  chats: number
+  contacts: number
+  groups: number
+}
+
 export interface Session {
   id: number
   session: string
@@ -17,6 +24,7 @@ export interface Session {
   updatedAt: string
   lastConnectedAt?: string
   lastDisconnectedAt?: string
+  stats?: SessionStats
 }
 
 export interface CreateSessionRequest {
