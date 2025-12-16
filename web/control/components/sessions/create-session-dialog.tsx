@@ -1,8 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, ReactNode } from "react"
 import { useRouter } from "next/navigation"
-import { Plus } from "lucide-react"
 
 import { createSession } from "@/lib/api/sessions"
 import { Button } from "@/components/ui/button"
@@ -20,9 +19,10 @@ import { Label } from "@/components/ui/label"
 
 interface CreateSessionDialogProps {
   onSuccess?: () => void
+  children?: ReactNode
 }
 
-export function CreateSessionDialog({ onSuccess }: CreateSessionDialogProps) {
+export function CreateSessionDialog({ onSuccess, children }: CreateSessionDialogProps) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [sessionName, setSessionName] = useState("")
@@ -53,10 +53,11 @@ export function CreateSessionDialog({ onSuccess }: CreateSessionDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          New Session
-        </Button>
+        {children || (
+          <Button>
+            New Session
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <form onSubmit={handleSubmit}>

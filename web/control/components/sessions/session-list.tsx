@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, forwardRef, useImperativeHandle } from "react"
-import { RefreshCw } from "lucide-react"
+import { RefreshCw, WifiOff, Users } from "lucide-react"
 
 import {
   Session,
@@ -18,7 +18,12 @@ export interface SessionListRef {
   refresh: () => void
 }
 
-export const SessionList = forwardRef<SessionListRef>(function SessionList(_, ref) {
+interface SessionListProps {
+  searchTerm?: string
+  statusFilter?: "all" | "connected" | "connecting" | "disconnected"
+}
+
+export const SessionList = forwardRef<SessionListRef, SessionListProps>(function SessionList({ searchTerm = "", statusFilter = "all" }, ref) {
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -67,34 +72,44 @@ export const SessionList = forwardRef<SessionListRef>(function SessionList(_, re
 
   if (loading) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className="space-y-3 rounded-lg border p-4">
-            <div className="flex items-center gap-3">
-              <Skeleton className="h-12 w-12 rounded-full" />
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-3 w-32" />
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">Carregando sessões...</p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="space-y-3 rounded-lg border p-4">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-12 w-12 rounded-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-3 w-32" />
+                </div>
+              </div>
+              <Skeleton className="h-6 w-20" />
+              <div className="flex gap-2">
+                <Skeleton className="h-9 flex-1" />
+                <Skeleton className="h-9 flex-1" />
+                <Skeleton className="h-9 flex-1" />
               </div>
             </div>
-            <Skeleton className="h-6 w-20" />
-            <div className="flex gap-2">
-              <Skeleton className="h-9 flex-1" />
-              <Skeleton className="h-9 flex-1" />
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-8 text-center">
-        <p className="text-sm text-muted-foreground">{error}</p>
+      <div className="flex flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed p-12 text-center">
+        <WifiOff className="h-12 w-12 text-muted-foreground" />
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold">Erro ao carregar</h3>
+          <p className="text-sm text-muted-foreground">{error}</p>
+        </div>
         <Button variant="outline" onClick={fetchSessions}>
           <RefreshCw className="mr-2 h-4 w-4" />
-          Try Again
+          Tentar novamente
         </Button>
       </div>
     )
@@ -102,39 +117,63 @@ export const SessionList = forwardRef<SessionListRef>(function SessionList(_, re
 
   if (sessions.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-8 text-center">
+      <div className="flex flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed p-12 text-center">
+        <Users className="h-12 w-12 text-muted-foreground" />
         <div className="space-y-2">
-          <h3 className="text-lg font-semibold">No sessions yet</h3>
+          <h3 className="text-lg font-semibold">Nenhuma sessão ainda</h3>
           <p className="text-sm text-muted-foreground">
-            Create your first WhatsApp session to get started.
+            Crie sua primeira sessão WhatsApp para começar.
           </p>
         </div>
       </div>
     )
   }
 
+  // Apply filters
+  const filteredSessions = sessions.filter(session => {
+    // Status filter
+    if (statusFilter !== "all" && session.status !== statusFilter) {
+      return false
+    }
+    
+    // Search filter
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase()
+      return (
+        session.session.toLowerCase().includes(term) ||
+        (session.pushName?.toLowerCase().includes(term)) ||
+        (session.phone?.toLowerCase().includes(term))
+      )
+    }
+    
+    return true
+  })
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          {sessions.length} session{sessions.length !== 1 ? "s" : ""}
-        </p>
-        <Button variant="ghost" size="sm" onClick={fetchSessions}>
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Refresh
-        </Button>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {sessions.map((session) => (
-          <SessionCard
-            key={session.id}
-            session={session}
-            onConnect={handleConnect}
-            onDisconnect={handleDisconnect}
-            onDelete={handleDelete}
-          />
-        ))}
-      </div>
+      {/* Sessions Grid */}
+      {filteredSessions.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-12 text-center">
+          <Users className="h-10 w-10 text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">
+            {searchTerm || statusFilter !== "all" 
+              ? "Nenhum resultado encontrado" 
+              : "Nenhuma sessão criada ainda"}
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredSessions.map((session) => (
+            <SessionCard
+              key={session.id}
+              session={session}
+              onConnect={handleConnect}
+              onDisconnect={handleDisconnect}
+              onDelete={handleDelete}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 })

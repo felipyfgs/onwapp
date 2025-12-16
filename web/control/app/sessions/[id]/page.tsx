@@ -2,23 +2,16 @@
 
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
-import { Activity, QrCode } from "lucide-react"
+import Link from "next/link"
+import { Activity, ArrowLeft, QrCode } from "lucide-react"
 
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { SessionStats } from "@/components/overview/session-stats"
 import { QuickActions } from "@/components/overview/quick-actions"
 import { QRCodeDialog } from "@/components/qr-code-dialog"
+import { ModeToggle } from "@/components/mode-toggle"
 import { getSession } from "@/lib/api/sessions"
 import { getChats } from "@/lib/api/chats"
 import { getContacts } from "@/lib/api/contacts"
@@ -82,47 +75,43 @@ export default function SessionOverviewPage() {
   }, [sessionId])
 
   return (
-    <>
-      <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-        <div className="flex items-center gap-2 px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator
-            orientation="vertical"
-            className="mr-2 data-[orientation=vertical]:h-4"
-          />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href="/sessions">Sessions</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator className="hidden md:block" />
-              <BreadcrumbItem>
-                <BreadcrumbPage>{sessionId}</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container mx-auto flex h-14 items-center justify-between px-6">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" asChild className="h-8 w-8">
+              <Link href="/sessions">
+                <ArrowLeft className="h-4 w-4" />
+                <span className="sr-only">Voltar</span>
+              </Link>
+            </Button>
+            <div>
+              <h1 className="text-base font-semibold tracking-tight">{sessionId}</h1>
+              <p className="text-xs text-muted-foreground">
+                {session?.pushName || "WhatsApp Session"}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <ModeToggle />
+            {session?.status === "connected" && (
+              <Button
+                variant="secondary"
+                size="sm"
+                className="h-8"
+                onClick={() => setQrDialogOpen(true)}
+              >
+                <QrCode className="mr-2 h-4 w-4" />
+                QR Code
+              </Button>
+            )}
+          </div>
         </div>
       </header>
-      <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold">Session Overview</h1>
-            <p className="text-sm text-muted-foreground">
-              Monitor and manage your WhatsApp session
-            </p>
-          </div>
-          {session?.status === "connected" && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setQrDialogOpen(true)}
-            >
-              <QrCode className="mr-2 h-4 w-4" />
-              Show QR Code
-            </Button>
-          )}
-        </div>
 
+      {/* Main Content */}
+      <main className="container mx-auto px-6 py-6 space-y-4">
         <SessionStats
           chatsCount={stats.chats}
           contactsCount={stats.contacts}
@@ -182,17 +171,17 @@ export default function SessionOverviewPage() {
             </CardContent>
           </Card>
         </div>
-      </div>
 
-      <QRCodeDialog
-        open={qrDialogOpen}
-        onOpenChange={setQrDialogOpen}
-        sessionId={sessionId}
-        onConnected={() => {
-          setQrDialogOpen(false)
-          fetchData()
-        }}
-      />
-    </>
+        <QRCodeDialog
+          open={qrDialogOpen}
+          onOpenChange={setQrDialogOpen}
+          sessionId={sessionId}
+          onConnected={() => {
+            setQrDialogOpen(false)
+            fetchData()
+          }}
+        />
+      </main>
+    </div>
   )
 }
