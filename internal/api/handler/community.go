@@ -111,7 +111,17 @@ func (h *CommunityHandler) GetSubGroups(c *gin.Context) {
 		return
 	}
 
+	// Convert to DTO format
+	var communityGroups []dto.CommunityGroup
+	for _, g := range groups {
+		communityGroups = append(communityGroups, dto.CommunityGroup{
+			ID:      g.JID.String(),
+			Name:    g.Name.Name,
+			Members: int(g.Participants),
+		})
+	}
+
 	c.JSON(http.StatusOK, dto.CommunityResponse{
-		Groups: groups,
+		Groups: communityGroups,
 	})
 }

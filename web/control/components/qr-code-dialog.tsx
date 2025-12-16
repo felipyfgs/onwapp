@@ -1,9 +1,10 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { QrCode, Smartphone, RefreshCw, CheckCircle, XCircle } from "lucide-react"
+import { QrCode, Smartphone, RefreshCw, CheckCircle, XCircle, Wifi } from "lucide-react"
 
 import { getQRCode, pairPhone, getSession } from "@/lib/api/sessions"
+import { useAdminWebSocket } from "@/hooks/use-admin-websocket"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,

@@ -46,9 +46,8 @@ func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.NewsletterResponse{
-
-		Data: newsletter,
+	c.JSON(http.StatusOK, gin.H{
+		"data": newsletter,
 	})
 }
 
@@ -138,8 +137,8 @@ func (h *NewsletterHandler) GetNewsletterInfo(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.NewsletterResponse{
-		Data: info,
+	c.JSON(http.StatusOK, gin.H{
+		"data": info,
 	})
 }
 
@@ -196,9 +195,8 @@ func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.NewsletterResponse{
-
-		Data: messages,
+	c.JSON(http.StatusOK, gin.H{
+		"data": messages,
 	})
 }
 
