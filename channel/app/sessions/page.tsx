@@ -1,15 +1,28 @@
 "use client"
 
 import { useRef, useState } from "react"
-import Link from "next/link"
-import { ArrowLeft, Plus, RefreshCw, Search, Filter } from "lucide-react"
+import { Plus, RefreshCw, Search, Filter } from "lucide-react"
 
+import { AppSidebar } from "@/components/app-sidebar"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
+import { Separator } from "@/components/ui/separator"
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { SessionList, SessionListRef } from "@/components/sessions/session-list"
 import { CreateSessionDialog } from "@/components/sessions/create-session-dialog"
-import { ModeToggle } from "@/components/mode-toggle"
 
 export default function SessionsPage() {
   const sessionListRef = useRef<SessionListRef>(null)
@@ -25,36 +38,34 @@ export default function SessionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto flex h-14 items-center justify-between px-6">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" asChild className="h-8 w-8">
-              <Link href="/dashboard">
-                <ArrowLeft className="h-4 w-4" />
-                <span className="sr-only">Voltar</span>
-              </Link>
-            </Button>
-            <h1 className="text-lg font-semibold tracking-tight">Sessões WhatsApp</h1>
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+          <div className="flex items-center gap-2 px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator
+              orientation="vertical"
+              className="mr-2 data-[orientation=vertical]:h-4"
+            />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem className="hidden md:block">
+                  <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator className="hidden md:block" />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>Sessões</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
           </div>
-          <div className="flex items-center gap-2">
-            <ModeToggle />
-            <CreateSessionDialog onSuccess={handleSessionCreated}>
-              <Button size="sm" className="h-8">
-                <Plus className="mr-2 h-4 w-4" />
-                Nova
-              </Button>
-            </CreateSessionDialog>
-          </div>
-        </div>
+        </header>
 
-        {/* Toolbar */}
-        <div className="border-t bg-background">
-          <div className="container mx-auto px-6 py-3">
-            <div className="flex flex-wrap items-center gap-3">
-              {/* Search */}
-              <div className="flex-1 min-w-[200px] relative">
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-1 items-center gap-3 min-w-[200px] max-w-md">
+              <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Buscar sessão..."
@@ -63,64 +74,63 @@ export default function SessionsPage() {
                   className="pl-9"
                 />
               </div>
+            </div>
 
-              {/* Filters */}
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-muted-foreground" />
-                <Button
-                  variant={statusFilter === "all" ? "secondary" : "ghost"}
-                  size="sm"
-                  className="h-8"
-                  onClick={() => setStatusFilter("all")}
-                >
-                  Todos
-                </Button>
-                <Button
-                  variant={statusFilter === "connected" ? "secondary" : "ghost"}
-                  size="sm"
-                  className="h-8"
-                  onClick={() => setStatusFilter("connected")}
-                >
-                  <Badge variant="default" className="mr-1 px-1.5 py-0 h-4 text-[10px]">•</Badge>
-                  Conectado
-                </Button>
-                <Button
-                  variant={statusFilter === "connecting" ? "secondary" : "ghost"}
-                  size="sm"
-                  className="h-8"
-                  onClick={() => setStatusFilter("connecting")}
-                >
-                  <Badge variant="secondary" className="mr-1 px-1.5 py-0 h-4 text-[10px]">•</Badge>
-                  Conectando
-                </Button>
-                <Button
-                  variant={statusFilter === "disconnected" ? "secondary" : "ghost"}
-                  size="sm"
-                  className="h-8"
-                  onClick={() => setStatusFilter("disconnected")}
-                >
-                  <Badge variant="destructive" className="mr-1 px-1.5 py-0 h-4 text-[10px]">•</Badge>
-                  Desconectado
-                </Button>
-              </div>
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Button
+                variant={statusFilter === "all" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setStatusFilter("all")}
+              >
+                Todos
+              </Button>
+              <Button
+                variant={statusFilter === "connected" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setStatusFilter("connected")}
+              >
+                <Badge variant="default" className="mr-1 px-1.5 py-0 h-4 text-[10px]">•</Badge>
+                Conectado
+              </Button>
+              <Button
+                variant={statusFilter === "connecting" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setStatusFilter("connecting")}
+              >
+                <Badge variant="secondary" className="mr-1 px-1.5 py-0 h-4 text-[10px]">•</Badge>
+                Conectando
+              </Button>
+              <Button
+                variant={statusFilter === "disconnected" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setStatusFilter("disconnected")}
+              >
+                <Badge variant="destructive" className="mr-1 px-1.5 py-0 h-4 text-[10px]">•</Badge>
+                Desconectado
+              </Button>
 
-              {/* Refresh */}
-              <Button variant="outline" size="sm" className="h-8" onClick={handleRefresh}>
+              <Separator orientation="vertical" className="h-6 mx-2" />
+
+              <Button variant="outline" size="sm" onClick={handleRefresh}>
                 <RefreshCw className="h-4 w-4" />
               </Button>
+              <CreateSessionDialog onSuccess={handleSessionCreated}>
+                <Button size="sm">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Nova Sessão
+                </Button>
+              </CreateSessionDialog>
             </div>
           </div>
-        </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-6 py-6">
-        <SessionList 
-          ref={sessionListRef} 
-          searchTerm={searchTerm}
-          statusFilter={statusFilter}
-        />
-      </main>
-    </div>
+          <SessionList 
+            ref={sessionListRef} 
+            searchTerm={searchTerm}
+            statusFilter={statusFilter}
+          />
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }

@@ -10,13 +10,12 @@ import {
   UserCircle,
   Settings2,
   Webhook,
-  MessageCircle,
   Smartphone,
+  Send,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
-import { SessionSwitcher } from "@/components/session-switcher"
 import { TeamSwitcher } from "@/components/team-switcher"
 import {
   Sidebar,
@@ -26,7 +25,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
-const globalData = {
+const data = {
   user: {
     name: "Admin",
     email: "admin@onwapp.io",
@@ -44,93 +43,71 @@ const globalData = {
       title: "Dashboard",
       url: "/dashboard",
       icon: LayoutDashboard,
-      isActive: true,
     },
     {
       title: "Sessions",
       url: "/sessions",
       icon: Smartphone,
     },
-  ],
-}
-
-function getSessionNavItems(sessionId: string) {
-  return [
-    {
-      title: "Overview",
-      url: `/sessions/${sessionId}`,
-      icon: LayoutDashboard,
-    },
     {
       title: "Chats",
-      url: `/sessions/${sessionId}/chats`,
+      url: "/chats",
       icon: MessageSquare,
     },
     {
+      title: "Messages",
+      url: "/messages",
+      icon: Send,
+    },
+    {
       title: "Contacts",
-      url: `/sessions/${sessionId}/contacts`,
+      url: "/contacts",
       icon: Users,
     },
     {
       title: "Groups",
-      url: `/sessions/${sessionId}/groups`,
+      url: "/groups",
       icon: UsersRound,
     },
     {
       title: "Media",
-      url: `/sessions/${sessionId}/media`,
+      url: "/media",
       icon: Image,
     },
     {
       title: "Profile",
-      url: `/sessions/${sessionId}/profile`,
+      url: "/profile",
       icon: UserCircle,
     },
     {
-      title: "Settings",
-      url: `/sessions/${sessionId}/settings`,
-      icon: Settings2,
+      title: "Integrations",
+      url: "/integrations",
+      icon: Webhook,
       items: [
-        { title: "General", url: `/sessions/${sessionId}/settings` },
-        { title: "Integrations", url: `/sessions/${sessionId}/integrations` },
+        { title: "Overview", url: "/integrations" },
+        { title: "Chatwoot", url: "/integrations/chatwoot" },
+        { title: "Webhook", url: "/integrations/webhook" },
       ],
     },
     {
-      title: "Integrations",
-      url: `/sessions/${sessionId}/integrations`,
-      icon: Webhook,
-      items: [
-        { title: "Overview", url: `/sessions/${sessionId}/integrations` },
-        { title: "Chatwoot", url: `/sessions/${sessionId}/integrations/chatwoot` },
-        { title: "Webhook", url: `/sessions/${sessionId}/integrations/webhook` },
-      ],
+      title: "Settings",
+      url: "/settings",
+      icon: Settings2,
     },
-  ]
+  ],
 }
 
-interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
-  sessionId?: string
-}
-
-export function AppSidebar({ sessionId, ...props }: AppSidebarProps) {
-  const navItems = sessionId
-    ? getSessionNavItems(sessionId)
-    : globalData.navMain
-
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        {sessionId ? (
-          <SessionSwitcher sessionId={sessionId} />
-        ) : (
-          <TeamSwitcher teams={globalData.teams} />
-        )}
+        <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navItems} />
+        <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={globalData.user} />
+        <NavUser user={data.user} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
