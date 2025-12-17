@@ -42,10 +42,10 @@ func RunMigrations() error {
 
 func logAndError(msg string) error {
 	log.Println("❌ Migration error:", msg)
-	return migrate.ErrMigrationFailed
+	return &migrate.ErrDirty{}
 }
 
 func logAndErrorf(format string, args ...interface{}) error {
 	log.Printf("❌ Migration error: "+format, args...)
-	return migrate.ErrMigrationFailed
+	return &migrate.ErrDirty{}
 }
