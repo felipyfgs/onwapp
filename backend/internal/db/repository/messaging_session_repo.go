@@ -9,25 +9,26 @@ import (
 	"github.com/seu-usuario/onwapp/internal/models"
 )
 
-type WhatsAppSessionRepository struct {
+type MessagingSessionRepository struct {
 	db *pgx.Conn
 }
 
-func NewWhatsAppSessionRepository(db *pgx.Conn) *WhatsAppSessionRepository {
-	return &WhatsAppSessionRepository{db: db}
+func NewMessagingSessionRepository(db *pgx.Conn) *MessagingSessionRepository {
+	return &MessagingSessionRepository{db: db}
 }
 
-func (r *WhatsAppSessionRepository) Create(ctx context.Context, session *models.WhatsAppSession) error {
+func (r *MessagingSessionRepository) Create(ctx context.Context, session *models.MessagingSession) error {
 	query := `
-		INSERT INTO whatsapp_sessions (id, tenant_id, name, phone_number, status, session_data, last_seen, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO messaging_sessions (id, tenant_id, name, channel_id, platform, status, session_data, last_seen, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	`
 	
 	_, err := r.db.Exec(ctx, query,
 		session.ID,
 		session.TenantID,
 		session.Name,
-		session.PhoneNumber,
+		session.ChannelID,
+		session.Platform,
 		session.Status,
 		session.SessionData,
 		session.LastSeen,
