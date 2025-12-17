@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { QrCode, Smartphone, RefreshCw, CheckCircle, XCircle, Wifi, WifiOff } from "lucide-react"
+import { QrCode, Smartphone, RefreshCw, CheckCircle, XCircle } from "lucide-react"
 
 import { getQRCode, pairPhone, getSession } from "@/lib/api/sessions"
 import { useAdminWebSocket, ConnectionState } from "@/hooks/use-admin-websocket"
@@ -104,18 +104,6 @@ export function QRCodeDialog({
     }
   }, [open, fetchQRCode, checkStatus, connectionState])
 
-  function getWsStatusBadge(state: ConnectionState) {
-    switch (state) {
-      case "connected":
-        return <Badge variant="outline" className="text-green-600 border-green-600"><Wifi className="h-3 w-3 mr-1" />Live</Badge>
-      case "connecting":
-        return <Badge variant="outline" className="text-yellow-600 border-yellow-600"><RefreshCw className="h-3 w-3 mr-1 animate-spin" />Connecting</Badge>
-      case "disconnected":
-      case "error":
-        return <Badge variant="outline" className="text-muted-foreground"><WifiOff className="h-3 w-3 mr-1" />Polling</Badge>
-    }
-  }
-
   async function handlePairPhone() {
     if (!phone.trim()) return
     setPairingLoading(true)
@@ -135,7 +123,6 @@ export function QRCodeDialog({
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle>Connect WhatsApp</DialogTitle>
-            {getWsStatusBadge(connectionState)}
           </div>
           <DialogDescription>
             Scan the QR code with your phone or use a pairing code

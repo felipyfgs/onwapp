@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
-import { Activity, QrCode } from "lucide-react"
+import { Activity, QrCode, Power, PowerOff, RefreshCw, LogOut } from "lucide-react"
 
 import {
   Breadcrumb,
@@ -24,6 +24,7 @@ import { getSession } from "@/lib/api/sessions"
 import { getChats } from "@/lib/api/chats"
 import { getContacts } from "@/lib/api/contacts"
 import { getGroups } from "@/lib/api/groups"
+import { connectSession, disconnectSession, logoutSession, restartSession } from "@/lib/api/sessions"
 
 export default function SessionOverviewPage() {
   const params = useParams()
