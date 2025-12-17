@@ -1,6 +1,8 @@
 package router
 
 import (
+	"context"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
@@ -46,7 +48,7 @@ func NewRouter(db *db.PostgresDB, logger *zerolog.Logger, config *configs.Config
 	// Initialize services
 	conn, err := db.Pool.Acquire(context.Background())
 	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to acquire database connection")
+		logger.Fatal().Err(err).Msg("Failed to acquire database connection")
 	}
 	defer conn.Release()
 	

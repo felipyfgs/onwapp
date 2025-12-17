@@ -34,7 +34,7 @@ func main() {
 	defer dbConn.Close()
 
 	// Run migrations
-	if err := migrations.RunMigrations(); err != nil {
+	if err := db.RunMigrations(); err != nil {
 		logger.Fatal().Err(err).Msg("Failed to run database migrations")
 	}
 
