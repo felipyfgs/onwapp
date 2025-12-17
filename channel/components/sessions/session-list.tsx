@@ -8,6 +8,7 @@ import {
   getSessions,
   connectSession,
   disconnectSession,
+  logoutSession,
   deleteSession,
 } from "@/lib/api/sessions"
 import { Button } from "@/components/ui/button"
@@ -57,6 +58,14 @@ export const SessionList = forwardRef<SessionListRef, SessionListProps>(function
 
   async function handleDisconnect(session: Session) {
     const response = await disconnectSession(session.session)
+    if (response.success) {
+      fetchSessions()
+    }
+  }
+
+  async function handleLogout(session: Session) {
+    if (!confirm(`Logout da sessão "${session.session}"? Você precisará escanear o QR code novamente.`)) return
+    const response = await logoutSession(session.session)
     if (response.success) {
       fetchSessions()
     }
@@ -161,6 +170,7 @@ export const SessionList = forwardRef<SessionListRef, SessionListProps>(function
               session={session}
               onConnect={handleConnect}
               onDisconnect={handleDisconnect}
+              onLogout={handleLogout}
               onDelete={handleDelete}
             />
           ))}

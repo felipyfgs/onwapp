@@ -11,6 +11,7 @@ import {
   User,
   Hash,
   Smartphone,
+  LogOut,
 } from "lucide-react"
 
 import { Session } from "@/lib/api/sessions"
@@ -23,6 +24,7 @@ interface SessionItemProps {
   session: Session
   onConnect?: (session: Session) => void
   onDisconnect?: (session: Session) => void
+  onLogout?: (session: Session) => void
   onDelete?: (session: Session) => void
 }
 
@@ -64,6 +66,7 @@ export function SessionItem({
   session,
   onConnect,
   onDisconnect,
+  onLogout,
   onDelete,
 }: SessionItemProps) {
   const [qrDialogOpen, setQrDialogOpen] = useState(false)
@@ -138,15 +141,26 @@ export function SessionItem({
           </Button>
 
           {isConnected ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-destructive hover:text-destructive"
-              onClick={() => onDisconnect?.(session)}
-              title="Disconnect"
-            >
-              <PowerOff className="h-4 w-4" />
-            </Button>
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-orange-500 hover:text-orange-500"
+                onClick={() => onDisconnect?.(session)}
+                title="Disconnect (mantém credenciais)"
+              >
+                <PowerOff className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-destructive hover:text-destructive"
+                onClick={() => onLogout?.(session)}
+                title="Logout (apaga credenciais)"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </>
           ) : (
             <Button
               variant="ghost"
