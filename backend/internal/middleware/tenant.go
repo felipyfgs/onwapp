@@ -3,7 +3,7 @@ package middleware
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/seu-usuario/onwapp/internal/services"
+	"onwapp/internal/services"
 )
 
 func TenantMiddleware(tenantService *services.TenantService) fiber.Handler {

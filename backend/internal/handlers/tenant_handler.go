@@ -3,9 +3,9 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/seu-usuario/onwapp/internal/models"
-	"github.com/seu-usuario/onwapp/internal/services"
-	"github.com/seu-usuario/onwapp/pkg/validator"
+	"onwapp/internal/models"
+	"onwapp/internal/services"
+	"onwapp/pkg/validator"
 )
 
 type TenantHandler struct {

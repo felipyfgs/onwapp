@@ -7,10 +7,10 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/seu-usuario/onwapp/internal/models"
-	"github.com/seu-usuario/onwapp/internal/db/repository"
-	"github.com/seu-usuario/onwapp/pkg/hash"
-	"github.com/seu-usuario/onwapp/pkg/jwt"
+	"onwapp/internal/models"
+	"onwapp/internal/db/repository"
+	"onwapp/pkg/hash"
+	"onwapp/pkg/jwt"
 )
 
 type AuthService struct {

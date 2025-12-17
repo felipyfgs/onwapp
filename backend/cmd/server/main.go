@@ -6,9 +6,9 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog"
-	"github.com/seu-usuario/onwapp/internal/configs"
-	"github.com/seu-usuario/onwapp/internal/db"
-	"github.com/seu-usuario/onwapp/internal/router"
+	"onwapp/internal/configs"
+	"onwapp/internal/db"
+	"onwapp/internal/router"
 )
 
 func main() {

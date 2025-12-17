@@ -5,8 +5,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/seu-usuario/onwapp/internal/models"
-	"github.com/seu-usuario/onwapp/internal/db/repository"
+	"onwapp/internal/models"
+	"onwapp/internal/db/repository"
 )
 
 type TenantService struct {

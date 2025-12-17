@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/seu-usuario/onwapp/internal/models"
+	"onwapp/internal/models"
 )
 
 type MessagingSessionRepository struct {
@@ -39,19 +39,20 @@ func (r *MessagingSessionRepository) Create(ctx context.Context, session *models
 	return err
 }
 
-func (r *WhatsAppSessionRepository) FindByID(ctx context.Context, id uuid.UUID) (*models.WhatsAppSession, error) {
+func (r *MessagingSessionRepository) FindByID(ctx context.Context, id uuid.UUID) (*models.MessagingSession, error) {
 	query := `
-		SELECT id, tenant_id, name, phone_number, status, session_data, last_seen, created_at, updated_at
-		FROM whatsapp_sessions
+		SELECT id, tenant_id, name, channel_id, platform, status, session_data, last_seen, created_at, updated_at
+		FROM messaging_sessions
 		WHERE id = $1
 	`
 	
-	var session models.WhatsAppSession
+	var session models.MessagingSession
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&session.ID,
 		&session.TenantID,
 		&session.Name,
-		&session.PhoneNumber,
+		&session.ChannelID,
+		&session.Platform,
 		&session.Status,
 		&session.SessionData,
 		&session.LastSeen,
@@ -66,10 +67,10 @@ func (r *WhatsAppSessionRepository) FindByID(ctx context.Context, id uuid.UUID) 
 	return &session, nil
 }
 
-func (r *WhatsAppSessionRepository) FindByTenant(ctx context.Context, tenantID uuid.UUID) ([]models.WhatsAppSession, error) {
+func (r *MessagingSessionRepository) FindByTenant(ctx context.Context, tenantID uuid.UUID) ([]models.MessagingSession, error) {
 	query := `
-		SELECT id, tenant_id, name, phone_number, status, session_data, last_seen, created_at, updated_at
-		FROM whatsapp_sessions
+		SELECT id, tenant_id, name, channel_id, platform, status, session_data, last_seen, created_at, updated_at
+		FROM messaging_sessions
 		WHERE tenant_id = $1
 		ORDER BY name
 	`
@@ -80,14 +81,15 @@ func (r *WhatsAppSessionRepository) FindByTenant(ctx context.Context, tenantID u
 	}
 	defer rows.Close()
 	
-	var sessions []models.WhatsAppSession
+	var sessions []models.MessagingSession
 	for rows.Next() {
-		var session models.WhatsAppSession
+		var session models.MessagingSession
 		if err := rows.Scan(
 			&session.ID,
 			&session.TenantID,
 			&session.Name,
-			&session.PhoneNumber,
+			&session.ChannelID,
+			&session.Platform,
 			&session.Status,
 			&session.SessionData,
 			&session.LastSeen,
@@ -102,16 +104,17 @@ func (r *WhatsAppSessionRepository) FindByTenant(ctx context.Context, tenantID u
 	return sessions, nil
 }
 
-func (r *WhatsAppSessionRepository) Update(ctx context.Context, session *models.WhatsAppSession) error {
+func (r *MessagingSessionRepository) Update(ctx context.Context, session *models.MessagingSession) error {
 	query := `
-		UPDATE whatsapp_sessions
-		SET name = $1, phone_number = $2, status = $3, session_data = $4, last_seen = $5, updated_at = $6
-		WHERE id = $7
+		UPDATE messaging_sessions
+		SET name = $1, channel_id = $2, platform = $3, status = $4, session_data = $5, last_seen = $6, updated_at = $7
+		WHERE id = $8
 	`
 	
 	_, err := r.db.Exec(ctx, query,
 		session.Name,
-		session.PhoneNumber,
+		session.ChannelID,
+		session.Platform,
 		session.Status,
 		session.SessionData,
 		session.LastSeen,
@@ -122,8 +125,8 @@ func (r *WhatsAppSessionRepository) Update(ctx context.Context, session *models.
 	return err
 }
 
-func (r *WhatsAppSessionRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	query := `DELETE FROM whatsapp_sessions WHERE id = $1`
+func (r *MessagingSessionRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	query := `DELETE FROM messaging_sessions WHERE id = $1`
 	_, err := r.db.Exec(ctx, query, id)
 	return err
 }

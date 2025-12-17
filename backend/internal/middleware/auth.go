@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/seu-usuario/onwapp/internal/services"
+	"onwapp/internal/services"
 )
 
 func AuthMiddleware(authService *services.AuthService) fiber.Handler {

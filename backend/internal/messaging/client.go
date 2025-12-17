@@ -13,7 +13,7 @@ import (
 	waLog "go.mau.fi/whatsmeow/util/log"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/seu-usuario/onwapp/internal/models"
+	"onwapp/internal/models"
 )
 
 type MessagingClient struct {

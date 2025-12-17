@@ -3,14 +3,13 @@ package router
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/rs/zerolog"
-	"github.com/seu-usuario/onwapp/internal/configs"
-	"github.com/seu-usuario/onwapp/internal/db"
-	"github.com/seu-usuario/onwapp/internal/handlers"
-	"github.com/seu-usuario/onwapp/internal/middleware"
-	"github.com/seu-usuario/onwapp/internal/services"
+	"onwapp/internal/configs"
+	"onwapp/internal/db"
+	"onwapp/internal/handlers"
+	"onwapp/internal/middleware"
+	"onwapp/internal/services"
 )
 
 type Router struct {
@@ -29,7 +28,7 @@ func NewRouter(db *db.PostgresDB, logger *zerolog.Logger, config *configs.Config
 
 	// Middleware
 	app.Use(recover.New())
-	app.Use(logger.New())
+	app.Use(middleware.LoggerMiddleware(logger))
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
 		AllowHeaders:  "Origin, Content-Type, Accept, Authorization",
@@ -45,9 +44,15 @@ func NewRouter(db *db.PostgresDB, logger *zerolog.Logger, config *configs.Config
 	api := app.Group("/api/v1")
 	
 	// Initialize services
-	tenantService := services.NewTenantService(db.Pool)
+	conn, err := db.Pool.Acquire(context.Background())
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to acquire database connection")
+	}
+	defer conn.Release()
+	
+	tenantService := services.NewTenantService(conn.Conn())
 	tenantHandler := handlers.NewTenantHandler(tenantService)
-	authService := services.NewAuthService(db.Pool, config.JWTSecret, config.JWTExpiration)
+	authService := services.NewAuthService(conn.Conn(), config.JWTSecret, config.JWTExpiration)
 	authHandler := handlers.NewAuthHandler(authService)
 
 	// Initialize router
