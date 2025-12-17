@@ -14,7 +14,7 @@ build:
 migrate:
 	go run -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest \
 		-source file://internal/db/migrations \
-		-database $(DATABASE_URL) up
+		-database postgres://postgres:postgres@localhost:5432/onwapp?sslmode=disable up
 
 # Clean build artifacts
 clean:

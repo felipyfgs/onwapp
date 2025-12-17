@@ -8,6 +8,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/seu-usuario/onwapp/internal/configs"
 	"github.com/seu-usuario/onwapp/internal/db"
+	"github.com/seu-usuario/onwapp/internal/db/migrations"
 	"github.com/seu-usuario/onwapp/internal/router"
 )
 
@@ -34,7 +35,7 @@ func main() {
 	defer dbConn.Close()
 
 	// Run migrations
-	if err := db.RunMigrations(config.DatabaseURL); err != nil {
+	if err := migrations.RunMigrations(); err != nil {
 		logger.Fatal().Err(err).Msg("Failed to run database migrations")
 	}
 

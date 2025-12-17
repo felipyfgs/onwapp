@@ -14,7 +14,7 @@ CREATE TABLE tickets (
     FOREIGN KEY (contact_id) REFERENCES contacts(id) ON DELETE CASCADE,
     FOREIGN KEY (queue_id) REFERENCES queues(id) ON DELETE SET NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
-    FOREIGN KEY (session_id) REFERENCES whatsapp_sessions(id) ON DELETE CASCADE
+    FOREIGN KEY (session_id) REFERENCES messaging_sessions(id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_tickets_tenant_id ON tickets(tenant_id);
