@@ -10,7 +10,6 @@ import {
   Users,
   User,
   Hash,
-  MoreHorizontal,
   Smartphone,
 } from "lucide-react"
 
@@ -18,13 +17,6 @@ import { Session } from "@/lib/api/sessions"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { QRCodeDialog } from "@/components/qr-code-dialog"
 
 interface SessionItemProps {
@@ -134,12 +126,13 @@ export function SessionItem({
           </div>
         )}
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
             className="h-8 w-8"
             onClick={() => setQrDialogOpen(true)}
+            title="QR Code"
           >
             <QrCode className="h-4 w-4" />
           </Button>
@@ -150,6 +143,7 @@ export function SessionItem({
               size="icon"
               className="h-8 w-8 text-destructive hover:text-destructive"
               onClick={() => onDisconnect?.(session)}
+              title="Disconnect"
             >
               <PowerOff className="h-4 w-4" />
             </Button>
@@ -160,43 +154,21 @@ export function SessionItem({
               className="h-8 w-8 text-green-600 hover:text-green-600"
               onClick={() => onConnect?.(session)}
               disabled={isConnecting}
+              title="Connect"
             >
               <Power className="h-4 w-4" />
             </Button>
           )}
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setQrDialogOpen(true)}>
-                <QrCode className="mr-2 h-4 w-4" />
-                Show QR Code
-              </DropdownMenuItem>
-              {isConnected ? (
-                <DropdownMenuItem onClick={() => onDisconnect?.(session)}>
-                  <PowerOff className="mr-2 h-4 w-4" />
-                  Disconnect
-                </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem onClick={() => onConnect?.(session)}>
-                  <Power className="mr-2 h-4 w-4" />
-                  Connect
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                onClick={() => onDelete?.(session)}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete Session
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+            onClick={() => onDelete?.(session)}
+            title="Delete"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
