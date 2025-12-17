@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import { Activity, QrCode } from "lucide-react"
 
-import { AppSidebar } from "@/components/app-sidebar"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -15,11 +14,7 @@ import {
 } from "@/components/ui/breadcrumb"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { SessionStats } from "@/components/overview/session-stats"
 import { QuickActions } from "@/components/overview/quick-actions"
@@ -40,6 +35,7 @@ export default function SessionOverviewPage() {
     pushName?: string
     phone?: string
     createdAt?: string
+    profilePictureUrl?: string
   } | null>(null)
   const [stats, setStats] = useState({
     chats: 0,
@@ -88,115 +84,152 @@ export default function SessionOverviewPage() {
   }, [sessionId])
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator
-              orientation="vertical"
-              className="mr-2 data-[orientation=vertical]:h-4"
-            />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="/sessions">Sessões</BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>{sessionId}</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-          <div className="ml-auto flex items-center gap-2 px-4">
-            <ModeToggle />
-            {session?.status === "connected" && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setQrDialogOpen(true)}
-              >
-                <QrCode className="mr-2 h-4 w-4" />
-                QR Code
-              </Button>
-            )}
-          </div>
-        </header>
+    <>
+      <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+        <div className="flex items-center gap-2 px-4">
+          <SidebarTrigger className="-ml-1" />
+          <Separator
+            orientation="vertical"
+            className="mr-2 data-[orientation=vertical]:h-4"
+          />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem className="hidden md:block">
+                <BreadcrumbLink href="/sessions">Sessões</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator className="hidden md:block" />
+              <BreadcrumbItem>
+                <BreadcrumbPage>{sessionId}</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+        <div className="ml-auto flex items-center gap-2 px-4">
+          <ModeToggle />
+          {session?.status === "connected" && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setQrDialogOpen(true)}
+            >
+              <QrCode className="mr-2 h-4 w-4" />
+              QR Code
+            </Button>
+          )}
+        </div>
+      </header>
 
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <SessionStats
-            chatsCount={stats.chats}
-            contactsCount={stats.contacts}
-            groupsCount={stats.groups}
-            mediaCount={stats.media}
-            loading={loading}
+      <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+        <Card className="w-full">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center justify-center h-16 w-16 rounded-full bg-muted">
+                {session?.profilePictureUrl ? (
+                  <img
+                    src={session.profilePictureUrl}
+                    alt={session.pushName || sessionId}
+                    className="h-16 w-16 rounded-full object-cover"
+                  />
+                ) : (
+                  <span className="text-2xl font-medium text-muted-foreground">
+                    {(session?.pushName || sessionId).charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-lg font-semibold truncate">
+                  {session?.pushName || sessionId}
+                </h2>
+                <p className="text-sm text-muted-foreground truncate">
+                  {session?.phone || "Not connected"}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Activity className={`h-5 w-5 $
+                  session?.status === "connected"
+                    ? "text-green-500"
+                    : session?.status === "connecting"
+                    ? "text-yellow-500"
+                    : "text-muted-foreground"
+                }`} />
+                <span className="text-sm font-medium capitalize">
+                  {session?.status || "Disconnected"}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <QuickActions
+            sessionId={sessionId}
+            sessionName={session?.session || sessionId}
+            status={session?.status || "disconnected"}
+            onStatusChange={fetchData}
           />
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <QuickActions
-              sessionId={sessionId}
-              sessionName={session?.session || sessionId}
-              status={session?.status || "disconnected"}
-              onStatusChange={fetchData}
-            />
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Session Info</CardTitle>
-                <CardDescription>Details about this session</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Status</span>
-                  <div className="flex items-center gap-2">
-                    <Activity className={`h-4 w-4 ${
-                      session?.status === "connected"
-                        ? "text-green-500"
-                        : session?.status === "connecting"
-                        ? "text-yellow-500"
-                        : "text-muted-foreground"
-                    }`} />
-                    <span className="text-sm font-medium capitalize">
-                      {session?.status || "Disconnected"}
-                    </span>
-                  </div>
-                </div>
-                <Separator />
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Session ID</span>
-                  <span className="text-sm font-medium">{sessionId}</span>
-                </div>
-                <Separator />
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Name</span>
-                  <span className="text-sm font-medium">
-                    {session?.pushName || "-"}
+          <Card>
+            <CardHeader>
+              <CardTitle>Session Info</CardTitle>
+              <CardDescription>Details about this session</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Status</span>
+                <div className="flex items-center gap-2">
+                  <Activity className={`h-4 w-4 ${
+                    session?.status === "connected"
+                      ? "text-green-500"
+                      : session?.status === "connecting"
+                      ? "text-yellow-500"
+                      : "text-muted-foreground"
+                  }`} />
+                  <span className="text-sm font-medium capitalize">
+                    {session?.status || "Disconnected"}
                   </span>
                 </div>
-                <Separator />
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Phone</span>
-                  <span className="text-sm font-medium">
-                    {session?.phone || "Not connected"}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+              <Separator />
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Session ID</span>
+                <span className="text-sm font-medium">{sessionId}</span>
+              </div>
+              <Separator />
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Name</span>
+                <span className="text-sm font-medium">
+                  {session?.pushName || "-"}
+                </span>
+              </div>
+              <Separator />
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Phone</span>
+                <span className="text-sm font-medium">
+                  {session?.phone || "Not connected"}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        <QRCodeDialog
-          open={qrDialogOpen}
-          onOpenChange={setQrDialogOpen}
-          sessionId={sessionId}
-          onConnected={() => {
-            setQrDialogOpen(false)
-            fetchData()
-          }}
+        <SessionStats
+          chatsCount={stats.chats}
+          contactsCount={stats.contacts}
+          groupsCount={stats.groups}
+          mediaCount={stats.media}
+          loading={loading}
         />
-      </SidebarInset>
-    </SidebarProvider>
+      </div>
+
+      <QRCodeDialog
+        open={qrDialogOpen}
+        onOpenChange={setQrDialogOpen}
+        sessionId={sessionId}
+        onConnected={() => {
+          setQrDialogOpen(false)
+          fetchData()
+        }}
+      />
+    </>
   )
 }
