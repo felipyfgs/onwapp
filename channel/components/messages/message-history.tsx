@@ -27,11 +27,8 @@ import {
 import { getChats, getChatMessages, Chat, ChatMessage } from "@/lib/api/chats"
 import { formatDistanceToNow } from "date-fns"
 
-interface MessageHistoryProps {
-  sessionId: string
-}
-
-export function MessageHistory({ sessionId }: MessageHistoryProps) {
+export function MessageHistory() {
+  const sessionId = ""
   const [chats, setChats] = useState<Chat[]>([])
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])

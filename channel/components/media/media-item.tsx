@@ -37,6 +37,7 @@ const mediaIcons = {
   video: FileVideo,
   audio: FileAudio,
   document: File,
+  sticker: FileImage,
 }
 
 export function MediaItem({ media, onDownload, onRetry, onView }: MediaItemProps) {

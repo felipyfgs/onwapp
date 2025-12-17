@@ -13,13 +13,13 @@ import {
 import { setProfilePicture, deleteProfilePicture } from "@/lib/api/profile"
 
 interface ProfilePictureProps {
-  sessionId: string
   pictureUrl?: string
   name?: string
   onUpdate?: () => void
 }
 
-export function ProfilePicture({ sessionId, pictureUrl, name, onUpdate }: ProfilePictureProps) {
+export function ProfilePicture({ pictureUrl, name, onUpdate }: ProfilePictureProps) {
+  const sessionId = ""
   const [loading, setLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 

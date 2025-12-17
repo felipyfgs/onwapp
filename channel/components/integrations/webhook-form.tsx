@@ -10,11 +10,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { getWebhook, setWebhook } from "@/lib/api/webhook"
 
 interface WebhookFormProps {
-  sessionId: string
   onUpdate?: () => void
 }
 
-export function WebhookForm({ sessionId, onUpdate }: WebhookFormProps) {
+export function WebhookForm({ onUpdate }: WebhookFormProps) {
+  const sessionId = ""
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [testing, setTesting] = useState(false)

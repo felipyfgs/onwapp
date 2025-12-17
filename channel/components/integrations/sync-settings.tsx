@@ -10,7 +10,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { syncAll } from "@/lib/api/chatwoot"
 
 interface SyncSettingsProps {
-  sessionId: string
   syncContacts?: boolean
   syncMessages?: boolean
   syncDays?: number
@@ -20,7 +19,6 @@ interface SyncSettingsProps {
 }
 
 export function SyncSettings({
-  sessionId,
   syncContacts = true,
   syncMessages = true,
   syncDays = 7,
@@ -28,6 +26,7 @@ export function SyncSettings({
   onSyncMessagesChange,
   onSyncDaysChange,
 }: SyncSettingsProps) {
+  const sessionId = ""
   const [syncing, setSyncing] = useState(false)
   const [lastSync, setLastSync] = useState<Date | null>(null)
 

@@ -32,11 +32,8 @@ import {
   sendMediaFile,
 } from "@/lib/api/messages"
 
-interface MessageComposerProps {
-  sessionId: string
-}
-
-export function MessageComposer({ sessionId }: MessageComposerProps) {
+export function MessageComposer() {
+  const sessionId = ""
   const [phone, setPhone] = useState("")
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<{

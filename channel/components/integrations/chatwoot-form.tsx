@@ -11,11 +11,11 @@ import { Badge } from "@/components/ui/badge"
 import { getChatwootConfig, setChatwootConfig, validateCredentials, type ChatwootConfig } from "@/lib/api/chatwoot"
 
 interface ChatwootFormProps {
-  sessionId: string
   onUpdate?: () => void
 }
 
-export function ChatwootForm({ sessionId, onUpdate }: ChatwootFormProps) {
+export function ChatwootForm({ onUpdate }: ChatwootFormProps) {
+  const sessionId = ""
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [validating, setValidating] = useState(false)

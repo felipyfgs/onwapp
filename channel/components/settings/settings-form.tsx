@@ -34,11 +34,11 @@ import {
 } from "@/lib/api/settings"
 
 interface SettingsFormProps {
-  sessionId: string
   onUpdate?: () => void
 }
 
-export function SettingsForm({ sessionId, onUpdate }: SettingsFormProps) {
+export function SettingsForm({ onUpdate }: SettingsFormProps) {
+  const sessionId = ""
   const [settings, setSettings] = useState<SessionSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)

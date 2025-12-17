@@ -10,11 +10,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { getProfile, setPushName, setStatus } from "@/lib/api/profile"
 
 interface ProfileFormProps {
-  sessionId: string
   onUpdate?: () => void
 }
 
-export function ProfileForm({ sessionId, onUpdate }: ProfileFormProps) {
+export function ProfileForm({ onUpdate }: ProfileFormProps) {
+  const sessionId = ""
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [pushName, setPushNameValue] = useState("")

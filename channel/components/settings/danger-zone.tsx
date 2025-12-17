@@ -8,13 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { disconnectSession, deleteSession } from "@/lib/api/sessions"
 
-interface DangerZoneProps {
-  sessionId: string
-  sessionName: string
-  isConnected: boolean
-}
-
-export function DangerZone({ sessionId, sessionName, isConnected }: DangerZoneProps) {
+export function DangerZone() {
+  const sessionId = ""
+  const sessionName = ""
+  const isConnected = false
   const router = useRouter()
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
