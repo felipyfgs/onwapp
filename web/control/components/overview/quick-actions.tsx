@@ -135,7 +135,7 @@ export function QuickActions({ sessionId, sessionName, status, onStatusChange }:
             </Button>
 
             <Button
-              variant="outline"
+              variant="destructive"
               onClick={() => setLogoutDialogOpen(true)}
               disabled={loading}
             >

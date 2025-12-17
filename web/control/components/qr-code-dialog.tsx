@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface QRCodeDialogProps {
   sessionId: string
@@ -75,14 +76,20 @@ export function QRCodeDialog({
   const fetchQRCode = useCallback(async () => {
     setLoading(true)
     setError(null)
-    const response = await getQRCode(sessionId)
-    if (response.success && response.data) {
-      setQrCode(response.data.qr)
-      setStatus("waiting")
-    } else {
-      setError(response.error || "Failed to get QR code")
+    try {
+      const response = await getQRCode(sessionId)
+      if (response.success && response.data) {
+        setQrCode(response.data.qr)
+        setStatus("waiting")
+      } else {
+        setError(response.error || "Failed to get QR code")
+      }
+    } catch (err) {
+      setError("Failed to get QR code")
+      console.error("Failed to get QR code:", err)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }, [sessionId])
 
   const checkStatus = useCallback(async () => {
@@ -96,13 +103,17 @@ export function QRCodeDialog({
 
   useEffect(() => {
     if (open) {
-      fetchQRCode()
+      setLoading(true)
+      const fetchData = async () => {
+        await fetchQRCode()
+      }
+      fetchData()
       const interval = connectionState !== "connected" ? setInterval(checkStatus, 3000) : null
       return () => {
         if (interval) clearInterval(interval)
       }
     }
-  }, [open, fetchQRCode, checkStatus, connectionState])
+  }, [open, fetchQRCode, checkStatus])
 
   async function handlePairPhone() {
     if (!phone.trim()) return
@@ -152,8 +163,8 @@ export function QRCodeDialog({
             <TabsContent value="qrcode" className="space-y-4">
               <div className="flex flex-col items-center gap-4 py-4">
                 {loading ? (
-                  <div className="flex h-64 w-64 items-center justify-center rounded-lg border">
-                    <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+                  <div className="flex h-64 w-64 items-center justify-center rounded-lg border p-4">
+                    <Skeleton className="h-full w-full" />
                   </div>
                 ) : error ? (
                   <div className="flex h-64 w-64 flex-col items-center justify-center gap-2 rounded-lg border">
