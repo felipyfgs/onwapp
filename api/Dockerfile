@@ -25,7 +25,7 @@ COPY . .
 # Build static binary
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags="-s -w -X onwapp/internal/version.Version=${VERSION} -X onwapp/internal/version.GitCommit=${GIT_COMMIT} -X onwapp/internal/version.BuildDate=${BUILD_DATE}" \
-    -o onwapp ./cmd/onwapp
+    -o onwapp ./cmd/server
 
 # ===========================================
 # Runtime stage

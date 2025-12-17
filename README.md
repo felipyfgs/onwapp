@@ -24,12 +24,43 @@ WhatsApp API Bridge - A powerful REST API for WhatsApp built with Go.
 - **NATS** - Message queue (optional)
 - **MinIO/S3** - Media storage (optional)
 - **whatsmeow** - WhatsApp Web API library
+- **Next.js** - Frontend (Channel)
+
+## Project Structure
+
+```
+onwapp/
+├── api/                        # Backend Go (REST API)
+│   ├── cmd/server/             # Application entrypoint
+│   ├── internal/               # Core application code
+│   │   ├── api/                # HTTP handlers and routing
+│   │   ├── config/             # Configuration management
+│   │   ├── db/                 # Database and migrations
+│   │   ├── integrations/       # Chatwoot, webhooks
+│   │   ├── service/            # Business logic
+│   │   └── ...
+│   ├── docs/                   # Swagger documentation
+│   ├── go.mod
+│   └── Makefile
+│
+├── channel/                    # Frontend Next.js
+│   ├── app/                    # Next.js App Router
+│   ├── components/             # React components
+│   ├── lib/                    # Utilities and API client
+│   └── package.json
+│
+├── Makefile                    # Global orchestrator
+├── docker-compose.yaml         # Development stack
+├── docker-compose.prod.yaml    # Production stack
+└── AGENTS.md                   # AI agent guidelines
+```
 
 ## Quick Start
 
 ### Prerequisites
 
 - Go 1.24+
+- Node.js 20+ (for frontend)
 - PostgreSQL 14+
 - Docker (optional)
 
@@ -46,8 +77,15 @@ cp .env.example .env
 # Edit .env with your settings
 nano .env
 
-# Start services
-docker-compose up -d
+# Start development dependencies
+make up
+
+# Run API in development mode
+make api-dev
+
+# In another terminal, run frontend
+make channel-install
+make channel-dev
 ```
 
 ### Manual Installation
@@ -57,15 +95,58 @@ docker-compose up -d
 git clone https://github.com/felipyfgs/onwapp.git
 cd onwapp
 
-# Install dependencies
+# Install API dependencies
+cd api
 go mod download
 
+# Install frontend dependencies
+cd ../channel
+cd ../../apps/channel
+npm install
+
 # Copy and configure environment
+cd ../..
 cp .env.example .env
 
-# Run
-go run cmd/server/main.go
+# Run API
+make api-dev
+
+# Run frontend (another terminal)
+make channel-dev
 ```
+
+## Available Commands
+
+### Global Commands
+
+| Command | Description |
+|---------|-------------|
+| `make build` | Build all services |
+| `make dev` | Run API in development mode |
+| `make test` | Run all tests |
+| `make lint` | Lint all services |
+| `make deps` | Install all dependencies |
+| `make up` | Start dev dependencies (Docker) |
+| `make down` | Stop dev dependencies |
+
+### API Commands
+
+| Command | Description |
+|---------|-------------|
+| `make api-build` | Build API binary |
+| `make api-dev` | Run API in dev mode |
+| `make api-test` | Run API tests |
+| `make api-lint` | Lint API code |
+| `make api-swagger` | Generate Swagger docs |
+
+### Channel (Frontend) Commands
+
+| Command | Description |
+|---------|-------------|
+| `make channel-install` | Install frontend deps |
+| `make channel-dev` | Run frontend dev server |
+| `make channel-build` | Build frontend |
+| `make channel-lint` | Lint frontend code |
 
 ## Configuration
 
@@ -120,43 +201,8 @@ curl -X POST http://localhost:8080/my-session/message/send/text \
 
 ## API Documentation
 
-- **REST API**: See [docs/API.md](docs/API.md)
+- **REST API**: See [services/api/docs/API.md](services/api/docs/API.md)
 - **Swagger UI**: http://localhost:8080/swagger/index.html
-
-## Project Structure
-
-```
-onwapp/
-├── cmd/
-│   └── onwapp/          # Application entrypoint
-├── internal/
-│   ├── api/             # HTTP handlers and routing
-│   ├── config/          # Configuration management
-│   ├── db/              # Database and migrations
-│   ├── integrations/    # Chatwoot, webhooks
-│   ├── logger/          # Logging utilities
-│   ├── model/           # Domain models
-│   ├── service/         # Business logic
-│   └── version/         # Version info
-├── docs/                # Documentation
-└── docker/              # Docker configs
-```
-
-## Development
-
-```bash
-# Run with hot reload
-make dev
-
-# Run tests
-make test
-
-# Lint
-make lint
-
-# Build
-make build
-```
 
 ## Webhooks
 
@@ -197,6 +243,25 @@ curl -X POST http://localhost:8080/sessions/my-session/chatwoot/set \
   }'
 ```
 
+## Development
+
+```bash
+# Run API with hot reload
+make api-dev
+
+# Run frontend dev server
+make channel-dev
+
+# Run tests
+make test
+
+# Lint all code
+make lint
+
+# Build all
+make build
+```
+
 ## Contributing
 
 1. Fork the repository
@@ -223,4 +288,4 @@ This project is not affiliated with WhatsApp or Meta. Use at your own risk and e
 ## Support
 
 - **Issues**: [GitHub Issues](https://github.com/felipyfgs/onwapp/issues)
-- **Documentation**: [docs/API.md](docs/API.md)
+- **Documentation**: [services/api/docs/API.md](services/api/docs/API.md)

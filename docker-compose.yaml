@@ -42,7 +42,7 @@ services:
       - "/etc/nats/nats.conf"
     volumes:
       - dev_nats_data:/data
-      - ./nats.conf:/etc/nats/nats.conf:ro
+      - ./api/nats.conf:/etc/nats/nats.conf:ro
     networks:
       - onwapp-dev-network
 

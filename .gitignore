@@ -5,12 +5,14 @@
 *.so
 *.dylib
 /onwapp
+api/onwapp
 
 # Test binary
 *.test
 
 # Output of the go coverage tool
 *.out
+coverage.html
 
 # Dependency directories
 vendor/
@@ -53,6 +55,11 @@ tmp/
 # Build output
 dist/
 build/
+
+# Next.js (frontend)
+channel/.next/
+channel/out/
+channel/node_modules/
 
 # Internal docs
 AGENTS.md

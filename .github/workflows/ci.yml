@@ -11,9 +11,12 @@ jobs:
   # ================================
   # Backend Tests (Go)
   # ================================
-  test:
-    name: Backend Tests
+  api-test:
+    name: API Tests
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./api
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,6 +26,7 @@ jobs:
         with:
           go-version: '1.24'
           cache: true
+          cache-dependency-path: api/go.sum
 
       - name: Download dependencies
         run: go mod download
@@ -42,15 +46,18 @@ jobs:
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
-          files: coverage.out
+          files: api/coverage.out
           fail_ci_if_error: false
 
   # ================================
   # Backend Lint (Go)
   # ================================
-  lint:
-    name: Backend Lint
+  api-lint:
+    name: API Lint
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./api
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -60,20 +67,25 @@ jobs:
         with:
           go-version: '1.24'
           cache: true
+          cache-dependency-path: api/go.sum
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
           version: latest
           args: --timeout=5m
+          working-directory: ./api
 
   # ================================
   # Build Binary (Go)
   # ================================
-  build:
-    name: Build Binary
+  api-build:
+    name: API Build Binary
     runs-on: ubuntu-latest
-    needs: [test, lint]
+    needs: [api-test, api-lint]
+    defaults:
+      run:
+        working-directory: ./api
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -83,6 +95,7 @@ jobs:
         with:
           go-version: '1.24'
           cache: true
+          cache-dependency-path: api/go.sum
 
       - name: Build binary
         run: make build
@@ -96,7 +109,7 @@ jobs:
   docker-api:
     name: Docker Build - API
     runs-on: ubuntu-latest
-    needs: [test, lint]
+    needs: [api-test, api-lint]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -107,8 +120,8 @@ jobs:
       - name: Build API image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: ./Dockerfile.api
+          context: ./api
+          file: ./api/Dockerfile
           push: false
           tags: onwapp-api:ci
           cache-from: type=gha
@@ -118,4 +131,55 @@ jobs:
             GIT_COMMIT=${{ github.sha }}
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
 
+  # ================================
+  # Frontend Lint (Next.js)
+  # ================================
+  channel-lint:
+    name: Channel Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./channel
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: channel/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run lint
+        run: npm run lint
+
+  # ================================
+  # Frontend Build (Next.js)
+  # ================================
+  channel-build:
+    name: Channel Build
+    runs-on: ubuntu-latest
+    needs: [channel-lint]
+    defaults:
+      run:
+        working-directory: ./channel
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: channel/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build

@@ -166,15 +166,6 @@ export function QRCodeDialog({
                   <div className="flex h-64 w-64 items-center justify-center rounded-lg border p-4">
                     <Skeleton className="h-full w-full" />
                   </div>
-                ) : error ? (
-                  <div className="flex h-64 w-64 flex-col items-center justify-center gap-2 rounded-lg border">
-                    <XCircle className="h-8 w-8 text-destructive" />
-                    <p className="text-sm text-muted-foreground">{error}</p>
-                    <Button variant="outline" size="sm" onClick={fetchQRCode}>
-                      <RefreshCw className="mr-2 h-4 w-4" />
-                      Retry
-                    </Button>
-                  </div>
                 ) : qrCode ? (
                   <div className="rounded-lg border bg-white p-4">
                     <img
