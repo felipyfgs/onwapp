@@ -48,7 +48,18 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(user)
+	// Generate token for the new user
+	_, token, err := h.service.Login(c.Context(), req.Email, req.Password)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "User created but failed to generate token",
+		})
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"user":  user,
+		"token": token,
+	})
 }
 
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
