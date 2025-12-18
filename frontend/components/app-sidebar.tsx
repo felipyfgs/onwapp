@@ -2,14 +2,10 @@
 
 import * as React from "react"
 import {
-  AudioWaveform,
   BookOpen,
   Bot,
-  Command,
-  Frame,
   GalleryVerticalEnd,
   Map,
-  PieChart,
   Settings2,
   SquareTerminal,
 } from "lucide-react"
@@ -26,131 +22,113 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
-// This is sample data.
+// Dados reais do sistema
 const data = {
   user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    name: "Admin User",
+    email: "admin@onwapp.com",
+    avatar: "/avatars/admin.jpg",
   },
   teams: [
     {
-      name: "Acme Inc",
+      name: "ONWApp",
       logo: GalleryVerticalEnd,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
+      plan: "Pro",
     },
   ],
   navMain: [
     {
-      title: "Playground",
-      url: "#",
+      title: "Dashboard",
+      url: "/dashboard",
       icon: SquareTerminal,
       isActive: true,
       items: [
         {
-          title: "History",
-          url: "#",
+          title: "Overview",
+          url: "/dashboard",
         },
         {
-          title: "Starred",
-          url: "#",
+          title: "Analytics",
+          url: "/dashboard/analytics",
         },
         {
-          title: "Settings",
-          url: "#",
+          title: "Reports",
+          url: "/dashboard/reports",
         },
       ],
     },
     {
-      title: "Models",
-      url: "#",
+      title: "Chats",
+      url: "/dashboard/chats",
       icon: Bot,
       items: [
         {
-          title: "Genesis",
-          url: "#",
+          title: "All Chats",
+          url: "/dashboard/chats",
         },
         {
-          title: "Explorer",
-          url: "#",
+          title: "Active",
+          url: "/dashboard/chats/active",
         },
         {
-          title: "Quantum",
-          url: "#",
+          title: "Archived",
+          url: "/dashboard/chats/archived",
         },
       ],
     },
     {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
+      title: "Connections",
+      url: "/dashboard/connections",
       icon: Settings2,
       items: [
         {
-          title: "General",
-          url: "#",
+          title: "All Connections",
+          url: "/dashboard/connections",
         },
         {
-          title: "Team",
-          url: "#",
+          title: "API Keys",
+          url: "/dashboard/connections/api",
         },
         {
-          title: "Billing",
-          url: "#",
+          title: "Webhooks",
+          url: "/dashboard/connections/webhooks",
+        },
+      ],
+    },
+    {
+      title: "Contacts",
+      url: "/dashboard/contacts",
+      icon: BookOpen,
+      items: [
+        {
+          title: "All Contacts",
+          url: "/dashboard/contacts",
         },
         {
-          title: "Limits",
-          url: "#",
+          title: "Groups",
+          url: "/dashboard/contacts/groups",
+        },
+        {
+          title: "Import",
+          url: "/dashboard/contacts/import",
         },
       ],
     },
   ],
   projects: [
     {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
+      name: "Settings",
+      url: "/dashboard/settings",
+      icon: Settings2,
     },
     {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
+      name: "Help Center",
+      url: "/dashboard/help",
+      icon: BookOpen,
     },
     {
-      name: "Travel",
-      url: "#",
+      name: "Profile",
+      url: "/dashboard/profile",
       icon: Map,
     },
   ],

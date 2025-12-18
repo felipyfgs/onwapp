@@ -156,8 +156,3 @@ export default function Page() {
     </SidebarProvider>
   )
 }
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
-  )
-}
