@@ -56,6 +56,10 @@ func NewRouter(db *db.PostgresDB, logger *zerolog.Logger, config *configs.Config
 	tenantHandler := handlers.NewTenantHandler(tenantService)
 	authService := services.NewAuthService(conn.Conn(), config.JWTSecret, config.JWTExpiration)
 	authHandler := handlers.NewAuthHandler(authService, conn.Conn())
+	
+	// Messaging Session services and handlers
+	sessionService := services.NewMessagingSessionService(conn.Conn())
+	sessionHandler := handlers.NewMessagingSessionHandler(sessionService)
 
 	// Initialize router
 	r := &Router{
@@ -66,7 +70,7 @@ func NewRouter(db *db.PostgresDB, logger *zerolog.Logger, config *configs.Config
 	}
 	
 	// Register routes
-	r.registerRoutes(api, tenantHandler, authHandler, authService)
+	r.registerRoutes(api, tenantHandler, authHandler, authService, sessionHandler)
 	
 	return r
 }
