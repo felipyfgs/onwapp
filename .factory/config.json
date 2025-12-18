@@ -1,0 +1,12 @@
+{
+  "custom_models": [
+    {
+      "model_display_name": "mistralai/devstral-2512:free [OpenRouter]",
+      "model": "mistralai/devstral-2512:free",
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key": "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",
+      "provider": "generic-chat-completion-api",
+      "max_tokens": 32000
+    }
+  ]
+}
