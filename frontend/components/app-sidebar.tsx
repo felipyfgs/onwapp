@@ -42,77 +42,21 @@ const data = {
       url: "/dashboard",
       icon: SquareTerminal,
       isActive: true,
-      items: [
-        {
-          title: "Overview",
-          url: "/dashboard",
-        },
-        {
-          title: "Analytics",
-          url: "/dashboard/analytics",
-        },
-        {
-          title: "Reports",
-          url: "/dashboard/reports",
-        },
-      ],
     },
     {
       title: "Chats",
       url: "/dashboard/chats",
       icon: Bot,
-      items: [
-        {
-          title: "All Chats",
-          url: "/dashboard/chats",
-        },
-        {
-          title: "Active",
-          url: "/dashboard/chats/active",
-        },
-        {
-          title: "Archived",
-          url: "/dashboard/chats/archived",
-        },
-      ],
     },
     {
       title: "Connections",
       url: "/dashboard/connections",
       icon: Settings2,
-      items: [
-        {
-          title: "All Connections",
-          url: "/dashboard/connections",
-        },
-        {
-          title: "API Keys",
-          url: "/dashboard/connections/api",
-        },
-        {
-          title: "Webhooks",
-          url: "/dashboard/connections/webhooks",
-        },
-      ],
     },
     {
       title: "Contacts",
       url: "/dashboard/contacts",
       icon: BookOpen,
-      items: [
-        {
-          title: "All Contacts",
-          url: "/dashboard/contacts",
-        },
-        {
-          title: "Groups",
-          url: "/dashboard/contacts/groups",
-        },
-        {
-          title: "Import",
-          url: "/dashboard/contacts/import",
-        },
-      ],
     },
   ],
   projects: [

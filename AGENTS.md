@@ -17,6 +17,112 @@
 - **Linguagem:** Go
 - **Estrutura:** Estrutura modular com cmd/server, internal/config, internal/db
 
+### Factory Droids
+
+O projeto ONWApp utiliza o sistema **Factory Droids** para automação inteligente e agentes especializados. Droids são agentes personalizados que podem realizar tarefas específicas de forma autônoma, usando ferramentas avançadas de análise e pesquisa.
+
+#### Estrutura dos Droids
+```
+.factory/droids/
+├── explorador-context.md    # Droid explorador inteligente
+└── [outros-droids].md       # Futuros droids personalizados
+```
+
+#### Como Funcionam
+- **Definição**: Cada droid é definido em arquivo Markdown com metadados YAML
+- **Ferramentas**: Acesso a Read, Grep, Glob, WebSearch, FetchUrl e outras
+- **Autonomia**: Níveis variados de autonomia (low, medium, high)
+- **Especialização**: Cada droid foca em um domínio específico
+
+#### Droids Disponíveis
+
+##### 🤖 explorador
+**Agente explorador inteligente** especializado em análise profunda de código e pesquisa web integrada.
+
+**Capacidades Principais:**
+- **Deep Code Exploration**: Varredura completa da estrutura do projeto
+- **Web Research Integration**: Busca automática de melhores práticas online
+- **Context Building**: Geração de contexto completo para features
+
+**Workflow de Exploração:**
+1. **Discovery**: Mapeamento de estrutura e componentes
+2. **Deep Analysis**: Análise detalhada do código
+3. **Web Research**: Pesquisa de melhores práticas e documentação
+4. **Synthesis**: Geração de relatórios e sugestões
+
+**Exemplos de Uso:**
+```bash
+# Exploração completa do projeto
+Task(explorador, "explore all", "Varredura completa do código ONWApp")
+
+# Análise de componente específico
+Task(explorador, "analyze dashboard", "Análise profunda do dashboard")
+
+# Geração de contexto para feature
+Task(explorador, "context chat-system", "Contexto completo para sistema de chats")
+```
+
+**Benefícios para ONWApp:**
+- Conhecimento profundo da stack Next.js + shadcn/ui
+- Contextualização com pesquisa web em tempo real
+- Sugestões baseadas em melhores práticas da comunidade
+- Documentação automática e relatórios técnicos
+
+#### Criando Novos Droids
+
+Para criar um novo droid personalizado:
+
+1. **Criar arquivo de definição:**
+```bash
+# Criar novo droid
+touch .factory/droids/nome-droid.md
+```
+
+2. **Definir metadados e capacidades:**
+```yaml
+---
+name: nome-droid
+description: Descrição do que o droid faz
+model: inherit  # ou modelo específico
+permissions:
+  file_access: full_read
+  command_execution: analysis_only
+  network_access: web_research
+tools:
+  - Read
+  - Grep
+  - Glob
+  - WebSearch
+  - FetchUrl
+autonomy_level: medium
+---
+```
+
+3. **Documentar funcionalidades e exemplos de uso**
+
+#### Comandos Úteis
+
+```bash
+# Listar droids disponíveis
+ls .factory/droids/
+
+# Usar droid específico
+Task(explorador, "comando", "descrição da tarefa")
+
+# Gerar novo droid baseado em descrição
+GenerateDroid("descrição detalhada do droid desejado")
+```
+
+#### Integração com Fluxo de Trabalho
+
+Os droids se integram naturalmente ao desenvolvimento do ONWApp:
+
+- **Análise de Código**: Antes de implementar novas features
+- **Context Building**: Para entender requirements complexos
+- **Best Practices**: Para validar implementações
+- **Documentação**: Para gerar docs automaticamente
+- **Refatoração**: Para identificar oportunidades de melhoria
+
 ## Estrutura do Projeto
 
 ```
@@ -189,6 +295,21 @@
 
 ## Comandos Úteis
 
+### Droids Personalizados
+```bash
+# Listar droids disponíveis
+ls .factory/droids/
+
+# Usar droid explorador para análise completa
+Task(explorador, "explore all", "Análise completa do projeto")
+
+# Gerar contexto para uma feature específica
+Task(explorador, "context feature-name", "Contexto completo para feature")
+
+# Criar novo droid personalizado
+GenerateDroid("descrição detalhada do droid desejado")
+```
+
 ### Instalação e Setup
 ```bash
 cd frontend
@@ -242,8 +363,14 @@ export function ComponentName({ props }: ComponentProps) {
 ### Imports
 - Componentes UI: `@/components/ui/[component]`
 - Componentes específicos: `@/components/[categoria]/[component]`
+- Componentes personalizados: `@/components/custom/[component]`
 - Hooks: `@/hooks/[hook]`
 - Utils: `@/lib/utils`
+
+### Regras Importantes
+- **Pasta ui/**: Reservada exclusivamente para componentes shadcn/ui instalados via `npx shadcn@latest add`.
+- **Componentes personalizados**: Devem ser criados na pasta `custom/` ou em pastas específicas de domínio (chats/, connections/, etc.).
+- **Nunca modificar manualmente**: Componentes na pasta ui/ devem ser atualizados apenas via comandos shadcn.
 
 ## Configurações
 
@@ -319,6 +446,13 @@ export function ComponentName({ props }: ComponentProps) {
 - [ ] Filtros e ordenação
 - [ ] Dark mode toggle
 
+### Droids e Automação
+- [ ] Criar droid especializado para validação de código
+- [ ] Desenvolver droid para análise de performance
+- [ ] Implementar droid para geração automática de testes
+- [ ] Criar droid para documentação de API
+- [ ] Desenvolver droid para refatoração automática
+
 ## Notas Importantes
 
 1. **Sidebar**: Utiliza `shadcn/ui sidebar` (versão 0.7)
@@ -327,6 +461,8 @@ export function ComponentName({ props }: ComponentProps) {
 4. **Sem Backend**: Ainda não há integração real com API
 5. **Mobile**: Hook `use-mobile.ts` detecta viewport
 6. **Assets**: Avatares em `/public/avatars/`
+7. **Factory Droids**: Sistema de agentes personalizados disponível em `.factory/droids/`
+8. **Droid Explorador**: Agente inteligente para análise e pesquisa já configurado
 
 ## URLs e Referências
 

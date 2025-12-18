@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { NatsStatus } from "@/components/custom/nats-status"
 import React from "react"
 
 interface BreadcrumbItemType {
@@ -46,6 +47,9 @@ export function DashboardHeader({ breadcrumbs }: DashboardHeaderProps) {
             ))}
           </BreadcrumbList>
         </Breadcrumb>
+      </div>
+      <div className="ml-auto mr-4">
+        <NatsStatus />
       </div>
     </header>
   )
