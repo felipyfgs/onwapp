@@ -1,0 +1,61 @@
+{
+    "mcpServers": {
+        "playwright": {
+            "timeout": 60,
+            "type": "stdio",
+            "command": "npx",
+            "args": [
+                "-y",
+                "@playwright/mcp@latest",
+                "--headless",
+                "--isolated",
+                "--no-sandbox",
+                "--viewport-size",
+                "1920x1080"
+            ]
+        },
+        "postgres": {
+            "timeout": 60,
+            "type": "stdio",
+            "command": "npx",
+            "args": [
+                "-y",
+                "@henkey/postgres-mcp-server"
+            ],
+            "env": {
+                "CONNECTION_STRING": "postgres://postgres:postgres@localhost:5432/onwapp?sslmode=disable"
+            }
+        },
+        "context7": {
+            "timeout": 60,
+            "type": "stdio",
+            "command": "npx",
+            "args": [
+                "-y",
+                "@upstash/context7-mcp"
+            ]
+        },
+        "filesystem": {
+            "disabled": true,
+            "timeout": 60,
+            "type": "stdio",
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-filesystem",
+                "/home/obsidian/onwapp"
+            ],
+            "alwaysAllow": []
+        },
+        "memory-bank": {
+            "disabled": false,
+            "timeout": 60,
+            "type": "stdio",
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-memory"
+            ]
+        }
+    }
+}
