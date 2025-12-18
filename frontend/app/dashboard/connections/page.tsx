@@ -13,9 +13,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { ConnectionList, ConnectionHeader } from "@/components/connections/connection-list"
 
 export default function Page() {
   return (
@@ -45,76 +43,8 @@ export default function Page() {
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold">Connections</h2>
-            <Button>Add Connection</Button>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>API Integration</CardTitle>
-                  <Badge variant="default">Active</Badge>
-                </div>
-                <CardDescription>Connected via OAuth 2.0</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <p className="text-sm">Last sync: 5 minutes ago</p>
-                  <p className="text-sm text-muted-foreground">API endpoints: 12 active</p>
-                  <Button variant="outline" size="sm">Configure</Button>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Webhook Service</CardTitle>
-                  <Badge variant="secondary">Pending</Badge>
-                </div>
-                <CardDescription>Awaiting configuration</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <p className="text-sm">Setup required</p>
-                  <p className="text-sm text-muted-foreground">0 endpoints configured</p>
-                  <Button variant="outline" size="sm">Setup</Button>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Database Sync</CardTitle>
-                  <Badge variant="default">Active</Badge>
-                </div>
-                <CardDescription>PostgreSQL connection</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <p className="text-sm">Last sync: 1 minute ago</p>
-                  <p className="text-sm text-muted-foreground">Tables: 8 synced</p>
-                  <Button variant="outline" size="sm">View Logs</Button>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Cloud Storage</CardTitle>
-                  <Badge variant="destructive">Error</Badge>
-                </div>
-                <CardDescription>Authentication failed</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <p className="text-sm">Last attempt: 2 hours ago</p>
-                  <p className="text-sm text-muted-foreground">Status: 401 Unauthorized</p>
-                  <Button variant="outline" size="sm">Reconnect</Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <ConnectionHeader />
+          <ConnectionList />
         </div>
       </SidebarInset>
     </SidebarProvider>
