@@ -75,7 +75,7 @@ func NewRouter(db *db.PostgresDB, logger *zerolog.Logger, config *configs.Config
 	return r
 }
 
-func (r *Router) registerRoutes(api fiber.Router, tenantHandler *handlers.TenantHandler, authHandler *handlers.AuthHandler, authService *services.AuthService) {
+func (r *Router) registerRoutes(api fiber.Router, tenantHandler *handlers.TenantHandler, authHandler *handlers.AuthHandler, authService *services.AuthService, sessionHandler *handlers.MessagingSessionHandler) {
 	// Public routes
 	authHandler.RegisterRoutes(api)
 	
@@ -84,6 +84,9 @@ func (r *Router) registerRoutes(api fiber.Router, tenantHandler *handlers.Tenant
 	
 	// Register tenant routes
 	tenantHandler.RegisterRoutes(protected)
+	
+	// Register messaging session routes
+	sessionHandler.RegisterRoutes(protected)
 	
 	// Add other route groups here
 	// r.registerWhatsAppRoutes(protected)
