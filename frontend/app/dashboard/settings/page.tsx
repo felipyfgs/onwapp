@@ -1,297 +1,312 @@
-'use client'
+"use client"
 
-import {
-  Settings2,
-  Save,
-  Trash2,
-  Plus,
-  Globe,
+import { useState } from "react"
+import { useAuthStore } from "@/lib/stores/auth-store"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { 
+  User, 
+  Shield, 
+  Bell, 
   Database,
-  Shield,
-  Bell,
-  Mail,
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
-import { useAuthStore } from '@/lib/stores/auth-store'
+  Save,
+  AlertCircle,
+  CheckCircle2
+} from "lucide-react"
 
 export default function SettingsPage() {
-  const { user } = useAuthStore()
+  const { user, logout } = useAuthStore()
+  const [saving, setSaving] = useState(false)
+  const [success, setSuccess] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleProfileUpdate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaving(true)
+    setError(null)
+    setSuccess(null)
+
+    try {
+      // Simular chamada API
+      // await apiClient.put("/api/v1/users/profile", data)
+      
+      setSuccess("Perfil atualizado com sucesso!")
+      setTimeout(() => setSuccess(null), 3000)
+    } catch (err) {
+      setError("Erro ao atualizar perfil")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaving(true)
+    setError(null)
+    setSuccess(null)
+
+    const formData = new FormData(e.target as HTMLFormElement)
+    const newPassword = formData.get("new_password") as string
+    const confirmPassword = formData.get("confirm_password") as string
+
+    if (newPassword !== confirmPassword) {
+      setError("As senhas não coincidem")
+      setSaving(false)
+      return
+    }
+
+    try {
+      // await apiClient.put("/api/v1/users/password", { password: newPassword })
+      
+      setSuccess("Senha alterada com sucesso!")
+      setTimeout(() => setSuccess(null), 3000)
+      ;(e.target as HTMLFormElement).reset()
+    } catch (err) {
+      setError("Erro ao alterar senha")
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 max-w-4xl">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
-        <p className="text-muted-foreground">
-          Configure your system preferences and manage settings
-        </p>
+        <h2 className="text-lg font-semibold">Configurações</h2>
+        <p className="text-xs text-muted-foreground">Gerencie suas preferências e segurança</p>
       </div>
 
-      <Tabs defaultValue="general" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="general">
-            <Globe className="mr-2 h-4 w-4" />
-            General
-          </TabsTrigger>
-          <TabsTrigger value="database">
-            <Database className="mr-2 h-4 w-4" />
-            Database
+      <Tabs defaultValue="profile" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="profile">
+            <User className="h-4 w-4 mr-2" />
+            Perfil
           </TabsTrigger>
           <TabsTrigger value="security">
-            <Shield className="mr-2 h-4 w-4" />
-            Security
+            <Shield className="h-4 w-4 mr-2" />
+            Segurança
           </TabsTrigger>
           <TabsTrigger value="notifications">
-            <Bell className="mr-2 h-4 w-4" />
-            Notifications
+            <Bell className="h-4 w-4 mr-2" />
+            Notificações
           </TabsTrigger>
-          <TabsTrigger value="email">
-            <Mail className="mr-2 h-4 w-4" />
-            Email
+          <TabsTrigger value="system">
+            <Database className="h-4 w-4 mr-2" />
+            Sistema
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="general">
+        {/* Profile Tab */}
+        <TabsContent value="profile">
           <Card>
             <CardHeader>
-              <CardTitle>General Settings</CardTitle>
-              <CardDescription>
-                Configure general application settings
-              </CardDescription>
+              <CardTitle>Informações do Perfil</CardTitle>
+              <CardDescription>Atualize suas informações pessoais</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="appName">Application Name</Label>
-                <Input id="appName" placeholder="My Onwapp" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="timezone">Timezone</Label>
-                <Select>
-                  <SelectTrigger id="timezone">
-                    <SelectValue placeholder="Select timezone" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="utc">UTC</SelectItem>
-                    <SelectItem value="est">EST</SelectItem>
-                    <SelectItem value="pst">PST</SelectItem>
-                    <SelectItem value="cet">CET</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="language">Language</Label>
-                <Select>
-                  <SelectTrigger id="language">
-                    <SelectValue placeholder="Select language" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="pt">Português</SelectItem>
-                    <SelectItem value="es">Español</SelectItem>
-                    <SelectItem value="fr">Français</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch id="maintenance" />
-                <Label htmlFor="maintenance">Maintenance Mode</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch id="debug" />
-                <Label htmlFor="debug">Debug Mode</Label>
-              </div>
-              <div className="flex gap-2">
-                <Button>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Changes
+            <CardContent>
+              {success && (
+                <Alert className="mb-4 bg-green-50 border-green-200">
+                  <CheckCircle2 className="h-4 w-4 text-green-600 mr-2" />
+                  <AlertDescription className="text-green-800">{success}</AlertDescription>
+                </Alert>
+              )}
+              
+              {error && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertCircle className="h-4 w-4 mr-2" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <form onSubmit={handleProfileUpdate} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nome</Label>
+                    <Input 
+                      id="name" 
+                      name="name" 
+                      defaultValue={user?.name} 
+                      required 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input 
+                      id="email" 
+                      name="email" 
+                      type="email" 
+                      defaultValue={user?.email} 
+                      disabled 
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="company">Empresa (Tenant)</Label>
+                  <Input 
+                    id="company" 
+                    name="company" 
+                    placeholder="Nome da empresa" 
+                    defaultValue={user?.tenant_id || ""}
+                    disabled
+                  />
+                </div>
+
+                <Button type="submit" disabled={saving}>
+                  <Save className="h-4 w-4 mr-2" />
+                  {saving ? "Salvando..." : "Salvar Alterações"}
                 </Button>
-              </div>
+              </form>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="database">
-          <Card>
-            <CardHeader>
-              <CardTitle>Database Settings</CardTitle>
-              <CardDescription>
-                Configure database connection and settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="dbHost">Database Host</Label>
-                <Input id="dbHost" placeholder="localhost" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="dbPort">Database Port</Label>
-                <Input id="dbPort" type="number" placeholder="5432" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="dbName">Database Name</Label>
-                <Input id="dbName" placeholder="onwapp" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="dbUser">Database User</Label>
-                <Input id="dbUser" placeholder="postgres" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="dbPassword">Database Password</Label>
-                <Input id="dbPassword" type="password" placeholder="password" />
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline">
-                  <Database className="mr-2 h-4 w-4" />
-                  Test Connection
-                </Button>
-                <Button>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Changes
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
+        {/* Security Tab */}
         <TabsContent value="security">
           <Card>
             <CardHeader>
-              <CardTitle>Security Settings</CardTitle>
-              <CardDescription>
-                Configure security and authentication settings
-              </CardDescription>
+              <CardTitle>Segurança</CardTitle>
+              <CardDescription>Alterar senha e preferências de segurança</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="jwtSecret">JWT Secret</Label>
-                <Input id="jwtSecret" type="password" placeholder="your-secret-key" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="jwtExpiration">JWT Expiration (minutes)</Label>
-                <Input id="jwtExpiration" type="number" placeholder="15" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="sessionTimeout">Session Timeout (minutes)</Label>
-                <Input id="sessionTimeout" type="number" placeholder="60" />
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch id="twoFactor" />
-                <Label htmlFor="twoFactor">Two-Factor Authentication</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch id="ipWhitelist" />
-                <Label htmlFor="ipWhitelist">IP Whitelist</Label>
-              </div>
-              <div className="flex gap-2">
-                <Button>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Changes
+            <CardContent>
+              {success && (
+                <Alert className="mb-4 bg-green-50 border-green-200">
+                  <CheckCircle2 className="h-4 w-4 text-green-600 mr-2" />
+                  <AlertDescription className="text-green-800">{success}</AlertDescription>
+                </Alert>
+              )}
+              
+              {error && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertCircle className="h-4 w-4 mr-2" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <form onSubmit={handlePasswordChange} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new_password">Nova Senha</Label>
+                  <Input 
+                    id="new_password" 
+                    name="new_password" 
+                    type="password" 
+                    placeholder="••••••••"
+                    minLength={8}
+                    required 
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirm_password">Confirmar Nova Senha</Label>
+                  <Input 
+                    id="confirm_password" 
+                    name="confirm_password" 
+                    type="password" 
+                    placeholder="••••••••"
+                    minLength={8}
+                    required 
+                  />
+                </div>
+
+                <Button type="submit" disabled={saving}>
+                  <Save className="h-4 w-4 mr-2" />
+                  {saving ? "Alterando..." : "Alterar Senha"}
                 </Button>
+              </form>
+
+              <div className="mt-6 pt-6 border-t">
+                <h4 className="font-medium mb-3">Sessões Ativas</h4>
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <div className="flex items-center justify-between p-2 bg-muted rounded">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                      <span>Este dispositivo (Linux - Chrome)</span>
+                    </div>
+                    <span className="text-xs">Ativo agora</span>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
+        {/* Notifications Tab */}
         <TabsContent value="notifications">
           <Card>
             <CardHeader>
-              <CardTitle>Notification Settings</CardTitle>
-              <CardDescription>
-                Configure notification preferences
-              </CardDescription>
+              <CardTitle>Notificações</CardTitle>
+              <CardDescription>Gerencie como você recebe alertas</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="natsUrl">NATS URL</Label>
-                <Input id="natsUrl" placeholder="nats://localhost:4222" />
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <p className="font-medium">Novos Tickets</p>
+                  <p className="text-sm text-muted-foreground">Notificar quando novos tickets chegarem</p>
+                </div>
+                <Button variant="outline" size="sm">Ativar</Button>
               </div>
-              <div className="flex items-center space-x-2">
-                <Switch id="emailNotifications" />
-                <Label htmlFor="emailNotifications">Email Notifications</Label>
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <p className="font-medium">Mensagens não lidas</p>
+                  <p className="text-sm text-muted-foreground">Alertas para mensagens pendentes</p>
+                </div>
+                <Button variant="outline" size="sm">Ativar</Button>
               </div>
-              <div className="flex items-center space-x-2">
-                <Switch id="smsNotifications" />
-                <Label htmlFor="smsNotifications">SMS Notifications</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch id="webPush" />
-                <Label htmlFor="webPush">Web Push Notifications</Label>
-              </div>
-              <div className="flex gap-2">
-                <Button>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Changes
-                </Button>
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <p className="font-medium">Conexão WhatsApp</p>
+                  <p className="text-sm text-muted-foreground">Status das conexões</p>
+                </div>
+                <Button variant="outline" size="sm">Ativar</Button>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="email">
+        {/* System Tab */}
+        <TabsContent value="system">
           <Card>
             <CardHeader>
-              <CardTitle>Email Settings</CardTitle>
-              <CardDescription>
-                Configure email service settings
-              </CardDescription>
+              <CardTitle>Informações do Sistema</CardTitle>
+              <CardDescription>Detalhes sobre o ambiente e tenant</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="smtpHost">SMTP Host</Label>
-                <Input id="smtpHost" placeholder="smtp.gmail.com" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3 bg-muted rounded">
+                  <p className="text-xs text-muted-foreground mb-1">Versão</p>
+                  <p className="font-medium">v1.0.0</p>
+                </div>
+                <div className="p-3 bg-muted rounded">
+                  <p className="text-xs text-muted-foreground mb-1">Ambiente</p>
+                  <p className="font-medium">Desenvolvimento</p>
+                </div>
+                <div className="p-3 bg-muted rounded">
+                  <p className="text-xs text-muted-foreground mb-1">Tenant ID</p>
+                  <p className="font-medium text-xs break-all">{user?.tenant_id || "N/A"}</p>
+                </div>
+                <div className="p-3 bg-muted rounded">
+                  <p className="text-xs text-muted-foreground mb-1">User ID</p>
+                  <p className="font-medium text-xs">{user?.id || "N/A"}</p>
+                </div>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="smtpPort">SMTP Port</Label>
-                <Input id="smtpPort" type="number" placeholder="587" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="smtpUser">SMTP Username</Label>
-                <Input id="smtpUser" placeholder="your-email@gmail.com" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="smtpPass">SMTP Password</Label>
-                <Input id="smtpPass" type="password" placeholder="your-app-password" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="fromEmail">From Email</Label>
-                <Input id="fromEmail" placeholder="noreply@yourapp.com" />
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch id="smtpSecure" />
-                <Label htmlFor="smtpSecure">Use Secure Connection</Label>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline">
-                  <Mail className="mr-2 h-4 w-4" />
-                  Test Email
-                </Button>
-                <Button>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Changes
-                </Button>
+
+              <div className="pt-4 border-t">
+                <h4 className="font-medium mb-2">Ações</h4>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => {
+                    // Limpar cache
+                    localStorage.clear()
+                    window.location.reload()
+                  }}>
+                    Limpar Cache
+                  </Button>
+                  <Button variant="destructive" onClick={logout}>
+                    Sair da Conta
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

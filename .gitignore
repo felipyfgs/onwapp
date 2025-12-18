@@ -1,0 +1,38 @@
+# Onwapp .gitignore
+
+# Node modules (never commit)
+node_modules/
+
+# Frontend tamplate directory with large dependencies
+frontend/tamplate/node_modules/
+
+# Factory/MCP configuration (local development only)
+.factory/
+.mcp/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Environment files
+.env*
+!.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Large binary files (Node.js native modules)
+*.node
+
+# Logs
+*.log
+npm-debug.log*

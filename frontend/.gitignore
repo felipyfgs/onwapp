@@ -10,6 +10,11 @@
 !.yarn/releases
 !.yarn/versions
 
+# tamplate directory (template with node_modules that should never be committed)
+/tamplate/node_modules/
+/tamplate/.next/
+/tamplate/dist/
+
 # testing
 /coverage
 
@@ -39,3 +44,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Large binary files
+*.node
