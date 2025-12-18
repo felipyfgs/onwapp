@@ -1,4 +1,5 @@
 import { AppSidebar } from "@/components/app-sidebar"
+import { AuthGuard } from "@/components/auth-guard"
 import {
   SidebarProvider,
   SidebarInset,
@@ -10,13 +11,15 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset className="p-4">
-        <main className="flex flex-col flex-1">
-          {children}
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+    <AuthGuard>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset className="p-4">
+          <main className="flex flex-col flex-1">
+            {children}
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
+    </AuthGuard>
   )
 }

@@ -34,7 +34,7 @@ export default function ConnectionsPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'connected':
-        return <Badge variant="success">Connected</Badge>
+        return <Badge variant="default">Connected</Badge>
       case 'disconnected':
         return <Badge variant="destructive">Disconnected</Badge>
       case 'connecting':

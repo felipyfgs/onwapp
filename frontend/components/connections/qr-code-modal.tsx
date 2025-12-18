@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Loader2, CheckCircle2, XCircle } from 'lucide-react'
 
@@ -110,18 +110,18 @@ export default function QRCodeModal({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>
+    <Sheet open={isOpen} onOpenChange={onClose}>
+      <SheetContent className="sm:max-w-md">
+        <SheetHeader>
+          <SheetTitle>
             {session ? `Connect ${session.name}` : 'Add New Connection'}
-          </DialogTitle>
-          <DialogDescription>
+          </SheetTitle>
+          <SheetDescription>
             {session 
               ? `Connect your ${session.platform} channel to start receiving messages`
               : 'Set up a new messaging channel connection'}
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
 
         {getContent()}
 
@@ -130,7 +130,7 @@ export default function QRCodeModal({
             <Button variant="outline" onClick={onClose}>Cancel</Button>
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }
