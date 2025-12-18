@@ -1,26 +1,26 @@
-# Onwapp - AI Agents Reference (AGENTS.md)
+# Onwapp - Guia de Referência para Agentes de IA (AGENTS.md)
 
 Este arquivo serve como guia de referência global para agentes de IA que operam no projeto **Onwapp** - uma plataforma multi-tenant de atendimento ao cliente via WhatsApp.
 
-## 📋 Project Overview
+## 📋 Visão Geral do Projeto
 - **Missão:** Plataforma multi-tenant de atendimento ao cliente via WhatsApp
 - **Status:** Em desenvolvimento - autenticação e estrutura base implementadas
-- **DB Schema:** Migrations completas para tenants, users, tickets, contacts, queues, messages, sessions
+- **Schema do BD:** Migrations completas para tenants, users, tickets, contacts, queues, messages, sessions
 
-## 🏗️ Tech Stack & Architecture
+## 🏗️ Stack Tecnológica & Arquitetura
 
 ### Backend (Go)
 ```bash
 # Comandos essenciais
 cd backend
 go run cmd/server/main.go          # Rodar servidor
-go build ./...                     # Build
+go build ./...                     # Compilar
 go test ./...                      # Testes
-go mod tidy                        # Dependency management
+go mod tidy                        # Gerenciamento de dependências
 ```
 
 - **Framework:** Fiber v2
-- **Database:** PostgreSQL com pgx/v5
+- **Banco de Dados:** PostgreSQL com pgx/v5
 - **Mensageria:** NATS (JetStream)
 - **WhatsApp:** whatsmeow
 - **Padrão:** Clean Architecture (Handlers → Services → Repositories → Models)
@@ -42,7 +42,7 @@ npm run lint                       # Lint
 - **API:** Axios
 - **Comunicação:** REST + WebSocket (NATS)
 
-## 📚 Domain Language (Glossário)
+## 📚 Linguagem de Domínio (Glossário)
 
 | Termo | Definição |
 |-------|-----------|
@@ -52,7 +52,7 @@ npm run lint                       # Lint
 | **Queue** | Fila de atendimento para distribuição de tickets |
 | **Contact** | Cliente final que envia mensagens via WhatsApp |
 
-## 🤖 Agent Personas & Responsabilidades
+## 🤖 Personas de Agentes & Responsabilidades
 
 ### Architect Agent
 - **Foco:** Design de sistema, escalabilidade, padrões
@@ -78,9 +78,9 @@ npm run lint                       # Lint
   - Validar integração NATS antes de alterar lógica
   - Testar fluxo completo: message → ticket → response
 
-## 🛠️ Code Standards
+## 🛠️ Padrões de Código
 
-### Backend (Go) - CRITICAL RULES
+### Backend (Go) - REGRAS CRÍTICAS
 
 #### Multi-tenancy (PRIORIDADE 1)
 ```go
@@ -96,7 +96,7 @@ func (r *Repository) GetAll() ([]Model, error) {
 }
 ```
 
-#### Clean Architecture Flow
+#### Fluxo da Clean Architecture
 ```
 HTTP Request 
     ↓
@@ -123,7 +123,7 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
     
     if err := c.BodyParser(&req); err != nil {
         return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-            "error": "Invalid request body",
+            "error": "Corpo da requisição inválido",
         })
     }
     
@@ -136,7 +136,7 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
     user, token, err := h.service.Login(c.Context(), req.Email, req.Password)
     if err != nil {
         return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-            "error": "Invalid credentials",
+            "error": "Credenciais inválidas",
         })
     }
     
@@ -144,7 +144,7 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 }
 ```
 
-#### Repository Pattern
+#### Padrão Repository
 ```go
 type TicketRepository struct {
     db *pgx.Conn
@@ -175,7 +175,7 @@ func (r *TicketRepository) ListByTenant(ctx context.Context, tenantID uuid.UUID)
 
 ### Frontend (TypeScript/Next.js)
 
-#### Component Structure
+#### Estrutura de Componentes
 ```typescript
 // ✅ CORRETO
 'use client'
@@ -188,7 +188,7 @@ export function LoginComponent() {
 }
 ```
 
-#### Zustand Store Pattern
+#### Padrão Zustand Store
 ```typescript
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -215,7 +215,7 @@ export const useAuthStore = create<AuthState>()(
 )
 ```
 
-#### API Client with Interceptors
+#### Client API com Interceptores
 ```typescript
 export const apiClient = axios.create({
   baseURL: `${API_URL}/api/v1`,
@@ -240,13 +240,13 @@ apiClient.interceptors.response.use(
 )
 ```
 
-## ⚙️ Environment Setup
+## ⚙️ Configuração de Ambiente
 
 ### Backend (.env)
 ```env
 PORT=:8080
 DATABASE_URL=postgres://user:pass@localhost:5432/onwapp
-JWT_SECRET=your-secret-key-here
+JWT_SECRET=sua-secreta-aqui
 JWT_EXPIRATION=15m
 NATS_URL=nats://localhost:4222
 ```
@@ -261,9 +261,9 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 docker-compose up -d postgres nats
 ```
 
-## 🔧 Development Workflow
+## 🔧 Fluxo de Desenvolvimento
 
-### 1. Analysis Phase (SEMPRECOMEÇAR AQUI)
+### 1. Fase de Análise (SEMPRECOMEÇAR AQUI)
 ```bash
 # Antes de codificar, explore o contexto:
 # Use Grep para achar padrões existentes
@@ -275,7 +275,7 @@ Read backend/internal/models/user.go
 Read backend/internal/db/repository/user_repo.go
 ```
 
-### 2. Planning with TODO List
+### 2. Planejamento com TODO List
 ```bash
 # Crie TODO list antes de implementar
 1. [ ] Entender problema e contexto existente
@@ -285,13 +285,13 @@ Read backend/internal/db/repository/user_repo.go
 5. [ ] Atualizar documentação
 ```
 
-### 3. Implementation Rules
+### 3. Regras de Implementação
 - **Mudanças incrementais**: Uma feature por PR
 - **Testar sempre**: `go test ./...` e `npm run lint`
 - **Commit message**: `<scope>: <action>` (ex: `feat(auth): add JWT refresh`)
 - **Preview**: Rode servidor antes de finalizar
 
-### 4. Common Mistakes to Avoid
+### 4. Erros Comuns a Evitar
 ```
 ❌ Não misturar tenant_id em queries
 ❌ Não usar variáveis de ambiente no código
@@ -302,7 +302,7 @@ Read backend/internal/db/repository/user_repo.go
 ❌ Não esquecer de rollback em migrations (arquivo .down.sql)
 ```
 
-## 📦 Database Migrations
+## 📦 Migrations de Database
 
 ```bash
 # Backend - migrations
@@ -333,7 +333,7 @@ CREATE TABLE tickets (
 DROP TABLE IF EXISTS tickets;
 ```
 
-## 🔐 Security Checklist
+## 🔐 Checklist de Segurança
 
 - [ ] **CRÍTICO**: Todas as DB queries incluem `tenant_id`
 - [ ] Validação de input no backend (mesmo com frontend validado)
@@ -343,7 +343,7 @@ DROP TABLE IF EXISTS tickets;
 - [ ] HTTPS only em produção
 - [ ] Nenhum segredo em logs ou erros
 
-## 🎯 Code Review Checklist
+## 🎯 Checklist de Code Review
 
 ### Backend
 - [ ] Handler usa Service, não Repository
@@ -362,9 +362,9 @@ DROP TABLE IF EXISTS tickets;
 - [ ] API calls via axios client with interceptors
 - [ ] Types strict (no `any`)
 
-## 🚀 Commands Reference
+## 🚀 Comandos de Referência
 
-### Setup & Development
+### Setup & Desenvolvimento
 ```bash
 # Backend
 cd backend
@@ -378,7 +378,7 @@ npm run dev
 docker-compose up -d postgres nats
 ```
 
-### Testing & Quality
+### Testes & Qualidade
 ```bash
 # Backend
 go test ./...
@@ -392,49 +392,49 @@ npm run build
 
 ### Database
 ```bash
-# Run migrations
+# Rodar migrations
 migrate -path backend/internal/db/migrations -database "postgres://..." up
 
-# Create new migration
+# Criar nova migration
 migrate create -ext sql -dir backend/internal/db/migrations -seq create_tickets_table
 ```
 
-## 📝 PR Guidelines
+## 📝 Diretrizes de PR
 
-### Title Format
+### Formato do Título
 ```
 <type>(<scope>): <description>
 
-Examples:
+Exemplos:
 feat(auth): add registration endpoint
 fix(whatsapp): fix QR code generation
 refactor(ticket): improve performance
 test(auth): add login tests
 ```
 
-### PR Description Template
+### Template de Descrição do PR
 ```
-## What changed
-Brief description
+## O que mudou
+Descrição breve
 
-## Why
-Problem being solved
+## Porquê
+Problema sendo resolvido
 
-## How
-Technical approach
+## Como
+Abordagem técnica
 
-## Testing
-- [ ] Manual testing completed
-- [ ] Unit tests pass
-- [ ] Integration flow verified
+## Testes
+- [ ] Testes manuais completos
+- [ ] Unit tests passaram
+- [ ] Fluxo de integração verificado
 
-## Security
-- [ ] Tenant isolation verified
-- [ ] No secrets exposed
-- [ ] Input validation added
+## Segurança
+- [ ] Tenant isolation verificado
+- [ ] Nenhum segredo exposto
+- [ ] Validação de input adicionada
 ```
 
-### Commit Format
+### Formato do Commit
 ```bash
 git commit -m "feat: add user registration with validation
 
@@ -445,32 +445,32 @@ git commit -m "feat: add user registration with validation
 Co-authored-by: factory-droid[bot] <138933559+factory-droid[bot]@users.noreply.github.com>"
 ```
 
-### Pre-Commit Checklist
+### Pré-Commit Checklist
 ```bash
-# Run before every commit
+# Rodar antes de cada commit
 cd backend && go test ./... && go vet ./...
 cd frontend && npm run lint
-git diff --cached  # Review ALL changes
+git diff --cached  # Revise TODAS as mudanças
 ```
 
-## 🎯 Success Criteria
+## 🎯 Critérios de Sucesso
 
-Each task is complete when:
-- ✅ Code compiles without errors (`go build ./...` / `npm run build`)
-- ✅ All tests pass (`go test ./...` / `npm run lint`)
-- ✅ Multi-tenancy verified (every query has `tenant_id`)
-- ✅ Documentation updated (AGENTS.md if needed)
-- ✅ Manual testing successful (server runs, features work)
-- ✅ No secrets exposed (`git diff --cached` review)
+Cada tarefa está completa quando:
+- ✅ Code compila sem erros (`go build ./...` / `npm run build`)
+- ✅ Todos os testes passam (`go test ./...` / `npm run lint`)
+- ✅ Multi-tenancy verificado (toda query tem `tenant_id`)
+- ✅ Documentação atualizada (AGENTS.md se necessário)
+- ✅ Testes manuais bem-sucedidos (servidor roda, features funcionam)
+- ✅ Nenhum segredo exposto (`git diff --cached` review)
 
-## 📊 Example: Complete Ticket Flow
+## 📊 Exemplo: Fluxo Completo de Ticket
 
-### Step 1: WhatsApp Message Received
+### Passo 1: Mensagem WhatsApp Recebida
 ```
 WhatsApp → whatsmeow → NATS event "message.received"
 ```
 
-### Step 2: Find/Create Contact
+### Passo 2: Encontrar/Criar Contato
 ```go
 // Service layer
 func (s *TicketService) ProcessIncomingMessage(msg *events.Message, sessionID uuid.UUID) error {
@@ -518,7 +518,7 @@ func (s *TicketService) ProcessIncomingMessage(msg *events.Message, sessionID uu
 }
 ```
 
-### Step 3: Agent Responds
+### Passo 3: Agente Responde
 ```typescript
 // Frontend
 const sendMessage = async (ticketId: string, text: string) => {
@@ -532,44 +532,44 @@ const sendMessage = async (ticketId: string, text: string) => {
 }
 ```
 
-## 🔍 Debug Tips
+## 🔍 Dicas de Debug
 
-### Backend Issues
+### Problemas no Backend
 ```bash
-# Check logs
+# Ver logs
 tail -f logs/app.log
 
-# Test database connection
+# Testar conexão com banco
 psql $DATABASE_URL -c "SELECT 1"
 
-# Check NATS
+# Verificar NATS
 nats server report
 ```
 
-### Frontend Issues
+### Problemas no Frontend
 ```bash
-# Check network
+# Ver network
 curl -v http://localhost:8080/health
 
 # Debug state
 console.log(useAuthStore.getState())
 ```
 
-## 🚨 Emergency Procedures
+## 🚨 Procedimentos de Emergência
 
-### If Multi-tenancy Breach Detected
-1. **STOP** all development immediately
-2. Review `git log --all` for recent changes
-3. Check all queries: `grep -r "SELECT.*FROM" backend/internal/db`
-4. Add tests for tenant isolation
-5. Deploy fix within 1 hour
+### Se Brecha de Multi-tenancy Detectada
+1. **PARE** todo desenvolvimento imediatamente
+2. Revise `git log --all` por mudanças recentes
+3. Verifique todas queries: `grep -r "SELECT.*FROM" backend/internal/db`
+4. Adicione testes para tenant isolation
+5. Deploy correção em até 1 hora
 
-### If Secret Exposed
-1. Rotate secret immediately
-2. Update .env files
-3. Check Git history: `git log -p | grep -i "secret"`
-4. Add git pre-commit hook
-5. Document incident
+### Se Secret Exposto
+1. Rotacione secret imediatamente
+2. Atualize arquivos .env
+3. Verifique Git history: `git log -p | grep -i "secret"`
+4. Adicione git pre-commit hook
+5. Documente incidente
 
 ---
 *Este documento é mantido por humanos e IAs para o sucesso do Onwapp. Última atualização: 2025-12-18*
