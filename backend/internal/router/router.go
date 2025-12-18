@@ -28,70 +28,155 @@ func NewRouter(db *db.PostgresDB, logger *zerolog.Logger, config *configs.Config
 		ErrorHandler: errorHandler,
 	})
 
-	// Middleware
+	// Middleware Global
 	app.Use(recover.New())
 	app.Use(middleware.LoggerMiddleware(logger))
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
-		AllowHeaders:  "Origin, Content-Type, Accept, Authorization",
-		AllowMethods:  "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
+		AllowMethods: "GET, POST, PUT, PATCH, DELETE, OPTIONS",
 	}))
 
-	// Health check
+	// Health Check
 	app.Get("/health", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{"status": "ok"})
+		return c.JSON(fiber.Map{"status": "ok", "service": "onwapp-api"})
 	})
 
-	// API routes
+	// API Group
 	api := app.Group("/api/v1")
 	
-	// Initialize services
+	// Initialize all services
 	conn, err := db.Pool.Acquire(context.Background())
 	if err != nil {
 		logger.Fatal().Err(err).Msg("Failed to acquire database connection")
 	}
 	defer conn.Release()
 	
-	tenantService := services.NewTenantService(conn.Conn())
-	tenantHandler := handlers.NewTenantHandler(tenantService)
+	// Services
 	authService := services.NewAuthService(conn.Conn(), config.JWTSecret, config.JWTExpiration)
-	authHandler := handlers.NewAuthHandler(authService, conn.Conn())
-	
-	// Messaging Session services and handlers
+	tenantService := services.NewTenantService(conn.Conn())
 	sessionService := services.NewMessagingSessionService(conn.Conn())
+	ticketService := services.NewTicketService(conn.Conn())
+	contactService := services.NewContactService(conn.Conn())
+	queueService := services.NewQueueService(conn.Conn())
+	messageService := services.NewMessageService(conn.Conn())
+	
+	// Handlers
+	authHandler := handlers.NewAuthHandler(authService, conn.Conn())
+	tenantHandler := handlers.NewTenantHandler(tenantService)
 	sessionHandler := handlers.NewMessagingSessionHandler(sessionService)
+	ticketHandler := handlers.NewTicketHandler(ticketService)
+	contactHandler := handlers.NewContactHandler(contactService)
+	queueHandler := handlers.NewQueueHandler(queueService)
+	messageHandler := handlers.NewMessageHandler(messageService)
 
-	// Initialize router
+	// Initialize Router
 	r := &Router{
 		app:    app,
 		config: config,
 		logger: logger,
 		db:     db,
 	}
-	
-	// Register routes
-	r.registerRoutes(api, tenantHandler, authHandler, authService, sessionHandler)
+
+	// Register ALL routes here (Centralizado!)
+	r.registerRoutes(api, authService, 
+		tenantHandler, authHandler, 
+		sessionHandler, ticketHandler, 
+		contactHandler, queueHandler, 
+		messageHandler,
+	)
 	
 	return r
 }
 
-func (r *Router) registerRoutes(api fiber.Router, tenantHandler *handlers.TenantHandler, authHandler *handlers.AuthHandler, authService *services.AuthService, sessionHandler *handlers.MessagingSessionHandler) {
-	// Public routes
-	authHandler.RegisterRoutes(api)
-	
-	// Protected routes
+func (r *Router) registerRoutes(
+	api fiber.Router,
+	authService *services.AuthService,
+	tenantHandler *handlers.TenantHandler,
+	authHandler *handlers.AuthHandler,
+	sessionHandler *handlers.MessagingSessionHandler,
+	ticketHandler *handlers.TicketHandler,
+	contactHandler *handlers.ContactHandler,
+	queueHandler *handlers.QueueHandler,
+	messageHandler *handlers.MessageHandler,
+) {
+	// ==================== PUBLIC ROUTES ====================
+	public := api.Group("/auth")
+	{
+		public.Post("/register", authHandler.Register)
+		public.Post("/login", authHandler.Login)
+		public.Post("/validate", authHandler.ValidateToken)
+	}
+
+	// ==================== PROTECTED ROUTES ====================
 	protected := api.Group("", middleware.AuthMiddleware(authService))
 	
-	// Register tenant routes
-	tenantHandler.RegisterRoutes(protected)
-	
-	// Register messaging session routes
-	sessionHandler.RegisterRoutes(protected)
-	
-	// Add other route groups here
-	// r.registerWhatsAppRoutes(protected)
-	// r.registerTicketRoutes(protected)
-	// etc...
+	// --- TENANT ROUTES ---
+	tenantRoutes := protected.Group("/tenants")
+	{
+		tenantRoutes.Get("", tenantHandler.ListTenants)
+		tenantRoutes.Post("", tenantHandler.CreateTenant)
+		tenantRoutes.Get("/:id", tenantHandler.GetTenant)
+		tenantRoutes.Put("/:id", tenantHandler.UpdateTenant)
+		tenantRoutes.Delete("/:id", tenantHandler.DeleteTenant)
+	}
+
+	// --- MESSAGING SESSION ROUTES ---
+	sessionRoutes := protected.Group("/sessions")
+	{
+		sessionRoutes.Get("", sessionHandler.ListSessions)
+		sessionRoutes.Post("", sessionHandler.CreateSession)
+		sessionRoutes.Get("/:id", sessionHandler.GetSession)
+		sessionRoutes.Put("/:id", sessionHandler.UpdateSession)
+		sessionRoutes.Delete("/:id", sessionHandler.DeleteSession)
+		sessionRoutes.Post("/:id/connect", sessionHandler.ConnectSession)
+		sessionRoutes.Post("/:id/disconnect", sessionHandler.DisconnectSession)
+	}
+
+	// --- CONTACT ROUTES ---
+	contactRoutes := protected.Group("/contacts")
+	{
+		contactRoutes.Get("", contactHandler.ListContacts)
+		contactRoutes.Post("", contactHandler.CreateContact)
+		contactRoutes.Get("/:id", contactHandler.GetContact)
+		contactRoutes.Put("/:id", contactHandler.UpdateContact)
+		contactRoutes.Delete("/:id", contactHandler.DeleteContact)
+		contactRoutes.Get("/search/q", contactHandler.SearchContacts)
+		contactRoutes.Get("/by-waid/:waid", contactHandler.GetByWhatsAppID)
+	}
+
+	// --- QUEUE ROUTES ---
+	queueRoutes := protected.Group("/queues")
+	{
+		queueRoutes.Get("", queueHandler.ListQueues)
+		queueRoutes.Post("", queueHandler.CreateQueue)
+		queueRoutes.Get("/:id", queueHandler.GetQueue)
+		queueRoutes.Put("/:id", queueHandler.UpdateQueue)
+		queueRoutes.Delete("/:id", queueHandler.DeleteQueue)
+	}
+
+	// --- TICKET ROUTES ---
+	ticketRoutes := protected.Group("/tickets")
+	{
+		ticketRoutes.Get("", ticketHandler.ListTickets)
+		ticketRoutes.Post("", ticketHandler.CreateTicket)
+		ticketRoutes.Get("/:id", ticketHandler.GetTicket)
+		ticketRoutes.Put("/:id", ticketHandler.UpdateTicket)
+		ticketRoutes.Delete("/:id", ticketHandler.DeleteTicket)
+		ticketRoutes.Post("/:id/close", ticketHandler.CloseTicket)
+		ticketRoutes.Get("/:id/messages", ticketHandler.GetTicketWithMessages)
+		ticketRoutes.Post("/:id/assign", ticketHandler.AssignTicket)
+		ticketRoutes.Post("/:id/transfer", ticketHandler.TransferTicket)
+	}
+
+	// --- MESSAGE ROUTES ---
+	messageRoutes := protected.Group("/messages")
+	{
+		messageRoutes.Get("", messageHandler.ListMessages)
+		messageRoutes.Post("", messageHandler.SendMessage)
+		messageRoutes.Get("/ticket/:id", messageHandler.GetTicketMessages)
+		messageRoutes.Post("/:id/read", messageHandler.MarkAsRead)
+	}
 }
 
 func (r *Router) Listen(port string) error {
@@ -99,7 +184,6 @@ func (r *Router) Listen(port string) error {
 }
 
 func errorHandler(c *fiber.Ctx, err error) error {
-	// Custom error handling
 	code := fiber.StatusInternalServerError
 	message := "Internal Server Error"
 	

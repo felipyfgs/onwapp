@@ -25,3 +25,17 @@ type CreateTicketRequest struct {
 	QueueID   uuid.UUID `json:"queue_id"`
 	SessionID uuid.UUID `json:"session_id" validate:"required"`
 }
+
+type TicketWithMessages struct {
+	Ticket   *Ticket  `json:"ticket"`
+	Messages []Message `json:"messages"`
+	Contact  *Contact `json:"contact"`
+}
+
+type AssignTicketRequest struct {
+	UserID uuid.UUID `json:"user_id" validate:"required"`
+}
+
+type TransferTicketRequest struct {
+	QueueID uuid.UUID `json:"queue_id" validate:"required"`
+}
