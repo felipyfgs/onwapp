@@ -38,9 +38,10 @@ type Chat struct {
 	SyncedAt  time.Time `json:"syncedAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 
-	Archived bool   `json:"archived,omitempty"`
-	Pinned   bool   `json:"pinned,omitempty"`
-	Muted    string `json:"muted,omitempty"`
+	Archived bool       `json:"archived,omitempty"`
+	Pinned   bool       `json:"pinned,omitempty"`
+	Muted    string     `json:"muted,omitempty"`
+	MutedUntil *time.Time `json:"mutedUntil,omitempty"`
 }
 
 func (c *Chat) IsGroup() bool {

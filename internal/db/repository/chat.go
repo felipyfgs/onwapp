@@ -331,7 +331,7 @@ func (r *ChatRepository) GetBySessionWithLastMessage(ctx context.Context, sessio
 			c."conversationTimestamp", COALESCE(c."pHash", ''), c."notSpam",
 			c."syncedAt", c."updatedAt",
 			lm."content", lm."timestamp", lm."fromMe", lm."type", lm."mediaType", lm."status", lm."senderJid", lm."pushName",
-			COALESCE(c."archived", false), COALESCE(c."pinned", false), CASE WHEN c."muted" > NOW() THEN 'muted' ELSE '' END
+			COALESCE(c."archived", false), COALESCE(c."pinned", false), c."muted"
 		FROM "onWappChat" c
 		LEFT JOIN last_messages lm ON lm."chatJid" = c."chatJid"
 		WHERE c."sessionId" = $1 AND c."chatJid" != 'status@broadcast'`
@@ -353,7 +353,7 @@ func (r *ChatRepository) GetBySessionWithLastMessage(ctx context.Context, sessio
 		c := &model.Chat{}
 		lm := &LastMessageData{}
 		var archived, pinned bool
-		var muted string
+		var mutedUntil *time.Time
 		var lmContent, lmType, lmMediaType, lmStatus, lmSenderJID, lmPushName *string
 		var lmTimestamp *int64
 		var lmFromMe *bool
@@ -368,18 +368,24 @@ func (r *ChatRepository) GetBySessionWithLastMessage(ctx context.Context, sessio
 			&c.ConversationTimestamp, &c.PHash, &c.NotSpam,
 			&c.SyncedAt, &c.UpdatedAt,
 			&lmContent, &lmTimestamp, &lmFromMe, &lmType, &lmMediaType, &lmStatus, &lmSenderJID, &lmPushName,
-			&archived, &pinned, &muted,
+			&archived, &pinned, &mutedUntil,
 		)
 		if err != nil {
 			return nil, err
+		}
+
+		mutedStr := ""
+		if mutedUntil != nil && mutedUntil.After(time.Now()) {
+			mutedStr = "muted"
 		}
 
 		result := &ChatWithLastMessage{
 			Chat:     c,
 			Archived: archived,
 			Pinned:   pinned,
-			Muted:    muted,
+			Muted:    mutedStr,
 		}
+		c.MutedUntil = mutedUntil
 
 		if lmTimestamp != nil {
 			lm.Timestamp = *lmTimestamp
