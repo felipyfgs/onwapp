@@ -60,3 +60,41 @@ export interface TicketMessage {
   timestamp: Date;
   mediaUrl?: string;
 }
+
+export interface Tag {
+  id: string;
+  name: string;
+  colorClass: string;
+}
+
+export interface MediaMessage {
+  type: 'image' | 'audio' | 'video' | 'document';
+  url: string;
+  filename?: string;
+  duration?: number;
+  thumbnail?: string;
+}
+
+export interface Message {
+  id: string;
+  content: string;
+  timestamp: Date;
+  sender: 'me' | 'them';
+  status?: 'sent' | 'delivered' | 'read';
+  media?: MediaMessage;
+  quotedMessage?: Message;
+}
+
+export interface QuickReply {
+  id: string;
+  shortcut: string;
+  message: string;
+}
+
+export interface WhatsAppConnection {
+  id: string;
+  name: string;
+  number: string;
+  status: 'connected' | 'disconnected' | 'connecting' | 'qrcode';
+  qrCode?: string;
+}
