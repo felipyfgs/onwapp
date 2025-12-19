@@ -32,6 +32,7 @@ export class NatsClient {
         servers: this.options.url,
         reconnect: true,
         maxReconnectAttempts: this.options.maxReconnectAttempts,
+        timeout: 5000, // 5 second timeout
       });
       
       console.log('Connected to NATS server:', this.options.url);
@@ -47,9 +48,10 @@ export class NatsClient {
       this.resubscribeAll();
       
     } catch (error) {
-      console.error('Connection failed:', error);
+      console.log('NATS server not available:', this.options.url);
+      // Don't throw - just mark as disconnected
+      this.connection = null;
       this.scheduleReconnect();
-      throw error;
     }
   }
 

@@ -30,12 +30,19 @@ export function NatsProvider({ children }: { children: React.ReactNode }) {
     setState(prev => ({ ...prev, connecting: true, error: null }));
     try {
       await client.connect();
-      setState(prev => ({
-        ...prev,
-        connected: true,
-        connecting: false,
-        reconnectCount: 0,
-      }));
+      // Check if actually connected
+      const connectionState = client.getConnectionState();
+      if (connectionState.connected) {
+        setState(prev => ({
+          ...prev,
+          connected: true,
+          connecting: false,
+          reconnectCount: 0,
+          error: null,
+        }));
+      } else {
+        throw new Error('Connection failed');
+      }
     } catch (error) {
       setState(prev => ({
         ...prev,
@@ -45,7 +52,7 @@ export function NatsProvider({ children }: { children: React.ReactNode }) {
         reconnectCount: prev.reconnectCount + 1,
         lastError: error instanceof Error ? error.message : String(error),
       }));
-      throw error;
+      // Don't throw - allow app to continue in offline mode
     }
   };
 
@@ -70,28 +77,40 @@ export function NatsProvider({ children }: { children: React.ReactNode }) {
 
   const subscribe = async (subject: string, callback: (msg: NatsMessage) => void, options?: NatsSubscriptionOptions) => {
     if (!state.connected) {
-      throw new Error('NATS client not connected');
+      console.log('Subscribe skipped - NATS not connected:', subject);
+      return;
     }
     return client.subscribe(subject, callback, options);
   };
 
   const publish = async (subject: string, data: any) => {
     if (!state.connected) {
-      throw new Error('NATS client not connected');
+      console.log('Publish skipped - NATS not connected:', subject, data);
+      return;
     }
     return client.publish(subject, data);
   };
 
   const request = async (subject: string, data: any, timeout?: number) => {
     if (!state.connected) {
-      throw new Error('NATS client not connected');
+      console.log('Request skipped - NATS not connected:', subject);
+      return null;
     }
     return client.request(subject, data, timeout);
   };
 
-  // Auto-connect on mount
+  // Auto-connect on mount (non-blocking)
   useEffect(() => {
-    connect().catch(console.error);
+    const tryConnect = async () => {
+      try {
+        await connect();
+      } catch (error) {
+        // Silently fail - just log, don't crash
+        console.log('NATS server not available, running in offline mode');
+      }
+    };
+    
+    tryConnect();
     
     return () => {
       disconnect().catch(console.error);
