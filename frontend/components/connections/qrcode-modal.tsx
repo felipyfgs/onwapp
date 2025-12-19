@@ -31,58 +31,61 @@ export function QRCodeModal({
 }: QRCodeModalProps) {
   const [timeLeft, setTimeLeft] = useState(expiresIn)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
-  const initializedRef = useRef(false)
+  const prevQrCodeRef = useRef<string | undefined>(undefined)
 
-  const resetTimer = useCallback(() => {
+  const clearTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current)
       timerRef.current = null
     }
-    setTimeLeft(expiresIn)
-  }, [expiresIn])
-
-  const startTimer = useCallback(() => {
-    resetTimer()
-    timerRef.current = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          if (timerRef.current) {
-            clearInterval(timerRef.current)
-            timerRef.current = null
-          }
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-  }, [resetTimer])
+  }, [])
 
   useEffect(() => {
-    if (open && qrCodeData && !isLoading) {
-      if (!initializedRef.current) {
-        initializedRef.current = true
-        startTimer()
-      }
-    } else {
-      initializedRef.current = false
-      resetTimer()
+    if (!open) {
+      clearTimer()
+      return
     }
 
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current)
-      }
+    if (!qrCodeData || isLoading) {
+      clearTimer()
+      return
     }
-  }, [open, qrCodeData, isLoading, startTimer, resetTimer])
+
+    if (prevQrCodeRef.current !== qrCodeData) {
+      prevQrCodeRef.current = qrCodeData
+      setTimeLeft(expiresIn)
+      
+      clearTimer()
+      timerRef.current = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            clearTimer()
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+    }
+
+    return clearTimer
+  }, [open, qrCodeData, isLoading, expiresIn, clearTimer])
 
   function handleRefresh() {
-    resetTimer()
-    startTimer()
+    prevQrCodeRef.current = undefined
+    setTimeLeft(expiresIn)
     onRefresh?.()
   }
 
+  function handleOpenChange(newOpen: boolean) {
+    if (!newOpen) {
+      prevQrCodeRef.current = undefined
+      setTimeLeft(expiresIn)
+    }
+    onOpenChange(newOpen)
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md bg-card border-border">
         <DialogHeader>
           <DialogTitle className="text-card-foreground flex items-center gap-2">
@@ -149,7 +152,7 @@ export function QRCodeModal({
         <DialogFooter className="flex-col sm:flex-row gap-2">
           <Button 
             variant="outline" 
-            onClick={() => onOpenChange(false)}
+            onClick={() => handleOpenChange(false)}
             className="w-full sm:w-auto"
           >
             Cancelar
